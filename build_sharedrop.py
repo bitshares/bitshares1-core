@@ -30,6 +30,10 @@ substitutions = dict([
     ("1G3HMZzCr4QDihJEpz1arrmR4swm7krinM", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"), 
     ("Pe9F7tmq8Wxd2bCkFrW6nc4h5RASAzHAWC", "PmBR2p6uYY1SKhB9FbdHMbSGcqjEGsfK2n"),
     ("1376AFc3gfic94o9yK1dx7JMMqxzfbssrg", "1gD8zEUgPN6imT3uGUqVVnxT5agAH9r4Y"),
+    ("1Gaw39RvbkZxcXeYzGrjWvmiEqAB6PMqsX", "1A2SAL7i5UwZ3pYuaf7rcBj1U3wffEAoo7"),
+    ("13U3XLUTRHLGMwfCmhde7EmQtNdJE7X2zw", "1A2SAL7i5UwZ3pYuaf7rcBj1U3wffEAoo7"),
+    ("PbXSuic9B1iEmgMiWqW93cdXFvPQsHXdUc", "PfSQYEJYKN3YTmk74BwXy6fk2StTJczaQw"),
+    ("PitE7xxJvjzkVcs6BT5yRxV55YJqgFrhCU", "PfSQYEJYKN3YTmk74BwXy6fk2StTJczaQw"),
 ])
 
 
@@ -104,7 +108,7 @@ with open("dns-dev-fund.json") as devfund:
         #print "dns no dev: " + str(dns_no_dev)
         scale = 75000000.0 / dns_no_dev
         scale *= 10 ** 8
-        print "BTS per DNS: " + str(scale / 1000)
+        print "BTS per DNS normal: " + str(scale / 1000)
 
         for item in snapshot:
             if (item[0] in devkeys and item[1] != 0):
@@ -133,6 +137,7 @@ with open("dns-collapse.json") as collapse:
   
     bts_for_exchanges = bts_to_bonus * 2/3 # 10000000 * 10**8
     print "bts for exchanges: " + str(bts_for_exchanges / 10**8)
+    print "bts for on-chain: " + str((bts_to_bonus - bts_for_exchanges) / 10**8)
     with open("exchanges.json") as exchanges:
         exchanges = json.load(exchanges)
         ex_total = 0
@@ -146,6 +151,8 @@ with open("dns-collapse.json") as collapse:
             print bts_to_exchange
 
     scale = 1.0 * (bts_to_bonus - bts_for_exchanges) / collapse_total
+    print "BTS per DNS for normal claimed balances " + str(scale / 1000)
+    print "total claimed DNS outside of exchanges " + str(collapse_total / 10**5)
     for item in collapse:
         if item[0] in devkeys:
             continue
@@ -170,7 +177,7 @@ for item in exodus_balances:
         if address.startswith("PaNGEL") and address != "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw":
             bts_added -= item[1]
             bts_excluded += item[1]
-            print "Removed from pangel scammer: " + str(item[1] / 10**8)
+            print "Removed from pangel scammer: " + str(item[1] / 10**5)
             continue
         
         obj = {

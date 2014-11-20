@@ -2,6 +2,7 @@
 
 require 'open3'
 require 'json'
+require 'readline'
 require_relative './bitshares_api.rb'
 
 class BitSharesNode
@@ -101,22 +102,37 @@ class BitSharesNode
     File.write("#{@options[:data_dir]}/config.json", JSON.pretty_generate(config))
   end
 
+  @@completion_list = nil
+  @@completion_proc = proc { |s| @@completion_list.grep( /^#{Regexp.escape(s)}/ ) }
+
   def interactive_mode
-    STDOUT.puts "\nentering node '#{@name}' interactive mode, enter 'exit' to exit"
+    STDOUT.puts "\nentering node '#{@name}' interactive mode, enter 'exit' or 'quite' to exit"
     ignore_errors = @rpc_instance.ignore_errors
     @rpc_instance.ignore_errors = true
-    while true
-      STDOUT.print '> '
-      command = STDIN.gets
+    echo_off = @rpc_instance.echo_off
+    @rpc_instance.echo_off = true
+
+    unless @@completion_list
+      @@completion_list = []
+      res = @rpc_instance.request('help')
+      res.split("\n").each do |l|
+        c = l.chomp.split(' ')[0]
+        @@completion_list << c
+      end
+      Readline.completion_append_character = ' '
+      Readline.completion_proc = @@completion_proc
+    end
+
+    while command = Readline.readline('→ ', true)
+      break if command.nil?
       command.chomp!
-      break if command == 'exit'
+      break if command == 'exit' or command == 'quit'
       next if command.empty?
-      params = command.split(' ')
-      method = params.shift
-      res = @rpc_instance.request(method, params)
-      STDOUT.puts JSON.pretty_generate(res) if res and not res.empty?
+      res = @rpc_instance.request('execute_command_line', [command])
+      STDOUT.puts res.gsub('\n', "\n") if res and not res.empty?
     end
     @rpc_instance.ignore_errors = ignore_errors
+    @rpc_instance.echo_off = echo_off
   end
 
 end

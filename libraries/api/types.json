@@ -446,6 +446,11 @@
         "cpp_include_file" : "bts/blockchain/address.hpp"
       },
       {
+        "type_name" : "legacy_address",
+        "cpp_return_type" : "bts::blockchain::pts_address",
+        "cpp_include_file" : "bts/blockchain/pts_address.hpp"
+      },
+      {
         "type_name" : "full_block",
         "cpp_return_type" : "bts::blockchain::full_block",
         "cpp_include_file" : "bts/blockchain/block.hpp"

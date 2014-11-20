@@ -2715,6 +2715,11 @@ namespace detail {
       return record;
    }
 
+   public_key_type  wallet::get_new_public_key( const string& account_name )
+   {
+       return my->get_new_public_key( account_name );
+   }
+
    address  wallet::create_new_address( const string& account_name, const string& label )
    {
        FC_ASSERT( is_open() );
@@ -2723,7 +2728,6 @@ namespace detail {
        auto addr = my->get_new_address( account_name, label );
        return addr;
    }
-
 
     vector<wallet_balance_record>   wallet::get_address_balances( const address& addr )
     {

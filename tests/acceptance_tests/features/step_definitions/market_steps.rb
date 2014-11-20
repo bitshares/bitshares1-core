@@ -11,6 +11,14 @@ Given(/^feed price is (.+) ([A-Z]+)\/XTS$/) do |price, symbol|
   end
 end
 
+Given(/^delegates publish price feeds:$/) do |table|
+  feeds = table.hashes.map {|f| [f['Symbol'], f['Price'].to_f]}
+  node = @testnet.delegate_node
+  @testnet.for_each_delegate do |delegate_name|
+    node.exec 'execute_command_line', "wallet_publish_feeds #{delegate_name} #{feeds.to_s}"
+  end
+end
+
 When(/^(\w+) shorts? ([A-Z]+), collateral ([\d,\.]+) ([A-Z]+), interest rate ([\d\.]+)%, price limit ([\d\.]+) ([A-Z]+)\/([A-Z]+)$/) do |name, symbol, collateral, collateral_symbol, ir, price_limit, ps1, ps2|
   actor = get_actor(name)
   actor.node.exec 'wallet_market_submit_short', actor.account, to_f(collateral), collateral_symbol, ir, symbol, price_limit
