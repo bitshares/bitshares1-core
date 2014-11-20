@@ -1388,26 +1388,23 @@
                {
                   "name" : "description",
                   "type" : "string",
-                  "description" : "a description of the asset",
-                  "default_value" : ""
-               },
-               {
-                  "name" : "data",
-                  "type" : "json_variant",
-                  "description" : "arbitrary data attached to the asset",
-                  "default_value" : null
+                  "description" : "a description of the asset"
                },
                {
                   "name" : "maximum_share_supply",
                   "type" : "real_amount",
-                  "description" : "the maximum number of shares of the asset",
-                  "default_value" : 1000000000000000
+                  "description" : "the maximum number of shares of the asset"
                },
                {
                   "name" : "precision",
                   "type" : "uint64_t",
-                  "description" : "defines where the decimal should be displayed, must be a power of 10",
-                  "default_value" : 1000000
+                  "description" : "defines where the decimal should be displayed, must be a power of 10"
+               },
+               {
+                  "name" : "public_data",
+                  "type" : "json_variant",
+                  "description" : "arbitrary data attached to the asset",
+                  "default_value" : null
                },
                {
                   "name" : "is_market_issued",

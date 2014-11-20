@@ -505,12 +505,12 @@ wallet_transaction_record detail::client_impl::wallet_asset_create(
         const string& asset_name,
         const string& issuer_name,
         const string& description,
-        const variant& data,
         double maximum_share_supply ,
         uint64_t precision,
+        const variant& public_data,
         bool is_market_issued /* = false */ )
 {
-  const auto record = _wallet->create_asset( symbol, asset_name, description, data, issuer_name,
+  const auto record = _wallet->create_asset( symbol, asset_name, description, public_data, issuer_name,
                                              maximum_share_supply, precision, is_market_issued, true );
   network_broadcast_transaction( record.trx );
   return record;
