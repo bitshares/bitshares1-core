@@ -106,7 +106,7 @@ class BitSharesNode
   @@completion_proc = proc { |s| @@completion_list.grep( /^#{Regexp.escape(s)}/ ) }
 
   def interactive_mode
-    STDOUT.puts "\nentering node '#{@name}' interactive mode, enter 'exit' to exit"
+    STDOUT.puts "\nentering node '#{@name}' interactive mode, enter 'exit' or 'quite' to exit"
     ignore_errors = @rpc_instance.ignore_errors
     @rpc_instance.ignore_errors = true
     echo_off = @rpc_instance.echo_off
@@ -126,7 +126,7 @@ class BitSharesNode
     while command = Readline.readline('→ ', true)
       break if command.nil?
       command.chomp!
-      break if command == 'exit'
+      break if command == 'exit' or command == 'quit'
       next if command.empty?
       res = @rpc_instance.request('execute_command_line', [command])
       STDOUT.puts res.gsub('\n', "\n") if res and not res.empty?

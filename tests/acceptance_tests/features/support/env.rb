@@ -38,6 +38,12 @@ class Helper
     return @testnet.delegate_node.exec 'blockchain_get_asset', id
   end
 
+  def get_asset_fee(symbol)
+    fee = @testnet.delegate_node.exec 'wallet_get_transaction_fee', symbol
+    asset = get_asset_by_id(fee['asset_id'])
+    return fee['amount'].to_f / asset['precision'].to_f
+  end
+
   def get_balance(data, account, currency)
     asset = get_asset_by_name(currency)
     asset_id = asset['id']
