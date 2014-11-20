@@ -16,6 +16,10 @@ expiring_signature client_impl::registrar_demo_registration(const signed_identit
    auto property_id = validated_ballot_id.id(identity_address);
    auto voter_key = fc::ecc::public_key(ballot_id_signature, property_id);
 
+   //FIXME: This needs to be persistent for any real system.
+   static std::unordered_set<address> marked_ids;
+   FC_ASSERT(marked_ids.find(voter_key) == marked_ids.end(), "Identity has already registered to vote.");
+
    std::unordered_set<address> signatories;
    const std::unordered_set<address> recognized_verifiers = {
       bts::blockchain::public_key_type("XTS6LNgKuUmEH18TxXWDEeqMtYYQBBXWfE1ZDdSx95jjCJvnwnoGy")
@@ -37,6 +41,9 @@ expiring_signature client_impl::registrar_demo_registration(const signed_identit
                          std::back_inserter(recognized_signatories));
    FC_ASSERT(recognized_signatories.size() > recognized_verifiers.size() / 2,
              "Ballot ID must be verfied by strictly more than half of the recognized verifiers!");
+
+   //Mark this identity as having now registered. This should never fail, but check it anyways.
+   FC_ASSERT(marked_ids.insert(voter_key).second, "Could not mark ID as having registered.");
 
    return ballot::authorize_voter(validated_ballot_id.value.as<digest_type>(),
                                   _wallet->get_active_private_key("registrar"),
