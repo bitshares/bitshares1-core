@@ -519,13 +519,14 @@ public:
                 if (email.status == client::failed) {
                     for (auto task_future : transmit_tasks)
                     {
+                        fc::oexception cancel_error;
                         try {
                             task_future.cancel_and_wait();
                         } catch (const fc::exception& e) {
-                            elog("Caught exception while canceling mail client transmitter task: ${x}", ("x",e.to_detail_string()) );
-                        } catch (...) {
-                            elog("Caught unknown exception while canceling mail client transmitter task");
-                        }
+                            cancel_error = e;
+                        } 
+                        if (cancel_error)
+                            elog("Caught exception while canceling mail client transmitter task: ${x}", ("x",cancel_error->to_detail_string()) );
                     }
                     return;
                 }
