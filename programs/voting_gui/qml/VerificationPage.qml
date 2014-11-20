@@ -16,6 +16,9 @@ TaskPage {
       // @disable-check M126
       if( response.response == null ) {
          //Request not yet processed. Keep waiting.
+         if( container.state !== "POLLING" ) {
+            container.state = "POLLING"
+         }
          return;
       }
 
@@ -58,6 +61,9 @@ TaskPage {
 
    Stack.onStatusChanged: {
       if( Stack.status === Stack.Active ) {
+         if( container.state === "REJECTED" ) {
+            container.state = "SUBMITTING"
+         }
          startVerification()
       }
    }
