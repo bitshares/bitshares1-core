@@ -224,7 +224,6 @@ struct chain_fixture
       else
          console->print( "B: produce block----------------------------------------\n", fc::console_appender::color::green );
 
-
       auto head_num = my_client->get_chain()->get_head_block_num();
       const auto& delegates = my_client->get_wallet()->get_my_delegates( enabled_delegate_status | active_delegate_status );
       auto next_block_time = my_client->get_wallet()->get_next_producible_block_timestamp( delegates );

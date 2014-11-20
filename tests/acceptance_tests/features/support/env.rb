@@ -1,4 +1,3 @@
-require 'io/console'
 require 'rspec/expectations'
 require 'logger'
 require './testnet.rb'
@@ -16,7 +15,7 @@ class Helper
   end
 
   def get_actor(name)
-    if name == 'my' or name == 'me' or name == 'I' or name == 'mine'
+    if name == 'my' or name == 'me' or name == 'I' or name == 'mine' or name == 'myself'
       @current_actor
     elsif name == 'Alice' or name == "Alice's"
       @alice
@@ -54,14 +53,15 @@ class Helper
   end
 
   #{"type"=>"ask_order", "market_index"=>{"order_price"=>{"ratio"=>"0.002", "quote_asset_id"=>7, "base_asset_id"=>0}, "owner"=>"XTSJA72rtoSYfbWvEDm4zZKve5ucNqhKRrCP"}, "state"=>{"balance"=>2000000000, "limit_price"=>nil, "last_update"=>"2014-11-18T22:34:50"}, "collateral"=>nil, "interest_rate"=>nil, "expiration"=>nil}
-  def parse_order(o)
+  def parse_ask_bid_order(o)
     res = {}
     order_price = o['market_index']['order_price']
     ratio = order_price['ratio'].to_f
     quote_asset = get_asset_by_id(order_price['quote_asset_id'])
     base_asset = get_asset_by_id(order_price['base_asset_id'])
     res[:price] = ratio * (base_asset['precision'].to_f / quote_asset['precision'].to_f)
-    res[:balance] = o['state']['balance'].to_f / base_asset['precision'].to_f
+    balance_asset = o['type'] == 'ask_order' ? base_asset : quote_asset
+    res[:balance] = o['state']['balance'].to_f / balance_asset['precision'].to_f
     return res
   end
 
@@ -81,7 +81,7 @@ class Helper
         end
       end
       if order['type'] == 'ask_order' or order['type'] == 'bid_order'
-        po = parse_order(order)
+        po = parse_ask_bid_order(order)
         if po[:balance] == o['Balance'].to_f and po[:price] == o['Price'].to_f
           @last_order_id = e[0]
           return true
@@ -140,34 +140,7 @@ Before do |scenario|
 end
 
 After do |scenario|
-  if @pause
-    while true
-      STDOUT.puts '@pause: use the following urls to access the nodes via browser:'
-      STDOUT.puts "- delegate node: #{@testnet.delegate_node.url}"
-      STDOUT.puts "- alice node: #{@testnet.alice_node.url}"
-      STDOUT.puts "- bob node: #{@testnet.bob_node.url}"
-      STDOUT.puts 'or press [d],[a] or [b] to have console access'
-      STDOUT.puts 'or press any other key to shutdown testnet and continue..'
-      c = ''
-      begin
-        STDIN.echo = false
-        STDIN.raw!
-        c = STDIN.getc
-      ensure
-        STDIN.echo = true
-        STDIN.cooked!
-      end
-      if c == 'd'
-        @testnet.delegate_node.interactive_mode
-      elsif c == 'a'
-        @testnet.alice_node.interactive_mode
-      elsif c == 'b'
-        @testnet.bob_node.interactive_mode
-      else
-        break
-      end
-    end
-  end
+  @testnet.pause if @pause
   @pause = false
   STDOUT.puts 'shutting down testnet..'
   @testnet.shutdown

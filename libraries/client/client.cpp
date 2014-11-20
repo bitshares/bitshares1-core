@@ -1139,14 +1139,8 @@ fc::time_point_sec client_impl::get_block_time(const bts::net::item_hash_t& bloc
 {
    if (block_id == bts::net::item_hash_t())
    {
-      // then the question the net is really asking is, what is the timestamp of the
-      // genesis block?  That's not stored off directly anywhere I can find, but it
-      // does wind its way into the the registration date of the base asset.
-      oasset_record base_asset_record = _chain_db->get_asset_record(BTS_BLOCKCHAIN_SYMBOL);
-      FC_ASSERT(base_asset_record);
-      if (!base_asset_record)
-         return fc::time_point_sec::min();
-      return base_asset_record->registration_date;
+      // then the question the net is really asking is, what is the timestamp of the genesis block?
+      return _chain_db->get_genesis_timestamp();
    }
    // else they're asking about a specific block
    try
