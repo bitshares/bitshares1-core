@@ -290,13 +290,12 @@ public:
       record.conflicting_ids.clear();
 
       auto& name_dob_index = _id_unique_db.get<by_name_dob>();
-      auto itr = name_dob_index.find(boost::make_tuple(unique_record.name, unique_record.date_of_birth));
-      if( itr != name_dob_index.end() )
+      auto range = name_dob_index.equal_range(boost::make_tuple(unique_record.name, unique_record.date_of_birth));
+      if( range.first != range.second )
       {
          passes = false;
-         auto range = name_dob_index.equal_range(boost::make_tuple(unique_record.name, unique_record.date_of_birth));
          std::for_each(range.first, range.second, [&record](const identity_uniqueness_record& rec) {
-            record.conflicting_ids.emplace_back(rec.id);
+            record.conflicting_ids.push_back(rec.id);
          });
       }
 
