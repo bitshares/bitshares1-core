@@ -232,7 +232,9 @@ namespace bts { namespace wallet {
                                                  const optional<string>& account_name,
                                                  bool create_account = false );
 
-         address  create_new_address( const string& account_name, const string& label);
+
+         public_key_type       get_new_public_key( const string& account_name );
+         address               create_new_address( const string& account_name, const string& label);
 
 
          void              set_address_label( const address& addr, const string& label );

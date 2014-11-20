@@ -60,7 +60,7 @@ Then(/^([\w]+) should have\s?(around)? ([\d,\.]+) ([A-Z]+)\s?(minus fee|minus \d
   if minus_fee and minus_fee.length > 0
     m = /(\d+)\s?\*\s?fee/.match(minus_fee)
     multiplier = if m and m[1] then m[1].to_i else 1 end
-    amount = amount - multiplier * 0.5
+    amount = amount - multiplier * get_asset_fee(currency)
   end
   if around and around.length > 0
     amount = amount.round

@@ -268,9 +268,9 @@ namespace bts { namespace blockchain {
                                                                uint32_t limit = -1, order_type_enum type = null_order )const;
          optional<market_order>             get_market_order( const order_id_type& order_id, order_type_enum type = null_order )const;
 
-         void                               scan_assets( function<void( const asset_record& )> callback );
-         void                               scan_balances( function<void( const balance_record& )> callback );
-         void                               scan_accounts( function<void( const account_record& )> callback );
+         void                               scan_assets( function<void( const asset_record& )> callback )const;
+         void                               scan_balances( function<void( const balance_record& )> callback )const;
+         void                               scan_accounts( function<void( const account_record& )> callback )const;
 
          virtual variant                    get_property( chain_property_enum property_id )const override;
          virtual void                       set_property( chain_property_enum property_id,

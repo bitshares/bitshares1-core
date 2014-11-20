@@ -3,6 +3,7 @@
 require 'fileutils'
 require 'yaml'
 require 'open3'
+require 'io/console'
 require_relative './client.rb'
 
 module BitShares
@@ -164,6 +165,37 @@ module BitShares
       @running = false
     end
 
+    def pause
+      @alice_node.exec 'execute_command_line', 'enable_raw'
+      @bob_node.exec 'execute_command_line', 'enable_raw'
+      while true
+        STDOUT.puts '@pause: use the following urls to access the nodes via browser:'
+        STDOUT.puts "- delegate node: #{@delegate_node.url}"
+        STDOUT.puts "- alice node: #{@alice_node.url}"
+        STDOUT.puts "- bob node: #{@bob_node.url}"
+        STDOUT.puts 'or press [d],[a] or [b] to have console access'
+        STDOUT.puts 'or press any other key to shutdown testnet and continue..'
+        c = ''
+        begin
+          STDIN.echo = false
+          STDIN.raw!
+          c = STDIN.getc
+        ensure
+          STDIN.echo = true
+          STDIN.cooked!
+        end
+        if c == 'd'
+          @delegate_node.interactive_mode
+        elsif c == 'a'
+          @alice_node.interactive_mode
+        elsif c == 'b'
+          @bob_node.interactive_mode
+        else
+          break
+        end
+      end
+    end
+
   end
 
 end
@@ -174,9 +206,8 @@ if $0 == __FILE__
     testnet.create
   else
     testnet.start
-    puts 'testnet is running, press any key to exit..'
-    STDIN.getc
   end
+  testnet.pause
   puts 'exiting..'
   testnet.shutdown
 end

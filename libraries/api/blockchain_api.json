@@ -277,12 +277,12 @@
       },
       {
         "method_name": "blockchain_list_address_balances",
-        "description": "Lists balance records which can be claimed by signature for this address",
+        "description": "Lists balance records which are the balance IDs or which can be claimed by signature for this address",
         "return_type": "balance_record_list",
         "parameters" : [
             {
               "name" : "addr",
-              "type" : "address",
+              "type" : "string",
               "description" : "address to scan for"
             }
         ],

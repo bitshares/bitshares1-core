@@ -259,8 +259,14 @@ account_balance_summary_type detail::client_impl::blockchain_get_account_public_
   return ret;
 } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
-vector<balance_record> detail::client_impl::blockchain_list_address_balances( const address& addr )const
+vector<balance_record> detail::client_impl::blockchain_list_address_balances( const string& raw_addr )const
 {
+    address addr;
+    try {
+        addr = address( raw_addr );
+    } catch (...) {
+        addr = address( pts_address( raw_addr ) );
+    }
     return _chain_db->get_balances_for_address( addr );
 }
 
