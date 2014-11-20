@@ -10,6 +10,15 @@ Given(/I made an account (\w+)$/) do |name|
     @current_actor.node.exec 'wallet_account_create', name
 end
 
+Given(/I register an account (\w+)$/) do |name|
+    @current_actor.node.exec 'wallet_account_register', name, @current_actor.account
+end
+
+Given(/I rename account (\w+) to (\w+)$/) do |old_name, new_name|
+    res = @current_actor.node.exec 'wallet_rename_account', old_name, new_name
+    p res
+end
+
 Given(/I ma[d|k]e an address (\w+) for (\w+)$/) do |addrname, acct|
     addr = @current_actor.node.exec 'wallet_address_create', acct
     @addresses ||= {}
