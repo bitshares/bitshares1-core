@@ -1582,7 +1582,9 @@ namespace detail {
 
    optional<time_point_sec> wallet::get_next_producible_block_timestamp( const vector<wallet_account_record>& delegate_records )const
    { try {
+            ilog( "" );
       if( !is_open() || is_locked() ) return optional<time_point_sec>();
+            ilog( "" );
 
       vector<account_id_type> delegate_ids;
       delegate_ids.reserve( delegate_records.size() );
