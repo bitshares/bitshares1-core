@@ -1,4 +1,3 @@
-require 'io/console'
 require 'rspec/expectations'
 require 'logger'
 require './testnet.rb'
@@ -16,7 +15,7 @@ class Helper
   end
 
   def get_actor(name)
-    if name == 'my' or name == 'me' or name == 'I' or name == 'mine'
+    if name == 'my' or name == 'me' or name == 'I' or name == 'mine' or name == 'myself'
       @current_actor
     elsif name == 'Alice' or name == "Alice's"
       @alice
@@ -141,36 +140,7 @@ Before do |scenario|
 end
 
 After do |scenario|
-  if @pause
-    @testnet.alice_node.exec 'execute_command_line', 'enable_raw'
-    @testnet.bob_node.exec 'execute_command_line', 'enable_raw'
-    while true
-      STDOUT.puts '@pause: use the following urls to access the nodes via browser:'
-      STDOUT.puts "- delegate node: #{@testnet.delegate_node.url}"
-      STDOUT.puts "- alice node: #{@testnet.alice_node.url}"
-      STDOUT.puts "- bob node: #{@testnet.bob_node.url}"
-      STDOUT.puts 'or press [d],[a] or [b] to have console access'
-      STDOUT.puts 'or press any other key to shutdown testnet and continue..'
-      c = ''
-      begin
-        STDIN.echo = false
-        STDIN.raw!
-        c = STDIN.getc
-      ensure
-        STDIN.echo = true
-        STDIN.cooked!
-      end
-      if c == 'd'
-        @testnet.delegate_node.interactive_mode
-      elsif c == 'a'
-        @testnet.alice_node.interactive_mode
-      elsif c == 'b'
-        @testnet.bob_node.interactive_mode
-      else
-        break
-      end
-    end
-  end
+  @testnet.pause if @pause
   @pause = false
   STDOUT.puts 'shutting down testnet..'
   @testnet.shutdown
