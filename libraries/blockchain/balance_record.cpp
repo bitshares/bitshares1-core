@@ -83,15 +83,16 @@ namespace bts { namespace blockchain {
                return asset( spendable_balance, condition.asset_id );
            }
            case withdraw_escrow_type:
-               return asset();
-           /*
-           default: // don't use a default here.. generate warnings for unsupported types
            {
-               FC_ASSERT( !"Unsupported withdraw condition!" );
+               return asset();
            }
-           */
+           default:
+           {
+               elog( "balance_record::get_spendable_balance() called on unsupported withdraw type!" );
+               return asset();
+           }
        }
-       return asset();
+       FC_ASSERT( !"Should never get here!" );
    }
 
 } } // bts::blockchain
