@@ -1804,7 +1804,7 @@ namespace bts { namespace blockchain {
       }
    } FC_CAPTURE_AND_RETHROW( (record_id)(record_to_store) ) }
 
-   void chain_database::scan_assets( function<void( const asset_record& )> callback )
+   void chain_database::scan_assets( function<void( const asset_record& )> callback )const
    {
         auto asset_itr = my->_asset_db.begin();
         while( asset_itr.valid() )
@@ -1814,7 +1814,7 @@ namespace bts { namespace blockchain {
         }
    }
 
-   void chain_database::scan_balances( function<void( const balance_record& )> callback )
+   void chain_database::scan_balances( function<void( const balance_record& )> callback )const
    {
         auto balances = my->_balance_db.begin();
         while( balances.valid() )
@@ -1824,7 +1824,7 @@ namespace bts { namespace blockchain {
         }
    }
 
-   void chain_database::scan_accounts( function<void( const account_record& )> callback )
+   void chain_database::scan_accounts( function<void( const account_record& )> callback )const
    {
         auto name_itr = my->_account_db.begin();
         while( name_itr.valid() )
@@ -1996,33 +1996,28 @@ namespace bts { namespace blockchain {
     } FC_RETHROW_EXCEPTIONS( warn, "", ("first",first)("limit",limit) )  }
 
     vector<balance_record> chain_database::get_balances_for_address( const address& addr )const
-    {
+   { try {
         vector<balance_record> ret;
-        for( auto pair : get_balances( "", -1 ) )
+        const auto scan_balance = [ &addr, &ret ]( const balance_record& record )
         {
-            auto bal = pair.second;
-            if( bal.is_owner( addr ) || addr == bal.id() )
-            {
-                ret.push_back(bal);
-            }
-        }
+            if( record.is_owner( addr ) || addr == record.id() )
+                ret.push_back( record );
+        };
+        scan_balances( scan_balance );
         return ret;
-    }
+   } FC_CAPTURE_AND_RETHROW( (addr) ) }
 
     vector<balance_record> chain_database::get_balances_for_key( const public_key_type& key )const
-    {
+   { try {
         vector<balance_record> ret;
-        for( auto pair : get_balances( "", -1 ) )
+        const auto scan_balance = [ &key, &ret ]( const balance_record& record )
         {
-            auto bal = pair.second;
-            if( bal.is_owner(key) )
-            {
-                ret.push_back( bal );
-            }
-        }
+            if( record.is_owner( key ) )
+                ret.push_back( record );
+        };
+        scan_balances( scan_balance );
         return ret;
-    }
-
+   } FC_CAPTURE_AND_RETHROW( (key) ) }
 
     std::vector<account_record> chain_database::get_accounts( const string& first, uint32_t limit )const
     { try {
