@@ -1,7 +1,7 @@
 When(/^(\w+) creates? asset ([A-Z]+) \(max shares: ([\d,]+)\)$/) do |name, asset, max_shares|
   actor = get_actor(name)
   max_shares.gsub!(',','')
-  actor.node.exec 'wallet_asset_create', asset, asset.downcase + '_iou', actor.account, asset.downcase + '_iou_description', "''", max_shares.to_i, 1000, false
+  actor.node.exec 'wallet_asset_create', asset, asset.downcase + '_iou', actor.account, asset.downcase + '_iou_description', max_shares.to_i, 1000, '', false
 end
 
 When(/^(\w+) issues? ([\d,]+) ([A-Z]+) shares to (\w+)$/) do |name, amount, symbol, to_name|

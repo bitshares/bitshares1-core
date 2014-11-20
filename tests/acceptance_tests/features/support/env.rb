@@ -9,6 +9,7 @@ end
 class Helper
 
   def initialize
+    Dir.mkdir 'tmp' unless Dir.exist? 'tmp'
     FileUtils.rm_rf('tmp/lastrun.log')
     @logger = Logger.new('tmp/lastrun.log')
     @pause = false
