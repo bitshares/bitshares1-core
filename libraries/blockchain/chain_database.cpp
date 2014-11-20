@@ -1155,6 +1155,12 @@ namespace bts { namespace blockchain {
 
                  push_block(block);
                  ++blocks_indexed;
+
+                 if( blocks_indexed % 1000 == 0 )
+                 {
+                     set_db_cache_write_through( true );
+                     set_db_cache_write_through( false );
+                 }
              };
 
              if (num_to_id.empty()) {
