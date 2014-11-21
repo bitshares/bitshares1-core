@@ -102,7 +102,7 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
          ("resync-blockchain", "Delete our copy of the blockchain at startup and download a "
                                "fresh copy of the entire blockchain from the network")
 
-         ("p2p-port", program_options::value<uint16_t>(), "Set network port to listen on")
+         ("p2p-port", program_options::value<string>(), "Set network port to listen on (prepend 'r' to enable SO_REUSEADDR)")
          ("accept-incoming-connections", program_options::value<bool>()->default_value(true), "Set to false to reject incoming p2p connections and only establish outbound connections")
          ("upnp", program_options::value<bool>()->default_value(true), "Enable UPNP")
 
@@ -1475,10 +1475,18 @@ void client::configure_from_command_line(int argc, char** argv)
    my->configure_rpc_server(my->_config,option_variables);
    my->configure_chain_server(my->_config,option_variables);
 
+   uint16_t p2p_port = 0;
    if (option_variables.count("p2p-port"))
    {
-      uint16_t p2pport = option_variables["p2p-port"].as<uint16_t>();
-      listen_on_port(p2pport, option_variables.count("p2p-port") != 0);
+	  string str_port = option_variables["p2p-port"].as<string>();
+	  bool p2p_wait_if_not_available = true;
+	  if( str_port[0] == 'r' )
+	  {
+	      str_port = str_port.substr(1);
+	      p2p_wait_if_not_available = false;
+	  }
+      p2p_port = (uint16_t) std::stoul( str_port );
+      listen_on_port(p2p_port, p2p_wait_if_not_available);
    }
    accept_incoming_p2p_connections(option_variables["accept-incoming-connections"].as<bool>());
 
@@ -1601,7 +1609,6 @@ void client::configure_from_command_line(int argc, char** argv)
             ulog("Listening for P2P connections on ${port}",("port",port_stream.str()));
             if (option_variables.count("p2p-port"))
             {
-               uint16_t p2p_port = option_variables["p2p-port"].as<uint16_t>();
                if (p2p_port != 0 && p2p_port != actual_p2p_endpoint.port())
                   ulog(" (unable to bind to the desired port ${p2p_port} )", ("p2p_port",p2p_port));
             }
