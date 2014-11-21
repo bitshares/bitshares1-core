@@ -827,7 +827,14 @@
                 "type": "bool",
                 "description": "",
                 "default_value": true
+            },
+            {
+              "name" : "builder_path",
+              "type" : "string",
+              "description" : "If specified, will write builder here instead of to DATA_DIR/transactions/latest.trx",
+              "default_value" : ""
             }
+
         ],
         "prerequisites": ["json_authenticated"],
         "aliases": ["withdraw_from_address"],
@@ -912,11 +919,11 @@
               "default_value" : "vote_none"
             },
             {
-              "name" : "alternate_path",
+              "name" : "builder_path",
               "type" : "string",
               "description" : "If specified, will write builder here instead of to DATA_DIR/transactions/latest.trx",
               "default_value" : ""
-            },
+            }
         ],
         "prerequisites": ["json_authenticated"],
         "aliases": ["withdraw_from_multisig"],

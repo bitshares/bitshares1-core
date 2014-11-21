@@ -62,6 +62,9 @@ namespace bts { namespace wallet {
          void    create_from_json( const path& filename, const string& wallet_name, const string& passphrase );
 
          void    auto_backup( const string& reason )const;
+
+         void    write_latest_builder( const transaction_builder& builder,
+                                       const string& alternate_path );
          ///@}
 
          /**

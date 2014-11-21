@@ -348,7 +348,8 @@ transaction_builder detail::client_impl::wallet_withdraw_from_address(
                                                     const address& from_address,
                                                     const string& to,
                                                     const vote_selection_method& vote_method,
-                                                    bool sign )const
+                                                    bool sign,
+                                                    const string& builder_path )const
 {
     address to_address;
     try {
@@ -367,6 +368,7 @@ transaction_builder detail::client_impl::wallet_withdraw_from_address(
         builder->transaction_record.trx.expiration = _chain_db->now() + _wallet->get_transaction_expiration();
         builder->sign();
     }
+    _wallet->write_latest_builder( *builder, builder_path );
     return *builder;
 }
 
@@ -408,31 +410,14 @@ transaction_builder detail::client_impl::wallet_multisig_withdraw_start(
                                                     const balance_id_type& from,
                                                     const address& to_address,
                                                     const vote_selection_method& vote_method,
-                                                    const string& alternate_path )const
+                                                    const string& builder_path )const
 {
     asset ugly_asset = _chain_db->to_ugly_asset(amount, symbol);
     auto builder = _wallet->create_transaction_builder();
     auto fee = _wallet->get_transaction_fee();
     builder->withdraw_from_balance( from, ugly_asset.amount + fee.amount );
     builder->deposit_to_balance( to_address, ugly_asset, vote_method );
-    std::ofstream out;
-    if( alternate_path == "" )
-    {
-        auto dir = (_wallet->get_data_directory() / "trx").string();
-        auto default_path = dir + "latest.trx";
-        if( !fc::exists( default_path ) )
-            fc::create_directories( dir );
-        out.open(dir + "latest.trx");
-    }
-    else
-    {
-        if( fc::exists( alternate_path  ) )
-            FC_THROW_EXCEPTION( file_already_exists, "That filename already exists!", ("filename", alternate_path));
-        out.open(alternate_path);
-    }
-    out << fc::json::to_pretty_string(builder);
-    out.close();
-
+    _wallet->write_latest_builder( *builder, builder_path );
     return *builder;
 }
 

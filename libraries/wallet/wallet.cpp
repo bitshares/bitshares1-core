@@ -10,6 +10,7 @@
 #include <bts/utilities/key_conversion.hpp>
 
 #include <thread>
+#include <fstream>
 
 namespace bts { namespace wallet {
 
@@ -53,6 +54,7 @@ namespace detail {
    {
        return _wallet_db.get_pending_transactions();
    }
+
 
    void wallet_impl::withdraw_to_transaction(
            const asset& amount_to_withdraw,
@@ -4514,6 +4516,28 @@ namespace detail {
           order_map[ order.get_id() ] = order;
 
       return order_map;
+   }
+
+   void wallet::write_latest_builder( const transaction_builder& builder,
+                                      const string& alternate_path )
+   {
+        std::ofstream fs;
+        if( alternate_path == "" )
+        {
+            auto dir = (get_data_directory() / "trx").string();
+            auto default_path = dir + "latest.trx";
+            if( !fc::exists( default_path ) )
+                fc::create_directories( dir );
+            fs.open(dir + "latest.trx");
+        }
+        else
+        {
+            if( fc::exists( alternate_path  ) )
+                FC_THROW_EXCEPTION( file_already_exists, "That filename already exists!", ("filename", alternate_path));
+            fs.open(alternate_path);
+        }
+        fs << fc::json::to_pretty_string(builder);
+        fs.close();
    }
 
    // TODO: We don't need this anymore
