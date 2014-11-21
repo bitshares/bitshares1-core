@@ -233,10 +233,17 @@ void client_impl::debug_initialize_election(const string& contests, const string
    vector<vote::contest> c = fc::json::from_file(contests).as<vector<vote::contest>>();
    std::for_each(c.begin(), c.end(), [this](const vote::contest& c) {
       _ballot_box->store_contest(c);
+      fc::mutable_variant_object con = fc::variant(c).as<mutable_variant_object>();
+      con["id"] = c.id();
+      std::cout << fc::json::to_pretty_string(con) << "\n\n";
    });
+   std::cout << "*************************** BEGIN BALLOTS ******************************\n";
    vector<vote::ballot> b = fc::json::from_file(ballots).as<vector<vote::ballot>>();
    std::for_each(b.begin(), b.end(), [this](const vote::ballot& b) {
       _ballot_box->store_ballot(b);
+      fc::mutable_variant_object bal = fc::variant(b).as<mutable_variant_object>();
+      bal["id"] = b.id();
+      std::cout << fc::json::to_pretty_string(bal) << "\n\n";
    });
 }
 } } } // namespace bts::client::detail
