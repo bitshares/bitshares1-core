@@ -425,4 +425,76 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_balance_record( *escrow_balance_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
+
+   void restricted_balance_update_operation::evaluate( transaction_evaluation_state& eval_state )
+   { try {
+      auto current_balance_record = eval_state._current_state->get_balance_record( this->balance_id );
+      FC_ASSERT( current_balance_record.valid(), "No such balance!" );
+      FC_ASSERT( current_balance_record->condition.asset_id == 0, "Only BTS balances can have restricted owners." );
+      FC_ASSERT( current_balance_record->condition.type == withdraw_signature_type, "Restricted owners not enabled for anything but basic balances" );
+
+
+      auto balance = current_balance_record->balance;
+      if( current_balance_record->condition.delegate_slate_id )
+      {
+          eval_state.adjust_vote( current_balance_record->condition.delegate_slate_id, -balance );
+      }
+      current_balance_record->balance -= balance;
+      current_balance_record->last_update = eval_state._current_state->now();
+
+      eval_state._current_state->store_balance_record( *current_balance_record );
+
+      auto new_restricted_owner = current_balance_record->restricted_owner;
+      auto new_slate = current_balance_record->condition.delegate_slate_id;
+
+
+      if( this->new_restricted_owner.valid() )
+      {
+          for( auto owner : current_balance_record->owners() ) //eventually maybe multisig can delegate vote
+              if( !eval_state.check_signature( owner ) )
+                  FC_CAPTURE_AND_THROW( missing_signature, (owner) );
+          new_restricted_owner = this->new_restricted_owner;
+          new_slate = this->new_slate;
+      } else {
+          auto restricted_owner = current_balance_record->restricted_owner;
+          FC_ASSERT( restricted_owner.valid(),
+                     "Didn't specify a new restricted owner, but one currently exists." );
+          if( !eval_state.check_signature( *restricted_owner ) )
+              FC_CAPTURE_AND_THROW( missing_signature, (restricted_owner) );
+          new_slate = this->new_slate;
+      }
+
+      withdraw_condition new_condition(withdraw_with_signature(current_balance_record->owner()),
+                                       0, new_slate);
+      balance_record newer_balance_record( new_condition );
+      auto new_balance_record = eval_state._current_state->get_balance_record( newer_balance_record.id() );
+
+      if( new_balance_record->balance == 0 )
+      {
+         new_balance_record->deposit_date = eval_state._current_state->now();
+      }
+      else
+      {
+         fc::uint128 old_sec_since_epoch( current_balance_record->deposit_date.sec_since_epoch() );
+         fc::uint128 new_sec_since_epoch( eval_state._current_state->now().sec_since_epoch() );
+
+         fc::uint128 avg = (old_sec_since_epoch * new_balance_record->balance) + (new_sec_since_epoch * balance);
+         avg /= (new_balance_record->balance + balance);
+
+         new_balance_record->deposit_date = time_point_sec( avg.to_integer() );
+      }
+
+      new_balance_record->balance += balance;
+
+      // update delegate vote on deposited account..
+      if( new_balance_record->condition.delegate_slate_id )
+         eval_state.adjust_vote( current_balance_record->condition.delegate_slate_id, balance );
+
+      new_balance_record->last_update = eval_state._current_state->now();
+      eval_state._current_state->store_balance_record( *new_balance_record );
+
+   } FC_CAPTURE_AND_RETHROW( (*this) ) }
+
+
+
 } } // bts::blockchain

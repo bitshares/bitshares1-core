@@ -24,14 +24,19 @@ namespace bts { namespace blockchain {
       {
          return condition.as<withdraw_with_multi_sig>().owners;
       }
-      return set<address>{address()};
+      FC_ASSERT(!"This balance's condition type doesn't have a true owner.");
    }
+
    bool             balance_record::is_owner( const address& addr )const
    {
-       auto owners = this->owners(); // Can't make distinct calls to owners() for .find/.end
-       if( owners.find( addr ) != owners.end() )
-           return true;
-       return false;
+       try {
+           auto owners = this->owners(); // Can't make distinct calls to owners() for .find/.end
+           if( owners.find( addr ) != owners.end() )
+               return true;
+           return false;
+       } catch (...) {
+           false;
+       }
    }
 
    bool             balance_record::is_owner( const public_key_type& key )const
