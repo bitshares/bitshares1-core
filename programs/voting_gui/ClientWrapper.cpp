@@ -377,7 +377,7 @@ void ClientWrapper::begin_registration(QString account_name, QStringList registr
          try {
             auto registrar_signature = client->registrar_demo_registration(*ballot_id, identity.owner, signature);
             auto data = account.private_data.as<fc::mutable_variant_object>();
-            data["registrar_signatures"] = std::vector<bts::vote::signature_data>({registrar_signature});
+            data["registrar_signatures"] = std::vector<bts::vote::expiring_signature>({registrar_signature});
             _client->get_wallet()->update_account_private_data(account.name, data);
             Q_EMIT registered();
          } catch (fc::exception& e) {
@@ -412,7 +412,7 @@ bts::blockchain::public_key_type ClientWrapper::lookup_public_key(QString accoun
 std::shared_ptr<bts::rpc::rpc_client> ClientWrapper::get_rpc_client(QString account)
 {
    auto client = std::make_shared<bts::rpc::rpc_client>();
-   client->connect_to(fc::ip::endpoint(fc::ip::address("127.0.0.1"), 3000));
+   client->connect_to(fc::ip::endpoint(fc::ip::address("69.90.132.209"), 3000));
    client->login("bob", "bob");
 
    return client;
@@ -464,7 +464,7 @@ std::vector<bts::vote::signed_identity_property> ClientWrapper::merge_identities
       {
          //This property is already in old identity. Merge signatures.
          bts::vote::signed_identity_property& old_property = *itr;
-         for( const bts::vote::signature_data& new_signature : new_property.verifier_signatures )
+         for( const bts::vote::expiring_signature& new_signature : new_property.verifier_signatures )
          {
             fc::ecc::public_key new_signer = new_signature.signer(new_property.id(new_id.owner));
             if( new_signer == fc::ecc::public_key() )
@@ -472,7 +472,7 @@ std::vector<bts::vote::signed_identity_property> ClientWrapper::merge_identities
                continue;
             //Find iterator to signature with same signer
             auto itr = std::find_if(old_property.verifier_signatures.begin(), old_property.verifier_signatures.end(),
-                                    [new_signer, old_property, old_id](const bts::vote::signature_data& old_signature)
+                                    [new_signer, old_property, old_id](const bts::vote::expiring_signature& old_signature)
                                     -> bool {
                return old_signature.signer(old_property.id(old_id.owner)) == new_signer;
             });
@@ -502,7 +502,7 @@ void ClientWrapper::purge_invalid_signatures(std::vector<bts::vote::signed_ident
       old_property.verifier_signatures.erase(std::remove_if(old_property.verifier_signatures.begin(),
                                                             old_property.verifier_signatures.end(),
                                                             [&old_property, &owner](
-                                                               const bts::vote::signature_data& old_signature
+                                                               const bts::vote::expiring_signature& old_signature
                                                             ) -> bool {
          return old_signature.signer(old_property.id(owner)) == fc::ecc::public_key();
       }), old_property.verifier_signatures.end());
