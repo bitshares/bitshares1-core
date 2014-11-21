@@ -46,8 +46,8 @@ TaskPage {
 
    QtObject {
       id: d
-      readonly property ViewFinder snapper: photoSnapper.createObject(this, {"visible": false,
-                                                                             "camera": camera})
+      readonly property ViewFinder snapper: photoSnapper.createObject(container, {"visible": false,
+                                                                                  "camera": camera})
       property PhotoButton currentButton
 
       function startSnapshot(button, overlaySource) {
