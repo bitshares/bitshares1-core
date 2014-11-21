@@ -289,6 +289,11 @@
                "name" : "contests",
                "description" : "",
                "type" : "string"
+            },
+            {
+               "name" : "ballots",
+               "description" : "",
+               "type" : "string"
             }
          ],
         "is_const"   : false,

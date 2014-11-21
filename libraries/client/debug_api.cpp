@@ -224,7 +224,7 @@ variant_object client_impl::debug_request_verification(const std::string &accoun
    return fc::variant(resm.as<identity_verification_response_message>()).as<variant_object>();
 }
 
-void client_impl::debug_initialize_election(const string& contests)
+void client_impl::debug_initialize_election(const string& contests, const string& ballots)
 {
    FC_ASSERT( _ballot_box, "Cannot initialize election with ballot box disabled." );
 
@@ -233,6 +233,10 @@ void client_impl::debug_initialize_election(const string& contests)
    vector<vote::contest> c = fc::json::from_file(contests).as<vector<vote::contest>>();
    std::for_each(c.begin(), c.end(), [this](const vote::contest& c) {
       _ballot_box->store_contest(c);
+   });
+   vector<vote::ballot> b = fc::json::from_file(ballots).as<vector<vote::ballot>>();
+   std::for_each(b.begin(), b.end(), [this](const vote::ballot& b) {
+      _ballot_box->store_ballot(b);
    });
 }
 } } } // namespace bts::client::detail
