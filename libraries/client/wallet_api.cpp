@@ -242,7 +242,7 @@ string  detail::client_impl::wallet_address_create( const string& account_name,
     if( legacy_network_byte == -1 )
         return string( address(pubkey) );
     else if (legacy_network_byte == 0 || legacy_network_byte == 56)
-        return string( pts_address( pubkey, legacy_network_byte ) );
+        return string( pts_address( pubkey, true, legacy_network_byte ) );
     else
         FC_ASSERT(!"Unsupported network byte");
 } FC_CAPTURE_AND_RETHROW( (account_name)(label)(legacy_network_byte) ) }
@@ -326,16 +326,6 @@ balance_id_type detail::client_impl::wallet_multisig_get_balance_id(
     return _chain_db->get_multisig_balance_id( m, addresses );
 }
 
-/*
-wallet_transaction_record detail::client_impl::wallet_transfer_to_multisig(
-                                                    const string& from_name,
-                                                    const string& amount,
-                                                    const string& symbol,
-                                                    const balance_id_type& to_balance )const
-{
-}
-*/
-
 wallet_transaction_record detail::client_impl::wallet_multisig_deposit(
                                                     const string& amount,
                                                     const string& symbol,
@@ -351,23 +341,6 @@ wallet_transaction_record detail::client_impl::wallet_multisig_deposit(
     network_broadcast_transaction( rec.trx );
     return rec;
 }
-/*
-wallet_transaction_record  detail::client_impl::wallet_transfer_to_multisig(
-                                                    const string& from_name,
-                                                    const string& raw_amount,
-                                                    const string& symbol,
-                                                    const uint32_t& N,
-                                                    vector<string> account_names )
-{
-}
-transaction_builder   detail::client_impl::wallet_withdraw_from_multisig(
-                                               const balance_id_type& multisig,
-                                               const string& raw_amount,
-                                               const address& to_address )
-{
-}
-
-*/
 
 transaction_builder detail::client_impl::wallet_withdraw_from_address(
                                                     const string& amount,
@@ -434,14 +407,32 @@ transaction_builder detail::client_impl::wallet_multisig_withdraw_start(
                                                     const string& symbol,
                                                     const balance_id_type& from,
                                                     const address& to_address,
-                                                    const vote_selection_method& vote_method )const
+                                                    const vote_selection_method& vote_method,
+                                                    const string& alternate_path )const
 {
     asset ugly_asset = _chain_db->to_ugly_asset(amount, symbol);
     auto builder = _wallet->create_transaction_builder();
     auto fee = _wallet->get_transaction_fee();
     builder->withdraw_from_balance( from, ugly_asset.amount + fee.amount );
     builder->deposit_to_balance( to_address, ugly_asset, vote_method );
-    //builder->sign();
+    std::ofstream out;
+    if( alternate_path == "" )
+    {
+        auto dir = (_wallet->get_data_directory() / "trx").string();
+        auto default_path = dir + "latest.trx";
+        if( !fc::exists( default_path ) )
+            fc::create_directories( dir );
+        out.open(dir + "latest.trx");
+    }
+    else
+    {
+        if( fc::exists( alternate_path  ) )
+            FC_THROW_EXCEPTION( file_already_exists, "That filename already exists!", ("filename", alternate_path));
+        out.open(alternate_path);
+    }
+    out << fc::json::to_pretty_string(builder);
+    out.close();
+
     return *builder;
 }
 

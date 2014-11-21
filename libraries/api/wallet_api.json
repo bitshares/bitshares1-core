@@ -910,7 +910,13 @@
               "type" : "vote_selection_method",
               "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
               "default_value" : "vote_none"
-            }
+            },
+            {
+              "name" : "alternate_path",
+              "type" : "string",
+              "description" : "If specified, will write builder here instead of to DATA_DIR/transactions/latest.trx",
+              "default_value" : ""
+            },
         ],
         "prerequisites": ["json_authenticated"],
         "aliases": ["withdraw_from_multisig"],
