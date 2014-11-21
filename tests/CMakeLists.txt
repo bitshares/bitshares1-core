@@ -68,7 +68,6 @@ if( WIN32 )
     set( DB_VERSION 60 )
     message( STATUS "Configuring Bitshares on WIN32")
     set( ZLIB_LIBRARIES "" )
-    set( LEVEL_DB_DIR vendor/leveldb-win )
 
     set(BOOST_ROOT $ENV{BOOST_ROOT})
     set(Boost_USE_DEBUG_PYTHON OFF)
