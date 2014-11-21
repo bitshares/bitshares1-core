@@ -106,8 +106,8 @@ namespace bts { namespace blockchain {
       withdraw_with_signature( const address owner_arg = address() )
       :owner(owner_arg){}
 
-      omemo_status decrypt_memo_data( const fc::ecc::private_key& receiver_key )const;
-      void         encrypt_memo_data( const fc::ecc::private_key& one_time_private_key,
+      omemo_status     decrypt_memo_data( const fc::ecc::private_key& receiver_key )const;
+      public_key_type  encrypt_memo_data( const fc::ecc::private_key& one_time_private_key,
                                       const fc::ecc::public_key&  to_public_key,
                                       const fc::ecc::private_key& from_private_key,
                                       const std::string& memo_message,
@@ -150,7 +150,7 @@ namespace bts { namespace blockchain {
       digest_type             agreement_digest;
 
       omemo_status decrypt_memo_data( const fc::ecc::private_key& receiver_key )const;
-      void         encrypt_memo_data( const fc::ecc::private_key& one_time_private_key,
+      public_key_type encrypt_memo_data( const fc::ecc::private_key& one_time_private_key,
                                       const fc::ecc::public_key&  to_public_key,
                                       const fc::ecc::private_key& from_private_key,
                                       const std::string& memo_message,

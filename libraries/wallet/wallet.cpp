@@ -3850,11 +3850,14 @@ namespace detail {
 
              const auto sender_key_record = my->_wallet_db.lookup_key( escrow_cond.sender );
              const auto receiver_key_record = my->_wallet_db.lookup_key( escrow_cond.receiver );
+             /*
              if( !((sender_key_record && sender_key_record->has_private_key()) ||
                    (receiver_key_record && receiver_key_record->has_private_key())) )
              {
+                ilog( "no private key for sender nor receiver" );
                 return; // no private key for the sender nor receiver
              }
+             */
              escrow_summary sum;
              sum.balance_id = record.id();
              sum.balance    = record.get_spendable_balance( time_point_sec() );
@@ -3863,12 +3866,23 @@ namespace detail {
              {
                 const auto account_address = sender_key_record->account_address;
                 const auto account_record = my->_wallet_db.lookup_account( account_address );
-                const auto name = account_record.valid() ? account_record->name : string( account_address );
-                sum.sender_account_name = name;
+                if( account_record )
+                {
+                   const auto name = account_record->name;
+                   sum.sender_account_name = name;
+                }
+                else
+                {
+                   auto registered_account = my->_blockchain->get_account_record( account_address );
+                   if( registered_account )
+                      sum.sender_account_name = registered_account->name;
+                   else
+                      sum.sender_account_name = string(escrow_cond.sender);
+                }
              }
              else
              {
-                sum.sender_account_name = "UNKNOWN";
+                sum.sender_account_name = string(escrow_cond.sender);
              }
 
              if( receiver_key_record )
@@ -3876,7 +3890,7 @@ namespace detail {
                 const auto account_address = receiver_key_record->account_address;
                 const auto account_record = my->_wallet_db.lookup_account( account_address );
                 const auto name = account_record.valid() ? account_record->name : string( account_address );
-                sum.sender_account_name = name;
+                sum.receiver_account_name = name;
              }
              else
              {
@@ -3897,8 +3911,20 @@ namespace detail {
              }
 
              sum.agreement_digest = escrow_cond.agreement_digest;
+             if( account_name.size() )
+             {
+                if( sum.sender_account_name == account_name ||
+                    sum.receiver_account_name == account_name )
+                {
+                   result.emplace_back(sum);
+                }
+                else
+                {
+                  wlog( "skip ${s}", ("s",sum) );
+                }
+             }
+             else result.emplace_back(sum);
 
-             result.emplace_back(sum);
 
              /*
              const auto account_address = key_record->account_address;

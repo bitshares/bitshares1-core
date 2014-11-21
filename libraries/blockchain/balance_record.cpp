@@ -57,6 +57,7 @@ namespace bts { namespace blockchain {
        switch( withdraw_condition_types( condition.type ) )
        {
            case withdraw_signature_type:
+           case withdraw_escrow_type:
            case withdraw_multi_sig_type:
            {
                return asset( balance, condition.asset_id );
@@ -86,10 +87,6 @@ namespace bts { namespace blockchain {
                FC_ASSERT( spendable_balance >= 0 && spendable_balance <= vesting_condition.original_balance );
 
                return asset( spendable_balance, condition.asset_id );
-           }
-           case withdraw_escrow_type:
-           {
-               return asset();
            }
            default:
            {
