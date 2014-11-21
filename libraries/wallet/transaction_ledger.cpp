@@ -213,51 +213,44 @@ void wallet_impl::scan_balances()
        }
    }
 
-   // Do the same for sharedrop balances
-   const auto record_id = fc::ripemd160::hash( string( "SHAREDROP" ) );
-   auto transaction_record = _wallet_db.lookup_transaction( record_id );
-   if( transaction_record.valid() )
-   {
-       transaction_record->ledger_entries.clear();
-       _wallet_db.store_transaction( *transaction_record );
-   }
-
    const auto timestamp = _blockchain->get_genesis_timestamp();
-   _blockchain->scan_balances( [&]( const balance_record& bal_rec )
+   const auto scan_balance = [&]( const balance_record& bal_rec )
    {
-        const auto key_rec = _wallet_db.lookup_key( bal_rec.owner() );
-        if( key_rec.valid() && key_rec->has_private_key() )
-        {
-          if( bal_rec.snapshot_info.valid() ) /* Create virtual transactions for genesis claims */
-          {
-              const auto public_key = key_rec->public_key;
-              auto record_id = fc::ripemd160::hash( self->get_key_label( public_key ) );
-              if( bal_rec.condition.type == withdraw_vesting_type )
-                  record_id = fc::ripemd160::hash( string( "SHAREDROP" ) );
-              auto transaction_record = _wallet_db.lookup_transaction( record_id );
-              if( !transaction_record.valid() )
-              {
-                  transaction_record = wallet_transaction_record();
-                  transaction_record->created_time = timestamp;
-                  transaction_record->received_time = timestamp;
+       if( !bal_rec.snapshot_info.valid() )
+           return;
 
-                  if( bal_rec.condition.type == withdraw_vesting_type )
-                      transaction_record->block_num = 933804;
-              }
+       if( bal_rec.condition.type != withdraw_signature_type )
+           return;
 
-              auto entry = ledger_entry();
-              entry.to_account = public_key;
-              entry.amount = asset( bal_rec.snapshot_info->original_balance, bal_rec.condition.asset_id );
-              entry.memo = "claim " + bal_rec.snapshot_info->original_address;
+       const auto key_rec = _wallet_db.lookup_key( bal_rec.owner() );
+       if( !key_rec.valid() || !key_rec->has_private_key() )
+           return;
 
-              transaction_record->record_id = record_id;
-              transaction_record->is_virtual = true;
-              transaction_record->is_confirmed = true;
-              transaction_record->ledger_entries.push_back( entry );
-              _wallet_db.store_transaction( *transaction_record );
-          }
-        }
-   } );
+       const auto public_key = key_rec->public_key;
+       auto record_id = fc::ripemd160::hash( self->get_key_label( public_key ) );
+       auto transaction_record = _wallet_db.lookup_transaction( record_id );
+       if( !transaction_record.valid() )
+       {
+           transaction_record = wallet_transaction_record();
+           transaction_record->created_time = timestamp;
+           transaction_record->received_time = timestamp;
+
+           if( bal_rec.condition.type == withdraw_vesting_type )
+               transaction_record->block_num = 933804;
+       }
+
+       auto entry = ledger_entry();
+       entry.to_account = public_key;
+       entry.amount = asset( bal_rec.snapshot_info->original_balance, bal_rec.condition.asset_id );
+       entry.memo = "claim " + bal_rec.snapshot_info->original_address;
+
+       transaction_record->record_id = record_id;
+       transaction_record->is_virtual = true;
+       transaction_record->is_confirmed = true;
+       transaction_record->ledger_entries.push_back( entry );
+       _wallet_db.store_transaction( *transaction_record );
+   };
+   _blockchain->scan_balances( scan_balance );
 }
 
 void wallet_impl::scan_registered_accounts()
@@ -1533,8 +1526,6 @@ pretty_transaction wallet::to_pretty_trx( const wallet_transaction_record& trx_r
           pretty_entry.from_account = "GENESIS";
        else if( trx_rec.is_market )
           pretty_entry.from_account = "MARKET";
-       else if( trx_rec.is_virtual && trx_rec.block_num == 933804 )
-          pretty_entry.from_account = "SHAREDROP";
        else
           pretty_entry.from_account = "UNKNOWN";
 
