@@ -899,7 +899,7 @@ namespace bts { namespace wallet {
    vector<wallet_balance_record> wallet_db::get_all_balances( const string& account_name, uint32_t limit )
    {
        auto ret = vector<wallet_balance_record>();
-       auto count = 0;
+       uint32_t count = 0;
        for( auto item : balances )
        {
            if (count == limit && limit != -1)
