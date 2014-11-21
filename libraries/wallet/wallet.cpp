@@ -4014,8 +4014,11 @@ namespace detail {
 
           for( const auto& record : records )
           {
-              const auto balance = record.get_spendable_balance( my->_blockchain->get_pending_state()->now() );
-              balances[ name ][ balance.asset_id ] += balance.amount;
+              if( record.condition.type != withdraw_escrow_type )
+              {
+                 const auto balance = record.get_spendable_balance( my->_blockchain->get_pending_state()->now() );
+                 balances[ name ][ balance.asset_id ] += balance.amount;
+              }
           }
       }
 

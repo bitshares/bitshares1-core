@@ -297,8 +297,6 @@ namespace bts { namespace blockchain {
 
    void release_escrow_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-      FC_ASSERT( !"Release escrow operation is not enabled yet!" );
-
       auto escrow_balance_record = eval_state._current_state->get_balance_record( this->escrow_id );
       FC_ASSERT( escrow_balance_record.valid() );
 

@@ -50,18 +50,29 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "wallet_delegate_set_block_production delegate32 true" );
    exec(clientb, "wallet_set_transaction_scanning true");
 
+   exec( clientb, "wallet_account_create b-account" );
+   exec( clientb, "wallet_account_register b-account delegate30 null 100" );
+   produce_block(clientb);
    exec( clientb, "balance delegate30");
    exec( clientb, "wallet_asset_create BUSD BitUSD delegate30 \"paper bucks\" null 1000000000 10000 true" );
    exec( clientb, "help" );
 //   wallet_transfer_from_with_escrow <amount_to_transfer> <asset_symbol> <paying_account_name> <from_account_name> <to_account_name> <escrow_account_name> <agreement> <memo>
-   exec( clientb, "wallet_transfer_from_with_escrow 1000 XTS delegate24 delegate24 delegate33 delegate36 \"5100000000000000000000000000000000000000000000000000000000000005\" \"my memo\"" );
+   exec( clientb, "wallet_transfer_from_with_escrow 1000 XTS delegate24 delegate24 b-account delegate36 \"5100000000000000000000000000000000000000000000000000000000000005\" \"my memo\"" );
    produce_block(clientb);
    exec( clientb, "wallet_escrow_summary delegate24" );
-   exec( clienta, "wallet_escrow_summary delegate33" );
+   exec( clienta, "wallet_escrow_summary b-account" );
    exec( clienta, "wallet_escrow_summary delegate36" );
    exec( clienta, "wallet_escrow_summary delegate29" );
    exec( clienta, "history" );
    exec( clientb, "history" );
+   exec( clientb, "balance delegate24" );
+   exec( clienta, "balance b-account" );
+   exec( clientb, "wallet_release_escrow delegate24 XTS6LPZ1zmNFrbabpzTa4y7ccGMvn5jb9TQV sender 0 1111111" );
+   produce_block(clientb);
+   exec( clientb, "wallet_escrow_summary delegate24" );
+   exec( clienta, "wallet_escrow_summary b-account" );
+   exec( clientb, "balance delegate24" );
+   exec( clienta, "balance b-account" );
    return;
    produce_block(clientb);
 
