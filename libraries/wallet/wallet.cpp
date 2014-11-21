@@ -2714,12 +2714,12 @@ namespace detail {
       return record;
    }
 
-   public_key_type  wallet::get_new_public_key( const string& account_name )
+   public_key_type wallet::get_new_public_key( const string& account_name )
    {
        return my->get_new_public_key( account_name );
    }
 
-   address  wallet::create_new_address( const string& account_name, const string& label )
+   address wallet::create_new_address( const string& account_name, const string& label )
    {
        FC_ASSERT( is_open() );
        FC_ASSERT( is_unlocked() );
@@ -2728,91 +2728,65 @@ namespace detail {
        return addr;
    }
 
-    vector<wallet_balance_record>   wallet::get_address_balances( const address& addr )
-    {
-        auto balances = my->_wallet_db.get_balances();
-        auto ret = vector<wallet_balance_record>();
-        for( auto bal : balances )
-        {
-            if( bal.second.owner() == addr )
-                ret.push_back( bal.second );
-        }
-        return ret;
-    }
+   void wallet::set_address_label( const address& addr, const string& label )
+   {
+       FC_ASSERT(!"This doesn't do anything right now.");
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+       auto okey = my->_wallet_db.lookup_key( addr );
+       FC_ASSERT( okey.valid(), "No such address." );
+       //FC_ASSERT( okey->btc_data.valid(), "Trying to set a label for a TITAN address." );
+       //okey->btc_data->label = label;
+       my->_wallet_db.store_key( *okey );
+   }
 
-    void   wallet::set_address_label( const address& addr, const string& label )
-    {
-        FC_ASSERT(!"This doesn't do anything right now.");
-        FC_ASSERT( is_open() );
-        FC_ASSERT( is_unlocked() );
-        auto okey = my->_wallet_db.lookup_key( addr );
-        FC_ASSERT( okey.valid(), "No such address." );
-        //FC_ASSERT( okey->btc_data.valid(), "Trying to set a label for a TITAN address." );
-        //okey->btc_data->label = label;
-        my->_wallet_db.store_key( *okey );
-    }
+   string wallet::get_address_label( const address& addr )
+   {
+       FC_ASSERT(!"This doesn't do anything right now.");
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+       auto okey = my->_wallet_db.lookup_key( addr );
+       //FC_ASSERT( okey.valid(), "No such address." );
+       //FC_ASSERT( okey->btc_data.valid(), "This address has no label (it is a TITAN address)!" );
+       //return okey->btc_data->label;
+       return "";
+   }
 
-    string  wallet::get_address_label( const address& addr )
-    {
-        FC_ASSERT(!"This doesn't do anything right now.");
-        FC_ASSERT( is_open() );
-        FC_ASSERT( is_unlocked() );
-        auto okey = my->_wallet_db.lookup_key( addr );
-        //FC_ASSERT( okey.valid(), "No such address." );
-        //FC_ASSERT( okey->btc_data.valid(), "This address has no label (it is a TITAN address)!" );
-        //return okey->btc_data->label;
-        return "";
-    }
+   void wallet::set_address_group_label( const address& addr, const string& group_label )
+   {
+       FC_ASSERT(!"This doesn't do anything right now.");
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+       auto okey = my->_wallet_db.lookup_key( addr );
+       FC_ASSERT( okey.valid(), "No such address." );
+       //FC_ASSERT( okey->btc_data.valid(), "Trying to set a group label for a TITAN address" );
+       //okey->btc_data->group_label = group_label;
+       my->_wallet_db.store_key( *okey );
+   }
 
+   string wallet::get_address_group_label( const address& addr )
+   {
+       FC_ASSERT(!"This doesn't do anything right now.");
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+       auto okey = my->_wallet_db.lookup_key( addr );
+       FC_ASSERT( okey.valid(), "No such address." );
+       //FC_ASSERT( okey->btc_data.valid(), "This address has no group label (it is a TITAN address)!" );
+       return ""; //return okey->btc_data->group_label;
+   }
 
-
-    void  wallet::set_address_group_label( const address& addr, const string& group_label )
-    {
-        FC_ASSERT(!"This doesn't do anything right now.");
-        FC_ASSERT( is_open() );
-        FC_ASSERT( is_unlocked() );
-        auto okey = my->_wallet_db.lookup_key( addr );
-        FC_ASSERT( okey.valid(), "No such address." );
-        //FC_ASSERT( okey->btc_data.valid(), "Trying to set a group label for a TITAN address" );
-        //okey->btc_data->group_label = group_label;
-        my->_wallet_db.store_key( *okey );
-    }
-
-    string           wallet::get_address_group_label( const address& addr )
-    {
-        FC_ASSERT(!"This doesn't do anything right now.");
-        FC_ASSERT( is_open() );
-        FC_ASSERT( is_unlocked() );
-        auto okey = my->_wallet_db.lookup_key( addr );
-        FC_ASSERT( okey.valid(), "No such address." );
-        //FC_ASSERT( okey->btc_data.valid(), "This address has no group label (it is a TITAN address)!" );
-        return ""; //return okey->btc_data->group_label;
-    }
-
-    vector<address>  wallet::get_addresses_for_group_label( const string& group_label )
-    {
-        FC_ASSERT(!"This doesn't do anything right now.");
-        vector<address> addrs;
-        for( auto item : my->_wallet_db.get_keys() )
-        {
-            auto key = item.second;
-            //if( key.btc_data.valid() && key.btc_data->group_label == group_label )
-                addrs.push_back( item.first );
-        }
-        return addrs;
-    }
-
-/*
-   transaction_record  wallet::builder_transfer_asset_to_address(
-           double real_amount_to_transfer,
-           const string& amount_to_transfer_symbol,
-           const string& from_account_name,
-           const address& to_address,
-           const string& memo_message,
-           vote_selection_method selection_method )
-   { try {
-   } FC_CAPTURE_AND_RETHROW( (real_amount_to_transfer)(amount_to_transfer_symbol)(from_account_name)(to_address)(memo_message) ) }
-   */
+   vector<address> wallet::get_addresses_for_group_label( const string& group_label )
+   {
+       FC_ASSERT(!"This doesn't do anything right now.");
+       vector<address> addrs;
+       for( auto item : my->_wallet_db.get_keys() )
+       {
+           auto key = item.second;
+           //if( key.btc_data.valid() && key.btc_data->group_label == group_label )
+               addrs.push_back( item.first );
+       }
+       return addrs;
+   }
 
    wallet_transaction_record wallet::transfer_asset_to_address(
            double real_amount_to_transfer,
@@ -4133,41 +4107,48 @@ namespace detail {
       return result;
    }
 
-   account_balance_record_summary_type wallet::get_account_balance_records( const string& account_name, bool include_empty )const
+   account_balance_record_summary_type wallet::get_account_balance_records(
+           const string& account_name, bool include_empty,
+           const set<withdraw_condition_types>& withdraw_types )const
    { try {
-      FC_ASSERT( is_open() );
-      if( !account_name.empty() ) get_account( account_name ); /* Just to check input */
+      if( !is_open() )
+          FC_CAPTURE_AND_THROW( wallet_closed );
 
       map<string, vector<balance_record>> balance_records;
       const auto pending_state = my->_blockchain->get_pending_state();
 
       const auto scan_balance = [&]( const balance_record& record )
       {
+          if( !withdraw_types.empty() && withdraw_types.count( record.condition.type ) == 0 ) return;
+
           const auto key_record = my->_wallet_db.lookup_key( record.owner() );
           if( !key_record.valid() || !key_record->has_private_key() ) return;
 
           const auto account_address = key_record->account_address;
           const auto account_record = my->_wallet_db.lookup_account( account_address );
-          const auto name = account_record.valid() ? account_record->name : string( account_address );
+          const auto name = account_record.valid() ? account_record->name : string( key_record->public_key );
           if( !account_name.empty() && name != account_name ) return;
 
           const auto balance_id = record.id();
           const auto pending_record = pending_state->get_balance_record( balance_id );
           if( !pending_record.valid() ) return;
           if( !include_empty && pending_record->balance == 0 ) return;
+
           balance_records[ name ].push_back( *pending_record );
       };
 
       my->_blockchain->scan_balances( scan_balance );
 
       return balance_records;
-   } FC_CAPTURE_AND_RETHROW() }
+   } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_types) ) }
 
-   account_balance_id_summary_type wallet::get_account_balance_ids( const string& account_name, bool include_empty )const
+   account_balance_id_summary_type wallet::get_account_balance_ids(
+           const string& account_name, bool include_empty,
+           const set<withdraw_condition_types>& withdraw_types )const
    { try {
       map<string, vector<balance_id_type>> balance_ids;
 
-      map<string, vector<balance_record>> items = get_account_balance_records( account_name, include_empty );
+      const map<string, vector<balance_record>>& items = get_account_balance_records( account_name, include_empty );
       for( const auto& item : items )
       {
           const auto& name = item.first;
@@ -4178,14 +4159,15 @@ namespace detail {
       }
 
       return balance_ids;
-   } FC_CAPTURE_AND_RETHROW() }
+   } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_types) ) }
 
-   // This will lie about vesting balances to show the user what they can actually spend
-   account_balance_summary_type wallet::get_account_balances( const string& account_name, bool include_empty )const
+   account_balance_summary_type wallet::get_account_balances(
+           const string& account_name, bool include_empty,
+           const set<withdraw_condition_types>& withdraw_types )const
    { try {
       map<string, map<asset_id_type, share_type>> balances;
 
-      map<string, vector<balance_record>> items = get_account_balance_records( account_name, include_empty );
+      const map<string, vector<balance_record>>& items = get_account_balance_records( account_name, include_empty );
       for( const auto& item : items )
       {
           const auto& name = item.first;
@@ -4199,7 +4181,7 @@ namespace detail {
       }
 
       return balances;
-   } FC_CAPTURE_AND_RETHROW() }
+   } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_types) ) }
 
    account_balance_summary_type wallet::get_account_yield( const string& account_name )const
    { try {
