@@ -493,13 +493,6 @@ transaction_ledger_entry wallet_impl::apply_transaction_experimental( const sign
 { try {
    const transaction_evaluation_state_ptr eval_state = _blockchain->store_pending_transaction( transaction, true );
    FC_ASSERT( eval_state != nullptr );
-
-   for( const auto& op : transaction.operations )
-   {
-       if( operation_type_enum( op.type ) == withdraw_op_type )
-           sync_balance_with_blockchain( op.as<withdraw_operation>().balance_id );
-   }
-
    return scan_transaction_experimental( *eval_state, -1, blockchain::now(), true );
 } FC_CAPTURE_AND_RETHROW( (transaction) ) }
 

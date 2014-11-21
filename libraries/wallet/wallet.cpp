@@ -150,21 +150,6 @@ namespace detail {
       return fc::ripemd160::hash( enc.result() );
    }
 
-   void wallet_impl::sync_balance_with_blockchain( const balance_id_type& balance_id, const obalance_record& record )
-   {
-      if( !record.valid() || record->balance == 0 )
-          _wallet_db.remove_balance( balance_id );
-      else
-          _wallet_db.cache_balance( *record );
-   }
-
-   void wallet_impl::sync_balance_with_blockchain( const balance_id_type& balance_id )
-   {
-      const auto pending_state = _blockchain->get_pending_state();
-      const auto record = pending_state->get_balance_record( balance_id );
-      sync_balance_with_blockchain( balance_id, record );
-   }
-
    void wallet_impl::reschedule_relocker()
    {
      if( !_relocker_done.valid() || _relocker_done.ready() )
@@ -1753,11 +1738,9 @@ namespace detail {
       record.fee = required_fees;
 
       if( sign )
-      {
           my->sign_transaction( trx, required_signatures );
-          my->cache_transaction( trx, record );
-      }
 
+      record.trx = trx;
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(amount_per_xts) ) }
 
@@ -1837,11 +1820,9 @@ namespace detail {
       record.fee = required_fees;
 
       if( sign )
-      {
           my->sign_transaction( trx, required_signatures );
-          my->cache_transaction( trx, record );
-      }
 
+      record.trx = trx;
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(amount_per_xts)(amount_asset_symbol)(sign) ) }
 
@@ -1914,11 +1895,9 @@ namespace detail {
       record.fee = required_fees;
 
       if( sign )
-      {
           my->sign_transaction( trx, required_signatures );
-          my->cache_transaction( trx, record );
-      }
 
+      record.trx = trx;
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(account_to_pay_with)(sign) ) }
 
@@ -1988,11 +1967,9 @@ namespace detail {
       record.fee = required_fees;
 
       if( sign )
-      {
           my->sign_transaction( trx, required_signatures );
-          my->cache_transaction( trx, record );
-      }
 
+      record.trx = trx;
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(account_to_pay_with)(sign) ) }
 
@@ -2357,6 +2334,7 @@ namespace detail {
        return optional<variant_object>();
    } FC_CAPTURE_AND_RETHROW() }
 
+#if 0
    /**
     *  This method assumes that fees can be paid in the same asset type as the
     *  asset being transferred so that the account can be kept private and
@@ -2546,6 +2524,7 @@ namespace detail {
 
        return trxs;
    } FC_CAPTURE_AND_RETHROW( (real_amount_to_transfer)(amount_to_transfer_symbol)(from_account_name)(to_account_name)(memo_message) ) }
+#endif
 
    wallet_transaction_record wallet::withdraw_delegate_pay(
            const string& delegate_name,
@@ -2607,11 +2586,9 @@ namespace detail {
        record.fee = required_fees;
 
        if( sign )
-       {
            my->sign_transaction( trx, required_signatures );
-           my->cache_transaction( trx, record );
-       }
 
+       record.trx = trx;
        return record;
    } FC_CAPTURE_AND_RETHROW( (delegate_name)(real_amount_to_withdraw) ) }
 
@@ -2707,11 +2684,9 @@ namespace detail {
       record.extra_addresses.push_back( to_account_rec->active_key() );
 
       if( sign )
-      {
           my->sign_transaction( trx, required_signatures );
-          my->cache_transaction( trx, record );
-      }
 
+      record.trx = trx;
       return record;
    }
 
@@ -2883,11 +2858,11 @@ namespace detail {
       record.fee = required_fees;
       record.extra_addresses.push_back( to_address );
       record.trx = trx;
+
       if( sign )
-          my->cache_transaction( trx, record );
+          my->sign_transaction( trx, required_signatures );
 
       return record;
-
    } FC_CAPTURE_AND_RETHROW( (real_amount_to_transfer)(amount_to_transfer_symbol)(from_account_name)(to_address)(memo_message) ) }
 
 
@@ -2955,77 +2930,11 @@ namespace detail {
          record.extra_addresses = to_addresses;
 
          if( sign )
-         {
              my->sign_transaction( trx, required_signatures );
-             my->cache_transaction( trx, record );
-         }
 
+         record.trx = trx;
          return record;
    } FC_CAPTURE_AND_RETHROW( (amount_to_transfer_symbol)(from_account_name)(to_address_amounts)(memo_message) ) }
-
-/*  all done in builder
-   wallet_transaction_record wallet::transfer_asset_to_multisig_address(
-           const asset& amount,
-           const string& from_account_name,
-           uint32_t m,
-           const vector<address>& owners,
-           vote_selection_method selection_method,
-           bool sign )
-   { try {
-      FC_ASSERT( is_open() );
-      FC_ASSERT( is_unlocked() );
-      FC_ASSERT( my->is_receive_account( from_account_name ) );
-
-      private_key_type sender_private_key  = get_active_private_key( from_account_name );
-      public_key_type  sender_public_key   = sender_private_key.get_public_key();
-      address          sender_account_address( sender_private_key.get_public_key() );
-
-      signed_transaction     trx;
-      unordered_set<address> required_signatures;
-
-      trx.expiration = blockchain::now() + get_transaction_expiration();
-
-      const auto required_fees = get_transaction_fee( asset_to_transfer.asset_id );
-      if( required_fees.asset_id == asset_to_transfer.asset_id )
-      {
-         my->withdraw_to_transaction( required_fees + asset_to_transfer,
-                                      from_account_name,
-                                      trx,
-                                      required_signatures );
-      }
-      else
-      {
-         my->withdraw_to_transaction( asset_to_transfer,
-                                      from_account_name,
-                                      trx,
-                                      required_signatures );
-
-         my->withdraw_to_transaction( required_fees,
-                                      from_account_name,
-                                      trx,
-                                      required_signatures );
-      }
-
-      const auto slate_id = my->select_slate( trx, asset_to_transfer.asset_id, selection_method );
-
-      trx.deposit_multisig( to_address, asset_to_transfer, slate_id);
-
-      auto entry = ledger_entry();
-      entry.from_account = sender_public_key;
-      entry.amount = asset_to_transfer;
-      entry.memo = memo_message;
-
-      auto record = wallet_transaction_record();
-      record.ledger_entries.push_back( entry );
-      record.fee = required_fees;
-      record.extra_addresses.push_back( to_address );
-
-      if( sign ) my->sign_transaction( trx, required_signatures );
-      my->cache_transaction( trx, record );
-
-      return record;
-   } FC_CAPTURE_AND_RETHROW( (real_amount_to_transfer)(amount_to_transfer_symbol)(from_account_name)(to_address)(memo_message) ) }
-   */
 
    wallet_transaction_record wallet::register_account(
            const string& account_to_register,
@@ -3107,11 +3016,9 @@ namespace detail {
       record.fee = required_fees;
 
       if( sign )
-      {
           my->sign_transaction( trx, required_signatures );
-          my->cache_transaction( trx, record );
-      }
 
+      record.trx = trx;
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_register)(public_data)(pay_with_account_name)(delegate_pay_rate) ) }
 
@@ -3178,11 +3085,9 @@ namespace detail {
       record.fee = required_fees;
 
       if( sign )
-      {
           my->sign_transaction( trx, required_signatures );
-          my->cache_transaction( trx, record );
-      }
 
+      record.trx = trx;
       return record;
    } FC_CAPTURE_AND_RETHROW( (symbol)(asset_name)(description)(issuer_account_name) ) }
 
@@ -3271,11 +3176,9 @@ namespace detail {
       record.fee = required_fees;
 
       if( sign )
-      {
           my->sign_transaction( trx, required_signatures );
-          my->cache_transaction( trx, record );
-      }
 
+      record.trx = trx;
       return record;
    } FC_CAPTURE_AND_RETHROW() }
 
@@ -3750,11 +3653,9 @@ namespace detail {
        record.ledger_entries.push_back(entry);
 
        if( sign )
-       {
            my->sign_transaction( trx, required_signatures );
-           my->cache_transaction( trx, record );
-       }
 
+       record.trx = trx;
        return record;
    } FC_CAPTURE_AND_RETHROW((from_account_name)(cover_id)(real_quantity_collateral_to_add)(sign)) }
 
@@ -4231,9 +4132,6 @@ namespace detail {
           if( !pending_record.valid() ) return;
           if( !include_empty && pending_record->balance == 0 ) return;
           balance_records[ name ].push_back( *pending_record );
-
-          /* Re-cache the pending balance just in case */
-          my->sync_balance_with_blockchain( balance_id, pending_record );
       };
 
       my->_blockchain->scan_balances( scan_balance );

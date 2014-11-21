@@ -253,8 +253,7 @@ namespace bts { namespace wallet {
          std::shared_ptr<transaction_builder> create_transaction_builder();
          std::shared_ptr<transaction_builder> create_transaction_builder(const transaction_builder& old_builder);
 
-
-
+         void cache_transaction( wallet_transaction_record& transaction_record );
 
          /**
           *  Multi-Part transfers provide additional security by not combining inputs, but they

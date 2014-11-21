@@ -26,13 +26,9 @@ void wallet_impl::scan_market_transaction(
 
         auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.bid_owner),
                                                                             mtrx.bid_price.base_asset_id ).get_address() );
-        if( bal_rec.valid() )
-            sync_balance_with_blockchain( bal_rec->id() );
 
         bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.bid_owner),
                                                                       mtrx.bid_price.quote_asset_id ).get_address() );
-        if( bal_rec.valid() )
-            sync_balance_with_blockchain( bal_rec->id() );
 
         /* Construct a unique record id */
         std::stringstream id_ss;
@@ -128,13 +124,9 @@ void wallet_impl::scan_market_transaction(
 
         auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.ask_owner),
                                                                             mtrx.ask_price.base_asset_id ).get_address() );
-        if( bal_rec.valid() )
-            sync_balance_with_blockchain( bal_rec->id() );
 
         bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.ask_owner),
                                                                       mtrx.ask_price.quote_asset_id ).get_address() );
-        if( bal_rec.valid() )
-            sync_balance_with_blockchain( bal_rec->id() );
 
         /* Construct a unique record id */
         std::stringstream id_ss;
@@ -236,8 +228,6 @@ void wallet_impl::scan_balances()
         const auto key_rec = _wallet_db.lookup_key( bal_rec.owner() );
         if( key_rec.valid() && key_rec->has_private_key() )
         {
-          sync_balance_with_blockchain( bal_rec.id() );
-
           if( bal_rec.snapshot_info.valid() ) /* Create virtual transactions for genesis claims */
           {
               const auto public_key = key_rec->public_key;
@@ -593,7 +583,6 @@ bool wallet_impl::scan_withdraw( const withdraw_operation& op,
        }
        withdraw_pub_key = key_rec->public_key;
 
-       sync_balance_with_blockchain( op.balance_id );
        return true;
    }
    return false;
@@ -1259,9 +1248,6 @@ bool wallet_impl::scan_deposit( const deposit_operation& op, const vector<privat
        }
   }
 
-  if( cache_deposit )
-      sync_balance_with_blockchain( op.balance_id() );
-
   return cache_deposit;
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -1314,23 +1300,15 @@ void wallet_impl::sign_transaction( signed_transaction& transaction, const unord
        transaction.sign( self->get_private_key( addr ), chain_id );
 } FC_CAPTURE_AND_RETHROW() }
 
-void wallet_impl::cache_transaction( const signed_transaction& transaction, wallet_transaction_record& record, bool apply_transaction )
+void wallet::cache_transaction( wallet_transaction_record& transaction_record )
 { try {
-   if( apply_transaction ) // Should only be false when apply_transaction_experimental is used
-       _blockchain->store_pending_transaction( transaction, true );
+   my->_blockchain->store_pending_transaction( transaction_record.trx, true );
 
-   record.record_id = transaction.permanent_id();
-   record.trx = transaction;
-   record.created_time = blockchain::now();
-   record.received_time = record.created_time;
-   _wallet_db.store_transaction( record );
-
-   for( const auto& op : transaction.operations )
-   {
-       if( operation_type_enum( op.type ) == withdraw_op_type )
-           sync_balance_with_blockchain( op.as<withdraw_operation>().balance_id );
-   }
-} FC_CAPTURE_AND_RETHROW() }
+   transaction_record.record_id = transaction_record.trx.permanent_id();
+   transaction_record.created_time = blockchain::now();
+   transaction_record.received_time = transaction_record.created_time;
+   my->_wallet_db.store_transaction( transaction_record );
+} FC_CAPTURE_AND_RETHROW( (transaction_record) ) }
 
 /**
  * @return the list of all transactions related to this wallet
