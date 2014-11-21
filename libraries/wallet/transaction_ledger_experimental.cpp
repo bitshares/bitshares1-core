@@ -558,7 +558,7 @@ set<pretty_transaction_experimental> wallet::transaction_history_experimental( c
    {
        try
        {
-           scan_transaction_experimental( string( item.second.record_id ), false );
+           scan_transaction_experimental( string( item.second.trx.id() ), false );
        }
        catch( ... )
        {
