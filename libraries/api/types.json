@@ -393,6 +393,10 @@
          "cpp_return_type" : "std::pair<std::vector<bts::blockchain::market_order>,std::vector<bts::blockchain::market_order>>"
       },
       {
+         "type_name" : "vector<std::pair<string, wallet_transaction_record>>",
+         "cpp_return_type" : "std::vector<std::pair<std::string, bts::wallet::wallet_transaction_record>>"
+      },
+      {
         "type_name" : "amount",
         "cpp_parameter_type" : "int64_t",
         "cpp_return_type" : "int64_t",

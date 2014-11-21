@@ -2303,6 +2303,18 @@
          "prerequisites" : ["wallet_unlocked"]
       },
       {
+         "method_name" : "wallet_publish_feeds_multi_experimental",
+         "description" : "publishes a set of feeds for BitAssets for all active delegates, most useful for testnets",
+         "return_type" : "vector<std::pair<string, wallet_transaction_record>>",
+         "parameters"  : [
+             {
+                "name" : "symbol_to_price_map",
+                "type" : "price_map",
+                "description" : "maps the BitAsset symbol to its price per share"
+             }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },      {
          "method_name" : "wallet_repair_records",
          "description" : "tries to repair any inconsistent wallet account, key, and transaction records",
          "return_type" : "void",
