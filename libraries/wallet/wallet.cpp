@@ -156,21 +156,6 @@ namespace detail {
       return fc::ripemd160::hash( enc.result() );
    }
 
-   void wallet_impl::sync_balance_with_blockchain( const balance_id_type& balance_id, const obalance_record& record )
-   {
-      if( !record.valid() || record->balance == 0 )
-          _wallet_db.remove_balance( balance_id );
-      else
-          _wallet_db.cache_balance( *record );
-   }
-
-   void wallet_impl::sync_balance_with_blockchain( const balance_id_type& balance_id )
-   {
-      const auto pending_state = _blockchain->get_pending_state();
-      const auto record = pending_state->get_balance_record( balance_id );
-      sync_balance_with_blockchain( balance_id, record );
-   }
-
    void wallet_impl::reschedule_relocker()
    {
      if( !_relocker_done.valid() || _relocker_done.ready() )
@@ -1771,6 +1756,30 @@ namespace detail {
    } FC_CAPTURE_AND_RETHROW() }
 
 
+   vector<std::pair<string, wallet_transaction_record>> wallet::publish_feeds_multi_experimental(
+           map<string,double> amount_per_xts, // map symbol to amount per xts
+           bool sign )
+   {
+	   vector<std::pair<string, wallet_transaction_record>> result;
+	   const vector<wallet_account_record> accounts = this->list_my_accounts();
+
+	   for( auto acct : accounts )
+	   {
+		   auto current_account = my->_blockchain->get_account_record( acct.name );
+		   if( !current_account )
+			   continue;
+		   if( !my->_blockchain->is_active_delegate( current_account->id ) )
+			   continue;
+	       wallet_transaction_record tr = this->publish_feeds(
+	           acct.name,
+	           amount_per_xts,
+	           sign);
+		   std::pair<string, wallet_transaction_record> p(acct.name, tr);
+		   result.push_back(p);
+	   }
+       return result;
+   }
+
    wallet_transaction_record wallet::publish_feeds(
            const string& account_to_publish_under,
            map<string,double> amount_per_xts, // map symbol to amount per xts
@@ -1850,11 +1859,9 @@ namespace detail {
       record.fee = required_fees;
 
       if( sign )
-      {
           my->sign_transaction( trx, required_signatures );
-          my->cache_transaction( trx, record );
-      }
 
+      record.trx = trx;
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(amount_per_xts) ) }
 
@@ -1934,11 +1941,9 @@ namespace detail {
       record.fee = required_fees;
 
       if( sign )
-      {
           my->sign_transaction( trx, required_signatures );
-          my->cache_transaction( trx, record );
-      }
 
+      record.trx = trx;
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(amount_per_xts)(amount_asset_symbol)(sign) ) }
 
@@ -2011,11 +2016,9 @@ namespace detail {
       record.fee = required_fees;
 
       if( sign )
-      {
           my->sign_transaction( trx, required_signatures );
-          my->cache_transaction( trx, record );
-      }
 
+      record.trx = trx;
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(account_to_pay_with)(sign) ) }
 
@@ -2085,11 +2088,9 @@ namespace detail {
       record.fee = required_fees;
 
       if( sign )
-      {
           my->sign_transaction( trx, required_signatures );
-          my->cache_transaction( trx, record );
-      }
 
+      record.trx = trx;
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(account_to_pay_with)(sign) ) }
 
@@ -2454,6 +2455,7 @@ namespace detail {
        return optional<variant_object>();
    } FC_CAPTURE_AND_RETHROW() }
 
+#if 0
    /**
     *  This method assumes that fees can be paid in the same asset type as the
     *  asset being transferred so that the account can be kept private and
@@ -2647,6 +2649,7 @@ namespace detail {
 
        return trxs;
    } FC_CAPTURE_AND_RETHROW( (real_amount_to_transfer)(amount_to_transfer_symbol)(from_account_name)(to_account_name)(memo_message) ) }
+#endif
 
    wallet_transaction_record wallet::withdraw_delegate_pay(
            const string& delegate_name,
@@ -2708,11 +2711,9 @@ namespace detail {
        record.fee = required_fees;
 
        if( sign )
-       {
            my->sign_transaction( trx, required_signatures );
-           my->cache_transaction( trx, record );
-       }
 
+       record.trx = trx;
        return record;
    } FC_CAPTURE_AND_RETHROW( (delegate_name)(real_amount_to_withdraw) ) }
 
@@ -2808,20 +2809,18 @@ namespace detail {
       record.extra_addresses.push_back( to_account_rec->active_key() );
 
       if( sign )
-      {
           my->sign_transaction( trx, required_signatures );
-          my->cache_transaction( trx, record );
-      }
 
+      record.trx = trx;
       return record;
    }
 
-   public_key_type  wallet::get_new_public_key( const string& account_name )
+   public_key_type wallet::get_new_public_key( const string& account_name )
    {
        return my->get_new_public_key( account_name );
    }
 
-   address  wallet::create_new_address( const string& account_name, const string& label )
+   address wallet::create_new_address( const string& account_name, const string& label )
    {
        FC_ASSERT( is_open() );
        FC_ASSERT( is_unlocked() );
@@ -2830,91 +2829,65 @@ namespace detail {
        return addr;
    }
 
-    vector<wallet_balance_record>   wallet::get_address_balances( const address& addr )
-    {
-        auto balances = my->_wallet_db.get_balances();
-        auto ret = vector<wallet_balance_record>();
-        for( auto bal : balances )
-        {
-            if( bal.second.owner() == addr )
-                ret.push_back( bal.second );
-        }
-        return ret;
-    }
+   void wallet::set_address_label( const address& addr, const string& label )
+   {
+       FC_ASSERT(!"This doesn't do anything right now.");
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+       auto okey = my->_wallet_db.lookup_key( addr );
+       FC_ASSERT( okey.valid(), "No such address." );
+       //FC_ASSERT( okey->btc_data.valid(), "Trying to set a label for a TITAN address." );
+       //okey->btc_data->label = label;
+       my->_wallet_db.store_key( *okey );
+   }
 
-    void   wallet::set_address_label( const address& addr, const string& label )
-    {
-        FC_ASSERT(!"This doesn't do anything right now.");
-        FC_ASSERT( is_open() );
-        FC_ASSERT( is_unlocked() );
-        auto okey = my->_wallet_db.lookup_key( addr );
-        FC_ASSERT( okey.valid(), "No such address." );
-        //FC_ASSERT( okey->btc_data.valid(), "Trying to set a label for a TITAN address." );
-        //okey->btc_data->label = label;
-        my->_wallet_db.store_key( *okey );
-    }
+   string wallet::get_address_label( const address& addr )
+   {
+       FC_ASSERT(!"This doesn't do anything right now.");
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+       auto okey = my->_wallet_db.lookup_key( addr );
+       //FC_ASSERT( okey.valid(), "No such address." );
+       //FC_ASSERT( okey->btc_data.valid(), "This address has no label (it is a TITAN address)!" );
+       //return okey->btc_data->label;
+       return "";
+   }
 
-    string  wallet::get_address_label( const address& addr )
-    {
-        FC_ASSERT(!"This doesn't do anything right now.");
-        FC_ASSERT( is_open() );
-        FC_ASSERT( is_unlocked() );
-        auto okey = my->_wallet_db.lookup_key( addr );
-        //FC_ASSERT( okey.valid(), "No such address." );
-        //FC_ASSERT( okey->btc_data.valid(), "This address has no label (it is a TITAN address)!" );
-        //return okey->btc_data->label;
-        return "";
-    }
+   void wallet::set_address_group_label( const address& addr, const string& group_label )
+   {
+       FC_ASSERT(!"This doesn't do anything right now.");
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+       auto okey = my->_wallet_db.lookup_key( addr );
+       FC_ASSERT( okey.valid(), "No such address." );
+       //FC_ASSERT( okey->btc_data.valid(), "Trying to set a group label for a TITAN address" );
+       //okey->btc_data->group_label = group_label;
+       my->_wallet_db.store_key( *okey );
+   }
 
+   string wallet::get_address_group_label( const address& addr )
+   {
+       FC_ASSERT(!"This doesn't do anything right now.");
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+       auto okey = my->_wallet_db.lookup_key( addr );
+       FC_ASSERT( okey.valid(), "No such address." );
+       //FC_ASSERT( okey->btc_data.valid(), "This address has no group label (it is a TITAN address)!" );
+       return ""; //return okey->btc_data->group_label;
+   }
 
-
-    void  wallet::set_address_group_label( const address& addr, const string& group_label )
-    {
-        FC_ASSERT(!"This doesn't do anything right now.");
-        FC_ASSERT( is_open() );
-        FC_ASSERT( is_unlocked() );
-        auto okey = my->_wallet_db.lookup_key( addr );
-        FC_ASSERT( okey.valid(), "No such address." );
-        //FC_ASSERT( okey->btc_data.valid(), "Trying to set a group label for a TITAN address" );
-        //okey->btc_data->group_label = group_label;
-        my->_wallet_db.store_key( *okey );
-    }
-
-    string           wallet::get_address_group_label( const address& addr )
-    {
-        FC_ASSERT(!"This doesn't do anything right now.");
-        FC_ASSERT( is_open() );
-        FC_ASSERT( is_unlocked() );
-        auto okey = my->_wallet_db.lookup_key( addr );
-        FC_ASSERT( okey.valid(), "No such address." );
-        //FC_ASSERT( okey->btc_data.valid(), "This address has no group label (it is a TITAN address)!" );
-        return ""; //return okey->btc_data->group_label;
-    }
-
-    vector<address>  wallet::get_addresses_for_group_label( const string& group_label )
-    {
-        FC_ASSERT(!"This doesn't do anything right now.");
-        vector<address> addrs;
-        for( auto item : my->_wallet_db.get_keys() )
-        {
-            auto key = item.second;
-            //if( key.btc_data.valid() && key.btc_data->group_label == group_label )
-                addrs.push_back( item.first );
-        }
-        return addrs;
-    }
-
-/*
-   transaction_record  wallet::builder_transfer_asset_to_address(
-           double real_amount_to_transfer,
-           const string& amount_to_transfer_symbol,
-           const string& from_account_name,
-           const address& to_address,
-           const string& memo_message,
-           vote_selection_method selection_method )
-   { try {
-   } FC_CAPTURE_AND_RETHROW( (real_amount_to_transfer)(amount_to_transfer_symbol)(from_account_name)(to_address)(memo_message) ) }
-   */
+   vector<address> wallet::get_addresses_for_group_label( const string& group_label )
+   {
+       FC_ASSERT(!"This doesn't do anything right now.");
+       vector<address> addrs;
+       for( auto item : my->_wallet_db.get_keys() )
+       {
+           auto key = item.second;
+           //if( key.btc_data.valid() && key.btc_data->group_label == group_label )
+               addrs.push_back( item.first );
+       }
+       return addrs;
+   }
 
    wallet_transaction_record wallet::transfer_asset_to_address(
            double real_amount_to_transfer,
@@ -2984,11 +2957,11 @@ namespace detail {
       record.fee = required_fees;
       record.extra_addresses.push_back( to_address );
       record.trx = trx;
+
       if( sign )
-          my->cache_transaction( trx, record );
+          my->sign_transaction( trx, required_signatures );
 
       return record;
-
    } FC_CAPTURE_AND_RETHROW( (real_amount_to_transfer)(amount_to_transfer_symbol)(from_account_name)(to_address)(memo_message) ) }
 
 
@@ -3056,77 +3029,11 @@ namespace detail {
          record.extra_addresses = to_addresses;
 
          if( sign )
-         {
              my->sign_transaction( trx, required_signatures );
-             my->cache_transaction( trx, record );
-         }
 
+         record.trx = trx;
          return record;
    } FC_CAPTURE_AND_RETHROW( (amount_to_transfer_symbol)(from_account_name)(to_address_amounts)(memo_message) ) }
-
-/*  all done in builder
-   wallet_transaction_record wallet::transfer_asset_to_multisig_address(
-           const asset& amount,
-           const string& from_account_name,
-           uint32_t m,
-           const vector<address>& owners,
-           vote_selection_method selection_method,
-           bool sign )
-   { try {
-      FC_ASSERT( is_open() );
-      FC_ASSERT( is_unlocked() );
-      FC_ASSERT( my->is_receive_account( from_account_name ) );
-
-      private_key_type sender_private_key  = get_active_private_key( from_account_name );
-      public_key_type  sender_public_key   = sender_private_key.get_public_key();
-      address          sender_account_address( sender_private_key.get_public_key() );
-
-      signed_transaction     trx;
-      unordered_set<address> required_signatures;
-
-      trx.expiration = blockchain::now() + get_transaction_expiration();
-
-      const auto required_fees = get_transaction_fee( asset_to_transfer.asset_id );
-      if( required_fees.asset_id == asset_to_transfer.asset_id )
-      {
-         my->withdraw_to_transaction( required_fees + asset_to_transfer,
-                                      from_account_name,
-                                      trx,
-                                      required_signatures );
-      }
-      else
-      {
-         my->withdraw_to_transaction( asset_to_transfer,
-                                      from_account_name,
-                                      trx,
-                                      required_signatures );
-
-         my->withdraw_to_transaction( required_fees,
-                                      from_account_name,
-                                      trx,
-                                      required_signatures );
-      }
-
-      const auto slate_id = my->select_slate( trx, asset_to_transfer.asset_id, selection_method );
-
-      trx.deposit_multisig( to_address, asset_to_transfer, slate_id);
-
-      auto entry = ledger_entry();
-      entry.from_account = sender_public_key;
-      entry.amount = asset_to_transfer;
-      entry.memo = memo_message;
-
-      auto record = wallet_transaction_record();
-      record.ledger_entries.push_back( entry );
-      record.fee = required_fees;
-      record.extra_addresses.push_back( to_address );
-
-      if( sign ) my->sign_transaction( trx, required_signatures );
-      my->cache_transaction( trx, record );
-
-      return record;
-   } FC_CAPTURE_AND_RETHROW( (real_amount_to_transfer)(amount_to_transfer_symbol)(from_account_name)(to_address)(memo_message) ) }
-   */
 
    wallet_transaction_record wallet::register_account(
            const string& account_to_register,
@@ -3208,11 +3115,9 @@ namespace detail {
       record.fee = required_fees;
 
       if( sign )
-      {
           my->sign_transaction( trx, required_signatures );
-          my->cache_transaction( trx, record );
-      }
 
+      record.trx = trx;
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_register)(public_data)(pay_with_account_name)(delegate_pay_rate) ) }
 
@@ -3279,11 +3184,9 @@ namespace detail {
       record.fee = required_fees;
 
       if( sign )
-      {
           my->sign_transaction( trx, required_signatures );
-          my->cache_transaction( trx, record );
-      }
 
+      record.trx = trx;
       return record;
    } FC_CAPTURE_AND_RETHROW( (symbol)(asset_name)(description)(issuer_account_name) ) }
 
@@ -3372,11 +3275,9 @@ namespace detail {
       record.fee = required_fees;
 
       if( sign )
-      {
           my->sign_transaction( trx, required_signatures );
-          my->cache_transaction( trx, record );
-      }
 
+      record.trx = trx;
       return record;
    } FC_CAPTURE_AND_RETHROW() }
 
@@ -3851,11 +3752,9 @@ namespace detail {
        record.ledger_entries.push_back(entry);
 
        if( sign )
-       {
            my->sign_transaction( trx, required_signatures );
-           my->cache_transaction( trx, record );
-       }
 
+       record.trx = trx;
        return record;
    } FC_CAPTURE_AND_RETHROW((from_account_name)(cover_id)(real_quantity_collateral_to_add)(sign)) }
 
@@ -4309,44 +4208,48 @@ namespace detail {
       return result;
    }
 
-   account_balance_record_summary_type wallet::get_account_balance_records( const string& account_name, bool include_empty )const
+   account_balance_record_summary_type wallet::get_account_balance_records(
+           const string& account_name, bool include_empty,
+           const set<withdraw_condition_types>& withdraw_types )const
    { try {
-      FC_ASSERT( is_open() );
-      if( !account_name.empty() ) get_account( account_name ); /* Just to check input */
+      if( !is_open() )
+          FC_CAPTURE_AND_THROW( wallet_closed );
 
       map<string, vector<balance_record>> balance_records;
       const auto pending_state = my->_blockchain->get_pending_state();
 
       const auto scan_balance = [&]( const balance_record& record )
       {
+          if( !withdraw_types.empty() && withdraw_types.count( record.condition.type ) == 0 ) return;
+
           const auto key_record = my->_wallet_db.lookup_key( record.owner() );
           if( !key_record.valid() || !key_record->has_private_key() ) return;
 
           const auto account_address = key_record->account_address;
           const auto account_record = my->_wallet_db.lookup_account( account_address );
-          const auto name = account_record.valid() ? account_record->name : string( account_address );
+          const auto name = account_record.valid() ? account_record->name : string( key_record->public_key );
           if( !account_name.empty() && name != account_name ) return;
 
           const auto balance_id = record.id();
           const auto pending_record = pending_state->get_balance_record( balance_id );
           if( !pending_record.valid() ) return;
           if( !include_empty && pending_record->balance == 0 ) return;
-          balance_records[ name ].push_back( *pending_record );
 
-          /* Re-cache the pending balance just in case */
-          my->sync_balance_with_blockchain( balance_id, pending_record );
+          balance_records[ name ].push_back( *pending_record );
       };
 
       my->_blockchain->scan_balances( scan_balance );
 
       return balance_records;
-   } FC_CAPTURE_AND_RETHROW() }
+   } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_types) ) }
 
-   account_balance_id_summary_type wallet::get_account_balance_ids( const string& account_name, bool include_empty )const
+   account_balance_id_summary_type wallet::get_account_balance_ids(
+           const string& account_name, bool include_empty,
+           const set<withdraw_condition_types>& withdraw_types )const
    { try {
       map<string, vector<balance_id_type>> balance_ids;
 
-      map<string, vector<balance_record>> items = get_account_balance_records( account_name, include_empty );
+      const map<string, vector<balance_record>>& items = get_account_balance_records( account_name, include_empty );
       for( const auto& item : items )
       {
           const auto& name = item.first;
@@ -4357,14 +4260,15 @@ namespace detail {
       }
 
       return balance_ids;
-   } FC_CAPTURE_AND_RETHROW() }
+   } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_types) ) }
 
-   // This will lie about vesting balances to show the user what they can actually spend
-   account_balance_summary_type wallet::get_account_balances( const string& account_name, bool include_empty )const
+   account_balance_summary_type wallet::get_account_balances(
+           const string& account_name, bool include_empty,
+           const set<withdraw_condition_types>& withdraw_types )const
    { try {
       map<string, map<asset_id_type, share_type>> balances;
 
-      map<string, vector<balance_record>> items = get_account_balance_records( account_name, include_empty );
+      const map<string, vector<balance_record>>& items = get_account_balance_records( account_name, include_empty );
       for( const auto& item : items )
       {
           const auto& name = item.first;
@@ -4382,7 +4286,7 @@ namespace detail {
       }
 
       return balances;
-   } FC_CAPTURE_AND_RETHROW() }
+   } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_types) ) }
 
    account_balance_summary_type wallet::get_account_yield( const string& account_name )const
    { try {

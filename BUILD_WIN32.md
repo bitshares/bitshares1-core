@@ -20,8 +20,6 @@ git clone https://github.com/bitshares/bitshares_toolkit.git
 cd bitshares_toolkit
 git submodule init
 git submodule update
-cd vendor
-git clone https://github.com/InvictusInnovations/leveldb-win.git
 ```
 
 * Dowload CMake

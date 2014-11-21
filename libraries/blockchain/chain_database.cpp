@@ -1232,6 +1232,12 @@ namespace bts { namespace blockchain {
 
                  push_block(block);
                  ++blocks_indexed;
+
+                 if( blocks_indexed % 1000 == 0 )
+                 {
+                     set_db_cache_write_through( true );
+                     set_db_cache_write_through( false );
+                 }
              };
 
              if (num_to_id.empty()) {
@@ -2679,8 +2685,8 @@ namespace bts { namespace blockchain {
    vector<market_order> chain_database::get_market_shorts( const string& quote_symbol,
                                                           uint32_t limit  )
    { try {
-       auto quote_id = get_asset_id( quote_symbol );
-       auto base_id  = 0;
+       asset_id_type quote_id = get_asset_id( quote_symbol );
+       asset_id_type base_id  = 0;
        if( base_id >= quote_id )
           FC_CAPTURE_AND_THROW( invalid_market, (quote_id)(base_id) );
 
@@ -2715,8 +2721,8 @@ namespace bts { namespace blockchain {
 
    vector<market_order> chain_database::get_market_covers( const string& quote_symbol, uint32_t limit )
    { try {
-       auto quote_asset_id = get_asset_id( quote_symbol );
-       auto base_asset_id  = 0;
+       asset_id_type quote_asset_id = get_asset_id( quote_symbol );
+       asset_id_type base_asset_id  = 0;
        if( base_asset_id >= quote_asset_id )
           FC_CAPTURE_AND_THROW( invalid_market, (quote_asset_id)(base_asset_id) );
 
@@ -2769,8 +2775,8 @@ namespace bts { namespace blockchain {
 
    share_type           chain_database::get_asset_collateral( const string& symbol )
    { try {
-       auto quote_asset_id = get_asset_id( symbol);
-       auto base_asset_id = 0;
+       asset_id_type quote_asset_id = get_asset_id( symbol);
+       asset_id_type base_asset_id = 0;
        auto total = share_type(0);
 
        auto market_itr = my->_collateral_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );

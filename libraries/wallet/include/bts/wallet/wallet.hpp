@@ -253,8 +253,7 @@ namespace bts { namespace wallet {
          std::shared_ptr<transaction_builder> create_transaction_builder();
          std::shared_ptr<transaction_builder> create_transaction_builder(const transaction_builder& old_builder);
 
-
-
+         void cache_transaction( wallet_transaction_record& transaction_record );
 
          /**
           *  Multi-Part transfers provide additional security by not combining inputs, but they
@@ -359,6 +358,11 @@ namespace bts { namespace wallet {
                  );
          wallet_transaction_record publish_feeds(
                  const string& account,
+                 map<string,double> amount_per_xts,
+                 bool sign
+                 );
+         vector<std::pair<string, wallet_transaction_record>>
+                 publish_feeds_multi_experimental(
                  map<string,double> amount_per_xts,
                  bool sign
                  );
@@ -533,11 +537,12 @@ namespace bts { namespace wallet {
 
          vector<escrow_summary>             get_escrow_balances( const string& account_name );
 
-         account_balance_record_summary_type get_account_balance_records( const string& account_name = "", bool include_empty = true )const;
-         account_balance_id_summary_type    get_account_balance_ids( const string& account_name = "", bool include_empty = true )const;
-         account_balance_summary_type       get_account_balances( const string& account_name = "", bool include_empty = true )const;
-         /* Get balances for which they key for this address can sign ("owner") */
-         vector<wallet_balance_record>      get_address_balances( const address& addr );
+         account_balance_record_summary_type get_account_balance_records( const string& account_name = "", bool include_empty = true,
+                 const set<withdraw_condition_types>& withdraw_types = set<withdraw_condition_types>{ withdraw_signature_type } )const;
+         account_balance_id_summary_type    get_account_balance_ids( const string& account_name = "", bool include_empty = true,
+                 const set<withdraw_condition_types>& withdraw_types = set<withdraw_condition_types>{ withdraw_signature_type } )const;
+         account_balance_summary_type       get_account_balances( const string& account_name = "", bool include_empty = true,
+                 const set<withdraw_condition_types>& withdraw_types = set<withdraw_condition_types>{ withdraw_signature_type } )const;
 
 
          account_balance_summary_type       get_account_yield( const string& account_name = "" )const;

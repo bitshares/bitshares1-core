@@ -508,7 +508,7 @@ namespace bts { namespace cli {
       out << '-';
     out << '\n';
 
-    auto counter = 0;
+    int32_t counter = 0;
     for(const auto& acct : account_records)
     {
       if(acct.is_delegate())

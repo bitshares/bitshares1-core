@@ -26,13 +26,9 @@ void wallet_impl::scan_market_transaction(
 
         auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.bid_owner),
                                                                             mtrx.bid_price.base_asset_id ).get_address() );
-        if( bal_rec.valid() )
-            sync_balance_with_blockchain( bal_rec->id() );
 
         bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.bid_owner),
                                                                       mtrx.bid_price.quote_asset_id ).get_address() );
-        if( bal_rec.valid() )
-            sync_balance_with_blockchain( bal_rec->id() );
 
         /* Construct a unique record id */
         std::stringstream id_ss;
@@ -128,13 +124,9 @@ void wallet_impl::scan_market_transaction(
 
         auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.ask_owner),
                                                                             mtrx.ask_price.base_asset_id ).get_address() );
-        if( bal_rec.valid() )
-            sync_balance_with_blockchain( bal_rec->id() );
 
         bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.ask_owner),
                                                                       mtrx.ask_price.quote_asset_id ).get_address() );
-        if( bal_rec.valid() )
-            sync_balance_with_blockchain( bal_rec->id() );
 
         /* Construct a unique record id */
         std::stringstream id_ss;
@@ -221,57 +213,44 @@ void wallet_impl::scan_balances()
        }
    }
 
-   // Do the same for sharedrop balances
-   const auto record_id = fc::ripemd160::hash( string( "SHAREDROP" ) );
-   auto transaction_record = _wallet_db.lookup_transaction( record_id );
-   if( transaction_record.valid() )
-   {
-       transaction_record->ledger_entries.clear();
-       _wallet_db.store_transaction( *transaction_record );
-   }
-
    const auto timestamp = _blockchain->get_genesis_timestamp();
-   _blockchain->scan_balances( [&]( const balance_record& bal_rec )
+   const auto scan_balance = [&]( const balance_record& bal_rec )
    {
-        const auto key_rec = _wallet_db.lookup_key( bal_rec.owner() );
-        if( key_rec.valid() && key_rec->has_private_key() )
-        {
-          sync_balance_with_blockchain( bal_rec.id() );
+       if( !bal_rec.snapshot_info.valid() )
+           return;
 
-          if( bal_rec.snapshot_info.valid() ) /* Create virtual transactions for genesis claims */
-          {
-              const auto public_key = key_rec->public_key;
-              auto record_id = fc::ripemd160::hash( self->get_key_label( public_key ) );
-#ifndef WIN32
-#warning [SHAREDROP] Re-enable scanning when finalized
-#endif
-              if( bal_rec.condition.type == withdraw_vesting_type )
-                  //record_id = fc::ripemd160::hash( string( "SHAREDROP" ) );
-                  return;
-              auto transaction_record = _wallet_db.lookup_transaction( record_id );
-              if( !transaction_record.valid() )
-              {
-                  transaction_record = wallet_transaction_record();
-                  transaction_record->created_time = timestamp;
-                  transaction_record->received_time = timestamp;
+       if( bal_rec.condition.type != withdraw_signature_type )
+           return;
 
-                  if( bal_rec.condition.type == withdraw_vesting_type )
-                      transaction_record->block_num = 933804;
-              }
+       const auto key_rec = _wallet_db.lookup_key( bal_rec.owner() );
+       if( !key_rec.valid() || !key_rec->has_private_key() )
+           return;
 
-              auto entry = ledger_entry();
-              entry.to_account = public_key;
-              entry.amount = asset( bal_rec.snapshot_info->original_balance, bal_rec.condition.asset_id );
-              entry.memo = "claim " + bal_rec.snapshot_info->original_address;
+       const auto public_key = key_rec->public_key;
+       auto record_id = fc::ripemd160::hash( self->get_key_label( public_key ) );
+       auto transaction_record = _wallet_db.lookup_transaction( record_id );
+       if( !transaction_record.valid() )
+       {
+           transaction_record = wallet_transaction_record();
+           transaction_record->created_time = timestamp;
+           transaction_record->received_time = timestamp;
 
-              transaction_record->record_id = record_id;
-              transaction_record->is_virtual = true;
-              transaction_record->is_confirmed = true;
-              transaction_record->ledger_entries.push_back( entry );
-              _wallet_db.store_transaction( *transaction_record );
-          }
-        }
-   } );
+           if( bal_rec.condition.type == withdraw_vesting_type )
+               transaction_record->block_num = 933804;
+       }
+
+       auto entry = ledger_entry();
+       entry.to_account = public_key;
+       entry.amount = asset( bal_rec.snapshot_info->original_balance, bal_rec.condition.asset_id );
+       entry.memo = "claim " + bal_rec.snapshot_info->original_address;
+
+       transaction_record->record_id = record_id;
+       transaction_record->is_virtual = true;
+       transaction_record->is_confirmed = true;
+       transaction_record->ledger_entries.push_back( entry );
+       _wallet_db.store_transaction( *transaction_record );
+   };
+   _blockchain->scan_balances( scan_balance );
 }
 
 void wallet_impl::scan_registered_accounts()
@@ -611,7 +590,6 @@ bool wallet_impl::scan_withdraw( const withdraw_operation& op,
        }
        withdraw_pub_key = key_rec->public_key;
 
-       sync_balance_with_blockchain( op.balance_id );
        return true;
    }
    return false;
@@ -1331,9 +1309,6 @@ bool wallet_impl::scan_deposit( const deposit_operation& op, const vector<privat
        }
   }
 
-  if( cache_deposit )
-      sync_balance_with_blockchain( op.balance_id() );
-
   return cache_deposit;
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -1386,23 +1361,15 @@ void wallet_impl::sign_transaction( signed_transaction& transaction, const unord
        transaction.sign( self->get_private_key( addr ), chain_id );
 } FC_CAPTURE_AND_RETHROW() }
 
-void wallet_impl::cache_transaction( const signed_transaction& transaction, wallet_transaction_record& record, bool apply_transaction )
+void wallet::cache_transaction( wallet_transaction_record& transaction_record )
 { try {
-   if( apply_transaction ) // Should only be false when apply_transaction_experimental is used
-       _blockchain->store_pending_transaction( transaction, true );
+   my->_blockchain->store_pending_transaction( transaction_record.trx, true );
 
-   record.record_id = transaction.permanent_id();
-   record.trx = transaction;
-   record.created_time = blockchain::now();
-   record.received_time = record.created_time;
-   _wallet_db.store_transaction( record );
-
-   for( const auto& op : transaction.operations )
-   {
-       if( operation_type_enum( op.type ) == withdraw_op_type )
-           sync_balance_with_blockchain( op.as<withdraw_operation>().balance_id );
-   }
-} FC_CAPTURE_AND_RETHROW() }
+   transaction_record.record_id = transaction_record.trx.permanent_id();
+   transaction_record.created_time = blockchain::now();
+   transaction_record.received_time = transaction_record.created_time;
+   my->_wallet_db.store_transaction( transaction_record );
+} FC_CAPTURE_AND_RETHROW( (transaction_record) ) }
 
 /**
  * @return the list of all transactions related to this wallet
@@ -1418,7 +1385,7 @@ vector<wallet_transaction_record> wallet::get_transaction_history( const string&
    vector<wallet_transaction_record> history_records;
    const auto& transactions = my->_wallet_db.get_transactions();
 
-   auto asset_id = 0;
+   asset_id_type asset_id = 0;
    if( !asset_symbol.empty() && asset_symbol != BTS_BLOCKCHAIN_SYMBOL )
    {
        try
@@ -1627,8 +1594,6 @@ pretty_transaction wallet::to_pretty_trx( const wallet_transaction_record& trx_r
           pretty_entry.from_account = "GENESIS";
        else if( trx_rec.is_market )
           pretty_entry.from_account = "MARKET";
-       else if( trx_rec.is_virtual && trx_rec.block_num == 933804 )
-          pretty_entry.from_account = "SHAREDROP";
        else
           pretty_entry.from_account = "UNKNOWN";
 

@@ -246,7 +246,7 @@ namespace bts { namespace blockchain {
    string chain_interface::to_pretty_asset( const asset& a )const
    {
       const auto oasset = get_asset_record( a.asset_id );
-      const auto amount = ( a.amount >= 0 ) ? a.amount : -a.amount;
+      const share_type amount = ( a.amount >= 0 ) ? a.amount : -a.amount;
       if( oasset.valid() )
       {
          const auto precision = oasset->get_precision();
