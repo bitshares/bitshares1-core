@@ -11,7 +11,24 @@ TaskPage {
    property string account_name
 
    onBackClicked: window.previousPage()
+   onNextClicked: {
+      if( mayProceed() ) {
+         window.nextPage()
+      } else {
+         cannotProceedAlert()
+      }
+   }
+   nextButtonHighlighted: mayProceed()
 
+   function mayProceed() {
+      if( container.state === "SUBMITTING" || container.state === "REJECTED" )
+         return false
+      return true
+   }
+   function cannotProceedAlert() {
+      console.log("error")
+      errorAnimation.restart()
+   }
    function processResponse(response) {
       // @disable-check M126
       if( response.response == null ) {
@@ -93,6 +110,12 @@ TaskPage {
       wrapMode: Text.WrapAtWordBoundaryOrAnywhere
       width: parent.width / 2
       font.pointSize: Math.max(1, parent.height / 50)
+
+      SequentialAnimation {
+         id: errorAnimation
+         PropertyAnimation { target: statusText; property: "color"; from: "white"; to: "red"; duration: 200 }
+         PropertyAnimation { target: statusText; property: "color"; from: "red"; to: "white"; duration: 200 }
+      }
    }
    Spinner {
       id: spinner
@@ -135,10 +158,6 @@ TaskPage {
                        "When they finish, their response will be displayed here. You may proceed to the next step " +
                        "while waiting for their response.")
          }
-         PropertyChanges {
-            target: container
-            nextButtonHighlighted: true
-         }
       },
       State {
          name: "ACCEPTED"
@@ -155,10 +174,6 @@ TaskPage {
             text: qsTr("Your identity has been verified successfully. An anonymous voting identity is now being " +
                        "registered, which will allow you to cast your votes anonymously. You may proceed to the next " +
                        "step while waiting for this registration.")
-         }
-         PropertyChanges {
-            target: container
-            nextButtonHighlighted: true
          }
       },
       State {
@@ -195,10 +210,6 @@ TaskPage {
             target: statusText
             text: qsTr("Your identity has been accepted and anonymously registered to vote. Please proceed to the " +
                        "next step.")
-         }
-         PropertyChanges {
-            target: container
-            nextButtonHighlighted: true
          }
       }
    ]

@@ -34,7 +34,7 @@ ApplicationWindow {
       d.poppedItems.push(votingUiStack.pop())
    }
 
-   Connections {
+      Connections {
       target: bitshares
       onError: console.log("Error from backend: " + errorString)
    }
@@ -75,6 +75,7 @@ ApplicationWindow {
          }
          ListElement {
             title: "Voting"
+            page: "VotingPage.qml"
          }
          ListElement {
             title: "Finished"
