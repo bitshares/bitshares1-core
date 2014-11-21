@@ -1324,7 +1324,7 @@ vector<wallet_transaction_record> wallet::get_transaction_history( const string&
    vector<wallet_transaction_record> history_records;
    const auto& transactions = my->_wallet_db.get_transactions();
 
-   auto asset_id = 0;
+   asset_id_type asset_id = 0;
    if( !asset_symbol.empty() && asset_symbol != BTS_BLOCKCHAIN_SYMBOL )
    {
        try
