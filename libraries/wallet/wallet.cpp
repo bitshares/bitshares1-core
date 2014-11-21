@@ -1659,6 +1659,30 @@ namespace detail {
    } FC_CAPTURE_AND_RETHROW() }
 
 
+   vector<std::pair<string, wallet_transaction_record>> wallet::publish_feeds_multi_experimental(
+           map<string,double> amount_per_xts, // map symbol to amount per xts
+           bool sign )
+   {
+	   vector<std::pair<string, wallet_transaction_record>> result;
+	   const vector<wallet_account_record> accounts = this->list_my_accounts();
+
+	   for( auto acct : accounts )
+	   {
+		   auto current_account = my->_blockchain->get_account_record( acct.name );
+		   if( !current_account )
+			   continue;
+		   if( !my->_blockchain->is_active_delegate( current_account->id ) )
+			   continue;
+	       wallet_transaction_record tr = this->publish_feeds(
+	           acct.name,
+	           amount_per_xts,
+	           sign);
+		   std::pair<string, wallet_transaction_record> p(acct.name, tr);
+		   result.push_back(p);
+	   }
+       return result;
+   }
+
    wallet_transaction_record wallet::publish_feeds(
            const string& account_to_publish_under,
            map<string,double> amount_per_xts, // map symbol to amount per xts

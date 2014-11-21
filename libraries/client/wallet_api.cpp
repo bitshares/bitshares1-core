@@ -1203,6 +1203,13 @@ wallet_transaction_record client_impl::wallet_publish_price_feed( const std::str
    network_broadcast_transaction( record.trx );
    return record;
 }
+
+vector<std::pair<string, wallet_transaction_record>> client_impl::wallet_publish_feeds_multi_experimental( const map<string,double>& real_amount_per_xts )
+{
+   const auto record_list = _wallet->publish_feeds_multi_experimental( real_amount_per_xts, true );
+   return record_list;
+}
+
 wallet_transaction_record client_impl::wallet_publish_feeds( const std::string& delegate_account,
                                                              const map<string,double>& real_amount_per_xts )
 {
