@@ -1551,7 +1551,7 @@ namespace detail {
        uint64_t total = 0;
        auto summary = vote_summary();
 
-       const account_balance_record_summary_type balance_records = self->get_account_balance_records( from_account_name );
+       const account_balance_record_summary_type items = get_account_balance_records( account_name );
        for( const auto& item : items )
        {
            const auto& records = item.second;
@@ -4156,7 +4156,7 @@ namespace detail {
       auto raw_votes = map<account_id_type, int64_t>();
       auto result = account_vote_summary_type();
 
-      const account_balance_record_summary_type balance_records = self->get_account_balance_records( from_account_name );
+      const account_balance_record_summary_type items = get_account_balance_records( account_name );
       for( const auto& item : items )
       {
           const auto& records = item.second;
