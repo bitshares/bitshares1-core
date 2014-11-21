@@ -196,8 +196,8 @@
       },
       {
         "method_name": "blockchain_get_block",
-        "description": "Retrieves the block header for the given block number or ID",
-        "return_type": "odigest_block",
+        "description": "Retrieves the block record for the given block number or ID",
+        "return_type": "oblock_record",
         "parameters" : [
             {
               "name" : "block",

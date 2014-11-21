@@ -562,6 +562,10 @@
          "cpp_return_type" : "bts::blockchain::block_record"
       },
       {
+         "type_name" : "oblock_record",
+         "cpp_return_type" : "fc::optional<bts::blockchain::block_record>"
+      },
+      {
          "type_name" : "block_record_array",
          "container_type" : "array",
          "contained_type" : "block_record"
