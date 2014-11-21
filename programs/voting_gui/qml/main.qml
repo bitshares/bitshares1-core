@@ -107,8 +107,15 @@ ApplicationWindow {
             PropertyAnimation {
                target: enterItem
                property: "opacity"
-               from: 0.5
+               from: 0
                to: 1
+               easing.type: "InQuad"
+            }
+            PropertyAnimation {
+               target: exitItem
+               property: "opacity"
+               from: 1
+               to: 0
                easing.type: "InQuad"
             }
             PropertyAnimation {
@@ -116,6 +123,35 @@ ApplicationWindow {
                property: "scale"
                from: 1
                to: .8
+            }
+         }
+         popTransition: StackViewTransition {
+            PropertyAnimation {
+               target: exitItem
+               property: "x"
+               from: 0
+               to: exitItem.width
+               easing.type: "InQuad"
+            }
+            PropertyAnimation {
+               target: exitItem
+               property: "opacity"
+               from: 1
+               to: 0
+               easing.type: "InQuad"
+            }
+            PropertyAnimation {
+               target: enterItem
+               property: "opacity"
+               from: 0
+               to: 1
+               easing.type: "InQuad"
+            }
+            PropertyAnimation {
+               target: enterItem
+               property: "scale"
+               from: .8
+               to: 1
             }
          }
       }

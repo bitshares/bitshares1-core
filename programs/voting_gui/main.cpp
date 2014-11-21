@@ -6,7 +6,7 @@
 #include "ClientWrapper.hpp"
 #include "Utilities.hpp"
 
-Q_DECLARE_METATYPE(bts::mail::message);
+Q_DECLARE_METATYPE(bts::mail::message)
 int main(int argc, char *argv[])
 {
    QGuiApplication app(argc, argv);

@@ -1,12 +1,13 @@
 import QtQuick 2.3
-import QtQuick.Layouts 1.1
 
 Image {
+   id: spinner
    fillMode: Image.PreserveAspectFit
    source: "qrc:/res/v.png"
    smooth: true
 
-   property alias running: animator.running
+   property bool running: false
+   onRunningChanged: animator.running = running
 
    Image {
       id: ring
@@ -14,14 +15,22 @@ Image {
       fillMode: Image.PreserveAspectFit
       source: "qrc:/res/ring.png"
       smooth: true
-      RotationAnimation {
+      RotationAnimator {
          id: animator
          target: ring
-         from: 0; to: 360
-         property: "rotation"
-         loops: Animation.Infinite
-         duration: 1500
+         from: 0; to: 450
+         duration: 2000
          alwaysRunToEnd: true
+         easing.type: "InOutQuad"
+         onStopped: {
+            if( !spinner.running ) {
+               return
+            }
+
+            from = ring.rotation % 360
+            to = from + 450
+            start()
+         }
       }
    }
 }
