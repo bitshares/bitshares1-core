@@ -402,9 +402,11 @@ wallet_transaction_record wallet_impl::scan_transaction(
         switch( operation_type_enum( op.type ) )
         {
             case deposit_op_type:
+            {
                 is_deposit = scan_deposit( op.as<deposit_operation>(), keys, *transaction_record, total_fee );
                 has_deposit |= is_deposit;
                 break;
+            }
             case bid_op_type:
             {
                 const auto bid_op = op.as<bid_operation>();
@@ -1107,6 +1109,12 @@ bool wallet_impl::scan_deposit( const deposit_operation& op, const vector<privat
           FC_THROW( "withdraw_null_type not implemented!" );
           break;
        }
+       case withdraw_escrow_type:
+       {
+          auto deposit = op.condition.as<withdraw_with_escrow>();
+          cache_deposit = scan_condition( deposit, amount, trx_rec, total_fee, keys );
+          break;
+       }
        case withdraw_signature_type:
        {
           auto deposit = op.condition.as<withdraw_with_signature>();
@@ -1243,11 +1251,6 @@ bool wallet_impl::scan_deposit( const deposit_operation& op, const vector<privat
           break;
        }
        case withdraw_option_type:
-       {
-          // TODO: FC_THROW( "withdraw_option_type not implemented!" );
-          break;
-       }
-       case withdraw_escrow_type:
        {
           // TODO: FC_THROW( "withdraw_option_type not implemented!" );
           break;

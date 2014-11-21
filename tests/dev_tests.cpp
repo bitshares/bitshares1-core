@@ -59,6 +59,9 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "wallet_escrow_summary delegate24" );
    exec( clienta, "wallet_escrow_summary delegate33" );
    exec( clienta, "wallet_escrow_summary delegate36" );
+   exec( clienta, "wallet_escrow_summary delegate29" );
+   exec( clienta, "history" );
+   exec( clientb, "history" );
    return;
    produce_block(clientb);
 

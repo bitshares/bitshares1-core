@@ -59,7 +59,7 @@ namespace bts { namespace blockchain {
                            share_type amount_to_sender,
                            share_type amount_to_receiver );
 
-      void deposit_to_escrow( fc::ecc::public_key receiver_key,
+      public_key_type deposit_to_escrow( fc::ecc::public_key receiver_key,
                               fc::ecc::public_key escrow_key,
                               digest_type agreement,
                               asset amount,
@@ -70,7 +70,7 @@ namespace bts { namespace blockchain {
                               fc::ecc::private_key one_time_private_key,
                               memo_flags_enum memo_type = from_memo );
 
-      void deposit_to_account( fc::ecc::public_key receiver_key,
+      public_key_type deposit_to_account( fc::ecc::public_key receiver_key,
                                 asset amount,
                                 fc::ecc::private_key from_key,
                                 const string& memo_message,

@@ -271,7 +271,8 @@ transaction_builder& transaction_builder::deposit_asset_with_escrow(const bts::w
    } else {
       auto one_time_key = _wimpl->get_new_private_key(payer.name);
       titan_one_time_key = one_time_key.get_public_key();
-      trx.deposit_to_escrow( recipient.active_key(),
+      auto receiver_key = trx.deposit_to_escrow( 
+                             recipient.active_key(),
                              escrow_agent.active_key(),
                              agreement,
                              amount,
@@ -281,6 +282,12 @@ transaction_builder& transaction_builder::deposit_asset_with_escrow(const bts::w
                              *memo_sender,
                              one_time_key,
                              from_memo);
+
+      key_data data;
+      data.account_address = recipient.owner_address();
+      data.public_key      = receiver_key;
+      data.memo            = memo;
+      _wimpl->_wallet_db.store_key( data );
    }
 
    deduct_balance(payer.owner_key, amount);
