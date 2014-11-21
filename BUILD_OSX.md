@@ -1,73 +1,64 @@
-Building BitShares Toolkit on OS X 10.9
+BitShares Mac OS X Build Instructions
 ===============================
 
-0) Install X Code by following these instructions https://guide.macports.org/chunked/installing.xcode.html
+1. Install XCode and its command line tools by following the instructions here: https://guide.macports.org/#installing.xcode
 
-1) Download boost 1.54.0 from http://sourceforge.net/projects/boost/files/boost/1.54.0/
-   
-   Note: boost 1.55 does not compile with clang using the latest version of XCode as of (March 2014)
+2. Install Homebrew by following the instructions here: http://brew.sh/
 
-2) If you happen to have boost already installed and it was not compiled with clang or libc++ and c++11 then you will
- need to uninstall it prior to running the above steps.   
+3. Configure and update Homebrew:
+   ```
+   brew doctor
+   brew update
+   ```
 
-    sudo rm -r /usr/local/include/boost
-    sudo rm -r /usr/local/lib/libboost*
+4. Install dependencies:
+   ```
+   brew install boost cmake git openssl readline
+   ```
 
-3) Compile and install boost to support c++11 with clang using the following commands:
+5. Link upgraded OpenSSL and Readline:
+   ```
+   brew link --force openssl readline
+   ```
 
-    tar -xjvf boost_1_54_0.tar.bz
-    cd boost_1_54_0
-    ./bootstrap.sh
-    sudo ./b2 toolset=clang cxxflags="-stdlib=libc++ -std=c++11" linkflags="-stdlib=libc++" link=static install
+6. *Optional.* To support importing Bitcoin wallet files:
+   ```
+   brew install berkeley-db
+   ```
 
-4) Download OpenSSL  https://www.openssl.org/source/
+7. *Optional.* To use TCMalloc in LevelDB:
+   ```
+   brew install google-perftools
+   ```
 
-    tar -xzvf openssl-1.0.1f.tar.gz
-    cd openssl-1.0.1f
-    ./Configure darwin64-x86_64-cc  
-    make
-    sudo make install
+8. Clone the BitShares repository:
+   ```
+   git clone git@github.com:BitShares/bitshares.git
+   cd bitshares
+   ```
 
-5) If you would like support for importing Bitcoin Core wallets then you will require Berkeley DB
+9. *Optional.* To help contribute changes:
+   ```
+   git checkout develop
+   ```
 
-    curl http://download.oracle.com/berkeley-db/db-6.0.30.tar.gz > db-6.0.30.tar.gz
-    tar -xzvf db-6.0.30.tar.gz
-    cd db-6.0.30/build_unix
-    ../dist/configure --enable-cxx --prefix=/usr/local CPPFLAGS=-stdlib=libc++ 
-    make
-    sudo make install
+10. Build BitShares:
+   ```
+   git submodule init
+   git submodule update
+   cmake .
+   make
+   ```
 
-6) OS X comes with a very old version of readline (4.x) 
-
-    curl ftp://ftp.gnu.org/gnu/readline/readline-6.3.tar.gz > readline-6.3.tar.gz
-    tar -xzvf readline-6.3.tar.gz
-    cd readline-6.3
-    ./configure
-    make
-    sudo make install
-
-7) Build BitShares Toolkit with CMake
-
-    git clone https://github.com/BitShares/bitshares_toolkit.git
-    cd bitshares_toolkit
-    git submodule init
-    git submodule update
-    cmake -DCMAKE_PREFIX_PATH=/usr/local/ssl .
-    make
-
-8) To build the Desktop Client
-
-    TODO: describe Install Node
-
-    git clone git@github.com:BitShares/web_wallet.git
-    git clone git@github.com:BitShares/qt_wallet.git
+11. *Optional*. To build the desktop GUI:
+   ```
     cd programs/web_wallet/
     npm install lineman-angular
     npm install lineman-less
     cd ../..
     export CMAKE_PREFIX_PATH=~/Qt/5.3/clang_64/
     make buildweb
-    cmake -DINCLUDE_QT_WALLET=TRUE -DCMAKE_PREFIX_PATH=/usr/local/ssl  .
+    cmake -DINCLUDE_QT_WALLET=TRUE
     make
-
-By default, the web wallet will not be rebuilt even after pulling new changes. To force the web wallet to rebuild, use `make forcebuildweb`.
+   ```
+   By default, the web wallet will not be rebuilt even after pulling new changes. To force the web wallet to rebuild, use `make forcebuildweb`.
