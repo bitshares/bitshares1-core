@@ -283,7 +283,7 @@ void ClientWrapper::begin_verification(QObject* window, QString account_name, QS
    request->properties.emplace_back(bts::vote::identity_property::generate("Address Line 2"));
    request->properties.emplace_back(bts::vote::identity_property::generate("City"));
    request->properties.emplace_back(bts::vote::identity_property::generate("State"));
-   request->properties.emplace_back(bts::vote::identity_property::generate("9-Digit ZIP"));
+   request->properties.emplace_back(bts::vote::identity_property::generate("ZIP"));
    request->properties.emplace_back(bts::vote::identity_property::generate("Ballot ID"));
    request->owner_photo = window->property("userPhoto").toUrl().toLocalFile().toStdString();
    request->id_front_photo = window->property("idFrontPhoto").toUrl().toLocalFile().toStdString();
