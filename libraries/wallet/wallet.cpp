@@ -71,11 +71,7 @@ namespace detail {
          FC_CAPTURE_AND_THROW( insufficient_funds, (from_account_name)(amount_to_withdraw)(balance_records) );
       for( const auto& record : balance_records.at( from_account_name ) )
       {
-#ifndef WIN32
-#warning [FUTURE SOFTFORK] Remove after BTS_V0_4_25_FORK_BLOCK_NUM has passed
-#endif
-          //const asset balance = record.get_spendable_balance( _blockchain->get_pending_state()->now() );
-          const asset balance = record.get_spendable_balance( fc::time_point_sec( 1415188800 ) );
+          const asset balance = record.get_spendable_balance( _blockchain->get_pending_state()->now() );
           if( balance.amount <= 0 || balance.asset_id != amount_remaining.asset_id )
               continue;
 
@@ -1554,29 +1550,27 @@ namespace detail {
        uint64_t total_possible = 0;
        uint64_t total = 0;
        auto summary = vote_summary();
-       for( auto balance : my->_wallet_db.get_all_balances( account_name, -1 ) )
+
+       const account_balance_record_summary_type balance_records = self->get_account_balance_records( from_account_name );
+       for( const auto& item : items )
        {
-           auto oslate = my->_blockchain->get_delegate_slate( balance.delegate_slate_id() );
-           if( oslate.valid() )
+           const auto& records = item.second;
+           for( const auto& record : records )
            {
-#ifndef WIN32
-#warning [FUTURE SOFTFORK] Remove after BTS_V0_4_25_FORK_BLOCK_NUM has passed
-#endif
-               //total += balance.get_spendable_balance( my->_blockchain->now() ).amount * oslate->supported_delegates.size();
-               total += balance.get_spendable_balance( fc::time_point_sec( 1415188800 ) ).amount * oslate->supported_delegates.size();
-               ilog("total: ${t}", ("t", total));
+               auto oslate = my->_blockchain->get_delegate_slate( record.delegate_slate_id() );
+               if( oslate.valid() )
+                   total += record.get_spendable_balance( my->_blockchain->now() ).amount * oslate->supported_delegates.size();
+               total_possible += record.get_spendable_balance( my->_blockchain->now() ).amount * BTS_BLOCKCHAIN_MAX_SLATE_SIZE;
            }
-           //total_possible += balance.get_spendable_balance( my->_blockchain->now() ).amount * BTS_BLOCKCHAIN_MAX_SLATE_SIZE;
-           total_possible += balance.get_spendable_balance( fc::time_point_sec( 1415188800 ) ).amount * BTS_BLOCKCHAIN_MAX_SLATE_SIZE;
-           ilog("total_possible: ${t}", ("t", total_possible));
        }
-       ilog("total_possible: ${t}", ("t", total_possible));
-       ilog("total: ${t}", ("t", total));
+
        if( total_possible == 0 )
            summary.utilization = 0;
        else
            summary.utilization = float(total) / float(total_possible);
+
        summary.negative_utilization = 0;
+
        return summary;
    }
 
@@ -2454,202 +2448,6 @@ namespace detail {
 
        return optional<variant_object>();
    } FC_CAPTURE_AND_RETHROW() }
-
-#if 0
-   /**
-    *  This method assumes that fees can be paid in the same asset type as the
-    *  asset being transferred so that the account can be kept private and
-    *  secure.
-    *
-    */
-   // TODO: This is broken
-   vector<signed_transaction> wallet::multipart_transfer( double  real_amount_to_transfer,
-                                                const string& amount_to_transfer_symbol,
-                                                const string& from_account_name,
-                                                const string& to_account_name,
-                                                const string& memo_message,
-                                                bool          sign )
-   { try {
-       FC_ASSERT( is_open() );
-       FC_ASSERT( is_unlocked() );
-
-       if( !my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) )
-           FC_THROW_EXCEPTION( invalid_asset_symbol, "Invalid asset symbol!", ("amount_to_transfer_symbol",amount_to_transfer_symbol) );
-
-       if( !my->is_receive_account( from_account_name ) )
-           FC_THROW_EXCEPTION( unknown_account, "Unknown sending account name!", ("from_account_name",from_account_name) );
-
-       if( !my->is_valid_account( to_account_name ) )
-           FC_THROW_EXCEPTION( unknown_receive_account, "Unknown receiving account name!", ("to_account_name",to_account_name) );
-
-       if( !my->is_unique_account(to_account_name) )
-           FC_THROW_EXCEPTION( duplicate_account_name,
-                               "Local account name conflicts with registered name. Please rename your local account first.", ("to_account_name",to_account_name) );
-
-       if( memo_message.size() > BTS_BLOCKCHAIN_MAX_MEMO_SIZE )
-           FC_THROW_EXCEPTION( memo_too_long, "Memo too long!", ("memo_message",memo_message) );
-
-       auto asset_rec = my->_blockchain->get_asset_record( amount_to_transfer_symbol );
-       FC_ASSERT( asset_rec.valid() );
-       auto asset_id = asset_rec->id;
-
-       int64_t precision = asset_rec->precision ? asset_rec->precision : 1;
-       share_type amount_to_transfer((share_type)(real_amount_to_transfer * precision));
-       asset asset_to_transfer( amount_to_transfer, asset_id );
-
-       //FC_ASSERT( amount_to_transfer > get_transaction_fee( amount_to_transfer_symbol ).amount );
-
-       /**
-        *  TODO: until we support paying fees in other assets, this will not function
-        *  properly.
-       FC_ASSERT( asset_id == 0, "multipart transfers only support base shares",
-                  ("asset_to_transfer",asset_to_transfer)("symbol",amount_to_transfer_symbol));
-        */
-
-       vector<signed_transaction >       trxs;
-       vector<share_type>                amount_sent;
-       vector<wallet_balance_record>     balances_to_store; // records to cache if transfer succeeds
-
-       public_key_type  receiver_public_key = get_account_public_key( to_account_name );
-       private_key_type sender_private_key  = get_active_private_key( from_account_name );
-       public_key_type  sender_public_key   = sender_private_key.get_public_key();
-       address          sender_account_address( sender_private_key.get_public_key() );
-
-       asset total_fee = get_transaction_fee( asset_id );
-
-       asset amount_collected( 0, asset_id );
-       const auto items = my->_wallet_db.get_balances();
-       for( auto balance_item : items )
-       {
-          auto owner = balance_item.second.owner();
-          if( balance_item.second.asset_id() == asset_id )
-          {
-             const auto okey_rec = my->_wallet_db.lookup_key( owner );
-             if( !okey_rec.valid() || !okey_rec->has_private_key() ) continue;
-             if( okey_rec->account_address != sender_account_address ) continue;
-
-             signed_transaction trx;
-             trx.expiration = blockchain::now() + get_transaction_expiration();
-
-#ifndef WIN32
-#warning [FUTURE SOFTFORK] Remove after BTS_V0_4_25_FORK_BLOCK_NUM has passed
-#endif
-             //auto from_balance = balance_item.second.get_spendable_balance( my->_blockchain->get_pending_state()->now() );
-             auto from_balance = balance_item.second.get_spendable_balance( fc::time_point_sec( 1415188800 ) );
-
-             if( from_balance.amount <= 0 )
-                continue;
-
-             trx.withdraw( balance_item.first,
-                           from_balance.amount );
-
-             from_balance -= total_fee;
-
-             /** make sure there is at least something to withdraw at the other side */
-             if( from_balance < total_fee )
-                continue; // next balance_item
-
-             asset amount_to_deposit( 0, asset_id );
-             asset amount_of_change( 0, asset_id );
-
-             if( (amount_collected + from_balance) > asset_to_transfer )
-             {
-                amount_to_deposit = asset_to_transfer - amount_collected;
-                amount_of_change  = from_balance - amount_to_deposit;
-                amount_collected += amount_to_deposit;
-             }
-             else
-             {
-                amount_to_deposit = from_balance;
-             }
-
-             const auto slate_id = my->select_slate( trx, amount_to_deposit.asset_id );
-
-             if( amount_to_deposit.amount > 0 )
-             {
-                trx.deposit_to_account( receiver_public_key,
-                                        amount_to_deposit,
-                                        sender_private_key,
-                                        memo_message,
-                                        slate_id,
-                                        sender_private_key.get_public_key(),
-                                        my->get_new_private_key( from_account_name ),
-                                        from_memo
-                                        );
-             }
-             if( amount_of_change > total_fee )
-             {
-                trx.deposit_to_account( sender_public_key,
-                                        amount_of_change,
-                                        sender_private_key,
-                                        memo_message,
-                                        slate_id,
-                                        receiver_public_key,
-                                        my->get_new_private_key( from_account_name ),
-                                        to_memo
-                                        );
-
-                /** randomly shuffle change to prevent analysis */
-                if( rand() % 2 )
-                {
-                   FC_ASSERT( trx.operations.size() >= 3 );
-                   std::swap( trx.operations[1], trx.operations[2] );
-                }
-             }
-
-             // set the balance of this item to 0 so that we do not
-             // attempt to spend it again.
-             balance_item.second.balance = 0;
-             balances_to_store.push_back( balance_item.second );
-
-             if( sign )
-             {
-                unordered_set<address> required_signatures;
-                required_signatures.insert( balance_item.second.owner() );
-                my->sign_transaction( trx, required_signatures );
-             }
-
-             trxs.emplace_back( trx );
-             amount_sent.push_back( amount_to_deposit.amount );
-             if( amount_collected >= asset( amount_to_transfer, asset_id ) )
-                break;
-          } // if asset id matches
-       } // for each balance_item
-
-       // If we went through all our balances and still don't have enough
-       if (amount_collected < asset( amount_to_transfer, asset_id ))
-       {
-          FC_CAPTURE_AND_THROW( insufficient_funds, (amount_to_transfer)(amount_collected) );
-       }
-
-       if( sign ) // don't store invalid trxs..
-       {
-          //const auto now = blockchain::now();
-          //for( const auto& rec : balances_to_store )
-          //{
-              //my->_wallet_db.cache_balance( rec );
-          //}
-          for( uint32_t i = 0 ; i < trxs.size(); ++i )
-          {
-             auto entry = ledger_entry();
-             entry.from_account = sender_public_key;
-             entry.to_account = receiver_public_key;
-             entry.amount = asset(amount_sent[i],asset_id); //asset_to_transfer;
-             entry.memo = fc::to_string(i)+":"+memo_message;
-           //  if( payer_public_key != sender_public_key )
-           //      entry.memo_from_account = sender_public_key;
-
-             auto record = wallet_transaction_record();
-             record.ledger_entries.push_back( entry );
-             record.fee = total_fee; //required_fees;
-
-             my->cache_transaction( trxs[i], record );
-          }
-       }
-
-       return trxs;
-   } FC_CAPTURE_AND_RETHROW( (real_amount_to_transfer)(amount_to_transfer_symbol)(from_account_name)(to_account_name)(memo_message) ) }
-#endif
 
    wallet_transaction_record wallet::withdraw_delegate_pay(
            const string& delegate_name,
@@ -4276,11 +4074,7 @@ namespace detail {
 
           for( const auto& record : records )
           {
-#ifndef WIN32
-#warning [FUTURE SOFTFORK] Remove after BTS_V0_4_25_FORK_BLOCK_NUM has passed
-#endif
-              //const auto balance = record.get_spendable_balance( my->_blockchain->get_pending_state()->now() );
-              const auto balance = record.get_spendable_balance( fc::time_point_sec( 1415188800 ) );
+              const auto balance = record.get_spendable_balance( my->_blockchain->get_pending_state()->now() );
               balances[ name ][ balance.asset_id ] += balance.amount;
           }
       }
@@ -4301,11 +4095,7 @@ namespace detail {
 
           for( const auto& record : records )
           {
-#ifndef WIN32
-#warning [FUTURE SOFTFORK] Remove after BTS_V0_4_25_FORK_BLOCK_NUM has passed
-#endif
-              //const auto balance = record.get_spendable_balance( my->_blockchain->get_pending_state()->now() );
-              const auto balance = record.get_spendable_balance( fc::time_point_sec( 1415188800 ) );
+              const auto balance = record.get_spendable_balance( my->_blockchain->get_pending_state()->now() );
               // TODO: Memoize these
               const auto asset_rec = pending_state->get_asset_record( balance.asset_id );
               if( !asset_rec.valid() || !asset_rec->is_market_issued() ) continue;
@@ -4366,36 +4156,36 @@ namespace detail {
       auto raw_votes = map<account_id_type, int64_t>();
       auto result = account_vote_summary_type();
 
-      const auto items = my->_wallet_db.get_balances();
+      const account_balance_record_summary_type balance_records = self->get_account_balance_records( from_account_name );
       for( const auto& item : items )
       {
-          const auto okey_rec = my->_wallet_db.lookup_key( item.second.owner() );
-          if( !okey_rec.valid() || !okey_rec->has_private_key() ) continue;
-
-          const auto oaccount_rec = my->_wallet_db.lookup_account( okey_rec->account_address );
-          if( !oaccount_rec.valid() ) FC_THROW_EXCEPTION( unknown_account, "Unknown account name!" );
-          if( !account_name.empty() && oaccount_rec->name != account_name ) continue;
-
-          const auto obalance = pending_state->get_balance_record( item.first );
-          if( !obalance.valid() ) continue;
-
-#ifndef WIN32
-#warning [FUTURE SOFTFORK] Remove after BTS_V0_4_25_FORK_BLOCK_NUM has passed
-#endif
-          //const auto balance = obalance->get_spendable_balance( pending_state->now() );
-          const auto balance = obalance->get_spendable_balance( fc::time_point_sec( 1415188800 ) );
-          if( balance.amount <= 0 || balance.asset_id != 0 ) continue;
-
-          const auto slate_id = obalance->delegate_slate_id();
-          if( slate_id == 0 ) continue;
-
-          const auto slate = pending_state->get_delegate_slate( slate_id );
-          if( !slate.valid() ) FC_THROW_EXCEPTION( unknown_slate, "Unknown slate!" );
-
-          for( const auto& delegate_id : slate->supported_delegates )
+          const auto& records = item.second;
+          for( const auto& record : records )
           {
-              if( raw_votes.count( delegate_id ) <= 0 ) raw_votes[ delegate_id ] = balance.amount;
-              else raw_votes[ delegate_id ] += balance.amount;
+              const auto okey_rec = my->_wallet_db.lookup_key( record.owner() );
+              if( !okey_rec.valid() || !okey_rec->has_private_key() ) continue;
+
+              const auto oaccount_rec = my->_wallet_db.lookup_account( okey_rec->account_address );
+              if( !oaccount_rec.valid() ) FC_THROW_EXCEPTION( unknown_account, "Unknown account name!" );
+              if( !account_name.empty() && oaccount_rec->name != account_name ) continue;
+
+              const auto obalance = pending_state->get_balance_record( record.id() );
+              if( !obalance.valid() ) continue;
+
+              const auto balance = obalance->get_spendable_balance( pending_state->now() );
+              if( balance.amount <= 0 || balance.asset_id != 0 ) continue;
+
+              const auto slate_id = obalance->delegate_slate_id();
+              if( slate_id == 0 ) continue;
+
+              const auto slate = pending_state->get_delegate_slate( slate_id );
+              if( !slate.valid() ) FC_THROW_EXCEPTION( unknown_slate, "Unknown slate!" );
+
+              for( const auto& delegate_id : slate->supported_delegates )
+              {
+                  if( raw_votes.count( delegate_id ) <= 0 ) raw_votes[ delegate_id ] = balance.amount;
+                  else raw_votes[ delegate_id ] += balance.amount;
+              }
           }
       }
 
