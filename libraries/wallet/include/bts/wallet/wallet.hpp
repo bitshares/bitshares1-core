@@ -361,6 +361,11 @@ namespace bts { namespace wallet {
                  map<string,double> amount_per_xts,
                  bool sign
                  );
+         vector<std::pair<string, wallet_transaction_record>>
+                 publish_feeds_multi_experimental(
+                 map<string,double> amount_per_xts,
+                 bool sign
+                 );
          wallet_transaction_record publish_price(
                  const string& account,
                  double amount_per_xts,
