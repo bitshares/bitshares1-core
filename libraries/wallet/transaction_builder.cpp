@@ -708,7 +708,8 @@ transaction_builder& transaction_builder::finalize()
       else _wimpl->withdraw_to_transaction(-balance, account_name, trx, required_signatures);
    }
 
-   trx.expiration = blockchain::now() + _wimpl->self->get_transaction_expiration();
+   if( trx.expiration == time_point_sec() )
+       trx.expiration = blockchain::now() + _wimpl->self->get_transaction_expiration();
 
    transaction_record.record_id = trx.permanent_id();
    transaction_record.created_time = blockchain::now();
@@ -732,7 +733,6 @@ wallet_transaction_record& transaction_builder::sign()
    for( auto& notice : notices )
       notice.first.trx = trx;
 
-//   _wimpl->cache_transaction(trx, transaction_record);
    return transaction_record;
 }
 

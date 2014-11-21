@@ -827,7 +827,14 @@
                 "type": "bool",
                 "description": "",
                 "default_value": true
+            },
+            {
+              "name" : "builder_path",
+              "type" : "string",
+              "description" : "If specified, will write builder here instead of to DATA_DIR/transactions/latest.trx",
+              "default_value" : ""
             }
+
         ],
         "prerequisites": ["json_authenticated"],
         "aliases": ["withdraw_from_address"],
@@ -910,6 +917,12 @@
               "type" : "vote_selection_method",
               "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
               "default_value" : "vote_none"
+            },
+            {
+              "name" : "builder_path",
+              "type" : "string",
+              "description" : "If specified, will write builder here instead of to DATA_DIR/transactions/latest.trx",
+              "default_value" : ""
             }
         ],
         "prerequisites": ["json_authenticated"],
@@ -2290,6 +2303,18 @@
          "prerequisites" : ["wallet_unlocked"]
       },
       {
+         "method_name" : "wallet_publish_feeds_multi_experimental",
+         "description" : "publishes a set of feeds for BitAssets for all active delegates, most useful for testnets",
+         "return_type" : "vector<std::pair<string, wallet_transaction_record>>",
+         "parameters"  : [
+             {
+                "name" : "symbol_to_price_map",
+                "type" : "price_map",
+                "description" : "maps the BitAsset symbol to its price per share"
+             }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },      {
          "method_name" : "wallet_repair_records",
          "description" : "tries to repair any inconsistent wallet account, key, and transaction records",
          "return_type" : "void",

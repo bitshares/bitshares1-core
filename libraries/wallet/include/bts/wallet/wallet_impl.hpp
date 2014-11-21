@@ -133,9 +133,6 @@ class wallet_impl : public chain_observer
 
       bool scan_burn( const burn_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
 
-      void sync_balance_with_blockchain( const balance_id_type& balance_id, const obalance_record& record );
-      void sync_balance_with_blockchain( const balance_id_type& balance_id );
-
       vector<wallet_transaction_record> get_pending_transactions()const;
 
       void scan_balances();
@@ -165,7 +162,6 @@ class wallet_impl : public chain_observer
       address           get_new_address( const string& account_name, const string& label="" );
 
       void sign_transaction( signed_transaction& transaction, const unordered_set<address>& required_signatures )const;
-      void cache_transaction( const signed_transaction& transaction, wallet_transaction_record& record, bool apply_transaction = true );
 
       transaction_ledger_entry apply_transaction_experimental( const signed_transaction& transaction );
 

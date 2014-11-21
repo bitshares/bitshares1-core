@@ -45,9 +45,6 @@ namespace bts { namespace wallet {
                    case transaction_record_type:
                        load_transaction_record( record.as<wallet_transaction_record>() );
                        break;
-                   case balance_record_type:
-                       load_balance_record( record.as<wallet_balance_record>() );
-                       break;
                    case property_record_type:
                        load_property_record( record.as<wallet_property_record>() );
                        break;
@@ -122,11 +119,6 @@ namespace bts { namespace wallet {
                    self->id_to_transaction_record_index[ transaction_id ] = record_id;
            } FC_CAPTURE_AND_RETHROW( (transaction_record) ) }
 
-           void load_balance_record( const wallet_balance_record& rec )
-           { try {
-              self->balances[ rec.id() ] = rec;
-           } FC_CAPTURE_AND_RETHROW( (rec) ) }
-
            void load_property_record( const wallet_property_record& property_rec )
            { try {
               self->properties[property_rec.key] = property_rec;
@@ -198,7 +190,6 @@ namespace bts { namespace wallet {
       transactions.clear();
       id_to_transaction_record_index.clear();
 
-      balances.clear();
       properties.clear();
       settings.clear();
    }
@@ -889,33 +880,6 @@ namespace bts { namespace wallet {
       store_key( data );
    }
 
-   owallet_balance_record wallet_db::lookup_balance( const balance_id_type& balance_id )const
-   {
-      auto itr = balances.find( balance_id );
-      if( itr == balances.end() ) return fc::optional<wallet_balance_record>();
-      return itr->second;
-   }
-
-   vector<wallet_balance_record> wallet_db::get_all_balances( const string& account_name, uint32_t limit )
-   {
-       auto ret = vector<wallet_balance_record>();
-       auto count = 0;
-       for( auto item : balances )
-       {
-           if (count == limit && limit != -1)
-               break;
-           auto okey = lookup_key(item.second.owner());
-           FC_ASSERT(okey.valid(), "expect a key record to exist at this point");
-           auto oacct = lookup_account( okey->account_address );
-           if ( oacct.valid() && oacct->name == account_name )
-           {
-               ret.push_back(item.second);
-               count++;
-           }
-       }
-       return ret;
-   }
-
    owallet_setting_record wallet_db::lookup_setting( const string& name)const
    {
       auto itr = settings.find(name);
@@ -924,25 +888,6 @@ namespace bts { namespace wallet {
           return itr->second;
       }
       return owallet_setting_record();
-   }
-
-   void wallet_db::cache_balance( const bts::blockchain::balance_record& balance_to_cache )
-   {
-      auto balance_id = balance_to_cache.id();
-      owallet_balance_record current_bal = lookup_balance(balance_id);
-      wallet_balance_record balance_record;
-      if( !current_bal.valid() )
-      {
-         balance_record = wallet_balance_record( balance_to_cache, new_wallet_record_index() );
-      }
-      else
-      {
-         blockchain::balance_record& chain_rec = *current_bal;
-         chain_rec = balance_to_cache;
-         balance_record = *current_bal;
-      }
-
-      store_and_reload_record( balance_record );
    }
 
    void wallet_db::remove_contact_account( const string& account_name )
@@ -1048,12 +993,6 @@ namespace bts { namespace wallet {
          }
       }
    } FC_CAPTURE_AND_RETHROW() }
-
-   void wallet_db::remove_balance( const balance_id_type& balance_id )
-   {
-      remove_item( balances[balance_id].wallet_record_index );
-      balances.erase(balance_id);
-   }
 
    void wallet_db::remove_transaction( const transaction_id_type& record_id )
    {
