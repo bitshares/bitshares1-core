@@ -53,8 +53,8 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "balance delegate30");
    exec( clientb, "wallet_asset_create BUSD BitUSD delegate30 \"paper bucks\" null 1000000000 10000 true" );
    exec( clientb, "help" );
-//   wallet_transfer_from_with_escrow <amount_to_transfer> <asset_symbol> <paying_account_name> <from_account_name> <to_account_name> <escrow_account_name>
-   exec( clientb, "wallet_transfer_from_with_escrow 1000 XTS delegate24 delegate24 delegate33 delegate36" );
+//   wallet_transfer_from_with_escrow <amount_to_transfer> <asset_symbol> <paying_account_name> <from_account_name> <to_account_name> <escrow_account_name> <agreement> <memo>
+   exec( clientb, "wallet_transfer_from_with_escrow 1000 XTS delegate24 delegate24 delegate33 delegate36 \"5100000000000000000000000000000000000000000000000000000000000005\" \"my memo\"" );
    produce_block(clientb);
    exec( clientb, "wallet_escrow_summary delegate24" );
    exec( clienta, "wallet_escrow_summary delegate33" );

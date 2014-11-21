@@ -236,6 +236,7 @@ namespace fc {
             break;
          case withdraw_escrow_type:
             obj["data"] = fc::raw::unpack<withdraw_with_escrow>( var.data );
+            break;
          case withdraw_vesting_type:
             obj["data"] = fc::raw::unpack<withdraw_vesting>( var.data );
             break;
@@ -270,6 +271,7 @@ namespace fc {
             break;
          case withdraw_escrow_type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_with_escrow>() );
+            break;
          case withdraw_vesting_type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_vesting>() );
             break;
