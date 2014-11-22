@@ -2067,7 +2067,7 @@
                 "description" : ""
              }
          ],
-         "prerequisites" : ["wallet_unlocked"]
+         "prerequisites" : ["wallet_open"]
       },
       {
          "method_name" : "wallet_set_setting",
