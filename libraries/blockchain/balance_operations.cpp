@@ -426,7 +426,7 @@ namespace bts { namespace blockchain {
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 
-   void restricted_balance_update_operation::evaluate( transaction_evaluation_state& eval_state )
+   void update_balance_vote_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
       auto current_balance_record = eval_state._current_state->get_balance_record( this->balance_id );
       FC_ASSERT( current_balance_record.valid(), "No such balance!" );

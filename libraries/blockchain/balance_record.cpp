@@ -35,7 +35,7 @@ namespace bts { namespace blockchain {
                return true;
            return false;
        } catch (...) {
-           false;
+           return false;
        }
    }
 
