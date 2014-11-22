@@ -793,6 +793,9 @@ void transaction_builder::pay_fee()
    }
    else if( withdraw_fee() ) return;
 
+#ifndef WIN32
+#warning Probably should restore this
+#endif
 //   FC_THROW( "Unable to pay fee; no remaining balances can cover it and no account can pay it." );
 } FC_RETHROW_EXCEPTIONS( warn, "All balances: ${bals}", ("bals", outstanding_balances) ) }
 
