@@ -171,7 +171,7 @@ namespace bts { namespace net {
         /**
          *  Attempt to connect to the specified endpoint immediately.
          */
-        virtual void connect_to( const fc::ip::endpoint& ep );
+        virtual void connect_to_endpoint( const fc::ip::endpoint& ep );
 
         /**
          *  Specifies the network interface and port upon which incoming
@@ -256,7 +256,7 @@ namespace bts { namespace net {
       simulated_network(const std::string& user_agent) : node(user_agent) {}
       void      listen_to_p2p_network() override {}
       void      connect_to_p2p_network() override {}
-      void      connect_to(const fc::ip::endpoint& ep) override {}
+      void      connect_to_endpoint(const fc::ip::endpoint& ep) override {}
 
       fc::ip::endpoint get_actual_listening_endpoint() const override { return fc::ip::endpoint(); }
 
