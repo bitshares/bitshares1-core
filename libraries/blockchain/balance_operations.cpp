@@ -449,8 +449,10 @@ namespace bts { namespace blockchain {
       if( this->new_restricted_owner.valid() )
       {
           for( auto owner : current_balance_record->owners() ) //eventually maybe multisig can delegate vote
+          {
               if( !eval_state.check_signature( owner ) )
                   FC_CAPTURE_AND_THROW( missing_signature, (owner) );
+          }
           new_restricted_owner = this->new_restricted_owner;
           new_slate = this->new_slate;
       } else {
