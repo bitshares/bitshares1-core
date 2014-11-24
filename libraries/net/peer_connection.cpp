@@ -436,8 +436,8 @@ namespace bts { namespace net
       // allow the total inventory size to be the maximum number of transactions we'll store in the inventory (above)
       // plus the maximum number of blocks that would be generated in BTS_NET_MAX_INVENTORY_SIZE_IN_MINUTES (plus one,
       // to give us some wiggle room)
-      return inventory_peer_advertised_to_us.size() > 
-        BTS_NET_MAX_INVENTORY_SIZE_IN_MINUTES * BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND * 60 + 
+      return inventory_peer_advertised_to_us.size() >
+        BTS_NET_MAX_INVENTORY_SIZE_IN_MINUTES * BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND * 60 +
         (BTS_NET_MAX_INVENTORY_SIZE_IN_MINUTES + 1) * 60 / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
     }
 
@@ -450,8 +450,7 @@ namespace bts { namespace net
     {
       if (inbound_port)
         return fc::ip::endpoint(inbound_address, inbound_port);
-      else
-        fc::optional<fc::ip::endpoint>();
+      return fc::optional<fc::ip::endpoint>();
     }
 
 } } // end namespace bts::net
