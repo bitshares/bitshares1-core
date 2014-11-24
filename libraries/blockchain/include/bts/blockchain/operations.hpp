@@ -61,7 +61,7 @@ namespace bts { namespace blockchain {
       relative_bid_op_type          = 25,
       relative_ask_op_type          = 26,
 
-      update_balance_vote_op_type   = 27
+      update_balance_vote_op_type   = 27,
 
       short_op_v2_type              = 34
    };
