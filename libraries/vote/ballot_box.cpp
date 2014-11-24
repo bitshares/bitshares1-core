@@ -23,6 +23,7 @@ protected:
    struct by_contest;
    struct by_ballot;
    struct by_tags;
+   struct by_latest;
 public:
    struct decision_storage_record : public signed_voter_decision
    {
@@ -32,12 +33,16 @@ public:
 
       operator cast_decision()
       {
-         return {digest(), contest_id, ballot_id, write_in_names, voter_opinions, voter_key, timestamp, authoritative};
+         return { digest(),
+                  contest_id, ballot_id, write_in_names,
+                  voter_opinions, voter_key, timestamp,
+                  authoritative, latest };
       }
 
       bts::blockchain::public_key_type voter_key = voter_public_key();
       fc::time_point timestamp = fc::time_point::now();
       bool authoritative;
+      bool latest;
    };
    struct decision_index_record
    {
@@ -47,6 +52,7 @@ public:
          : id(id),
            voter(s.voter_key),
            contest_id(s.contest_id),
+           latest(s.latest),
            write_in_names(s.write_in_names),
            ballot_id(s.ballot_id)
       {}
@@ -54,6 +60,7 @@ public:
       digest_type id;
       address voter;
       digest_type contest_id;
+      bool latest;
       vector<string> write_in_names;
       digest_type ballot_id;
    };
@@ -84,6 +91,21 @@ public:
             tag<by_ballot>,
             member<decision_index_record, digest_type, &decision_index_record::ballot_id>,
             std::hash<digest_type>
+         >,
+         //Constant-time lookup for latest vote
+         hashed_non_unique<
+            tag<by_latest>,
+            composite_key<
+               decision_index_record,
+               member<decision_index_record, address, &decision_index_record::voter>,
+               member<decision_index_record, digest_type, &decision_index_record::contest_id>,
+               member<decision_index_record, bool, &decision_index_record::latest>
+            >,
+            composite_key_hash<
+               std::hash<address>,
+               std::hash<digest_type>,
+               boost::hash<bool>
+            >
          >
       >
    > decision_index;
@@ -148,6 +170,31 @@ public:
          elog("Error while checking authority of decision ${d}", ("d", decision));
       }
    }
+   void supercede_latest(decision_storage_record& decision)
+   {
+      decision.latest = true;
+
+      try {
+         auto& index = decision_index.get<by_latest>();
+         //Should only ever be one record found, but just in case...
+         auto range = index.equal_range(boost::make_tuple(address(decision.voter_key), decision.contest_id, true));
+         vector<std::pair<digest_type,decision_storage_record>> updated_storage_records;
+
+         for( auto itr = range.first; itr != range.second; ++itr ) {
+            auto storage_record = decision_db.fetch(itr->id);
+            storage_record.latest = false;
+            decision_db.store(itr->id, storage_record);
+            updated_storage_records.push_back(std::make_pair(itr->id,storage_record));
+         }
+         while( !updated_storage_records.empty() )
+         {
+            update_index(updated_storage_records.back().first, updated_storage_records.back().second);
+            updated_storage_records.pop_back();
+         }
+      } catch (...){
+         elog("Error while updating latest decision ${d}", ("d", decision));
+      }
+   }
 
    void update_index(const digest_type& id, const decision_storage_record& storage_record)
    {
@@ -173,6 +220,7 @@ public:
       auto id = decision.digest();
       decision_storage_record record(decision);
       check_authority(record);
+      supercede_latest(record);
       decision_db.store(id, record);
       update_index(id, record);
    }
