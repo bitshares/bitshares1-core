@@ -299,6 +299,7 @@ struct cast_decision
    bts::blockchain::address voter_id;
    fc::time_point timestamp;
    bool authoritative;
+   bool latest;
 };
 
 struct signed_voter_decision : public voter_decision
@@ -351,4 +352,4 @@ FC_REFLECT( bts::vote::ballot, (title)(description)(contests) )
 FC_REFLECT( bts::vote::voter_decision, (contest_id)(write_in_names)(voter_opinions) )
 FC_REFLECT_DERIVED( bts::vote::signed_voter_decision, (bts::vote::voter_decision), (voter_signature) )
 FC_REFLECT( bts::vote::cast_decision, (decision_id)(contest_id)(ballot_id)(write_in_names)(voter_opinions)(voter_id)
-            (timestamp)(authoritative) )
+            (timestamp)(authoritative)(latest) )
