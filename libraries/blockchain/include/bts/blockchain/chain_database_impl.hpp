@@ -160,7 +160,7 @@ namespace bts { namespace blockchain {
             bts::db::cached_level_map<asset_id_type, asset_record>                      _asset_db;
             bts::db::cached_level_map<string, asset_id_type>                            _symbol_index_db;
 
-            bts::db::level_map<balance_id_type, balance_record>                         _balance_db;
+            bts::db::cached_level_map<balance_id_type, balance_record>                  _balance_db;
 
             bts::db::cached_level_map<account_id_type, account_record>                  _account_db;
             bts::db::cached_level_map<string, account_id_type>                          _account_index_db;
@@ -170,7 +170,7 @@ namespace bts { namespace blockchain {
 
             bts::db::level_map<time_point_sec, slot_record>                             _slot_record_db;
 
-            bts::db::level_map<burn_record_key, burn_record_value>                      _burn_db;
+            bts::db::cached_level_map<burn_record_key, burn_record_value>               _burn_db;
 
             bts::db::cached_level_map<market_index_key, order_record>                   _ask_db;
             bts::db::cached_level_map<market_index_key, order_record>                   _bid_db;
@@ -181,7 +181,7 @@ namespace bts { namespace blockchain {
             bts::db::cached_level_map<feed_index, feed_record>                          _feed_db;
 
             bts::db::cached_level_map<std::pair<asset_id_type,asset_id_type>, market_status> _market_status_db;
-            bts::db::level_map<market_history_key, market_history_record>               _market_history_db;
+            bts::db::cached_level_map<market_history_key, market_history_record>        _market_history_db;
 
             std::map<operation_type_enum, std::deque<operation>>                        _recent_operations;
       };

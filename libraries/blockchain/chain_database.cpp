@@ -1196,6 +1196,9 @@ namespace bts { namespace blockchain {
                  my->_asset_db.set_write_through( write_through );
                  my->_symbol_index_db.set_write_through( write_through );
 
+                 my->_balance_db.set_write_through( write_through );
+                 my->_burn_db.set_write_through( write_through );
+
                  my->_ask_db.set_write_through( write_through );
                  my->_bid_db.set_write_through( write_through );
                  my->_relative_ask_db.set_write_through( write_through );
@@ -1206,6 +1209,7 @@ namespace bts { namespace blockchain {
                  my->_feed_db.set_write_through( write_through );
                  my->_market_status_db.set_write_through( write_through );
                  my->_market_transactions_db.set_write_through( write_through );
+                 my->_market_history_db.set_write_through( write_through );
              };
 
              // For the duration of reindexing, we allow certain databases to postpone flushing until we finish

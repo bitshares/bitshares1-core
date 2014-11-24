@@ -231,12 +231,14 @@ class wallet_impl : public chain_observer
                              entry.memo = status->get_message();
                              trx_rec.ledger_entries.push_back( entry );
                          }
-
-                         key_data data;
-                         data.account_address = status->from;
-                         wdump( (status->from)(deposit.memo->one_time_key) );
-                         data.public_key      = deposit.memo->one_time_key;
-                         _wallet_db.store_key( data );
+                         auto current_key = _wallet_db.lookup_key( deposit.memo->one_time_key );
+                         if( !current_key )
+                         {
+                            key_data data;
+                            data.account_address = status->from;
+                            data.public_key      = deposit.memo->one_time_key;
+                            _wallet_db.store_key( data );
+                         }
                       }
                       else // to_memo
                       {
