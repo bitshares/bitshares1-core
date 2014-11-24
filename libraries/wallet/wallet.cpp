@@ -2002,6 +2002,60 @@ namespace detail {
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(account_to_pay_with)(sign) ) }
 
+   wallet_transaction_record wallet::collect_vested( const string& account_name, bool sign )
+   { try {
+      if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+      if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
+
+      const owallet_account_record account_record = my->_wallet_db.lookup_account( account_name );
+      if( !account_record.valid() || !account_record->is_my_account )
+          FC_CAPTURE_AND_THROW( unknown_receive_account, (account_name) );
+
+      const auto balance_records = get_account_balance_records( account_name, false, 1 << uint8_t( withdraw_vesting_type ) );
+      if( balance_records.find( account_name ) == balance_records.end() )
+          FC_CAPTURE_AND_THROW( insufficient_funds, (account_name) );
+
+      signed_transaction trx;
+      trx.expiration = blockchain::now() + get_transaction_expiration();
+      unordered_set<address> required_signatures;
+
+      asset total_balance;
+      for( const balance_record& record : balance_records.at( account_name ) )
+      {
+          const asset balance = record.get_spendable_balance( my->_blockchain->get_pending_state()->now() );
+          trx.withdraw( record.id(), balance.amount );
+          required_signatures.insert( record.owner() );
+          total_balance += balance;
+      }
+
+       trx.deposit_to_account( account_record->active_key(),
+                               total_balance - get_transaction_fee(),
+                               get_private_key( account_record->active_key() ),
+                               "",
+                               slate_id_type(),
+                               account_record->active_key(),
+                               my->get_new_private_key( account_name ),
+                               from_memo
+                               );
+
+
+      auto entry = ledger_entry();
+      entry.from_account = account_record->owner_key;
+      entry.to_account = account_record->owner_key;
+      entry.amount = total_balance - get_transaction_fee();
+      entry.memo = "collect vested";
+
+      auto record = wallet_transaction_record();
+      record.ledger_entries.push_back( entry );
+      record.fee = get_transaction_fee();
+
+      if( sign )
+          my->sign_transaction( trx, required_signatures );
+
+      record.trx = trx;
+      return record;
+   } FC_CAPTURE_AND_RETHROW( (account_name)(sign) ) }
+
    transaction_builder wallet::set_vote_info(
            const balance_id_type& balance_id,
            const address& voter_address,

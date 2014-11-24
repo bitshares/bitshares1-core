@@ -2217,7 +2217,7 @@
                  "type" : "vote_selection_method",
                  "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
                  "default_value" : "vote_recommended"
-               }
+               },
                {
                   "name" : "sign_and_broadcast",
                   "type" : "bool",
@@ -2262,6 +2262,19 @@
                 "type" : "account_name",
                 "description" : "The account to pay transaction fees with or leave empty to pay with publishing account",
                 "default_value" : ""
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_collect_vested_balances",
+         "description" : "Collect specified account's vested balances",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+                "name" : "account_name",
+                "type" : "account_name",
+                "description" : "account to collect vested balances for"
             }
          ],
          "prerequisites" : ["wallet_unlocked"]

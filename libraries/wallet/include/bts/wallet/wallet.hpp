@@ -391,6 +391,10 @@ namespace bts { namespace wallet {
                  const string& account_to_pay_with,
                  bool sign
                  );
+         wallet_transaction_record collect_vested(
+                 const string& account_name,
+                 bool sign
+                 );
          wallet_transaction_record update_block_signing_key(
                  const string& authorizing_account_name,
                  const string& delegate_name,

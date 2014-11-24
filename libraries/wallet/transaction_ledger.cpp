@@ -1563,7 +1563,13 @@ pretty_transaction wallet::to_pretty_trx( const wallet_transaction_record& trx_r
           }
        }
        else if( entry.memo.find( "burn" ) == 0 )
+       {
           pretty_entry.to_account = "NETWORK";
+       }
+       else if( entry.memo.find( "collect vested" ) == 0 )
+       {
+          pretty_entry.from_account = "SHAREDROP";
+       }
 
        /* I'm sorry - Vikram */
        /* You better be. - Dan */
