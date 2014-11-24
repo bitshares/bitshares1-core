@@ -3993,9 +3993,8 @@ namespace detail {
       return result;
    }
 
-   account_balance_record_summary_type wallet::get_account_balance_records(
-           const string& account_name, bool include_empty,
-           const set<withdraw_condition_types>& withdraw_types )const
+   account_balance_record_summary_type wallet::get_account_balance_records( const string& account_name, bool include_empty,
+                                                                            uint8_t withdraw_type_mask )const
    { try {
       if( !is_open() )
           FC_CAPTURE_AND_THROW( wallet_closed );
@@ -4005,7 +4004,7 @@ namespace detail {
 
       const auto scan_balance = [&]( const balance_record& record )
       {
-          if( !withdraw_types.empty() && withdraw_types.count( record.condition.type ) == 0 ) return;
+          if( !((1 << uint8_t( record.condition.type )) & withdraw_type_mask) ) return;
 
           const auto key_record = my->_wallet_db.lookup_key( record.owner() );
           if( !key_record.valid() || !key_record->has_private_key() ) return;
@@ -4026,15 +4025,14 @@ namespace detail {
       my->_blockchain->scan_balances( scan_balance );
 
       return balance_records;
-   } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_types) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_type_mask) ) }
 
-   account_balance_id_summary_type wallet::get_account_balance_ids(
-           const string& account_name, bool include_empty,
-           const set<withdraw_condition_types>& withdraw_types )const
+   account_balance_id_summary_type wallet::get_account_balance_ids( const string& account_name, bool include_empty,
+                                                                    uint8_t withdraw_type_mask )const
    { try {
       map<string, vector<balance_id_type>> balance_ids;
 
-      const map<string, vector<balance_record>>& items = get_account_balance_records( account_name, include_empty );
+      const map<string, vector<balance_record>>& items = get_account_balance_records( account_name, include_empty, withdraw_type_mask );
       for( const auto& item : items )
       {
           const auto& name = item.first;
@@ -4045,15 +4043,14 @@ namespace detail {
       }
 
       return balance_ids;
-   } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_types) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_type_mask) ) }
 
-   account_balance_summary_type wallet::get_account_balances(
-           const string& account_name, bool include_empty,
-           const set<withdraw_condition_types>& withdraw_types )const
+   account_balance_summary_type wallet::get_account_balances( const string& account_name, bool include_empty,
+                                                              uint8_t withdraw_type_mask )const
    { try {
       map<string, map<asset_id_type, share_type>> balances;
 
-      const map<string, vector<balance_record>>& items = get_account_balance_records( account_name, include_empty );
+      const map<string, vector<balance_record>>& items = get_account_balance_records( account_name, include_empty, withdraw_type_mask );
       for( const auto& item : items )
       {
           const auto& name = item.first;
@@ -4067,7 +4064,7 @@ namespace detail {
       }
 
       return balances;
-   } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_types) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_type_mask) ) }
 
    account_balance_summary_type wallet::get_account_yield( const string& account_name )const
    { try {
