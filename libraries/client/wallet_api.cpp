@@ -373,10 +373,7 @@ transaction_builder detail::client_impl::wallet_withdraw_from_address(
     builder->withdraw_from_balance( from_address, ugly_asset.amount + fee.amount );
     builder->deposit_to_balance( to_address, ugly_asset, vote_method );
     if( sign )
-    {
-        builder->transaction_record.trx.expiration = _chain_db->now() + _wallet->get_transaction_expiration();
-        builder->sign();
-    }
+        builder->finalize().sign();
     _wallet->write_latest_builder( *builder, builder_path );
     return *builder;
 }
@@ -404,10 +401,7 @@ transaction_builder detail::client_impl::wallet_withdraw_from_legacy_address(
     builder->withdraw_from_balance( from_address, ugly_asset.amount + fee.amount );
     builder->deposit_to_balance( to_address, ugly_asset, vote_method );
     if( sign )
-    {
-        builder->transaction_record.trx.expiration = _chain_db->now() + _wallet->get_transaction_expiration();
-        builder->sign();
-    }
+        builder->finalize().sign();
     return *builder;
 }
 
@@ -451,7 +445,7 @@ transaction_builder detail::client_impl::wallet_builder_add_signature(
     return *b2;
 } FC_CAPTURE_AND_RETHROW( (builder)(broadcast) ) }
 
-wallet_transaction_record detail::client_impl::wallet_release_escrow( const string& paying_account_name, 
+wallet_transaction_record detail::client_impl::wallet_release_escrow( const string& paying_account_name,
                                                                       const address& escrow_balance_id,
                                                                       const string& released_by,
                                                                       const share_type& amount_to_sender,
@@ -973,14 +967,16 @@ vector<bts::wallet::escrow_summary> client_impl::wallet_escrow_summary( const st
    return _wallet->get_escrow_balances( account_name );
 }
 
-account_balance_summary_type client_impl::wallet_account_balance( const string& account_name )const
+account_balance_summary_type client_impl::wallet_account_balance( const string& account_name,
+                                                                  const withdraw_condition_types& withdraw_condition )const
 {
-  return _wallet->get_account_balances( account_name, false );
+  return _wallet->get_account_balances( account_name, false, 1 << uint8_t( withdraw_condition ) );
 }
 
-account_balance_id_summary_type client_impl::wallet_account_balance_ids( const string& account_name )const
+account_balance_id_summary_type client_impl::wallet_account_balance_ids( const string& account_name,
+                                                                         const withdraw_condition_types& withdraw_condition )const
 {
-  return _wallet->get_account_balance_ids( account_name, false );
+  return _wallet->get_account_balance_ids( account_name, false, 1 << uint8_t( withdraw_condition ) );
 }
 
 account_balance_summary_type client_impl::wallet_account_yield( const string& account_name )const
@@ -1218,7 +1214,11 @@ transaction_builder client_impl::wallet_balance_set_vote_info(const balance_id_t
 {
     auto builder = _wallet->set_vote_info( balance_id, voter_address, selection_method );
     if( sign_and_broadcast )
-        wallet_builder_add_signature( builder, true );
+    {
+        auto record = builder.finalize().sign();
+        _wallet->cache_transaction( record );
+        network_broadcast_transaction( record.trx );
+    }
     return builder;
 }
 

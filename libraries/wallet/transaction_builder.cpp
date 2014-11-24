@@ -276,7 +276,7 @@ transaction_builder& transaction_builder::deposit_asset_with_escrow(const bts::w
    } else {
       auto one_time_key = _wimpl->get_new_private_key(payer.name);
       titan_one_time_key = one_time_key.get_public_key();
-      auto receiver_key = trx.deposit_to_escrow( 
+      auto receiver_key = trx.deposit_to_escrow(
                              recipient.active_key(),
                              escrow_agent.active_key(),
                              agreement,
@@ -732,7 +732,7 @@ wallet_transaction_record& transaction_builder::sign()
       //Ignore exceptions; this function operates on a best-effort basis, and doesn't actually have to succeed.
       try {
          trx.sign(_wimpl->self->get_private_key(address), chain_id);
-      } catch( const fc::exception& e ) 
+      } catch( const fc::exception& e )
       {
          wlog( "unable to sign for address ${a}:\n${e}", ("a",address)("e",e.to_detail_string()) );
       }
@@ -793,10 +793,7 @@ void transaction_builder::pay_fee()
    }
    else if( withdraw_fee() ) return;
 
-#ifndef WIN32
-#warning Probably should restore this
-#endif
-//   FC_THROW( "Unable to pay fee; no remaining balances can cover it and no account can pay it." );
+   FC_THROW( "Unable to pay fee; no remaining balances can cover it and no account can pay it." );
 } FC_RETHROW_EXCEPTIONS( warn, "All balances: ${bals}", ("bals", outstanding_balances) ) }
 
 

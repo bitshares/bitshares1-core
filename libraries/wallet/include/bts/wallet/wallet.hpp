@@ -546,12 +546,11 @@ namespace bts { namespace wallet {
          vector<escrow_summary>             get_escrow_balances( const string& account_name );
 
          account_balance_record_summary_type get_account_balance_records( const string& account_name = "", bool include_empty = true,
-                 const set<withdraw_condition_types>& withdraw_types = set<withdraw_condition_types>{ withdraw_signature_type } )const;
+                 uint8_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ) )const;
          account_balance_id_summary_type    get_account_balance_ids( const string& account_name = "", bool include_empty = true,
-                 const set<withdraw_condition_types>& withdraw_types = set<withdraw_condition_types>{ withdraw_signature_type } )const;
+                 uint8_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ) )const;
          account_balance_summary_type       get_account_balances( const string& account_name = "", bool include_empty = true,
-                 const set<withdraw_condition_types>& withdraw_types = set<withdraw_condition_types>{ withdraw_signature_type } )const;
-
+                 uint8_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ) )const;
 
          account_balance_summary_type       get_account_yield( const string& account_name = "" )const;
          asset                              asset_worth( const asset& base, const string& price_in_symbol )const;
