@@ -460,6 +460,7 @@ namespace bts { namespace cli {
                        this_parameter.type == "public_key" ||
                        this_parameter.type == "order_id" ||
                        this_parameter.type == "vote_selection_method" ||
+                       this_parameter.type == "withdraw_condition_type" ||
                        this_parameter.type == "passphrase")
               {
                 string result;

@@ -967,14 +967,16 @@ vector<bts::wallet::escrow_summary> client_impl::wallet_escrow_summary( const st
    return _wallet->get_escrow_balances( account_name );
 }
 
-account_balance_summary_type client_impl::wallet_account_balance( const string& account_name )const
+account_balance_summary_type client_impl::wallet_account_balance( const string& account_name,
+                                                                  const withdraw_condition_types& withdraw_condition )const
 {
-  return _wallet->get_account_balances( account_name, false );
+  return _wallet->get_account_balances( account_name, false, 1 << uint8_t( withdraw_condition ) );
 }
 
-account_balance_id_summary_type client_impl::wallet_account_balance_ids( const string& account_name )const
+account_balance_id_summary_type client_impl::wallet_account_balance_ids( const string& account_name,
+                                                                         const withdraw_condition_types& withdraw_condition )const
 {
-  return _wallet->get_account_balance_ids( account_name, false );
+  return _wallet->get_account_balance_ids( account_name, false, 1 << uint8_t( withdraw_condition ) );
 }
 
 account_balance_summary_type client_impl::wallet_account_yield( const string& account_name )const
