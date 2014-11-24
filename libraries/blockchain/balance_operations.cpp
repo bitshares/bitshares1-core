@@ -336,7 +336,7 @@ namespace bts { namespace blockchain {
          FC_ASSERT( amount_to_receiver == 0 );
          FC_ASSERT( amount_to_sender <= escrow_balance_record->balance );
 
-         if( !eval_state.check_signature( escrow_condition.sender ) )
+         if( !eval_state.check_signature( escrow_condition.receiver ) )
              FC_CAPTURE_AND_THROW( missing_signature, (escrow_condition.receiver) );
 
          balance_record new_balance_record( escrow_condition.sender, 

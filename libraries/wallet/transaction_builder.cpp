@@ -36,6 +36,12 @@ transaction_builder& transaction_builder::release_escrow( const account_record& 
 
    auto escrow_condition = escrow_record->condition.as<withdraw_with_escrow>();
 
+   //deduct_balance( released_by_address, _wimpl->self->get_transaction_fee() );
+   // TODO: this is a hack to bypass finalize() call... 
+   _wimpl->withdraw_to_transaction( _wimpl->self->get_transaction_fee(),
+                                 payer.name,
+                                 trx,
+                                 required_signatures );
    // fetch balance record, assert that released_by_address is a party to the contract
    trx.release_escrow( escrow_account, released_by_address, amount_to_sender, amount_to_receiver );
    if( released_by_address == address() )
@@ -47,10 +53,12 @@ transaction_builder& transaction_builder::release_escrow( const account_record& 
    {
       required_signatures.insert( released_by_address );
    }
-   _wimpl->withdraw_to_transaction( _wimpl->self->get_transaction_fee(),
-                                 payer.name,
-                                 trx,
-                                 required_signatures );
+   if( trx.expiration == time_point_sec() )
+       trx.expiration = blockchain::now() + _wimpl->self->get_transaction_expiration();
+
+   transaction_record.record_id = trx.permanent_id();
+   transaction_record.created_time = blockchain::now();
+   transaction_record.received_time = transaction_record.created_time;
    return *this;
 } FC_CAPTURE_AND_RETHROW( (payer)(escrow_account)(released_by_address)(amount_to_sender)(amount_to_receiver) ) }
 
@@ -272,7 +280,7 @@ transaction_builder& transaction_builder::deposit_asset_with_escrow(const bts::w
    optional<public_key_type> titan_one_time_key;
    if( recipient.is_public_account() )
    {
-      trx.deposit(recipient.active_key(), amount, _wimpl->select_slate(trx, amount.asset_id, vote_method));
+      // TODO: user public receiver key...
    } else {
       auto one_time_key = _wimpl->get_new_private_key(payer.name);
       titan_one_time_key = one_time_key.get_public_key();
@@ -724,7 +732,7 @@ transaction_builder& transaction_builder::finalize()
 } FC_CAPTURE_AND_RETHROW( (trx) ) }
 
 wallet_transaction_record& transaction_builder::sign()
-{
+{ try {
    auto chain_id = _wimpl->_blockchain->chain_id();
 
    for( const auto& address : required_signatures )
@@ -742,7 +750,7 @@ wallet_transaction_record& transaction_builder::sign()
       notice.first.trx = trx;
 
    return transaction_record;
-}
+} FC_CAPTURE_AND_RETHROW() }
 
 std::vector<bts::mail::message> transaction_builder::encrypted_notifications()
 {
