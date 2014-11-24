@@ -476,7 +476,7 @@ wallet_transaction_record detail::client_impl::wallet_release_escrow( const stri
 
     transaction_builder_ptr builder = _wallet->create_transaction_builder();
     auto record = builder->release_escrow( payer, escrow_balance_id, release_by_address, amount_to_sender, amount_to_receiver )
-                                        .finalize()
+  //  TODO: restore this function       .finalize()
                                         .sign();
 
     _wallet->cache_transaction( record );

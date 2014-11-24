@@ -671,9 +671,6 @@ namespace bts { namespace blockchain {
           pending_state->store_account_record( *delegate_record );
           pending_state->store_asset_record( *base_asset_record );
 
-#ifndef WIN32
-#warning [BTS] Track this information in previous pay_delegate versions
-#endif
           oblock_record block_record = self->get_block_record( block_id );
           FC_ASSERT( block_record.valid() );
           block_record->signee_shares_issued = accepted_new_shares;
@@ -1122,6 +1119,9 @@ namespace bts { namespace blockchain {
                  my->_asset_db.set_write_through( write_through );
                  my->_symbol_index_db.set_write_through( write_through );
 
+                 my->_balance_db.set_write_through( write_through );
+                 my->_burn_db.set_write_through( write_through );
+
                  my->_ask_db.set_write_through( write_through );
                  my->_bid_db.set_write_through( write_through );
                  my->_relative_ask_db.set_write_through( write_through );
@@ -1132,6 +1132,7 @@ namespace bts { namespace blockchain {
                  my->_feed_db.set_write_through( write_through );
                  my->_market_status_db.set_write_through( write_through );
                  my->_market_transactions_db.set_write_through( write_through );
+                 my->_market_history_db.set_write_through( write_through );
              };
 
              // For the duration of reindexing, we allow certain databases to postpone flushing until we finish
