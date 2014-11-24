@@ -1144,7 +1144,7 @@ namespace bts { namespace blockchain {
                  num_to_id[itr.key()] = itr.value();
 
              if( !reindex_status_callback )
-                std::cout << "Please be patient, this will take a few minutes...\r\nRe-indexing database..." << std::flush << std::fixed;
+                 std::cout << "Please be patient, this will take a few minutes...\r\nRe-indexing database..." << std::flush << std::fixed;
              else
                  reindex_status_callback(0);
 

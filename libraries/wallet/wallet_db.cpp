@@ -4,6 +4,7 @@
 
 #include <fc/io/json.hpp>
 #include <fstream>
+#include <iostream>
 
 namespace bts { namespace wallet {
 
@@ -681,13 +682,16 @@ namespace bts { namespace wallet {
        for( auto iter = my->_records.begin(); iter.valid(); ++iter )
            records.push_back( iter.value() );
 
+
        // Repair account_data.is_my_account and key_data.account_address
+       uint32_t count = 0;
        for( generic_wallet_record& record : records )
        {
            try
            {
                if( wallet_record_type_enum( record.type ) == account_record_type )
                {
+                   std::cout << "\rRepairing account record " << std::to_string( ++count ) << std::flush;
                    wallet_account_record account_record = record.as<wallet_account_record>();
                    store_account( account_record );
                }
@@ -699,12 +703,14 @@ namespace bts { namespace wallet {
 
        // Repair key_data.public_key when I have the private key and
        // repair key_data.account_address and account_data.is_my_account
+       count = 0;
        for( generic_wallet_record& record : records )
        {
            try
            {
                if( wallet_record_type_enum( record.type ) == key_record_type )
                {
+                   std::cout << "\rRepairing key record     " << std::to_string( ++count ) << std::flush;
                    wallet_key_record key_record = record.as<wallet_key_record>();
                    if( key_record.has_private_key() )
                    {
@@ -733,12 +739,14 @@ namespace bts { namespace wallet {
        }
 
        // Repair transaction_data.record_id
+       count = 0;
        for( generic_wallet_record& record : records )
        {
            try
            {
                if( wallet_record_type_enum( record.type ) == transaction_record_type )
                {
+                   std::cout << "\rRepairing transaction record     " << std::to_string( ++count ) << std::flush;
                    wallet_transaction_record transaction_record = record.as<wallet_transaction_record>();
                    if( transaction_record.trx.id() != signed_transaction().id()  )
                    {
@@ -759,6 +767,7 @@ namespace bts { namespace wallet {
            {
            }
        }
+       std::cout << "\rWallet records repaired.                                  " << std::flush << "\n";
    } FC_CAPTURE_AND_RETHROW() }
 
    void wallet_db::set_property( property_enum property_id, const variant& v )
