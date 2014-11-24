@@ -827,7 +827,14 @@
                 "type": "bool",
                 "description": "",
                 "default_value": true
+            },
+            {
+              "name" : "builder_path",
+              "type" : "string",
+              "description" : "If specified, will write builder here instead of to DATA_DIR/transactions/latest.trx",
+              "default_value" : ""
             }
+
         ],
         "prerequisites": ["json_authenticated"],
         "aliases": ["withdraw_from_address"],
@@ -910,6 +917,12 @@
               "type" : "vote_selection_method",
               "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
               "default_value" : "vote_none"
+            },
+            {
+              "name" : "builder_path",
+              "type" : "string",
+              "description" : "If specified, will write builder here instead of to DATA_DIR/transactions/latest.trx",
+              "default_value" : ""
             }
         ],
         "prerequisites": ["json_authenticated"],
@@ -936,6 +949,43 @@
         ],
         "prerequisites": ["json_authenticated"],
         "aliases": ["add_signature"]
+      },
+    {
+        "method_name": "wallet_release_escrow",
+        "description": "Releases escrow balance to third parties",
+        "return_type": "transaction_record",
+        "parameters":
+        [
+            {
+               "name" : "pay_fee_with_account_name",
+               "type" : "account_name",
+               "description" : "when releasing escrow a transaction fee must be paid by funds not in escrow, this account will pay the fee"
+            },
+            {
+                "name": "escrow_balance_id",
+                "type": "address",
+                "description": "The balance id of the escrow to be released."
+            },
+            {
+                "name": "released_by_account",
+                "type": "account_name",
+                "description": "the account that is to perform the release."
+            },
+            {
+                "name": "amount_to_sender",
+                "type": "share_type",
+                "description": "Amount to release back to the sender.",
+                "default_value": 0
+            },
+            {
+                "name": "amount_to_receiver",
+                "type": "share_type",
+                "description": "Amount to release to receiver.",
+                "default_value": 0
+            }
+        ],
+        "prerequisites": ["json_authenticated"],
+        "aliases": ["release"]
       },
       {
         "method_name": "wallet_transfer_from_with_escrow",
@@ -1514,6 +1564,12 @@
             "type" : "account_name",
             "description" : "the account to get a balance for, or leave empty for all accounts",
             "default_value" : ""
+         },
+         {
+            "name" : "withdraw_condition",
+            "type" : "withdraw_condition_type",
+            "description" : "the withdraw condition type to return balances for",
+            "default_value" : "withdraw_signature_type"
          }
          ],
          "is_const" : true,
@@ -1530,6 +1586,12 @@
             "type" : "account_name",
             "description" : "the account to list balance ids for, or leave empty for all accounts",
             "default_value" : ""
+         },
+         {
+            "name" : "withdraw_condition",
+            "type" : "withdraw_condition_type",
+            "description" : "the withdraw condition type to return balance ids for",
+            "default_value" : "withdraw_signature_type"
          }
          ],
          "is_const" : true,
@@ -1920,8 +1982,8 @@
             {
                "name" : "account_name",
                "type" : "account_name",
-               "description" : "the account for which to get the orders, or 'ALL' to get them all",
-               "default_value" : "ALL"
+               "description" : "the account for which to get the orders, or empty for all accounts",
+               "default_value" : ""
             }
          ],
          "prerequisites" : ["wallet_open"],
@@ -1935,8 +1997,8 @@
             {
                "name" : "account_name",
                "type" : "account_name",
-               "description" : "the account for which to get the orders, or 'ALL' to get them all",
-               "default_value" : "ALL"
+               "description" : "the account for which to get the orders, or empty for all accounts",
+               "default_value" : ""
             },
             {
                "name" : "limit",
@@ -2017,7 +2079,7 @@
                 "description" : ""
              }
          ],
-         "prerequisites" : ["wallet_unlocked"]
+         "prerequisites" : ["wallet_open"]
       },
       {
          "method_name" : "wallet_set_setting",
@@ -2136,6 +2198,37 @@
          "prerequisites" : ["wallet_unlocked"]
       },
       {
+         "method_name" : "wallet_balance_set_vote_info",
+         "description" : "Set this balance's voting address and slate",
+         "return_type" : "transaction_builder",
+         "parameters"  : [
+               {
+                  "name" : "balance_id",
+                  "type" : "address",
+                  "description" : "the current name of the account"
+               },
+               {
+                  "name" : "voter_address",
+                  "type" : "address",
+                  "description" : "the new voting address"
+               },
+               {
+                 "name" : "vote_method",
+                 "type" : "vote_selection_method",
+                 "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+                 "default_value" : "vote_recommended"
+               },
+               {
+                  "name" : "sign_and_broadcast",
+                  "type" : "bool",
+                  "description" : "",
+                  "default_value" : "true"
+               }
+            ],
+         "prerequisites" : ["wallet_open"],
+         "aliases" : ["set_vote_info"]
+      },
+      {
          "method_name" : "wallet_publish_slate",
          "description" : "Publishes the current wallet delegate slate to the public data associated with the account",
          "return_type" : "transaction_record",
@@ -2169,6 +2262,19 @@
                 "type" : "account_name",
                 "description" : "The account to pay transaction fees with or leave empty to pay with publishing account",
                 "default_value" : ""
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_collect_vested_balances",
+         "description" : "Collect specified account's vested balances",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+                "name" : "account_name",
+                "type" : "account_name",
+                "description" : "account to collect vested balances for"
             }
          ],
          "prerequisites" : ["wallet_unlocked"]

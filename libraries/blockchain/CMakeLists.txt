@@ -72,6 +72,8 @@ add_library( bts_blockchain
              account_record.cpp
              asset_record.cpp
              market_records.cpp
+             object_record.cpp
+             edge_record.cpp
              chain_interface_v1.cpp
              chain_interface.cpp
              pending_chain_state.cpp

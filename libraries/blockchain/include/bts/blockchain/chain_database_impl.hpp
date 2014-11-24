@@ -82,11 +82,14 @@ namespace bts { namespace blockchain {
             void                                        apply_transactions( const full_block& block,
                                                                             const pending_chain_state_ptr& );
             void                                        pay_delegate( const pending_chain_state_ptr& pending_state,
-                                                                      const public_key_type& block_signee )const;
+                                                                      const public_key_type& block_signee,
+                                                                      const block_id_type& block_id );
             void                                        pay_delegate_v2( const pending_chain_state_ptr& pending_state,
-                                                                         const public_key_type& block_signee )const;
+                                                                         const public_key_type& block_signee,
+                                                                         const block_id_type& block_id );
             void                                        pay_delegate_v1( const pending_chain_state_ptr& pending_state,
-                                                                         const public_key_type& block_signee )const;
+                                                                         const public_key_type& block_signee,
+                                                                         const block_id_type& block_id );
             void                                        save_undo_state( const block_id_type& id,
                                                                          const pending_chain_state_ptr& );
             void                                        update_head_block( const full_block& blk );

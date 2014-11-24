@@ -29,8 +29,12 @@ namespace bts { namespace db {
 
         void set_write_through( bool write_through )
         { try {
-            if( !_write_through && write_through )
+            if( write_through == _write_through )
+                return;
+
+            if( write_through )
                 flush();
+
             _write_through = write_through;
         } FC_CAPTURE_AND_RETHROW( (write_through) ) }
 

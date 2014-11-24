@@ -10,6 +10,7 @@
 #include <bts/utilities/key_conversion.hpp>
 
 #include <thread>
+#include <fstream>
 
 #include <bts/blockchain/fork_blocks.hpp>
 
@@ -55,6 +56,7 @@ namespace detail {
    {
        return _wallet_db.get_pending_transactions();
    }
+
 
    void wallet_impl::withdraw_to_transaction(
            const asset& amount_to_withdraw,
@@ -2088,6 +2090,107 @@ namespace detail {
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(account_to_pay_with)(sign) ) }
 
+   wallet_transaction_record wallet::collect_vested( const string& account_name, bool sign )
+   { try {
+      if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+      if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
+
+      const owallet_account_record account_record = my->_wallet_db.lookup_account( account_name );
+      if( !account_record.valid() || !account_record->is_my_account )
+          FC_CAPTURE_AND_THROW( unknown_receive_account, (account_name) );
+
+      const auto balance_records = get_account_balance_records( account_name, false, 1 << uint8_t( withdraw_vesting_type ) );
+      if( balance_records.find( account_name ) == balance_records.end() )
+          FC_CAPTURE_AND_THROW( insufficient_funds, (account_name) );
+
+      signed_transaction trx;
+      trx.expiration = blockchain::now() + get_transaction_expiration();
+      unordered_set<address> required_signatures;
+
+      asset total_balance;
+      for( const balance_record& record : balance_records.at( account_name ) )
+      {
+          const asset balance = record.get_spendable_balance( my->_blockchain->get_pending_state()->now() );
+          trx.withdraw( record.id(), balance.amount );
+          required_signatures.insert( record.owner() );
+          total_balance += balance;
+      }
+
+       trx.deposit_to_account( account_record->active_key(),
+                               total_balance - get_transaction_fee(),
+                               get_private_key( account_record->active_key() ),
+                               "",
+                               slate_id_type(),
+                               account_record->active_key(),
+                               my->get_new_private_key( account_name ),
+                               from_memo
+                               );
+
+
+      auto entry = ledger_entry();
+      entry.from_account = account_record->owner_key;
+      entry.to_account = account_record->owner_key;
+      entry.amount = total_balance - get_transaction_fee();
+      entry.memo = "collect vested";
+
+      auto record = wallet_transaction_record();
+      record.ledger_entries.push_back( entry );
+      record.fee = get_transaction_fee();
+
+      if( sign )
+          my->sign_transaction( trx, required_signatures );
+
+      record.trx = trx;
+      return record;
+   } FC_CAPTURE_AND_RETHROW( (account_name)(sign) ) }
+
+   transaction_builder wallet::set_vote_info(
+           const balance_id_type& balance_id,
+           const address& voter_address,
+           vote_selection_method selection_method )
+   { try {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+
+      auto builder = create_transaction_builder();
+      const auto required_fees = get_transaction_fee();
+      auto balance = my->_blockchain->get_balance_record( balance_id );
+      FC_ASSERT( balance.valid(), "No such balance!" );
+
+      signed_transaction     trx;
+      trx.expiration = blockchain::now() + get_transaction_expiration();
+
+      const auto slate = my->select_delegate_vote( selection_method );
+      auto slate_id = slate.id();
+
+      if( slate_id != slate_id_type( 0 ) && !my->_blockchain->get_delegate_slate( slate_id ).valid() )
+          trx.define_delegate_slate( slate );
+
+
+      update_balance_vote_operation op;
+      op.balance_id = balance_id;
+      op.new_restricted_owner = voter_address;
+      op.new_slate = slate_id;
+      if( balance->restricted_owner == voter_address ) // not an owner update
+          builder->required_signatures.insert( voter_address );
+      else
+          builder->required_signatures.insert( balance->owner() );
+
+      trx.withdraw( balance_id, required_fees.amount );
+      trx.operations.push_back( op );
+
+      auto entry = ledger_entry();
+      entry.memo = "Set balance vote info";
+      auto record = wallet_transaction_record();
+      record.ledger_entries.push_back( entry );
+      record.fee = required_fees;
+
+      record.trx = trx;
+      builder->transaction_record = record;
+      return *builder;
+   } FC_CAPTURE_AND_RETHROW( (balance_id)(voter_address)(selection_method) ) }
+
+
    wallet_transaction_record wallet::update_block_signing_key(
            const string& authorizing_account_name,
            const string& delegate_name,
@@ -3936,11 +4039,14 @@ namespace detail {
 
              const auto sender_key_record = my->_wallet_db.lookup_key( escrow_cond.sender );
              const auto receiver_key_record = my->_wallet_db.lookup_key( escrow_cond.receiver );
+             /*
              if( !((sender_key_record && sender_key_record->has_private_key()) ||
                    (receiver_key_record && receiver_key_record->has_private_key())) )
              {
+                ilog( "no private key for sender nor receiver" );
                 return; // no private key for the sender nor receiver
              }
+             */
              escrow_summary sum;
              sum.balance_id = record.id();
              sum.balance    = record.get_spendable_balance( time_point_sec() );
@@ -3949,12 +4055,23 @@ namespace detail {
              {
                 const auto account_address = sender_key_record->account_address;
                 const auto account_record = my->_wallet_db.lookup_account( account_address );
-                const auto name = account_record.valid() ? account_record->name : string( account_address );
-                sum.sender_account_name = name;
+                if( account_record )
+                {
+                   const auto name = account_record->name;
+                   sum.sender_account_name = name;
+                }
+                else
+                {
+                   auto registered_account = my->_blockchain->get_account_record( account_address );
+                   if( registered_account )
+                      sum.sender_account_name = registered_account->name;
+                   else
+                      sum.sender_account_name = string(escrow_cond.sender);
+                }
              }
              else
              {
-                sum.sender_account_name = "UNKNOWN";
+                sum.sender_account_name = string(escrow_cond.sender);
              }
 
              if( receiver_key_record )
@@ -3962,7 +4079,7 @@ namespace detail {
                 const auto account_address = receiver_key_record->account_address;
                 const auto account_record = my->_wallet_db.lookup_account( account_address );
                 const auto name = account_record.valid() ? account_record->name : string( account_address );
-                sum.sender_account_name = name;
+                sum.receiver_account_name = name;
              }
              else
              {
@@ -3983,8 +4100,20 @@ namespace detail {
              }
 
              sum.agreement_digest = escrow_cond.agreement_digest;
+             if( account_name.size() )
+             {
+                if( sum.sender_account_name == account_name ||
+                    sum.receiver_account_name == account_name )
+                {
+                   result.emplace_back(sum);
+                }
+                else
+                {
+                  wlog( "skip ${s}", ("s",sum) );
+                }
+             }
+             else result.emplace_back(sum);
 
-             result.emplace_back(sum);
 
              /*
              const auto account_address = key_record->account_address;
@@ -4006,9 +4135,8 @@ namespace detail {
       return result;
    }
 
-   account_balance_record_summary_type wallet::get_account_balance_records(
-           const string& account_name, bool include_empty,
-           const set<withdraw_condition_types>& withdraw_types )const
+   account_balance_record_summary_type wallet::get_account_balance_records( const string& account_name, bool include_empty,
+                                                                            uint8_t withdraw_type_mask )const
    { try {
       if( !is_open() )
           FC_CAPTURE_AND_THROW( wallet_closed );
@@ -4018,7 +4146,7 @@ namespace detail {
 
       const auto scan_balance = [&]( const balance_record& record )
       {
-          if( !withdraw_types.empty() && withdraw_types.count( record.condition.type ) == 0 ) return;
+          if( !((1 << uint8_t( record.condition.type )) & withdraw_type_mask) ) return;
 
           const auto key_record = my->_wallet_db.lookup_key( record.owner() );
           if( !key_record.valid() || !key_record->has_private_key() ) return;
@@ -4039,15 +4167,14 @@ namespace detail {
       my->_blockchain->scan_balances( scan_balance );
 
       return balance_records;
-   } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_types) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_type_mask) ) }
 
-   account_balance_id_summary_type wallet::get_account_balance_ids(
-           const string& account_name, bool include_empty,
-           const set<withdraw_condition_types>& withdraw_types )const
+   account_balance_id_summary_type wallet::get_account_balance_ids( const string& account_name, bool include_empty,
+                                                                    uint8_t withdraw_type_mask )const
    { try {
       map<string, vector<balance_id_type>> balance_ids;
 
-      const map<string, vector<balance_record>>& items = get_account_balance_records( account_name, include_empty );
+      const map<string, vector<balance_record>>& items = get_account_balance_records( account_name, include_empty, withdraw_type_mask );
       for( const auto& item : items )
       {
           const auto& name = item.first;
@@ -4058,15 +4185,14 @@ namespace detail {
       }
 
       return balance_ids;
-   } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_types) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_type_mask) ) }
 
-   account_balance_summary_type wallet::get_account_balances(
-           const string& account_name, bool include_empty,
-           const set<withdraw_condition_types>& withdraw_types )const
+   account_balance_summary_type wallet::get_account_balances( const string& account_name, bool include_empty,
+                                                              uint8_t withdraw_type_mask )const
    { try {
       map<string, map<asset_id_type, share_type>> balances;
 
-      const map<string, vector<balance_record>>& items = get_account_balance_records( account_name, include_empty );
+      const map<string, vector<balance_record>>& items = get_account_balance_records( account_name, include_empty, withdraw_type_mask );
       for( const auto& item : items )
       {
           const auto& name = item.first;
@@ -4080,7 +4206,7 @@ namespace detail {
       }
 
       return balances;
-   } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_types) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_type_mask) ) }
 
    account_balance_summary_type wallet::get_account_yield( const string& account_name )const
    { try {
@@ -4296,118 +4422,66 @@ namespace detail {
    }
 
 
-   map<order_id_type, market_order> wallet::get_market_orders( const string& account_name, uint32_t limit )const
-   {
+   map<order_id_type, market_order> wallet::get_market_orders( const string& account_name, const string& quote_symbol,
+                                                               const string& base_symbol, uint32_t limit )const
+   { try {
       map<order_id_type, market_order> order_map;
+
+      const oasset_record quote_record = my->_blockchain->get_asset_record( quote_symbol );
+      const oasset_record base_record = my->_blockchain->get_asset_record( base_symbol );
+      FC_ASSERT( quote_symbol.empty() || quote_record.valid() );
+      FC_ASSERT( base_symbol.empty() || base_record.valid() );
 
       const auto filter = [&]( const market_order& order ) -> bool
       {
-          const auto okey = my->_wallet_db.lookup_key( order.get_owner() );
-          if( !okey.valid() || !okey->has_private_key() )
+          if( quote_record.valid() && order.market_index.order_price.quote_asset_id != quote_record->id )
               return false;
 
-          if( account_name == "ALL" )
-              return true;
-
-          const auto oaccount = my->_wallet_db.lookup_account( okey->account_address );
-          if( !oaccount.valid() )
+          if( base_record.valid() && order.market_index.order_price.base_asset_id != base_record->id )
               return false;
 
-          return oaccount->name == account_name;
+          const owallet_key_record key_record = my->_wallet_db.lookup_key( order.get_owner() );
+          if( !key_record.valid() || !key_record->has_private_key() )
+              return false;
+
+          if( !account_name.empty() )
+          {
+              const owallet_account_record account_record = my->_wallet_db.lookup_account( key_record->account_address );
+              if( !account_record.valid() || account_record->name != account_name )
+                  return false;
+          }
+
+          return true;
       };
 
-      const auto orders = my->_blockchain->get_market_orders( filter, limit );
+      const auto orders = my->_blockchain->scan_market_orders( filter, limit );
       for( const auto& order : orders )
           order_map[ order.get_id() ] = order;
 
       return order_map;
+   } FC_CAPTURE_AND_RETHROW( (account_name)(quote_symbol)(base_symbol)(limit) ) }
+
+   void wallet::write_latest_builder( const transaction_builder& builder,
+                                      const string& alternate_path )
+   {
+        std::ofstream fs;
+        if( alternate_path == "" )
+        {
+            auto dir = (get_data_directory() / "trx").string();
+            auto default_path = dir + "latest.trx";
+            if( !fc::exists( default_path ) )
+                fc::create_directories( dir );
+            fs.open(dir + "latest.trx");
+        }
+        else
+        {
+            if( fc::exists( alternate_path  ) )
+                FC_THROW_EXCEPTION( file_already_exists, "That filename already exists!", ("filename", alternate_path));
+            fs.open(alternate_path);
+        }
+        fs << fc::json::to_pretty_string(builder);
+        fs.close();
    }
-
-   // TODO: We don't need this anymore
-   map<order_id_type, market_order> wallet::get_market_orders( const string& quote_symbol, const string& base_symbol,
-                                                               uint32_t limit, const string& account_name)const
-   { try {
-      auto bids   = my->_blockchain->get_market_bids( quote_symbol, base_symbol );
-      auto asks   = my->_blockchain->get_market_asks( quote_symbol, base_symbol );
-      auto shorts = my->_blockchain->get_market_shorts( quote_symbol );
-      auto covers = my->_blockchain->get_market_covers( quote_symbol );
-
-      map<order_id_type, market_order> result;
-
-      uint32_t count = 0;
-
-      for( const auto& order : bids )
-      {
-         if( count >= limit )
-             break;
-         auto okey_rec = my->_wallet_db.lookup_key( order.get_owner() );
-         if( !okey_rec.valid() )
-             continue;
-         auto oacct = my->_wallet_db.lookup_account( okey_rec->account_address );
-         FC_ASSERT( oacct.valid(), "Account for that account_addres doesn't exist!");
-         if( oacct->name == account_name || account_name == "ALL" )
-         {
-             if( my->_wallet_db.has_private_key( order.get_owner() ) )
-                result[ order.get_id() ] = order;
-             count++;
-         }
-      }
-
-      count = 0;
-      for( const auto& order : asks )
-      {
-         if( count >= limit )
-             break;
-         auto okey_rec = my->_wallet_db.lookup_key( order.get_owner() );
-         if( !okey_rec.valid() )
-             continue;
-         auto oacct = my->_wallet_db.lookup_account( okey_rec->account_address );
-         FC_ASSERT( oacct.valid(), "Account for that account_addres doesn't exist!");
-         if( oacct->name == account_name || account_name == "ALL" )
-         {
-             if( my->_wallet_db.has_private_key( order.get_owner() ) )
-                result[ order.get_id() ] = order;
-             count++;
-         }
-      }
-
-      count = 0;
-      for( const auto& order : shorts )
-      {
-         if( count > limit )
-             break;
-         auto okey_rec = my->_wallet_db.lookup_key( order.get_owner() );
-         if( !okey_rec.valid() )
-             continue;
-         auto oacct = my->_wallet_db.lookup_account( okey_rec->account_address );
-         FC_ASSERT( oacct.valid(), "Account for that account_addres doesn't exist!");
-         if( oacct->name == account_name || account_name == "ALL" )
-         {
-             if( my->_wallet_db.has_private_key( order.get_owner() ) )
-                result[ order.get_id() ] = order;
-             count++;
-         }
-      }
-
-      count = 0;
-      for( const auto& order : covers )
-      {
-         if( count > limit )
-             break;
-         auto okey_rec = my->_wallet_db.lookup_key( order.get_owner() );
-         if( !okey_rec.valid() )
-             continue;
-         auto oacct = my->_wallet_db.lookup_account( okey_rec->account_address );
-         FC_ASSERT( oacct.valid(), "Account for that account_address doesn't exist!");
-         if( oacct->name == account_name || account_name == "ALL" )
-         {
-             if( my->_wallet_db.has_private_key( order.get_owner() ) )
-                result[ order.get_id() ] = order;
-             count++;
-         }
-      }
-      return result;
-   } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol) ) }
 
    vector<snapshot_record> wallet::check_sharedrop()const
    { try {

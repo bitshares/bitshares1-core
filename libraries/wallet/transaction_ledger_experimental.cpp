@@ -140,6 +140,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
 
     const auto scan_withdraw = [&]( const withdraw_operation& op ) -> bool
     {
+        // TODO: If withdrawing vesting balance, then set delta label appropriately and override account name
         ++withdrawal_count;
         return collect_balance( op.balance_id, eval_state.deltas.at( op_index ) );
     };

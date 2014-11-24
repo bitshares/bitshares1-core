@@ -500,8 +500,12 @@ namespace bts { namespace blockchain {
 
           if( !self->get_block_record( block_id ).valid() ) /* Only insert with latency if not already present */
           {
-              auto latency = now - block_data.timestamp;
-              block_record record( block_data, self->get_current_random_seed(), block_data.block_size(), latency );
+              block_record record;
+              digest_block& digest = record;
+              digest = block_data;
+              record.random_seed = self->get_current_random_seed();
+              record.block_size = block_data.block_size();
+              record.latency = now - block_data.timestamp;
               _block_id_to_block_record_db.store( block_id, record );
           }
 
@@ -638,7 +642,8 @@ namespace bts { namespace blockchain {
          } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_num",trx_num) )
       }
 
-      void chain_database_impl::pay_delegate( const pending_chain_state_ptr& pending_state, const public_key_type& block_signee )const
+      void chain_database_impl::pay_delegate( const pending_chain_state_ptr& pending_state, const public_key_type& block_signee,
+                                              const block_id_type& block_id )
       { try {
           if( pending_state->get_head_block_num() < BTS_V0_4_25_FORK_BLOCK_NUM )
               return pay_delegate_v2( pending_state, block_signee );
@@ -662,9 +667,10 @@ namespace bts { namespace blockchain {
           static const uint32_t blocks_per_two_weeks = 14 * BTS_BLOCKCHAIN_BLOCKS_PER_DAY;
           const share_type max_collected_fees = base_asset_record->collected_fees / blocks_per_two_weeks;
           const share_type accepted_collected_fees = (max_collected_fees * pay_rate_percent) / 100;
-          FC_ASSERT( max_collected_fees >= 0 && accepted_collected_fees >= 0 );
+          const share_type destroyed_collected_fees = max_collected_fees - accepted_collected_fees;
+          FC_ASSERT( max_collected_fees >= 0 && accepted_collected_fees >= 0 && destroyed_collected_fees >= 0 );
           base_asset_record->collected_fees -= max_collected_fees;
-          base_asset_record->current_share_supply -= (max_collected_fees - accepted_collected_fees);
+          base_asset_record->current_share_supply -= destroyed_collected_fees;
 
           const share_type accepted_paycheck = accepted_new_shares + accepted_collected_fees;
           FC_ASSERT( accepted_paycheck >= 0 );
@@ -674,7 +680,17 @@ namespace bts { namespace blockchain {
 
           pending_state->store_account_record( *delegate_record );
           pending_state->store_asset_record( *base_asset_record );
-      } FC_CAPTURE_AND_RETHROW( (block_signee) ) }
+
+#ifndef WIN32
+#warning [BTS] Track this information in previous pay_delegate versions
+#endif
+          oblock_record block_record = self->get_block_record( block_id );
+          FC_ASSERT( block_record.valid() );
+          block_record->signee_shares_issued = accepted_new_shares;
+          block_record->signee_fees_collected = accepted_collected_fees;
+          block_record->signee_fees_destroyed = destroyed_collected_fees;
+          _block_id_to_block_record_db.store( block_id, *block_record );
+      } FC_CAPTURE_AND_RETHROW( (block_signee)(block_id) ) }
 
       void chain_database_impl::save_undo_state( const block_id_type& block_id,
                                                  const pending_chain_state_ptr& pending_state )
@@ -880,7 +896,7 @@ namespace bts { namespace blockchain {
             public_key_type block_signee;
             if( CHECKPOINT_BLOCKS.size() > 0 && (--CHECKPOINT_BLOCKS.end())->first > block_data.block_num )
                //Skip signature validation
-               block_signee = self->get_slot_signee( block_data.timestamp, self->get_active_delegates() ).active_key();
+               block_signee = self->get_slot_signee( block_data.timestamp, self->get_active_delegates() ).signing_key();
             else
                /* We need the block_signee's key in several places and computing it is expensive, so compute it here and pass it down */
                block_signee = block_data.signee();
@@ -906,7 +922,7 @@ namespace bts { namespace blockchain {
             // apply any deterministic operations such as market operations before we perturb indexes
             //apply_deterministic_updates(pending_state);
 
-            pay_delegate( pending_state, block_signee );
+            pay_delegate( pending_state, block_signee, block_id );
 
             if( block_data.block_num < BTS_V0_4_9_FORK_BLOCK_NUM )
                 apply_transactions( block_data, pending_state );
@@ -1205,7 +1221,7 @@ namespace bts { namespace blockchain {
                  num_to_id[itr.key()] = itr.value();
 
              if( !reindex_status_callback )
-                std::cout << "Please be patient, this will take a few minutes...\r\nRe-indexing database..." << std::flush << std::fixed;
+                 std::cout << "Please be patient, this will take a few minutes...\r\nRe-indexing database..." << std::flush << std::fixed;
              else
                  reindex_status_callback(0);
 
@@ -2854,8 +2870,8 @@ namespace bts { namespace blockchain {
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol)(limit) ) }
 
-   vector<market_order> chain_database::get_market_orders( std::function<bool( const market_order& )> filter,
-                                                           uint32_t limit, order_type_enum type )const
+   vector<market_order> chain_database::scan_market_orders( std::function<bool( const market_order& )> filter,
+                                                            uint32_t limit, order_type_enum type )const
    { try {
        vector<market_order> orders;
        if( limit == 0 ) return orders;
@@ -2960,7 +2976,7 @@ namespace bts { namespace blockchain {
            return order.get_id() == order_id;
        };
 
-       const auto orders = get_market_orders( filter, 1, type );
+       const auto orders = scan_market_orders( filter, 1, type );
        if( !orders.empty() )
            return orders.front();
 

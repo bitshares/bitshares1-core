@@ -25,11 +25,12 @@ public_key_type transaction_builder::order_key_for_account(const address& accoun
    }
    return order_key;
 }
-transaction_builder& transaction_builder::release_escrow( const address& escrow_account,
+transaction_builder& transaction_builder::release_escrow( const account_record& payer,
+                                                          const address& escrow_account,
                                                           const address& released_by_address,
                                                           share_type     amount_to_sender,
                                                           share_type     amount_to_receiver )
-{
+{ try {
    auto escrow_record = _wimpl->_blockchain->get_balance_record( escrow_account );
    FC_ASSERT( escrow_record.valid() );
 
@@ -46,8 +47,12 @@ transaction_builder& transaction_builder::release_escrow( const address& escrow_
    {
       required_signatures.insert( released_by_address );
    }
+   _wimpl->withdraw_to_transaction( _wimpl->self->get_transaction_fee(),
+                                 payer.name,
+                                 trx,
+                                 required_signatures );
    return *this;
-}
+} FC_CAPTURE_AND_RETHROW( (payer)(escrow_account)(released_by_address)(amount_to_sender)(amount_to_receiver) ) }
 
 transaction_builder& transaction_builder::update_account_registration(const wallet_account_record& account,
                                                                       optional<variant> public_data,
@@ -271,7 +276,8 @@ transaction_builder& transaction_builder::deposit_asset_with_escrow(const bts::w
    } else {
       auto one_time_key = _wimpl->get_new_private_key(payer.name);
       titan_one_time_key = one_time_key.get_public_key();
-      trx.deposit_to_escrow( recipient.active_key(),
+      auto receiver_key = trx.deposit_to_escrow(
+                             recipient.active_key(),
                              escrow_agent.active_key(),
                              agreement,
                              amount,
@@ -281,6 +287,12 @@ transaction_builder& transaction_builder::deposit_asset_with_escrow(const bts::w
                              *memo_sender,
                              one_time_key,
                              from_memo);
+
+      key_data data;
+      data.account_address = recipient.owner_address();
+      data.public_key      = receiver_key;
+      data.memo            = memo;
+      _wimpl->_wallet_db.store_key( data );
    }
 
    deduct_balance(payer.owner_key, amount);
@@ -720,7 +732,10 @@ wallet_transaction_record& transaction_builder::sign()
       //Ignore exceptions; this function operates on a best-effort basis, and doesn't actually have to succeed.
       try {
          trx.sign(_wimpl->self->get_private_key(address), chain_id);
-      } catch( ... ) {}
+      } catch( const fc::exception& e )
+      {
+         wlog( "unable to sign for address ${a}:\n${e}", ("a",address)("e",e.to_detail_string()) );
+      }
    }
 
    for( auto& notice : notices )
