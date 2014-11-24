@@ -1771,7 +1771,7 @@ void client::connect_to_peer(const string& remote_endpoint)
    try
    {
       ulog("Attempting to connect to peer ${peer}", ("peer", endpoint));
-      my->_p2p_node->connect_to(endpoint);
+      my->_p2p_node->connect_to_endpoint(endpoint);
    }
    catch (const bts::net::already_connected_to_requested_peer&)
    {

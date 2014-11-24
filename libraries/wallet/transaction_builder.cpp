@@ -25,11 +25,12 @@ public_key_type transaction_builder::order_key_for_account(const address& accoun
    }
    return order_key;
 }
-transaction_builder& transaction_builder::release_escrow( const address& escrow_account,
+transaction_builder& transaction_builder::release_escrow( const account_record& payer,
+                                                          const address& escrow_account,
                                                           const address& released_by_address,
                                                           share_type     amount_to_sender,
                                                           share_type     amount_to_receiver )
-{
+{ try {
    auto escrow_record = _wimpl->_blockchain->get_balance_record( escrow_account );
    FC_ASSERT( escrow_record.valid() );
 
@@ -46,8 +47,12 @@ transaction_builder& transaction_builder::release_escrow( const address& escrow_
    {
       required_signatures.insert( released_by_address );
    }
+   _wimpl->withdraw_to_transaction( _wimpl->self->get_transaction_fee(),
+                                 payer.name,
+                                 trx,
+                                 required_signatures );
    return *this;
-}
+} FC_CAPTURE_AND_RETHROW( (payer)(escrow_account)(released_by_address)(amount_to_sender)(amount_to_receiver) ) }
 
 transaction_builder& transaction_builder::update_account_registration(const wallet_account_record& account,
                                                                       optional<variant> public_data,
@@ -727,7 +732,10 @@ wallet_transaction_record& transaction_builder::sign()
       //Ignore exceptions; this function operates on a best-effort basis, and doesn't actually have to succeed.
       try {
          trx.sign(_wimpl->self->get_private_key(address), chain_id);
-      } catch( ... ) {}
+      } catch( const fc::exception& e ) 
+      {
+         wlog( "unable to sign for address ${a}:\n${e}", ("a",address)("e",e.to_detail_string()) );
+      }
    }
 
    for( auto& notice : notices )
@@ -785,7 +793,10 @@ void transaction_builder::pay_fee()
    }
    else if( withdraw_fee() ) return;
 
-   FC_THROW( "Unable to pay fee; no remaining balances can cover it and no account can pay it." );
+#ifndef WIN32
+#warning Probably should restore this
+#endif
+//   FC_THROW( "Unable to pay fee; no remaining balances can cover it and no account can pay it." );
 } FC_RETHROW_EXCEPTIONS( warn, "All balances: ${bals}", ("bals", outstanding_balances) ) }
 
 

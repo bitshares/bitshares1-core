@@ -950,6 +950,43 @@
         "prerequisites": ["json_authenticated"],
         "aliases": ["add_signature"]
       },
+    {
+        "method_name": "wallet_release_escrow",
+        "description": "Releases escrow balance to third parties",
+        "return_type": "transaction_record",
+        "parameters":
+        [
+            {
+               "name" : "pay_fee_with_account_name",
+               "type" : "account_name",
+               "description" : "when releasing escrow a transaction fee must be paid by funds not in escrow, this account will pay the fee"
+            },
+            {
+                "name": "escrow_balance_id",
+                "type": "address",
+                "description": "The balance id of the escrow to be released."
+            },
+            {
+                "name": "released_by_account",
+                "type": "account_name",
+                "description": "the account that is to perform the release."
+            },
+            {
+                "name": "amount_to_sender",
+                "type": "share_type",
+                "description": "Amount to release back to the sender.",
+                "default_value": 0
+            },
+            {
+                "name": "amount_to_receiver",
+                "type": "share_type",
+                "description": "Amount to release to receiver.",
+                "default_value": 0
+            }
+        ],
+        "prerequisites": ["json_authenticated"],
+        "aliases": ["release"]
+      },
       {
         "method_name": "wallet_transfer_from_with_escrow",
         "description": "Sends given amount to the given name, with the from field set to a different account than the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.",
@@ -2030,7 +2067,7 @@
                 "description" : ""
              }
          ],
-         "prerequisites" : ["wallet_unlocked"]
+         "prerequisites" : ["wallet_open"]
       },
       {
          "method_name" : "wallet_set_setting",

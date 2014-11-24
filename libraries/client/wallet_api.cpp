@@ -451,6 +451,46 @@ transaction_builder detail::client_impl::wallet_builder_add_signature(
     return *b2;
 } FC_CAPTURE_AND_RETHROW( (builder)(broadcast) ) }
 
+wallet_transaction_record detail::client_impl::wallet_release_escrow( const string& paying_account_name, 
+                                                                      const address& escrow_balance_id,
+                                                                      const string& released_by,
+                                                                      const share_type& amount_to_sender,
+                                                                      const share_type& amount_to_receiver )
+{
+    auto payer = _wallet->get_account(paying_account_name);
+    auto balance_rec = _chain_db->get_balance_record( escrow_balance_id );
+    FC_ASSERT( balance_rec.valid() );
+    FC_ASSERT( balance_rec->condition.type == withdraw_escrow_type );
+    FC_ASSERT( released_by == "sender" ||
+               released_by == "receiver" ||
+               released_by == "agent" );
+
+    auto escrow_cond = balance_rec->condition.as<withdraw_with_escrow>();
+    address release_by_address;
+
+    if( released_by == "sender" ) release_by_address = escrow_cond.sender;
+    if( released_by == "receiver" ) release_by_address = escrow_cond.receiver;
+    if( released_by == "agent" ) release_by_address = escrow_cond.escrow;
+
+    transaction_builder_ptr builder = _wallet->create_transaction_builder();
+    auto record = builder->release_escrow( payer, escrow_balance_id, release_by_address, amount_to_sender, amount_to_receiver )
+                                        .finalize()
+                                        .sign();
+
+    _wallet->cache_transaction( record );
+    network_broadcast_transaction( record.trx );
+
+    /* TODO: notify other parties of the transaction.
+    for( auto&& notice : builder->encrypted_notifications() )
+        _mail_client->send_encrypted_message(std::move(notice),
+                                             from_account_name,
+                                             to_account_name,
+                                             recipient.owner_key);
+
+    */
+    return record;
+}
+
 wallet_transaction_record detail::client_impl::wallet_transfer_from_with_escrow(
         const string& amount_to_transfer,
         const string& asset_symbol,

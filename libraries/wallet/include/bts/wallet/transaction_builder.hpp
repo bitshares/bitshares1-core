@@ -184,7 +184,8 @@ namespace bts { namespace wallet {
                                          vote_selection_method vote_method = vote_recommended,
                                          fc::optional<public_key_type> memo_sender = fc::optional<public_key_type>());
 
-      transaction_builder& release_escrow( const address& escrow_account,
+      transaction_builder& release_escrow( const account_record& payer,
+                                           const address& escrow_account,
                                            const address& released_by_address,
                                            share_type     amount_to_sender,
                                            share_type     amount_to_receiver );

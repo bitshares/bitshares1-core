@@ -1,6 +1,6 @@
 #pragma once
 
-#define BTS_NET_PROTOCOL_VERSION                        105
+#define BTS_NET_PROTOCOL_VERSION                        106
 
 /**
  * Define this to enable debugging code in the p2p network interface.

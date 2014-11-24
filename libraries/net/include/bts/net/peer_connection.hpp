@@ -23,6 +23,21 @@
 
 namespace bts { namespace net
   {
+    struct firewall_check_state_data
+    {
+      node_id_t        expected_node_id;
+      fc::ip::endpoint endpoint_to_test;
+
+      // if we're coordinating a firewall check for another node, these are the helper
+      // nodes we've already had do the test (if this structure is still relevant, that
+      // that means they have all had indeterminate results
+      std::set<node_id_t> nodes_already_tested;
+
+      // If we're a just a helper node, this is the node we report back to 
+      // when we have a result
+      node_id_t        requesting_peer;
+    };
+
     class peer_connection;
     class peer_connection_delegate
     {
@@ -185,6 +200,7 @@ namespace bts { namespace net
 
       fc::future<void> accept_or_connect_task_done;
 
+      firewall_check_state_data *firewall_check_state;
 #ifndef NDEBUG
     private:
       fc::thread* _thread;
@@ -226,6 +242,8 @@ namespace bts { namespace net
       void clear_old_inventory();
       bool is_inventory_advertised_to_us_list_full_for_transactions() const;
       bool is_inventory_advertised_to_us_list_full() const;
+      bool performing_firewall_check() const;
+      fc::optional<fc::ip::endpoint> get_endpoint_for_connecting() const;
     private:
       void send_queued_messages_task();
       void accept_connection_task();
