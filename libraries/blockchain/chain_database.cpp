@@ -646,7 +646,7 @@ namespace bts { namespace blockchain {
                                               const block_id_type& block_id )
       { try {
           if( pending_state->get_head_block_num() < BTS_V0_4_25_FORK_BLOCK_NUM )
-              return pay_delegate_v2( pending_state, block_signee );
+              return pay_delegate_v2( pending_state, block_signee, block_id );
 
           oasset_record base_asset_record = pending_state->get_asset_record( asset_id_type( 0 ) );
           FC_ASSERT( base_asset_record.valid() );
@@ -681,9 +681,6 @@ namespace bts { namespace blockchain {
           pending_state->store_account_record( *delegate_record );
           pending_state->store_asset_record( *base_asset_record );
 
-#ifndef WIN32
-#warning [BTS] Track this information in previous pay_delegate versions
-#endif
           oblock_record block_record = self->get_block_record( block_id );
           FC_ASSERT( block_record.valid() );
           block_record->signee_shares_issued = accepted_new_shares;
