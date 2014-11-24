@@ -2790,8 +2790,8 @@ namespace bts { namespace blockchain {
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol)(limit) ) }
 
-   vector<market_order> chain_database::get_market_orders( std::function<bool( const market_order& )> filter,
-                                                           uint32_t limit, order_type_enum type )const
+   vector<market_order> chain_database::scan_market_orders( std::function<bool( const market_order& )> filter,
+                                                            uint32_t limit, order_type_enum type )const
    { try {
        vector<market_order> orders;
        if( limit == 0 ) return orders;
@@ -2896,7 +2896,7 @@ namespace bts { namespace blockchain {
            return order.get_id() == order_id;
        };
 
-       const auto orders = get_market_orders( filter, 1, type );
+       const auto orders = scan_market_orders( filter, 1, type );
        if( !orders.empty() )
            return orders.front();
 

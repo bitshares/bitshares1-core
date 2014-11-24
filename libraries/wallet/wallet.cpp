@@ -4280,32 +4280,44 @@ namespace detail {
    }
 
 
-   map<order_id_type, market_order> wallet::get_market_orders( const string& account_name, uint32_t limit )const
-   {
+   map<order_id_type, market_order> wallet::get_market_orders( const string& account_name, const string& quote_symbol,
+                                                               const string& base_symbol, uint32_t limit )const
+   { try {
       map<order_id_type, market_order> order_map;
+
+      const oasset_record quote_record = my->_blockchain->get_asset_record( quote_symbol );
+      const oasset_record base_record = my->_blockchain->get_asset_record( base_symbol );
+      FC_ASSERT( quote_symbol.empty() || quote_record.valid() );
+      FC_ASSERT( base_symbol.empty() || base_record.valid() );
 
       const auto filter = [&]( const market_order& order ) -> bool
       {
-          const auto okey = my->_wallet_db.lookup_key( order.get_owner() );
-          if( !okey.valid() || !okey->has_private_key() )
+          if( quote_record.valid() && order.market_index.order_price.quote_asset_id != quote_record->id )
               return false;
 
-          if( account_name == "ALL" )
-              return true;
-
-          const auto oaccount = my->_wallet_db.lookup_account( okey->account_address );
-          if( !oaccount.valid() )
+          if( base_record.valid() && order.market_index.order_price.base_asset_id != base_record->id )
               return false;
 
-          return oaccount->name == account_name;
+          const owallet_key_record key_record = my->_wallet_db.lookup_key( order.get_owner() );
+          if( !key_record.valid() || !key_record->has_private_key() )
+              return false;
+
+          if( !account_name.empty() )
+          {
+              const owallet_account_record account_record = my->_wallet_db.lookup_account( key_record->account_address );
+              if( !account_record.valid() || account_record->name != account_name )
+                  return false;
+          }
+
+          return true;
       };
 
-      const auto orders = my->_blockchain->get_market_orders( filter, limit );
+      const auto orders = my->_blockchain->scan_market_orders( filter, limit );
       for( const auto& order : orders )
           order_map[ order.get_id() ] = order;
 
       return order_map;
-   }
+   } FC_CAPTURE_AND_RETHROW( (account_name)(quote_symbol)(base_symbol)(limit) ) }
 
    void wallet::write_latest_builder( const transaction_builder& builder,
                                       const string& alternate_path )
@@ -4328,92 +4340,6 @@ namespace detail {
         fs << fc::json::to_pretty_string(builder);
         fs.close();
    }
-
-   // TODO: We don't need this anymore
-   map<order_id_type, market_order> wallet::get_market_orders( const string& quote_symbol, const string& base_symbol,
-                                                               uint32_t limit, const string& account_name)const
-   { try {
-      auto bids   = my->_blockchain->get_market_bids( quote_symbol, base_symbol );
-      auto asks   = my->_blockchain->get_market_asks( quote_symbol, base_symbol );
-      auto shorts = my->_blockchain->get_market_shorts( quote_symbol );
-      auto covers = my->_blockchain->get_market_covers( quote_symbol );
-
-      map<order_id_type, market_order> result;
-
-      uint32_t count = 0;
-
-      for( const auto& order : bids )
-      {
-         if( count >= limit )
-             break;
-         auto okey_rec = my->_wallet_db.lookup_key( order.get_owner() );
-         if( !okey_rec.valid() )
-             continue;
-         auto oacct = my->_wallet_db.lookup_account( okey_rec->account_address );
-         FC_ASSERT( oacct.valid(), "Account for that account_addres doesn't exist!");
-         if( oacct->name == account_name || account_name == "ALL" )
-         {
-             if( my->_wallet_db.has_private_key( order.get_owner() ) )
-                result[ order.get_id() ] = order;
-             count++;
-         }
-      }
-
-      count = 0;
-      for( const auto& order : asks )
-      {
-         if( count >= limit )
-             break;
-         auto okey_rec = my->_wallet_db.lookup_key( order.get_owner() );
-         if( !okey_rec.valid() )
-             continue;
-         auto oacct = my->_wallet_db.lookup_account( okey_rec->account_address );
-         FC_ASSERT( oacct.valid(), "Account for that account_addres doesn't exist!");
-         if( oacct->name == account_name || account_name == "ALL" )
-         {
-             if( my->_wallet_db.has_private_key( order.get_owner() ) )
-                result[ order.get_id() ] = order;
-             count++;
-         }
-      }
-
-      count = 0;
-      for( const auto& order : shorts )
-      {
-         if( count > limit )
-             break;
-         auto okey_rec = my->_wallet_db.lookup_key( order.get_owner() );
-         if( !okey_rec.valid() )
-             continue;
-         auto oacct = my->_wallet_db.lookup_account( okey_rec->account_address );
-         FC_ASSERT( oacct.valid(), "Account for that account_addres doesn't exist!");
-         if( oacct->name == account_name || account_name == "ALL" )
-         {
-             if( my->_wallet_db.has_private_key( order.get_owner() ) )
-                result[ order.get_id() ] = order;
-             count++;
-         }
-      }
-
-      count = 0;
-      for( const auto& order : covers )
-      {
-         if( count > limit )
-             break;
-         auto okey_rec = my->_wallet_db.lookup_key( order.get_owner() );
-         if( !okey_rec.valid() )
-             continue;
-         auto oacct = my->_wallet_db.lookup_account( okey_rec->account_address );
-         FC_ASSERT( oacct.valid(), "Account for that account_address doesn't exist!");
-         if( oacct->name == account_name || account_name == "ALL" )
-         {
-             if( my->_wallet_db.has_private_key( order.get_owner() ) )
-                result[ order.get_id() ] = order;
-             count++;
-         }
-      }
-      return result;
-   } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol) ) }
 
    vector<snapshot_record> wallet::check_sharedrop()const
    { try {

@@ -264,9 +264,10 @@ namespace bts { namespace blockchain {
                                                              const string& base_symbol,
                                                              uint32_t limit = uint32_t(-1) );
 
-         vector<market_order>               get_market_orders( std::function<bool( const market_order& )> filter,
-                                                               uint32_t limit = -1, order_type_enum type = null_order )const;
          optional<market_order>             get_market_order( const order_id_type& order_id, order_type_enum type = null_order )const;
+
+         vector<market_order>               scan_market_orders( std::function<bool( const market_order& )> filter,
+                                                                uint32_t limit = -1, order_type_enum type = null_order )const;
 
          void                               scan_assets( function<void( const asset_record& )> callback )const;
          void                               scan_balances( function<void( const balance_record& )> callback )const;

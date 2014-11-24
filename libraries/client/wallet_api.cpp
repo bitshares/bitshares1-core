@@ -1137,7 +1137,7 @@ wallet_transaction_record client_impl::wallet_market_add_collateral( const std::
 map<order_id_type, market_order> client_impl::wallet_account_order_list( const string& account_name,
                                                                          uint32_t limit )
 {
-   return _wallet->get_market_orders( account_name, limit );
+   return _wallet->get_market_orders( account_name, "", "", limit );
 }
 
 map<order_id_type, market_order> client_impl::wallet_market_order_list( const string& quote_symbol,
@@ -1145,7 +1145,7 @@ map<order_id_type, market_order> client_impl::wallet_market_order_list( const st
                                                                         uint32_t limit,
                                                                         const string& account_name )
 {
-   return _wallet->get_market_orders( quote_symbol, base_symbol, limit, account_name );
+   return _wallet->get_market_orders( account_name, quote_symbol, base_symbol, limit );
 }
 
 wallet_transaction_record client_impl::wallet_market_cancel_order( const order_id_type& order_id )

@@ -557,9 +557,8 @@ namespace bts { namespace wallet {
          asset                              get_account_net_worth( const string& account_name, const string& symbol )const;
          account_vote_summary_type          get_account_vote_summary( const string& account_name = "" )const;
 
-         map<order_id_type, market_order>   get_market_orders( const string& account_name, uint32_t limit)const;
-         map<order_id_type, market_order>   get_market_orders( const string& quote, const string& base,
-                                                               uint32_t limit, const string& account_name )const;
+         map<order_id_type, market_order>   get_market_orders( const string& account_name, const string& quote_symbol,
+                                                               const string& base_symbol, uint32_t limit )const;
 
          vector<wallet_transaction_record>  get_transaction_history( const string& account_name = string(),
                                                                      uint32_t start_block_num = 0,
