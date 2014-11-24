@@ -139,9 +139,9 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (withdraw_all_op_type)
                  (release_escrow_op_type)
                  (update_block_signing_key_type)
-                 (update_balance_vote_op_type)
                  (relative_bid_op_type)
                  (relative_ask_op_type)
+                 (update_balance_vote_op_type)
                  )
 
 FC_REFLECT( bts::blockchain::operation, (type)(data) )

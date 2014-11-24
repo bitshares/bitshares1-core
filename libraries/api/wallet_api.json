@@ -2149,6 +2149,37 @@
          "prerequisites" : ["wallet_unlocked"]
       },
       {
+         "method_name" : "wallet_balance_set_vote_info",
+         "description" : "Set this balance's voting address and slate",
+         "return_type" : "transaction_builder",
+         "parameters"  : [
+               {
+                  "name" : "balance_id",
+                  "type" : "address",
+                  "description" : "the current name of the account"
+               },
+               {
+                  "name" : "voter_address",
+                  "type" : "address",
+                  "description" : "the new voting address"
+               },
+               {
+                 "name" : "vote_method",
+                 "type" : "vote_selection_method",
+                 "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+                 "default_value" : "vote_recommended"
+               }
+               {
+                  "name" : "sign_and_broadcast",
+                  "type" : "bool",
+                  "description" : "",
+                  "default_value" : "true"
+               }
+            ],
+         "prerequisites" : ["wallet_open"],
+         "aliases" : ["set_vote_info"]
+      },
+      {
          "method_name" : "wallet_publish_slate",
          "description" : "Publishes the current wallet delegate slate to the public data associated with the account",
          "return_type" : "transaction_record",

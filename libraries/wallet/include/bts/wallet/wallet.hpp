@@ -376,6 +376,11 @@ namespace bts { namespace wallet {
                  bool settle,
                  bool sign
                  );
+         transaction_builder set_vote_info(
+                 const balance_id_type& balance_id,
+                 const address& voter_address,
+                 vote_selection_method selection_method
+                 );
          wallet_transaction_record publish_slate(
                  const string& account_to_publish_under,
                  const string& account_to_pay_with,

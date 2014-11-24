@@ -2002,6 +2002,53 @@ namespace detail {
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(account_to_pay_with)(sign) ) }
 
+   transaction_builder wallet::set_vote_info(
+           const balance_id_type& balance_id,
+           const address& voter_address,
+           vote_selection_method selection_method )
+   { try {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+
+      auto builder = create_transaction_builder();
+      const auto required_fees = get_transaction_fee();
+      auto balance = my->_blockchain->get_balance_record( balance_id );
+      FC_ASSERT( balance.valid(), "No such balance!" );
+
+      signed_transaction     trx;
+      trx.expiration = blockchain::now() + get_transaction_expiration();
+
+      const auto slate = my->select_delegate_vote( selection_method );
+      auto slate_id = slate.id();
+
+      if( slate_id != slate_id_type( 0 ) && !my->_blockchain->get_delegate_slate( slate_id ).valid() )
+          trx.define_delegate_slate( slate );
+
+
+      update_balance_vote_operation op;
+      op.balance_id = balance_id;
+      op.new_restricted_owner = voter_address;
+      op.new_slate = slate_id;
+      if( balance->restricted_owner == voter_address ) // not an owner update
+          builder->required_signatures.insert( voter_address );
+      else
+          builder->required_signatures.insert( balance->owner() );
+
+      trx.withdraw( balance_id, required_fees.amount );
+      trx.operations.push_back( op );
+
+      auto entry = ledger_entry();
+      entry.memo = "Set balance vote info";
+      auto record = wallet_transaction_record();
+      record.ledger_entries.push_back( entry );
+      record.fee = required_fees;
+
+      record.trx = trx;
+      builder->transaction_record = record;
+      return *builder;
+   } FC_CAPTURE_AND_RETHROW( (balance_id)(voter_address)(selection_method) ) }
+
+
    wallet_transaction_record wallet::update_block_signing_key(
            const string& authorizing_account_name,
            const string& delegate_name,

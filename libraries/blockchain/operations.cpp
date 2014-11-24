@@ -78,6 +78,7 @@ namespace bts { namespace blockchain {
       bts::blockchain::operation_factory::instance().register_operation<update_block_signing_key>();
       bts::blockchain::operation_factory::instance().register_operation<relative_bid_operation>();
       bts::blockchain::operation_factory::instance().register_operation<relative_ask_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<update_balance_vote_operation>();
       return true;
    }();
 

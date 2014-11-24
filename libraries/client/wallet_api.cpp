@@ -434,7 +434,7 @@ transaction_builder detail::client_impl::wallet_multisig_withdraw_start(
 transaction_builder detail::client_impl::wallet_builder_add_signature(
                                             const transaction_builder& builder,
                                             bool broadcast )
-{
+{ try {
     auto b2 = _wallet->create_transaction_builder( builder );
     if( b2->transaction_record.trx.signatures.empty() )
         b2->finalize();
@@ -449,7 +449,7 @@ transaction_builder detail::client_impl::wallet_builder_add_signature(
         }
     }
     return *b2;
-}
+} FC_CAPTURE_AND_RETHROW( (builder)(broadcast) ) }
 
 wallet_transaction_record detail::client_impl::wallet_transfer_from_with_escrow(
         const string& amount_to_transfer,
@@ -1169,6 +1169,19 @@ fc::variant client_impl::wallet_login_finish(const public_key_type &server_key,
 {
    return _wallet->login_finish(server_key, client_key, client_signature);
 }
+
+
+transaction_builder client_impl::wallet_balance_set_vote_info(const balance_id_type& balance_id,
+                                                              const address& voter_address,
+                                                              const vote_selection_method& selection_method,
+                                                              bool sign_and_broadcast)
+{
+    auto builder = _wallet->set_vote_info( balance_id, voter_address, selection_method );
+    if( sign_and_broadcast )
+        wallet_builder_add_signature( builder, true );
+    return builder;
+}
+
 
 wallet_transaction_record client_impl::wallet_publish_price_feed( const std::string& delegate_account,
                                                                   double real_amount_per_xts,
