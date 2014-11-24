@@ -11,23 +11,24 @@ namespace bts { namespace blockchain {
         asset_object = 2
     };
 
-    struct bitfield48
-    {
-        uint64_t value : 48;
-        friend bool operator < ( const bitfield48& a, const bitfield48& b )
-        {
-            return a.value < b.value;
-        }
-        friend bool operator == ( const bitfield48& a, const bitfield48& b )
-        {
-            return a.value == b.value;
-        }
-    };
-
     struct obj_id
     {
         obj_type       type;
-        bitfield48     number;
+        uint64_t       number;
+
+        obj_id(){}
+        obj_id( uint64_t packed_int )
+        {
+            obj_id ret;
+            type = type;
+            number = packed_int & 0x0000ffffffffffff;
+        }
+
+        uint64_t as_int()
+        {
+            return (uint64_t(type) << 48) | number;
+        }
+        operator int64_t() { return as_int(); }
 
         friend bool operator == ( const obj_id& a, const obj_id& b )
         {
@@ -37,19 +38,19 @@ namespace bts { namespace blockchain {
         {
             return std::tie(a.type, a.number) < std::tie(b.type, b.number);
         }
-
     };
-    typedef struct obj_id object_id_type;
+
+    typedef uint64_t object_id_type;
 
     struct object_record
     {
         object_id_type              id;
         variant                     public_data;
-        optional<set<address>>      owners;
-        set<address>                get_owners(); // if owners is null, will try special owner logic
+        optional<set<address>>      _owners; // always use chain_interface->get_object_owners(obj)  instead of accessing this!
     };
 
 } } // bts::blockchain
 
 FC_REFLECT_ENUM( bts::blockchain::obj_type, (normal_object)(account_object)(asset_object) );
-FC_REFLECT( bts::blockchain::object_record, (id)(public_data)(owners) );
+FC_REFLECT( bts::blockchain::object_record, (id)(public_data)(_owners) );
+FC_REFLECT( bts::blockchain::obj_id, (type)(number) );

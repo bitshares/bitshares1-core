@@ -3,6 +3,7 @@
 #include <bts/blockchain/account_record.hpp>
 #include <bts/blockchain/asset_record.hpp>
 #include <bts/blockchain/balance_record.hpp>
+#include <bts/blockchain/object_record.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
 #include <bts/blockchain/block_record.hpp>
 #include <bts/blockchain/delegate_slate.hpp>
@@ -36,7 +37,8 @@ namespace bts { namespace blockchain {
       confirmation_requirement = 6,
       database_version         = 7, // database version, to know when we need to upgrade
       dirty_markets            = 8,
-      last_feed_id             = 9 // used for allocating new data feeds
+      last_feed_id             = 9, // used for allocating new data feeds
+      last_object_id           = 10 // all object types that aren't legacy
    };
    typedef uint32_t chain_property_type;
 
@@ -172,6 +174,10 @@ namespace bts { namespace blockchain {
          virtual void                       store_recent_operation( const operation& o )                    = 0;
          virtual vector<operation>          get_recent_operations( operation_type_enum t )                  = 0;
 
+         virtual void                       store_object_record( const object_record& obj )                 = 0;
+         virtual object_record              get_object_record( object_id_type id )                          = 0;
+
+
          virtual void                       apply_deterministic_updates(){}
 
          virtual asset_id_type              last_asset_id()const;
@@ -179,6 +185,12 @@ namespace bts { namespace blockchain {
 
          virtual account_id_type            last_account_id()const;
          virtual account_id_type            new_account_id();
+
+         virtual object_id_type             last_object_id()const;
+         virtual object_id_type             new_object_id( obj_type type );
+
+         virtual set<address>               get_object_owners( const object_record& obj );
+
 
 #if 0
          virtual proposal_id_type           last_proposal_id()const;
@@ -208,6 +220,7 @@ FC_REFLECT_ENUM( bts::blockchain::chain_property_enum,
                  (last_account_id)
                  (last_proposal_id)
                  (last_random_seed_id)
+                 (last_object_id)
                  (active_delegate_list_id)
                  (chain_id)
                  (confirmation_requirement)

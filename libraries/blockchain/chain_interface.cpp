@@ -127,6 +127,42 @@ namespace bts { namespace blockchain {
       return next_id;
    }
 
+   object_id_type chain_interface::last_object_id()const
+   {
+       return get_property( chain_property_enum::last_object_id ).as<object_id_type>();
+   }
+
+   object_id_type chain_interface::new_object_id( obj_type type )
+   {
+      auto id = obj_id( last_object_id() );
+      auto old_number = id.number;
+      FC_ASSERT( id.number != (2^48 - 1), "Object ID wrapped!" );
+      id.number = old_number + 1;
+      id.type = type;
+      set_property( chain_property_enum::last_object_id, object_id_type( id ) );
+      return id;
+   }
+
+   set<address>   chain_interface::get_object_owners( const object_record& obj )
+   {
+       set<address> owners;
+       switch( obj_id( obj.id ).type )
+       {
+           case( obj_type::normal_object ): 
+           {
+               if( obj._owners.valid() )
+                   owners = *obj._owners;
+               return owners;
+           }
+           case( obj_type::account_object ):
+           case( obj_type::asset_object ):
+           default:
+           {
+               FC_ASSERT(!"Unknown object type!");
+           }
+       }
+   }
+
 #if 0
    proposal_id_type   chain_interface::last_proposal_id()const
    {
