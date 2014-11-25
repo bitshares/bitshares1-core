@@ -1,0 +1,659 @@
+[{
+  "description": "",
+  "tags": [
+     ["name", "Governor"],
+     ["decision type", "vote one"],
+     ["contest type", "Voter-Nominated Offices"],
+     ["region", "State"],
+  ],
+  "contestants": [{
+      "name": "NEEL KASHKARI",
+      "description": "Party Preference: Republican\nBusinessman"
+    },{
+      "name": "EDMUND G. \"JERRY\" BROWN",
+      "description": "Party Preference: Democratic\nGovernor of California"
+    }
+  ]
+},{
+  "description": "",
+  "tags": [
+     ["name", "Lieutenant Governor"],
+     ["decision type", "vote one"],
+     ["contest type", "Voter-Nominated Offices"],
+     ["region", "State"],
+  ],
+  "contestants": [{
+      "name": "GAVIN NEWSOM",
+      "description": "Party Preference: Democratic\nLieutenant Governor"
+    },{
+      "name": "RON NEHRING",
+      "description": "Party Preference: Republican\nSmall Businessman/Educator"
+    }
+  ]
+},{
+  "description": "",
+  "tags": [
+     ["name", "Secretary of State"],
+     ["decision type", "vote one"],
+     ["contest type", "Voter-Nominated Offices"],
+     ["region", "State"],
+  ],
+  "contestants": [{
+      "name": "PETE PETERSON",
+      "description": "Party Preference: Republican\nEducator/Institute Director"
+    },{
+      "name": "ALEX PADILLA",
+      "description": "Party Preference: Democratic\nCalifornia State Senator"
+    }
+  ]
+},{
+  "description": "",
+  "tags": [
+     ["name", "Controller"],
+     ["decision type", "vote one"],
+     ["contest type", "Voter-Nominated Offices"],
+     ["region", "State"],
+  ],
+  "contestants": [{
+      "name": "BETTY T. YEE",
+      "description": "Party Preference: Democratic\nCalifornia State Board of Equalization Member"
+    },{
+      "name": "ASHLEY SWEARENGIN",
+      "description": "Party Preference: Republican\nMayor/CEO"
+    }
+  ]
+},{
+  "description": "",
+  "tags": [
+     ["name", "Treasurer"],
+     ["decision type", "vote one"],
+     ["contest type", "Voter-Nominated Offices"],
+     ["region", "State"],
+  ],
+  "contestants": [{
+      "name": "GREG CONLON",
+      "description": "Party Preference: Republican\nBusinessman/CPA"
+    },{
+      "name": "JOHN CHIANG",
+      "description": "Party Preference: Democratic\nCalifornia State Controller"
+    }
+  ]
+},{
+  "description": "",
+  "tags": [
+     ["name", "Attorney General"],
+     ["decision type", "vote one"],
+     ["contest type", "Voter-Nominated Offices"],
+     ["region", "State"],
+  ],
+  "contestants": [{
+      "name": "RONALD GOLD",
+      "description": "Party Preference: Republican\nCalifornia Attorney"
+    },{
+      "name": "KAMALA D. HARRIS",
+      "description": "Party Preference: Democratic\nAttorney General of California"
+    }
+  ]
+},{
+  "description": "",
+  "tags": [
+     ["name", "Insurance Commissioner"],
+     ["decision type", "vote one"],
+     ["contest type", "Voter-Nominated Offices"],
+     ["region", "State"],
+  ],
+  "contestants": [{
+      "name": "TED GAINES",
+      "description": "Party Preference: Republican\nIndependent Insurance Agent"
+    },{
+      "name": "DAVE JONES"
+      "description": "Party Preference: Democratic\nInsurance Commissioner"
+    }
+  ]
+},{
+  "description": "",
+  "tags": [
+     ["name", "Member, State Board of Equalization 1st District"],
+     ["decision type", "vote one"],
+     ["contest type", "Voter-Nominated Offices"],
+     ["region", "State"],
+  ],
+  "contestants": [{
+      "name": "GEORGE RUNNER",
+      "description": "Party Preference: Republican\nMember, State Board of Equalization"
+    },{
+      "name": "CHRIS PARKER",
+      "description": "Party Preference: Democratic\nTax Professional/Educator"
+    }
+  ]
+},{
+  "description": "",
+  "tags": [
+     ["name", "United States Representative"],
+     ["decision type", "vote one"],
+     ["contest type", "Voter-Nominated Offices"],
+     ["region", "Federal"],
+     ["district", "8th"],
+  ],
+  "contestants": [{
+      "name": "BOB CONAWAY",
+      "description": "Party Preference: Democratic\nSmall Businessman/Attorney"
+    },{
+      "name": "PAUL COOK",
+      "description": "Party Preference: Republican\nUnited States Representative"
+    }
+  ]
+},{
+  "description": "",
+  "tags": [
+     ["name", "State Senator"],
+     ["decision type", "vote one"],
+     ["contest type", "Voter-Nominated Offices"],
+     ["region", "State"],
+     ["district", "8th"],
+  ],
+  "contestants": [{
+      "name": "PAULINA MIRANDA",
+      "description": "Party Preference: Democratic\nBusinesswoman"
+    },{
+      "name": "TOM BERRYHILL",
+      "description": "Party Preference: Republican\nFarmer/Legislator"
+    }
+  ]
+},{
+  "description": "",
+  "tags": [
+     ["name", "Member Of The State Assembly"],
+     ["decision type", "vote one"],
+     ["contest type", "Voter-Nominated Offices"],
+     ["region", "State"],
+     ["district", "26th"],
+  ],
+  "contestants": [{
+      "name": "DEVON MATHIS",
+      "description": "Party Preference:  Republican\nVeteran Advocate"
+    },{
+      "name": "RUDY MENDOZA",
+      "description": "Party Preference: Republican\nMayor of Woodlake"
+    }
+   ]
+ },{
+   "description": "",
+   "tags": [
+      ["name", "Associate Justice of the Supreme Court"],
+      ["decision type", "vote yes/no"],
+      ["contest type", "Judicial"],
+      ["region", "State"],
+   ],
+   "contestants": [{
+       "name": "GOODWIN LIU",
+       "description": "ASSOCIATE JUSTICE OF THE SUPREME COURT"
+    }
+  ]
+},{
+   "description": "",
+   "tags": [
+      ["name", "Associate Justice of the Supreme Court"],
+      ["decision type", "vote yes/no"],
+      ["contest type", "Judicial"],
+      ["region", "State"],
+   ],
+   "contestants": [{
+       "name": "MARIANO-FLORENTINO CUÉLLAR",
+       "description": "STANFORD UNIVERSITY LAW PROFESSOR"
+    }
+  ]
+},{
+   "description": "",
+   "tags": [
+      ["name", "Associate Justice of the Supreme Court"],
+      ["decision type", "vote yes/no"],
+      ["contest type", "Judicial"],
+      ["region", "State"],
+   ],
+   "contestants": [{
+       "name": "KATHRYN MICKLE WERDEGAR",
+       "description": "ASSOCIATE JUSTICE OF THE SUPREME COURT"
+     }
+  ]
+},{
+   "description": "",
+   "tags": [
+      ["name", "Associate Justice Court of Appeal Fourth Appellate District Division 1"],
+      ["decision type", "vote yes/no"],
+      ["contest type", "Judicial"],
+      ["region", "State"],
+   ],
+   "contestants": [{
+       "name": "TERRY B. O’ROURKE",
+       "description": "ASSOCIATE JUSTICE"
+     }
+  ]
+},{
+   "description": "",
+   "tags": [
+      ["name", "Associate Justice Court of Appeal Fourth Appellate District Division 1"],
+      ["decision type", "vote yes/no"],
+      ["contest type", "Judicial"],
+      ["region", "State"],
+   ],
+   "contestants": [{
+       "name": "GILBERT NARES",
+       "description": "ASSOCIATE JUSTICE"
+     }
+  ]
+},{
+   "description": "",
+   "tags": [
+      ["name", "Associate Justice Court of Appeal Fourth Appellate District Division 1"],
+      ["decision type", "vote yes/no"],
+      ["contest type", "Judicial"],
+      ["region", "State"],
+   ],
+   "contestants": [{
+       "name": "ALEX C. MCDONALD",
+       "description": "ASSOCIATE JUSTICE"
+     }
+  ]
+},{
+   "description": "",
+   "tags": [
+      ["name", "Associate Justice Court of Appeal Fourth Appellate District Division 1"],
+      ["decision type", "vote yes/no"],
+      ["contest type", "Judicial"],
+      ["region", "State"],
+   ],
+   "contestants": [{
+       "name": "JAMES A. MCINTYRE",
+       "description": "ASSOCIATE JUSTICE"
+     }
+  ]
+},{
+   "description": "",
+   "tags": [
+      ["name", "Associate Justice Court of Appeal Fourth Appellate District Division 2"],
+      ["decision type", "vote yes/no"],
+      ["contest type", "Judicial"],
+      ["region", "State"],
+   ],
+   "contestants": [{
+       "name": "THOMAS E. HOLLENHORST",
+       "description": "ASSOCIATE JUSTICE"
+     }
+  ]
+},{
+   "description": "",
+   "tags": [
+      ["name", "Associate Justice Court of Appeal Fourth Appellate District Division 3"],
+      ["decision type", "vote yes/no"],
+      ["contest type", "Judicial"],
+      ["region", "State"],
+   ],
+   "contestants": [{
+       "name": "KATHLEEN E. O’LEARY",
+       "description": "PRESIDING JUSTICE"
+     }
+  ]
+},{
+   "description": "",
+   "tags": [
+      ["name", "Associate Justice Court of Appeal Fourth Appellate District Division 3"],
+      ["decision type", "vote yes/no"],
+      ["contest type", "Judicial"],
+      ["region", "State"],
+   ],
+   "contestants": [{
+       "name": "WILLIAM F. RYLAARSDAM",
+       "description": "ASSOCIATE JUSTICE"
+     }
+  ]
+},{
+   "description": "",
+   "tags": [
+      ["name", "Associate Justice Court of Appeal Fourth Appellate District Division 3"],
+      ["decision type", "vote yes/no"],
+      ["contest type", "Judicial"],
+      ["region", "State"],
+   ],
+   "contestants": [{
+       "name": "RICHARD M. ARONSON",
+       "description": "ASSOCIATE JUSTICE"
+     }
+  ]
+},{
+   "description": "",
+   "tags": [
+      ["name", "Associate Justice Court of Appeal Fourth Appellate District Division 3"],
+      ["decision type", "vote yes/no"],
+      ["contest type", "Judicial"],
+      ["region", "State"],
+   ],
+   "contestants": [{
+       "name": "DAVID A. THOMPSON",
+       "description": "ASSOCIATE JUSTICE"
+     }
+  ]
+},{
+   "description": "",
+   "tags": [
+      ["name", "Associate Justice Court of Appeal Fourth Appellate District Division 3"],
+      ["decision type", "vote yes/no"],
+      ["contest type", "Judicial"],
+      ["region", "State"],
+   ],
+   "contestants": [{
+       "name": "RICHARD D. FYBEL",
+       "description": "ASSOCIATE JUSTICE"
+     }
+  ]
+},{
+  "description": "",
+  "tags": [
+     ["name", "State Superintendent of Public Instruction"],
+     ["decision type", "vote one"],
+     ["write-in slots", "1"],
+     ["contest type", "Nonpartisan Offices"],
+     ["region", "Local"],
+  ],
+  "contestants": [{
+      "name": "MARSHALL TUCK",
+      "description": "Educator\nSchools' Executive"
+    },{
+      "name": "TOM TORLAKSON",
+      "description": "Educator\nCalifornia Superintendent"
+    }
+  ]
+},{
+  "description": "",
+  "tags": [
+     ["name", "Governing Board Member"],
+     ["decision type", "vote many"],
+     ["vote many limit", "3"],
+     ["write-in slots", "3"],
+     ["contest type", "Nonpartisan Offices"],
+     ["region", "Local"],
+     ["school district", "Bishop Unified"],
+  ],
+  "contestants": [{
+      "name": "TOM STEPHENSON",
+      "description": "Appointed Incumbent"
+    },{
+      "name": "SUSANNE M. RIZO",
+      "description": "Director\nAttorney"
+    },{
+      "name": "TAYLOR P. LUDWICK",
+      "description": "Veterinarian"
+    },{
+      "name": "JOSHUA R. NICHOLSON",
+      "description": "Deputy Sheriff"
+    },{
+      "name": "KATHY ZACK",
+      "description": "Incumbent"
+    }
+  ]
+},{
+  "description": "",
+  "tags": [
+     ["name", "Governing Board Member"],
+     ["decision type", "vote many"],
+     ["vote many limit", "2"],
+     ["contest type", "Nonpartisan Offices"],
+     ["region", "Local"],
+     ["school district", "Round Valley Joint Elementary"],
+  ],
+  "contestants": [{
+      "name": "EDUARDO SANDOVAL",
+      "description": "Chief Executive Officer"
+    },{
+      "name": "SHAWN K. RAY",
+      "description": ""
+    },{
+      "name": "JEFF PERRY",
+      "description": "Teacher"
+    }
+  ]
+},{
+  "description": "WATER BOND. FUNDING FOR WATER QUALITY, SUPPLY, TREATMENT, AND STORAGE PROJECTS.",
+  "tags": [
+     ["name", "Measure 1"],
+     ["decision type", "vote yes/no"],
+     ["contest type", "Measures Submitted To The Voters"],
+     ["region", "State"],
+  ],
+  "contestants": [{
+      "name": "",
+      "description": "Authorizes $7.545 billion in
+general obligation bonds for state water supply
+infrastructure projects, including surface and
+groundwater storage, ecosystem and watershed
+protection and restoration, and drinking water
+protection. Fiscal Impact: Increased
+state bond costs averaging $360 million
+annually over 40 years. Local
+government savings for water-related
+projects, likely averaging a couple
+hundred million dollars annually over the
+next few decades."
+    }
+  ]
+},{
+  "description": "STATE BUDGET. BUDGET STABILIZATION ACCOUNT. LEGISLATIVE CONSTITUTIONAL AMENDMENT.",
+  "tags": [
+     ["name", "Measure 2"],
+     ["decision type", "vote yes/no"],
+     ["contest type", "Measures Submitted To The Voters"],
+     ["region", "State"],
+  ],
+  "contestants": [{
+      "name": "",
+      "description": "Requires annual transfer
+of state general fund revenues to budget stabilization
+account. Requires half the revenues be used to repay
+state debts. Limits use of remaining funds to
+emergencies or budget deficits. Fiscal Impact: Longterm
+state savings from faster payment of existing
+debts. Different levels of state budget
+reserves, depending on economy and
+decisions by elected officials. Smaller
+local reserves for some school districts."
+    }
+  ]
+},{
+  "description": "HEALTHCARE INSURANCE. RATE CHANGES. INITIATIVE STATUTE.",
+  "tags": [
+     ["name", "Measure 45"],
+     ["decision type", "vote yes/no"],
+     ["contest type", "Measures Submitted To The Voters"],
+     ["region", "State"],
+  ],
+  "contestants": [{
+      "name": "",
+      "description": "Requires Insurance Commissioner’s
+approval before health insurer can
+change its rates or anything else affecting the charges
+associated with health insurance. Provides for public
+notice, disclosure, and hearing, and subsequent
+judicial review. Exempts employer large group health
+plans. Fiscal Impact: Increased state administrative
+costs to regulate health insurance, likely
+not exceeding the low millions of dollars
+annually in most years, funded from fees
+paid by health insurance companies."
+    }
+  ]
+},{
+  "description": "DRUG AND ALCOHOL TESTING OF DOCTORS. MEDICAL NEGLIGENCE LAWSUITS. INITIATIVE STATUTE.",
+  "tags": [
+     ["name", "Measure 46"],
+     ["decision type", "vote yes/no"],
+     ["contest type", "Measures Submitted To The Voters"],
+     ["region", "State"],
+  ],
+  "contestants": [{
+      "name": "",
+      "description": "Requires drug
+testing of doctors. Requires review of statewide
+prescription database before prescribing controlled
+substances. Increases $250,000 pain/suffering cap in
+medical negligence lawsuits for inflation. Fiscal
+Impact: State and local government costs from
+raising the cap on medical malpractice
+damages ranging from tens of millions to
+several hundred million dollars annually,
+offset to some extent by savings from
+requirements on health care providers."
+    }
+  ]
+},{
+  "description": "CRIMINAL SENTENCES. MISDEMEANOR PENALTIES. INITIATIVE STATUTE.",
+  "tags": [
+     ["name", "Measure 47"],
+     ["decision type", "vote yes/no"],
+     ["contest type", "Measures Submitted To The Voters"],
+     ["region", "State"],
+  ],
+  "contestants": [{
+      "name": "",
+      "description": "Requires
+misdemeanor sentence instead of felony
+for certain drug and property offenses. Inapplicable to
+persons with prior conviction for serious or violent
+crime and registered sex offenders. Fiscal Impact:
+State and county criminal justice savings potentially in
+the high hundreds of millions of dollars
+annually. State savings spent on school
+truancy and dropout prevention, mental
+health and substance abuse treatment,
+and victim services."
+    }
+  ]
+},{
+  "description": "INDIAN GAMING COMPACTS. REFERENDUM.",
+  "tags": [
+     ["name", "Measure 48"],
+     ["decision type", "vote yes/no"],
+     ["contest type", "Measures Submitted To The Voters"],
+     ["region", "State"],
+  ],
+  "contestants": [{
+      "name": "",
+      "description": "A \"Yes\" vote approves,
+and a \"No\" vote rejects, tribal gaming
+compacts between the state and the
+North Fork Rancheria of Mono Indians and the Wiyot
+Tribe. Fiscal Impact: One-time payments ($16 million
+to $35 million) and for 20 years annual
+payments ($10 million) from Indian tribes
+to state and local governments to
+address costs related to the operation of
+a new casino."
+    }
+  ]
+},{
+  "description": "",
+  "tags": [
+     ["name", "Member, City Council"],
+     ["decision type", "vote many"],
+     ["vote many limit", "2"],
+     ["write-in slots", "2"],
+     ["contest type", "Nonpartisan Offices"],
+     ["region", "Local"],
+     ["school district", "Round Valley Joint Elementary"],
+  ],
+  "contestants": [{
+      "name": "KAREN K. SCHWARTZ",
+      "description": "Businesswoman"
+    },{
+      "name": "JOE PECSI",
+      "description": "Retired Police Chief"
+    },{
+      "name": "KEITH GLIDEWELL",
+      "description": "Project Coordinator"
+    },{
+      "name": "JIM ELLIS",
+      "description": "Mayor, City of Bishop"
+    },{
+      "name": "HOWARD J. WU",
+      "description": "Licensed Acupuncturist"
+    }
+  ]
+},{
+  "description": "",
+  "tags": [
+     ["name", "Governing Board Member"],
+     ["decision type", "vote many"],
+     ["vote many limit", "3"],
+     ["write-in slots", "3"],
+     ["contest type", "Nonpartisan Offices"],
+     ["region", "Local"],
+     ["school district", "Lone Pine Unified"],
+  ],
+  "contestants": [{
+      "name": "CHERYL HOWERTON",
+      "description": "Appointed Incumbent\nVeterinarian"
+    },{
+      "name": "ROBERT OSWALD",
+      "description": "Cemetery Sexton"
+    },{
+      "name": "JASON OLIN",
+      "description": "Senior Hydrographer"
+    },{
+      "name": "DONNA CARSON",
+      "description": "Retired Educator"
+    },{
+      "name": "RICKY R. MADDUX",
+      "description": "Incumbent"
+    },{
+      "name": "LEROY KRITZ",
+      "description": "Fire Chief"
+    }
+  ]
+},{
+  "description": "DISTRICT TAX",
+  "tags": [
+     ["name", "Measure D"],
+     ["decision type", "vote yes/no"],
+     ["contest type", "Measures Submitted To The Voters"],
+     ["region", "State"],
+     ["district", "8th"],
+  ],
+  "contestants": [{
+      "name": "",
+      "description": "Shall the Lone Pine Fire Protection District
+impose and levy a Special Emergency
+Response Services tax upon
+secured parcels of taxable
+real property within the District?"
+    }
+  ]
+},{
+  "description": "",
+  "tags": [
+     ["name", "Governing Board Member"],
+     ["decision type", "vote many"],
+     ["vote many limit", "3"],
+     ["write-in slots", "3"],
+     ["contest type", "Nonpartisan Offices"],
+     ["region", "Local"],
+     ["school district", "Trona Joint Unified"],
+  ],
+  "contestants": [{
+      "name": "RAYMOND RICHARDSON",
+      "description": "Retired Teacher"
+    },{
+      "name": "DEANA GARRISON",
+      "description": "School Board Member"
+    },{
+      "name": "CHRISTINA CELAYA",
+      "description": "Senior Hydrographer"
+    },{
+      "name": "CHRISTOPHER DARLING",
+      "description": "Pastor"
+    },{
+      "name": "TRISHA FUNKE",
+      "description": "Mother"
+    }
+  ]
+}
+]
+

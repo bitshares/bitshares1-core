@@ -9,6 +9,7 @@ Item {
    property bool backButtonHighlighted: false
    property alias nextButtonVisible: nextButton.visible
    property bool nextButtonHighlighted: false
+   property real buttonAreaHeight: height - (backButton.y - backButton.anchors.margins)
 
    RectangularGlow {
       id: backGlow

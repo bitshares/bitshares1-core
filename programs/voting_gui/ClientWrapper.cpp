@@ -17,10 +17,15 @@
 #include <QMessageBox>
 #include <QDir>
 #include <QDebug>
+#include <QJsonObject>
 
 #include <iostream>
 
 using std::string;
+using std::vector;
+using bts::vote::ballot;
+using bts::vote::contest;
+using bts::vote::digest_type;
 
 ClientWrapper::ClientWrapper(QObject *parent)
    : QObject(parent),
@@ -180,6 +185,28 @@ void ClientWrapper::set_data_dir(QString data_dir)
    QSettings ("BitShares", BTS_BLOCKCHAIN_NAME).setValue("data_dir", data_dir);
 }
 
+void ClientWrapper::load_election()
+{
+   QFile json_file(":/res/ballots.json");
+   json_file.open(QIODevice::ReadOnly);
+   QByteArray json_dump;
+   json_dump = json_file.readAll();
+   json_file.close();
+   vector<ballot> ballot_array = fc::json::from_string(string(json_dump.data(), json_dump.size())).as<vector<ballot>>();
+   std::for_each(ballot_array.begin(), ballot_array.end(), [this](const ballot& bal) {
+      _ballot_map[bal.id()] = bal;
+   });
+   json_file.setFileName(":/res/contests.json");
+   json_file.open(QIODevice::ReadOnly);
+   json_dump = json_file.readAll();
+   json_file.close();
+   vector<contest> contest_array = fc::json::from_string(string(json_dump.data(), json_dump.size())).as<vector<contest>>();
+   std::for_each(contest_array.begin(), contest_array.end(), [this](const contest& con) {
+      _contest_map[con.id()] = con;
+   });
+   qDebug() << "Loaded" << _contest_map.size() << "contests and" << _ballot_map.size() << "ballots.";
+}
+
 QString ClientWrapper::create_voter_account()
 {
    try {
@@ -192,6 +219,30 @@ QString ClientWrapper::create_voter_account()
       Q_EMIT error(e.to_detail_string().c_str());
    }
    return "";
+}
+
+QJsonObject ClientWrapper::get_voter_ballot(QString account_name)
+{
+   //TODO: get actual ballot_id from verifier
+   bts::vote::digest_type ballot_id("c871c1329db193e314e3ce6f3911052d0e747e0d068e2caec530bc94707f7ad5");
+   string json_ballot = fc::json::to_string(_ballot_map[ballot_id]);
+
+   return QJsonDocument::fromJson(QByteArray(json_ballot.data(), json_ballot.size())).object();
+}
+
+QJsonArray ClientWrapper::get_voter_contests(QString account_name)
+{
+   //TODO: get actual ballot_id from verifier
+   bts::vote::digest_type ballot_id("c871c1329db193e314e3ce6f3911052d0e747e0d068e2caec530bc94707f7ad5");
+   ballot bal = _ballot_map[ballot_id];
+
+   QJsonArray contests;
+   std::for_each(bal.contests.begin(), bal.contests.end(),
+                 [this, &contests](const digest_type& id) {
+      string contest = fc::json::to_string(_contest_map[id]);
+      contests.append(QJsonDocument::fromJson(QByteArray(contest.data(), contest.size())).object());
+   });
+   return contests;
 }
 
 void ClientWrapper::get_verification_request_status(QString account_name, QStringList verifiers, QJSValue callback)

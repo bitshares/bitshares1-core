@@ -21,7 +21,7 @@ TaskPage {
    nextButtonHighlighted: mayProceed()
 
    function mayProceed() {
-      if( container.state === "SUBMITTING" || container.state === "REJECTED" )
+      if( container.state === "SUBMITTING" || container.state === "POLLING" || container.state === "REJECTED" )
          return false
       return true
    }
@@ -155,8 +155,7 @@ TaskPage {
          PropertyChanges {
             target: statusText
             text: qsTr("The election identity verification officials are currently processing your information. " +
-                       "When they finish, their response will be displayed here. You may proceed to the next step " +
-                       "while waiting for their response.")
+                       "Please wait while your identity is verified and your ballot is prepared.")
          }
       },
       State {

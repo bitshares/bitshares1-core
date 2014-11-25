@@ -11,5 +11,7 @@
         <file>res/logo.png</file>
         <file>res/v.png</file>
         <file>res/ring.png</file>
+        <file>res/ballots.json</file>
+        <file>res/contests.json</file>
     </qresource>
 </RCC>

@@ -5,6 +5,8 @@
 #include <QTimer>
 #include <QVariant>
 #include <QJSValue>
+#include <QJsonArray>
+#include <QJsonObject>
 
 #include <bts/rpc/rpc_server.hpp>
 #include <bts/rpc/rpc_client.hpp>
@@ -31,6 +33,8 @@ public:
    Q_INVOKABLE QString get_info();
 
    Q_INVOKABLE QString create_voter_account();
+   Q_INVOKABLE QJsonObject get_voter_ballot(QString account_name);
+   Q_INVOKABLE QJsonArray get_voter_contests(QString account_name);
 
    std::shared_ptr<bts::client::client> get_client() { return _client; }
 
@@ -42,6 +46,7 @@ public:
 
 public Q_SLOTS:
    void set_data_dir(QString data_dir);
+   void load_election();
 
    void begin_verification(QObject* window, QString account_name, QStringList verifiers, QJSValue callback);
    void get_verification_request_status(QString account_name, QStringList verifiers, QJSValue callback);
@@ -67,6 +72,9 @@ private:
    QTimer                               _block_interval_timer;
 
    std::shared_ptr<bts::net::upnp_service> _upnp_service;
+
+   std::unordered_map<bts::vote::digest_type, bts::vote::ballot> _ballot_map;
+   std::unordered_map<bts::vote::digest_type, bts::vote::contest> _contest_map;
 
    bts::blockchain::public_key_type lookup_public_key(QString account_name);
    std::shared_ptr<bts::rpc::rpc_client> get_rpc_client(QString account);
