@@ -50,7 +50,7 @@ namespace bts { namespace blockchain {
 
         // always use chain_interface->get_object_owners(obj)  instead of accessing this!
         // At least until we migrate all legacy object types
-        optional<vector<address>>    _owners;
+        set<address>                _owners;
 
         object_record() {}
         object_record( const object_id_type& id ):id(id){}

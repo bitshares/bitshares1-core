@@ -150,8 +150,8 @@ namespace bts { namespace blockchain {
        {
            case( obj_type::normal_object ): 
            {
-               if( obj._owners.valid() )
-                   owners = set<address>(obj._owners->begin(), obj._owners->end());
+               if( obj._owners.size() > 0 )
+                   owners = obj._owners;
                return owners;
            }
            case( obj_type::account_object ):
