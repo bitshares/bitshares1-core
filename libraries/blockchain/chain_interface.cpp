@@ -146,12 +146,12 @@ namespace bts { namespace blockchain {
    set<address>   chain_interface::get_object_owners( const object_record& obj )
    {
        set<address> owners;
-       switch( obj_id( obj.id ).type )
+       switch( obj_type( obj_id( obj.id ).type ) )
        {
            case( obj_type::normal_object ): 
            {
                if( obj._owners.valid() )
-                   owners = *obj._owners;
+                   owners = set<address>(obj._owners->begin(), obj._owners->end());
                return owners;
            }
            case( obj_type::account_object ):

@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include <bts/blockchain/types.hpp>
+#include <fc/io/enum_type.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -13,8 +14,8 @@ namespace bts { namespace blockchain {
 
     struct obj_id
     {
-        obj_type       type;
-        uint64_t       number;
+        fc::enum_type<uint16_t,obj_type>        type;
+        uint64_t                                number;
 
         obj_id(){}
         obj_id( uint64_t packed_int )
@@ -26,7 +27,7 @@ namespace bts { namespace blockchain {
 
         uint64_t as_int()
         {
-            return (uint64_t(type) << 48) | number;
+            return (uint64_t(type.value) << 48) | number;
         }
         operator int64_t() { return as_int(); }
 
@@ -45,18 +46,18 @@ namespace bts { namespace blockchain {
     struct object_record
     {
         object_id_type              id;
-        variant                     public_data;
+        variant                     user_data; // user-added metadata for all objects - actual application logic should go in derived class
 
         // always use chain_interface->get_object_owners(obj)  instead of accessing this!
         // At least until we migrate all legacy object types
-        optional<set<address>>      _owners;
+        optional<vector<address>>    _owners;
 
         object_record() {}
-        object_record( const object_id_type& id ) {}
+        object_record( const object_id_type& id ):id(id){}
     };
 
 } } // bts::blockchain
 
 FC_REFLECT_ENUM( bts::blockchain::obj_type, (normal_object)(account_object)(asset_object) );
-FC_REFLECT( bts::blockchain::object_record, (id)(public_data)(_owners) );
+FC_REFLECT( bts::blockchain::object_record, (id)(user_data)(_owners) );
 FC_REFLECT( bts::blockchain::obj_id, (type)(number) );
