@@ -16,7 +16,7 @@ end
 
 Given(/I rename account (\w+) to (\w+)$/) do |old_name, new_name|
     res = @current_actor.node.exec 'wallet_rename_account', old_name, new_name
-    p res
+    STDOUT.puts res
 end
 
 Given(/I ma[d|k]e an address (\w+) for (\w+)$/) do |addrname, acct|
@@ -29,7 +29,7 @@ Given(/^account (\w+) received ([\d,\.]+) ([A-Z]+) from angel/) do |name, amount
   @current_actor.node.exec 'wallet_transfer', to_f(amount), currency, 'angel', name
 end
 
-Given(/^(\w+) received ([\d,\.]+) ([A-Z]+) from angel/) do |name, amount, currency|
+Given(/^(['\w]+) received ([\d,\.]+) ([A-Z]+) from angel/) do |name, amount, currency|
   actor = get_actor(name)
   actor.node.exec 'wallet_transfer', to_f(amount), currency, 'angel', actor.account
 end
