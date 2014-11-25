@@ -118,8 +118,8 @@ rpc_set_username [username]
 rpc_start_server [port]                                                                             
 stop                                                                                                
 validate_address <address>                                                                          
-wallet_account_balance [account_name]                                                               
-wallet_account_balance_ids [account_name]                                                           
+wallet_account_balance [account_name] [withdraw_condition]                                          
+wallet_account_balance_ids [account_name] [withdraw_condition]                                      
 wallet_account_create <account_name> [private_data]                                                 
 wallet_account_list_public_keys <account_name>                                                      
 wallet_account_order_list [account_name] [limit]                                                    
@@ -142,12 +142,14 @@ wallet_asset_issue <amount> <symbol> <to_account_name> [memo_message]
 wallet_asset_update <symbol> [name] [description] [public_data] [maximum_share_supply] [precision]  
 wallet_backup_create <json_filename>                                                                
 wallet_backup_restore <json_filename> <wallet_name> <imported_wallet_passphrase>                    
+wallet_balance_set_vote_info <balance_id> <voter_address> [vote_method] [sign_and_broadcast]        
 wallet_builder_add_signature <builder> [broadcast]                                                  
 wallet_burn <amount_to_transfer> <asset_symbol> <from_account_name> <for_or_against> <to_account_name> [public_message] [anonymous] 
 wallet_change_passphrase <passphrase>                                                               
 wallet_check_sharedrop                                                                              
 wallet_check_vote_proportion <account>                                                              
 wallet_close                                                                                        
+wallet_collect_vested_balances <account_name>                                                       
 wallet_create <wallet_name> <new_passphrase> [brain_key]                                            
 wallet_delegate_set_block_production <delegate_name> <enabled>                                      
 wallet_delegate_update_block_signing_key <authorizing_account_name> <delegate_name> <block_signing_key> 
