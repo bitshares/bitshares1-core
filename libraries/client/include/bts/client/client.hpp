@@ -72,9 +72,7 @@ namespace bts { namespace client {
           wallet_enabled(true),
           ignore_console(false),
           use_upnp(true),
-          maximum_number_of_connections(BTS_NET_DEFAULT_MAX_CONNECTIONS) ,
-          delegate_server( fc::ip::endpoint::from_string("0.0.0.0:9988") ),
-          default_delegate_peers( vector<string>({"0.0.0.0:9988"}) )
+          maximum_number_of_connections(BTS_NET_DEFAULT_MAX_CONNECTIONS)
           {
 #ifdef BTS_TEST_NETWORK
               uint32_t port = BTS_NET_TEST_P2P_PORT + BTS_TEST_NETWORK_VERSION;
@@ -98,8 +96,6 @@ namespace bts { namespace client {
           optional<fc::path>  genesis_config;
           uint16_t            maximum_number_of_connections;
           fc::logging_config  logging;
-          fc::ip::endpoint    delegate_server;
-          vector<string>      default_delegate_peers;
           string              wallet_callback_url;
 
           fc::optional<std::string> growl_notify_endpoint;
@@ -198,8 +194,6 @@ FC_REFLECT( bts::client::chain_server_config, (enabled)(listen_port) )
 FC_REFLECT( bts::client::config,
             (rpc)(default_peers)(chain_servers)(chain_server)(mail_server_enabled)
             (wallet_enabled)(ignore_console)(logging)
-            (delegate_server)
-            (default_delegate_peers)
             (wallet_callback_url)
             (growl_notify_endpoint)
             (growl_password)
