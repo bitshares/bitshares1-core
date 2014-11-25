@@ -1,10 +1,11 @@
 default (unlocked) >>> help wallet_account_balance
 Usage:
-wallet_account_balance [account_name]                                                                 Lists the total asset balances for the specified account
+wallet_account_balance [account_name] [withdraw_condition]                                            Lists the total asset balances for the specified account
 Lists the total asset balances for the specified account
 
 Parameters:
   account_name (account_name, optional, defaults to ""): the account to get a balance for, or leave empty for all accounts
+  withdraw_condition (withdraw_condition_type, optional, defaults to "withdraw_signature_type"): the withdraw condition type to return balances for
 
 Returns:
   account_balance_summary_type

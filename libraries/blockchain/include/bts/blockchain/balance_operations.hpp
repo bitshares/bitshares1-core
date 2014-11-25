@@ -129,6 +129,19 @@ namespace bts { namespace blockchain {
       void evaluate( transaction_evaluation_state& eval_state );
    };
 
+   /* Moves funds to a new balance with the same owner key but different votes
+    * and restricted owner key.
+    */
+   struct update_balance_vote_operation
+   {
+      static const operation_type_enum type;
+
+      balance_id_type     balance_id;
+      optional<address>   new_restricted_owner;
+      slate_id_type       new_slate;
+
+      void evaluate( transaction_evaluation_state& eval_state );
+   };
 
 } } // bts::blockchain
 
@@ -138,4 +151,5 @@ FC_REFLECT( bts::blockchain::deposit_operation, (amount)(condition) )
 FC_REFLECT( bts::blockchain::burn_operation, (amount)(account_id)(message)(message_signature) )
 FC_REFLECT( bts::blockchain::withdraw_all_operation, (balance_id)(claim_input_data) )
 FC_REFLECT( bts::blockchain::release_escrow_operation, (escrow_id)(released_by)(amount_to_receiver)(amount_to_sender) )
+FC_REFLECT( bts::blockchain::update_balance_vote_operation, (balance_id)(new_restricted_owner)(new_slate) )
 

@@ -491,7 +491,7 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
         group = transaction.ledger_entries.size() > 1;
         if( group && !prev_group ) out << pretty_line( line_size + 2, '-' ) << "\n";
 
-        auto count = 0;
+        size_t count = 0;
         for( const auto& entry : transaction.ledger_entries )
         {
             const auto is_pending = !transaction.is_virtual && !transaction.is_confirmed;
@@ -612,7 +612,7 @@ string pretty_experimental_transaction_list( const set<pretty_transaction_experi
 
     for( const auto& transaction : transactions )
     {
-        auto line_count = 0;
+        size_t line_count = 0;
 
         while( line_count < transaction.inputs.size()
                || line_count < transaction.outputs.size()

@@ -39,34 +39,41 @@ namespace bts { namespace blockchain {
 
    omemo_status withdraw_with_signature::decrypt_memo_data( const fc::ecc::private_key& receiver_key )const
    { try {
-      FC_ASSERT( memo.valid() );
-      auto secret = receiver_key.get_shared_secret( memo->one_time_key );
-      extended_private_key ext_receiver_key(receiver_key);
+      try {
+         FC_ASSERT( memo.valid() );
+         auto secret = receiver_key.get_shared_secret( memo->one_time_key );
+         extended_private_key ext_receiver_key(receiver_key);
 
-      fc::ecc::private_key secret_private_key = ext_receiver_key.child( fc::sha256::hash(secret),
-                                                                        extended_private_key::public_derivation );
-      auto secret_public_key = secret_private_key.get_public_key();
+         fc::ecc::private_key secret_private_key = ext_receiver_key.child( fc::sha256::hash(secret),
+                                                                           extended_private_key::public_derivation );
+         auto secret_public_key = secret_private_key.get_public_key();
 
-      if( owner != address(secret_public_key) )
+         // allow memos to be sent so long as we can decrypt the data.
+         //if( owner != address(secret_public_key) )
+         //   return omemo_status();
+
+         auto memo = decrypt_memo_data( secret );
+
+         bool has_valid_signature = false;
+         if( memo.memo_flags == from_memo && !( memo.from == public_key_type() && memo.from_signature == 0 ) )
+         {
+            auto check_secret = secret_private_key.get_shared_secret( memo.from );
+            has_valid_signature = check_secret._hash[0] == memo.from_signature;
+         }
+         else
+         {
+            has_valid_signature = true;
+         }
+
+         return memo_status( memo, has_valid_signature, secret_private_key );
+      } 
+      catch ( const fc::aes_exception& e )
+      {
          return omemo_status();
-
-      auto memo = decrypt_memo_data( secret );
-
-      bool has_valid_signature = false;
-      if( memo.memo_flags == from_memo && !( memo.from == public_key_type() && memo.from_signature == 0 ) )
-      {
-         auto check_secret = secret_private_key.get_shared_secret( memo.from );
-         has_valid_signature = check_secret._hash[0] == memo.from_signature;
       }
-      else
-      {
-         has_valid_signature = true;
-      }
-
-      return memo_status( memo, has_valid_signature, secret_private_key );
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void withdraw_with_signature::encrypt_memo_data(
+   public_key_type withdraw_with_signature::encrypt_memo_data(
            const fc::ecc::private_key& one_time_private_key,
            const fc::ecc::public_key&  to_public_key,
            const fc::ecc::private_key& from_private_key,
@@ -94,6 +101,7 @@ namespace bts { namespace blockchain {
       memo->one_time_key = one_time_private_key.get_public_key();
 
       encrypt_memo_data( secret, memo_content );
+      return secret_public_key;
    }
 
    memo_data withdraw_with_signature::decrypt_memo_data( const fc::sha512& secret )const
@@ -117,34 +125,40 @@ namespace bts { namespace blockchain {
 
    omemo_status withdraw_with_escrow::decrypt_memo_data( const fc::ecc::private_key& receiver_key )const
    { try {
-      FC_ASSERT( memo.valid() );
-      auto secret = receiver_key.get_shared_secret( memo->one_time_key );
-      extended_private_key ext_receiver_key(receiver_key);
+       try {
+         FC_ASSERT( memo.valid() );
+         auto secret = receiver_key.get_shared_secret( memo->one_time_key );
+         extended_private_key ext_receiver_key(receiver_key);
 
-      fc::ecc::private_key secret_private_key = ext_receiver_key.child( fc::sha256::hash(secret),
-                                                                        extended_private_key::public_derivation );
-      auto secret_public_key = secret_private_key.get_public_key();
+         fc::ecc::private_key secret_private_key = ext_receiver_key.child( fc::sha256::hash(secret),
+                                                                           extended_private_key::public_derivation );
+         auto secret_public_key = secret_private_key.get_public_key();
 
-      if( receiver != address(secret_public_key) )
+         //if( receiver != address(secret_public_key) )
+         //   return omemo_status();
+
+         auto memo = decrypt_memo_data( secret );
+
+         bool has_valid_signature = false;
+         if( memo.memo_flags == from_memo && !( memo.from == public_key_type() && memo.from_signature == 0 ) )
+         {
+            auto check_secret = secret_private_key.get_shared_secret( memo.from );
+            has_valid_signature = check_secret._hash[0] == memo.from_signature;
+         }
+         else
+         {
+            has_valid_signature = true;
+         }
+
+         return memo_status( memo, has_valid_signature, secret_private_key );
+      } 
+      catch ( const fc::aes_exception& e )
+      {
          return omemo_status();
-
-      auto memo = decrypt_memo_data( secret );
-
-      bool has_valid_signature = false;
-      if( memo.memo_flags == from_memo && !( memo.from == public_key_type() && memo.from_signature == 0 ) )
-      {
-         auto check_secret = secret_private_key.get_shared_secret( memo.from );
-         has_valid_signature = check_secret._hash[0] == memo.from_signature;
       }
-      else
-      {
-         has_valid_signature = true;
-      }
-
-      return memo_status( memo, has_valid_signature, secret_private_key );
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void withdraw_with_escrow::encrypt_memo_data(
+   public_key_type withdraw_with_escrow::encrypt_memo_data(
            const fc::ecc::private_key& one_time_private_key,
            const fc::ecc::public_key&  to_public_key,
            const fc::ecc::private_key& from_private_key,
@@ -174,6 +188,7 @@ namespace bts { namespace blockchain {
       memo->one_time_key = one_time_private_key.get_public_key();
 
       encrypt_memo_data( secret, memo_content );
+      return secret_public_key;
    }
 
    memo_data withdraw_with_escrow::decrypt_memo_data( const fc::sha512& secret )const
@@ -221,6 +236,7 @@ namespace fc {
             break;
          case withdraw_escrow_type:
             obj["data"] = fc::raw::unpack<withdraw_with_escrow>( var.data );
+            break;
          case withdraw_vesting_type:
             obj["data"] = fc::raw::unpack<withdraw_vesting>( var.data );
             break;
@@ -255,6 +271,7 @@ namespace fc {
             break;
          case withdraw_escrow_type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_with_escrow>() );
+            break;
          case withdraw_vesting_type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_vesting>() );
             break;

@@ -4,7 +4,7 @@ namespace bts { namespace blockchain {
 
    balance_record::balance_record( const address& owner, const asset& balance_arg, slate_id_type delegate_id )
    {
-      balance =  balance_arg.amount;
+      balance = balance_arg.amount;
       condition = withdraw_condition( withdraw_with_signature( owner ), balance_arg.asset_id, delegate_id );
    }
 
@@ -14,7 +14,7 @@ namespace bts { namespace blockchain {
        return *owners().begin();
    }
 
-   set<address>     balance_record::owners()const
+   set<address> balance_record::owners()const
    {
       if( condition.type == withdraw_signature_type )
          return set<address>{ condition.as<withdraw_with_signature>().owner };
@@ -24,17 +24,21 @@ namespace bts { namespace blockchain {
       {
          return condition.as<withdraw_with_multi_sig>().owners;
       }
-      return set<address>{address()};
+      FC_ASSERT(!"This balance's condition type doesn't have a true owner.");
    }
-   bool             balance_record::is_owner( const address& addr )const
+
+   bool balance_record::is_owner( const address& addr )const
    {
-       auto owners = this->owners(); // Can't make distinct calls to owners() for .find/.end
-       if( owners.find( addr ) != owners.end() )
-           return true;
+       try {
+           auto owners = this->owners(); // Can't make distinct calls to owners() for .find/.end
+           if( owners.find( addr ) != owners.end() )
+               return true;
+       } catch (...) {
+       }
        return false;
    }
 
-   bool             balance_record::is_owner( const public_key_type& key )const
+   bool balance_record::is_owner( const public_key_type& key )const
    {
        for( auto addr : owners() )
        {
@@ -52,6 +56,7 @@ namespace bts { namespace blockchain {
        switch( withdraw_condition_types( condition.type ) )
        {
            case withdraw_signature_type:
+           case withdraw_escrow_type:
            case withdraw_multi_sig_type:
            {
                return asset( balance, condition.asset_id );
@@ -84,9 +89,11 @@ namespace bts { namespace blockchain {
            }
            default:
            {
-               FC_ASSERT( !"Unsupported withdraw condition!" );
+               elog( "balance_record::get_spendable_balance() called on unsupported withdraw type!" );
+               return asset();
            }
        }
+       FC_ASSERT( !"Should never get here!" );
    }
 
 } } // bts::blockchain

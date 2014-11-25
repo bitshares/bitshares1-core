@@ -62,6 +62,9 @@ namespace bts { namespace wallet {
          void    create_from_json( const path& filename, const string& wallet_name, const string& passphrase );
 
          void    auto_backup( const string& reason )const;
+
+         void    write_latest_builder( const transaction_builder& builder,
+                                       const string& alternate_path );
          ///@}
 
          /**
@@ -232,7 +235,9 @@ namespace bts { namespace wallet {
                                                  const optional<string>& account_name,
                                                  bool create_account = false );
 
-         address  create_new_address( const string& account_name, const string& label);
+
+         public_key_type       get_new_public_key( const string& account_name );
+         address               create_new_address( const string& account_name, const string& label);
 
 
          void              set_address_label( const address& addr, const string& label );
@@ -251,8 +256,7 @@ namespace bts { namespace wallet {
          std::shared_ptr<transaction_builder> create_transaction_builder();
          std::shared_ptr<transaction_builder> create_transaction_builder(const transaction_builder& old_builder);
 
-
-
+         void cache_transaction( wallet_transaction_record& transaction_record );
 
          /**
           *  Multi-Part transfers provide additional security by not combining inputs, but they
@@ -360,12 +364,22 @@ namespace bts { namespace wallet {
                  map<string,double> amount_per_xts,
                  bool sign
                  );
+         vector<std::pair<string, wallet_transaction_record>>
+                 publish_feeds_multi_experimental(
+                 map<string,double> amount_per_xts,
+                 bool sign
+                 );
          wallet_transaction_record publish_price(
                  const string& account,
                  double amount_per_xts,
                  const string& amount_asset_symbol,
                  bool settle,
                  bool sign
+                 );
+         transaction_builder set_vote_info(
+                 const balance_id_type& balance_id,
+                 const address& voter_address,
+                 vote_selection_method selection_method
                  );
          wallet_transaction_record publish_slate(
                  const string& account_to_publish_under,
@@ -375,6 +389,10 @@ namespace bts { namespace wallet {
          wallet_transaction_record publish_version(
                  const string& account_to_publish_under,
                  const string& account_to_pay_with,
+                 bool sign
+                 );
+         wallet_transaction_record collect_vested(
+                 const string& account_name,
                  bool sign
                  );
          wallet_transaction_record update_block_signing_key(
@@ -531,21 +549,20 @@ namespace bts { namespace wallet {
 
          vector<escrow_summary>             get_escrow_balances( const string& account_name );
 
-         account_balance_record_summary_type get_account_balance_records( const string& account_name = "", bool include_empty = true )const;
-         account_balance_id_summary_type    get_account_balance_ids( const string& account_name = "", bool include_empty = true )const;
-         account_balance_summary_type       get_account_balances( const string& account_name = "", bool include_empty = true )const;
-         /* Get balances for which they key for this address can sign ("owner") */
-         vector<wallet_balance_record>      get_address_balances( const address& addr );
-
+         account_balance_record_summary_type get_account_balance_records( const string& account_name = "", bool include_empty = true,
+                 uint8_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ) )const;
+         account_balance_id_summary_type    get_account_balance_ids( const string& account_name = "", bool include_empty = true,
+                 uint8_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ) )const;
+         account_balance_summary_type       get_account_balances( const string& account_name = "", bool include_empty = true,
+                 uint8_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ) )const;
 
          account_balance_summary_type       get_account_yield( const string& account_name = "" )const;
          asset                              asset_worth( const asset& base, const string& price_in_symbol )const;
          asset                              get_account_net_worth( const string& account_name, const string& symbol )const;
          account_vote_summary_type          get_account_vote_summary( const string& account_name = "" )const;
 
-         map<order_id_type, market_order>   get_market_orders( const string& account_name, uint32_t limit)const;
-         map<order_id_type, market_order>   get_market_orders( const string& quote, const string& base,
-                                                               uint32_t limit, const string& account_name )const;
+         map<order_id_type, market_order>   get_market_orders( const string& account_name, const string& quote_symbol,
+                                                               const string& base_symbol, uint32_t limit )const;
 
          vector<wallet_transaction_record>  get_transaction_history( const string& account_name = string(),
                                                                      uint32_t start_block_num = 0,

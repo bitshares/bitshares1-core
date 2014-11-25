@@ -10,6 +10,15 @@ Given(/I made an account (\w+)$/) do |name|
     @current_actor.node.exec 'wallet_account_create', name
 end
 
+Given(/I register an account (\w+)$/) do |name|
+    @current_actor.node.exec 'wallet_account_register', name, @current_actor.account
+end
+
+Given(/I rename account (\w+) to (\w+)$/) do |old_name, new_name|
+    res = @current_actor.node.exec 'wallet_rename_account', old_name, new_name
+    p res
+end
+
 Given(/I ma[d|k]e an address (\w+) for (\w+)$/) do |addrname, acct|
     addr = @current_actor.node.exec 'wallet_address_create', acct
     @addresses ||= {}
@@ -60,7 +69,7 @@ Then(/^([\w]+) should have\s?(around)? ([\d,\.]+) ([A-Z]+)\s?(minus fee|minus \d
   if minus_fee and minus_fee.length > 0
     m = /(\d+)\s?\*\s?fee/.match(minus_fee)
     multiplier = if m and m[1] then m[1].to_i else 1 end
-    amount = amount - multiplier * 0.5
+    amount = amount - multiplier * get_asset_fee(currency)
   end
   if around and around.length > 0
     amount = amount.round

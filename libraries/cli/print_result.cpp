@@ -298,6 +298,13 @@ namespace bts { namespace cli {
   {
     const auto& market_orders = result.as<vector<market_order>>();
 
+    const string& quote_symbol = arguments[ 0 ].as_string();
+    const oasset_record quote_asset_record = client->get_chain()->get_asset_record( quote_symbol );
+    FC_ASSERT( quote_asset_record.valid() );
+    const asset_id_type& quote_id = quote_asset_record->id;
+
+    const omarket_status status = client->get_chain()->get_market_status( quote_id, asset_id_type( 0 ) );
+
     out << std::left;
     out << std::setw( 30 ) << "AMOUNT";
     out << std::setw( 30 ) << "COLLATERAL";
@@ -310,14 +317,20 @@ namespace bts { namespace cli {
 
     for( const auto& order : market_orders )
     {
-       out << std::setw( 30 ) <<  client->get_chain()->to_pretty_asset( order.get_balance() / order.get_price() );
-       out << std::setw( 30 ) <<  client->get_chain()->to_pretty_asset( order.get_balance() );
-       out << std::setw( 30 ) <<  std::to_string(100 * atof(order.interest_rate->ratio_string().c_str())) + " %";
-       if( order.state.limit_price.valid() )
-          out << std::setw( 30 ) <<  client->get_chain()->to_pretty_price( *order.state.limit_price );
+       out << std::setw( 30 );
+       if( status.valid() && status->current_feed_price.valid() )
+           out << client->get_chain()->to_pretty_asset( (order.get_balance() * *status->current_feed_price) / 2 );
+       else if( status.valid() && status->last_valid_feed_price.valid() )
+           out << client->get_chain()->to_pretty_asset( (order.get_balance() * *status->last_valid_feed_price) / 2 );
        else
-          out << std::setw( 30 ) <<  "NONE";
-       out << std::setw( 40 ) <<  variant(order.get_id()).as_string();
+           out << "N/A";
+       out << std::setw( 30 ) << client->get_chain()->to_pretty_asset( order.get_balance() );
+       out << std::setw( 30 ) << std::to_string(100 * atof(order.interest_rate->ratio_string().c_str())) + " %";
+       if( order.state.limit_price.valid() )
+          out << std::setw( 30 ) << client->get_chain()->to_pretty_price( *order.state.limit_price );
+       else
+          out << std::setw( 30 ) << "NONE";
+       out << std::setw( 40 ) << variant(order.get_id()).as_string();
        out << "\n";
     }
     out << "\n";
@@ -508,7 +521,7 @@ namespace bts { namespace cli {
       out << '-';
     out << '\n';
 
-    auto counter = 0;
+    int32_t counter = 0;
     for(const auto& acct : account_records)
     {
       if(acct.is_delegate())

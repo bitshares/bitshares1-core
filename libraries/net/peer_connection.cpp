@@ -31,7 +31,8 @@ namespace bts { namespace net
       last_block_number_delegate_has_seen(0),
       inhibit_fetching_sync_blocks(false),
       transaction_fetching_inhibited_until(fc::time_point::min()),
-      last_known_fork_block_number(0)
+      last_known_fork_block_number(0),
+      firewall_check_state(nullptr)
 #ifndef NDEBUG
       ,_thread(&fc::thread::current()),
       _send_message_queue_tasks_running(0)
@@ -421,20 +422,35 @@ namespace bts { namespace net
            ("to_peer", number_of_elements_advertised_to_peer_to_discard)("remain_to_peer", inventory_advertised_to_peer.size())
            ("to_us", number_of_elements_peer_advertised_to_discard)("remain_to_us", inventory_peer_advertised_to_us.size()));
     }
+
     // we have a higher limit for blocks than transactions so we will still fetch blocks even when transactions are throttled
     bool peer_connection::is_inventory_advertised_to_us_list_full_for_transactions() const
     {
       VERIFY_CORRECT_THREAD();
       return inventory_peer_advertised_to_us.size() > BTS_NET_MAX_INVENTORY_SIZE_IN_MINUTES * BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND * 60;
     }
+
     bool peer_connection::is_inventory_advertised_to_us_list_full() const
     {
       VERIFY_CORRECT_THREAD();
       // allow the total inventory size to be the maximum number of transactions we'll store in the inventory (above)
       // plus the maximum number of blocks that would be generated in BTS_NET_MAX_INVENTORY_SIZE_IN_MINUTES (plus one,
       // to give us some wiggle room)
-      return inventory_peer_advertised_to_us.size() > 
-        BTS_NET_MAX_INVENTORY_SIZE_IN_MINUTES * BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND * 60 + 
+      return inventory_peer_advertised_to_us.size() >
+        BTS_NET_MAX_INVENTORY_SIZE_IN_MINUTES * BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND * 60 +
         (BTS_NET_MAX_INVENTORY_SIZE_IN_MINUTES + 1) * 60 / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
     }
+
+    bool peer_connection::performing_firewall_check() const
+    {
+      return firewall_check_state && firewall_check_state->requesting_peer != node_id_t();
+    }
+
+    fc::optional<fc::ip::endpoint> peer_connection::get_endpoint_for_connecting() const
+    {
+      if (inbound_port)
+        return fc::ip::endpoint(inbound_address, inbound_port);
+      return fc::optional<fc::ip::endpoint>();
+    }
+
 } } // end namespace bts::net

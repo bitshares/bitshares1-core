@@ -539,7 +539,7 @@
       {
          "method_name" : "wallet_address_create",
          "description" : "Creates an address which can be used for a simple (non-TITAN) transfer.",
-         "return_type" : "address",
+         "return_type" : "string",
          "parameters"  : [
             {
               "name" : "account_name",
@@ -551,13 +551,60 @@
               "type" : "string",
               "description" : "",
               "default_value" : ""
+            },
+            {
+              "name" : "legacy_network_byte",
+              "type" : "int32_t",
+              "description" : "If not -1, use this as the network byte for a BTC-style address.",
+              "default_value" : -1
             }
          ],
          "prerequisites" : ["wallet_open"],
          "aliases": ["new_address"]
       },
       {
-         "method_name" : "wallet_transfer_asset_to_address",
+         "method_name" : "wallet_transfer_to_legacy_address",
+         "description" : "Do a simple (non-TITAN) transfer to a BTC-style address",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+              "name" : "amount_to_transfer",
+              "type" : "real_amount",
+              "description" : "the amount of shares to transfer"
+            },
+            {
+              "name" : "asset_symbol",
+              "type" : "asset_symbol",
+              "description" : "the asset to transfer"
+            },
+            {
+              "name" : "from_account_name",
+              "type" : "account_name",
+              "description" : "the source account to draw the shares from"
+            },
+            {
+              "name" : "to_address",
+              "type" : "legacy_address",
+              "description" : "the address to transfer to"
+            },
+            {
+              "name" : "memo_message",
+              "type" : "string",
+              "description" : "a memo to store with the transaction",
+              "default_value" : ""
+            },
+            {
+              "name" : "vote_method",
+              "type" : "vote_selection_method",
+              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "default_value" : "vote_recommended"
+            }
+         ],
+         "prerequisites" : ["wallet_open"]
+      },
+
+      {
+         "method_name" : "wallet_transfer_to_address",
          "description" : "Do a simple (non-TITAN) transfer to an address",
          "return_type" : "transaction_record",
          "parameters"  : [
@@ -780,12 +827,64 @@
                 "type": "bool",
                 "description": "",
                 "default_value": true
+            },
+            {
+              "name" : "builder_path",
+              "type" : "string",
+              "description" : "If specified, will write builder here instead of to DATA_DIR/transactions/latest.trx",
+              "default_value" : ""
             }
+
         ],
         "prerequisites": ["json_authenticated"],
         "aliases": ["withdraw_from_address"],
         "is_const": true
     },
+    {
+        "method_name": "wallet_withdraw_from_legacy_address",
+        "description": "",
+        "return_type": "transaction_builder",
+        "parameters":
+        [
+            {
+              "name": "amount",
+              "type": "string",
+              "description": "how much to transfer"
+            },
+            {
+              "name": "symbol",
+              "type": "string",
+              "description": "which asset"
+            },
+
+            {
+              "name": "from_address",
+              "type": "legacy_address",
+              "description": "the balance address to withdraw from"
+            },
+            {
+              "name": "to",
+              "type": "string",
+              "description": "address or account to receive funds"
+            },
+            {
+              "name" : "vote_method",
+              "type" : "vote_selection_method",
+              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "default_value" : "vote_none"
+            },
+            {
+                "name": "sign_and_broadcast",
+                "type": "bool",
+                "description": "",
+                "default_value": true
+            }
+        ],
+        "prerequisites": ["json_authenticated"],
+        "aliases": ["withdraw_from_legacy_address"],
+        "is_const": true
+    },
+
     {
         "method_name": "wallet_multisig_withdraw_start",
         "description": "",
@@ -818,6 +917,12 @@
               "type" : "vote_selection_method",
               "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
               "default_value" : "vote_none"
+            },
+            {
+              "name" : "builder_path",
+              "type" : "string",
+              "description" : "If specified, will write builder here instead of to DATA_DIR/transactions/latest.trx",
+              "default_value" : ""
             }
         ],
         "prerequisites": ["json_authenticated"],
@@ -844,6 +949,43 @@
         ],
         "prerequisites": ["json_authenticated"],
         "aliases": ["add_signature"]
+      },
+    {
+        "method_name": "wallet_release_escrow",
+        "description": "Releases escrow balance to third parties",
+        "return_type": "transaction_record",
+        "parameters":
+        [
+            {
+               "name" : "pay_fee_with_account_name",
+               "type" : "account_name",
+               "description" : "when releasing escrow a transaction fee must be paid by funds not in escrow, this account will pay the fee"
+            },
+            {
+                "name": "escrow_balance_id",
+                "type": "address",
+                "description": "The balance id of the escrow to be released."
+            },
+            {
+                "name": "released_by_account",
+                "type": "account_name",
+                "description": "the account that is to perform the release."
+            },
+            {
+                "name": "amount_to_sender",
+                "type": "share_type",
+                "description": "Amount to release back to the sender.",
+                "default_value": 0
+            },
+            {
+                "name": "amount_to_receiver",
+                "type": "share_type",
+                "description": "Amount to release to receiver.",
+                "default_value": 0
+            }
+        ],
+        "prerequisites": ["json_authenticated"],
+        "aliases": ["release"]
       },
       {
         "method_name": "wallet_transfer_from_with_escrow",
@@ -1296,26 +1438,23 @@
                {
                   "name" : "description",
                   "type" : "string",
-                  "description" : "a description of the asset",
-                  "default_value" : ""
-               },
-               {
-                  "name" : "data",
-                  "type" : "json_variant",
-                  "description" : "arbitrary data attached to the asset",
-                  "default_value" : null
+                  "description" : "a description of the asset"
                },
                {
                   "name" : "maximum_share_supply",
                   "type" : "real_amount",
-                  "description" : "the maximum number of shares of the asset",
-                  "default_value" : 1000000000000000
+                  "description" : "the maximum number of shares of the asset"
                },
                {
                   "name" : "precision",
                   "type" : "uint64_t",
-                  "description" : "defines where the decimal should be displayed, must be a power of 10",
-                  "default_value" : 1000000
+                  "description" : "defines where the decimal should be displayed, must be a power of 10"
+               },
+               {
+                  "name" : "public_data",
+                  "type" : "json_variant",
+                  "description" : "arbitrary data attached to the asset",
+                  "default_value" : null
                },
                {
                   "name" : "is_market_issued",
@@ -1425,6 +1564,12 @@
             "type" : "account_name",
             "description" : "the account to get a balance for, or leave empty for all accounts",
             "default_value" : ""
+         },
+         {
+            "name" : "withdraw_condition",
+            "type" : "withdraw_condition_type",
+            "description" : "the withdraw condition type to return balances for",
+            "default_value" : "withdraw_signature_type"
          }
          ],
          "is_const" : true,
@@ -1441,6 +1586,12 @@
             "type" : "account_name",
             "description" : "the account to list balance ids for, or leave empty for all accounts",
             "default_value" : ""
+         },
+         {
+            "name" : "withdraw_condition",
+            "type" : "withdraw_condition_type",
+            "description" : "the withdraw condition type to return balance ids for",
+            "default_value" : "withdraw_signature_type"
          }
          ],
          "is_const" : true,
@@ -1831,8 +1982,8 @@
             {
                "name" : "account_name",
                "type" : "account_name",
-               "description" : "the account for which to get the orders, or 'ALL' to get them all",
-               "default_value" : "ALL"
+               "description" : "the account for which to get the orders, or empty for all accounts",
+               "default_value" : ""
             }
          ],
          "prerequisites" : ["wallet_open"],
@@ -1846,8 +1997,8 @@
             {
                "name" : "account_name",
                "type" : "account_name",
-               "description" : "the account for which to get the orders, or 'ALL' to get them all",
-               "default_value" : "ALL"
+               "description" : "the account for which to get the orders, or empty for all accounts",
+               "default_value" : ""
             },
             {
                "name" : "limit",
@@ -1928,7 +2079,7 @@
                 "description" : ""
              }
          ],
-         "prerequisites" : ["wallet_unlocked"]
+         "prerequisites" : ["wallet_open"]
       },
       {
          "method_name" : "wallet_set_setting",
@@ -2047,6 +2198,37 @@
          "prerequisites" : ["wallet_unlocked"]
       },
       {
+         "method_name" : "wallet_balance_set_vote_info",
+         "description" : "Set this balance's voting address and slate",
+         "return_type" : "transaction_builder",
+         "parameters"  : [
+               {
+                  "name" : "balance_id",
+                  "type" : "address",
+                  "description" : "the current name of the account"
+               },
+               {
+                  "name" : "voter_address",
+                  "type" : "address",
+                  "description" : "the new voting address"
+               },
+               {
+                 "name" : "vote_method",
+                 "type" : "vote_selection_method",
+                 "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+                 "default_value" : "vote_recommended"
+               },
+               {
+                  "name" : "sign_and_broadcast",
+                  "type" : "bool",
+                  "description" : "",
+                  "default_value" : "true"
+               }
+            ],
+         "prerequisites" : ["wallet_open"],
+         "aliases" : ["set_vote_info"]
+      },
+      {
          "method_name" : "wallet_publish_slate",
          "description" : "Publishes the current wallet delegate slate to the public data associated with the account",
          "return_type" : "transaction_record",
@@ -2080,6 +2262,19 @@
                 "type" : "account_name",
                 "description" : "The account to pay transaction fees with or leave empty to pay with publishing account",
                 "default_value" : ""
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_collect_vested_balances",
+         "description" : "Collect specified account's vested balances",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+                "name" : "account_name",
+                "type" : "account_name",
+                "description" : "account to collect vested balances for"
             }
          ],
          "prerequisites" : ["wallet_unlocked"]
@@ -2201,6 +2396,18 @@
          "prerequisites" : ["wallet_unlocked"]
       },
       {
+         "method_name" : "wallet_publish_feeds_multi_experimental",
+         "description" : "publishes a set of feeds for BitAssets for all active delegates, most useful for testnets",
+         "return_type" : "vector<std::pair<string, wallet_transaction_record>>",
+         "parameters"  : [
+             {
+                "name" : "symbol_to_price_map",
+                "type" : "price_map",
+                "description" : "maps the BitAsset symbol to its price per share"
+             }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },      {
          "method_name" : "wallet_repair_records",
          "description" : "tries to repair any inconsistent wallet account, key, and transaction records",
          "return_type" : "void",

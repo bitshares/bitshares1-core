@@ -228,20 +228,20 @@ otransaction_record detail::client_impl::blockchain_get_transaction(const string
    return _chain_db->get_transaction(id, exact);
 }
 
-optional<digest_block> detail::client_impl::blockchain_get_block( const string& block )const
+oblock_record detail::client_impl::blockchain_get_block( const string& block )const
 {
    try
    {
       ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
-      if( block.size() == 40 )
-         return _chain_db->get_block_digest( block_id_type( block ) );
+      if( block.size() == string( block_id_type() ).size() )
+         return _chain_db->get_block_record( block_id_type( block ) );
       else
-         return _chain_db->get_block_digest( std::stoi( block ) );
+         return _chain_db->get_block_record( std::stoi( block ) );
    }
    catch( ... )
    {
    }
-   return optional<digest_block>();
+   return oblock_record();
 }
 
 map<balance_id_type, balance_record> detail::client_impl::blockchain_list_balances( const string& first, uint32_t limit )const
@@ -259,8 +259,14 @@ account_balance_summary_type detail::client_impl::blockchain_get_account_public_
   return ret;
 } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
-vector<balance_record> detail::client_impl::blockchain_list_address_balances( const address& addr )const
+vector<balance_record> detail::client_impl::blockchain_list_address_balances( const string& raw_addr )const
 {
+    address addr;
+    try {
+        addr = address( raw_addr );
+    } catch (...) {
+        addr = address( pts_address( raw_addr ) );
+    }
     return _chain_db->get_balances_for_address( addr );
 }
 

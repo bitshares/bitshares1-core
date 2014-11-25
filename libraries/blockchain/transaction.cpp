@@ -154,7 +154,7 @@ namespace bts { namespace blockchain {
    }
 
 
-   void transaction::deposit_to_account( fc::ecc::public_key receiver_key,
+   public_key_type transaction::deposit_to_account( fc::ecc::public_key receiver_key,
                                          asset amount,
                                          fc::ecc::private_key from_key,
                                          const std::string& memo_message,
@@ -165,7 +165,7 @@ namespace bts { namespace blockchain {
                                          )
    {
       withdraw_with_signature by_account;
-      by_account.encrypt_memo_data( one_time_private_key,
+      auto receiver_address_key = by_account.encrypt_memo_data( one_time_private_key,
                                  receiver_key,
                                  from_key,
                                  memo_message,
@@ -177,6 +177,7 @@ namespace bts { namespace blockchain {
       op.condition = withdraw_condition( by_account, amount.asset_id, slate_id );
 
       operations.push_back( op );
+      return receiver_address_key;
    }
    void transaction::release_escrow( const address& escrow_account,
                                      const address& released_by,
@@ -191,7 +192,8 @@ namespace bts { namespace blockchain {
        operations.push_back(op);
    }
 
-   void transaction::deposit_to_escrow( fc::ecc::public_key receiver_key,
+   public_key_type transaction::deposit_to_escrow( 
+                                        fc::ecc::public_key receiver_key,
                                         fc::ecc::public_key escrow_key,
                                         digest_type agreement,
                                         asset amount,
@@ -204,7 +206,7 @@ namespace bts { namespace blockchain {
                                       )
    {
       withdraw_with_escrow by_escrow;
-      by_escrow.encrypt_memo_data( one_time_private_key,
+      auto receiver_pub_key = by_escrow.encrypt_memo_data( one_time_private_key,
                                  receiver_key,
                                  from_key,
                                  memo_message,
@@ -218,6 +220,7 @@ namespace bts { namespace blockchain {
       op.condition = withdraw_condition( by_escrow, amount.asset_id, slate_id );
 
       operations.push_back( op );
+      return receiver_pub_key;
    }
 
 
