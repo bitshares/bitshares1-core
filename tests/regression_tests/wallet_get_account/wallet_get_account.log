@@ -12,7 +12,7 @@ Returns:
   wallet_account_record
 default (unlocked) >>> wallet_get_account testaccount
 {
-  "index": 414,
+  "index": 313,
   "id": 0,
   "name": "testaccount",
   "public_data": null,

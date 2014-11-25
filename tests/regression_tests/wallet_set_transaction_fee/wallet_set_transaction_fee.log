@@ -62,6 +62,7 @@ Command failed with exception: insufficient relay fee (36005)
 
 
 
+
 default (unlocked) >>> wallet_set_transaction_fee 123.456
 123.45600 XTS
 default (unlocked) >>> wallet_get_info

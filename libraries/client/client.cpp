@@ -583,11 +583,6 @@ void client_impl::delegate_loop()
       _chain_db->skip_signature_verification( false );
       ilog( "Producing block at time: ${t}", ("t",*next_block_time) );
 
-#ifndef DISABLE_DELEGATE_NETWORK
-      // sign in to delegate server using private keys of my delegates
-      //_delegate_network.signin( _wallet->get_my_delegate( enabled_delegate_status | active_delegate_status ) );
-#endif
-
       if( *next_block_time <= now )
       {
          try
@@ -602,11 +597,6 @@ void client_impl::delegate_loop()
             full_block next_block = _chain_db->generate_block( *next_block_time );
             _wallet->sign_block( next_block );
             on_new_block( next_block, next_block.id(), false );
-
-#ifndef DISABLE_DELEGATE_NETWORK
-            _delegate_network.broadcast_block( next_block );
-            // broadcast block to delegates first, starting with the next delegate
-#endif
 
             _p2p_node->broadcast( block_message( next_block ) );
             ilog( "Produced block #${n}!", ("n",next_block.block_num) );
@@ -1234,30 +1224,6 @@ void client::simulate_disconnect( bool state )
 void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_path, std::function<void(float)> reindex_status_callback )
 { try {
       my->_config = load_config( data_dir, my->_enable_ulog );
-
-#ifndef DISABLE_DELEGATE_NETWORK
-      /*
-         *  Don't delete me, I promise I will be used soon
-         *
-         *  TODO: this creates a memory leak / circular reference between client and
-         *  delegate network.
-        */
-      my->_delegate_network.set_client( shared_from_this() );
-      my->_delegate_network.listen( my->_config.delegate_server );
-
-      for( auto delegate_host : my->_config.default_delegate_peers )
-      {
-         try {
-            wlog( "connecting to delegate peer ${p}", ("p",delegate_host) );
-            my->_delegate_network.connect_to( fc::ip::endpoint::from_string(delegate_host) );
-         }
-         catch ( const fc::exception& e )
-         {
-            wlog( "${e}", ("e", e.to_detail_string() ) );
-         }
-
-      }
-#endif
 
       //std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
       fc::configure_logging( my->_config.logging );
