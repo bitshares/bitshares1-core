@@ -46,7 +46,13 @@ namespace bts { namespace blockchain {
     {
         object_id_type              id;
         variant                     public_data;
-        optional<set<address>>      _owners; // always use chain_interface->get_object_owners(obj)  instead of accessing this!
+
+        // always use chain_interface->get_object_owners(obj)  instead of accessing this!
+        // At least until we migrate all legacy object types
+        optional<set<address>>      _owners;
+
+        object_record() {}
+        object_record( const object_id_type& id ) {}
     };
 
 } } // bts::blockchain

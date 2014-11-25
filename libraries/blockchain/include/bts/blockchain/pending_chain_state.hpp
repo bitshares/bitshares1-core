@@ -76,8 +76,8 @@ namespace bts { namespace blockchain {
          virtual vector<operation>      get_recent_operations( operation_type_enum t )override;
          virtual void                   store_recent_operation( const operation& o )override;
 
-         virtual void                       store_object_record( const object_record& obj )override;
-         virtual object_record              get_object_record( object_id_type id )override;
+         virtual void                   store_object_record( const object_record& obj )override;
+         virtual object_record          get_object_record( object_id_type id )override;
 
          virtual variant                get_property( chain_property_enum property_id )const override;
          virtual void                   set_property( chain_property_enum property_id, const variant& property_value )override;
@@ -143,6 +143,8 @@ namespace bts { namespace blockchain {
          map< market_index_key, order_record>                           relative_bids;
          map< market_index_key, order_record>                           relative_asks;
 
+         map< object_id_type, object_record >                           objects;
+
          std::set<std::pair<asset_id_type, asset_id_type>>              _dirty_markets;
 
          chain_interface_weak_ptr                                       _prev_state;
@@ -156,4 +158,4 @@ namespace bts { namespace blockchain {
 FC_REFLECT( bts::blockchain::pending_chain_state,
             (assets)(slates)(accounts)(balances)(account_id_index)(symbol_id_index)(transactions)
             (properties)(bids)(asks)(shorts)(collateral)(slots)
-            (market_statuses)(feeds)(burns)(relative_bids)(relative_asks)(_dirty_markets) )
+            (market_statuses)(feeds)(objects)(burns)(relative_bids)(relative_asks)(_dirty_markets) )

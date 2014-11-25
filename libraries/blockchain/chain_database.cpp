@@ -146,6 +146,8 @@ namespace bts { namespace blockchain {
           _collateral_db.open( data_dir / "index/collateral_db" );
           _feed_db.open( data_dir / "index/feed_db" );
 
+          _object_db.open( data_dir / "index/object_db" );
+
           _market_status_db.open( data_dir / "index/market_status_db" );
           _market_history_db.open( data_dir / "index/market_history_db" );
 
@@ -1130,6 +1132,7 @@ namespace bts { namespace blockchain {
                  my->_collateral_db.set_write_through( write_through );
 
                  my->_feed_db.set_write_through( write_through );
+                 my->_object_db.set_write_through( write_through );
                  my->_market_status_db.set_write_through( write_through );
                  my->_market_transactions_db.set_write_through( write_through );
                  my->_market_history_db.set_write_through( write_through );
@@ -1292,6 +1295,8 @@ namespace bts { namespace blockchain {
       my->_collateral_db.close();
       my->_feed_db.close();
 
+      my->_object_db.close();
+      
       my->_market_history_db.close();
       my->_market_status_db.close();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
@@ -1785,6 +1790,17 @@ namespace bts { namespace blockchain {
       if( recent_op_queue.size() > MAX_RECENT_OPERATIONS )
         recent_op_queue.pop_front();
    }
+
+
+    object_record              chain_database::get_object_record( object_id_type id )
+    {
+       return *( my->_object_db.fetch_optional( id ) ); // TODO interface should be optional
+    }
+
+    void                       chain_database::store_object_record( const object_record& obj )
+    {
+        my->_object_db.store( obj.id, obj );
+    }
 
    otransaction_record chain_database::get_transaction( const transaction_id_type& trx_id, bool exact )const
    { try {
@@ -3479,6 +3495,10 @@ namespace bts { namespace blockchain {
        my->_feed_db.export_to_json( next_path );
        ulog( "Dumped ${p}", ("p",next_path) );
 
+       next_path = dir / "_object_db.json";
+       my->_object_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
        next_path = dir / "_market_status_db.json";
        my->_market_status_db.export_to_json( next_path );
        ulog( "Dumped ${p}", ("p",next_path) );
@@ -3495,7 +3515,7 @@ namespace bts { namespace blockchain {
                            (_block_num_to_id_db)(_block_id_to_block_record_db)(_block_id_to_block_data_db)(_known_transactions) \
                            (_id_to_transaction_record_db)(_pending_transaction_db)(_pending_fee_index)(_asset_db)(_balance_db) \
                            (_burn_db)(_account_db)(_address_to_account_db)(_account_index_db)(_symbol_index_db)(_delegate_vote_index_db) \
-                           (_slot_record_db)(_ask_db)(_bid_db)(_short_db)(_collateral_db)(_feed_db)(_market_status_db)(_market_history_db) \
+                           (_slot_record_db)(_ask_db)(_bid_db)(_short_db)(_collateral_db)(_feed_db)(_object_db)(_market_status_db)(_market_history_db) \
                            (_recent_operations)
 #define GET_DATABASE_SIZE(r, data, elem) stats[BOOST_PP_STRINGIZE(elem)] = my->elem.size();
      BOOST_PP_SEQ_FOR_EACH(GET_DATABASE_SIZE, _, CHAIN_DB_DATABASES)

@@ -83,6 +83,7 @@ namespace bts { namespace blockchain {
          for( const auto& item : items.second )    prev_state->store_recent_operation( item );
       }
       for( const auto& item : burns ) prev_state->store_burn_record( burn_record(item.first,item.second) );
+      for( const auto& item : objects ) prev_state->store_object_record( item.second );
       prev_state->set_market_transactions( market_transactions );
       prev_state->set_dirty_markets( _dirty_markets );
    }
@@ -232,6 +233,10 @@ namespace bts { namespace blockchain {
       {
          undo_state->store_burn_record( burn_record( item.first ) );
       }
+      for( const auto& item : objects )
+      {
+         undo_state->store_object_record( object_record( item.first ) );
+      }
 
       const auto dirty_markets = prev_state->get_dirty_markets();
       undo_state->set_dirty_markets( dirty_markets );
@@ -367,6 +372,18 @@ namespace bts { namespace blockchain {
       if( recent_op_queue.size() > MAX_RECENT_OPERATIONS )
         recent_op_queue.pop_front();
    }
+
+   object_record pending_chain_state::get_object_record(object_id_type id)
+   {
+       //TODO optional
+       return objects[id];
+   }
+
+   void pending_chain_state::store_object_record(const object_record& obj)
+   {
+       objects[obj.id] = obj;
+   }
+
 
    fc::variant pending_chain_state::get_property( chain_property_enum property_id )const
    {
