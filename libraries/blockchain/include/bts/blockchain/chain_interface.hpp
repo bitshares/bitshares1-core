@@ -4,6 +4,7 @@
 #include <bts/blockchain/asset_record.hpp>
 #include <bts/blockchain/balance_record.hpp>
 #include <bts/blockchain/object_record.hpp>
+#include <bts/blockchain/edge_record.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
 #include <bts/blockchain/block_record.hpp>
 #include <bts/blockchain/delegate_slate.hpp>
@@ -175,7 +176,7 @@ namespace bts { namespace blockchain {
          virtual vector<operation>          get_recent_operations( operation_type_enum t )                  = 0;
 
          virtual void                       store_object_record( const object_record& obj )                 = 0;
-         virtual object_record              get_object_record( object_id_type id )                          = 0;
+         virtual oobject_record             get_object_record( object_id_type id )                          = 0;
 
 
          virtual void                       apply_deterministic_updates(){}

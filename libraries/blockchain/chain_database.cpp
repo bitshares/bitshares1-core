@@ -1792,14 +1792,14 @@ namespace bts { namespace blockchain {
    }
 
 
-    object_record              chain_database::get_object_record( object_id_type id )
+    oobject_record             chain_database::get_object_record( object_id_type id )
     {
-       return *( my->_object_db.fetch_optional( id ) ); // TODO interface should be optional
+       return my->_object_db.fetch_optional( id );
     }
 
     void                       chain_database::store_object_record( const object_record& obj )
     {
-        my->_object_db.store( obj.id, obj );
+        my->_object_db.store( obj._id, obj );
     }
 
    otransaction_record chain_database::get_transaction( const transaction_id_type& trx_id, bool exact )const

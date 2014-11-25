@@ -16,7 +16,11 @@ namespace bts { namespace blockchain {
       set_object_operation( const object_record& o )
       :obj( std::move(obj) ){}
 
-      int64_t id; // if not zero, overrides "number" field of ID with either this or id with this index
+      // This is not the real ID with type info - object record should have a type
+      // If ID is zero, make a new object (get a new ID)
+      // if ID is negative, look in evaluation stack
+      // if ID is positive, update the existing object
+      int64_t id;
       object_record obj;
 
       void evaluate( transaction_evaluation_state& eval_state );
