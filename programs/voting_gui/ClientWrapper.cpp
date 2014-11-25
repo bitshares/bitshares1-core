@@ -277,6 +277,7 @@ void ClientWrapper::begin_verification(QObject* window, QString account_name, QS
    request->properties.emplace_back(bts::vote::identity_property::generate("First Name"));
    request->properties.emplace_back(bts::vote::identity_property::generate("Middle Name"));
    request->properties.emplace_back(bts::vote::identity_property::generate("Last Name"));
+   request->properties.emplace_back(bts::vote::identity_property::generate("Name Suffix"));
    request->properties.emplace_back(bts::vote::identity_property::generate("Date of Birth"));
    request->properties.emplace_back(bts::vote::identity_property::generate("ID Number"));
    request->properties.emplace_back(bts::vote::identity_property::generate("Address Line 1"));

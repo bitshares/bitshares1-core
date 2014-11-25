@@ -309,21 +309,23 @@ public:
       auto first_name = record.get_property("First Name");
       auto middle_name = record.get_property("Middle Name");
       auto last_name = record.get_property("Last Name");
+      auto name_suffix = record.get_property("Name Suffix");
       auto dob = record.get_property("Date of Birth");
       auto id_number = record.get_property("ID Number");
 
-      if( !(first_name && middle_name && last_name && dob && id_number) )
+      if( !(first_name && last_name && dob && id_number) )
       {
          record.status = needs_further_review;
-         record.rejection_reason = ("A required field was not provided. Required fields are all name fields, date of "
+         record.rejection_reason = ("A required field was not provided. Required fields are first and last name fields, date of "
                                     "birth, and ID Number. Complete these fields and resubmit as an accepted identity.");
          return;
       }
 
       //Concatenate first, middle and last names; remove all non-alphabetical characters, and make completely upper-case
       string normalized_name = first_name->value.as_string()
-            + middle_name->value.as_string()
-            + last_name->value.as_string();
+            + (middle_name? middle_name->value.as_string() : string())
+            + last_name->value.as_string()
+            + (name_suffix? name_suffix->value.as_string() : string());
       normalized_name.erase(std::remove_if(normalized_name.begin(), normalized_name.end(), [](char c) {
          return !isalpha(c);
       }), normalized_name.end());

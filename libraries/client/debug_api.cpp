@@ -189,6 +189,8 @@ variant_object client_impl::debug_request_verification(const std::string &accoun
    ident.properties.push_back(prop);
    prop = {fc::uint128(234), "Last Name", variant()};
    ident.properties.push_back(prop);
+   prop = {fc::uint128(234), "Name Suffix", variant()};
+   ident.properties.push_back(prop);
    prop = {fc::uint128(777), "Date of Birth", variant()};
    ident.properties.push_back(prop);
    prop = {fc::uint128(345), "ID Number", variant()};
