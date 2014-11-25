@@ -18,9 +18,6 @@
 #include <iostream>
 #include <fstream>
 
-// delegate network breaks win32
-#define DISABLE_DELEGATE_NETWORK 1
-
 namespace bts { namespace client {
 
 typedef boost::iostreams::tee_device<std::ostream, std::ofstream> TeeDevice;
@@ -234,10 +231,6 @@ public:
    bts::client::client*                                    _self;
    std::string                                             _user_agent;
    bts::cli::cli*                                          _cli = nullptr;
-
-#ifndef DISABLE_DELEGATE_NETWORK
-   bts::net::node                                          _delegate_network;
-#endif
 
    std::unique_ptr<std::istream>                           _command_script_holder;
    std::ofstream                                           _console_log;
