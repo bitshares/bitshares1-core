@@ -901,7 +901,7 @@ string pretty_order_list( const vector<std::pair<order_id_type, market_order>>& 
     std::stringstream out;
     out << std::left;
 
-    out << std::setw( 12 ) << "TYPE";
+    out << std::setw( 20 ) << "TYPE";
     out << std::setw( 20 ) << "QUANTITY";
     out << std::setw( 30 ) << "PRICE";
     out << std::setw( 20 ) << "BALANCE";
@@ -912,17 +912,21 @@ string pretty_order_list( const vector<std::pair<order_id_type, market_order>>& 
 
     out << pretty_line( 162 );
     out << "\n";
+    auto qid = order_items.front().second.market_index.order_price.quote_asset_id;
+    auto bid =order_items.front().second.market_index.order_price.base_asset_id;
+
+    auto median_price_feed = client->get_chain()->get_median_delegate_price( qid, bid );
 
     for( const auto& item : order_items )
     {
         const auto id = item.first;
         const auto order = item.second;
 
-        out << std::setw( 12 ) << variant( order.type ).as_string();
-        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_quantity() );
-        out << std::setw( 30 ) << client->get_chain()->to_pretty_price( order.get_price() );
+        out << std::setw( 20 ) << variant( order.type ).as_string();
+        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_quantity(*median_price_feed) );
+        out << std::setw( 30 ) << client->get_chain()->to_pretty_price( order.get_price(*median_price_feed) );
         out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_balance() );
-        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_quantity() * order.get_price() );
+        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_quantity(*median_price_feed) * order.get_price(*median_price_feed) );
         if( order.type != cover_order )
            out << std::setw( 20 ) << "N/A";
         else

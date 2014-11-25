@@ -11,13 +11,13 @@
 
 namespace bts { namespace blockchain {
   price operator +  ( const price& l, const price& r )
-  {
+  { try {
      FC_ASSERT( l.quote_asset_id == r.quote_asset_id );
      FC_ASSERT( l.base_asset_id  == r.base_asset_id );
      price result = l;
      result.ratio += r.ratio;
-     return l;
-  }
+     return result;
+  } FC_CAPTURE_AND_RETHROW( (l)(r) ) }
 
   asset::operator std::string()const
   {
@@ -25,7 +25,7 @@ namespace bts { namespace blockchain {
   }
 
   asset& asset::operator += ( const asset& o )
-  {
+  { try {
      FC_ASSERT( this->asset_id == o.asset_id, "", ("*this",*this)("o",o) );
 
      if (((o.amount > 0) && (amount > (INT64_MAX - o.amount))) ||
@@ -37,7 +37,7 @@ namespace bts { namespace blockchain {
 
      amount += o.amount;
      return *this;
-  }
+  } FC_CAPTURE_AND_RETHROW( (*this)(o) ) }
 
   asset  asset::operator *  ( const fc::uint128_t& fix6464 )const
   {
