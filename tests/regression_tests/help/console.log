@@ -193,6 +193,9 @@ wallet_market_submit_short <from_account_name> <short_collateral> <collateral_sy
 wallet_multisig_deposit <amount> <symbol> <from_name> <m> <addresses> [vote_method]                 
 wallet_multisig_get_balance_id <m> <addresses>                                                      
 wallet_multisig_withdraw_start <amount> <symbol> <from> <to_address> [vote_method] [builder_path]   
+wallet_object_create <paying_account_name> <m> <owners> [user_data]                                 
+wallet_object_transfer <paying_account_name> <object_id> <m> <owners> [sign_and_broadcast]          
+wallet_object_update <paying_account_name> <object_id> [user_data] [sign_and_broadcast]             
 wallet_open <wallet_name>                                                                           
 wallet_publish_feeds <delegate_account> <symbol_to_price_map>                                       
 wallet_publish_feeds_multi_experimental <symbol_to_price_map>                                       
