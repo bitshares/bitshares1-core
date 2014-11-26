@@ -11,6 +11,7 @@
 #include <bts/blockchain/market_records.hpp>
 #include <bts/blockchain/feed_operations.hpp>
 #include <bts/blockchain/types.hpp>
+#include <bts/blockchain/condition.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -190,7 +191,7 @@ namespace bts { namespace blockchain {
          virtual object_id_type             last_object_id()const;
          virtual object_id_type             new_object_id( obj_type type );
 
-         virtual set<address>               get_object_owners( const object_record& obj );
+         virtual multisig_condition         get_object_owners( const object_record& obj );
 
 
 #if 0

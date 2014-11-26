@@ -3,6 +3,7 @@
 #include <bts/blockchain/balance_operations.hpp>
 #include <bts/blockchain/market_operations.hpp>
 #include <bts/blockchain/feed_operations.hpp>
+#include <bts/blockchain/object_operations.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/blockchain/transaction.hpp>
 
@@ -42,6 +43,11 @@ namespace bts { namespace blockchain {
    void signed_transaction::sign( const fc::ecc::private_key& signer, const digest_type& chain_id )
    {
       signatures.push_back( signer.sign_compact( digest(chain_id) ) );
+   }
+
+   void transaction::set_object( int64_t id, const object_record& obj )
+   {
+      operations.emplace_back( set_object_operation( id, obj ) );
    }
 
    void transaction::define_delegate_slate( delegate_slate s )

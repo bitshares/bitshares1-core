@@ -29,6 +29,19 @@ namespace bts { namespace blockchain {
       return  _skip_signature_check || signed_keys.find( a ) != signed_keys.end();
    } FC_CAPTURE_AND_RETHROW( (a) ) }
 
+   bool transaction_evaluation_state::check_multisig( const multisig_condition& condition )const
+   { try {
+
+      if( _skip_signature_check )
+          return true;
+      auto valid = 0;
+      for( auto addr : condition.owners )
+          if( signed_keys.find( addr) != signed_keys.end() )
+              valid++;
+      return valid >= condition.required;
+
+   } FC_CAPTURE_AND_RETHROW( (condition) ) }
+
    bool transaction_evaluation_state::any_parent_has_signed( const string& account_name )const
    { try {
        for( optional<string> parent_name = _current_state->get_parent_account_name( account_name );

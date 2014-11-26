@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include <bts/blockchain/types.hpp>
+#include <bts/blockchain/condition.hpp>
 #include <fc/io/enum_type.hpp>
 
 namespace bts { namespace blockchain {
@@ -35,7 +36,7 @@ namespace bts { namespace blockchain {
 
         // always use chain_interface->get_object_owners(obj)  instead of accessing this!
         // At least until we migrate all legacy object types
-        set<address>                _owners;
+        multisig_condition          _owners;
 
     };
 

@@ -142,16 +142,14 @@ namespace bts { namespace blockchain {
       return next_id;
    }
 
-   set<address>   chain_interface::get_object_owners( const object_record& obj )
+   multisig_condition   chain_interface::get_object_owners( const object_record& obj )
    {
-       auto owners = set<address>();
+       multisig_condition owners;
        switch( obj.type() )
        {
            case( obj_type::normal_object ): 
            {
-               if( obj._owners.size() > 0 )
-                   owners = obj._owners;
-               return owners;
+               owners = obj._owners;
            }
            case( obj_type::edge_object ):
            {
@@ -165,7 +163,8 @@ namespace bts { namespace blockchain {
                auto account_id = obj.short_id();
                auto oacct = get_account_record( account_id );
                FC_ASSERT( oacct.valid(), "No such account object!");
-               owners.insert( oacct->owner_address() );
+               owners.owners.insert( oacct->owner_address() );
+               owners.required = 1;
                return owners;
            }
            case( obj_type::asset_object ):

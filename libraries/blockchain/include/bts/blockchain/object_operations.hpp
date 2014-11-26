@@ -13,8 +13,10 @@ namespace bts { namespace blockchain {
       static const operation_type_enum type;
 
       set_object_operation(){}
-      set_object_operation( const object_record& o )
-      :obj( std::move(obj) ){}
+      set_object_operation( int64_t id, const object_record& o )
+          :id(id),
+          obj( o )
+      {}
 
       // This is not the real ID with type info - object record should have a type
       // If ID is zero, make a new object (get a new ID)

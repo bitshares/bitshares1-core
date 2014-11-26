@@ -20,19 +20,14 @@ namespace bts { namespace blockchain {
             auto next_id = eval_state._current_state->new_object_id(this->obj.type());
             obj = this->obj;
             obj.set_id( this->obj.type(), next_id );
-            auto owners = eval_state._current_state->get_object_owners( obj );
             switch( obj.type() )
             {
                 case( normal_object ):
                 case( edge_object ):
                 {
-                    FC_ASSERT( owners.size() > 0, "This object doesn't have any owners that can sign for it!" );
-                    for( auto owner : owners )
-                    {
-                        if( NOT eval_state.check_signature( owner ) )
-                            FC_CAPTURE_AND_THROW( missing_signature, (owner) );
-                    }
-                    break;
+                    auto owners = eval_state._current_state->get_object_owners( obj );
+                    if( NOT eval_state.check_multisig( owners ) )
+                        FC_CAPTURE_AND_THROW( missing_signature, ( owners ) );
                 }
                 case( account_object ):
                 case( asset_object ):
@@ -47,15 +42,14 @@ namespace bts { namespace blockchain {
             auto oobj = eval_state._current_state->get_object_record( real_id );
             FC_ASSERT( oobj.valid(), "No object with that ID.");
             obj = *oobj;
+            auto owners = eval_state._current_state->get_object_owners( obj );
             switch( obj.type() )
             {
                 case( normal_object ):
+                case( edge_object ):
                 {
-                    for( auto owner : eval_state._current_state->get_object_owners( obj ) )
-                    {
-                        if( !eval_state.check_signature( owner ) )
-                            FC_CAPTURE_AND_THROW( missing_signature, (owner) );
-                    }
+                    if( NOT eval_state.check_multisig( owners ) )
+                        FC_CAPTURE_AND_THROW( missing_signature, (owners) );
                 }
                 case( account_object ):
                 case( asset_object ):
