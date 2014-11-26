@@ -249,7 +249,7 @@ namespace bts { namespace cli {
 
     _command_to_function["blockchain_get_block"] = [](std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client)
     {
-      auto& block = result.as<fc::mutable_variant_object>();
+      auto block = result.as<fc::mutable_variant_object>();
       if(!block["processing_time"].is_null() && FILTER_OUTPUT_FOR_TESTS)
         block["processing_time"] = "<d-ign>" + block["processing_time"].as_string() + "</d-ign>";
       out << fc::json::to_pretty_string(block) << "\n";
