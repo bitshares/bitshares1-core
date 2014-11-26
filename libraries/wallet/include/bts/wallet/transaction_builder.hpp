@@ -197,7 +197,11 @@ namespace bts { namespace wallet {
                                                      const vector<address>& addresses,
                                                      const vote_selection_method& vote_method = vote_none );
 
-      transaction_builder& withdraw_from_balance(const balance_id_type& from, 
+      transaction_builder& set_object(const string& payer_name,
+                                      const object_record& obj,
+                                      bool create );
+
+      transaction_builder& withdraw_from_balance(const balance_id_type& from,
                                                  const share_type& amount);
       transaction_builder& deposit_to_balance(const balance_id_type& to,
                                               const asset& amount,

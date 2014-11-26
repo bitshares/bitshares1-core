@@ -373,15 +373,16 @@ namespace bts { namespace blockchain {
         recent_op_queue.pop_front();
    }
 
-   object_record pending_chain_state::get_object_record(object_id_type id)
+   oobject_record pending_chain_state::get_object_record(object_id_type id)
    {
-       //TODO optional
-       return objects[id];
+       if( objects.find(id) != objects.end() )
+           return oobject_record(objects[id]);
+       return oobject_record();
    }
 
    void pending_chain_state::store_object_record(const object_record& obj)
    {
-       objects[obj.id] = obj;
+       objects[obj._id] = obj;
    }
 
 

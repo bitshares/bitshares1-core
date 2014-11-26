@@ -60,7 +60,9 @@ namespace bts { namespace blockchain {
       relative_bid_op_type          = 25,
       relative_ask_op_type          = 26,
 
-      update_balance_vote_op_type   = 27
+      update_balance_vote_op_type   = 27,
+
+      set_object_op_type            = 28
    };
 
    /**
@@ -142,6 +144,7 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (relative_bid_op_type)
                  (relative_ask_op_type)
                  (update_balance_vote_op_type)
+                 (set_object_op_type)
                  )
 
 FC_REFLECT( bts::blockchain::operation, (type)(data) )

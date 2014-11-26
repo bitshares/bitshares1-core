@@ -3,6 +3,7 @@
 #include <bts/blockchain/balance_operations.hpp>
 #include <bts/blockchain/feed_operations.hpp>
 #include <bts/blockchain/market_operations.hpp>
+#include <bts/blockchain/object_operations.hpp>
 #include <bts/blockchain/operation_factory.hpp>
 #include <bts/blockchain/operations.hpp>
 #include <bts/blockchain/proposal_operations.hpp>
@@ -49,6 +50,8 @@ namespace bts { namespace blockchain {
 
    const operation_type_enum update_balance_vote_operation::type    = update_balance_vote_op_type;
 
+   const operation_type_enum set_object_operation::type             = set_object_op_type;
+
    static bool first_chain = []()->bool{
       bts::blockchain::operation_factory::instance().register_operation<withdraw_operation>();
       bts::blockchain::operation_factory::instance().register_operation<withdraw_all_operation>();
@@ -79,6 +82,7 @@ namespace bts { namespace blockchain {
       bts::blockchain::operation_factory::instance().register_operation<relative_bid_operation>();
       bts::blockchain::operation_factory::instance().register_operation<relative_ask_operation>();
       bts::blockchain::operation_factory::instance().register_operation<update_balance_vote_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<set_object_operation>();
       return true;
    }();
 

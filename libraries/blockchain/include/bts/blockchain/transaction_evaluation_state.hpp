@@ -1,6 +1,7 @@
 #pragma once
 #include <bts/blockchain/types.hpp>
 #include <bts/blockchain/transaction.hpp>
+#include <bts/blockchain/condition.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -51,6 +52,7 @@ namespace bts { namespace blockchain {
          // virtual void verify_slate_id( slate_id_type id )const;
 
          bool check_signature( const address& a )const;
+         bool check_multisig( const multisig_condition& a )const;
 
          bool any_parent_has_signed( const string& account_name )const;
          bool account_or_any_parent_has_signed( const account_record& record )const;

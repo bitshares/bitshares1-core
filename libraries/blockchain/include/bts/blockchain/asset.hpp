@@ -83,7 +83,10 @@ namespace bts { namespace blockchain {
   inline asset operator -  ( const asset& l, const asset& r ) { return asset(l) -= r; }
 
   inline bool operator == ( const price& l, const price& r ) { return l.ratio == r.ratio; }
-  inline bool operator != ( const price& l, const price& r ) { return l.ratio == r.ratio; }
+
+  inline bool operator != ( const price& l, const price& r ) { return l.ratio != r.ratio || 
+                                                                      l.base_asset_id != r.base_asset_id || 
+                                                                      l.quote_asset_id != r.quote_asset_id; }
   price operator +  ( const price& l, const price& r );
 
   inline bool operator <  ( const price& l, const price& r )

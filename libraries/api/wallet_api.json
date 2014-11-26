@@ -253,6 +253,105 @@
         "aliases" : ["set_expiration"]
       },
       {
+        "method_name": "wallet_object_create",
+        "description": "Creates a normal user object.",
+        "return_type": "transaction_record",
+        "parameters" :
+          [
+            {
+              "name" : "paying_account_name",
+              "type" : "sending_account_name",
+              "description" : "the source account to draw the shares from"
+            },
+            {
+               "name" : "m",
+               "type" : "uint32_t",
+               "description" : ""
+            },
+            {
+               "name" : "owners",
+               "type" : "address_list",
+               "description" : ""
+            },
+            {
+               "name" : "user_data",
+               "type" : "variant",
+               "description" : "",
+               "default_value": ""
+            }
+        ],
+        "prerequisites" : ["wallet_unlocked"],
+        "aliases" : ["create_object"]
+      },
+      {
+        "method_name": "wallet_object_update",
+        "description": "Update a normal user object.",
+        "return_type": "transaction_builder",
+        "parameters" :
+          [
+            {
+              "name" : "paying_account_name",
+              "type" : "sending_account_name",
+              "description" : "the source account to draw the shares from"
+            },
+            {
+              "name" : "object_id",
+              "type" : "object_id_type",
+              "description" : "the object to update"
+            },
+            {
+               "name" : "user_data",
+               "type" : "variant",
+               "description" : "",
+               "default_value": ""
+            },
+            {
+                "name": "sign_and_broadcast",
+                "type": "bool",
+                "description": "",
+                "default_value": true
+            }
+        ],
+        "prerequisites" : ["wallet_unlocked"],
+        "aliases" : ["update_object"]
+      },
+      {
+        "method_name": "wallet_object_transfer",
+        "description": "Update a normal user object's owner.",
+        "return_type": "transaction_builder",
+        "parameters" :
+          [
+            {
+              "name" : "paying_account_name",
+              "type" : "sending_account_name",
+              "description" : "the source account to draw the shares from"
+            },
+            {
+              "name" : "object_id",
+              "type" : "object_id_type",
+              "description" : "the object to update"
+            },
+            {
+               "name" : "m",
+               "type" : "uint32_t",
+               "description" : ""
+            },
+            {
+               "name" : "owners",
+               "type" : "address_list",
+               "description" : ""
+            },
+            {
+                "name": "sign_and_broadcast",
+                "type": "bool",
+                "description": "",
+                "default_value": true
+            }
+        ],
+        "prerequisites" : ["wallet_unlocked"],
+        "aliases" : ["transfer_object"]
+      },
+      {
         "method_name": "wallet_account_transaction_history",
         "description": "Lists transaction history for the specified account",
         "return_type": "pretty_transactions",

@@ -153,8 +153,8 @@ namespace bts { namespace blockchain {
       asset         get_balance()const; // funds available for this order
       price         get_price( const price& base = price() )const;
       price         get_highest_cover_price()const; // the price that consumes all collateral
-      asset         get_quantity()const;
-      asset         get_quote_quantity()const;
+      asset         get_quantity( const price& base = price() )const;
+      asset         get_quote_quantity( const price& base = price() )const;
       address       get_owner()const { return market_index.owner; }
 
       fc::enum_type<uint8_t, order_type_enum>   type = null_order;

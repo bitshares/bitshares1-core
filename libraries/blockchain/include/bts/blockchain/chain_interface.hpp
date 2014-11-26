@@ -4,12 +4,14 @@
 #include <bts/blockchain/asset_record.hpp>
 #include <bts/blockchain/balance_record.hpp>
 #include <bts/blockchain/object_record.hpp>
+#include <bts/blockchain/edge_record.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
 #include <bts/blockchain/block_record.hpp>
 #include <bts/blockchain/delegate_slate.hpp>
 #include <bts/blockchain/market_records.hpp>
 #include <bts/blockchain/feed_operations.hpp>
 #include <bts/blockchain/types.hpp>
+#include <bts/blockchain/condition.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -175,7 +177,7 @@ namespace bts { namespace blockchain {
          virtual vector<operation>          get_recent_operations( operation_type_enum t )                  = 0;
 
          virtual void                       store_object_record( const object_record& obj )                 = 0;
-         virtual object_record              get_object_record( object_id_type id )                          = 0;
+         virtual oobject_record             get_object_record( object_id_type id )                          = 0;
 
 
          virtual void                       apply_deterministic_updates(){}
@@ -189,7 +191,7 @@ namespace bts { namespace blockchain {
          virtual object_id_type             last_object_id()const;
          virtual object_id_type             new_object_id( obj_type type );
 
-         virtual set<address>               get_object_owners( const object_record& obj );
+         virtual multisig_condition         get_object_owners( const object_record& obj );
 
 
 #if 0

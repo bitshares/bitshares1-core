@@ -134,31 +134,54 @@ namespace bts { namespace blockchain {
 
    object_id_type chain_interface::new_object_id( obj_type type )
    {
-      auto id = obj_id( last_object_id() );
-      auto old_number = id.number;
-      FC_ASSERT( id.number != (2^48 - 1), "Object ID wrapped!" );
-      id.number = old_number + 1;
-      id.type = type;
-      set_property( chain_property_enum::last_object_id, object_id_type( id ) );
-      return id;
+      auto last_id = last_object_id();
+      auto tmp = object_record( type, last_id );
+      tmp.set_id( tmp.type(), tmp.short_id() + 1 );
+      auto next_id = tmp._id;
+      set_property( chain_property_enum::last_object_id, object_id_type( next_id ) );
+      return next_id;
    }
 
-   set<address>   chain_interface::get_object_owners( const object_record& obj )
+   multisig_condition   chain_interface::get_object_owners( const object_record& obj )
    {
-       set<address> owners;
-       switch( obj_type( obj_id( obj.id ).type ) )
+       multisig_condition owners;
+       switch( obj.type() )
        {
            case( obj_type::normal_object ): 
            {
-               if( obj._owners.size() > 0 )
-                   owners = obj._owners;
-               return owners;
+               owners = obj._owners;
+           }
+           case( obj_type::edge_object ):
+           {
+               const edge_record& edge = dynamic_cast<const edge_record&>( obj );
+               auto from_object = get_object_record( edge.from );
+               FC_ASSERT( from_object.valid(), "Unrecognized from object.");
+               return get_object_owners( *from_object );
            }
            case( obj_type::account_object ):
+           {
+               auto account_id = obj.short_id();
+               auto oacct = get_account_record( account_id );
+               FC_ASSERT( oacct.valid(), "No such account object!");
+               owners.owners.insert( oacct->owner_address() );
+               owners.required = 1;
+               return owners;
+           }
            case( obj_type::asset_object ):
+           {
+               auto oasset = get_asset_record( obj.short_id() );
+               FC_ASSERT( oasset.valid(), "No such asset!" );
+               if( oasset->issuer_account_id > 0 )
+               {
+               }
+               else
+               {
+                   
+               }
+           }
            default:
            {
-               FC_ASSERT(!"Unknown object type!");
+               FC_ASSERT(!"I don't know how to get the owners for this object type!");
            }
        }
    }

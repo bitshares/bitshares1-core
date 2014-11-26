@@ -6,9 +6,4 @@
 
 namespace bts { namespace blockchain {
 
-    set<address> edge_record::get_owners()
-    {
-        FC_ASSERT(!"unimplemented");
-    }
-
 }} // bts::blockchain

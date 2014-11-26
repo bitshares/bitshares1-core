@@ -11,8 +11,6 @@ namespace bts { namespace blockchain {
         object_id_type     to;
         string             name;
         variant            value;
-
-        set<address>         get_owners();
     };
 
 

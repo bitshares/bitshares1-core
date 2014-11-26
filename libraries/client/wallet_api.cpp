@@ -453,6 +453,66 @@ transaction_builder detail::client_impl::wallet_builder_add_signature(
     return *b2;
 } FC_CAPTURE_AND_RETHROW( (builder)(broadcast) ) }
 
+wallet_transaction_record detail::client_impl::wallet_object_create(
+                                            const string& paying_account,
+                                            uint32_t m, 
+                                            const vector<address>& owners,
+                                            const variant& user_data )
+{ try {
+    auto builder = _wallet->create_transaction_builder();
+    object_record obj( obj_type::normal_object, 0 );
+    obj.user_data = user_data;
+    obj._owners = multisig_condition( m, set<address>(owners.begin(), owners.end()) );
+    builder->set_object( paying_account, obj, true )
+            .finalize()
+            .sign();
+    network_broadcast_transaction( builder->transaction_record.trx );
+    return builder->transaction_record;
+} FC_CAPTURE_AND_RETHROW( (paying_account)(m)(owners)(user_data) ) }
+
+transaction_builder detail::client_impl::wallet_object_update(
+                                            const string& paying_account,
+                                            const object_id_type& id,
+                                            const variant& user_data,
+                                            bool sign_and_broadcast )
+{ try {
+    auto builder = _wallet->create_transaction_builder();
+    auto obj = _chain_db->get_object_record( id );
+    FC_ASSERT( obj.valid(), "No such object!" );
+    obj->user_data = user_data;
+    builder->set_object( paying_account, *obj, true )
+            .finalize();
+    if( sign_and_broadcast )
+    {
+        builder->sign();
+        network_broadcast_transaction( builder->transaction_record.trx );
+    }
+    return *builder;
+} FC_CAPTURE_AND_RETHROW( (paying_account)(id)(user_data)(sign_and_broadcast ) ) }
+
+transaction_builder detail::client_impl::wallet_object_transfer(
+                                            const string& paying_account,
+                                            const object_id_type& id,
+                                            uint32_t m, 
+                                            const vector<address>& owners,
+                                            bool sign_and_broadcast )
+{ try {
+    auto builder = _wallet->create_transaction_builder();
+    auto obj = _chain_db->get_object_record( id );
+    FC_ASSERT( obj.valid(), "No such object!" );
+    obj->_owners = multisig_condition( m, set<address>(owners.begin(), owners.end()) );
+    builder->set_object( paying_account, *obj, true )
+            .finalize();
+    if( sign_and_broadcast )
+    {
+        builder->sign();
+        network_broadcast_transaction( builder->transaction_record.trx );
+    }
+    return *builder;
+} FC_CAPTURE_AND_RETHROW( (paying_account)(id)(m)(owners)(sign_and_broadcast) ) }
+
+
+
 wallet_transaction_record detail::client_impl::wallet_release_escrow( const string& paying_account_name,
                                                                       const address& escrow_balance_id,
                                                                       const string& released_by,
