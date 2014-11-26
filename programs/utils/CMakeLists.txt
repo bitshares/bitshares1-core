@@ -24,7 +24,7 @@ target_link_libraries( bts_key_info fc bts_blockchain bts_utilities)
 # by splitting bts_blockchain, but it doesn't seem worth it just for this
 add_executable( bts_genesis_to_bin bts_genesis_to_bin.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../../libraries/blockchain/types.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/../../libraries/blockchain/pts_address.cpp )
-target_link_libraries( bts_genesis_to_bin fc z)
+target_link_libraries( bts_genesis_to_bin fc )
 target_include_directories( bts_genesis_to_bin PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../../libraries/blockchain/include" )
 
 add_executable( bts_json_to_cpp bts_json_to_cpp.cpp )
@@ -34,7 +34,7 @@ add_executable( map_bts_network map_bts_network.cpp )
 target_link_libraries( map_bts_network fc bts_net bts_client)
 
 add_executable( pack_web pack_web.cpp )
-target_link_libraries( pack_web fc z )
+target_link_libraries( pack_web fc )
 
 add_executable( compute_item_hashes compute_item_hashes.cpp )
 target_link_libraries( compute_item_hashes fc bts_net bts_client)
