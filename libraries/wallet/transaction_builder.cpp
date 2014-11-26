@@ -264,6 +264,8 @@ transaction_builder& transaction_builder::set_object(const string& payer_name,
     else
         id = obj.short_id();
     trx.set_object( id, obj );
+
+    return *this;
 }
 
 
