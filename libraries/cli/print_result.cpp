@@ -246,6 +246,14 @@ namespace bts { namespace cli {
       const auto& usage = result.as<fc::mutable_variant_object>();
       out << pretty_disk_usage( usage );
     };
+
+    _command_to_function["blockchain_get_block"] = [](std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client)
+    {
+      auto& block = result.as<fc::mutable_variant_object>();
+      if(!block["processing_time"].is_null() && FILTER_OUTPUT_FOR_TESTS)
+        block["processing_time"] = "<d-ign>" + block["processing_time"].as_string() + "</d-ign>";
+      out << fc::json::to_pretty_string(block) << "\n";
+    };
   }
 
   void print_result::f_blockchain_get_account_wall( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )

@@ -30,7 +30,7 @@ default (unlocked) >>> blockchain_get_block 1
   "random_seed": "0000000000000000000000000000000000000000",
   "block_size": 166,
   "latency": 0,
-  "processing_time": 3903
+  "processing_time": "<d-ign></d-ign>"
 }
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
@@ -52,7 +52,7 @@ default (unlocked) >>> blockchain_get_block 2
   "random_seed": "2322c73ae804adc5c3e9ec4d188eee59871e4604",
   "block_size": 166,
   "latency": 0,
-  "processing_time": 2931
+  "processing_time": "<d-ign></d-ign>"
 }
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
@@ -74,7 +74,7 @@ default (unlocked) >>> blockchain_get_block 3
   "random_seed": "651f4a46471d05b65eb769e890392640878b3f97",
   "block_size": 166,
   "latency": 0,
-  "processing_time": 977
+  "processing_time": "<d-ign></d-ign>"
 }
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
@@ -96,6 +96,6 @@ default (unlocked) >>> blockchain_get_block 4
   "random_seed": "f00e7ffa074d41538766c540b0ba58b2532fdcbb",
   "block_size": 166,
   "latency": 0,
-  "processing_time": 1953
+  "processing_time": "<d-ign></d-ign>"
 }
 default (unlocked) >>> quit
