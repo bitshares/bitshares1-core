@@ -270,15 +270,31 @@ void wallet_impl::scan_registered_accounts()
 }
 
 void wallet_impl::scan_block( uint32_t block_num, const vector<private_key_type>& keys, const time_point_sec& received_time )
-{
-   const auto block = _blockchain->get_block( block_num );
-   for( const auto& transaction : block.user_transactions )
-      scan_transaction( transaction, block_num, block.timestamp, keys, received_time );
+{ try {
+    const full_block& block = _blockchain->get_block( block_num );
+    for( const signed_transaction& transaction : block.user_transactions )
+    {
+        try
+        {
+            scan_transaction( transaction, block_num, block.timestamp, keys, received_time );
+        }
+        catch( ... )
+        {
+        }
+    }
 
-   const auto market_trxs = _blockchain->get_market_transactions( block_num );
-   for( const auto& market_trx : market_trxs )
-      scan_market_transaction( market_trx, block_num, block.timestamp, received_time );
-}
+    const vector<market_transaction>& market_trxs = _blockchain->get_market_transactions( block_num );
+    for( const market_transaction& market_trx : market_trxs )
+    {
+        try
+        {
+            scan_market_transaction( market_trx, block_num, block.timestamp, received_time );
+        }
+        catch( ... )
+        {
+        }
+    }
+} FC_CAPTURE_AND_RETHROW( (block_num)(received_time) ) }
 
 wallet_transaction_record wallet_impl::scan_transaction(
         const signed_transaction& transaction,
