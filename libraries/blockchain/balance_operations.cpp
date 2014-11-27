@@ -432,6 +432,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( current_balance_record->condition.type == withdraw_signature_type, "Restricted owners not enabled for anything but basic balances" );
 
 
+
       auto balance = current_balance_record->balance;
       if( current_balance_record->condition.delegate_slate_id )
       {
@@ -459,6 +460,11 @@ namespace bts { namespace blockchain {
           auto restricted_owner = current_balance_record->restricted_owner;
           FC_ASSERT( restricted_owner.valid(),
                      "Didn't specify a new restricted owner, but one currently exists." );
+          FC_ASSERT( current_balance_record->last_update.sec_since_epoch()
+                     - eval_state._current_state->now().sec_since_epoch()
+                     >= BTS_BLOCKCHAIN_VOTE_UPDATE_PERIOD_SEC,
+                     "You cannot update your vote this frequently with only the voting key!" );
+
           if( !eval_state.check_signature( *restricted_owner ) )
               FC_CAPTURE_AND_THROW( missing_signature, (restricted_owner) );
           new_slate = this->new_slate;
