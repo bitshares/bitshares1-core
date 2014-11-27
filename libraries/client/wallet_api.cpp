@@ -409,8 +409,9 @@ transaction_builder detail::client_impl::wallet_withdraw_from_legacy_address(
     auto fee = _wallet->get_transaction_fee();
     builder->withdraw_from_balance( from_address, ugly_asset.amount + fee.amount );
     builder->deposit_to_balance( to_address, ugly_asset, vote_method );
+    builder->finalize( false );
     if( sign )
-        builder->finalize().sign();
+        builder->sign();
     return *builder;
 }
 
