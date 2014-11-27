@@ -42,6 +42,7 @@ end
 
 Then(/^Balance with public accountname: (\w+) should have (\d+) (\w+)$/) do |id, amount, symbol|
     bals = @current_actor.node.exec 'blockchain_get_account_public_balance', id
+    puts bals
     bal = bals[0][1][0][1] # maps as lists
     expect(bal == to_f(amount) * 10000)
 end

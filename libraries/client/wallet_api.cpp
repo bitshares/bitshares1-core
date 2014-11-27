@@ -380,8 +380,9 @@ transaction_builder detail::client_impl::wallet_withdraw_from_address(
     auto fee = _wallet->get_transaction_fee();
     builder->withdraw_from_balance( from_address, ugly_asset.amount + fee.amount );
     builder->deposit_to_balance( to_address, ugly_asset, vote_method );
+    builder->finalize( false );
     if( sign )
-        builder->finalize().sign();
+        builder->sign();
     _wallet->write_latest_builder( *builder, builder_path );
     return *builder;
 }
@@ -439,7 +440,7 @@ transaction_builder detail::client_impl::wallet_builder_add_signature(
 { try {
     auto b2 = _wallet->create_transaction_builder( builder );
     if( b2->transaction_record.trx.signatures.empty() )
-        b2->finalize();
+        b2->finalize( false );
     b2->sign();
     if( broadcast )
     {

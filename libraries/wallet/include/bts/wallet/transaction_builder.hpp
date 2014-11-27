@@ -300,7 +300,7 @@ namespace bts { namespace wallet {
        * This function should be called only once, at the end of the builder function calls. Calling it multiple times
        * may cause attempts to over-withdraw balances.
        */
-      transaction_builder& finalize();
+      transaction_builder& finalize( bool pay_fee = true );
       /// @}
 
       /**

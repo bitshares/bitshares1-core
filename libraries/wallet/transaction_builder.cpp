@@ -712,7 +712,7 @@ transaction_builder& transaction_builder::update_asset( const string& symbol,
     return *this;
 } FC_CAPTURE_AND_RETHROW( (symbol)(name)(description)(public_data)(maximum_share_supply)(precision) ) }
 
-transaction_builder& transaction_builder::finalize()
+transaction_builder& transaction_builder::finalize( bool pay_fee )
 { try {
    FC_ASSERT( !trx.operations.empty(), "Cannot finalize empty transaction" );
 
@@ -723,7 +723,8 @@ transaction_builder& transaction_builder::finalize()
    else
       slate_id = 0;
 
-   pay_fee();
+   if( pay_fee )
+       this->pay_fee();
 
    //outstanding_balance is pair<pair<account address, asset ID>, share_type>
    for( const auto& outstanding_balance : outstanding_balances )
