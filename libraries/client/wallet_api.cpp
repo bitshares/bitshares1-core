@@ -1278,11 +1278,22 @@ fc::variant client_impl::wallet_login_finish(const public_key_type &server_key,
 
 
 transaction_builder client_impl::wallet_balance_set_vote_info(const balance_id_type& balance_id,
-                                                              const address& voter_address,
+                                                              const string& voter_address,
                                                               const vote_selection_method& selection_method,
                                                               bool sign_and_broadcast)
 {
-    auto builder = _wallet->set_vote_info( balance_id, voter_address, selection_method );
+    address new_voter;
+    if( voter_address == "" )
+    {
+        auto balance = _chain_db->get_balance_record( balance_id );
+        if( balance.valid() && balance->restricted_owner.valid() )
+            new_voter = *balance->restricted_owner;
+    }
+    else
+    {
+        new_voter = address( voter_address );
+    }
+    auto builder = _wallet->set_vote_info( balance_id, new_voter, selection_method );
     if( sign_and_broadcast )
     {
         auto record = builder.finalize().sign();

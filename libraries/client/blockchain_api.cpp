@@ -252,14 +252,14 @@ account_balance_summary_type detail::client_impl::blockchain_get_account_public_
 { try {
   auto acct = _wallet->get_account( account_name );
   map<asset_id_type, share_type> balances;
-  for( auto bal : _chain_db->get_balances_for_address( acct.owner_address() ) )
-      balances[bal.asset_id()] = bal.balance;
+  for( auto pair : _chain_db->get_balances_for_address( acct.owner_address() ) )
+      balances[pair.second.asset_id()] = pair.second.balance;
   account_balance_summary_type ret;
   ret[account_name] = balances;
   return ret;
 } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
-vector<balance_record> detail::client_impl::blockchain_list_address_balances( const string& raw_addr )const
+map<balance_id_type, balance_record> detail::client_impl::blockchain_list_address_balances( const string& raw_addr )const
 {
     address addr;
     try {
@@ -270,7 +270,7 @@ vector<balance_record> detail::client_impl::blockchain_list_address_balances( co
     return _chain_db->get_balances_for_address( addr );
 }
 
-vector<balance_record> detail::client_impl::blockchain_list_key_balances( const public_key_type& key )const
+map<balance_id_type, balance_record> detail::client_impl::blockchain_list_key_balances( const public_key_type& key )const
 {
     return _chain_db->get_balances_for_key( key );
 }

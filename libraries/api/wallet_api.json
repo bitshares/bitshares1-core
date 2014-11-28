@@ -2308,8 +2308,9 @@
                },
                {
                   "name" : "voter_address",
-                  "type" : "address",
-                  "description" : "the new voting address"
+                  "type" : "string",
+                  "description" : "The new voting address. If none is specified, tries to re-use existing address.",
+                  "default_value": ""
                },
                {
                  "name" : "vote_method",
