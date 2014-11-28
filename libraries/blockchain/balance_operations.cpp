@@ -456,7 +456,9 @@ namespace bts { namespace blockchain {
           }
           new_restricted_owner = this->new_restricted_owner;
           new_slate = this->new_slate;
-      } else {
+      }
+      else
+      {
           auto restricted_owner = current_balance_record->restricted_owner;
           FC_ASSERT( restricted_owner.valid(),
                      "Didn't specify a new restricted owner, but one currently exists." );
