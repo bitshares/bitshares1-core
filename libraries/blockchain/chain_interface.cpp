@@ -156,6 +156,8 @@ namespace bts { namespace blockchain {
                const edge_record& edge = dynamic_cast<const edge_record&>( obj );
                auto from_object = get_object_record( edge.from );
                FC_ASSERT( from_object.valid(), "Unrecognized from object.");
+               // Remove the next assert once you deal with max recursion depth for get_object_owners
+               FC_ASSERT( from_object->type() != obj_type::edge_object, "You can't make an edge from an edge yet.");
                return get_object_owners( *from_object );
            }
            case( obj_type::account_object ):
@@ -173,10 +175,15 @@ namespace bts { namespace blockchain {
                FC_ASSERT( oasset.valid(), "No such asset!" );
                if( oasset->issuer_account_id > 0 )
                {
+                   auto oacct = get_account_record( oasset->issuer_account_id );
+                   FC_ASSERT(!"This asset has an issuer but the issuer account doens't exist. Crap!");
+                   owners.owners.insert( oacct->owner_address() );
+                   owners.required = 1;
+                   return owners;
                }
                else
                {
-                   
+                   FC_ASSERT(!"That asset has no issuer!");
                }
            }
            default:
@@ -184,6 +191,7 @@ namespace bts { namespace blockchain {
                FC_ASSERT(!"I don't know how to get the owners for this object type!");
            }
        }
+       FC_ASSERT(!"This code path should not happen.");
    }
 
 #if 0
