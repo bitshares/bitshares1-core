@@ -46,6 +46,14 @@ When(/^(\w+) sends? ([\d,\.]+) ([A-Z]+) to (\w+)$/) do |from, amount, currency, 
   @transfers << res['ledger_entries'].first
 end
 
+When(/^I transfer (\d+) (\w+) to (legacy )?address: (\w+)$/) do |amount, symbol, legacy, address|
+    if legacy
+        @current_actor.node.exec 'wallet_transfer_to_legacy_address', amount, symbol, @current_actor.account, @addresses[address]
+    else
+        @current_actor.node.exec 'wallet_transfer_to_address', amount, symbol, @current_actor.account, @addresses[address]
+    end
+end
+
 When(/^(\w+) waits? for (one|\d+) blocks?$/) do |name, blocks|
   actor = get_actor(name)
   blocks = if blocks == 'one' then 1 else blocks.to_i end
@@ -99,4 +107,12 @@ Then(/^transaction callback should match last transfer$/) do
   expect(@webserver.requests.length).to be > 0
   request = JSON.parse(@webserver.requests.last)
   expect(request).to eq(@transfers.last)
+end
+
+
+When(/^I get balance ID for address: (\w+) as (\w+)$/) do |addr, bal|
+    bals = @current_actor.node.exec 'blockchain_list_address_balances', @addresses[addr]
+    puts "get_address_balances result:"
+    puts bals
+    @addresses[bal] = bals[0][0]
 end
