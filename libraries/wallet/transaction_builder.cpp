@@ -835,7 +835,7 @@ transaction_builder& transaction_builder::withdraw_from_balance(const balance_id
     {
         auto balances = _wimpl->_blockchain->get_balances_for_address( address(from) );
         FC_ASSERT( balances.size() > 0, "No balance with that ID or owner address!" );
-        auto balance = balances[0];
+        auto balance = balances.begin()->second;
         trx.withdraw( balance.id(), amount );
         for(const auto& owner : balance.owners() )
             required_signatures.insert( owner );

@@ -2034,25 +2034,25 @@ namespace bts { namespace blockchain {
         return balances;
     } FC_RETHROW_EXCEPTIONS( warn, "", ("first",first)("limit",limit) )  }
 
-    vector<balance_record> chain_database::get_balances_for_address( const address& addr )const
+   map<balance_id_type, balance_record> chain_database::get_balances_for_address( const address& addr )const
    { try {
-        vector<balance_record> ret;
+        map<balance_id_type, balance_record> ret;
         const auto scan_balance = [ &addr, &ret ]( const balance_record& record )
         {
             if( record.is_owner( addr ) || addr == record.id() )
-                ret.push_back( record );
+                ret[record.id()] = record;
         };
         scan_balances( scan_balance );
         return ret;
    } FC_CAPTURE_AND_RETHROW( (addr) ) }
 
-    vector<balance_record> chain_database::get_balances_for_key( const public_key_type& key )const
+   map<balance_id_type, balance_record> chain_database::get_balances_for_key( const public_key_type& key )const
    { try {
-        vector<balance_record> ret;
+        map<balance_id_type, balance_record> ret;
         const auto scan_balance = [ &key, &ret ]( const balance_record& record )
         {
             if( record.is_owner( key ) )
-                ret.push_back( record );
+                ret[record.id()] = record;
         };
         scan_balances( scan_balance );
         return ret;

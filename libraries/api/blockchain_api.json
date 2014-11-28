@@ -278,7 +278,7 @@
       {
         "method_name": "blockchain_list_address_balances",
         "description": "Lists balance records which are the balance IDs or which can be claimed by signature for this address",
-        "return_type": "balance_record_list",
+        "return_type": "balance_record_map",
         "parameters" : [
             {
               "name" : "addr",
@@ -307,7 +307,7 @@
       {
         "method_name": "blockchain_list_key_balances",
         "description": "Lists balance records which can be claimed by signature for this key",
-        "return_type": "balance_record_list",
+        "return_type": "balance_record_map",
         "parameters" : [
             {
               "name" : "key",

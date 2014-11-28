@@ -200,13 +200,13 @@ namespace bts { namespace blockchain {
          map<balance_id_type, balance_record>  get_balances( const string& first,
                                                              uint32_t limit )const;
 
-         vector<balance_record>  get_balances_for_address( const address& addr )const;
-         vector<balance_record>  get_balances_for_key( const public_key_type& key )const;
-         vector<account_record>  get_accounts( const string& first,
-                                               uint32_t limit )const;
+         map<balance_id_type, balance_record>     get_balances_for_address( const address& addr )const;
+         map<balance_id_type, balance_record>     get_balances_for_key( const public_key_type& key )const;
+         vector<account_record>                   get_accounts( const string& first,
+                                                                uint32_t limit )const;
 
-         vector<asset_record>    get_assets( const string& first_symbol,
-                                             uint32_t limit )const;
+         vector<asset_record>                     get_assets( const string& first_symbol,
+                                                              uint32_t limit )const;
 
          std::vector<slot_record> get_delegate_slot_records( const account_id_type& delegate_id,
                                                              int64_t start_block_num, uint32_t count )const;
