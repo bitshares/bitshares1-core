@@ -367,6 +367,7 @@ namespace bts { namespace blockchain {
          self->set_property( chain_property_enum::last_asset_id, asset_id );
          self->set_property( chain_property_enum::last_proposal_id, 0 );
          self->set_property( chain_property_enum::last_account_id, uint64_t( config.names.size() ) );
+         self->set_property( chain_property_enum::last_object_id, 1 );
          self->set_property( chain_property_enum::last_random_seed_id, fc::variant( secret_hash_type() ) );
          self->set_property( chain_property_enum::confirmation_requirement, BTS_BLOCKCHAIN_NUM_DELEGATES*2 );
 
@@ -1872,6 +1873,17 @@ namespace bts { namespace blockchain {
            ++name_itr;
         }
    }
+
+   void chain_database::scan_objects( function<void( const object_record& )> callback )const
+   {
+        auto itr = my->_object_db.begin();
+        while( itr.valid() )
+        {
+           callback( itr.value() );
+           ++itr;
+        }
+   }
+
 
    /** this should throw if the trx is invalid */
    transaction_evaluation_state_ptr chain_database::store_pending_transaction( const signed_transaction& trx, bool override_limits )

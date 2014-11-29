@@ -749,6 +749,11 @@
         "cpp_include_file" : "bts/wallet/transaction_builder.hpp"
       },
       {
+        "type_name" : "object_record",
+        "cpp_return_type" : "bts::blockchain::object_record",
+        "cpp_include_file" : "bts/blockchain/object_record.hpp"
+      },
+      {
         "type_name" : "obj_type",
         "cpp_return_type" : "bts::blockchain::obj_type",
         "cpp_include_file" : "bts/blockchain/object_record.hpp"
@@ -757,6 +762,11 @@
         "type_name" : "object_id_type",
         "cpp_return_type" : "bts::blockchain::object_id_type",
         "cpp_include_file" : "bts/blockchain/object_record.hpp"
+      }
+      {
+        "type_name" : "object_array",
+        "container_type": "array",
+        "contained_type": "object_record"
       }
     ]
 }
