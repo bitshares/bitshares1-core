@@ -641,7 +641,13 @@ wallet_transaction_record detail::client_impl::wallet_asset_update(
         const optional<string>& description,
         const optional<variant>& public_data,
         const optional<double>& maximum_share_supply,
-        const optional<uint64_t>& precision )
+        const optional<uint64_t>& precision,
+        const share_type& issuer_fee,
+        bool restricted,
+        bool retractable,
+        uint32_t required_sigs,
+        const vector<address>& authority 
+      )
 {
   auto record = _wallet->update_asset( symbol, name, description, public_data, maximum_share_supply, precision, true );
   _wallet->cache_transaction( record );
