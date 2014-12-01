@@ -35,6 +35,17 @@ namespace bts { namespace blockchain {
       if( NOT eval_state._current_state->is_valid_symbol_name( this->symbol ) )
           FC_CAPTURE_AND_THROW( invalid_asset_symbol, (symbol) );
 
+      auto dot_pos = this->symbol.find('.');
+      if( dot_pos != std::string::npos )
+      {
+         std::string parent_symbol = this->symbol.substr( 0, dot_pos );
+         oasset_record parent_asset_record = eval_state._current_state->get_asset_record( parent_symbol );
+         FC_ASSERT( parent_asset_record.valid() );
+         
+         if( !eval_state.verify_authority( parent_asset_record->authority ) )
+            FC_CAPTURE_AND_THROW( missing_signature, (parent_asset_record->authority) );
+      }
+
       oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->symbol );
       if( current_asset_record.valid() )
           FC_CAPTURE_AND_THROW( asset_symbol_in_use, (symbol) );
@@ -47,9 +58,10 @@ namespace bts { namespace blockchain {
       if( current_asset_record.valid() )
           FC_CAPTURE_AND_THROW( asset_id_in_use, (asset_id) );
 
+      oaccount_record issuer_account_record;
       if( issuer_account_id != asset_record::market_issued_asset )
       {
-         const oaccount_record issuer_account_record = eval_state._current_state->get_account_record( this->issuer_account_id );
+         issuer_account_record = eval_state._current_state->get_account_record( this->issuer_account_id );
          if( NOT issuer_account_record.valid() )
              FC_CAPTURE_AND_THROW( unknown_account_id, (issuer_account_id) );
       }
@@ -77,6 +89,12 @@ namespace bts { namespace blockchain {
       new_record.maximum_share_supply   = this->maximum_share_supply;
       new_record.collected_fees         = 0;
 
+      if( issuer_account_record )
+      {
+         new_record.authority.owners.insert( issuer_account_record->active_key() );
+         new_record.authority.required = 1;
+      }
+
       eval_state._current_state->store_asset_record( new_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
@@ -93,11 +111,9 @@ namespace bts { namespace blockchain {
       FC_ASSERT( this->name.valid() || this->description.valid() || this->public_data.valid()
                  || this->maximum_share_supply.valid() || this->precision.valid() );
 
-      // Cannot update name, description, max share supply, or precision if any shares have been issued
+      // Cannot update max share supply, or precision if any shares have been issued
       if( current_asset_record->current_share_supply > 0 )
       {
-          FC_ASSERT( !this->name.valid() );
-          FC_ASSERT( !this->description.valid() );
           FC_ASSERT( !this->maximum_share_supply.valid() );
           FC_ASSERT( !this->precision.valid() );
       }

@@ -35,6 +35,7 @@ namespace bts { namespace blockchain {
 
          virtual void evaluate( const signed_transaction& trx, bool skip_signature_check = false );
          virtual void evaluate_operation( const operation& op );
+         virtual bool verify_authority( const multisig_meta_info& siginfo );
 
          /** perform any final operations based upon the current state of
           * the operation such as updating fees paid etc.

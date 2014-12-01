@@ -44,17 +44,29 @@ namespace bts { namespace blockchain {
       return is_valid_account_name(supername);
    } FC_CAPTURE_AND_RETHROW( (name) ) }
 
+   /**
+    *  Symbol names must be Alpha Numeric and may have a single '.' in the name that cannot be 
+    *  the first or last.
+    */
    bool chain_interface::is_valid_symbol_name( const string& symbol )const
    { try {
        if( symbol.size() < BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE || symbol.size() > BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE )
            return false;
 
+       int dots = 0;
        std::locale loc;
        for( const auto& c : symbol )
        {
-           if( !std::isalnum( c, loc ) || !std::isupper( c, loc ) )
+           if( c == '.' )
+           {
+              if( ++dots > 1 )
+               return false;
+           }
+           else if( !std::isalnum( c, loc ) || !std::isupper( c, loc ) )
                return false;
        }
+       if( symbol.back() == '.' ) return false;
+       if( symbol.front() == '.' ) return false;
 
        if( symbol.size() >= 3 && symbol.find( "BIT" ) == 0 )
            return false;

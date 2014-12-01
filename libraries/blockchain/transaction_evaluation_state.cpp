@@ -24,6 +24,14 @@ namespace bts { namespace blockchain {
       validation_error.reset();
    }
 
+   bool transaction_evaluation_state::verify_authority( const multisig_meta_info& siginfo )
+   {
+      uint32_t sig_count = 0;
+      for( const auto item : siginfo.owners )
+         sig_count += check_signature( item );
+      return sig_count >= siginfo.required;
+   }
+
    bool transaction_evaluation_state::check_signature( const address& a )const
    { try {
       return  _skip_signature_check || signed_keys.find( a ) != signed_keys.end();

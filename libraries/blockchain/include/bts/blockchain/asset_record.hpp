@@ -36,6 +36,7 @@ namespace bts { namespace blockchain {
       share_type          current_share_supply = 0;
       share_type          maximum_share_supply = 0;
       share_type          collected_fees = 0;
+      multisig_meta_info  authority;
    };
    typedef fc::optional<asset_record> oasset_record;
 
@@ -54,4 +55,5 @@ FC_REFLECT( bts::blockchain::asset_record,
             (current_share_supply)
             (maximum_share_supply)
             (collected_fees)
+            (authority)
             )
