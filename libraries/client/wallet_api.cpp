@@ -456,21 +456,27 @@ transaction_builder detail::client_impl::wallet_builder_add_signature(
 } FC_CAPTURE_AND_RETHROW( (builder)(broadcast) ) }
 
 wallet_transaction_record detail::client_impl::wallet_object_create(
-                                            const string& paying_account,
-                                            uint32_t m, 
-                                            const vector<address>& owners,
-                                            const variant& user_data )
+                                            const string& account,
+                                            const variant& user_data,
+                                            int32_t m, 
+                                            const vector<address>& owners )
 { try {
     auto builder = _wallet->create_transaction_builder();
     object_record obj( obj_type::normal_object, 0 );
+    vector<address> real_owners = owners;
+    if( m == -1 ) // default value - can't use 0 because 0 is a valid number of owners
+    {
+        m = 1;
+        real_owners = vector<address>{ _wallet->create_new_address( account, "Owner address for an object." ) };
+    }
     obj.user_data = user_data;
-    obj._owners = multisig_condition( m, set<address>(owners.begin(), owners.end()) );
-    builder->set_object( paying_account, obj, true )
+    obj._owners = multisig_condition( m, set<address>(real_owners.begin(), real_owners.end()) );
+    builder->set_object( account, obj, true )
             .finalize()
             .sign();
     network_broadcast_transaction( builder->transaction_record.trx );
     return builder->transaction_record;
-} FC_CAPTURE_AND_RETHROW( (paying_account)(m)(owners)(user_data) ) }
+} FC_CAPTURE_AND_RETHROW( (account)(m)(owners)(user_data) ) }
 
 transaction_builder detail::client_impl::wallet_object_update(
                                             const string& paying_account,
@@ -512,6 +518,28 @@ transaction_builder detail::client_impl::wallet_object_transfer(
     }
     return *builder;
 } FC_CAPTURE_AND_RETHROW( (paying_account)(id)(m)(owners)(sign_and_broadcast) ) }
+
+
+vector<object_record> detail::client_impl::wallet_object_list( const string& account )
+{ try {
+    vector<object_record> ret;
+    const auto pending_state = _chain_db->get_pending_state();
+    const auto acct_keys = _wallet->get_public_keys_in_account( account );
+    const auto scan_object = [&]( const object_record& obj )
+    {
+        for( auto owner : pending_state->get_object_owners( obj ).owners )
+        {
+            for( auto key : acct_keys )
+            {
+                if( address(key) == owner )
+                    ret.push_back( obj );
+            }
+        }
+    };
+    _chain_db->scan_objects( scan_object );
+    return ret;
+} FC_CAPTURE_AND_RETHROW( (account) ) }
+
 
 
 

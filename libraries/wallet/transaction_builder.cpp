@@ -255,7 +255,7 @@ transaction_builder& transaction_builder::deposit_asset_to_multisig(
 transaction_builder& transaction_builder::set_object(const string& payer_name,
                                                      const object_record& obj,
                                                      bool create )
-{
+{ try {
     auto payer = _wimpl->self->get_account( payer_name );
     deduct_balance( payer.owner_address(), asset() );
     int64_t id;
@@ -266,7 +266,7 @@ transaction_builder& transaction_builder::set_object(const string& payer_name,
     trx.set_object( id, obj );
 
     return *this;
-}
+} FC_CAPTURE_AND_RETHROW( (payer_name)(obj)(create) ) }
 
 
 transaction_builder& transaction_builder::deposit_asset_with_escrow(const bts::wallet::wallet_account_record& payer,
