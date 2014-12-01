@@ -40,24 +40,58 @@ Item {
          }
       }
    }
-   GridLayout {
+
+   Component {
+      id: voteOneDecision
+      GridLayout {
+         columns: 4
+
+         ExclusiveGroup { id: contestantButtonsGroup }
+         Repeater {
+            model: contestants
+            delegate: SimpleButton {
+               Layout.fillWidth: true
+               Layout.fillHeight: true
+               exclusiveGroup: contestantButtonsGroup
+               text: "<b>" + name + "</b><br/><br/>" + breakLines(description)
+               height: fontSize * 4.5
+            }
+         }
+      }
+   }
+   Component {
+      id: voteYesNoDecision
+      RowLayout {
+
+         ExclusiveGroup { id: yesNoButtonsGroup }
+         SimpleButton {
+            exclusiveGroup: yesNoButtonsGroup
+            color: "red"
+            Layout.fillWidth: true
+            text: "No"
+            height: fontSize * 1.5
+         }
+         SimpleButton {
+            exclusiveGroup: yesNoButtonsGroup
+            color: "green"
+            Layout.fillWidth: true
+            text: "Yes"
+            height: fontSize * 1.5
+         }
+      }
+   }
+
+   Loader {
       anchors.top: instructionText.bottom
       anchors.left: parent.left
       anchors.right: parent.right
       anchors.margins: contestContainer.radius / 2
-      columns: 4
-      
-      ExclusiveGroup { id: contestantButtonsGroup }
-      Repeater {
-         model: contestants
-         delegate: Button {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            Layout.minimumWidth: implicitWidth
-            exclusiveGroup: contestantButtonsGroup
-            checkable: true
-            checked: false
-            text: "<b>" + name + "</b><br/><br/>" + breakLines(description)
+      sourceComponent: {
+         switch( tags["decision type"] ) {
+         case "vote one":
+            return voteOneDecision
+         case "vote yes/no":
+            return voteYesNoDecision
          }
       }
    }
