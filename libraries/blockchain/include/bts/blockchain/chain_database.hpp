@@ -159,6 +159,9 @@ namespace bts { namespace blockchain {
          account_record              get_slot_signee( const time_point_sec& timestamp,
                                                       const std::vector<account_id_type>& ordered_delegates )const;
 
+         void                        authorize( asset_id_type asset_id, const address& owner, object_id_type oid = 0 ) override;
+         optional<object_id_type>    get_authorization( asset_id_type asset_id, const address& owner )const override;
+
          optional<time_point_sec>    get_next_producible_block_timestamp( const vector<account_id_type>& delegate_ids )const;
 
          uint32_t                    get_block_num( const block_id_type& )const;

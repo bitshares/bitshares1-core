@@ -80,6 +80,10 @@ namespace bts { namespace blockchain {
          void                               set_active_delegates( const std::vector<account_id_type>& id );
          bool                               is_active_delegate( const account_id_type& id )const;
 
+         virtual void                       authorize( asset_id_type asset_id, const address& owner, object_id_type oid = 0 ) = 0;
+         void                               deauthorize( asset_id_type asset_id, const address& owner ) { authorize( asset_id, owner, -1 ); }
+         virtual optional<object_id_type>   get_authorization( asset_id_type asset_id, const address& owner )const = 0;
+
          /** converts an asset + asset_id to a more friendly representation using the symbol name */
          string                             to_pretty_asset( const asset& a )const;
          double                             to_pretty_price_double( const price& a )const;

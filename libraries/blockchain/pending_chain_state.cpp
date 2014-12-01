@@ -62,6 +62,7 @@ namespace bts { namespace blockchain {
       for( const auto& item : assets )          prev_state->store_asset_record( item.second );
       for( const auto& item : accounts )        prev_state->store_account_record( item.second );
       for( const auto& item : balances )        prev_state->store_balance_record( item.second );
+      for( const auto& item : authorizations )  prev_state->authorize( item.first.first, item.first.second, item.second );
 #if 0
       for( const auto& item : proposals )       prev_state->store_proposal_record( item.second );
       for( const auto& item : proposal_votes )  prev_state->store_proposal_vote( item.second );
@@ -161,6 +162,12 @@ namespace bts { namespace blockchain {
          auto prev_value = prev_state->get_balance_record( item.first );
          if( !!prev_value ) undo_state->store_balance_record( *prev_value );
          else undo_state->store_balance_record( item.second.make_null() );
+      }
+      for( const auto& item : authorizations )
+      {
+         auto prev_value = prev_state->get_authorization( item.first.first, item.first.second );
+         if( !!prev_value ) undo_state->authorize( item.first.first, item.first.second, *prev_value );
+         else undo_state->deauthorize( item.first.first, item.first.second );
       }
       for( const auto& item : transactions )
       {
@@ -620,6 +627,23 @@ namespace bts { namespace blockchain {
          return prev_state->fetch_burn_record( key );
       }
       return burn_record( itr->first, itr->second );
+   }
+
+   void  pending_chain_state::authorize( asset_id_type asset_id, const address& owner, object_id_type oid  ) 
+   {
+      chain_interface_ptr prev_state = _prev_state.lock();
+      authorizations[std::make_pair(asset_id,owner)] = oid;
+   }
+
+   optional<object_id_type>  pending_chain_state::get_authorization( asset_id_type asset_id, const address& owner )const 
+   {
+      chain_interface_ptr prev_state = _prev_state.lock();
+      auto index = std::make_pair( asset_id, owner );
+      auto itr = authorizations.find( index );
+      if( itr == authorizations.end() ) return prev_state->get_authorization( asset_id, owner );
+      if( itr->second != -1 )
+         return itr->second;
+      return optional<object_id_type>();
    }
 
 } } // bts::blockchain
