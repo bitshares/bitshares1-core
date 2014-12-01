@@ -9,8 +9,9 @@ namespace bts { namespace blockchain {
     // if ID is negative, look in evaluation stack
     // if ID is positive, update the existing object
     void set_object_operation::evaluate( transaction_evaluation_state& eval_state )
-    {
+    { try {
         object_record obj;
+       
         if( this->id < 0 )
         {
             FC_ASSERT(! "unimplemented: set_object with negative id" );
@@ -28,6 +29,7 @@ namespace bts { namespace blockchain {
                     auto owners = eval_state._current_state->get_object_owners( obj );
                     if( NOT eval_state.check_multisig( owners ) )
                         FC_CAPTURE_AND_THROW( missing_signature, ( owners ) );
+                    break;
                 }
                 case( account_object ):
                 case( asset_object ):
@@ -58,6 +60,6 @@ namespace bts { namespace blockchain {
             }
         }
         eval_state._current_state->store_object_record( obj );
-    }
+    } FC_CAPTURE_AND_RETHROW( (*this)(eval_state) ) }
 
 }} // bts::blockchain

@@ -5,8 +5,8 @@
 #include <bts/blockchain/market_operations.hpp>
 #include <bts/blockchain/object_operations.hpp>
 #include <bts/blockchain/operation_factory.hpp>
-#include <bts/blockchain/operations.hpp>
 #include <bts/blockchain/proposal_operations.hpp>
+#include <bts/blockchain/operations.hpp>
 
 #include <fc/io/raw_variant.hpp>
 #include <fc/reflect/variant.hpp>
@@ -44,7 +44,6 @@ namespace bts { namespace blockchain {
 
    const operation_type_enum update_feed_operation::type            = update_feed_op_type;
    const operation_type_enum burn_operation::type                   = burn_op_type;
-   const operation_type_enum link_account_operation::type           = link_account_op_type;
    const operation_type_enum release_escrow_operation::type         = release_escrow_op_type;
    const operation_type_enum update_block_signing_key::type         = update_block_signing_key_type;
 
@@ -76,7 +75,6 @@ namespace bts { namespace blockchain {
       bts::blockchain::operation_factory::instance().register_operation<define_delegate_slate_operation>();
       bts::blockchain::operation_factory::instance().register_operation<update_feed_operation>();
       bts::blockchain::operation_factory::instance().register_operation<burn_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<link_account_operation>();
       bts::blockchain::operation_factory::instance().register_operation<release_escrow_operation>();
       bts::blockchain::operation_factory::instance().register_operation<update_block_signing_key>();
       bts::blockchain::operation_factory::instance().register_operation<relative_bid_operation>();

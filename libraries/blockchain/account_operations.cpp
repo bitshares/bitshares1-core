@@ -154,29 +154,6 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_account_record( *account );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-   void link_account_operation::evaluate( transaction_evaluation_state& eval_state )
-   { try {
-      FC_ASSERT( !"Link account operation is not enabled yet!" );
-
-      auto source_account_rec = eval_state._current_state->get_account_record( source_account );
-      if( !source_account_rec.valid() )
-          FC_CAPTURE_AND_THROW( unknown_account_id, (*this) );
-
-      if( source_account_rec->is_retracted() )
-          FC_CAPTURE_AND_THROW( account_retracted, (*this) );
-
-      auto destination_account_rec = eval_state._current_state->get_account_record( destination_account );
-      if( !destination_account_rec.valid() )
-          FC_CAPTURE_AND_THROW( unknown_account_id, (*this) );
-
-      if( destination_account_rec->is_retracted() )
-          FC_CAPTURE_AND_THROW( account_retracted, (*this) );
-
-      if( !eval_state.account_or_any_parent_has_signed( *source_account_rec ) )
-          FC_CAPTURE_AND_THROW( missing_signature, (*this) );
-
-      // STORE LINK...
-   } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
    void update_block_signing_key::evaluate( transaction_evaluation_state& eval_state )
    { try {

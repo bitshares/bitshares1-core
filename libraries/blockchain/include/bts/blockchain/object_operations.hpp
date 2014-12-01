@@ -22,7 +22,7 @@ namespace bts { namespace blockchain {
       // If ID is zero, make a new object (get a new ID)
       // if ID is negative, look in evaluation stack
       // if ID is positive, update the existing object
-      int64_t id;
+      int64_t id = 0;
       object_record obj;
 
       void evaluate( transaction_evaluation_state& eval_state );
