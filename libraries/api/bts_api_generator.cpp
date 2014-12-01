@@ -612,10 +612,16 @@ void api_generator::generate_rpc_client_files(const fc::path& rpc_client_output_
     cpp_file << generate_signature_for_method(method, client_classname, false) << "\n";
     cpp_file << "{\n";
 
-    cpp_file << "  fc::variant result = get_json_connection()->async_call(\"" << method.name << "\"";
+    cpp_file << "  fc::variant result = get_json_connection()->async_call(\"" << method.name << "\", std::vector<fc::variant>{";
+    bool first = true;
     for (const parameter_description& parameter : method.parameters)
-      cpp_file << ", " << parameter.type->convert_object_of_type_to_variant(parameter.name);
-    cpp_file << ").wait();\n";
+    {
+       if( !first )
+         cpp_file << ", ";
+       first = false;
+       cpp_file << parameter.type->convert_object_of_type_to_variant(parameter.name);
+    }
+    cpp_file << "}).wait();\n";
 
     if (!std::dynamic_pointer_cast<void_type_mapping>(method.return_type))
       cpp_file << "  return " << method.return_type->convert_variant_to_object_of_type("result") << ";\n";
