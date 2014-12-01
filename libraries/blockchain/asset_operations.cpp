@@ -156,6 +156,75 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_asset_record( *current_asset_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
+
+   void update_asset_ext_operation::evaluate( transaction_evaluation_state& eval_state )
+   {
+      oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->asset_id );
+      if( NOT current_asset_record.valid() )
+          FC_CAPTURE_AND_THROW( unknown_asset_id, (asset_id) );
+
+      if( current_asset_record->is_market_issued() )
+          FC_CAPTURE_AND_THROW( not_user_issued, (*current_asset_record) );
+
+      // Cannot update max share supply, or precision if any shares have been issued
+      if( current_asset_record->current_share_supply > 0 )
+      {
+          FC_ASSERT( !this->maximum_share_supply.valid() );
+          FC_ASSERT( !this->precision.valid() );
+      }
+
+      if( !eval_state.verify_authority( current_asset_record->authority ) )
+          FC_CAPTURE_AND_THROW( missing_signature, (current_asset_record->authority) );
+
+      if( this->name.valid() )
+      {
+          if( this->name->empty() )
+              FC_CAPTURE_AND_THROW( invalid_asset_name, (*this->name) );
+
+          current_asset_record->name = *this->name;
+      }
+
+      if( this->description.valid() )
+          current_asset_record->description = *this->description;
+
+      if( this->public_data.valid() )
+          current_asset_record->public_data = *this->public_data;
+
+      if( this->maximum_share_supply.valid() )
+      {
+          if( *this->maximum_share_supply <= 0 || *this->maximum_share_supply > BTS_BLOCKCHAIN_MAX_SHARES )
+              FC_CAPTURE_AND_THROW( invalid_asset_amount, (*this->maximum_share_supply) );
+
+          current_asset_record->maximum_share_supply = *this->maximum_share_supply;
+      }
+
+      if( this->precision.valid() )
+      {
+          if( NOT is_power_of_ten( *this->precision ) )
+              FC_CAPTURE_AND_THROW( invalid_precision, (*this->precision) );
+
+          current_asset_record->precision = *this->precision;
+      }
+
+      if( !current_asset_record->is_market_issued() )
+      {
+          if( this->restricted ) FC_ASSERT( current_asset_record->current_share_supply == 0 );
+             
+          current_asset_record->restricted  = this->restricted;
+          if( current_asset_record->retractable )
+          {
+             current_asset_record->retractable = this->retractable;
+          }
+          else FC_ASSERT( !this->retractable );
+          current_asset_record->transaction_fee = this->transaction_fee;
+          current_asset_record->authority       = this->authority;
+      }
+
+      current_asset_record->last_update = eval_state._current_state->now();
+
+      eval_state._current_state->store_asset_record( *current_asset_record );
+   }
+
    void issue_asset_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
       oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->amount.asset_id );

@@ -42,7 +42,8 @@ namespace bts { namespace blockchain {
        */
       bool                restricted  = false;
       /**
-       * Asset is retractable by the issuer.
+       * Asset is retractable by the issuer, makes the asset authority
+       * and implicit co-signer on all balances that involve this asset.
        */
       bool                retractable = true;
 
@@ -53,6 +54,9 @@ namespace bts { namespace blockchain {
        */
       share_type          transaction_fee = 0;
       multisig_meta_info  authority;
+
+      /** reserved for future extensions */
+      vector<char>        reserved; 
    };
    typedef fc::optional<asset_record> oasset_record;
 
