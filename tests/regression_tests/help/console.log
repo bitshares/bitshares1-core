@@ -142,7 +142,7 @@ wallet_asset_issue <amount> <symbol> <to_account_name> [memo_message]
 wallet_asset_update <symbol> [name] [description] [public_data] [maximum_share_supply] [precision]  
 wallet_backup_create <json_filename>                                                                
 wallet_backup_restore <json_filename> <wallet_name> <imported_wallet_passphrase>                    
-wallet_balance_set_vote_info <balance_id> <voter_address> [vote_method] [sign_and_broadcast]        
+wallet_balance_set_vote_info <balance_id> [voter_address] [vote_method] [sign_and_broadcast]        
 wallet_builder_add_signature <builder> [broadcast]                                                  
 wallet_burn <amount_to_transfer> <asset_symbol> <from_account_name> <for_or_against> <to_account_name> [public_message] [anonymous] 
 wallet_change_passphrase <passphrase>                                                               
@@ -193,7 +193,8 @@ wallet_market_submit_short <from_account_name> <short_collateral> <collateral_sy
 wallet_multisig_deposit <amount> <symbol> <from_name> <m> <addresses> [vote_method]                 
 wallet_multisig_get_balance_id <m> <addresses>                                                      
 wallet_multisig_withdraw_start <amount> <symbol> <from> <to_address> [vote_method] [builder_path]   
-wallet_object_create <paying_account_name> <m> <owners> [user_data]                                 
+wallet_object_create <account> [user_data] [m] [owners]                                             
+wallet_object_list <account>                                                                        
 wallet_object_transfer <paying_account_name> <object_id> <m> <owners> [sign_and_broadcast]          
 wallet_object_update <paying_account_name> <object_id> [user_data] [sign_and_broadcast]             
 wallet_open <wallet_name>                                                                           
