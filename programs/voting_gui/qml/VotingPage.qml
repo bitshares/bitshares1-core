@@ -45,7 +45,7 @@ TaskPage {
 
       ListView {
          id: contestList
-         spacing: 20
+         spacing: 5
 
          Component {
             id: contestDelegate
@@ -67,6 +67,8 @@ TaskPage {
                for( var tag in contests[contest]["tags"] )
                   tags[contests[contest]["tags"][tag][0]] = contests[contest]["tags"][tag][1]
                contests[contest]["tags"] = tags
+
+               console.log(JSON.stringify(contests[contest]))
 
                model.append(contests[contest])
             }
