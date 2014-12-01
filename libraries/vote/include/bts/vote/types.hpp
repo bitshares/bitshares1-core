@@ -51,7 +51,9 @@ struct identity_property
 
    bool operator==(const identity_property& other)const
    {
-      return salt == other.salt && name == other.name && value.as_string() == other.value.as_string();
+      return salt == other.salt && name == other.name && (value.is_null() ||
+                                                          other.value.is_null() ||
+                                                          value.as_string() == other.value.as_string());
    }
 
    fc::uint128    salt;
@@ -100,7 +102,7 @@ struct signed_identity_property : public identity_property
    signed_identity_property(){}
    signed_identity_property(const identity_property& prop)
       : identity_property(prop){}
-   signed_identity_property(const identity_property&& prop)
+   signed_identity_property(identity_property&& prop)
       : identity_property(prop){}
 
    bool operator== (const signed_identity_property& other) const

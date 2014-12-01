@@ -501,9 +501,8 @@ std::vector<bts::vote::signed_identity_property> ClientWrapper::merge_identities
 {
    auto working_properties = old_id.properties;
 
-   //Clean invalid signatures from old and new identities
+   //Clean invalid signatures from old identity
    purge_invalid_signatures(working_properties, old_id.owner);
-   purge_invalid_signatures(new_id.properties, new_id.owner);
 
    for( const bts::vote::signed_identity_property& new_property : new_id.properties )
    {
@@ -516,6 +515,13 @@ std::vector<bts::vote::signed_identity_property> ClientWrapper::merge_identities
       {
          //This property is already in old identity. Merge signatures.
          bts::vote::signed_identity_property& old_property = *itr;
+         //If old_property is an empty placeholder, just overwrite it.
+         if( old_property.value.is_null() && !new_property.value.is_null() )
+         {
+            old_property = new_property;
+            continue;
+         }
+
          for( const bts::vote::expiring_signature& new_signature : new_property.verifier_signatures )
          {
             fc::ecc::public_key new_signer = new_signature.signer(new_property.id(new_id.owner));
@@ -550,12 +556,12 @@ std::vector<bts::vote::signed_identity_property> ClientWrapper::merge_identities
 void ClientWrapper::purge_invalid_signatures(std::vector<bts::vote::signed_identity_property>& properties,
                                              bts::blockchain::address owner)
 {
-   for( bts::vote::signed_identity_property& old_property : properties)
-      old_property.verifier_signatures.erase(std::remove_if(old_property.verifier_signatures.begin(),
-                                                            old_property.verifier_signatures.end(),
-                                                            [&old_property, &owner](
-                                                               const bts::vote::expiring_signature& old_signature
-                                                            ) -> bool {
-         return old_signature.signer(old_property.id(owner)) == fc::ecc::public_key();
-      }), old_property.verifier_signatures.end());
+   for( bts::vote::signed_identity_property& property : properties)
+      property.verifier_signatures.erase(std::remove_if(property.verifier_signatures.begin(),
+                                                        property.verifier_signatures.end(),
+                                                        [&property, &owner](
+                                                           const bts::vote::expiring_signature& signature
+                                                        ) -> bool {
+         return signature.signer(property.id(owner)) == fc::ecc::public_key();
+      }), property.verifier_signatures.end());
 }
