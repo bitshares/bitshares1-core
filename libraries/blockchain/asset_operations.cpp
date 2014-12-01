@@ -118,13 +118,8 @@ namespace bts { namespace blockchain {
           FC_ASSERT( !this->precision.valid() );
       }
 
-      const account_id_type& current_issuer_account_id = current_asset_record->issuer_account_id;
-      const oaccount_record current_issuer_account_record = eval_state._current_state->get_account_record( current_issuer_account_id );
-      if( NOT current_issuer_account_record.valid() )
-          FC_CAPTURE_AND_THROW( unknown_account_id, (current_issuer_account_id) );
-
-      if( NOT eval_state.account_or_any_parent_has_signed( *current_issuer_account_record ) )
-          FC_CAPTURE_AND_THROW( missing_signature, (*current_issuer_account_record) );
+      if( !eval_state.verify_authority( current_asset_record->authority ) )
+          FC_CAPTURE_AND_THROW( missing_signature, (current_asset_record->authority) );
 
       if( this->name.valid() )
       {
@@ -170,13 +165,8 @@ namespace bts { namespace blockchain {
       if( current_asset_record->is_market_issued() )
           FC_CAPTURE_AND_THROW( not_user_issued, (*current_asset_record) );
 
-      const account_id_type& issuer_account_id = current_asset_record->issuer_account_id;
-      const oaccount_record issuer_account_record = eval_state._current_state->get_account_record( issuer_account_id );
-      if( NOT issuer_account_record.valid() )
-          FC_CAPTURE_AND_THROW( unknown_account_id, (issuer_account_id) );
-
-      if( NOT eval_state.account_or_any_parent_has_signed( *issuer_account_record ) )
-          FC_CAPTURE_AND_THROW( missing_signature, (*issuer_account_record) );
+      if( !eval_state.verify_authority( current_asset_record->authority ) )
+          FC_CAPTURE_AND_THROW( missing_signature, (current_asset_record->authority) );
 
       if( this->amount.amount <= 0 )
           FC_CAPTURE_AND_THROW( negative_issue, (amount) );
@@ -190,6 +180,20 @@ namespace bts { namespace blockchain {
       current_asset_record->last_update = eval_state._current_state->now();
 
       eval_state._current_state->store_asset_record( *current_asset_record );
+   } FC_CAPTURE_AND_RETHROW( (*this) ) }
+
+
+   void authorize_operation::evaluate( transaction_evaluation_state& eval_state )
+   { try {
+      oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->asset_id );
+
+      if( NOT current_asset_record.valid() ) FC_CAPTURE_AND_THROW( unknown_asset_id, (this->asset_id) );
+
+      FC_ASSERT( current_asset_record->restricted );
+      FC_ASSERT( current_asset_record->issuer_account_id != asset_record::market_issued_asset );
+
+      eval_state._current_state->authorize( this->asset_id, this->owner, this->meta_id );
+
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 } } // bts::blockchain

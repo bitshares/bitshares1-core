@@ -36,6 +36,22 @@ namespace bts { namespace blockchain {
       share_type          current_share_supply = 0;
       share_type          maximum_share_supply = 0;
       share_type          collected_fees = 0;
+      /**
+       * A restricted asset can only be held/controlled by keys
+       * on the authorized list.
+       */
+      bool                restricted  = false;
+      /**
+       * Asset is retractable by the issuer.
+       */
+      bool                retractable = true;
+
+      /**
+       *  The issuer can specify a transaction fee (of the asset type) 
+       *  that will be paid to the issuer with every transaction that
+       *  references this asset type.
+       */
+      share_type          transaction_fee = 0;
       multisig_meta_info  authority;
    };
    typedef fc::optional<asset_record> oasset_record;
@@ -55,5 +71,8 @@ FC_REFLECT( bts::blockchain::asset_record,
             (current_share_supply)
             (maximum_share_supply)
             (collected_fees)
+            (restricted)
+            (retractable)
+            (transaction_fee)
             (authority)
-            )
+           )

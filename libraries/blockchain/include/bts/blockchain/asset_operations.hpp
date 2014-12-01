@@ -86,7 +86,30 @@ namespace bts { namespace blockchain {
        void evaluate( transaction_evaluation_state& eval_state );
    };
 
+   /**
+    *  For assets that are restricted to certain qualified owners, this operation
+    *  allows updating the permission table.
+    *
+    *  Authorization operations require signatures by the authority on the asset_id
+    */
+   struct authorize_operation
+   {
+      static const operation_type_enum type;
+      authorize_operation(){}
+
+      asset_id_type    asset_id = 0;
+      address          owner;
+      object_id_type   meta_id = 0; /// extra data about this authorization
+
+      void evaluate( transaction_evaluation_state& eval_state );
+   };
+
 } } // bts::blockchain
+
+FC_REFLECT( bts::blockchain::authorize_operation,
+            (asset_id)
+            (owner)
+            (meta_id)  )
 
 FC_REFLECT( bts::blockchain::create_asset_operation,
             (symbol)

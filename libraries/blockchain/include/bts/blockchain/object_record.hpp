@@ -15,7 +15,6 @@ namespace bts { namespace blockchain {
         edge_object = 3
     };
 
-    typedef uint64_t object_id_type;
 
     struct object_record
     {
