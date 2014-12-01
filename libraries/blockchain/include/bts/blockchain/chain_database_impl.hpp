@@ -162,6 +162,7 @@ namespace bts { namespace blockchain {
             bts::db::cached_level_map<vote_del, int>                                    _delegate_vote_index_db;
 
             bts::db::level_map<time_point_sec, slot_record>                             _slot_record_db;
+            bts::db::level_map<std::pair<asset_id_type,address>, object_id_type>        _auth_db;
 
             bts::db::cached_level_map<burn_record_key, burn_record_value>               _burn_db;
 

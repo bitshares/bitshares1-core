@@ -128,6 +128,7 @@ namespace bts { namespace blockchain {
 
           _asset_db.open( data_dir / "index/asset_db" );
           _balance_db.open( data_dir / "index/balance_db" );
+          _auth_db.open( data_dir / "index/auth_db" );
           _burn_db.open( data_dir / "index/burn_db" );
           _account_db.open( data_dir / "index/account_db" );
           _address_to_account_db.open( data_dir / "index/address_to_account_db" );
@@ -1258,6 +1259,7 @@ namespace bts { namespace blockchain {
    void chain_database::close()
    { try {
       my->_market_transactions_db.close();
+      my->_auth_db.close();
       my->_fork_number_db.close();
       my->_fork_db.close();
       my->_slate_db.close();
@@ -3534,5 +3536,17 @@ namespace bts { namespace blockchain {
      return stats;
    }
 
+   void                        chain_database::authorize( asset_id_type asset_id, const address& owner, object_id_type oid  )
+   {
+      if( oid != -1 )
+         my->_auth_db.store( std::make_pair( asset_id, owner ), oid );
+      else
+         my->_auth_db.remove( std::make_pair( asset_id, owner ) );
+   }
+
+   optional<object_id_type>    chain_database::get_authorization( asset_id_type asset_id, const address& owner )const
+   {
+      return my->_auth_db.fetch_optional( std::make_pair( asset_id, owner ) );
+   }
 
 } } // bts::blockchain

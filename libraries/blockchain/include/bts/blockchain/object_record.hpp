@@ -8,6 +8,7 @@ namespace bts { namespace blockchain {
 
     enum obj_type
     {
+        null_object = -1,
         normal_object = 0,
         account_object = 1,
         asset_object = 2,
@@ -18,7 +19,7 @@ namespace bts { namespace blockchain {
 
     struct object_record
     {
-        object_id_type                _id;
+        object_id_type                _id = -1;
         uint64_t                      short_id()const;
         obj_type                      type()const;
 
@@ -44,5 +45,5 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
-FC_REFLECT_ENUM( bts::blockchain::obj_type, (normal_object)(account_object)(asset_object)(edge_object) );
+FC_REFLECT_ENUM( bts::blockchain::obj_type, (null_object)(normal_object)(account_object)(asset_object)(edge_object) );
 FC_REFLECT( bts::blockchain::object_record, (_id)(user_data)(_owners) );
