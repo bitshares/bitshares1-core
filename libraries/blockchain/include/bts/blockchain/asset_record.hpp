@@ -20,6 +20,8 @@ namespace bts { namespace blockchain {
       bool is_null()const;
       /** the asset is issued by the market and not by any user */
       bool is_market_issued()const;
+      bool is_retractable()const { return !is_market_issued() && retractable; }
+      bool is_restricted()const { return !is_market_issued() && restricted; }
       asset_record make_null()const;
 
       uint64_t get_precision()const;

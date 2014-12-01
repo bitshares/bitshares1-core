@@ -16,8 +16,21 @@ namespace bts { namespace blockchain {
       if( this->bid_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (bid_index.order_price) );
 
+
       auto owner = this->bid_index.owner;
-      if( !eval_state.check_signature( owner ) )
+
+      auto base_asset_rec = eval_state._current_state->get_asset_record( bid_index.order_price.base_asset_id );
+      auto quote_asset_rec = eval_state._current_state->get_asset_record( bid_index.order_price.quote_asset_id );
+      FC_ASSERT( base_asset_rec.valid() );
+      FC_ASSERT( quote_asset_rec.valid() );
+      if( base_asset_rec->is_restricted() )
+         FC_ASSERT( eval_state._current_state->get_authorization( base_asset_rec->id, owner ) );
+      if( quote_asset_rec->is_restricted() )
+         FC_ASSERT( eval_state._current_state->get_authorization( quote_asset_rec->id, owner ) );
+
+      bool issuer_override = quote_asset_rec->is_retractable() && eval_state.verify_authority( quote_asset_rec->authority );
+
+      if( !issuer_override && !eval_state.check_signature( owner ) )
          FC_CAPTURE_AND_THROW( missing_signature, (bid_index.owner) );
 
       asset delta_amount  = this->get_amount();
@@ -118,10 +131,23 @@ namespace bts { namespace blockchain {
    { try {
       if( this->ask_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (ask_index.order_price) );
-
+      
       auto owner = this->ask_index.owner;
-      if( !eval_state.check_signature( owner ) )
+
+      auto base_asset_rec = eval_state._current_state->get_asset_record( ask_index.order_price.base_asset_id );
+      auto quote_asset_rec = eval_state._current_state->get_asset_record( ask_index.order_price.quote_asset_id );
+      FC_ASSERT( base_asset_rec.valid() );
+      FC_ASSERT( quote_asset_rec.valid() );
+      if( base_asset_rec->is_restricted() )
+         FC_ASSERT( eval_state._current_state->get_authorization( base_asset_rec->id, owner ) );
+      if( quote_asset_rec->is_restricted() )
+         FC_ASSERT( eval_state._current_state->get_authorization( quote_asset_rec->id, owner ) );
+
+      bool issuer_override = base_asset_rec->is_retractable() && eval_state.verify_authority( base_asset_rec->authority );
+
+      if( !issuer_override && !eval_state.check_signature( owner ) )
          FC_CAPTURE_AND_THROW( missing_signature, (ask_index.owner) );
+
 
       asset delta_amount  = this->get_amount();
 
