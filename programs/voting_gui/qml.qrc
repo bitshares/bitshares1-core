@@ -9,6 +9,7 @@
         <file>qml/VerificationPage.qml</file>
         <file>qml/VotingPage.qml</file>
         <file>qml/Contest.qml</file>
+        <file>qml/ContestContent.qml</file>
         <file>qml/PhotoButton.qml</file>
         <file>qml/ViewFinder.qml</file>
         <file>qml/GreySheet.qml</file>
