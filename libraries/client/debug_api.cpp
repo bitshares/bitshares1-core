@@ -1,6 +1,8 @@
 #include <bts/blockchain/time.hpp>
 #include <bts/client/client.hpp>
 #include <bts/client/client_impl.hpp>
+#include <bts/utilities/key_conversion.hpp>
+#include <bts/wallet/wallet.hpp>
 
 namespace bts { namespace client { namespace detail {
 
@@ -176,6 +178,65 @@ void client_impl::debug_wait_for_block_by_number(uint32_t block_number, const st
 std::string client_impl::debug_get_client_name() const
 {
    return this->_config.client_debug_name;
+}
+
+static std::string _generate_deterministic_private_key(const std::string& prefix, int32_t index)
+{
+   std::string seed = prefix;
+   if( index >= 0 )
+      seed += std::to_string(index);
+   fc::sha256 h_seed = fc::sha256::hash(seed);
+   fc::ecc::private_key key = fc::ecc::private_key::regenerate(h_seed);
+   return bts::utilities::key_to_wif(key);
+}
+
+fc::variants client_impl::debug_deterministic_private_keys(
+   int32_t start,
+   int32_t count,
+   const std::string& prefix,
+   bool import,
+   const std::string& account_name,
+   bool create_account,
+   bool wallet_rescan_blockchain
+   )
+{
+   std::vector<std::string> generated_keys;
+   
+   if( start < 0 )
+   {
+      // ignore count, generate single key
+      generated_keys.push_back(_generate_deterministic_private_key(prefix, -1));
+   }
+   else
+   {
+      for( int32_t i=0;i<count;i++ )
+      {
+         int64_t sum = start;
+         sum += i;
+         generated_keys.push_back(_generate_deterministic_private_key(prefix, sum));
+      }
+   }
+
+   fc::variants result;
+   for( const fc::string &s : generated_keys )
+      result.push_back( s );
+
+   if( !import )
+      return result;
+
+   optional<string> name;
+   if( !account_name.empty() )
+      name = account_name;
+
+   for( const std::string& k : generated_keys )
+   {
+      _wallet->import_wif_private_key( k, name, create_account );
+      create_account = false;
+   }
+   if( wallet_rescan_blockchain )
+      _wallet->scan_chain( 0 );
+
+   return result;
 }
 
 } } } // namespace bts::client::detail
