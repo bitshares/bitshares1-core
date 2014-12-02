@@ -223,17 +223,22 @@ QString ClientWrapper::create_voter_account()
 
 QJsonObject ClientWrapper::get_voter_ballot(QString account_name)
 {
-   //TODO: get actual ballot_id from verifier
-   bts::vote::digest_type ballot_id("c871c1329db193e314e3ce6f3911052d0e747e0d068e2caec530bc94707f7ad5");
-   string json_ballot = fc::json::to_string(_ballot_map[ballot_id]);
+   try {
+      bts::vote::digest_type ballot_id = _client->get_wallet()->get_account(account_name.toStdString()).private_data.as<fc::variant_object>()["identity"].as<bts::vote::signed_identity>().get_property("Ballot ID")->value.as<bts::vote::digest_type>();
+      fc::mutable_variant_object ballot_with_id = fc::variant(_ballot_map[ballot_id]).as<fc::mutable_variant_object>();
+      ballot_with_id["id"] = ballot_id;
+      string json_ballot = fc::json::to_string(ballot_with_id);
 
-   return QJsonDocument::fromJson(QByteArray(json_ballot.data(), json_ballot.size())).object();
+      return QJsonDocument::fromJson(QByteArray(json_ballot.data(), json_ballot.size())).object();
+   } catch (fc::exception& e) {
+      Q_EMIT error(fc::json::to_string(e).c_str());
+      return QJsonObject();
+   }
 }
 
 QJsonArray ClientWrapper::get_voter_contests(QString account_name)
 {
-   //TODO: get actual ballot_id from verifier
-   bts::vote::digest_type ballot_id("c871c1329db193e314e3ce6f3911052d0e747e0d068e2caec530bc94707f7ad5");
+   bts::vote::digest_type ballot_id(get_voter_ballot(account_name)["id"].toString().toStdString());
    ballot bal = _ballot_map[ballot_id];
 
    QJsonArray contests;
@@ -455,7 +460,7 @@ bts::blockchain::public_key_type ClientWrapper::lookup_public_key(QString accoun
       if( account_name == "verifier" )
          account_key = bts::blockchain::public_key_type("XTS6LNgKuUmEH18TxXWDEeqMtYYQBBXWfE1ZDdSx95jjCJvnwnoGy");
       else if( account_name == "registrar" )
-         account_key = bts::blockchain::public_key_type("XTS6pBHGAjnGrYmYKX9Ko26nQokqZf41YcX8FcuCb7zQrLQSUMnS8");
+         account_key = bts::blockchain::public_key_type("XTS7AfNMa1ZUdv7EfhnJCj11km5NM8SRpyDCNcoMQfrEHwpLwuJfW");
       else
          Q_EMIT error(QString("Could not find account %1.").arg(account_name));
    }

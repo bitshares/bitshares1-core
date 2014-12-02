@@ -8,7 +8,6 @@ TaskPage {
 
    property var verifiers: ["verifier"]
    property var registrars: ["registrar"]
-   property string account_name
 
    onBackClicked: window.previousPage()
    onNextClicked: {

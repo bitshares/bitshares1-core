@@ -12,6 +12,8 @@ ApplicationWindow {
    property url idFrontPhoto
    property url idBackPhoto
    property url voterRegistrationPhoto
+   property string account_name
+   property var decisions: ({})
 
    QtObject {
       id: d
@@ -66,16 +68,16 @@ ApplicationWindow {
             page: "WelcomePage.qml"
          }
          ListElement {
-            title: "Voting"
-            page: "VotingPage.qml"
-         }
-         ListElement {
             title: "Identification"
             page: "IdentificationPage.qml"
          }
          ListElement {
             title: "Verification"
             page: "VerificationPage.qml"
+         }
+         ListElement {
+            title: "Voting"
+            page: "VotingPage.qml"
          }
          ListElement {
             title: "Finished"

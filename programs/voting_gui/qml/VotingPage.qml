@@ -6,16 +6,15 @@ TaskPage {
    onBackClicked: window.previousPage()
 
    property var contests: []
-   property var decisions: ({})
    property var ballot
 
    Component.onCompleted: {
       bitshares.load_election()
-      var json_contests = bitshares.get_voter_contests("joe")
+      var json_contests = bitshares.get_voter_contests(account_name)
       for( var index in json_contests ) {
          contests.push(json_contests[index])
       }
-      ballot = bitshares.get_voter_ballot("joe")
+      ballot = bitshares.get_voter_ballot(account_name)
       //Refresh the contest list and scroll back to the top
       contestList.reloadContests()
       contestList.contentY = 0
@@ -59,9 +58,12 @@ TaskPage {
                onDecisionChanged: {
                   //Immediately upon creation, the decision is changed to an empty object. Ignore this.
                   if( initialized ) {
-                     if( decision )
-                        decisions[id] = decision;
-                     else
+                     if( "voter_opinions" in decision ) {
+                        var stored_decision = decision
+                        stored_decision["contest_id"] = id
+                        stored_decision["ballot_id"] = ballot.id
+                        decisions[id] = stored_decision
+                     } else
                         delete decisions[id]
                   }
                   console.log(JSON.stringify(decisions))
