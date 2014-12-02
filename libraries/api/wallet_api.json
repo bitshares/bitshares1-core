@@ -363,12 +363,11 @@
               "name" : "account",
               "type" : "account_name",
               "description" : "Account to fetch objects for"
-            },
-        ],
+            }
+          ],
         "prerequisites" : ["wallet_unlocked"],
         "aliases" : ["object_list"]
       },
-
       {
         "method_name": "wallet_account_transaction_history",
         "description": "Lists transaction history for the specified account",
@@ -719,7 +718,6 @@
          ],
          "prerequisites" : ["wallet_open"]
       },
-
       {
          "method_name" : "wallet_transfer_to_address",
          "description" : "Do a simple (non-TITAN) transfer to an address",
