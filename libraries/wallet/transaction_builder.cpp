@@ -37,7 +37,7 @@ transaction_builder& transaction_builder::release_escrow( const account_record& 
    auto escrow_condition = escrow_record->condition.as<withdraw_with_escrow>();
 
    //deduct_balance( released_by_address, _wimpl->self->get_transaction_fee() );
-   // TODO: this is a hack to bypass finalize() call... 
+   // TODO: this is a hack to bypass finalize() call...
    _wimpl->withdraw_to_transaction( _wimpl->self->get_transaction_fee(),
                                  payer.name,
                                  trx,
@@ -852,37 +852,34 @@ transaction_builder& transaction_builder::deposit_to_balance(const balance_id_ty
     return *this;
 }
 
-
+//Time to get desperate
 bool transaction_builder::withdraw_fee()
 {
-   //At this point, we'll require XTS.
-   // for each asset type in my wallet... get transaction fee in that asset type..
+   const auto balances = _wimpl->self->get_account_balances( "", false );
+
+   //Shake 'em down
    for( const auto& item : outstanding_balances )
    {
-      auto current_asset_id = item.first.second;
-      asset final_fee = _wimpl->self->get_transaction_fee(current_asset_id);
+      const address& bag_holder = item.first.first;
 
-      address bag_holder = item.first.first;
-
-      //Am I allowed to take money from this bag holder?
-      auto account_rec = _wimpl->_wallet_db.lookup_account(bag_holder);
-      if( !account_rec || !account_rec->is_my_account )
+      //Got any lunch money?
+      const owallet_account_record account_rec = _wimpl->_wallet_db.lookup_account(bag_holder);
+      if( !account_rec || balances.count( account_rec->name ) == 0 )
          continue;
 
-      //Does this bag holder have any money I can take?
-      account_balance_summary_type balances = _wimpl->self->get_account_balances(account_rec->name);
-      if( balances.empty() )
-         continue;
+      //Well how much?
+      const map<asset_id_type, share_type>& account_balances = balances.at( account_rec->name );
+      for( const auto& balance_item : account_balances )
+      {
+          const asset balance( balance_item.second, balance_item.first );
+          const asset fee = _wimpl->self->get_transaction_fee( balance.asset_id );
+          if( fee.asset_id != balance.asset_id || fee > balance )
+              continue;
 
-      //Does this bag holder have enough XTS?
-      auto balance_map = balances.begin()->second;
-      if( balance_map.find(current_asset_id) == balance_map.end() ||
-          balance_map[current_asset_id] < final_fee.amount )
-         continue;
-
-      deduct_balance(bag_holder, final_fee);
-      transaction_record.fee = final_fee;
-      return true;
+          deduct_balance(bag_holder, fee);
+          transaction_record.fee = fee;
+          return true;
+      }
    }
    return false;
 }

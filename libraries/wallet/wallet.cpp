@@ -3727,8 +3727,9 @@ namespace detail {
              }
          }
       }
+
       return xts_fee;
-       } FC_CAPTURE_AND_RETHROW() }
+   } FC_CAPTURE_AND_RETHROW( (desired_fee_asset_id) ) }
 
    bool wallet::asset_can_pay_fee(const asset_id_type& desired_fee_asset_id) const
    {
