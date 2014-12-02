@@ -60,10 +60,10 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 <d-ign></d-ign>3         test                SHORT-f73489c4      100.00000 XTS           short XMO @ 200.% APR                       0.50000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>4         test                SHORT-d5d6c38a      100.00000 XTS           short XMO @ 125.% APR                       0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> wallet_market_order_list XMO XTS
-TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
+TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
 ==================================================================================================================================================================
-short_order 100.00000 XTS       1250. XMO / XTS               100.00000 XTS       125,000.00 XMO      N/A                 d5d6c38a2aabf76d9e9f3b43c68d4204dd0fd756
-short_order 100.00000 XTS       2000. XMO / XTS               100.00000 XTS       200,000.00 XMO      N/A                 f73489c4b4c56cdd6b0b4e236583996ff5affdaa
+short_order         100.00000 XTS       1250. XMO / XTS               100.00000 XTS       125,000.00 XMO      N/A                 d5d6c38a2aabf76d9e9f3b43c68d4204dd0fd756
+short_order         100.00000 XTS       2000. XMO / XTS               100.00000 XTS       200,000.00 XMO      N/A                 f73489c4b4c56cdd6b0b4e236583996ff5affdaa
 default (unlocked) >>> help wallet_market_cancel_orders
 Usage:
 wallet_market_cancel_orders <order_ids>                                                               Cancel more than one order at a time
@@ -86,9 +86,9 @@ AMOUNT                        COLLATERAL                    INTEREST RATE       
 125,000.00 XMO                100.00000 XTS                 125.000000 %                  NONE                          d5d6c38a2aabf76d9e9f3b43c68d4204dd0fd756
 
 default (unlocked) >>> wallet_market_order_list XMO XTS
-TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
+TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
 ==================================================================================================================================================================
-short_order 100.00000 XTS       1250. XMO / XTS               100.00000 XTS       125,000.00 XMO      N/A                 d5d6c38a2aabf76d9e9f3b43c68d4204dd0fd756
+short_order         100.00000 XTS       1250. XMO / XTS               100.00000 XTS       125,000.00 XMO      N/A                 d5d6c38a2aabf76d9e9f3b43c68d4204dd0fd756
 default (unlocked) >>> wallet_account_transaction_history
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
