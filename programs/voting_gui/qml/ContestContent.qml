@@ -48,18 +48,34 @@ Item {
    }
 
    Component {
-      id: voteOneDecision
+      id: voteOneOrManyDecision
       GridLayout {
          columns: 4
 
-         ExclusiveGroup { id: contestantButtonsGroup }
+         Component {
+            id: voteOneGroup
+            ExclusiveGroup { id: contestantButtonsGroup }
+         }
+         Component {
+            id: voteManyGroup
+            LimitedCheckGroup {
+               id: limitedCheckGroup
+               checkLimit: tags["vote many limit"]
+               onCheckBlocked: errorAnimation.restart()
+            }
+         }
+         Loader {
+            id: contestantButtonsGroup
+            sourceComponent: tags["decision type"] === "vote one"?
+                                voteOneGroup : voteManyGroup
+         }
          Repeater {
             model: contestants
             delegate: SimpleButton {
                Layout.fillWidth: true
                Layout.fillHeight: true
                Layout.minimumWidth: implicitWidth
-               exclusiveGroup: contestantButtonsGroup
+               exclusiveGroup: contestantButtonsGroup.item
                text: "<b>" + name + "</b><br/><br/>" + breakLines(description)
                height: fontSize * 4.5
             }
@@ -97,33 +113,6 @@ Item {
          }
       }
    }
-   Component {
-      id: voteManyDecision
-      GridLayout {
-         columns: 4
-
-         LimitedCheckGroup {
-            id: limitedCheckGroup
-            checkLimit: tags["vote many limit"]
-            onCheckBlocked: errorAnimation.restart()
-         }
-         Repeater {
-            model: contestants
-            delegate: SimpleButton {
-               Layout.fillWidth: true
-               Layout.fillHeight: true
-               Layout.minimumWidth: implicitWidth
-               exclusiveGroup: limitedCheckGroup
-               text: "<b>" + name + "</b><br/><br/>" + breakLines(description)
-               height: fontSize * 4.5
-            }
-         }
-         Component.onCompleted: {
-            if( "write-in slots" in tags )
-               console.log("Unsupported write-in on a vote one....")
-         }
-      }
-   }
 
    Loader {
       anchors.top: instructionText.bottom
@@ -132,10 +121,9 @@ Item {
       anchors.margins: contestContainer.radius / 2
       sourceComponent: {
          switch( tags["decision type"] ) {
-         case "vote one":
-            return voteOneDecision
          case "vote many":
-            return voteManyDecision
+         case "vote one":
+            return voteOneOrManyDecision
          case "vote yes/no":
             return voteYesNoDecision
          }
