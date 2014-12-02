@@ -27,7 +27,8 @@ protected:
 public:
    struct decision_storage_record : public signed_voter_decision
    {
-      decision_storage_record(const signed_voter_decision& s = signed_voter_decision())
+      decision_storage_record(){}
+      decision_storage_record(const signed_voter_decision& s)
          : signed_voter_decision(s)
       {}
 
