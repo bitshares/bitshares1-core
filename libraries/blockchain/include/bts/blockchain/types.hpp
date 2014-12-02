@@ -78,9 +78,7 @@ namespace bts { namespace blockchain {
        friend bool operator == ( const public_key_type& p1, const public_key_type& p2);
        friend bool operator != ( const public_key_type& p1, const public_key_type& p2);
 
-       static bool is_valid(const std::string& base58str );
-       static bool is_valid_v2(const std::string& base58str );
-       static bool is_valid_v1(const std::string& base58str );
+       bool is_valid_v1( const std::string& base58str );
    };
 
    struct proposal_vote_id_type
