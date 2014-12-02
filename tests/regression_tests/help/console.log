@@ -139,7 +139,7 @@ wallet_add_transaction_note_experimental <transaction_id> <note>
 wallet_address_create <account_name> [label] [legacy_network_byte]                                  
 wallet_asset_create <symbol> <asset_name> <issuer_name> <description> <maximum_share_supply> <precision> [public_data] [is_market_issued] 
 wallet_asset_issue <amount> <symbol> <to_account_name> [memo_message]                               
-wallet_asset_update <symbol> [name] [description] [public_data] [maximum_share_supply] [precision]  
+wallet_asset_update <symbol> [name] [description] [public_data] [maximum_share_supply] [precision] [issuer_transaction_fee] [restricted] [retractable] [required_sigs] [authority] 
 wallet_backup_create <json_filename>                                                                
 wallet_backup_restore <json_filename> <wallet_name> <imported_wallet_passphrase>                    
 wallet_balance_set_vote_info <balance_id> [voter_address] [vote_method] [sign_and_broadcast]        
