@@ -2,6 +2,7 @@
 
 #include <bts/blockchain/asset.hpp>
 #include <bts/blockchain/operations.hpp>
+#include <bts/blockchain/account_record.hpp>
 #include <bts/blockchain/types.hpp>
 
 namespace bts { namespace blockchain {
@@ -69,6 +70,36 @@ namespace bts { namespace blockchain {
    };
 
    /**
+    * This operation updates an existing issuer record provided
+    * it is signed by a proper key.
+    */
+   struct update_asset_ext_operation : public update_asset_operation
+   {
+       static const operation_type_enum type;
+
+       /**
+        * A restricted asset can only be held/controlled by keys
+        * on the authorized list.
+        */
+       bool                restricted  = false;
+       
+       /**
+        * Asset is retractable by the issuer.
+        */
+       bool                retractable = true;
+       
+       /**
+        *  The issuer can specify a transaction fee (of the asset type) 
+        *  that will be paid to the issuer with every transaction that
+        *  references this asset type.
+        */
+       share_type          transaction_fee = 0;
+       multisig_meta_info  authority;
+
+       void evaluate( transaction_evaluation_state& eval_state );
+   };
+
+   /**
     *  Transaction must be signed by the active key
     *  on the issuer_name_record.
     *
@@ -86,7 +117,30 @@ namespace bts { namespace blockchain {
        void evaluate( transaction_evaluation_state& eval_state );
    };
 
+   /**
+    *  For assets that are restricted to certain qualified owners, this operation
+    *  allows updating the permission table.
+    *
+    *  Authorization operations require signatures by the authority on the asset_id
+    */
+   struct authorize_operation
+   {
+      static const operation_type_enum type;
+      authorize_operation(){}
+
+      asset_id_type    asset_id = 0;
+      address          owner;
+      object_id_type   meta_id = 0; /// extra data about this authorization
+
+      void evaluate( transaction_evaluation_state& eval_state );
+   };
+
 } } // bts::blockchain
+
+FC_REFLECT( bts::blockchain::authorize_operation,
+            (asset_id)
+            (owner)
+            (meta_id)  )
 
 FC_REFLECT( bts::blockchain::create_asset_operation,
             (symbol)
@@ -105,6 +159,13 @@ FC_REFLECT( bts::blockchain::update_asset_operation,
             (maximum_share_supply)
             (precision)
             )
+FC_REFLECT_DERIVED( bts::blockchain::update_asset_ext_operation, 
+                    (bts::blockchain::update_asset_operation),
+                    (restricted)
+                    (retractable)
+                    (transaction_fee)
+                    (authority) )
+
 FC_REFLECT( bts::blockchain::issue_asset_operation,
             (amount)
             )

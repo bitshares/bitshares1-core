@@ -16,7 +16,7 @@ class Helper
   end
 
   def get_actor(name)
-    name.downcase!
+    name = name.downcase
     if name == 'my' or name == 'me' or name == 'i' or name == "i've" or name == 'mine' or name == 'myself'
       @current_actor
     elsif name == 'alice' or name == "alice's"

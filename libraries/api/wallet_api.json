@@ -363,12 +363,11 @@
               "name" : "account",
               "type" : "account_name",
               "description" : "Account to fetch objects for"
-            },
-        ],
+            }
+          ],
         "prerequisites" : ["wallet_unlocked"],
         "aliases" : ["object_list"]
       },
-
       {
         "method_name": "wallet_account_transaction_history",
         "description": "Lists transaction history for the specified account",
@@ -719,7 +718,6 @@
          ],
          "prerequisites" : ["wallet_open"]
       },
-
       {
          "method_name" : "wallet_transfer_to_address",
          "description" : "Do a simple (non-TITAN) transfer to an address",
@@ -1621,6 +1619,36 @@
                   "type" : "optional_uint64_t",
                   "description" : "the new precision to give the asset; or null to keep the current precision",
                   "default_value" : null
+               },
+               {
+                  "name" : "issuer_transaction_fee",
+                  "type" : "share_type",
+                  "description" : "an additional fee (denominated in issued asset) charged by the issuer on every transaction that uses this asset type",
+                  "default_value" : 0
+               },
+               {
+                  "name" : "restricted",
+                  "type" : "bool",
+                  "description" : "whether or not ownership of the asset is restricted to authorized keys",
+                  "default_value" : false
+               },
+               {
+                  "name" : "retractable",
+                  "type" : "bool",
+                  "description" : "whether or not issuer is a co-signer on all balances",
+                  "default_value" : true
+               },
+               {
+                  "name" : "required_sigs",
+                  "type" : "uint32_t",
+                  "description" : "number of signatures from the authority required to control this asset record",
+                  "default_value" : 0
+               },
+               {
+                  "name" : "authority",
+                  "type" : "address_list",
+                  "description" : "owner keys that control this asset record",
+                  "default_value" : []
                }
             ],
          "prerequisites" : ["wallet_unlocked"]

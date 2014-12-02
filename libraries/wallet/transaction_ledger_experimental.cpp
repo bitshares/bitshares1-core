@@ -175,7 +175,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
                                 status = condition.decrypt_memo_data( key );
                             }, "decrypt memo" ).wait();
 
-                            if( status.valid() )
+                            if( status.valid() && address( status->owner_private_key.get_public_key() ) == condition.owner )
                             {
                                 _wallet_db.cache_memo( *status, key, _wallet_password );
 

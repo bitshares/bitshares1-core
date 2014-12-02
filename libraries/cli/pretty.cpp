@@ -387,6 +387,7 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
     out << std::setw(  8 ) << "SIZE";
     out << std::setw(  8 ) << "LATENCY";
     out << std::setw( 15 ) << "PROCESSING TIME";
+    out << std::setw( 15 ) << "RAND";
     out << "\n";
 
     out << pretty_line( 99 );
@@ -419,6 +420,7 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
             out << std::setw(  8 ) << "N/A";
             out << std::setw(  8 ) << "N/A";
             out << std::setw( 15 ) << "N/A";
+            out << std::setw( 15 ) << "N/A";
             out << '\n';
         }
 
@@ -446,6 +448,7 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
             out << std::setw(  8 ) << block_record.latency.to_seconds();
             out << std::setw( 15 ) << block_record.processing_time.count() / double( 1000000 );
         }
+        out << std::setw( 15 ) << std::string(block_record.random_seed);
 
         out << '\n';
     }
@@ -912,10 +915,15 @@ string pretty_order_list( const vector<std::pair<order_id_type, market_order>>& 
 
     out << pretty_line( 162 );
     out << "\n";
-    auto qid = order_items.front().second.market_index.order_price.quote_asset_id;
-    auto bid =order_items.front().second.market_index.order_price.base_asset_id;
 
-    auto median_price_feed = client->get_chain()->get_median_delegate_price( qid, bid );
+    price feed_price;
+    {
+        const asset_id_type quote_id = order_items.front().second.market_index.order_price.quote_asset_id;
+        const asset_id_type base_id = order_items.front().second.market_index.order_price.base_asset_id;
+        const omarket_status status = client->get_chain()->get_market_status( quote_id, base_id );
+        if( status.valid() && status->last_valid_feed_price.valid() )
+            feed_price = *status->last_valid_feed_price;
+    }
 
     for( const auto& item : order_items )
     {
@@ -923,10 +931,10 @@ string pretty_order_list( const vector<std::pair<order_id_type, market_order>>& 
         const auto order = item.second;
 
         out << std::setw( 20 ) << variant( order.type ).as_string();
-        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_quantity(*median_price_feed) );
-        out << std::setw( 30 ) << client->get_chain()->to_pretty_price( order.get_price(*median_price_feed) );
+        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_quantity( feed_price ) );
+        out << std::setw( 30 ) << client->get_chain()->to_pretty_price( order.get_price( feed_price ) );
         out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_balance() );
-        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_quantity(*median_price_feed) * order.get_price(*median_price_feed) );
+        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_quantity( feed_price ) * order.get_price( feed_price ) );
         if( order.type != cover_order )
            out << std::setw( 20 ) << "N/A";
         else

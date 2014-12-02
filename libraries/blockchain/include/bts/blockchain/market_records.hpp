@@ -246,14 +246,14 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
-FC_REFLECT_ENUM( bts::blockchain::order_type_enum, 
+FC_REFLECT_ENUM( bts::blockchain::order_type_enum,
                  (null_order)
                  (bid_order)
                  (ask_order)
                  (short_order)
                  (cover_order)
                  (relative_bid_order)
-                 (relative_ask_order) 
+                 (relative_ask_order)
                )
 
 FC_REFLECT_ENUM( bts::blockchain::market_history_key::time_granularity_enum, (each_block)(each_hour)(each_day) )
