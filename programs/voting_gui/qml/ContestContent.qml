@@ -51,71 +51,17 @@ Item {
 
    Component {
       id: voteOneOrManyDecision
-      GridLayout {
-         columns: 4
-
-         Component {
-            id: voteOneGroup
-            ExclusiveGroup { id: contestantButtonsGroup }
-         }
-         Component {
-            id: voteManyGroup
-            LimitedCheckGroup {
-               id: limitedCheckGroup
-               checkLimit: tags["vote many limit"]
-               onCheckBlocked: errorAnimation.restart()
-            }
-         }
-         Loader {
-            id: contestantButtonsGroup
-            sourceComponent: tags["decision type"] === "vote one"?
-                                voteOneGroup : voteManyGroup
-         }
-         Repeater {
-            model: contestants
-            delegate: SimpleButton {
-               Layout.fillWidth: true
-               Layout.fillHeight: true
-               Layout.minimumWidth: textWidth
-               Layout.preferredWidth: content.width / parent.columns
-               exclusiveGroup: contestantButtonsGroup.item
-               text: "<b>" + name + "</b><br/><br/>" + breakLines(description)
-               height: fontSize * 4.5
-            }
-         }
-         Component.onCompleted: {
-            if( "write-in slots" in tags )
-               console.log("Unsupported write-in on a vote one....")
-         }
+      VoteOneOrManyDecision {
+         contestantList: contestants
+         writeInSlots: "write-in slots" in tags? tags["write-in slots"] : 0
+         winnerLimit: "vote many limit" in tags? tags["vote many limit"] : 1
+         fontSize: content.fontSize
       }
    }
    Component {
       id: voteYesNoDecision
-      RowLayout {
-
-         ExclusiveGroup { id: yesNoButtonsGroup }
-         SimpleButton {
-            exclusiveGroup: yesNoButtonsGroup
-            color: "red"
-            Layout.fillWidth: true
-            Layout.minimumWidth: textWidth
-            Layout.preferredWidth: content.width / 2
-            text: "No"
-            height: fontSize * 3
-         }
-         SimpleButton {
-            exclusiveGroup: yesNoButtonsGroup
-            color: "green"
-            Layout.fillWidth: true
-            Layout.minimumWidth: textWidth
-            Layout.preferredWidth: content.width / 2
-            text: "Yes"
-            height: fontSize * 3
-         }
-         Component.onCompleted: {
-            if( "write-in slots" in tags )
-               console.log("Unsupported write-in on a vote yes/no....")
-         }
+      VoteYesNoDecision {
+         buttonHeight: content.fontSize * 3
       }
    }
 
