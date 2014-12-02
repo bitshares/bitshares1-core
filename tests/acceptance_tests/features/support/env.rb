@@ -16,11 +16,12 @@ class Helper
   end
 
   def get_actor(name)
-    if name == 'my' or name == 'me' or name == 'I' or name == 'mine' or name == 'myself'
+    name = name.downcase
+    if name == 'my' or name == 'me' or name == 'i' or name == "i've" or name == 'mine' or name == 'myself'
       @current_actor
-    elsif name == 'Alice' or name == "Alice's"
+    elsif name == 'alice' or name == "alice's"
       @alice
-    elsif name == 'Bob' or name == "Bob's"
+    elsif name == 'bob' or name == "bob's"
       @bob
     else
       raise "Unknown actor '#{name}'"

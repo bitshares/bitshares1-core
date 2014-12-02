@@ -15,6 +15,9 @@ namespace bts { namespace blockchain {
 
          fc::ripemd160                  get_current_random_seed()const override;
 
+         void                           authorize( asset_id_type asset_id, const address& owner, object_id_type oid = 0 ) override;
+         optional<object_id_type>       get_authorization( asset_id_type asset_id, const address& owner )const override;
+
          virtual void                   set_feed( const feed_record&  ) override;
          virtual ofeed_record           get_feed( const feed_index& )const override;
          virtual oprice                 get_median_delegate_price( const asset_id_type& quote_id,
@@ -75,6 +78,9 @@ namespace bts { namespace blockchain {
 
          virtual vector<operation>      get_recent_operations( operation_type_enum t )override;
          virtual void                   store_recent_operation( const operation& o )override;
+
+         virtual void                   store_object_record( const object_record& obj )override;
+         virtual oobject_record         get_object_record( object_id_type id )override;
 
          virtual variant                get_property( chain_property_enum property_id )const override;
          virtual void                   set_property( chain_property_enum property_id, const variant& property_value )override;
@@ -140,6 +146,9 @@ namespace bts { namespace blockchain {
          map< market_index_key, order_record>                           relative_bids;
          map< market_index_key, order_record>                           relative_asks;
 
+         map< object_id_type, object_record >                           objects;
+         map< std::pair<asset_id_type,address>, object_id_type >        authorizations;
+
          std::set<std::pair<asset_id_type, asset_id_type>>              _dirty_markets;
 
          chain_interface_weak_ptr                                       _prev_state;
@@ -149,8 +158,9 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
-// TODO: Why not reflect all members?
 FC_REFLECT( bts::blockchain::pending_chain_state,
             (assets)(slates)(accounts)(balances)(account_id_index)(symbol_id_index)(transactions)
             (properties)(bids)(asks)(shorts)(collateral)(slots)
-            (market_statuses)(feeds)(burns)(relative_bids)(relative_asks)(_dirty_markets) )
+            (market_statuses)(feeds)(objects)(burns)(relative_bids)(relative_asks)(_dirty_markets)
+            (authorizations)
+           )

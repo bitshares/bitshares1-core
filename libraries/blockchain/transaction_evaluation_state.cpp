@@ -26,10 +26,31 @@ namespace bts { namespace blockchain {
       validation_error.reset();
    }
 
+   bool transaction_evaluation_state::verify_authority( const multisig_meta_info& siginfo )
+   {
+      uint32_t sig_count = 0;
+      for( const auto item : siginfo.owners )
+         sig_count += check_signature( item );
+      return sig_count >= siginfo.required;
+   }
+
    bool transaction_evaluation_state::check_signature( const address& a )const
    { try {
       return  _skip_signature_check || signed_keys.find( a ) != signed_keys.end();
    } FC_CAPTURE_AND_RETHROW( (a) ) }
+
+   bool transaction_evaluation_state::check_multisig( const multisig_condition& condition )const
+   { try {
+
+      if( _skip_signature_check )
+          return true;
+      auto valid = 0;
+      for( auto addr : condition.owners )
+          if( signed_keys.find( addr) != signed_keys.end() )
+              valid++;
+      return valid >= condition.required;
+
+   } FC_CAPTURE_AND_RETHROW( (condition) ) }
 
    bool transaction_evaluation_state::any_parent_has_signed( const string& account_name )const
    { try {
@@ -124,7 +145,16 @@ namespace bts { namespace blockchain {
     */
    void transaction_evaluation_state::post_evaluate()
    { try {
-      // Should this be here? We may not have fees in XTS now...
+      for( const auto& item : withdraws )
+      {
+         auto asset_rec = _current_state->get_asset_record( item.first );
+         if( !asset_rec.valid() ) FC_CAPTURE_AND_THROW( unknown_asset_id, (item) );
+         if( asset_rec->id > 0 && asset_rec->is_market_issued() && asset_rec->transaction_fee > 0 )
+         {
+            sub_balance( address(), asset(asset_rec->transaction_fee, asset_rec->id) );
+         }
+      }
+
       balance[0]; // make sure we have something for this.
       for( const auto& fee : balance )
       {

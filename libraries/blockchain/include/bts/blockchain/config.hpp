@@ -11,7 +11,7 @@
  *  @brief Defines global constants that determine blockchain behavior
  */
 #define BTS_BLOCKCHAIN_VERSION                              109
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     166
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     168
 
 /**
  *  The address prepended to string representation of
@@ -31,6 +31,8 @@
 #define BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE                    10000 // XTS
 #define BTS_BLOCKCHAIN_MINIMUM_SHORT_ORDER_SIZE             (BTS_BLOCKCHAIN_PRECISION*100)
 #define BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC                 (30*24*60*60) // 30 days * 24 hours * 60 minutes * 60 seconds = 1 month
+
+#define BTS_BLOCKCHAIN_VOTE_UPDATE_PERIOD_SEC               (60*60) // 1 hour
 
 /**
  * The number of delegates that the blockchain is designed to support

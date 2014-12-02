@@ -53,7 +53,7 @@ namespace bts { namespace blockchain {
 
       update_feed_op_type           = 19,
       burn_op_type                  = 20,
-      link_account_op_type          = 21,
+      link_account_op_type          = 21, // Use for merge when 34 is reached!
       withdraw_all_op_type          = 22,
       release_escrow_op_type        = 23,
       update_block_signing_key_type = 24,
@@ -63,6 +63,11 @@ namespace bts { namespace blockchain {
 
       update_balance_vote_op_type   = 27,
 
+      set_object_op_type            = 28,
+      authorize_op_type             = 29,
+      update_asset_ext_op_type      = 30,
+
+      // Use 21 above when this is reached!
       short_op_v2_type              = 34
    };
 
@@ -131,6 +136,7 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (vote_proposal_op_type)
                  (bid_op_type)
                  (ask_op_type)
+                 (short_op_v2_type)
                  (short_op_type)
                  (cover_op_type)
                  (add_collateral_op_type)
@@ -145,8 +151,9 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (relative_bid_op_type)
                  (relative_ask_op_type)
                  (update_balance_vote_op_type)
-
-                 (short_op_v2_type)
+                 (set_object_op_type)
+                 (authorize_op_type)
+                 (update_asset_ext_op_type)
                  )
 
 FC_REFLECT( bts::blockchain::operation, (type)(data) )

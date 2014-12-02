@@ -117,12 +117,6 @@ namespace bts { namespace blockchain {
       memo->encrypted_memo_data = fc::aes_encrypt( secret, fc::raw::pack( memo_content ) );
    }
 
-
-
-
-
-
-
    omemo_status withdraw_with_escrow::decrypt_memo_data( const fc::ecc::private_key& receiver_key )const
    { try {
        try {
@@ -203,11 +197,6 @@ namespace bts { namespace blockchain {
       FC_ASSERT( memo.valid() );
       memo->encrypted_memo_data = fc::aes_encrypt( secret, fc::raw::pack( memo_content ) );
    }
-
-
-
-
-
 
 } } // bts::blockchain
 

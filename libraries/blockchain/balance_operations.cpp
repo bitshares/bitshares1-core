@@ -84,6 +84,7 @@ namespace bts { namespace blockchain {
       if( this->slate.supported_delegates.size() > BTS_BLOCKCHAIN_MAX_SLATE_SIZE )
          FC_CAPTURE_AND_THROW( too_may_delegates_in_slate, (slate.supported_delegates.size()) );
 
+
       const slate_id_type slate_id = this->slate.id();
       const odelegate_slate current_slate = eval_state._current_state->get_delegate_slate( slate_id );
       if( NOT current_slate.valid() )
@@ -134,6 +135,16 @@ namespace bts { namespace blockchain {
 
        cur_record->last_update = eval_state._current_state->now();
 
+       auto asset_rec = eval_state._current_state->get_asset_record( cur_record->condition.asset_id );
+       FC_ASSERT( asset_rec.valid() );
+       if( asset_rec->is_restricted() )
+       {
+         for(auto owner : cur_record->owners())
+         {
+           FC_ASSERT(eval_state._current_state->get_authorization(asset_rec->id, owner));
+         }
+       }
+
        eval_state._current_state->store_balance_record( *cur_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
@@ -152,102 +163,107 @@ namespace bts { namespace blockchain {
       if( this->amount > current_balance_record->get_spendable_balance( eval_state._current_state->now() ).amount )
          FC_CAPTURE_AND_THROW( insufficient_funds, (current_balance_record)(amount) );
 
-      switch( (withdraw_condition_types)current_balance_record->condition.type )
+      auto asset_rec = eval_state._current_state->get_asset_record( current_balance_record->condition.asset_id );
+      FC_ASSERT( asset_rec.valid() );
+      bool issuer_override = asset_rec->is_retractable() && eval_state.verify_authority( asset_rec->authority );
+
+      if( !issuer_override )
       {
-         case withdraw_signature_type:
+         switch( (withdraw_condition_types)current_balance_record->condition.type )
          {
-             const withdraw_with_signature condition = current_balance_record->condition.as<withdraw_with_signature>();
-             const address owner = condition.owner;
-             if( !eval_state.check_signature( owner ) )
-                 FC_CAPTURE_AND_THROW( missing_signature, (owner) );
-             break;
+            case withdraw_signature_type:
+            {
+                const withdraw_with_signature condition = current_balance_record->condition.as<withdraw_with_signature>();
+                const address owner = condition.owner;
+                if( !eval_state.check_signature( owner ) )
+                    FC_CAPTURE_AND_THROW( missing_signature, (owner) );
+                break;
+            }
+
+            case withdraw_vesting_type:
+            {
+                FC_ASSERT( !"Not supported yet!" );
+
+                const withdraw_vesting condition = current_balance_record->condition.as<withdraw_vesting>();
+                const address owner = condition.owner;
+                if( !eval_state.check_signature( owner ) )
+                    FC_CAPTURE_AND_THROW( missing_signature, (owner) );
+                break;
+            }
+
+            case withdraw_multi_sig_type:
+            {
+               FC_ASSERT( !"Not supported yet!" );
+
+               auto multi_sig = current_balance_record->condition.as<withdraw_with_multi_sig>();
+               uint32_t valid_signatures = 0;
+               for( auto sig : multi_sig.owners )
+                  valid_signatures += eval_state.check_signature( sig );
+               if( valid_signatures < multi_sig.required )
+                  FC_CAPTURE_AND_THROW( missing_signature, (valid_signatures)(multi_sig) );
+               break;
+            }
+
+            case withdraw_password_type:
+            {
+               FC_ASSERT( !"Not supported yet!" );
+
+               auto password_condition = current_balance_record->condition.as<withdraw_with_password>();
+               try {
+                  if( password_condition.timeout < eval_state._current_state->now() )
+                  {
+                     if( !eval_state.check_signature( password_condition.payor ) )
+                        FC_CAPTURE_AND_THROW( missing_signature, (password_condition.payor) );
+                  }
+                  else
+                  {
+                     if( !eval_state.check_signature( password_condition.payee ) )
+                        FC_CAPTURE_AND_THROW( missing_signature, (password_condition.payee) );
+                     if( claim_input_data.size() < sizeof( fc::ripemd160 ) )
+                        FC_CAPTURE_AND_THROW( invalid_claim_password, (claim_input_data) );
+
+                     auto input_password_hash = fc::ripemd160::hash( claim_input_data.data(),
+                                                                     claim_input_data.size() );
+
+                     if( password_condition.password_hash != input_password_hash )
+                        FC_CAPTURE_AND_THROW( invalid_claim_password, (input_password_hash) );
+                  }
+               } FC_CAPTURE_AND_RETHROW( (password_condition ) )
+               break;
+            }
+
+            case withdraw_option_type:
+            {
+               FC_ASSERT( !"Not supported yet!" );
+
+               auto option = current_balance_record->condition.as<withdraw_option>();
+               try {
+                  if( eval_state._current_state->now() > option.date )
+                  {
+                     if( !eval_state.check_signature( option.optionor ) )
+                        FC_CAPTURE_AND_THROW( missing_signature, (option.optionor) );
+                  }
+                  else // the option hasn't expired
+                  {
+                     if( !eval_state.check_signature( option.optionee ) )
+                        FC_CAPTURE_AND_THROW( missing_signature, (option.optionee) );
+
+                     auto pay_amount = asset( this->amount, current_balance_record->condition.asset_id ) * option.strike_price;
+                     eval_state.add_required_deposit( option.optionee, pay_amount );
+                  }
+               } FC_CAPTURE_AND_RETHROW( (option) )
+               break;
+            }
+
+            default:
+               FC_CAPTURE_AND_THROW( invalid_withdraw_condition, (current_balance_record->condition) );
          }
-
-         case withdraw_vesting_type:
-         {
-             FC_ASSERT( !"Not supported yet!" );
-
-             const withdraw_vesting condition = current_balance_record->condition.as<withdraw_vesting>();
-             const address owner = condition.owner;
-             if( !eval_state.check_signature( owner ) )
-                 FC_CAPTURE_AND_THROW( missing_signature, (owner) );
-             break;
-         }
-
-         case withdraw_multi_sig_type:
-         {
-            FC_ASSERT( !"Not supported yet!" );
-
-            auto multi_sig = current_balance_record->condition.as<withdraw_with_multi_sig>();
-            uint32_t valid_signatures = 0;
-            for( auto sig : multi_sig.owners )
-               valid_signatures += eval_state.check_signature( sig );
-            if( valid_signatures < multi_sig.required )
-               FC_CAPTURE_AND_THROW( missing_signature, (valid_signatures)(multi_sig) );
-            break;
-         }
-
-         case withdraw_password_type:
-         {
-            FC_ASSERT( !"Not supported yet!" );
-
-            auto password_condition = current_balance_record->condition.as<withdraw_with_password>();
-            try {
-               if( password_condition.timeout < eval_state._current_state->now() )
-               {
-                  if( !eval_state.check_signature( password_condition.payor ) )
-                     FC_CAPTURE_AND_THROW( missing_signature, (password_condition.payor) );
-               }
-               else
-               {
-                  if( !eval_state.check_signature( password_condition.payee ) )
-                     FC_CAPTURE_AND_THROW( missing_signature, (password_condition.payee) );
-                  if( claim_input_data.size() < sizeof( fc::ripemd160 ) )
-                     FC_CAPTURE_AND_THROW( invalid_claim_password, (claim_input_data) );
-
-                  auto input_password_hash = fc::ripemd160::hash( claim_input_data.data(),
-                                                                  claim_input_data.size() );
-
-                  if( password_condition.password_hash != input_password_hash )
-                     FC_CAPTURE_AND_THROW( invalid_claim_password, (input_password_hash) );
-               }
-            } FC_CAPTURE_AND_RETHROW( (password_condition ) )
-            break;
-         }
-
-         case withdraw_option_type:
-         {
-            FC_ASSERT( !"Not supported yet!" );
-
-            auto option = current_balance_record->condition.as<withdraw_option>();
-            try {
-               if( eval_state._current_state->now() > option.date )
-               {
-                  if( !eval_state.check_signature( option.optionor ) )
-                     FC_CAPTURE_AND_THROW( missing_signature, (option.optionor) );
-               }
-               else // the option hasn't expired
-               {
-                  if( !eval_state.check_signature( option.optionee ) )
-                     FC_CAPTURE_AND_THROW( missing_signature, (option.optionee) );
-
-                  auto pay_amount = asset( this->amount, current_balance_record->condition.asset_id ) * option.strike_price;
-                  eval_state.add_required_deposit( option.optionee, pay_amount );
-               }
-            } FC_CAPTURE_AND_RETHROW( (option) )
-            break;
-         }
-
-         default:
-            FC_CAPTURE_AND_THROW( invalid_withdraw_condition, (current_balance_record->condition) );
       }
 
       // update delegate vote on withdrawn account..
       if( current_balance_record->condition.asset_id == 0 && current_balance_record->condition.delegate_slate_id )
          eval_state.adjust_vote( current_balance_record->condition.delegate_slate_id, -this->amount );
 
-      auto asset_rec = eval_state._current_state->get_asset_record( current_balance_record->condition.asset_id );
-      FC_ASSERT( asset_rec.valid() );
       if( asset_rec->is_market_issued() )
       {
          auto yield = current_balance_record->calculate_yield( eval_state._current_state->now(),
@@ -322,6 +338,18 @@ namespace bts { namespace blockchain {
       FC_ASSERT( total_released >= amount_to_sender ); // check for addition overflow
 
       escrow_balance_record->balance -= total_released;
+      auto asset_rec = eval_state._current_state->get_asset_record( escrow_balance_record->condition.asset_id );
+      if( asset_rec->restricted )
+      {
+         FC_ASSERT( eval_state._current_state->get_authorization( escrow_balance_record->condition.asset_id, escrow_condition.receiver ) );
+      }
+      if( asset_rec->is_retractable() )
+      {
+         if( eval_state.verify_authority( asset_rec->authority ) )
+         {
+            // 
+         }
+      }
 
       if( escrow_condition.sender == this->released_by )
       {
@@ -444,6 +472,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( current_balance_record->condition.type == withdraw_signature_type, "Restricted owners not enabled for anything but basic balances" );
 
 
+
       auto balance = current_balance_record->balance;
       if( current_balance_record->condition.delegate_slate_id )
       {
@@ -467,10 +496,17 @@ namespace bts { namespace blockchain {
           }
           new_restricted_owner = this->new_restricted_owner;
           new_slate = this->new_slate;
-      } else {
+      }
+      else
+      {
           auto restricted_owner = current_balance_record->restricted_owner;
           FC_ASSERT( restricted_owner.valid(),
                      "Didn't specify a new restricted owner, but one currently exists." );
+          FC_ASSERT( current_balance_record->last_update.sec_since_epoch()
+                     - eval_state._current_state->now().sec_since_epoch()
+                     >= BTS_BLOCKCHAIN_VOTE_UPDATE_PERIOD_SEC,
+                     "You cannot update your vote this frequently with only the voting key!" );
+
           if( !eval_state.check_signature( *restricted_owner ) )
               FC_CAPTURE_AND_THROW( missing_signature, (restricted_owner) );
           new_slate = this->new_slate;

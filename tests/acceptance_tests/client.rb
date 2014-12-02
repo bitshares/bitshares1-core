@@ -83,7 +83,22 @@ class BitSharesNode
 
   def exec(method, *params)
     raise Error, "rpc instance is not defined, make sure the node is started" unless @rpc_instance
-    @rpc_instance.request(method, params)
+    begin
+      @rpc_instance.request(method, params)
+    rescue EOFError => e
+      STDOUT.puts "encountered EOFError, #{@name} instance may have crashed"
+      pid = @handler[:wait_thr].pid
+      STDOUT.puts "waiting for process #{pid} to exit"
+      begin
+        Process.wait(pid)
+      rescue Errno::ECHILD
+        raise Error, "#{name} (pid:#{pid}) instance was crashed or exited unexpectedly"
+      end
+      # while s = stdout_gets
+      #   STDOUT.puts s
+      # end
+      raise e
+    end
   end
 
   def wait_new_block

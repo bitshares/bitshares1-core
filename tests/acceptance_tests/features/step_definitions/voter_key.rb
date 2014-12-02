@@ -1,23 +1,10 @@
-Given(/^I transfer (\d+) XTS to address: Address(\d+)$/) do |arg1, arg2|
-      pending # express the regexp above with the code you wish you had
+When(/^I set voter for balance (\w+) as (\w+)$/) do |bal1, addr|
+    puts @addresses
+    @current_actor.node.exec 'wallet_balance_set_vote_info', @addresses[bal1], @addresses[addr]
 end
 
-Given(/^I get a balance ID for address: Address(\d+) as B(\d+)$/) do |arg1, arg2|
-      pending # express the regexp above with the code you wish you had
-end
-
-Given(/^I made a slate with delegate Candidate(\d+) with id S(\d+)$/) do |arg1, arg2|
-      pending # express the regexp above with the code you wish you had
-end
-
-When(/^I set voter for balance B(\d+) as Voter and save balance as B(\d+)$/) do |arg1, arg2|
-      pending # express the regexp above with the code you wish you had
-end
-
-When(/^switch to wallet VoterWallet$/) do
-      pending # express the regexp above with the code you wish you had
-end
-
-When(/^I update vote for balance B(\d+)$/) do |arg1|
-      pending # express the regexp above with the code you wish you had
+When(/^I update vote for balance (\w+)$/) do |balID|
+    #bal = @current_actor.node.exec 'blockchain_get_balance', @addresses[balID]
+    puts bal
+    @current_actor.node.exec 'wallet_balance_set_vote_info', @addresses[balID]
 end

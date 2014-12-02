@@ -380,8 +380,9 @@ transaction_builder detail::client_impl::wallet_withdraw_from_address(
     auto fee = _wallet->get_transaction_fee();
     builder->withdraw_from_balance( from_address, ugly_asset.amount + fee.amount );
     builder->deposit_to_balance( to_address, ugly_asset, vote_method );
+    builder->finalize( false );
     if( sign )
-        builder->finalize().sign();
+        builder->sign();
     _wallet->write_latest_builder( *builder, builder_path );
     return *builder;
 }
@@ -408,8 +409,9 @@ transaction_builder detail::client_impl::wallet_withdraw_from_legacy_address(
     auto fee = _wallet->get_transaction_fee();
     builder->withdraw_from_balance( from_address, ugly_asset.amount + fee.amount );
     builder->deposit_to_balance( to_address, ugly_asset, vote_method );
+    builder->finalize( false );
     if( sign )
-        builder->finalize().sign();
+        builder->sign();
     return *builder;
 }
 
@@ -439,7 +441,7 @@ transaction_builder detail::client_impl::wallet_builder_add_signature(
 { try {
     auto b2 = _wallet->create_transaction_builder( builder );
     if( b2->transaction_record.trx.signatures.empty() )
-        b2->finalize();
+        b2->finalize( false );
     b2->sign();
     if( broadcast )
     {
@@ -452,6 +454,94 @@ transaction_builder detail::client_impl::wallet_builder_add_signature(
     }
     return *b2;
 } FC_CAPTURE_AND_RETHROW( (builder)(broadcast) ) }
+
+wallet_transaction_record detail::client_impl::wallet_object_create(
+                                            const string& account,
+                                            const variant& user_data,
+                                            int32_t m, 
+                                            const vector<address>& owners )
+{ try {
+    auto builder = _wallet->create_transaction_builder();
+    object_record obj( obj_type::normal_object, 0 );
+    vector<address> real_owners = owners;
+    if( m == -1 ) // default value - can't use 0 because 0 is a valid number of owners
+    {
+        m = 1;
+        real_owners = vector<address>{ _wallet->create_new_address( account, "Owner address for an object." ) };
+    }
+    obj.user_data = user_data;
+    obj._owners = multisig_condition( m, set<address>(real_owners.begin(), real_owners.end()) );
+    builder->set_object( account, obj, true )
+            .finalize()
+            .sign();
+    network_broadcast_transaction( builder->transaction_record.trx );
+    return builder->transaction_record;
+} FC_CAPTURE_AND_RETHROW( (account)(m)(owners)(user_data) ) }
+
+transaction_builder detail::client_impl::wallet_object_update(
+                                            const string& paying_account,
+                                            const object_id_type& id,
+                                            const variant& user_data,
+                                            bool sign_and_broadcast )
+{ try {
+    auto builder = _wallet->create_transaction_builder();
+    auto obj = _chain_db->get_object_record( id );
+    FC_ASSERT( obj.valid(), "No such object!" );
+    obj->user_data = user_data;
+    builder->set_object( paying_account, *obj, true )
+            .finalize();
+    if( sign_and_broadcast )
+    {
+        builder->sign();
+        network_broadcast_transaction( builder->transaction_record.trx );
+    }
+    return *builder;
+} FC_CAPTURE_AND_RETHROW( (paying_account)(id)(user_data)(sign_and_broadcast ) ) }
+
+transaction_builder detail::client_impl::wallet_object_transfer(
+                                            const string& paying_account,
+                                            const object_id_type& id,
+                                            uint32_t m, 
+                                            const vector<address>& owners,
+                                            bool sign_and_broadcast )
+{ try {
+    auto builder = _wallet->create_transaction_builder();
+    auto obj = _chain_db->get_object_record( id );
+    FC_ASSERT( obj.valid(), "No such object!" );
+    obj->_owners = multisig_condition( m, set<address>(owners.begin(), owners.end()) );
+    builder->set_object( paying_account, *obj, true )
+            .finalize();
+    if( sign_and_broadcast )
+    {
+        builder->sign();
+        network_broadcast_transaction( builder->transaction_record.trx );
+    }
+    return *builder;
+} FC_CAPTURE_AND_RETHROW( (paying_account)(id)(m)(owners)(sign_and_broadcast) ) }
+
+
+vector<object_record> detail::client_impl::wallet_object_list( const string& account )
+{ try {
+    vector<object_record> ret;
+    const auto pending_state = _chain_db->get_pending_state();
+    const auto acct_keys = _wallet->get_public_keys_in_account( account );
+    const auto scan_object = [&]( const object_record& obj )
+    {
+        for( auto owner : pending_state->get_object_owners( obj ).owners )
+        {
+            for( auto key : acct_keys )
+            {
+                if( address(key) == owner )
+                    ret.push_back( obj );
+            }
+        }
+    };
+    _chain_db->scan_objects( scan_object );
+    return ret;
+} FC_CAPTURE_AND_RETHROW( (account) ) }
+
+
+
 
 wallet_transaction_record detail::client_impl::wallet_release_escrow( const string& paying_account_name,
                                                                       const address& escrow_balance_id,
@@ -551,7 +641,13 @@ wallet_transaction_record detail::client_impl::wallet_asset_update(
         const optional<string>& description,
         const optional<variant>& public_data,
         const optional<double>& maximum_share_supply,
-        const optional<uint64_t>& precision )
+        const optional<uint64_t>& precision,
+        const share_type& issuer_fee,
+        bool restricted,
+        bool retractable,
+        uint32_t required_sigs,
+        const vector<address>& authority 
+      )
 {
   auto record = _wallet->update_asset( symbol, name, description, public_data, maximum_share_supply, precision, true );
   _wallet->cache_transaction( record );
@@ -1216,11 +1312,22 @@ fc::variant client_impl::wallet_login_finish(const public_key_type &server_key,
 
 
 transaction_builder client_impl::wallet_balance_set_vote_info(const balance_id_type& balance_id,
-                                                              const address& voter_address,
+                                                              const string& voter_address,
                                                               const vote_selection_method& selection_method,
                                                               bool sign_and_broadcast)
 {
-    auto builder = _wallet->set_vote_info( balance_id, voter_address, selection_method );
+    address new_voter;
+    if( voter_address == "" )
+    {
+        auto balance = _chain_db->get_balance_record( balance_id );
+        if( balance.valid() && balance->restricted_owner.valid() )
+            new_voter = *balance->restricted_owner;
+    }
+    else
+    {
+        new_voter = address( voter_address );
+    }
+    auto builder = _wallet->set_vote_info( balance_id, new_voter, selection_method );
     if( sign_and_broadcast )
     {
         auto record = builder.finalize().sign();

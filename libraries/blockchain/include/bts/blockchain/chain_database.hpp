@@ -159,6 +159,9 @@ namespace bts { namespace blockchain {
          account_record              get_slot_signee( const time_point_sec& timestamp,
                                                       const std::vector<account_id_type>& ordered_delegates )const;
 
+         void                        authorize( asset_id_type asset_id, const address& owner, object_id_type oid = 0 ) override;
+         optional<object_id_type>    get_authorization( asset_id_type asset_id, const address& owner )const override;
+
          optional<time_point_sec>    get_next_producible_block_timestamp( const vector<account_id_type>& delegate_ids )const;
 
          uint32_t                    get_block_num( const block_id_type& )const;
@@ -200,13 +203,13 @@ namespace bts { namespace blockchain {
          map<balance_id_type, balance_record>  get_balances( const string& first,
                                                              uint32_t limit )const;
 
-         vector<balance_record>  get_balances_for_address( const address& addr )const;
-         vector<balance_record>  get_balances_for_key( const public_key_type& key )const;
-         vector<account_record>  get_accounts( const string& first,
-                                               uint32_t limit )const;
+         map<balance_id_type, balance_record>     get_balances_for_address( const address& addr )const;
+         map<balance_id_type, balance_record>     get_balances_for_key( const public_key_type& key )const;
+         vector<account_record>                   get_accounts( const string& first,
+                                                                uint32_t limit )const;
 
-         vector<asset_record>    get_assets( const string& first_symbol,
-                                             uint32_t limit )const;
+         vector<asset_record>                     get_assets( const string& first_symbol,
+                                                              uint32_t limit )const;
 
          std::vector<slot_record> get_delegate_slot_records( const account_id_type& delegate_id,
                                                              int64_t start_block_num, uint32_t count )const;
@@ -272,6 +275,7 @@ namespace bts { namespace blockchain {
          void                               scan_assets( function<void( const asset_record& )> callback )const;
          void                               scan_balances( function<void( const balance_record& )> callback )const;
          void                               scan_accounts( function<void( const account_record& )> callback )const;
+         void                               scan_objects( function<void( const object_record& )> callback )const;
 
          virtual variant                    get_property( chain_property_enum property_id )const override;
          virtual void                       set_property( chain_property_enum property_id,
@@ -294,6 +298,10 @@ namespace bts { namespace blockchain {
 
          virtual vector<operation>          get_recent_operations( operation_type_enum t )override;
          virtual void                       store_recent_operation( const operation& o )override;
+
+         virtual void                       store_object_record( const object_record& obj )override;
+         virtual oobject_record             get_object_record( object_id_type id )override;
+
 
 #if 0
          virtual void                       store_proposal_record( const proposal_record& r )override;

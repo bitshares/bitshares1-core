@@ -5,9 +5,20 @@
 
 namespace bts { namespace blockchain {
 
-    set<address> object_record::get_owners()
+    obj_type object_record::type()const
     {
-        FC_ASSERT(!"unimplemented");
+        return obj_type(_id >> 48);
     }
+
+    uint64_t object_record::short_id()const
+    {
+        return obj_type(_id & 0x0000ffffffffffff);
+    }
+
+    void     object_record::set_id( obj_type type, uint64_t number )
+    {
+        _id = (uint64_t(type) << 48) | number;
+    }
+
 
 }} // bts::blockchain

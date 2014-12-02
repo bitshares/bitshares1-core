@@ -5,12 +5,13 @@ require 'json'
 
 class Generator
 
-  attr_reader :wallet_api, :network_api, :blockchain_api
+  attr_reader :wallet_api, :network_api, :blockchain_api, :mail_api
 
   def initialize
     @wallet_api = JSON.parse(IO.read('../wallet_api.json'))
     @network_api = JSON.parse(IO.read('../network_api.json'))
     @blockchain_api = JSON.parse(IO.read('../blockchain_api.json'))
+    @mail_api = JSON.parse(IO.read('../mail_api.json'))
   end
 
   def render(template)

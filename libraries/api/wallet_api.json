@@ -253,6 +253,122 @@
         "aliases" : ["set_expiration"]
       },
       {
+        "method_name": "wallet_object_create",
+        "description": "Creates a normal user object. If no owner info is specified, uses a new address from payer.",
+        "return_type": "transaction_record",
+        "parameters" :
+          [
+            {
+              "name" : "account",
+              "type" : "account_name",
+              "description" : ""
+            },
+            {
+               "name" : "user_data",
+               "type" : "variant",
+               "description" : "",
+               "default_value": ""
+            },
+            {
+               "name" : "m",
+               "type" : "int32_t",
+               "description" : "",
+               "default_value" : -1
+            },
+            {
+               "name" : "owners",
+               "type" : "address_list",
+               "description" : "",
+               "default_value": []
+            }
+        ],
+        "prerequisites" : ["wallet_unlocked"],
+        "aliases" : ["create_object"]
+      },
+      {
+        "method_name": "wallet_object_update",
+        "description": "Update a normal user object.",
+        "return_type": "transaction_builder",
+        "parameters" :
+          [
+            {
+              "name" : "paying_account_name",
+              "type" : "sending_account_name",
+              "description" : "the source account to draw the shares from"
+            },
+            {
+              "name" : "object_id",
+              "type" : "object_id_type",
+              "description" : "the object to update"
+            },
+            {
+               "name" : "user_data",
+               "type" : "variant",
+               "description" : "",
+               "default_value": ""
+            },
+            {
+                "name": "sign_and_broadcast",
+                "type": "bool",
+                "description": "",
+                "default_value": true
+            }
+        ],
+        "prerequisites" : ["wallet_unlocked"],
+        "aliases" : ["update_object"]
+      },
+      {
+        "method_name": "wallet_object_transfer",
+        "description": "Update a normal user object's owner.",
+        "return_type": "transaction_builder",
+        "parameters" :
+          [
+            {
+              "name" : "paying_account_name",
+              "type" : "sending_account_name",
+              "description" : "the source account to draw the shares from"
+            },
+            {
+              "name" : "object_id",
+              "type" : "object_id_type",
+              "description" : "the object to update"
+            },
+            {
+               "name" : "m",
+               "type" : "uint32_t",
+               "description" : ""
+            },
+            {
+               "name" : "owners",
+               "type" : "address_list",
+               "description" : ""
+            },
+            {
+                "name": "sign_and_broadcast",
+                "type": "bool",
+                "description": "",
+                "default_value": true
+            }
+        ],
+        "prerequisites" : ["wallet_unlocked"],
+        "aliases" : ["transfer_object"]
+      },
+      {
+        "method_name": "wallet_object_list",
+        "description": "List objects that belong to an account.",
+        "return_type": "object_array",
+        "parameters" :
+          [
+            {
+              "name" : "account",
+              "type" : "account_name",
+              "description" : "Account to fetch objects for"
+            }
+          ],
+        "prerequisites" : ["wallet_unlocked"],
+        "aliases" : ["object_list"]
+      },
+      {
         "method_name": "wallet_account_transaction_history",
         "description": "Lists transaction history for the specified account",
         "return_type": "pretty_transactions",
@@ -602,7 +718,6 @@
          ],
          "prerequisites" : ["wallet_open"]
       },
-
       {
          "method_name" : "wallet_transfer_to_address",
          "description" : "Do a simple (non-TITAN) transfer to an address",
@@ -1504,6 +1619,36 @@
                   "type" : "optional_uint64_t",
                   "description" : "the new precision to give the asset; or null to keep the current precision",
                   "default_value" : null
+               },
+               {
+                  "name" : "issuer_transaction_fee",
+                  "type" : "share_type",
+                  "description" : "an additional fee (denominated in issued asset) charged by the issuer on every transaction that uses this asset type",
+                  "default_value" : 0
+               },
+               {
+                  "name" : "restricted",
+                  "type" : "bool",
+                  "description" : "whether or not ownership of the asset is restricted to authorized keys",
+                  "default_value" : false
+               },
+               {
+                  "name" : "retractable",
+                  "type" : "bool",
+                  "description" : "whether or not issuer is a co-signer on all balances",
+                  "default_value" : true
+               },
+               {
+                  "name" : "required_sigs",
+                  "type" : "uint32_t",
+                  "description" : "number of signatures from the authority required to control this asset record",
+                  "default_value" : 0
+               },
+               {
+                  "name" : "authority",
+                  "type" : "address_list",
+                  "description" : "owner keys that control this asset record",
+                  "default_value" : []
                }
             ],
          "prerequisites" : ["wallet_unlocked"]
@@ -2209,8 +2354,9 @@
                },
                {
                   "name" : "voter_address",
-                  "type" : "address",
-                  "description" : "the new voting address"
+                  "type" : "string",
+                  "description" : "The new voting address. If none is specified, tries to re-use existing address.",
+                  "default_value": ""
                },
                {
                  "name" : "vote_method",

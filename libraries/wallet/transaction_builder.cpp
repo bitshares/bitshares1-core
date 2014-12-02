@@ -252,6 +252,22 @@ transaction_builder& transaction_builder::deposit_asset_to_multisig(
    return *this;
 } FC_CAPTURE_AND_RETHROW( (from_name)(addresses)(amount) ) }
 
+transaction_builder& transaction_builder::set_object(const string& payer_name,
+                                                     const object_record& obj,
+                                                     bool create )
+{ try {
+    auto payer = _wimpl->self->get_account( payer_name );
+    deduct_balance( payer.owner_address(), asset() );
+    int64_t id;
+    if( create )
+        id = 0;
+    else
+        id = obj.short_id();
+    trx.set_object( id, obj );
+
+    return *this;
+} FC_CAPTURE_AND_RETHROW( (payer_name)(obj)(create) ) }
+
 
 transaction_builder& transaction_builder::deposit_asset_with_escrow(const bts::wallet::wallet_account_record& payer,
                                                         const bts::blockchain::account_record& recipient,
@@ -696,7 +712,7 @@ transaction_builder& transaction_builder::update_asset( const string& symbol,
     return *this;
 } FC_CAPTURE_AND_RETHROW( (symbol)(name)(description)(public_data)(maximum_share_supply)(precision) ) }
 
-transaction_builder& transaction_builder::finalize()
+transaction_builder& transaction_builder::finalize( bool pay_fee )
 { try {
    FC_ASSERT( !trx.operations.empty(), "Cannot finalize empty transaction" );
 
@@ -707,7 +723,8 @@ transaction_builder& transaction_builder::finalize()
    else
       slate_id = 0;
 
-   pay_fee();
+   if( pay_fee )
+       this->pay_fee();
 
    //outstanding_balance is pair<pair<account address, asset ID>, share_type>
    for( const auto& outstanding_balance : outstanding_balances )
@@ -818,7 +835,7 @@ transaction_builder& transaction_builder::withdraw_from_balance(const balance_id
     {
         auto balances = _wimpl->_blockchain->get_balances_for_address( address(from) );
         FC_ASSERT( balances.size() > 0, "No balance with that ID or owner address!" );
-        auto balance = balances[0];
+        auto balance = balances.begin()->second;
         trx.withdraw( balance.id(), amount );
         for(const auto& owner : balance.owners() )
             required_signatures.insert( owner );

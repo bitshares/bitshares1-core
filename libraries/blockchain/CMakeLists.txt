@@ -63,6 +63,7 @@ add_library( bts_blockchain
 #proposal_operations.cpp
              feed_operations.cpp
 #fire_operation.cpp
+             object_operations.cpp
              asset.cpp
              transaction.cpp
              time.cpp

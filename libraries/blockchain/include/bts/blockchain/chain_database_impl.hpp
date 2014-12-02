@@ -180,6 +180,9 @@ namespace bts { namespace blockchain {
             bts::db::cached_level_map<market_index_key, collateral_record>              _collateral_db;
             bts::db::cached_level_map<feed_index, feed_record>                          _feed_db;
 
+            bts::db::level_map<object_id_type, object_record>                           _object_db;
+            bts::db::level_map<std::pair<asset_id_type,address>, object_id_type>        _auth_db;
+
             bts::db::cached_level_map<std::pair<asset_id_type,asset_id_type>, market_status> _market_status_db;
             bts::db::cached_level_map<market_history_key, market_history_record>        _market_history_db;
 

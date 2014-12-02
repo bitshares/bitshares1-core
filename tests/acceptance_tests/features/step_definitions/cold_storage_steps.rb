@@ -1,5 +1,5 @@
 When(/^I do transfer (\d+) (\w+) from accountname: (\w+) to address: (\w+)$/) do |amount, symbol, account, address|
-    @current_actor.node.exec 'wallet_transfer_asset_to_address', amount, symbol, account, @addresses[address]
+    @current_actor.node.exec 'wallet_transfer_to_address', amount, symbol, account, @addresses[address]
 end
 
 When(/^I do transfer (\d+) (\w+) from address: (\w+) to account: (\w+)$/) do |amount, symbol, address, account|
@@ -7,7 +7,7 @@ When(/^I do transfer (\d+) (\w+) from address: (\w+) to account: (\w+)$/) do |am
     @current_actor.node.exec 'wallet_builder_add_signature', builder, true
 end
 
-When(/^I do transfer (\d+) (\w+) from (legacy)? address: (\w+) to public account for: (\w+)$/) do |amount, symbol, legacy, from_addr, account|
+When(/^I do transfer (\d+) (\w+) from (legacy )?address: (\w+) to public account for: (\w+)$/) do |amount, symbol, legacy, from_addr, account|
     #to_addr = @current_actor.node.exec 'wallet_get_account_public_address', account
     #puts "from " + @addresses[from_addr]
     #puts "to " + to_addr

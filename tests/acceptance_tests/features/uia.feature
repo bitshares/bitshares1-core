@@ -30,7 +30,6 @@ Feature: User Issued Assets
     And Bob waits for one block
     Then Bob should have 102,000 ALCBTC
 
- #@pause @current
  Scenario: Alice sells some of her shares to Bob for BitUSD
     Given feed price is 0.01 USD/XTS
     And I wait for one block

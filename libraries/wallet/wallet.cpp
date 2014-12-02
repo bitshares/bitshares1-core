@@ -188,7 +188,7 @@ namespace detail {
    }
 
    void wallet_impl::scan_chain_task( uint32_t start, uint32_t end, bool fast_scan )
-   {
+   { try {
       auto min_end = std::min<size_t>( _blockchain->get_head_block_num(), end );
 
       try
@@ -224,27 +224,34 @@ namespace detail {
 
         for( auto block_num = start; !_scan_in_progress.canceled() && block_num <= min_end; ++block_num )
         {
-           scan_block( block_num, private_keys, now );
+            try
+            {
+                scan_block( block_num, private_keys, now );
+            }
+            catch( ... )
+            {
+            }
+
 #ifdef BTS_TEST_NETWORK
-           try
-           {
-               scan_block_experimental( block_num, account_keys, account_balances, account_names );
-           }
-           catch( ... )
-           {
-           }
+            try
+            {
+                scan_block_experimental( block_num, account_keys, account_balances, account_names );
+            }
+            catch( ... )
+            {
+            }
 #endif
-           _scan_progress = float(block_num-start)/(min_end-start+1);
-           self->set_last_scanned_block_number( block_num );
+            _scan_progress = float(block_num-start)/(min_end-start+1);
+            self->set_last_scanned_block_number( block_num );
 
-           if( block_num > start )
-           {
-               if( (block_num - start) % 10000 == 0 )
-                   ulog( "Scanning ${p} done...", ("p",cli::pretty_percent( _scan_progress, 1 )) );
+            if( block_num > start )
+            {
+                if( (block_num - start) % 10000 == 0 )
+                    ulog( "Scanning ${p} done...", ("p",cli::pretty_percent( _scan_progress, 1 )) );
 
-               if( !fast_scan && (block_num - start) % 100 == 0 )
-                   fc::usleep( fc::microseconds( 100 ) );
-           }
+                if( !fast_scan && (block_num - start) % 100 == 0 )
+                    fc::usleep( fc::microseconds( 100 ) );
+            }
         }
 
         // Update local accounts
@@ -268,7 +275,7 @@ namespace detail {
         ulog( "Scan failure." );
         throw;
       }
-   }
+   } FC_CAPTURE_AND_RETHROW( (start)(end)(fast_scan) ) }
 
    void wallet_impl::upgrade_version()
    {

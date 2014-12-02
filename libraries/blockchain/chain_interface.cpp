@@ -46,6 +46,10 @@ namespace bts { namespace blockchain {
       return is_valid_account_name(supername);
    } FC_CAPTURE_AND_RETHROW( (name) ) }
 
+   /**
+    *  Symbol names must be Alpha Numeric and may have a single '.' in the name that cannot be 
+    *  the first or last.
+    */
    bool chain_interface::is_valid_symbol_name( const string& symbol )const
    { try {
        FC_ASSERT( symbol != "BTSX" );
@@ -53,12 +57,20 @@ namespace bts { namespace blockchain {
        if( symbol.size() < BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE || symbol.size() > BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE )
            return false;
 
+       int dots = 0;
        std::locale loc;
        for( const auto& c : symbol )
        {
-           if( !std::isalnum( c, loc ) || !std::isupper( c, loc ) )
+           if( c == '.' )
+           {
+              if( ++dots > 1 )
+               return false;
+           }
+           else if( !std::isalnum( c, loc ) || !std::isupper( c, loc ) )
                return false;
        }
+       if( symbol.back() == '.' ) return false;
+       if( symbol.front() == '.' ) return false;
 
        if( get_head_block_num() >= BTS_V0_4_25_FORK_BLOCK_NUM )
        {
@@ -138,6 +150,73 @@ namespace bts { namespace blockchain {
       auto next_id = last_account_id() + 1;
       set_property( chain_property_enum::last_account_id, next_id );
       return next_id;
+   }
+
+   object_id_type chain_interface::last_object_id()const
+   {
+       return get_property( chain_property_enum::last_object_id ).as<object_id_type>();
+   }
+
+   object_id_type chain_interface::new_object_id( obj_type type )
+   {
+      auto last_id = last_object_id();
+      auto tmp = object_record( type, last_id );
+      tmp.set_id( tmp.type(), tmp.short_id() + 1 );
+      auto next_id = tmp._id;
+      set_property( chain_property_enum::last_object_id, object_id_type( next_id ) );
+      return next_id;
+   }
+
+   multisig_condition   chain_interface::get_object_owners( const object_record& obj )
+   {
+       multisig_condition owners;
+       switch( obj.type() )
+       {
+           case( obj_type::normal_object ): 
+           {
+               owners = obj._owners;
+           }
+           case( obj_type::edge_object ):
+           {
+               const edge_record& edge = dynamic_cast<const edge_record&>( obj );
+               auto from_object = get_object_record( edge.from );
+               FC_ASSERT( from_object.valid(), "Unrecognized from object.");
+               // Remove the next assert once you deal with max recursion depth for get_object_owners
+               FC_ASSERT( from_object->type() != obj_type::edge_object, "You can't make an edge from an edge yet.");
+               return get_object_owners( *from_object );
+           }
+           case( obj_type::account_object ):
+           {
+               auto account_id = obj.short_id();
+               auto oacct = get_account_record( account_id );
+               FC_ASSERT( oacct.valid(), "No such account object!");
+               owners.owners.insert( oacct->owner_address() );
+               owners.required = 1;
+               return owners;
+           }
+           case( obj_type::asset_object ):
+           {
+               auto oasset = get_asset_record( obj.short_id() );
+               FC_ASSERT( oasset.valid(), "No such asset!" );
+               if( oasset->issuer_account_id > 0 )
+               {
+                   auto oacct = get_account_record( oasset->issuer_account_id );
+                   FC_ASSERT(!"This asset has an issuer but the issuer account doens't exist. Crap!");
+                   owners.owners.insert( oacct->owner_address() );
+                   owners.required = 1;
+                   return owners;
+               }
+               else
+               {
+                   FC_ASSERT(!"That asset has no issuer!");
+               }
+           }
+           default:
+           {
+               FC_ASSERT(!"I don't know how to get the owners for this object type!");
+           }
+       }
+       FC_ASSERT(!"This code path should not happen.");
    }
 
 #if 0

@@ -130,6 +130,7 @@ namespace bts { namespace blockchain {
 
           _asset_db.open( data_dir / "index/asset_db" );
           _balance_db.open( data_dir / "index/balance_db" );
+          _auth_db.open( data_dir / "index/auth_db" );
           _burn_db.open( data_dir / "index/burn_db" );
           _account_db.open( data_dir / "index/account_db" );
           _address_to_account_db.open( data_dir / "index/address_to_account_db" );
@@ -147,6 +148,8 @@ namespace bts { namespace blockchain {
           _short_db.open( data_dir / "index/short_db" );
           _collateral_db.open( data_dir / "index/collateral_db" );
           _feed_db.open( data_dir / "index/feed_db" );
+
+          _object_db.open( data_dir / "index/object_db" );
 
           _market_status_db.open( data_dir / "index/market_status_db" );
           _market_history_db.open( data_dir / "index/market_history_db" );
@@ -372,6 +375,7 @@ namespace bts { namespace blockchain {
          self->set_property( chain_property_enum::last_asset_id, asset_id );
          self->set_property( chain_property_enum::last_proposal_id, 0 );
          self->set_property( chain_property_enum::last_account_id, uint64_t( config.names.size() ) );
+         self->set_property( chain_property_enum::last_object_id, 1 );
          self->set_property( chain_property_enum::last_random_seed_id, fc::variant( secret_hash_type() ) );
          self->set_property( chain_property_enum::confirmation_requirement, BTS_BLOCKCHAIN_NUM_DELEGATES*2 );
 
@@ -1330,7 +1334,6 @@ namespace bts { namespace blockchain {
 
    void chain_database::close()
    { try {
-      my->_market_transactions_db.close();
       my->_fork_number_db.close();
       my->_fork_db.close();
       my->_slate_db.close();
@@ -1371,6 +1374,10 @@ namespace bts { namespace blockchain {
 
       my->_market_history_db.close();
       my->_market_status_db.close();
+      my->_market_transactions_db.close();
+
+      my->_object_db.close();
+      my->_auth_db.close();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    account_record chain_database::get_delegate_record_for_signee( const public_key_type& block_signee )const
@@ -1865,6 +1872,17 @@ namespace bts { namespace blockchain {
         recent_op_queue.pop_front();
    }
 
+
+    oobject_record             chain_database::get_object_record( object_id_type id )
+    {
+       return my->_object_db.fetch_optional( id );
+    }
+
+    void                       chain_database::store_object_record( const object_record& obj )
+    {
+        my->_object_db.store( obj._id, obj );
+    }
+
    otransaction_record chain_database::get_transaction( const transaction_id_type& trx_id, bool exact )const
    { try {
       auto trx_rec = my->_id_to_transaction_record_db.fetch_optional( trx_id );
@@ -1935,6 +1953,17 @@ namespace bts { namespace blockchain {
            ++name_itr;
         }
    }
+
+   void chain_database::scan_objects( function<void( const object_record& )> callback )const
+   {
+        auto itr = my->_object_db.begin();
+        while( itr.valid() )
+        {
+           callback( itr.value() );
+           ++itr;
+        }
+   }
+
 
    /** this should throw if the trx is invalid */
    transaction_evaluation_state_ptr chain_database::store_pending_transaction( const signed_transaction& trx, bool override_limits )
@@ -2098,25 +2127,25 @@ namespace bts { namespace blockchain {
         return balances;
     } FC_RETHROW_EXCEPTIONS( warn, "", ("first",first)("limit",limit) )  }
 
-    vector<balance_record> chain_database::get_balances_for_address( const address& addr )const
+   map<balance_id_type, balance_record> chain_database::get_balances_for_address( const address& addr )const
    { try {
-        vector<balance_record> ret;
+        map<balance_id_type, balance_record> ret;
         const auto scan_balance = [ &addr, &ret ]( const balance_record& record )
         {
             if( record.is_owner( addr ) || addr == record.id() )
-                ret.push_back( record );
+                ret[record.id()] = record;
         };
         scan_balances( scan_balance );
         return ret;
    } FC_CAPTURE_AND_RETHROW( (addr) ) }
 
-    vector<balance_record> chain_database::get_balances_for_key( const public_key_type& key )const
+   map<balance_id_type, balance_record> chain_database::get_balances_for_key( const public_key_type& key )const
    { try {
-        vector<balance_record> ret;
+        map<balance_id_type, balance_record> ret;
         const auto scan_balance = [ &key, &ret ]( const balance_record& record )
         {
             if( record.is_owner( key ) )
-                ret.push_back( record );
+                ret[record.id()] = record;
         };
         scan_balances( scan_balance );
         return ret;
@@ -3559,6 +3588,10 @@ namespace bts { namespace blockchain {
        my->_feed_db.export_to_json( next_path );
        ulog( "Dumped ${p}", ("p",next_path) );
 
+       next_path = dir / "_object_db.json";
+       my->_object_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
        next_path = dir / "_market_status_db.json";
        my->_market_status_db.export_to_json( next_path );
        ulog( "Dumped ${p}", ("p",next_path) );
@@ -3575,12 +3608,24 @@ namespace bts { namespace blockchain {
                            (_block_num_to_id_db)(_block_id_to_block_record_db)(_block_id_to_block_data_db)(_known_transactions) \
                            (_id_to_transaction_record_db)(_pending_transaction_db)(_pending_fee_index)(_asset_db)(_balance_db) \
                            (_burn_db)(_account_db)(_address_to_account_db)(_account_index_db)(_symbol_index_db)(_delegate_vote_index_db) \
-                           (_slot_record_db)(_ask_db)(_bid_db)(_short_db)(_collateral_db)(_feed_db)(_market_status_db)(_market_history_db) \
+                           (_slot_record_db)(_ask_db)(_bid_db)(_short_db)(_collateral_db)(_feed_db)(_object_db)(_market_status_db)(_market_history_db) \
                            (_recent_operations)
 #define GET_DATABASE_SIZE(r, data, elem) stats[BOOST_PP_STRINGIZE(elem)] = my->elem.size();
      BOOST_PP_SEQ_FOR_EACH(GET_DATABASE_SIZE, _, CHAIN_DB_DATABASES)
      return stats;
    }
 
+   void                        chain_database::authorize( asset_id_type asset_id, const address& owner, object_id_type oid  )
+   {
+      if( oid != -1 )
+         my->_auth_db.store( std::make_pair( asset_id, owner ), oid );
+      else
+         my->_auth_db.remove( std::make_pair( asset_id, owner ) );
+   }
+
+   optional<object_id_type>    chain_database::get_authorization( asset_id_type asset_id, const address& owner )const
+   {
+      return my->_auth_db.fetch_optional( std::make_pair( asset_id, owner ) );
+   }
 
 } } // bts::blockchain
