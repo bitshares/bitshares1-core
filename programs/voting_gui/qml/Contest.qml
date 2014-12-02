@@ -13,6 +13,12 @@ Rectangle {
 
    property bool expanded: false
    property alias fontSize: content.fontSize
+   property alias decision: content.decision
+
+   function setDecision(decision) {
+      if( typeof decision !== "undefined" )
+         content.setDecision(decision)
+   }
 
    Item {
       id: header

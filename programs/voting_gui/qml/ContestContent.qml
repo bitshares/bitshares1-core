@@ -6,7 +6,11 @@ Item {
    id: content
 
    property real fontSize: 12
+   readonly property var decision: decisionLoader.item.getDecision()
 
+   function setDecision(decision) {
+      decisionLoader.item.setDecision(decision)
+   }
    function breakLines(text) {
       return text.replace("\n", "<br/>")
    }
@@ -66,6 +70,7 @@ Item {
    }
 
    Loader {
+      id: decisionLoader
       anchors.top: instructionText.bottom
       anchors.left: parent.left
       anchors.right: parent.right

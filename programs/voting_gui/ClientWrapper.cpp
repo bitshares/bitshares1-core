@@ -239,7 +239,9 @@ QJsonArray ClientWrapper::get_voter_contests(QString account_name)
    QJsonArray contests;
    std::for_each(bal.contests.begin(), bal.contests.end(),
                  [this, &contests](const digest_type& id) {
-      string contest = fc::json::to_string(_contest_map[id]);
+      fc::mutable_variant_object contest_with_id = fc::variant(_contest_map[id]).as<fc::mutable_variant_object>();
+      contest_with_id["id"] = id;
+      string contest = fc::json::to_string(contest_with_id);
       contests.append(QJsonDocument::fromJson(QByteArray(contest.data(), contest.size())).object());
    });
    return contests;

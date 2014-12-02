@@ -6,6 +6,7 @@ TaskPage {
    onBackClicked: window.previousPage()
 
    property var contests: []
+   property var decisions: ({})
    property var ballot
 
    Component.onCompleted: {
@@ -50,9 +51,25 @@ TaskPage {
          Component {
             id: contestDelegate
             Contest {
+               property bool initialized: false
+
                width: parent.width - 20
                expanded: ListView.isCurrentItem
                fontSize: Math.max(1, container.height * .02)
+               onDecisionChanged: {
+                  //Immediately upon creation, the decision is changed to an empty object. Ignore this.
+                  if( initialized ) {
+                     if( decision )
+                        decisions[id] = decision;
+                     else
+                        delete decisions[id]
+                  }
+                  console.log(JSON.stringify(decisions))
+               }
+               Component.onCompleted: {
+                  setDecision(decisions[id])
+                  initialized = true
+               }
             }
          }
 
