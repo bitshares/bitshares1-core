@@ -173,4 +173,9 @@ void client_impl::debug_wait_for_block_by_number(uint32_t block_number, const st
    _chain_db->remove_observer(&block_waiter);
 }
 
+std::string client_impl::debug_get_client_name() const
+{
+   return this->_config.client_debug_name;
+}
+
 } } } // namespace bts::client::detail

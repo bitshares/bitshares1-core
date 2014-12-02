@@ -200,6 +200,11 @@ public:
    bool on_new_transaction(const signed_transaction& trx);
    void blocks_too_old_monitor_task();
    void cancel_blocks_too_old_monitor_task();
+   void set_client_debug_name(const string& name)
+   {
+      _config.client_debug_name = name;
+      return;
+   }
 
    /* Implement node_delegate */
    // @{
