@@ -16,24 +16,44 @@ import json
 # Collect (address, balance) pairs
 exodus_balances = []
 
-# signatures at end of file
+# https://github.com/BitShares/bitshares/issues/880
 substitutions = dict([
-    ("178RVtWSyrCD8N1BnSdiSbMMokD2foQhAd", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"), 
-    ("1GJczjbQF8evXsLCHpX9sNXQ3m2QbwH2Wv", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"), 
-    ("19btdFcvEgF6t7hyr5n4gzsGitHZjk7uF4", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"), 
-    ("1J9FPXTMJXwh1mC4CYDp8kjtgsQehiVos4", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"), 
-    ("18Cpgt8w1aFsGBc3s82NMCU5RiRE1kiEe3", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"), 
-    ("1MnEmUHF9TYXMio86dTGXvRxeirW4VFE9w", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"), 
-    ("1DL9Rt8bWZbmNbSMZedqA2WeFRUeJS415s", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"), 
-    ("1QC9jKo53vAdo6zYUcHwpJWqGwCe5voxLv", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"), 
-    ("1JtuJEr3cGL7AyB4xcg9qMLjWV73qnHRBt", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"), 
-    ("1G3HMZzCr4QDihJEpz1arrmR4swm7krinM", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"), 
-    ("Pe9F7tmq8Wxd2bCkFrW6nc4h5RASAzHAWC", "PmBR2p6uYY1SKhB9FbdHMbSGcqjEGsfK2n"),
-    ("1376AFc3gfic94o9yK1dx7JMMqxzfbssrg", "1gD8zEUgPN6imT3uGUqVVnxT5agAH9r4Y"),
     ("1Gaw39RvbkZxcXeYzGrjWvmiEqAB6PMqsX", "1A2SAL7i5UwZ3pYuaf7rcBj1U3wffEAoo7"),
     ("13U3XLUTRHLGMwfCmhde7EmQtNdJE7X2zw", "1A2SAL7i5UwZ3pYuaf7rcBj1U3wffEAoo7"),
+    ("178RVtWSyrCD8N1BnSdiSbMMokD2foQhAd", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
+    ("1GJczjbQF8evXsLCHpX9sNXQ3m2QbwH2Wv", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
+    ("19btdFcvEgF6t7hyr5n4gzsGitHZjk7uF4", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
+    ("1J9FPXTMJXwh1mC4CYDp8kjtgsQehiVos4", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
+    ("18Cpgt8w1aFsGBc3s82NMCU5RiRE1kiEe3", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
+    ("1MnEmUHF9TYXMio86dTGXvRxeirW4VFE9w", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
+    ("1DL9Rt8bWZbmNbSMZedqA2WeFRUeJS415s", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
+    ("1QC9jKo53vAdo6zYUcHwpJWqGwCe5voxLv", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
+    ("1JtuJEr3cGL7AyB4xcg9qMLjWV73qnHRBt", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
+    ("1G3HMZzCr4QDihJEpz1arrmR4swm7krinM", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
+    ("1HziNRPCtiY6HXsBouwpVzTYtZws5A25LZ", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
+    ("135xcKg36YPGi2c1yDuacgDJuxqWcporDv", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
+    ("15MeKFbkdHp7357Ez3p1jnNdGSovoBKop6", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
+    ("12tiMQ2eFAsG5SwG1xYaejigbsXiqac6hx", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
+    ("1GqU61rhQ6sbwLiTc4FYSNpKZyjEA827VV", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
+    ("1ED1wLdA3WW7Xr3EPRhZH6LmWP7gwJP5Qj", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
+    ("1PegsunSa7ThjbEoRHxxFa5M4BgfXjbAj1", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
+    ("14seLs1EwvsXTb3dLvchFgMquJnF2yJwd2", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
+    ("1NhBbVJJUPN7X451bN9FEEq4LxyWLSWcft", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
+    ("12ZoxtSZVqApmRTmY75P6jYpYDLkPJzNai", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
+    ("1NZHLx6jNqY3R3953j6oALgkkZF4VoM6rH", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
+    ("14Efv8ZHhbFz1fJ3eD4tfKLyHVqAXMug7y", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
+    ("12ahkRrYhBcRGT9GbGRc7Y8uMGe9WTLibF", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
+    ("1TDLLyd684EqFHHwCuQuh5Hh1aEBZpEhv", "12Zv4sdQbm6bKpz5artZYoM8WbfFXKuTHC"),
+    ("16qGZVP5rgwQCeLSnf2U94dHBa3QMNHJ3F", "12Zv4sdQbm6bKpz5artZYoM8WbfFXKuTHC"),
+    ("1FnqQz36y18HK1EvaTCaGS65xUYDSTxBtx", "12Zv4sdQbm6bKpz5artZYoM8WbfFXKuTHC"),
+    ("1JyiMXW7NXjsyhp4hvsm77xFn3J4tvxuZa", "16fgrvY7ACrZDLNz9GWiwPfMuk34kZWKmf"),
+    ("1AEv2pKdGqJomxE9ApkW68QBg32QjjwA7b", "1BYrChoJn2UNMhTtWfRrqfcJ5ntkMYjTo8"),
+    ("1KgyqkYwq1uFMwc6MTeQKsz72jJfqHSBD9", "1KLNYniYHM2UwYxSA7rjRtXqNFQEEUDhPv"),
+    ("1PUZQbeu94iarZtrkKXiL4ryAEsvcsEvcE", "13P4or5Dz8734Arqg2CQLXFtxy2DSjKdXa"),
+    ("1CbkZbefm25BYFeUUUQGEvt9HYWh39hvJk", "1M69AMjAkeKkk6YfuEECZzbz54EnXijzvk"),
+    ("13XnJ6zKd6qgK5Uu4zJw4bdPT8M7232ZBf", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
     ("PbXSuic9B1iEmgMiWqW93cdXFvPQsHXdUc", "PfSQYEJYKN3YTmk74BwXy6fk2StTJczaQw"),
-    ("PitE7xxJvjzkVcs6BT5yRxV55YJqgFrhCU", "PfSQYEJYKN3YTmk74BwXy6fk2StTJczaQw"),
+    ("PitE7xxJvjzkVcs6BT5yRxV55YJqgFrhCU", "PfSQYEJYKN3YTmk74BwXy6fk2StTJczaQw")
 ])
 
 
@@ -170,7 +190,6 @@ for item in exodus_balances:
     if item[1] != 0:
         address = item[0]
         if address in substitutions.keys():
-            print "substituting address: " + address + " for amount " + str(item[1] / 10 ** 8)
             address = substitutions[address]
        
         # ~ 1 in 600 million chance... not a coincidence
@@ -190,7 +209,7 @@ print "bts_added: " + str(bts_added)
 print "bts_excluded: " + str(bts_excluded)
 print "total reviewed: " + str(bts_added + bts_excluded)
 
-with open("libraries/blockchain/bts-sharedrop.json", "w") as sharedrop:
+with open("bts-sharedrop.json", "w") as sharedrop:
     sharedrop.write(json.dumps(output, indent=4))
 
 
@@ -235,6 +254,9 @@ with open("libraries/blockchain/bts-sharedrop.json", "w") as sharedrop:
 # Address: 1G3HMZzCr4QDihJEpz1arrmR4swm7krinM
 # Message: New BTC Address: 1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb
 # Signature: HJk5aiPFINZ9+3yKe9h7yZPuPY6yLY05T27bBReEAYDr2jCHrmDhmFzkwe8/+dtnz
+
+
+#  more:  https://github.com/bitsuperlab/bitshares_play/blob/develop/libraries/blockchain/pts_ags_snapshot/substitution.txt
 
 
 # educatedwarrior theft - confirmed manually by BM 
