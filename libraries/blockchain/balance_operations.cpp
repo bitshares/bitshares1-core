@@ -134,8 +134,10 @@ namespace bts { namespace blockchain {
        FC_ASSERT( asset_rec.valid() );
        if( asset_rec->is_restricted() )
        {
-          for( auto owner : cur_record->owners() )
-             FC_ASSERT( eval_state._current_state->get_authorization( asset_rec->id, owner ) );
+         for(auto owner : cur_record->owners())
+         {
+           FC_ASSERT(eval_state._current_state->get_authorization(asset_rec->id, owner));
+         }
        }
 
        eval_state._current_state->store_balance_record( *cur_record );
