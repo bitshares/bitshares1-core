@@ -52,12 +52,14 @@ public Q_SLOTS:
    void get_verification_request_status(QString account_name, QStringList verifiers, QJSValue callback);
    void process_accepted_identity(QString account_name, QString identity, QJSValue callback);
    void begin_registration(QString account_name, QStringList registrars);
+   void submit_decisions(QString account_name, QString json_decisions);
 
 Q_SIGNALS:
    void initialization_complete();
    void state_changed();
    void status_update(QString statusString);
    void registered();
+   void decisions_submitted();
    void error(QString errorString);
 
 private:

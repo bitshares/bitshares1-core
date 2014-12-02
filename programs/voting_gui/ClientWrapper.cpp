@@ -450,6 +450,32 @@ void ClientWrapper::begin_registration(QString account_name, QStringList registr
    }, __FUNCTION__);
 }
 
+void ClientWrapper::submit_decisions(QString account_name, QString json_decisions)
+{
+   auto future = _bitshares_thread.async([this, account_name, json_decisions]() mutable {
+      auto decisions = fc::json::from_string(json_decisions.toStdString()).as<vector<bts::vote::voter_decision>>();
+      auto authorizations = _client->get_wallet()->get_account(account_name.toStdString()).private_data.as<fc::variant_object>()["registrar_signatures"].as<vector<bts::vote::expiring_signature>>();
+      auto voter_key = _client->get_wallet()->get_active_private_key("voter-key." + account_name.toStdString());
+      vector<fc::variants> signed_decisions;
+      signed_decisions.reserve(decisions.size());
+
+      for( bts::vote::voter_decision& decision : decisions )
+      {
+         decision.registrar_authorizations = authorizations;
+         signed_decisions.emplace_back(fc::variants(1, fc::variant(bts::vote::signed_voter_decision(decision, voter_key))));
+      }
+
+      auto client = get_rpc_client("ballot_box");
+      client->batch("ballot_submit_decision", signed_decisions);
+
+      Q_EMIT decisions_submitted();
+   }, __FUNCTION__);
+   future.on_complete([this](fc::exception_ptr e) {
+      if( e )
+         Q_EMIT error(fc::exception(*e).to_detail_string().c_str());
+   });
+}
+
 bts::blockchain::public_key_type ClientWrapper::lookup_public_key(QString account_name)
 {
    auto account = _client->blockchain_get_account(account_name.toStdString());
@@ -460,7 +486,7 @@ bts::blockchain::public_key_type ClientWrapper::lookup_public_key(QString accoun
       if( account_name == "verifier" )
          account_key = bts::blockchain::public_key_type("XTS6LNgKuUmEH18TxXWDEeqMtYYQBBXWfE1ZDdSx95jjCJvnwnoGy");
       else if( account_name == "registrar" )
-         account_key = bts::blockchain::public_key_type("XTS7AfNMa1ZUdv7EfhnJCj11km5NM8SRpyDCNcoMQfrEHwpLwuJfW");
+         account_key = bts::blockchain::public_key_type("XTS6pBHGAjnGrYmYKX9Ko26nQokqZf41YcX8FcuCb7zQrLQSUMnS8");
       else
          Q_EMIT error(QString("Could not find account %1.").arg(account_name));
    }
@@ -471,7 +497,7 @@ bts::blockchain::public_key_type ClientWrapper::lookup_public_key(QString accoun
 std::shared_ptr<bts::rpc::rpc_client> ClientWrapper::get_rpc_client(QString account)
 {
    auto client = std::make_shared<bts::rpc::rpc_client>();
-   client->connect_to(fc::ip::endpoint(fc::ip::address("69.90.132.209"), 3000));
+   client->connect_to(fc::ip::endpoint(fc::ip::address("127.0.0.1"), 3000));
    client->login("bob", "bob");
 
    return client;

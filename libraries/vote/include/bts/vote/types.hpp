@@ -308,9 +308,18 @@ struct signed_voter_decision : public voter_decision
 {
    fc::ecc::compact_signature voter_signature;
 
+   signed_voter_decision(){}
+   signed_voter_decision(const voter_decision& decision, const bts::blockchain::private_key_type& signing_key)
+      : voter_decision(decision),
+        voter_signature(signing_key.sign_compact(digest()))
+   {}
    bts::blockchain::public_key_type voter_public_key()const
    {
-      return fc::ecc::public_key(voter_signature, digest());
+      try {
+         return fc::ecc::public_key(voter_signature, digest());
+      } catch (...) {
+         return fc::ecc::public_key();
+      }
    }
 };
 

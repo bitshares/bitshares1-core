@@ -4,6 +4,11 @@ import QtQuick.Controls 1.2
 TaskPage {
    id: container
    onBackClicked: window.previousPage()
+   onNextClicked: {
+      var decision_list = Object.keys(decisions).map(function(key){return decisions[key]})
+      bitshares.submit_decisions(account_name, JSON.stringify(decision_list))
+      window.nextPage()
+   }
 
    property var contests: []
    property var ballot
