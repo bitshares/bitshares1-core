@@ -5,9 +5,9 @@ Rectangle {
    id: button
    radius: height / 4
    opacity: .4
-   implicitWidth: label.width
 
    property alias text: label.text
+   property alias textWidth: label.width
    property bool checkable: false
    property bool checked: false
    property ExclusiveGroup exclusiveGroup

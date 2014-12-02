@@ -5,6 +5,8 @@ import QtQuick.Layouts 1.1
 Item {
    id: content
 
+   property real fontSize: 12
+
    function breakLines(text) {
       return text.replace("\n", "<br/>")
    }
@@ -74,7 +76,7 @@ Item {
             delegate: SimpleButton {
                Layout.fillWidth: true
                Layout.fillHeight: true
-               Layout.minimumWidth: implicitWidth
+               Layout.minimumWidth: textWidth
                Layout.preferredWidth: content.width / parent.columns
                exclusiveGroup: contestantButtonsGroup.item
                text: "<b>" + name + "</b><br/><br/>" + breakLines(description)
@@ -96,7 +98,7 @@ Item {
             exclusiveGroup: yesNoButtonsGroup
             color: "red"
             Layout.fillWidth: true
-            Layout.minimumWidth: implicitWidth
+            Layout.minimumWidth: textWidth
             Layout.preferredWidth: content.width / 2
             text: "No"
             height: fontSize * 3
@@ -105,7 +107,7 @@ Item {
             exclusiveGroup: yesNoButtonsGroup
             color: "green"
             Layout.fillWidth: true
-            Layout.minimumWidth: implicitWidth
+            Layout.minimumWidth: textWidth
             Layout.preferredWidth: content.width / 2
             text: "Yes"
             height: fontSize * 3

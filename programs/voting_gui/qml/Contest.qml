@@ -8,11 +8,11 @@ Rectangle {
    border.width: 2
    border.color: "grey"
    color: "#aa000000"
-   height: expanded? childrenRect.height : header.height
+   height: expanded? content.y + content.height : header.height
    clip: true
 
    property bool expanded: false
-   property real fontSize
+   property alias fontSize: content.fontSize
 
    Item {
       id: header
