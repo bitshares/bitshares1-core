@@ -6,8 +6,8 @@ TaskPage {
    onBackClicked: window.previousPage()
    onNextClicked: {
       var decision_list = Object.keys(decisions).map(function(key){return decisions[key]})
+      console.log(JSON.stringify(decision_list))
       bitshares.submit_decisions(account_name, JSON.stringify(decision_list))
-      window.nextPage()
    }
 
    property var contests: []

@@ -330,14 +330,8 @@ struct wallet_state
      private_key_type real_id_private_key;
      private_key_type voter_id_private_key;
 
-     //Need to define token_data...
-//     map<registrar_id, token_data>  token_state; // blinded/unblinded tokens generated for this registrar.
-
-     // signature of registrars on voter_id_public_key
+     // signature of registrars authorizing voter to vote on ballot
      vector<expiring_signature>  registrars;
-
-     // trx history
-     vector<voter_decision>   decisions;
 };
 
 } } // bts::vote
@@ -353,7 +347,7 @@ FC_REFLECT_DERIVED( bts::vote::identity_verification_request_summary, (bts::vote
                     (status)(id)(rejection_reason) )
 FC_REFLECT( bts::vote::identity_verification_response, (accepted)
             (rejection_reason)(verified_identity)(expiration_date)
-            (owner_photo_valid)(id_front_photo_valid)(id_back_photo_valid)(voter_reg_photo_valid))
+            (owner_photo_valid)(id_front_photo_valid)(id_back_photo_valid)(voter_reg_photo_valid) )
 FC_REFLECT_TYPENAME( bts::vote::request_status_enum )
 FC_REFLECT_ENUM( bts::vote::request_status_enum,
                  (awaiting_processing)(needs_further_review)(in_processing)(accepted)(rejected) )
