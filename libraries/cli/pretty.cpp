@@ -387,6 +387,7 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
     out << std::setw(  8 ) << "SIZE";
     out << std::setw(  8 ) << "LATENCY";
     out << std::setw( 15 ) << "PROCESSING TIME";
+    out << std::setw( 15 ) << "RAND";
     out << "\n";
 
     out << pretty_line( 99 );
@@ -419,6 +420,7 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
             out << std::setw(  8 ) << "N/A";
             out << std::setw(  8 ) << "N/A";
             out << std::setw( 15 ) << "N/A";
+            out << std::setw( 15 ) << "N/A";
             out << '\n';
         }
 
@@ -446,6 +448,7 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
             out << std::setw(  8 ) << block_record.latency.to_seconds();
             out << std::setw( 15 ) << block_record.processing_time.count() / double( 1000000 );
         }
+        out << std::setw( 15 ) << std::string(block_record.random_seed);
 
         out << '\n';
     }
