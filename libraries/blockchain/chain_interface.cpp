@@ -155,13 +155,14 @@ namespace bts { namespace blockchain {
    }
 
    multisig_condition   chain_interface::get_object_owners( const object_record& obj )
-   {
+   { try {
        multisig_condition owners;
        switch( obj.type() )
        {
            case( obj_type::normal_object ): 
            {
                owners = obj._owners;
+               break;
            }
            case( obj_type::edge_object ):
            {
@@ -204,7 +205,7 @@ namespace bts { namespace blockchain {
            }
        }
        FC_ASSERT(!"This code path should not happen.");
-   }
+   } FC_CAPTURE_AND_RETHROW( (obj) ) }
 
 #if 0
    proposal_id_type   chain_interface::last_proposal_id()const
