@@ -5,6 +5,7 @@ Rectangle {
    id: button
    radius: height / 4
    opacity: .4
+   implicitWidth: label.width
 
    property alias text: label.text
    property bool checkable: false
@@ -35,13 +36,13 @@ Rectangle {
    Text {
       id: label
       anchors.centerIn: parent
-      font.pointSize: Math.max(parent.height * .8, 1) / lineCount
+      font.pointSize: Math.max(parent.height * .8, 1) / (lineCount * 1.3)
       color: "white"
    }
    Image {
       anchors.fill: parent
       fillMode: Image.PreserveAspectFit
-      horizontalAlignment: Image.AlignRight
+      horizontalAlignment: Image.AlignLeft
       verticalAlignment: Image.AlignTop
       source: "qrc:/res/checked.png"
       opacity: checked? .3 : 0

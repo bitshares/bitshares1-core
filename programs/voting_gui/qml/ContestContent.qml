@@ -39,6 +39,12 @@ Item {
             }
          }
       }
+
+      SequentialAnimation {
+         id: errorAnimation
+         PropertyAnimation { target: instructionText; property: "color"; from: "white"; to: "red"; duration: 200 }
+         PropertyAnimation { target: instructionText; property: "color"; from: "red"; to: "white"; duration: 200 }
+      }
    }
 
    Component {
@@ -52,10 +58,15 @@ Item {
             delegate: SimpleButton {
                Layout.fillWidth: true
                Layout.fillHeight: true
+               Layout.minimumWidth: implicitWidth
                exclusiveGroup: contestantButtonsGroup
                text: "<b>" + name + "</b><br/><br/>" + breakLines(description)
                height: fontSize * 4.5
             }
+         }
+         Component.onCompleted: {
+            if( "write-in slots" in tags )
+               console.log("Unsupported write-in on a vote one....")
          }
       }
    }
@@ -68,6 +79,7 @@ Item {
             exclusiveGroup: yesNoButtonsGroup
             color: "red"
             Layout.fillWidth: true
+            Layout.minimumWidth: implicitWidth
             text: "No"
             height: fontSize * 1.5
          }
@@ -75,8 +87,40 @@ Item {
             exclusiveGroup: yesNoButtonsGroup
             color: "green"
             Layout.fillWidth: true
+            Layout.minimumWidth: implicitWidth
             text: "Yes"
             height: fontSize * 1.5
+         }
+         Component.onCompleted: {
+            if( "write-in slots" in tags )
+               console.log("Unsupported write-in on a vote yes/no....")
+         }
+      }
+   }
+   Component {
+      id: voteManyDecision
+      GridLayout {
+         columns: 4
+
+         LimitedCheckGroup {
+            id: limitedCheckGroup
+            checkLimit: tags["vote many limit"]
+            onCheckBlocked: errorAnimation.restart()
+         }
+         Repeater {
+            model: contestants
+            delegate: SimpleButton {
+               Layout.fillWidth: true
+               Layout.fillHeight: true
+               Layout.minimumWidth: implicitWidth
+               exclusiveGroup: limitedCheckGroup
+               text: "<b>" + name + "</b><br/><br/>" + breakLines(description)
+               height: fontSize * 4.5
+            }
+         }
+         Component.onCompleted: {
+            if( "write-in slots" in tags )
+               console.log("Unsupported write-in on a vote one....")
          }
       }
    }
@@ -90,6 +134,8 @@ Item {
          switch( tags["decision type"] ) {
          case "vote one":
             return voteOneDecision
+         case "vote many":
+            return voteManyDecision
          case "vote yes/no":
             return voteYesNoDecision
          }

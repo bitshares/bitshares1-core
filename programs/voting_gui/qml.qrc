@@ -15,5 +15,6 @@
         <file>qml/GreySheet.qml</file>
         <file>qml/SimpleButton.qml</file>
         <file>qml/Spinner.qml</file>
+        <file>qml/LimitedCheckGroup.qml</file>
     </qresource>
 </RCC>

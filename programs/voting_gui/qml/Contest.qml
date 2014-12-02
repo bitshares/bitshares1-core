@@ -31,7 +31,7 @@ Rectangle {
          anchors.topMargin: height / 2
          font.pointSize: fontSize
          text: tags["name"]
-         elide: Text.ElideRight
+         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
       }
       MouseArea {
          anchors.fill: parent
