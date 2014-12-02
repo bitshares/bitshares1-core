@@ -97,7 +97,7 @@ Item {
             Layout.fillWidth: true
             Layout.minimumWidth: implicitWidth
             text: "No"
-            height: fontSize * 1.5
+            height: fontSize * 3
          }
          SimpleButton {
             exclusiveGroup: yesNoButtonsGroup
@@ -105,7 +105,7 @@ Item {
             Layout.fillWidth: true
             Layout.minimumWidth: implicitWidth
             text: "Yes"
-            height: fontSize * 1.5
+            height: fontSize * 3
          }
          Component.onCompleted: {
             if( "write-in slots" in tags )
