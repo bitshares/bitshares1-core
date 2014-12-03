@@ -45,7 +45,8 @@ namespace bts { namespace blockchain {
       short_op_type                 = 14,
       cover_op_type                 = 15,
       add_collateral_op_type        = 16,
-      remove_collateral_op_type     = 17,
+
+      reserved_op_3_type            = 17,
 
       define_delegate_slate_op_type = 18,
 
@@ -54,8 +55,8 @@ namespace bts { namespace blockchain {
       burn_op_type                  = 20,
 
       // reserved
-      reserved_op_3_type            = 21,
-      reserved_op_4_type            = 22,
+      reserved_op_4_type            = 21,
+      reserved_op_5_type            = 22,
 
       release_escrow_op_type        = 23,
 
@@ -144,12 +145,12 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (short_op_type)
                  (cover_op_type)
                  (add_collateral_op_type)
-                 (remove_collateral_op_type)
+                 (reserved_op_3_type)
                  (define_delegate_slate_op_type)
                  (update_feed_op_type)
                  (burn_op_type)
-                 (reserved_op_3_type)
                  (reserved_op_4_type)
+                 (reserved_op_5_type)
                  (release_escrow_op_type)
                  (update_block_signing_key_type)
                  (relative_bid_op_type)
