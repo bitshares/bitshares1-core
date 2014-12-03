@@ -19,10 +19,9 @@ namespace bts { namespace blockchain {
    {
       last_asset_id            = 0,
       last_account_id          = 1,
-      last_proposal_id         = 2,
-      last_random_seed_id      = 3,
-      active_delegate_list_id  = 4,
-      chain_id                 = 5, // hash of initial state
+      last_random_seed_id      = 2,
+      active_delegate_list_id  = 3,
+      chain_id                 = 4, // hash of initial state
       /**
        *  N = num delegates
        *  Initial condition = 2N
@@ -36,11 +35,11 @@ namespace bts { namespace blockchain {
        *  are present. Less than 60% and you
        *  are on the minority chain.
        */
-      confirmation_requirement = 6,
-      database_version         = 7, // database version, to know when we need to upgrade
-      dirty_markets            = 8,
-      last_feed_id             = 9, // used for allocating new data feeds
-      last_object_id           = 10 // all object types that aren't legacy
+      confirmation_requirement = 5,
+      database_version         = 6, // database version, to know when we need to upgrade
+      dirty_markets            = 7,
+      last_feed_id             = 8, // used for allocating new data feeds
+      last_object_id           = 9  // all object types that aren't legacy
    };
    typedef uint32_t chain_property_type;
 
@@ -169,14 +168,6 @@ namespace bts { namespace blockchain {
          virtual oasset_record              get_asset_record( const std::string& symbol )const              = 0;
          virtual oaccount_record            get_account_record( const std::string& name )const              = 0;
 
-#if 0
-         virtual void                       store_proposal_record( const proposal_record& r )               = 0;
-         virtual oproposal_record           get_proposal_record( proposal_id_type id )const                 = 0;
-
-         virtual void                       store_proposal_vote( const proposal_vote& r )                   = 0;
-         virtual oproposal_vote             get_proposal_vote( proposal_vote_id_type id )const              = 0;
-#endif
-
          virtual void                       store_asset_record( const asset_record& r )                     = 0;
          virtual void                       store_balance_record( const balance_record& r )                 = 0;
          virtual void                       store_account_record( const account_record& r )                 = 0;
@@ -201,12 +192,6 @@ namespace bts { namespace blockchain {
 
          virtual multisig_condition         get_object_owners( const object_record& obj );
 
-
-#if 0
-         virtual proposal_id_type           last_proposal_id()const;
-         virtual proposal_id_type           new_proposal_id();
-#endif
-
          virtual uint32_t                   get_head_block_num()const                                       = 0;
 
          virtual void                       store_slot_record( const slot_record& r )                       = 0;
@@ -228,7 +213,6 @@ namespace bts { namespace blockchain {
 FC_REFLECT_ENUM( bts::blockchain::chain_property_enum,
                  (last_asset_id)
                  (last_account_id)
-                 (last_proposal_id)
                  (last_random_seed_id)
                  (last_object_id)
                  (active_delegate_list_id)

@@ -87,7 +87,8 @@ transaction_ledger_entry wallet_impl::scan_transaction_experimental( const trans
 { try {
     transaction_ledger_entry record;
 
-    const transaction_id_type record_id = eval_state.trx.permanent_id();
+    const transaction_id_type transaction_id = eval_state.trx.id();
+    const transaction_id_type& record_id = transaction_id;
     const bool existing_record = _wallet_db.experimental_transactions.count( record_id ) > 0;
     if( existing_record )
         record = _wallet_db.experimental_transactions.at( record_id );
@@ -96,7 +97,7 @@ transaction_ledger_entry wallet_impl::scan_transaction_experimental( const trans
     record.block_num = block_num;
     record.timestamp = std::min( record.timestamp, timestamp );
     record.delta_amounts.clear();
-    record.transaction_id = eval_state.trx.id();
+    record.transaction_id = transaction_id;
 
     scan_transaction_experimental( eval_state, account_keys, account_balances, account_names, record,
                                    overwrite_existing || !existing_record );
@@ -175,7 +176,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
                                 status = condition.decrypt_memo_data( key );
                             }, "decrypt memo" ).wait();
 
-                            if( status.valid() && address( status->owner_private_key.get_public_key() ) == condition.owner )
+                            if( status.valid() )
                             {
                                 _wallet_db.cache_memo( *status, key, _wallet_password );
 
@@ -418,15 +419,6 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
             case burn_op_type:
                 my_transaction |= scan_burn( op.as<burn_operation>() );
                 break;
-            case link_account_op_type:
-                // Future feature
-                break;
-            case withdraw_all_op_type:
-                // Future feature
-                break;
-            case release_escrow_op_type:
-                // Future feature
-                break;
             default:
                 break;
         }
@@ -531,8 +523,7 @@ void wallet::add_transaction_note_experimental( const string& transaction_id_pre
    if( !transaction_record.valid() )
        FC_THROW_EXCEPTION( transaction_not_found, "Transaction not found!", ("transaction_id_prefix",transaction_id_prefix) );
 
-   // TODO: Allow referencing by external and internal id
-   const auto record_id = transaction_record->trx.permanent_id();
+   const auto record_id = transaction_record->trx.id();
    if( my->_wallet_db.experimental_transactions.count( record_id ) == 0 )
        FC_THROW_EXCEPTION( transaction_not_found, "Transaction not found!", ("transaction_id_prefix",transaction_id_prefix) );
 

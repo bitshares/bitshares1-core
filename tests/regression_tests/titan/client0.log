@@ -51,13 +51,10 @@ ACCOUNT                         BALANCE
 ============================================================
 test-account                    99.50000 XTS                
 default (unlocked) >>> history test-account
- TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
-================================================================================================================================================================================================
- <d-ign></d-ign>2         delegate0           test-account        0.00000 XTS             register test-account                       0.00000 XTS             0.00000 XTS         <d-ign></d-ign>
- <d-ign></d-ign>3         account-for-client1 test-account        100.00000 XTS           take this                                   100.00000 XTS           0.00000 XTS         <d-ign></d-ign>
- <d-ign></d-ign>4         test-account        account-for-client1 50.00000 XTS            again                                       49.50000 XTS            0.50000 XTS         <d-ign></d-ign>
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|<d-ign></d-ign>5         delegate67          XTS3ArKW2WCfukQL... 50.00000 XTS            Ř‡Ě¤·¤÷Ćöö	5I<Ú7                         49.50000 XTS            0.00000 XTS         <d-ign></d-ign>|
-|                              account-for-client1 test-account        50.00000 XTS            take this again                             99.50000 XTS                                        |
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+<d-ign></d-ign>2         delegate0           test-account        0.00000 XTS             register test-account                       0.00000 XTS             0.00000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>3         account-for-client1 test-account        100.00000 XTS           take this                                   100.00000 XTS           0.00000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>4         test-account        account-for-client1 50.00000 XTS            again                                       49.50000 XTS            0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>5         account-for-client1 test-account        50.00000 XTS            take this again                             99.50000 XTS            0.00000 XTS         <d-ign></d-ign>
 default (unlocked) >>> quit

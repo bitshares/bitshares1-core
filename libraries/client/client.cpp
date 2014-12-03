@@ -1802,6 +1802,11 @@ fc::ecc::public_key client_notification::signee() const
    return fc::ecc::public_key(signature, digest());
 }
 
+void client::set_client_debug_name(const string& name)
+{
+   return my->set_client_debug_name(name);
+}
+
 /**
   * Detail Implementation
   */

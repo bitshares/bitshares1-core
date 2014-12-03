@@ -5,6 +5,18 @@
 
 namespace bts { namespace blockchain {
 
+   enum asset_permissions
+   {
+      none = 0,
+      retractable  = 0x01, ///<! The issuer can sign inplace of the owner
+      restricted   = 0x02, ///<! The issuer whitelists public keys
+      market_halt  = 0x04, ///<! The issuer can/did freeze all markets
+      balance_halt = 0x08, ///<! The issuer can/did freeze all balances
+      supply_unlimit = 0x10,  ///<! The issuer can change the supply at will
+      default_permissions = retractable | market_halt | balance_halt | supply_unlimit,
+      all_permissions = 0xff
+   };
+
    struct asset_record
    {
       enum
@@ -20,8 +32,11 @@ namespace bts { namespace blockchain {
       bool is_null()const;
       /** the asset is issued by the market and not by any user */
       bool is_market_issued()const;
-      bool is_retractable()const { return !is_market_issued() && retractable; }
-      bool is_restricted()const { return !is_market_issued() && restricted; }
+      bool is_retractable()const { return !is_market_issued() && (flags & retractable); }
+      bool is_restricted()const { return !is_market_issued() && (flags & restricted); }
+      bool is_market_frozen()const { return !is_market_issued() && (flags & market_halt); }
+      bool is_balance_frozen()const { return !is_market_issued() && (flags & balance_halt); }
+      bool is_supply_unlimited()const { return !is_market_issued() && (flags & supply_unlimit); }
       asset_record make_null()const;
 
       uint64_t get_precision()const;
@@ -38,17 +53,8 @@ namespace bts { namespace blockchain {
       share_type          current_share_supply = 0;
       share_type          maximum_share_supply = 0;
       share_type          collected_fees = 0;
-      /**
-       * A restricted asset can only be held/controlled by keys
-       * on the authorized list.
-       */
-      bool                restricted  = false;
-      /**
-       * Asset is retractable by the issuer, makes the asset authority
-       * and implicit co-signer on all balances that involve this asset.
-       */
-      bool                retractable = true;
-
+      uint32_t            issuer_permissions = default_permissions;
+      uint32_t            flags = retractable;
       /**
        *  The issuer can specify a transaction fee (of the asset type) 
        *  that will be paid to the issuer with every transaction that
@@ -64,6 +70,9 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
+FC_REFLECT_ENUM( bts::blockchain::asset_permissions,
+    (none)(retractable)(restricted)(market_halt)(balance_halt)(supply_unlimit)(all_permissions)(default_permissions) )
+
 FC_REFLECT( bts::blockchain::asset_record,
             (id)
             (symbol)
@@ -77,8 +86,8 @@ FC_REFLECT( bts::blockchain::asset_record,
             (current_share_supply)
             (maximum_share_supply)
             (collected_fees)
-            (restricted)
-            (retractable)
+            (issuer_permissions)
+            (flags)
             (transaction_fee)
             (authority)
            )

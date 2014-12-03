@@ -26,13 +26,13 @@ with open("libraries/blockchain/genesis.json") as genesis:
 new_genesis["timestamp"] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 new_genesis["names"] = []
 
-try:
-    with open("libraries/blockchain/bts-sharedrop.json") as snapshot:
-        items = json.loads(snapshot.read())
-        for item in items:
-            new_genesis["bts_sharedrop"].append(item)
-except Exception:
-    pass
+#try:
+#    with open("libraries/blockchain/bts-sharedrop.json") as snapshot:
+#        items = json.loads(snapshot.read())
+#        for item in items:
+#            new_genesis["bts_sharedrop"].append(item)
+#except Exception:
+#    pass
 
 for i in range(101):
     keys = json.loads(subprocess.check_output(["./programs/utils/bts_create_key"]))

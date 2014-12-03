@@ -304,8 +304,8 @@ wallet_transaction_record wallet_impl::scan_transaction(
         const time_point_sec& received_time,
         bool overwrite_existing )
 { try {
-    const transaction_id_type record_id = transaction.permanent_id();
     const transaction_id_type transaction_id = transaction.id();
+    const transaction_id_type& record_id = transaction_id;
     auto transaction_record = _wallet_db.lookup_transaction( record_id );
     const auto already_exists = transaction_record.valid();
     if( !already_exists )
@@ -1198,7 +1198,7 @@ bool wallet_impl::scan_deposit( const deposit_operation& op, const vector<privat
                    _scanner_threads[ i % _num_scanner_threads ]->async( [&]()
                        { status =  deposit.decrypt_memo_data( key ); }, "decrypt memo" ).wait();
                    /* If I've successfully decrypted then it's for me */
-                   if( status.valid() && address( status->owner_private_key.get_public_key() ) == deposit.owner )
+                   if( status.valid() )
                    {
                       cache_deposit = true;
                       _wallet_db.cache_memo( *status, key, _wallet_password );
@@ -1385,7 +1385,7 @@ void wallet::cache_transaction( wallet_transaction_record& transaction_record )
 { try {
    my->_blockchain->store_pending_transaction( transaction_record.trx, true );
 
-   transaction_record.record_id = transaction_record.trx.permanent_id();
+   transaction_record.record_id = transaction_record.trx.id();
    transaction_record.created_time = blockchain::now();
    transaction_record.received_time = transaction_record.created_time;
    my->_wallet_db.store_transaction( transaction_record );

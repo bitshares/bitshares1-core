@@ -33,13 +33,6 @@ namespace bts { namespace blockchain {
       return fc::ripemd160::hash( enc.result() );
    }
 
-   transaction_id_type signed_transaction::permanent_id()const
-   {
-      signed_transaction copy( *this );
-      copy.signatures.clear();
-      return copy.id();
-   }
-
    void signed_transaction::sign( const fc::ecc::private_key& signer, const digest_type& chain_id )
    {
       signatures.push_back( signer.sign_compact( digest(chain_id) ) );
@@ -255,38 +248,6 @@ namespace bts { namespace blockchain {
       operations.push_back( op );
    }
 
-#if 0
-   void transaction::submit_proposal(account_id_type delegate_id,
-                                     const std::string& subject,
-                                     const std::string& body,
-                                     const std::string& proposal_type,
-                                     const fc::variant& public_data)
-   {
-     submit_proposal_operation op;
-     op.submitting_delegate_id = delegate_id;
-     op.submission_date = blockchain::now();
-     op.subject = subject;
-     op.body = body;
-     op.proposal_type = proposal_type;
-     op.data = public_data;
-     operations.push_back(op);
-   }
-
-   void transaction::vote_proposal(proposal_id_type proposal_id,
-                                   account_id_type voter_id,
-                                   proposal_vote::vote_type vote,
-                                   const string& message )
-   {
-     vote_proposal_operation op;
-     op.id.proposal_id = proposal_id;
-     op.id.delegate_id = voter_id;
-     op.timestamp = blockchain::now();
-     op.vote = vote;
-     op.message = message;
-     operations.push_back(op);
-   }
-#endif
-
    void transaction::create_asset( const std::string& symbol,
                                    const std::string& name,
                                    const std::string& description,
@@ -316,6 +277,31 @@ namespace bts { namespace blockchain {
                                    const optional<uint64_t>& precision )
    {
        operations.push_back( update_asset_operation{ asset_id, name, description, public_data, maximum_share_supply, precision } );
+   }
+   void transaction::update_asset_ext( const asset_id_type& asset_id,
+                                   const optional<string>& name,
+                                   const optional<string>& description,
+                                   const optional<variant>& public_data,
+                                   const optional<double>& maximum_share_supply,
+                                   const optional<uint64_t>& precision,
+                                   const share_type& issuer_fee,
+                                   uint32_t issuer_permissions,
+                                   uint32_t  flags,
+                                   account_id_type issuer_account_id,
+                                   uint32_t required_sigs,
+                                   const vector<address>& authority 
+                                   )
+   {
+       multisig_meta_info auth_info;
+       auth_info.required = required_sigs;
+       auth_info.owners.insert( authority.begin(), authority.end() );
+       update_asset_ext_operation op( update_asset_operation{asset_id, name, description, public_data, maximum_share_supply, precision} );
+       op.flags = flags;
+       op.issuer_permissions = issuer_permissions;
+       op.issuer_account_id = issuer_account_id;
+       op.transaction_fee = issuer_fee,
+       op.authority = auth_info;
+       operations.push_back( op );
    }
 
    void transaction::issue( const asset& amount_to_issue )

@@ -93,7 +93,8 @@ namespace bts { namespace client {
           wallet_enabled(true),
           ignore_console(false),
           use_upnp(true),
-          maximum_number_of_connections(BTS_NET_DEFAULT_MAX_CONNECTIONS)
+          maximum_number_of_connections(BTS_NET_DEFAULT_MAX_CONNECTIONS),
+          client_debug_name("")
           {
               logging = fc::logging_config::default_config();
           }
@@ -110,6 +111,7 @@ namespace bts { namespace client {
           uint16_t            maximum_number_of_connections;
           fc::logging_config  logging;
           string              wallet_callback_url;
+          string              client_debug_name;
 
           fc::optional<std::string> growl_notify_endpoint;
           fc::optional<std::string> growl_password;
@@ -143,6 +145,7 @@ namespace bts { namespace client {
 
          void init_cli();
          void set_daemon_mode(bool daemon_mode);
+         void set_client_debug_name(const string& name);
 
 
          chain_database_ptr         get_chain()const;
@@ -208,6 +211,7 @@ FC_REFLECT( bts::client::config,
             (rpc)(default_peers)(chain_servers)(chain_server)(mail_server_enabled)
             (wallet_enabled)(ignore_console)(logging)
             (wallet_callback_url)
+            (client_debug_name)
             (growl_notify_endpoint)
             (growl_password)
             (growl_bitshares_client_identifier) )

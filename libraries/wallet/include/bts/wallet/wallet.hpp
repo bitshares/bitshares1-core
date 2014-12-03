@@ -419,7 +419,13 @@ namespace bts { namespace wallet {
                  const optional<variant>& public_data,
                  const optional<double>& maximum_share_supply,
                  const optional<uint64_t>& precision,
-                 bool sign
+                 const share_type& issuer_fee,
+                 uint32_t issuer_perms,
+                 uint32_t flags,
+                 const string& issuer_account_name,
+                 uint32_t required_sigs,
+                 const vector<address>& authority,
+                 bool sign = true
                  );
          wallet_transaction_record issue_asset(
                  double amount,
@@ -519,23 +525,6 @@ namespace bts { namespace wallet {
                  const vector<std::pair<order_type_enum,vector<string>>>& new_orders,
                  bool sign
                  );
-#if 0
-         wallet_transaction_record create_proposal(
-                 const string& delegate_account_name,
-                 const string& subject,
-                 const string& body,
-                 const string& proposal_type,
-                 const variant& data,
-                 bool sign
-                 );
-         wallet_transaction_record vote_proposal(
-                 const string& delegate_account_name,
-                 proposal_id_type proposal_id,
-                 proposal_vote::vote_type vote,
-                 const string& message,
-                 bool sign
-                 );
-#endif
          ///@} Transaction Generation Methods
 
          string                             get_key_label( const public_key_type& key )const;

@@ -111,10 +111,6 @@ namespace bts { namespace blockchain {
           _fork_number_db.open( data_dir / "index/fork_number_db" );
           _fork_db.open( data_dir / "index/fork_db" );
           _slate_db.open( data_dir / "index/slate_db" );
-#if 0
-          _proposal_db.open( data_dir / "index/proposal_db" );
-          _proposal_vote_db.open( data_dir / "index/proposal_vote_db" );
-#endif
 
           _undo_state_db.open( data_dir / "index/undo_state_db" );
 
@@ -373,7 +369,6 @@ namespace bts { namespace blockchain {
 
          self->set_property( chain_property_enum::active_delegate_list_id, fc::variant( self->next_round_active_delegates() ) );
          self->set_property( chain_property_enum::last_asset_id, asset_id );
-         self->set_property( chain_property_enum::last_proposal_id, 0 );
          self->set_property( chain_property_enum::last_account_id, uint64_t( config.names.size() ) );
          self->set_property( chain_property_enum::last_object_id, 1 );
          self->set_property( chain_property_enum::last_random_seed_id, fc::variant( secret_hash_type() ) );
@@ -1338,10 +1333,6 @@ namespace bts { namespace blockchain {
       my->_fork_db.close();
       my->_slate_db.close();
       my->_property_db.close();
-#if 0
-      my->_proposal_db.close();
-      my->_proposal_vote_db.close();
-#endif
 
       my->_undo_state_db.close();
 
@@ -2355,71 +2346,6 @@ namespace bts { namespace blockchain {
    {
          return my->_chain_id;
    }
-
-#if 0
-   void chain_database::store_proposal_record( const proposal_record& r )
-   {
-      if( r.is_null() )
-      {
-         my->_proposal_db.remove( r.id );
-      }
-      else
-      {
-         my->_proposal_db.store( r.id, r );
-      }
-   }
-
-   oproposal_record chain_database::get_proposal_record( proposal_id_type id )const
-   {
-      return my->_proposal_db.fetch_optional(id);
-   }
-
-   void chain_database::store_proposal_vote( const proposal_vote& r )
-   {
-      if( r.is_null() )
-      {
-         my->_proposal_vote_db.remove( r.id );
-      }
-      else
-      {
-         my->_proposal_vote_db.store( r.id, r );
-      }
-   }
-
-   oproposal_vote chain_database::get_proposal_vote( proposal_vote_id_type id )const
-   {
-      return my->_proposal_vote_db.fetch_optional(id);
-   }
-
-   std::vector<proposal_record> chain_database::get_proposals( uint32_t first, uint32_t count )const
-   {
-      std::vector<proposal_record> results;
-      auto current_itr = my->_proposal_db.lower_bound( first );
-      uint32_t found = 0;
-      while( current_itr.valid() && found < count )
-      {
-         results.push_back( current_itr.value() );
-         ++found;
-         ++current_itr;
-      }
-      return results;
-   }
-
-   std::vector<proposal_vote> chain_database::get_proposal_votes( proposal_id_type proposal_id ) const
-   {
-      std::vector<proposal_vote> results;
-      auto current_itr = my->_proposal_vote_db.lower_bound( proposal_vote_id_type(proposal_id,0) );
-      while( current_itr.valid() )
-      {
-         if( current_itr.key().proposal_id != proposal_id )
-            return results;
-
-         results.push_back( current_itr.value() );
-         ++current_itr;
-      }
-      return results;
-   }
-#endif
 
    fc::variant_object chain_database::find_delegate_vote_discrepancies() const
    {

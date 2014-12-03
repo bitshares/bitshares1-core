@@ -129,7 +129,8 @@ public:
       _connection_count_notification_interval(fc::minutes(5)),
       _connection_count_always_notify_threshold(5),
       _connection_count_last_value_displayed(0),
-      _blockchain_synopsis_size_limit((unsigned)(log2(BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * 20)))
+      _blockchain_synopsis_size_limit((unsigned)(log2(BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * 20))),
+      _debug_last_wait_block(0)
    {
       try
       {
@@ -200,6 +201,11 @@ public:
    bool on_new_transaction(const signed_transaction& trx);
    void blocks_too_old_monitor_task();
    void cancel_blocks_too_old_monitor_task();
+   void set_client_debug_name(const string& name)
+   {
+      _config.client_debug_name = name;
+      return;
+   }
 
    /* Implement node_delegate */
    // @{
@@ -288,6 +294,8 @@ public:
    const unsigned                                          _blockchain_synopsis_size_limit;
 
    fc::future<void>                                        _client_done;
+   
+   uint32_t                                                _debug_last_wait_block;
 
    void wallet_http_callback( const string& url, const ledger_entry& e );
    boost::signals2::scoped_connection   _http_callback_signal_connection;

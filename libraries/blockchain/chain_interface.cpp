@@ -220,20 +220,6 @@ namespace bts { namespace blockchain {
        FC_ASSERT(!"This code path should not happen.");
    } FC_CAPTURE_AND_RETHROW( (obj) ) }
 
-#if 0
-   proposal_id_type   chain_interface::last_proposal_id()const
-   {
-       return get_property( chain_property_enum::last_proposal_id ).as<proposal_id_type>();
-   }
-
-   proposal_id_type   chain_interface::new_proposal_id()
-   {
-      auto next_id = last_proposal_id() + 1;
-      set_property( chain_property_enum::last_proposal_id, next_id );
-      return next_id;
-   }
-#endif
-
    vector<account_id_type> chain_interface::get_active_delegates()const
    { try {
       return get_property( active_delegate_list_id ).as<std::vector<account_id_type>>();

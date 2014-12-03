@@ -38,53 +38,53 @@ Returns:
 
 aliases: list_blocks
 default (unlocked) >>> blockchain_list_blocks
-HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME
-===================================================================================================
-5       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
-4       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
-3       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
-2       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
-1       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
+HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME  RAND           
+====================================================================================================================
+5       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+4       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+3       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+2       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+1       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
 default (unlocked) >>> blockchain_list_blocks 1 5
-HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME
-===================================================================================================
-1       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
-2       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
-3       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
-4       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
-5       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
+HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME  RAND           
+====================================================================================================================
+1       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+2       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+3       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+4       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+5       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
 default (unlocked) >>> blockchain_list_blocks 0 5
-HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME
-===================================================================================================
-1       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
-2       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
-3       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
-4       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
-5       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
+HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME  RAND           
+====================================================================================================================
+1       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+2       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+3       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+4       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+5       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
 default (unlocked) >>> blockchain_list_blocks 0 -5
-HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME
-===================================================================================================
-5       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
-4       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
-3       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
-2       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
-1       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
+HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME  RAND           
+====================================================================================================================
+5       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+4       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+3       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+2       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+1       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
 default (unlocked) >>> blockchain_list_blocks 1 3
-HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME
-===================================================================================================
-1       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
-2       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
-3       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
+HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME  RAND           
+====================================================================================================================
+1       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+2       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+3       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
 default (unlocked) >>> blockchain_list_blocks 1 -3
-HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME
-===================================================================================================
-4       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
-3       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
-2       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
+HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME  RAND           
+====================================================================================================================
+4       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+3       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+2       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
 default (unlocked) >>> blockchain_list_blocks 0 -3
-HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME
-===================================================================================================
-5       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
-4       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
-3       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign>        0.002929</d-ign>
+HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME  RAND           
+====================================================================================================================
+5       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+4       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+3       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
 default (unlocked) >>> quit

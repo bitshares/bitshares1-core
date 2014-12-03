@@ -28,7 +28,6 @@ namespace bts { namespace blockchain {
    typedef fc::signed_int                     asset_id_type;
    typedef fc::signed_int                     account_id_type;
    typedef fc::signed_int                     feed_id_type;
-   typedef fc::signed_int                     proposal_id_type;
    typedef int64_t                            share_type;
    typedef uint64_t                           slate_id_type;
    typedef uint64_t                           object_id_type;
@@ -81,32 +80,6 @@ namespace bts { namespace blockchain {
        bool is_valid_v1( const std::string& base58str );
    };
 
-   struct proposal_vote_id_type
-   {
-      proposal_vote_id_type( proposal_id_type proposal_id_arg = 0, account_id_type delegate_id_arg = 0 )
-         :proposal_id(proposal_id_arg),delegate_id(delegate_id_arg){}
-
-      proposal_id_type proposal_id;
-      account_id_type  delegate_id;
-
-      proposal_vote_id_type& operator=( const proposal_vote_id_type& other )
-      {
-         proposal_id = other.proposal_id;
-         delegate_id = other.delegate_id;
-         return *this;
-      }
-      friend bool operator <  ( const proposal_vote_id_type& a, const proposal_vote_id_type& b )
-      {
-         if( a.proposal_id == b.proposal_id )
-            return a.delegate_id < b.delegate_id;
-         return a.proposal_id < b.proposal_id;
-      }
-      friend bool operator ==  ( const proposal_vote_id_type& a, const proposal_vote_id_type& b )
-      {
-         return a.proposal_id == b.proposal_id  && a.delegate_id == b.delegate_id;
-      }
-   };
-
    struct blockchain_security_state {
        enum alert_level_enum {
            green = 0,
@@ -128,7 +101,6 @@ namespace fc
 }
 
 #include <fc/reflect/reflect.hpp>
-FC_REFLECT( bts::blockchain::proposal_vote_id_type, (proposal_id)(delegate_id) )
 FC_REFLECT( bts::blockchain::public_key_type, (key_data) )
 FC_REFLECT( bts::blockchain::public_key_type::binary_key, (data)(check) );
 FC_REFLECT_ENUM( bts::blockchain::blockchain_security_state::alert_level_enum, (green)(yellow)(red)(grey) );
