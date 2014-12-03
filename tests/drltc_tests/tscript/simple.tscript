@@ -1,0 +1,21 @@
+[
+ ["!clients", ["alice", "bob"]],
+ ["x", "all", "debug_start_simulated_time", ["${genesis.timestamp}"]],
+ ["x", "all", "wallet_create", ["${client.name}", "password"]],
+ ["x", "all", "wallet_open", ["${client.name}", "password"]],
+ ["x", "all", "wallet_unlock", [999999, "password"]],
+ ["x", "all", "wallet_set_automatic_backups", [false]],
+ ["x", "alice", "debug_deterministic_private_keys", [0, 101, "init", true]],
+ ["x", "alice", "wallet_delegate_set_block_production", ["ALL", true]],
+ ["x", "all", "debug_advance_time", [1, "seconds"]],
+ ["x", "all", "debug_advance_time", [1, "blocks"]],
+ ["x", "all", "debug_wait_for_block_by_number", [1, "rlast"]],
+ ["x", "all", "blockchain_get_block_count"],
+ ["x", "all", "debug_advance_time", [1, "blocks"]],
+ ["x", "all", "debug_wait_for_block_by_number", [1, "rlast"]],
+ ["x", "all", "blockchain_get_block_count"],
+ ["x", "all", "debug_advance_time", [1, "blocks"]],
+ ["x", "all", "debug_wait_for_block_by_number", [1, "rlast"]],
+ ["x", "all", "blockchain_get_block_count", [], "eq", 3]
+]
+

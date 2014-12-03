@@ -1,0 +1,17 @@
+
+["x", entity|group, cmd, params, expected_result],
+
+cmd:
+
+!defgroup <name> - establish a new named entity group
+!include <filename> - include header file
+!pragma once - only allow header file to be included once
+!clients name
+
+[
+ ["!clients", ["alice", "bob"]],
+ ["x", "all", "debug_start_simulated_time", ["${genesis.timestamp}"]],
+ ["x", "all", "wallet_set_automatic_backups", [false]],
+ ["x", "all", "wallet_create", ["${client.name}"]],
+ ["x", "alice", "debug_import_private_keys", ["init", 0, 101]]
+ ]
