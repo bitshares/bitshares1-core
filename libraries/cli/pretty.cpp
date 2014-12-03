@@ -760,7 +760,7 @@ string pretty_asset_list( const vector<asset_record>& asset_records, cptr client
             out << std::setw( 32 ) << "GENESIS";
             out << std::setw( 10 ) << "N/A";
         }
-        else if( issuer_id == asset_record::market_issued_asset )
+        else if( asset_record.is_market_issued() )
         {
             out << std::setw( 32 ) << "MARKET";
             out << std::setw( 10 ) << "N/A";

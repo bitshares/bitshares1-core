@@ -59,7 +59,7 @@ namespace bts { namespace blockchain {
           FC_CAPTURE_AND_THROW( asset_id_in_use, (asset_id) );
 
       oaccount_record issuer_account_record;
-      if( issuer_account_id != asset_record::market_issued_asset )
+      if( issuer_account_id != asset_record::market_issuer_id )
       {
          issuer_account_record = eval_state._current_state->get_account_record( this->issuer_account_id );
          if( NOT issuer_account_record.valid() )
@@ -238,11 +238,11 @@ namespace bts { namespace blockchain {
 
       if( current_asset_record->is_market_issued() )
       {
-         FC_ASSERT( this->issuer_account_id == asset_record::market_issued_asset );
+         FC_ASSERT( this->issuer_account_id == asset_record::market_issuer_id );
       }
       else
       {
-         FC_ASSERT( this->issuer_account_id != asset_record::market_issued_asset );
+         FC_ASSERT( this->issuer_account_id != asset_record::market_issuer_id );
          if( this->issuer_account_id != current_asset_record->issuer_account_id )
          {
             auto issuer_account_record = eval_state._current_state->get_account_record( this->issuer_account_id );
@@ -290,8 +290,8 @@ namespace bts { namespace blockchain {
 
       if( NOT current_asset_record.valid() ) FC_CAPTURE_AND_THROW( unknown_asset_id, (this->asset_id) );
 
+      FC_ASSERT( current_asset_record->is_user_issued() );
       FC_ASSERT( current_asset_record->issuer_permissions & restricted );
-      FC_ASSERT( current_asset_record->issuer_account_id != asset_record::market_issued_asset );
 
       eval_state._current_state->authorize( this->asset_id, this->owner, this->meta_id );
 

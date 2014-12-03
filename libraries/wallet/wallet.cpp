@@ -1730,11 +1730,11 @@ namespace detail {
          auto base_asset_record  = my->_blockchain->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
 
 
-         asset price_shares( item.second *  quote_asset_record->get_precision(), quote_asset_record->id );
-         asset base_one_quantity( base_asset_record->get_precision(), 0 );
+         asset price_shares( item.second *  quote_asset_record->precision, quote_asset_record->id );
+         asset base_one_quantity( base_asset_record->precision, 0 );
 
         // auto quote_price_shares = price_shares / base_one_quantity;
-         price quote_price_shares( (item.second * quote_asset_record->get_precision()) / base_asset_record->get_precision(), quote_asset_record->id, base_asset_record->id );
+         price quote_price_shares( (item.second * quote_asset_record->precision) / base_asset_record->precision, quote_asset_record->id, base_asset_record->id );
 
          if( item.second > 0 )
          {
@@ -1813,7 +1813,7 @@ namespace detail {
       FC_ASSERT( quote_asset_record.valid() );
 
       feed_price quote_price_shares;
-      const double ratio = (amount_per_xts * quote_asset_record->get_precision()) / base_asset_record->get_precision();
+      const double ratio = (amount_per_xts * quote_asset_record->precision) / base_asset_record->precision;
       price& standard_price = quote_price_shares;
       standard_price = price( ratio, quote_asset_record->id, base_asset_record->id );
       quote_price_shares.force_settle = force_settle;
@@ -2483,7 +2483,7 @@ namespace detail {
        FC_ASSERT( my->is_valid_account( withdraw_to_account_name ) );
 
        auto asset_rec = my->_blockchain->get_asset_record( asset_id_type(0) );
-       share_type amount_to_withdraw((share_type)(real_amount_to_withdraw * asset_rec->get_precision()));
+       share_type amount_to_withdraw((share_type)(real_amount_to_withdraw * asset_rec->precision));
 
        auto delegate_account_record = my->_blockchain->get_account_record( delegate_name );
        FC_ASSERT( delegate_account_record.valid() );
@@ -2818,7 +2818,7 @@ namespace detail {
          for( const auto& address_amount : to_address_amounts )
          {
             auto real_amount_to_transfer = address_amount.second;
-            share_type amount_to_transfer((share_type)(real_amount_to_transfer * asset_rec->get_precision()));
+            share_type amount_to_transfer((share_type)(real_amount_to_transfer * asset_rec->precision));
             asset asset_to_transfer( amount_to_transfer, asset_id );
 
             my->withdraw_to_transaction( asset_to_transfer,
@@ -2991,7 +2991,7 @@ namespace detail {
       {
          trx.create_asset( symbol, asset_name,
                            description, data,
-                           asset_record::market_issued_asset, max_share_supply_in_internal_units, precision );
+                           asset_record::market_issuer_id, max_share_supply_in_internal_units, precision );
       }
 
       auto entry = ledger_entry();
@@ -3068,7 +3068,7 @@ namespace detail {
       auto issuer_account = my->_blockchain->get_account_record( asset_record->issuer_account_id );
       FC_ASSERT(issuer_account, "uh oh! no account for valid asset");
 
-      asset shares_to_issue( amount_to_issue * asset_record->get_precision(), asset_record->id );
+      asset shares_to_issue( amount_to_issue * asset_record->precision, asset_record->id );
       my->withdraw_to_transaction( required_fees,
                                    issuer_account->name,
                                    trx,

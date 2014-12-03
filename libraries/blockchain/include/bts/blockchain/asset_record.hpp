@@ -1,45 +1,47 @@
 #pragma once
+
+#include <bts/blockchain/transaction.hpp>
 #include <bts/blockchain/types.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
-#include <bts/blockchain/transaction.hpp>
 
 namespace bts { namespace blockchain {
 
    enum asset_permissions
    {
-      none = 0,
-      retractable  = 0x01, ///<! The issuer can sign inplace of the owner
-      restricted   = 0x02, ///<! The issuer whitelists public keys
-      market_halt  = 0x04, ///<! The issuer can/did freeze all markets
-      balance_halt = 0x08, ///<! The issuer can/did freeze all balances
-      supply_unlimit = 0x10,  ///<! The issuer can change the supply at will
-      default_permissions = retractable | market_halt | balance_halt | supply_unlimit,
-      all_permissions = 0xff
+      none                  = 0,
+      retractable           = 1 << 1, ///<! The issuer can sign inplace of the owner
+      restricted            = 1 << 2, ///<! The issuer whitelists public keys
+      market_halt           = 1 << 3, ///<! The issuer can/did freeze all markets
+      balance_halt          = 1 << 4, ///<! The issuer can/did freeze all balances
+      supply_unlimit        = 1 << 5, ///<! The issuer can change the supply at will
+      default_permissions   = retractable | market_halt | balance_halt | supply_unlimit,
+      all_permissions       = 0xffffffff
    };
 
    struct asset_record
    {
       enum
       {
-          market_issued_asset = -2,
+          god_issuer_id     =  0,
+          null_issuer_id    = -1,
+          market_issuer_id  = -2
       };
 
-      share_type available_shares()const;
+      asset_record make_null()const;
+      bool is_null()const               { return issuer_account_id == null_issuer_id; };
+
+      bool is_market_issued()const      { return issuer_account_id == market_issuer_id; };
+      bool is_user_issued()const        { return issuer_account_id > god_issuer_id; };
+
+      bool is_retractable()const        { return is_user_issued() && (flags & retractable); }
+      bool is_restricted()const         { return is_user_issued() && (flags & restricted); }
+      bool is_market_frozen()const      { return is_user_issued() && (flags & market_halt); }
+      bool is_balance_frozen()const     { return is_user_issued() && (flags & balance_halt); }
+      bool is_supply_unlimited()const   { return is_user_issued() && (flags & supply_unlimit); }
 
       bool can_issue( const asset& amount )const;
       bool can_issue( const share_type& amount )const;
-
-      bool is_null()const;
-      /** the asset is issued by the market and not by any user */
-      bool is_market_issued()const;
-      bool is_retractable()const { return !is_market_issued() && (flags & retractable); }
-      bool is_restricted()const { return !is_market_issued() && (flags & restricted); }
-      bool is_market_frozen()const { return !is_market_issued() && (flags & market_halt); }
-      bool is_balance_frozen()const { return !is_market_issued() && (flags & balance_halt); }
-      bool is_supply_unlimited()const { return !is_market_issued() && (flags & supply_unlimit); }
-      asset_record make_null()const;
-
-      uint64_t get_precision()const;
+      share_type available_shares()const;
 
       asset_id_type       id;
       std::string         symbol;
@@ -56,7 +58,7 @@ namespace bts { namespace blockchain {
       uint32_t            issuer_permissions = default_permissions;
       uint32_t            flags = retractable;
       /**
-       *  The issuer can specify a transaction fee (of the asset type) 
+       *  The issuer can specify a transaction fee (of the asset type)
        *  that will be paid to the issuer with every transaction that
        *  references this asset type.
        */
@@ -64,7 +66,7 @@ namespace bts { namespace blockchain {
       multisig_meta_info  authority;
 
       /** reserved for future extensions */
-      vector<char>        reserved; 
+      vector<char>        reserved;
    };
    typedef fc::optional<asset_record> oasset_record;
 
