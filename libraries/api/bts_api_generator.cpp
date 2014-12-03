@@ -1033,7 +1033,7 @@ void api_generator::generate_client_files(const fc::path& client_output_dir, con
     if( !is_void )
       interceptor_cpp_file << method.return_type->get_cpp_return_type() << " result = ";
     else
-      interceptor_cpp_file << "nullptr_t result = nullptr;\n    ";
+      interceptor_cpp_file << "std::nullptr_t result = nullptr;\n    ";
 #else
     if( !is_void )
       interceptor_cpp_file << "return ";
