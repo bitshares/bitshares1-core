@@ -33,6 +33,8 @@ namespace bts { namespace blockchain {
       if( !issuer_override && !eval_state.check_signature( owner ) )
          FC_CAPTURE_AND_THROW( missing_signature, (bid_index.owner) );
 
+      FC_ASSERT( !issuer_override && !quote_asset_rec->is_balance_frozen() );
+
       asset delta_amount  = this->get_amount();
 
       eval_state.validate_asset( delta_amount );
@@ -148,6 +150,7 @@ namespace bts { namespace blockchain {
       if( !issuer_override && !eval_state.check_signature( owner ) )
          FC_CAPTURE_AND_THROW( missing_signature, (ask_index.owner) );
 
+      FC_ASSERT( !issuer_override && !base_asset_rec->is_balance_frozen() );
 
       asset delta_amount  = this->get_amount();
 

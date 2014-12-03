@@ -1627,16 +1627,22 @@
                   "default_value" : 0
                },
                {
-                  "name" : "restricted",
-                  "type" : "bool",
-                  "description" : "whether or not ownership of the asset is restricted to authorized keys",
-                  "default_value" : false
+                  "name" : "flags",
+                  "type" : "asset_permission_array",
+                  "description" : "a set of flags set by the issuer (if they have permission to set them)",
+                  "default_value" : []
                },
                {
-                  "name" : "retractable",
-                  "type" : "bool",
-                  "description" : "whether or not issuer is a co-signer on all balances",
-                  "default_value" : true
+                  "name" : "issuer_permissions",
+                  "type" : "asset_permission_array",
+                  "description" : "a set of permissions an issuer retains",
+                  "default_value" : ["retractable","market_halt","balance_halt","supply_limit"]
+               },
+               {
+                  "name" : "issuer_account_name",
+                  "type" : "account_name",
+                  "description" : "used to transfer the asset to a new user",
+                  "default_value" : ""
                },
                {
                   "name" : "required_sigs",

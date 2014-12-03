@@ -39,7 +39,10 @@ namespace bts { namespace blockchain { namespace detail {
 
           oasset_record quote_asset = _pending_state->get_asset_record( _quote_id );
           oasset_record base_asset = _pending_state->get_asset_record( _base_id );
+
           FC_ASSERT( quote_asset.valid() && base_asset.valid() );
+          FC_ASSERT( !quote_asset->is_market_frozen() );
+          FC_ASSERT( !base_asset->is_market_frozen() );
 
           // The order book is sorted from low to high price. So to get the last item (highest bid),
           // we need to go to the first item in the next market class and then back up one

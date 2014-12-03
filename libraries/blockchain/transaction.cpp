@@ -317,6 +317,31 @@ namespace bts { namespace blockchain {
    {
        operations.push_back( update_asset_operation{ asset_id, name, description, public_data, maximum_share_supply, precision } );
    }
+   void transaction::update_asset_ext( const asset_id_type& asset_id,
+                                   const optional<string>& name,
+                                   const optional<string>& description,
+                                   const optional<variant>& public_data,
+                                   const optional<double>& maximum_share_supply,
+                                   const optional<uint64_t>& precision,
+                                   const share_type& issuer_fee,
+                                   uint32_t issuer_permissions,
+                                   uint32_t  flags,
+                                   account_id_type issuer_account_id,
+                                   uint32_t required_sigs,
+                                   const vector<address>& authority 
+                                   )
+   {
+       multisig_meta_info auth_info;
+       auth_info.required = required_sigs;
+       auth_info.owners.insert( authority.begin(), authority.end() );
+       update_asset_ext_operation op( update_asset_operation{asset_id, name, description, public_data, maximum_share_supply, precision} );
+       op.flags = flags;
+       op.issuer_permissions = issuer_permissions;
+       op.issuer_account_id = issuer_account_id;
+       op.transaction_fee = issuer_fee,
+       op.authority = auth_info;
+       operations.push_back( op );
+   }
 
    void transaction::issue( const asset& amount_to_issue )
    {
