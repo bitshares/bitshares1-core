@@ -3,6 +3,8 @@
 #include <bts/blockchain/object_record.hpp>
 #include <bts/blockchain/exceptions.hpp>
 
+#include <bts/blockchain/fork_blocks.hpp>
+
 namespace bts { namespace blockchain {
 
     // If ID is zero, make a new object (get a new ID)
@@ -10,6 +12,11 @@ namespace bts { namespace blockchain {
     // if ID is positive, update the existing object
     void set_object_operation::evaluate( transaction_evaluation_state& eval_state )
     { try {
+#ifndef WIN32
+#warning [SOFTFORK] Remove this check after BTS_V0_4_26_FORK_BLOCK_NUM has passed
+#endif
+        FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_26_FORK_BLOCK_NUM );
+
         object_record obj;
        
         if( this->id < 0 )
