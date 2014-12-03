@@ -1,8 +1,8 @@
 #pragma once
 
 /**
- * This is an internal header for the bitshares toolkit. It does not contain any classes or functions intended for
- * clients of the toolkit. It exists purely as an implementation detail, and may change at any time withotu notice.
+ * This is an internal header for bitshares. It does not contain any classes or functions intended for clients.
+ * It exists purely as an implementation detail, and may change at any time without notice.
  */
 
 #include <fc/reflect/reflect.hpp>
