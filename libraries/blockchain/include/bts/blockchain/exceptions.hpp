@@ -61,14 +61,7 @@ namespace bts { namespace blockchain {
    FC_DECLARE_DERIVED_EXCEPTION( too_may_delegates_in_slate,        bts::blockchain::evaluation_error, 32012, "too many delegates in slate" );
    FC_DECLARE_DERIVED_EXCEPTION( pay_balance_remaining,             bts::blockchain::evaluation_error, 32013, "pay balance remaining" );
 
-   // TODO: account.data size
-   // TODO: asset.data size
-
-   //FC_DECLARE_DERIVED_EXCEPTION( invalid_fire_operation,            bts::blockchain::evaluation_error, 33001, "invalid fire operation" );
    FC_DECLARE_DERIVED_EXCEPTION( not_a_delegate_signature,          bts::blockchain::evaluation_error, 33002, "not delegates signature" );
-
-   FC_DECLARE_DERIVED_EXCEPTION( invalid_vote_message_size,         bts::blockchain::evaluation_error, 34001, "invalid vote message size" );
-   FC_DECLARE_DERIVED_EXCEPTION( unknown_proposal_id,               bts::blockchain::evaluation_error, 34002, "unknown proposal id" );
 
    FC_DECLARE_DERIVED_EXCEPTION( invalid_precision,                 bts::blockchain::evaluation_error, 35001, "invalid precision" );
    FC_DECLARE_DERIVED_EXCEPTION( invalid_asset_symbol,              bts::blockchain::evaluation_error, 35002, "invalid asset symbol" );

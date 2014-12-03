@@ -2,7 +2,6 @@
 
 #include <bts/blockchain/delegate_slate.hpp>
 #include <bts/blockchain/operations.hpp>
-#include <bts/blockchain/proposal_record.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
 #include <bts/blockchain/account_record.hpp>
 #include <bts/blockchain/object_record.hpp>
@@ -94,18 +93,6 @@ namespace bts { namespace blockchain {
                         uint8_t delegate_pay_rate,
                         const optional<variant>& public_data,
                         const optional<public_key_type>& active );
-
-      void submit_proposal( account_id_type delegate_id,
-                            const string& subject,
-                            const string& body,
-                            const string& proposal_type,
-                            const variant& public_data);
-
-      void vote_proposal(proposal_id_type proposal_id,
-                         account_id_type voter_id,
-                         proposal_vote::vote_type vote,
-                         const string& message );
-
 
       void create_asset( const string& symbol,
                          const string& name,

@@ -248,38 +248,6 @@ namespace bts { namespace blockchain {
       operations.push_back( op );
    }
 
-#if 0
-   void transaction::submit_proposal(account_id_type delegate_id,
-                                     const std::string& subject,
-                                     const std::string& body,
-                                     const std::string& proposal_type,
-                                     const fc::variant& public_data)
-   {
-     submit_proposal_operation op;
-     op.submitting_delegate_id = delegate_id;
-     op.submission_date = blockchain::now();
-     op.subject = subject;
-     op.body = body;
-     op.proposal_type = proposal_type;
-     op.data = public_data;
-     operations.push_back(op);
-   }
-
-   void transaction::vote_proposal(proposal_id_type proposal_id,
-                                   account_id_type voter_id,
-                                   proposal_vote::vote_type vote,
-                                   const string& message )
-   {
-     vote_proposal_operation op;
-     op.id.proposal_id = proposal_id;
-     op.id.delegate_id = voter_id;
-     op.timestamp = blockchain::now();
-     op.vote = vote;
-     op.message = message;
-     operations.push_back(op);
-   }
-#endif
-
    void transaction::create_asset( const std::string& symbol,
                                    const std::string& name,
                                    const std::string& description,

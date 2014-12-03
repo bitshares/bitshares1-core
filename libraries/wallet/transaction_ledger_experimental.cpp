@@ -419,15 +419,6 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
             case burn_op_type:
                 my_transaction |= scan_burn( op.as<burn_operation>() );
                 break;
-            case link_account_op_type:
-                // Future feature
-                break;
-            case withdraw_all_op_type:
-                // Future feature
-                break;
-            case release_escrow_op_type:
-                // Future feature
-                break;
             default:
                 break;
         }

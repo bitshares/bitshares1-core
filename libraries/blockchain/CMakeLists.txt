@@ -53,7 +53,6 @@ add_library( bts_blockchain
              delegate_slate.cpp
              asset_operations.cpp
              market_operations.cpp
-#proposal_operations.cpp
              feed_operations.cpp
 #fire_operation.cpp
              object_operations.cpp

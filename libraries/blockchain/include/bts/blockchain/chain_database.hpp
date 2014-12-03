@@ -238,12 +238,7 @@ namespace bts { namespace blockchain {
 
          /** top delegates by current vote, projected to be active in the next round */
          vector<account_id_type>            next_round_active_delegates()const;
-
          vector<account_id_type>            get_delegates_by_vote( uint32_t first=0, uint32_t count = uint32_t(-1) )const;
-#if 0
-         vector<proposal_record>            get_proposals( uint32_t first=0, uint32_t count = uint32_t(-1))const;
-         vector<proposal_vote>              get_proposal_votes( proposal_id_type proposal_id ) const;
-#endif
 
          fc::variant_object                 find_delegate_vote_discrepancies() const;
 
@@ -301,15 +296,6 @@ namespace bts { namespace blockchain {
 
          virtual void                       store_object_record( const object_record& obj )override;
          virtual oobject_record             get_object_record( object_id_type id )override;
-
-
-#if 0
-         virtual void                       store_proposal_record( const proposal_record& r )override;
-         virtual oproposal_record           get_proposal_record( proposal_id_type id )const override;
-
-         virtual void                       store_proposal_vote( const proposal_vote& r )override;
-         virtual oproposal_vote             get_proposal_vote( proposal_vote_id_type id )const override;
-#endif
 
          virtual oorder_record              get_bid_record( const market_index_key& )const override;
          virtual oorder_record              get_ask_record( const market_index_key& )const override;

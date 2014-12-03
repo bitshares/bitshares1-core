@@ -276,11 +276,6 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_balance_record( *current_balance_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-   void withdraw_all_operation::evaluate( transaction_evaluation_state& eval_state )
-   { try {
-       FC_ASSERT( !"Not implemented!" );
-   } FC_CAPTURE_AND_RETHROW( (*this) ) }
-
    void burn_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
       if( message.size() )
