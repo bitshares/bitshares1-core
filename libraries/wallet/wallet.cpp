@@ -3933,20 +3933,6 @@ namespace detail {
                 }
              }
              else result.emplace_back(sum);
-
-
-             /*
-             const auto account_address = key_record->account_address;
-             const auto account_record = my->_wallet_db.lookup_account( account_address );
-             const auto name = account_record.valid() ? account_record->name : string( account_address );
-             if( !account_name.empty() && name != account_name ) return;
-
-             const auto balance_id = record.id();
-             const auto pending_record = pending_state->get_balance_record( balance_id );
-             if( !pending_record.valid() ) return;
-             if( !include_empty && pending_record->balance == 0 ) return;
-             balance_records[ name ].push_back( *pending_record );
-             */
           }
       };
 
@@ -3979,7 +3965,7 @@ namespace detail {
           const auto balance_id = record.id();
           const auto pending_record = pending_state->get_balance_record( balance_id );
           if( !pending_record.valid() ) return;
-          if( !include_empty && pending_record->balance == 0 ) return;
+          if( !include_empty && pending_record->get_spendable_balance( pending_state->now() ).amount == 0 ) return;
 
           balance_records[ name ].push_back( *pending_record );
       };
