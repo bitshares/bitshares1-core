@@ -33,13 +33,6 @@ namespace bts { namespace blockchain {
       return fc::ripemd160::hash( enc.result() );
    }
 
-   transaction_id_type signed_transaction::permanent_id()const
-   {
-      signed_transaction copy( *this );
-      copy.signatures.clear();
-      return copy.id();
-   }
-
    void signed_transaction::sign( const fc::ecc::private_key& signer, const digest_type& chain_id )
    {
       signatures.push_back( signer.sign_compact( digest(chain_id) ) );

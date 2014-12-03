@@ -168,7 +168,6 @@ namespace bts { namespace blockchain {
    struct signed_transaction : public transaction
    {
       transaction_id_type                     id()const;
-      transaction_id_type                     permanent_id()const;
       size_t                                  data_size()const;
       void                                    sign( const fc::ecc::private_key& signer, const digest_type& chain_id );
 
