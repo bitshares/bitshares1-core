@@ -2,6 +2,8 @@ if( UNIX AND NOT APPLE )
   set(rt_library rt )
 endif()
 
+add_definitions( -DBTS_GLOBAL_API_LOG=1 )
+
 file(GLOB regression_tests_common_logs_files "${CMAKE_CURRENT_SOURCE_DIR}/regression_tests/_common_logs/*.log")
 source_group("Regression Tests\\Common Logs" FILES ${regression_tests_common_logs_files})
 

@@ -1,7 +1,9 @@
 #include <boost/test/unit_test.hpp>
+#include <bts/api/global_api_logger.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/genesis_config.hpp>
 #include <bts/wallet/wallet.hpp>
+#include <bts/client/api_logger.hpp>
 #include <bts/client/client.hpp>
 #include <bts/client/messages.hpp>
 #include <bts/cli/cli.hpp>
@@ -9,6 +11,7 @@
 #include <bts/blockchain/time.hpp>
 #include <fc/exception/exception.hpp>
 #include <fc/log/logger.hpp>
+#include <fc/io/fstream.hpp>
 #include <fc/io/json.hpp>
 #include <fc/thread/thread.hpp>
 #include <bts/utilities/key_conversion.hpp>
@@ -526,6 +529,12 @@ void run_regression_test(fc::path test_dir, bool with_network)
     //open test configuration file (contains one line per client to create)
     fc::path test_config_file_name = "test.config";
     std::ifstream test_config_file(test_config_file_name.string());
+#if BTS_GLOBAL_API_LOG
+    fc::path test_glog_file_name = test_output_dir / "glog.out";
+    fc::ostream_ptr test_glog_file = std::make_shared<fc::ofstream>(test_glog_file_name);
+    bts::client::stream_api_logger glogger(test_glog_file);
+    glogger.connect();
+#endif
 
     //create one client per line and run each client's input commands
     auto sim_network = std::make_shared<bts::net::simulated_network>("wallet_tests");
@@ -600,6 +609,9 @@ void run_regression_test(fc::path test_dir, bool with_network)
         bts::client::client_ptr client = std::make_shared<bts::client::client>("wallet_tests", sim_network);
         clients.push_back(client);
         client->configure_from_command_line(argc, argv);
+      #if BTS_GLOBAL_API_LOG  
+        client->set_client_debug_name(client_name);
+      #endif
         client_done = client->start();
       }
 
@@ -622,6 +634,10 @@ void run_regression_test(fc::path test_dir, bool with_network)
       current_test.client_done.wait();
       BOOST_CHECK_MESSAGE(current_test.compare_files_2(), "Results mismatch with golden reference log");
     }
+    
+#if BTS_GLOBAL_API_LOG
+    glogger.close();
+#endif
   }
   catch ( const fc::exception& e )
   {
