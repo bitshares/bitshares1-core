@@ -255,7 +255,7 @@ account_balance_summary_type detail::client_impl::blockchain_get_account_public_
 { try {
   const auto& acct = _wallet->get_account( account_name );
   map<asset_id_type, share_type> balances;
-  for( const auto& pair : _chain_db->get_balances_for_address( acct.owner_address() ) )
+  for( const auto& pair : _chain_db->get_balances_for_key( acct.active_key() ) )
       balances[pair.second.asset_id()] = pair.second.balance;
   account_balance_summary_type ret;
   ret[account_name] = balances;

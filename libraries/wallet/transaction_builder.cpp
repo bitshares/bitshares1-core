@@ -296,7 +296,7 @@ transaction_builder& transaction_builder::deposit_asset_with_escrow(const bts::w
    optional<public_key_type> titan_one_time_key;
    if( recipient.is_public_account() )
    {
-      // TODO: user public receiver key...
+      // TODO: user public active receiver key...
    } else {
       auto one_time_key = _wimpl->get_new_private_key(payer.name);
       titan_one_time_key = one_time_key.get_public_key();

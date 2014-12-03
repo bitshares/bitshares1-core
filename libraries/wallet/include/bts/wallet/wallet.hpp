@@ -116,12 +116,12 @@ namespace bts { namespace wallet {
           *  @name Utility Methods
           */
          ///@{
-         private_key_type get_active_private_key( const string& account_name )const;
-         public_key_type  get_account_public_key( const string& account_name )const;
+         private_key_type           get_active_private_key( const string& account_name )const;
+         public_key_type            get_active_public_key( const string& account_name )const;
+         public_key_type            get_owner_public_key( const string& account_name )const;
 
-         public_key_summary get_public_key_summary( const public_key_type& pubkey ) const;
-         vector<public_key_type> get_public_keys_in_account( const string& account_name )const;
-
+         public_key_summary         get_public_key_summary( const public_key_type& pubkey ) const;
+         vector<public_key_type>    get_public_keys_in_account( const string& account_name )const;
          ///@}
 
          wallet_transaction_record get_transaction( const string& transaction_id_prefix )const;
