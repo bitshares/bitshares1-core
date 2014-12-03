@@ -1,7 +1,7 @@
-BitShares Toolkit Coding Standards
+BitShares Coding Standards
 --------------------------
 
-BitShares Toolkit is a set C++ libraries that follow conventions similar to boost or the standard template library.
+BitShares is a set C++ libraries that follow conventions similar to boost or the standard template library.
 
   1) All text should be lowercase with the exception of MACROS and pre-processor defines.
 
@@ -10,7 +10,7 @@ BitShares Toolkit is a set C++ libraries that follow conventions similar to boos
   3) The following example is a template of how a high level class should be implemented.  This is done to
      minimize header bloat and keep the private implementation details out of the header.
 
-      namespace a { namespace b { 
+      namespace a { namespace b {
 
          namespace deltail { some_class_impl; }
 
@@ -34,7 +34,7 @@ BitShares Toolkit is a set C++ libraries that follow conventions similar to boos
       {
 
       } else if( other_condition ) {
-      
+
       }
 
       while( condition )
@@ -43,10 +43,10 @@ BitShares Toolkit is a set C++ libraries that follow conventions similar to boos
 
       try {
         ....
-      } 
+      }
       catch ( const fc::exception& e )
       {
 
       }
 
-   
+

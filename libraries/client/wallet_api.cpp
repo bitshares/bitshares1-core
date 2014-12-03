@@ -214,20 +214,19 @@ wallet_transaction_record detail::client_impl::wallet_transfer_to_public_account
         const string& memo_message,
         const vote_selection_method& selection_method )
 {
-    auto to_key = _wallet->get_account_public_key( to_account_name );
-    auto record =  _wallet->transfer_asset_to_address(amount_to_transfer,
-                                                      asset_symbol,
-                                                      from_account_name,
-                                                      address(to_key),
-                                                      memo_message,
-                                                      selection_method,
-                                                      true );
+    const oaccount_record account_record = _chain_db->get_account_record( to_account_name );
+    FC_ASSERT( account_record.valid() && !account_record->is_retracted() );
+    auto record = _wallet->transfer_asset_to_address(amount_to_transfer,
+                                                     asset_symbol,
+                                                     from_account_name,
+                                                     account_record->active_address(),
+                                                     memo_message,
+                                                     selection_method,
+                                                     true );
     _wallet->cache_transaction( record );
     network_broadcast_transaction( record.trx );
     return record;
 }
-
-
 
 wallet_transaction_record detail::client_impl::wallet_burn(
         double amount_to_transfer,
@@ -458,7 +457,7 @@ transaction_builder detail::client_impl::wallet_builder_add_signature(
 wallet_transaction_record detail::client_impl::wallet_object_create(
                                             const string& account,
                                             const variant& user_data,
-                                            int32_t m, 
+                                            int32_t m,
                                             const vector<address>& owners )
 { try {
     auto builder = _wallet->create_transaction_builder();
@@ -501,7 +500,7 @@ transaction_builder detail::client_impl::wallet_object_update(
 transaction_builder detail::client_impl::wallet_object_transfer(
                                             const string& paying_account,
                                             const object_id_type& id,
-                                            uint32_t m, 
+                                            uint32_t m,
                                             const vector<address>& owners,
                                             bool sign_and_broadcast )
 { try {
@@ -647,14 +646,14 @@ wallet_transaction_record detail::client_impl::wallet_asset_update(
         const vector<asset_permissions>& issuer_permissions,
         const string& issuer_account_name,
         uint32_t required_sigs,
-        const vector<address>& authority 
+        const vector<address>& authority
       )
 {
    uint32_t flags_int = 0;
    uint32_t issuer_perms_int = 0;
    for( auto item : flags ) flags_int |= item;
    for( auto item : issuer_permissions ) issuer_perms_int |= item;
-   auto record = _wallet->update_asset( symbol, name, description, public_data, maximum_share_supply, 
+   auto record = _wallet->update_asset( symbol, name, description, public_data, maximum_share_supply,
                                         precision, issuer_fee, flags_int, issuer_perms_int, issuer_account_name,
                                         required_sigs, authority);
 
@@ -1358,7 +1357,15 @@ wallet_transaction_record client_impl::wallet_publish_price_feed( const std::str
 
 vector<std::pair<string, wallet_transaction_record>> client_impl::wallet_publish_feeds_multi_experimental( const map<string,double>& real_amount_per_xts )
 {
-   const auto record_list = _wallet->publish_feeds_multi_experimental( real_amount_per_xts, true );
+   vector<std::pair<string, wallet_transaction_record>> record_list =
+      _wallet->publish_feeds_multi_experimental( real_amount_per_xts, true );
+
+   for( std::pair<string, wallet_transaction_record>& record_pair : record_list )
+   {
+      wallet_transaction_record& record = record_pair.second;
+      _wallet->cache_transaction( record );
+      network_broadcast_transaction( record.trx );
+   }
    return record_list;
 }
 

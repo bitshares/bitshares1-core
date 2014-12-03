@@ -501,8 +501,8 @@ void run_regression_test(fc::path test_dir, bool with_network)
   //  for each verify_file object,
   //    compare generated log files in datadirs to golden reference file (i.e. input command files)
 
-  // caller of this routine should have made sure we are already in bitshares_toolkit/test dir.
-  // so we pop dirs to create regression_tests_results as sibling to bitshares_toolkit source directory
+  // caller of this routine should have made sure we are already in bitshares/test dir.
+  // so we pop dirs to create regression_tests_results as sibling to bitshares source directory
   // (because we don't want the test results to be inadvertantly added to git repo).
   fc::path original_working_directory = boost::filesystem::current_path();
   fc::path regression_test_output_directory = original_working_directory.parent_path().parent_path();
@@ -552,7 +552,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
       //append genesis_file to load to command-line for now (later should be pre-created in test dir I think)
       line += " --genesis-config " + genesis_json_file.string();
 
-      //if no data-dir specified, put in ../bitshares_toolkit/regression_tests/${test dir}/${client_name}
+      //if no data-dir specified, put in ../bitshares/regression_tests/${test dir}/${client_name}
       string client_name = line.substr(0, line.find(' '));
       size_t data_dir_position = line.find("--data-dir");
       if (data_dir_position == string::npos)
@@ -609,7 +609,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
         bts::client::client_ptr client = std::make_shared<bts::client::client>("wallet_tests", sim_network);
         clients.push_back(client);
         client->configure_from_command_line(argc, argv);
-      #if BTS_GLOBAL_API_LOG  
+      #if BTS_GLOBAL_API_LOG
         client->set_client_debug_name(client_name);
       #endif
         client_done = client->start();
@@ -634,7 +634,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
       current_test.client_done.wait();
       BOOST_CHECK_MESSAGE(current_test.compare_files_2(), "Results mismatch with golden reference log");
     }
-    
+
 #if BTS_GLOBAL_API_LOG
     glogger.close();
 #endif

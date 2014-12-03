@@ -18,12 +18,12 @@ namespace bts { namespace blockchain {
         FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_26_FORK_BLOCK_NUM );
 
         object_record obj;
-       
+
         if( this->id < 0 )
         {
             FC_ASSERT(! "unimplemented: set_object with negative id" );
         }
-        else if( this->id == 0 ) 
+        else if( this->id == 0 )
         {
             auto next_id = eval_state._current_state->new_object_id(this->obj.type());
             obj = this->obj;

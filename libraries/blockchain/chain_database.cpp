@@ -350,7 +350,7 @@ namespace bts { namespace blockchain {
             rec.name = asset.name;
             rec.description = asset.description;
             rec.public_data = variant("");
-            rec.issuer_account_id = asset_record::market_issued_asset;
+            rec.issuer_account_id = asset_record::market_issuer_id;
             rec.precision = asset.precision;
             rec.registration_date = timestamp;
             rec.last_update = timestamp;

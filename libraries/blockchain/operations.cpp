@@ -28,7 +28,6 @@ namespace bts { namespace blockchain {
    const operation_type_enum short_operation_v1::type               = short_op_type;
    const operation_type_enum cover_operation::type                  = cover_op_type;
    const operation_type_enum add_collateral_operation::type         = add_collateral_op_type;
-   const operation_type_enum remove_collateral_operation::type      = remove_collateral_op_type;
 
    const operation_type_enum define_delegate_slate_operation::type  = define_delegate_slate_op_type;
 
@@ -68,7 +67,6 @@ namespace bts { namespace blockchain {
       bts::blockchain::operation_factory::instance().register_operation<short_operation_v1>();
       bts::blockchain::operation_factory::instance().register_operation<cover_operation>();
       bts::blockchain::operation_factory::instance().register_operation<add_collateral_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<remove_collateral_operation>();
 
       bts::blockchain::operation_factory::instance().register_operation<define_delegate_slate_operation>();
 

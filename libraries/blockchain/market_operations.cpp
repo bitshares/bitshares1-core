@@ -143,7 +143,7 @@ namespace bts { namespace blockchain {
 
       if( this->ask_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (ask_index.order_price) );
-      
+
       auto owner = this->ask_index.owner;
 
       auto base_asset_rec = eval_state._current_state->get_asset_record( ask_index.order_price.base_asset_id );
@@ -438,12 +438,6 @@ namespace bts { namespace blockchain {
 
       eval_state._current_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
                                                           *current_cover );
-   }
-
-   void remove_collateral_operation::evaluate( transaction_evaluation_state& eval_state )
-   {
-      // Should this even be allowed?
-      FC_ASSERT( !"Not implemented!" );
    }
 
 } } // bts::blockchain
