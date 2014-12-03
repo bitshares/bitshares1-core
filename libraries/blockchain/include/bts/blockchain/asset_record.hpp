@@ -9,11 +9,11 @@ namespace bts { namespace blockchain {
    enum asset_permissions
    {
       none                  = 0,
-      retractable           = 1 << 1, ///<! The issuer can sign inplace of the owner
-      restricted            = 1 << 2, ///<! The issuer whitelists public keys
-      market_halt           = 1 << 3, ///<! The issuer can/did freeze all markets
-      balance_halt          = 1 << 4, ///<! The issuer can/did freeze all balances
-      supply_unlimit        = 1 << 5, ///<! The issuer can change the supply at will
+      retractable           = 1 << 0, ///<! The issuer can sign inplace of the owner
+      restricted            = 1 << 1, ///<! The issuer whitelists public keys
+      market_halt           = 1 << 2, ///<! The issuer can/did freeze all markets
+      balance_halt          = 1 << 3, ///<! The issuer can/did freeze all balances
+      supply_unlimit        = 1 << 4, ///<! The issuer can change the supply at will
       default_permissions   = retractable | market_halt | balance_halt | supply_unlimit,
       all_permissions       = 0xffffffff
    };
