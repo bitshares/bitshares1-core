@@ -1,9 +1,9 @@
 default (unlocked) >>> debug_wait_for_block_by_number 1
 OK
 default (unlocked) >>> blockchain_list_blocks
-HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME
-===================================================================================================
-1       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign></d-ign><d-ign></d-ign>
+HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME  RAND           
+====================================================================================================================
+1       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign></d-ign><d-ign></d-ign><d-ign></d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
@@ -53,17 +53,17 @@ OK
 default (unlocked) >>> debug_wait_for_block_by_number 9
 OK
 default (unlocked) >>> blockchain_list_blocks
-HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME
-===================================================================================================
-9       <d-ign></d-ign><d-ign>delegate50</d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign>
-8       <d-ign></d-ign><d-ign>delegate49</d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign>
-7       <d-ign></d-ign><d-ign>delegate48</d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign>
-6       <d-ign></d-ign><d-ign>delegate47</d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign>
-5       <d-ign></d-ign><d-ign>delegate46</d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign>
-4       <d-ign></d-ign><d-ign>delegate45</d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign>
-3       <d-ign></d-ign><d-ign>delegate44</d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign>
-2       <d-ign></d-ign><d-ign>delegate43</d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign>
-1       <d-ign></d-ign><d-ign>delegate42</d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign>
+HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME  RAND           
+====================================================================================================================
+9       <d-ign></d-ign><d-ign>delegate50</d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+8       <d-ign></d-ign><d-ign>delegate49</d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+7       <d-ign></d-ign><d-ign>delegate48</d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+6       <d-ign></d-ign><d-ign>delegate47</d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+5       <d-ign></d-ign><d-ign>delegate46</d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+4       <d-ign></d-ign><d-ign>delegate45</d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+3       <d-ign></d-ign><d-ign>delegate44</d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+2       <d-ign></d-ign><d-ign>delegate43</d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
+1       <d-ign></d-ign><d-ign>delegate42</d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
 default (unlocked) >>> help blockchain_export_fork_graph
 Usage:
 blockchain_export_fork_graph [start_block] [end_block] [filename]                                     dumps the fork data to graphviz format

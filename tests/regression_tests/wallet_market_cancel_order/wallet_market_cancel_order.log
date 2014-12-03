@@ -13,10 +13,10 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> blockchain_list_blocks
-HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME
-===================================================================================================
-2       <d-ign></d-ign><d-ign></d-ign>1       320     <d-ign></d-ign><d-ign></d-ign>
-1       <d-ign></d-ign><d-ign></d-ign>1       410     <d-ign></d-ign><d-ign></d-ign>
+HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME  RAND           
+====================================================================================================================
+2       <d-ign></d-ign><d-ign></d-ign>1       320     <d-ign></d-ign><d-ign></d-ign><d-ign></d-ign>
+1       <d-ign></d-ign><d-ign></d-ign>1       410     <d-ign></d-ign><d-ign></d-ign><d-ign></d-ign>
 default (unlocked) >>> wallet_account_balance test
 ACCOUNT                         BALANCE                     
 ============================================================
@@ -83,7 +83,7 @@ OK
 default (unlocked) >>> blockchain_market_list_shorts XMO
 AMOUNT                        COLLATERAL                    INTEREST RATE                 PRICE LIMIT                   ID                                      
 ================================================================================================================================
-125,000.00 XMO                100.00000 XTS                 125.000000 %                  NONE                          d5d6c38a2aabf76d9e9f3b43c68d4204dd0fd756
+N/A                           100.00000 XTS                 125.000000 %                  NONE                          d5d6c38a2aabf76d9e9f3b43c68d4204dd0fd756
 
 default (unlocked) >>> wallet_market_order_list XMO XTS
 TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
