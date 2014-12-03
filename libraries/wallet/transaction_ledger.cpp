@@ -1130,7 +1130,7 @@ bool wallet_impl::scan_deposit( const deposit_operation& op, const vector<privat
                    _scanner_threads[ i % _num_scanner_threads ]->async( [&]()
                        { status =  deposit.decrypt_memo_data( key ); }, "decrypt memo" ).wait();
                    /* If I've successfully decrypted then it's for me */
-                   if( status.valid() && address( status->owner_private_key.get_public_key() ) == deposit.owner )
+                   if( status.valid() )
                    {
                       cache_deposit = true;
                       _wallet_db.cache_memo( *status, key, _wallet_password );
