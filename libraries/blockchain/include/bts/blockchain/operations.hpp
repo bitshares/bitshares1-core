@@ -61,13 +61,17 @@ namespace bts { namespace blockchain {
 
       update_block_signing_key_type = 24,
 
+      // relative orders
       relative_bid_op_type          = 25,
       relative_ask_op_type          = 26,
 
       update_balance_vote_op_type   = 27,
 
+      // objects
       set_object_op_type            = 28,
       authorize_op_type             = 29,
+
+      // assets
       update_asset_ext_op_type      = 30,
       cancel_order_op_type          = 31 /** TODO: return funds to balance with same key as order */
    };

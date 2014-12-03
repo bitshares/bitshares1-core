@@ -177,10 +177,10 @@
       {
         "method_name": "blockchain_get_transaction",
         "description": "Get detailed information about an in-wallet transaction",
-        "return_type": "optional_blockchain_transaction_record",
+        "return_type": "transaction_record_pair",
         "parameters" : [
             {
-              "name" : "transaction_id",
+              "name" : "transaction_id_prefix",
               "type" : "string",
               "description" : "the base58 transaction ID to return"
             },
@@ -212,7 +212,7 @@
       {
         "method_name": "blockchain_get_block_transactions",
         "description": "Retrieves the detailed transaction information for a block",
-        "return_type": "blockchain_transaction_record_map",
+        "return_type": "transaction_record_map",
         "parameters" : [
             {
               "name" : "block",
