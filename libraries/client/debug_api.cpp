@@ -174,7 +174,7 @@ void client_impl::debug_wait_for_block_by_number(uint32_t block_number, const st
    _chain_db->remove_observer(&block_waiter);
 }
 
-variant_object client_impl::debug_request_verification(const std::string &account, const std::string &owner_photo, const std::string &id_front_photo, const std::string &id_back_photo, const std::string &reg_photo)
+variant_object client_impl::debug_request_verification(const std::string &account, const std::string &owner_photo, const std::string &id_front_photo, const std::string &id_back_photo)
 {
    using namespace bts::vote;
    wallet_account_record account_rec = _wallet->get_account(account);
@@ -210,8 +210,8 @@ variant_object client_impl::debug_request_verification(const std::string &accoun
 
    identity_verification_request req;
    (identity&)req = ident;
-   std::tie(req.owner_photo, req.id_front_photo, req.id_back_photo, req.voter_reg_photo)
-     = std::tie(owner_photo,     id_front_photo,     id_back_photo,           reg_photo);
+   std::tie(req.owner_photo, req.id_front_photo, req.id_back_photo)
+     = std::tie(owner_photo,     id_front_photo,     id_back_photo);
    message reqm(identity_verification_request_message({req, key.sign_compact(req.digest())}));
    wlog("Req: ${r}; Reqm: ${m}", ("r", reqm.as<identity_verification_request_message>())("m", reqm));
    reqm = reqm.encrypt(fc::ecc::private_key::generate(), _wallet->get_active_private_key("verifier").get_public_key());

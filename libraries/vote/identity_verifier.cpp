@@ -25,8 +25,7 @@ struct identity_record : public identity_verification_request_summary {
        : owner_key(owner_key),
          person_photo(request.owner_photo),
          id_card_front_photo(request.id_front_photo),
-         id_card_back_photo(request.id_back_photo),
-         voter_registration_photo(request.voter_reg_photo)
+         id_card_back_photo(request.id_back_photo)
    {
       (identity&)*this = request;
       owner = owner_key;
@@ -37,8 +36,8 @@ struct identity_record : public identity_verification_request_summary {
       identity_verification_request request;
       (identity&)(request) = *this;
       //Copy relevant fields from record to request.
-      std::tie(request.owner_photo, request.id_front_photo, request.id_back_photo, request.voter_reg_photo, request.id) =
-            std::tie(person_photo, id_card_front_photo, id_card_back_photo, voter_registration_photo, id);
+      std::tie(request.owner_photo, request.id_front_photo, request.id_back_photo, request.id) =
+            std::tie(person_photo, id_card_front_photo, id_card_back_photo, id);
       return request;
    }
 
@@ -47,7 +46,6 @@ struct identity_record : public identity_verification_request_summary {
    string person_photo;
    string id_card_front_photo;
    string id_card_back_photo;
-   string voter_registration_photo;
 
    fc::optional<identity_verification_response> response;
 
@@ -441,5 +439,4 @@ fc::variant identity_verifier::fetch_record(fc::microseconds record_id) const
 } } // namespace bts::vote
 
 FC_REFLECT_DERIVED( bts::vote::detail::identity_record, (bts::vote::identity_verification_request_summary),
-                    (owner_key)(person_photo)(id_card_front_photo)(id_card_back_photo)(voter_registration_photo)
-                    (response)(conflicting_ids) )
+                    (owner_key)(person_photo)(id_card_front_photo)(id_card_back_photo)(response)(conflicting_ids) )

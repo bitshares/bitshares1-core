@@ -363,10 +363,6 @@ void ClientWrapper::begin_verification(QObject* window, QString account_name, QS
       file.open(QIODevice::ReadOnly);
       request->id_back_photo = file.readAll().toBase64().data();
       file.close();
-      file.setFileName(request->voter_reg_photo.c_str());
-      file.open(QIODevice::ReadOnly);
-      request->voter_reg_photo = file.readAll().toBase64().data();
-      file.close();
 
       bts::vote::identity_verification_request_message request_message;
       //Efficiently move the request into the message, then delete it. We don't want to copy or leak this thing; it's huge.

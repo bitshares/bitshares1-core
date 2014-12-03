@@ -271,10 +271,6 @@
                    "name" : "id_back_photo",
                    "description" : "",
                    "type" : "string"
-                },{
-                   "name" : "reg_photo",
-                   "description" : "",
-                   "type" : "string"
                 }
             ],
         "is_const"   : false,
