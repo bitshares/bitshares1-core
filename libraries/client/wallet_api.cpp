@@ -1358,7 +1358,15 @@ wallet_transaction_record client_impl::wallet_publish_price_feed( const std::str
 
 vector<std::pair<string, wallet_transaction_record>> client_impl::wallet_publish_feeds_multi_experimental( const map<string,double>& real_amount_per_xts )
 {
-   const auto record_list = _wallet->publish_feeds_multi_experimental( real_amount_per_xts, true );
+   vector<std::pair<string, wallet_transaction_record>> record_list =
+      _wallet->publish_feeds_multi_experimental( real_amount_per_xts, true );
+   
+   for( std::pair<string, wallet_transaction_record>& record_pair : record_list )
+   {
+      wallet_transaction_record& record = record_pair.second;
+      _wallet->cache_transaction( record );
+      network_broadcast_transaction( record.trx );
+   }
    return record_list;
 }
 
