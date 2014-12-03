@@ -30,12 +30,15 @@ namespace bts { namespace blockchain {
       if( quote_asset_rec->is_restricted() )
          FC_ASSERT( eval_state._current_state->get_authorization( quote_asset_rec->id, owner ) );
 
-      bool issuer_override = quote_asset_rec->is_retractable() && eval_state.verify_authority( quote_asset_rec->authority );
+      if( eval_state._current_state->get_head_block_num() >= BTS_V0_4_26_FORK_BLOCK_NUM )
+      {
+          bool issuer_override = quote_asset_rec->is_retractable() && eval_state.verify_authority( quote_asset_rec->authority );
 
-      if( !issuer_override && !eval_state.check_signature( owner ) )
-         FC_CAPTURE_AND_THROW( missing_signature, (bid_index.owner) );
+          if( !issuer_override && !eval_state.check_signature( owner ) )
+             FC_CAPTURE_AND_THROW( missing_signature, (bid_index.owner) );
 
-      FC_ASSERT( !issuer_override && !quote_asset_rec->is_balance_frozen() );
+          FC_ASSERT( !issuer_override && !quote_asset_rec->is_balance_frozen() );
+      }
 
       asset delta_amount  = this->get_amount();
 
@@ -155,12 +158,15 @@ namespace bts { namespace blockchain {
       if( quote_asset_rec->is_restricted() )
          FC_ASSERT( eval_state._current_state->get_authorization( quote_asset_rec->id, owner ) );
 
-      bool issuer_override = base_asset_rec->is_retractable() && eval_state.verify_authority( base_asset_rec->authority );
+      if( eval_state._current_state->get_head_block_num() >= BTS_V0_4_26_FORK_BLOCK_NUM )
+      {
+          bool issuer_override = base_asset_rec->is_retractable() && eval_state.verify_authority( base_asset_rec->authority );
 
-      if( !issuer_override && !eval_state.check_signature( owner ) )
-         FC_CAPTURE_AND_THROW( missing_signature, (ask_index.owner) );
+          if( !issuer_override && !eval_state.check_signature( owner ) )
+             FC_CAPTURE_AND_THROW( missing_signature, (ask_index.owner) );
 
-      FC_ASSERT( !issuer_override && !base_asset_rec->is_balance_frozen() );
+          FC_ASSERT( !issuer_override && !base_asset_rec->is_balance_frozen() );
+      }
 
       asset delta_amount  = this->get_amount();
 
