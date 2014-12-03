@@ -12,6 +12,14 @@
         "cpp_include_file" : "bts/blockchain/types.hpp"
       },
       {
+         "type_name" : "asset_permission",
+         "cpp_return_type" : "asset_permissions"
+      },
+      {
+         "type_name" : "asset_permission_array",
+         "cpp_return_type" : "std::vector<bts::blockchain::asset_permissions>"
+      },
+      {
         "type_name": "float",
         "cpp_return_type" : "float",
         "cpp_include_file" : "bts/blockchain/types.hpp"

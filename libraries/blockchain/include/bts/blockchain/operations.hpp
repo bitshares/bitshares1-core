@@ -68,7 +68,8 @@ namespace bts { namespace blockchain {
 
       set_object_op_type            = 28,
       authorize_op_type             = 29,
-      update_asset_ext_op_type      = 30
+      update_asset_ext_op_type      = 30,
+      cancel_order_op_type          = 31 /** TODO: return funds to balance with same key as order */
    };
 
    /**
@@ -153,6 +154,7 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (set_object_op_type)
                  (authorize_op_type)
                  (update_asset_ext_op_type)
+                 (cancel_order_op_type)
                  )
 
 FC_REFLECT( bts::blockchain::operation, (type)(data) )

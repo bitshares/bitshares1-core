@@ -419,7 +419,13 @@ namespace bts { namespace wallet {
                  const optional<variant>& public_data,
                  const optional<double>& maximum_share_supply,
                  const optional<uint64_t>& precision,
-                 bool sign
+                 const share_type& issuer_fee,
+                 uint32_t issuer_perms,
+                 uint32_t flags,
+                 const string& issuer_account_name,
+                 uint32_t required_sigs,
+                 const vector<address>& authority,
+                 bool sign = true
                  );
          wallet_transaction_record issue_asset(
                  double amount,

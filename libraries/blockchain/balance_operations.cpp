@@ -152,6 +152,7 @@ namespace bts { namespace blockchain {
       if( !current_balance_record.valid() )
          FC_CAPTURE_AND_THROW( unknown_balance_record, (balance_id) );
 
+
       if( this->amount > current_balance_record->get_spendable_balance( eval_state._current_state->now() ).amount )
          FC_CAPTURE_AND_THROW( insufficient_funds, (current_balance_record)(amount) );
 
@@ -159,8 +160,17 @@ namespace bts { namespace blockchain {
       FC_ASSERT( asset_rec.valid() );
       bool issuer_override = asset_rec->is_retractable() && eval_state.verify_authority( asset_rec->authority );
 
+
       if( !issuer_override )
       {
+         FC_ASSERT( !asset_rec->is_balance_frozen() );
+         if( asset_rec->is_restricted() )
+         {
+            for(auto owner : current_balance_record->owners())
+            {
+              FC_ASSERT(eval_state._current_state->get_authorization(asset_rec->id, owner));
+            }
+         }
          switch( (withdraw_condition_types)current_balance_record->condition.type )
          {
             case withdraw_signature_type:
@@ -322,7 +332,7 @@ namespace bts { namespace blockchain {
 
       escrow_balance_record->balance -= total_released;
       auto asset_rec = eval_state._current_state->get_asset_record( escrow_balance_record->condition.asset_id );
-      if( asset_rec->restricted )
+      if( asset_rec->is_restricted() )
       {
          FC_ASSERT( eval_state._current_state->get_authorization( escrow_balance_record->condition.asset_id, escrow_condition.receiver ) );
       }

@@ -288,7 +288,14 @@ namespace bts { namespace wallet {
                                          const optional<string>& description,
                                          const optional<variant>& public_data,
                                          const optional<double>& maximum_share_supply,
-                                         const optional<uint64_t>& precision );
+                                         const optional<uint64_t>& precision,
+                                         const share_type& issuer_fee,
+                                         uint32_t issuer_perms,
+                                         uint32_t flags,
+                                         account_id_type issuer_account_id,
+                                         uint32_t required_sigs,
+                                         const vector<address>& authority 
+                                       );
 
       /**
        * @brief Balance the books and pay the fees

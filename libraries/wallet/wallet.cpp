@@ -3017,20 +3017,30 @@ namespace detail {
            const optional<variant>& public_data,
            const optional<double>& maximum_share_supply,
            const optional<uint64_t>& precision,
+           const share_type& issuer_fee,
+           uint32_t issuer_perms,
+           uint32_t flags,
+           const string& issuer_account_name,
+           uint32_t required_sigs,
+           const vector<address>& authority,
            bool sign
            )
    { try {
       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
 
+      auto  issuer_account = my->_blockchain->get_account_record( issuer_account_name );
+      FC_ASSERT( issuer_account.valid() );
+
       transaction_builder_ptr builder = create_transaction_builder();
-      builder->update_asset( symbol, name, description, public_data, maximum_share_supply, precision );
+      builder->update_asset( symbol, name, description, public_data, maximum_share_supply, precision,
+                             issuer_fee, issuer_perms, flags, issuer_account->id, required_sigs, authority );
       builder->finalize();
 
       if( sign )
          return builder->sign();
       return builder->transaction_record;
-   } FC_CAPTURE_AND_RETHROW( (symbol)(name)(description)(public_data)(maximum_share_supply)(precision)(sign) ) }
+   } FC_CAPTURE_AND_RETHROW( (symbol)(name)(description)(public_data)(precision)(issuer_fee)(restricted)(retractable)(required_sigs)(authority)(sign) ) }
 
    wallet_transaction_record wallet::issue_asset(
            double amount_to_issue,

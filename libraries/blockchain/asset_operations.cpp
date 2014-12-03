@@ -169,7 +169,8 @@ namespace bts { namespace blockchain {
       // Cannot update max share supply, or precision if any shares have been issued
       if( current_asset_record->current_share_supply > 0 )
       {
-          FC_ASSERT( !this->maximum_share_supply.valid() );
+          if( !(current_asset_record->flags & supply_unlimit) )
+             FC_ASSERT( !this->maximum_share_supply.valid() );
           FC_ASSERT( !this->precision.valid() );
       }
 
@@ -208,18 +209,49 @@ namespace bts { namespace blockchain {
 
       if( !current_asset_record->is_market_issued() )
       {
-          if( this->restricted ) FC_ASSERT( current_asset_record->current_share_supply == 0 );
-             
-          current_asset_record->restricted  = this->restricted;
-          if( current_asset_record->retractable )
+
+          // you can only remove these permissions, but not add them if there are current shares
+          if( current_asset_record->current_share_supply > 0 )
           {
-             current_asset_record->retractable = this->retractable;
+             if( this->issuer_permissions & retractable  ) 
+                FC_ASSERT( current_asset_record->issuer_permissions & retractable );   
+             if( this->issuer_permissions & restricted  ) 
+                FC_ASSERT( current_asset_record->issuer_permissions & restricted );   
+             if( this->issuer_permissions & market_halt  ) 
+                FC_ASSERT( current_asset_record->issuer_permissions & market_halt );   
+             if( this->issuer_permissions & balance_halt  ) 
+                FC_ASSERT( current_asset_record->issuer_permissions & balance_halt );   
+             if( this->issuer_permissions & supply_unlimit  ) 
+                FC_ASSERT( current_asset_record->issuer_permissions & supply_unlimit );   
           }
-          else FC_ASSERT( !this->retractable );
-          current_asset_record->transaction_fee = this->transaction_fee;
-          current_asset_record->authority       = this->authority;
+          current_asset_record->issuer_permissions  = this->issuer_permissions;
+
+          if( this->flags & restricted   ) FC_ASSERT( current_asset_record->issuer_permissions & restricted );   
+          if( this->flags & retractable  ) FC_ASSERT( current_asset_record->issuer_permissions & retractable );   
+          if( this->flags & market_halt  ) FC_ASSERT( current_asset_record->issuer_permissions & market_halt );   
+          if( this->flags & balance_halt ) FC_ASSERT( current_asset_record->issuer_permissions & balance_halt );   
+          current_asset_record->flags               = this->flags;
+
+          current_asset_record->transaction_fee     = this->transaction_fee;
+          current_asset_record->authority           = this->authority;
       }
 
+      if( current_asset_record->is_market_issued() )
+      {
+         FC_ASSERT( this->issuer_account_id == asset_record::market_issued_asset );
+      }
+      else
+      {
+         FC_ASSERT( this->issuer_account_id != asset_record::market_issued_asset );
+         if( this->issuer_account_id != current_asset_record->issuer_account_id )
+         {
+            auto issuer_account_record = eval_state._current_state->get_account_record( this->issuer_account_id );
+            if( NOT issuer_account_record.valid() )
+                FC_CAPTURE_AND_THROW( unknown_account_id, (issuer_account_id) );
+         }
+      }
+
+      current_asset_record->issuer_account_id = this->issuer_account_id;
       current_asset_record->last_update = eval_state._current_state->now();
 
       eval_state._current_state->store_asset_record( *current_asset_record );
@@ -258,7 +290,7 @@ namespace bts { namespace blockchain {
 
       if( NOT current_asset_record.valid() ) FC_CAPTURE_AND_THROW( unknown_asset_id, (this->asset_id) );
 
-      FC_ASSERT( current_asset_record->restricted );
+      FC_ASSERT( current_asset_record->issuer_permissions & restricted );
       FC_ASSERT( current_asset_record->issuer_account_id != asset_record::market_issued_asset );
 
       eval_state._current_state->authorize( this->asset_id, this->owner, this->meta_id );

@@ -4,6 +4,7 @@
 #include <bts/blockchain/operations.hpp>
 #include <bts/blockchain/account_record.hpp>
 #include <bts/blockchain/types.hpp>
+#include <bts/blockchain/asset_record.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -76,17 +77,17 @@ namespace bts { namespace blockchain {
    struct update_asset_ext_operation : public update_asset_operation
    {
        static const operation_type_enum type;
+       update_asset_ext_operation(){}
+       update_asset_ext_operation( const update_asset_operation& c ):update_asset_operation(c){}
 
        /**
         * A restricted asset can only be held/controlled by keys
         * on the authorized list.
         */
-       bool                restricted  = false;
+       uint32_t           flags = none;
+       uint32_t           issuer_permissions = default_permissions;
+       account_id_type    issuer_account_id;
        
-       /**
-        * Asset is retractable by the issuer.
-        */
-       bool                retractable = true;
        
        /**
         *  The issuer can specify a transaction fee (of the asset type) 
@@ -161,8 +162,9 @@ FC_REFLECT( bts::blockchain::update_asset_operation,
             )
 FC_REFLECT_DERIVED( bts::blockchain::update_asset_ext_operation, 
                     (bts::blockchain::update_asset_operation),
-                    (restricted)
-                    (retractable)
+                    (flags)
+                    (issuer_permissions)
+                    (issuer_account_id)
                     (transaction_fee)
                     (authority) )
 
