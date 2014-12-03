@@ -72,7 +72,7 @@ namespace bts { namespace blockchain {
        if( symbol.back() == '.' ) return false;
        if( symbol.front() == '.' ) return false;
 
-       if( get_head_block_num() >= BTS_V0_4_25_FORK_BLOCK_NUM )
+       if( get_head_block_num() >= BTS_V0_4_26_FORK_BLOCK_NUM )
        {
            if( symbol.size() >= 3 && symbol.find( "BIT" ) == 0 )
                return false;

@@ -103,9 +103,9 @@ namespace bts { namespace blockchain {
    void update_asset_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
 #ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_4_25_FORK_BLOCK_NUM has passed
+#warning [SOFTFORK] Remove this check after BTS_V0_4_26_FORK_BLOCK_NUM has passed
 #endif
-      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_25_FORK_BLOCK_NUM );
+      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_26_FORK_BLOCK_NUM );
 
       oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->asset_id );
       if( NOT current_asset_record.valid() )

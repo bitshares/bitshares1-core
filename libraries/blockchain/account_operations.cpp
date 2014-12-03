@@ -90,16 +90,16 @@ namespace bts { namespace blockchain {
           if( current_record->is_retracted() && current_record->is_delegate() )
           {
 #ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_4_25_FORK_BLOCK_NUM has passed
+#warning [SOFTFORK] Remove this check after BTS_V0_4_26_FORK_BLOCK_NUM has passed
 #endif
-              FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_25_FORK_BLOCK_NUM );
+              FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_26_FORK_BLOCK_NUM );
 
               if( current_record->delegate_info->pay_balance > 0 )
                   FC_CAPTURE_AND_THROW( pay_balance_remaining, (*current_record) );
           }
 
           const uint32_t block_num = eval_state._current_state->get_head_block_num();
-          if( block_num < BTS_V0_4_25_FORK_BLOCK_NUM )
+          if( block_num < BTS_V0_4_26_FORK_BLOCK_NUM )
           {
               if( current_record->is_delegate() )
                   current_record->set_signing_key( block_num, current_record->active_key() );
@@ -172,9 +172,9 @@ namespace bts { namespace blockchain {
    void update_block_signing_key::evaluate( transaction_evaluation_state& eval_state )
    { try {
 #ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_4_25_FORK_BLOCK_NUM has passed
+#warning [SOFTFORK] Remove this check after BTS_V0_4_26_FORK_BLOCK_NUM has passed
 #endif
-      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_25_FORK_BLOCK_NUM );
+      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_26_FORK_BLOCK_NUM );
 
       oaccount_record account_rec = eval_state._current_state->get_account_record( this->account_id );
       if( !account_rec.valid() )
