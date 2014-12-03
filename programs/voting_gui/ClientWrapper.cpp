@@ -347,7 +347,6 @@ void ClientWrapper::begin_verification(QObject* window, QString account_name, QS
    request->owner_photo = window->property("userPhoto").toUrl().toLocalFile().toStdString();
    request->id_front_photo = window->property("idFrontPhoto").toUrl().toLocalFile().toStdString();
    request->id_back_photo = window->property("idBackPhoto").toUrl().toLocalFile().toStdString();
-   request->voter_reg_photo = window->property("voterRegistrationPhoto").toUrl().toLocalFile().toStdString();
 
    //Punt this whole procedure out to the bitshares thread. We don't want to block the GUI thread.
    _bitshares_thread.async([this, account_name, verifiers, callback, request]() mutable {

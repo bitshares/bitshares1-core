@@ -160,7 +160,6 @@ struct identity_verification_request : public identity
    string owner_photo;
    string id_front_photo;
    string id_back_photo;
-   string voter_reg_photo;
    ///Clients can ignore this field.
    fc::optional<fc::microseconds> id;
 };
@@ -198,7 +197,6 @@ struct identity_verification_response
    fc::optional<bool> owner_photo_valid;
    fc::optional<bool> id_front_photo_valid;
    fc::optional<bool> id_back_photo_valid;
-   fc::optional<bool> voter_reg_photo_valid;
 };
 
 struct contestant
@@ -342,12 +340,12 @@ FC_REFLECT_DERIVED( bts::vote::signed_identity_property, (bts::vote::identity_pr
 FC_REFLECT( bts::vote::identity, (owner)(properties) )
 FC_REFLECT_DERIVED( bts::vote::signed_identity, (bts::vote::identity), (owner_signature) )
 FC_REFLECT_DERIVED( bts::vote::identity_verification_request, (bts::vote::identity),
-                    (owner_photo)(id_front_photo)(id_back_photo)(voter_reg_photo)(id) )
+                    (owner_photo)(id_front_photo)(id_back_photo)(id) )
 FC_REFLECT_DERIVED( bts::vote::identity_verification_request_summary, (bts::vote::identity),
                     (status)(id)(rejection_reason) )
 FC_REFLECT( bts::vote::identity_verification_response, (accepted)
             (rejection_reason)(verified_identity)(expiration_date)
-            (owner_photo_valid)(id_front_photo_valid)(id_back_photo_valid)(voter_reg_photo_valid) )
+            (owner_photo_valid)(id_front_photo_valid)(id_back_photo_valid) )
 FC_REFLECT_TYPENAME( bts::vote::request_status_enum )
 FC_REFLECT_ENUM( bts::vote::request_status_enum,
                  (awaiting_processing)(needs_further_review)(in_processing)(accepted)(rejected) )

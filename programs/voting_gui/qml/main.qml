@@ -11,7 +11,6 @@ ApplicationWindow {
    property url userPhoto
    property url idFrontPhoto
    property url idBackPhoto
-   property url voterRegistrationPhoto
    property string account_name
    property var decisions: ({})
 
@@ -80,7 +79,7 @@ ApplicationWindow {
             page: "VotingPage.qml"
          }
          ListElement {
-            title: "Finished"
+            title: "Submit"
          }
       }
    }

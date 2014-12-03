@@ -147,13 +147,5 @@ TaskPage {
          labelText: qsTr("ID Card Back")
          onCurrentImageChanged: window.idBackPhoto = currentImage
       }
-      PhotoButton {
-         id: voterRegistrationPhotoButton
-         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-         Layout.fillHeight: true
-         onClicked: d.startSnapshot(this)
-         labelText: qsTr("Voter Registration")
-         onCurrentImageChanged: window.voterRegistrationPhoto = currentImage
-      }
    }
 }
