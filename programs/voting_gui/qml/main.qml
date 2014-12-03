@@ -71,15 +71,20 @@ ApplicationWindow {
             page: "IdentificationPage.qml"
          }
          ListElement {
-            title: "Verification"
-            page: "VerificationPage.qml"
+            title: "Registration"
+            page: "RegistrationPage.qml"
          }
          ListElement {
-            title: "Voting"
-            page: "VotingPage.qml"
+            title: "Vote"
+            page: "VotePage.qml"
          }
          ListElement {
-            title: "Submit"
+            title: "Cast"
+            page: "CastPage.qml"
+         }
+         ListElement {
+            title: "Confirmation"
+            page: "ConfirmationPage.qml"
          }
       }
    }
@@ -91,7 +96,7 @@ ApplicationWindow {
          right: parent.right
          bottom: parent.bottom
       }
-      initialItem: WelcomePage {}
+      initialItem: WelcomePage{}
       delegate: StackViewDelegate {
          function transitionFinished(properties)
          {
@@ -154,20 +159,6 @@ ApplicationWindow {
                property: "scale"
                from: .8
                to: 1
-            }
-         }
-      }
-
-      Component {
-         id: taskPage
-         TaskPage {
-            property variant currentCheckpoint
-
-            Text {
-               anchors.centerIn: parent
-               text: parent.currentCheckpoint.title
-               color: "white"
-               font.pointSize: 40
             }
          }
       }

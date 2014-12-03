@@ -244,12 +244,25 @@ QJsonArray ClientWrapper::get_voter_contests(QString account_name)
    QJsonArray contests;
    std::for_each(bal.contests.begin(), bal.contests.end(),
                  [this, &contests](const digest_type& id) {
-      fc::mutable_variant_object contest_with_id = fc::variant(_contest_map[id]).as<fc::mutable_variant_object>();
-      contest_with_id["id"] = id;
-      string contest = fc::json::to_string(contest_with_id);
-      contests.append(QJsonDocument::fromJson(QByteArray(contest.data(), contest.size())).object());
+      contests.append(get_contest_by_id(id));
    });
    return contests;
+}
+
+QJsonObject ClientWrapper::get_contest_by_id(QString contest_id)
+{
+   return get_contest_by_id(digest_type(contest_id.toStdString()));
+}
+
+QJsonObject ClientWrapper::get_contest_by_id(bts::vote::digest_type contest_id)
+{
+   if( _contest_map.find(contest_id) != _contest_map.end() ) {
+      fc::mutable_variant_object contest_with_id = fc::variant(_contest_map[contest_id]).as<fc::mutable_variant_object>();
+      contest_with_id["id"] = contest_id;
+      string contest = fc::json::to_string(contest_with_id);
+      return QJsonDocument::fromJson(QByteArray(contest.data(), contest.size())).object();
+   }
+   return QJsonObject();
 }
 
 void ClientWrapper::get_verification_request_status(QString account_name, QStringList verifiers, QJSValue callback)

@@ -11,37 +11,9 @@ Item {
    property bool nextButtonHighlighted: false
    property real buttonAreaHeight: height - (backButton.y - backButton.anchors.margins)
 
-   RectangularGlow {
-      id: backGlow
-      anchors.fill: backButton
-      anchors.margins: backButton.height / 4
-      cornerRadius: backButton.radius
-      color: backButton.color
-      glowRadius: backButton.height
-      visible: backButtonHighlighted
-
-      SequentialAnimation {
-         running: backButtonHighlighted
-         loops: Animation.Infinite
-         PropertyAnimation {
-            target: backGlow
-            property: "opacity"
-            duration: 500
-            from: 0; to: 1
-            easing.type: "OutQuad"
-         }
-         PropertyAnimation {
-            target: backGlow
-            property: "opacity"
-            duration: 500
-            from: 1; to: 0
-            easing.type: "InQuad"
-         }
-      }
-   }
    SimpleButton {
       id: backButton
-      color: "red"
+      color: "#88ff0000"
       anchors {
          bottom: parent.bottom
          left: parent.left
@@ -49,40 +21,14 @@ Item {
       }
       height: parent.height * .05
       width: height * 4
+      highlighted: backButtonHighlighted
+      pulsing: backButtonHighlighted
       text: qsTr("Back")
       onClicked: backClicked()
    }
-   RectangularGlow {
-      id: nextGlow
-      anchors.fill: nextButton
-      anchors.margins: nextButton.height / 4
-      cornerRadius: nextButton.radius
-      color: nextButton.color
-      glowRadius: nextButton.height
-      visible: nextButtonHighlighted
-
-      SequentialAnimation {
-         running: nextButtonHighlighted
-         loops: Animation.Infinite
-         PropertyAnimation {
-            target: nextGlow
-            property: "opacity"
-            duration: 500
-            from: 0; to: 1
-            easing.type: "OutQuad"
-         }
-         PropertyAnimation {
-            target: nextGlow
-            property: "opacity"
-            duration: 500
-            from: 1; to: 0
-            easing.type: "InQuad"
-         }
-      }
-   }
    SimpleButton {
       id: nextButton
-      color: "green"
+      color: "#8800ff00"
       anchors {
          bottom: parent.bottom
          right: parent.right
@@ -90,6 +36,8 @@ Item {
       }
       height: parent.height * .05
       width: height * 4
+      highlighted: nextButtonHighlighted
+      pulsing: nextButtonHighlighted
       text: qsTr("Next")
       onClicked: nextClicked()
    }

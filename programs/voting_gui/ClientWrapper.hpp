@@ -35,6 +35,8 @@ public:
    Q_INVOKABLE QString create_voter_account();
    Q_INVOKABLE QJsonObject get_voter_ballot(QString account_name);
    Q_INVOKABLE QJsonArray get_voter_contests(QString account_name);
+   Q_INVOKABLE QJsonObject get_contest_by_id(QString contest_id);
+   Q_INVOKABLE QJsonObject get_contest_by_id(bts::vote::digest_type contest_id);
 
    std::shared_ptr<bts::client::client> get_client() { return _client; }
 

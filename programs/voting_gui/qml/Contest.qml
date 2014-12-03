@@ -20,30 +20,17 @@ Rectangle {
          content.setDecision(decision)
    }
 
-   Item {
+   ContestHeader {
       id: header
-      width: parent.width
       anchors.top: parent.top
-      height: headerText.y + headerText.height + 10
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.leftMargin: contestContainer.radius
+      anchors.rightMargin: anchors.leftMargin
+      fontSize: contestContainer.fontSize
+      leftText: tags["name"]
 
-      Text {
-         id: headerText
-         color: "white"
-         anchors.left: parent.left
-         anchors.right: parent.right
-         anchors.top: parent.top
-         anchors.leftMargin: contestContainer.radius
-         anchors.rightMargin: anchors.leftMargin
-         anchors.topMargin: height / 2
-         font.pointSize: fontSize
-         text: tags["name"]
-         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
-      }
-      MouseArea {
-         anchors.fill: parent
-         hoverEnabled: false
-         onClicked: contestContainer.expanded = !contestContainer.expanded
-      }
+      onClicked: contestContainer.expanded = !contestContainer.expanded
    }
    ContestContent {
       id: content

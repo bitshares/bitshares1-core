@@ -29,9 +29,10 @@ RowLayout {
 
    ExclusiveGroup { id: yesNoButtonsGroup }
    SimpleButton {
-      id: yesButton
+      id: noButton
       exclusiveGroup: yesNoButtonsGroup
-      color: "red"
+      opacity: 1
+      color: "#88ff0000"
       Layout.fillWidth: true
       Layout.minimumWidth: textWidth
       Layout.preferredWidth: parent.width / 2
@@ -39,9 +40,10 @@ RowLayout {
       height: buttonHeight
    }
    SimpleButton {
-      id: noButton
+      id: yesButton
       exclusiveGroup: yesNoButtonsGroup
-      color: "green"
+      opacity: 1
+      color: "#8800ff00"
       Layout.fillWidth: true
       Layout.minimumWidth: textWidth
       Layout.preferredWidth: parent.width / 2

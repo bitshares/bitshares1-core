@@ -5,9 +5,8 @@ TaskPage {
    id: container
    onBackClicked: window.previousPage()
    onNextClicked: {
-      var decision_list = Object.keys(decisions).map(function(key){return decisions[key]})
-      console.log(JSON.stringify(decision_list))
-      bitshares.submit_decisions(account_name, JSON.stringify(decision_list))
+      window.nextPage()
+      return
    }
 
    property var contests: []
@@ -71,7 +70,6 @@ TaskPage {
                      } else
                         delete decisions[id]
                   }
-                  console.log(JSON.stringify(decisions))
                }
                Component.onCompleted: {
                   setDecision(decisions[id])
@@ -91,8 +89,6 @@ TaskPage {
                for( var tag in contests[contest]["tags"] )
                   tags[contests[contest]["tags"][tag][0]] = contests[contest]["tags"][tag][1]
                contests[contest]["tags"] = tags
-
-               console.log(JSON.stringify(contests[contest]))
 
                model.append(contests[contest])
             }

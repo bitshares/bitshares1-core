@@ -226,7 +226,7 @@ Rectangle {
    }
    SimpleButton {
       id: captureButton
-      color: "green"
+      color: "#7700ff00"
       anchors {
          bottom: parent.bottom
          left: parent.left
@@ -252,7 +252,7 @@ Rectangle {
 
       SimpleButton {
          id: retakeButton
-         color: "yellow"
+         color: "#77ffff00"
          Layout.fillWidth: true
          Layout.fillHeight: true
          text: qsTr("Retake")
@@ -260,7 +260,7 @@ Rectangle {
       }
       SimpleButton {
          id: acceptButton
-         color: "green"
+         color: "#7700ff00"
          Layout.fillWidth: true
          Layout.fillHeight: true
          text: qsTr("Accept")

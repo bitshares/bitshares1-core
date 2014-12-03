@@ -6,9 +6,12 @@
         <file>qml/TaskPage.qml</file>
         <file>qml/WelcomePage.qml</file>
         <file>qml/IdentificationPage.qml</file>
-        <file>qml/VerificationPage.qml</file>
-        <file>qml/VotingPage.qml</file>
+        <file>qml/RegistrationPage.qml</file>
+        <file>qml/VotePage.qml</file>
+        <file>qml/CastPage.qml</file>
+        <file>qml/ConfirmationPage.qml</file>
         <file>qml/Contest.qml</file>
+        <file>qml/ContestHeader.qml</file>
         <file>qml/ContestContent.qml</file>
         <file>qml/VoteOneOrManyDecision.qml</file>
         <file>qml/VoteYesNoDecision.qml</file>

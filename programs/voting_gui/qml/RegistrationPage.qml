@@ -9,6 +9,7 @@ TaskPage {
    property var verifiers: ["verifier"]
    property var registrars: ["registrar"]
 
+   backButtonVisible: state !== "REGISTERED"
    onBackClicked: window.previousPage()
    onNextClicked: {
       if( mayProceed() ) {
@@ -58,8 +59,10 @@ TaskPage {
    function startVerification() {
       if( !bitshares.initialized ) {
          console.log("Cannot verify account; backend is not yet initialized.")
+         bitshares.initialization_complete.connect(startVerification)
          return;
       }
+      bitshares.initialization_complete.disconnect(startVerification)
 
       if( account_name == "" ) {
          console.log("Verification begins")
@@ -77,6 +80,8 @@ TaskPage {
 
    Stack.onStatusChanged: {
       if( Stack.status === Stack.Active ) {
+         if( container.state === "REGISTERED" )
+            return
          if( container.state === "REJECTED" ) {
             container.state = "SUBMITTING"
          }

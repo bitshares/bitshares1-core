@@ -110,6 +110,8 @@ GridLayout {
       id: contestantRepeater
       model: contestantList
       delegate: SimpleButton {
+         color: "#aa333333"
+         opacity: 1
          Layout.fillWidth: true
          Layout.fillHeight: true
          Layout.minimumWidth: textWidth
@@ -128,6 +130,8 @@ GridLayout {
          property string contestantName: placeHolderText
          property string placeHolderText: "Click to write-in"
 
+         color: contestantName === placeHolderText? "#aa111111" : "#aa333333"
+         opacity: 1
          Layout.fillWidth: true
          Layout.fillHeight: true
          Layout.minimumWidth: textWidth
