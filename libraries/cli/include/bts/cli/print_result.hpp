@@ -35,10 +35,8 @@ namespace bts { namespace cli {
     static void f_network_get_usage_stats( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client );
     static void f_blockchain_list_delegates( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client );
     static void f_blockchain_list_accounts( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client );
-    static void f_blockchain_get_proposal_votes( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client );
     static void f_blockchain_list_forks( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client );
     static void f_blockchain_list_pending_transactions( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client );
-    static void f_blockchain_list_proposals( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client );
     static void f_blockchain_market_order_book( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client );
     static void f_blockchain_market_order_history( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client );
     static void f_blockchain_market_price_history( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client );

@@ -56,7 +56,7 @@ transaction_builder& transaction_builder::release_escrow( const account_record& 
    if( trx.expiration == time_point_sec() )
        trx.expiration = blockchain::now() + _wimpl->self->get_transaction_expiration();
 
-   transaction_record.record_id = trx.permanent_id();
+   transaction_record.record_id = trx.id();
    transaction_record.created_time = blockchain::now();
    transaction_record.received_time = transaction_record.created_time;
    return *this;
@@ -750,7 +750,7 @@ transaction_builder& transaction_builder::finalize( bool pay_fee )
    if( trx.expiration == time_point_sec() )
        trx.expiration = blockchain::now() + _wimpl->self->get_transaction_expiration();
 
-   transaction_record.record_id = trx.permanent_id();
+   transaction_record.record_id = trx.id();
    transaction_record.created_time = blockchain::now();
    transaction_record.received_time = transaction_record.created_time;
 

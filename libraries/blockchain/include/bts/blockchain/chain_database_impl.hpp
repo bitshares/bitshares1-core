@@ -126,10 +126,6 @@ namespace bts { namespace blockchain {
             bts::db::level_map<uint32_t, std::vector<block_id_type>>                    _fork_number_db;
             bts::db::level_map<block_id_type,block_fork_data>                           _fork_db;
             bts::db::cached_level_map<uint32_t, fc::variant>                            _property_db;
-#if 0
-            bts::db::level_map<proposal_id_type, proposal_record>                       _proposal_db;
-            bts::db::level_map<proposal_vote_id_type, proposal_vote>                    _proposal_vote_db;
-#endif
 
             /** the data required to 'undo' the changes a block made to the database */
             bts::db::level_map<block_id_type,pending_chain_state>                       _undo_state_db;

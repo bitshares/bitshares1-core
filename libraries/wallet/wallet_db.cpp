@@ -750,7 +750,7 @@ namespace bts { namespace wallet {
                    wallet_transaction_record transaction_record = record.as<wallet_transaction_record>();
                    if( transaction_record.trx.id() != signed_transaction().id()  )
                    {
-                       const transaction_id_type record_id = transaction_record.trx.permanent_id();
+                       const transaction_id_type record_id = transaction_record.trx.id();
                        if( transaction_record.record_id != record_id )
                        {
                            transactions.erase( transaction_record.record_id );

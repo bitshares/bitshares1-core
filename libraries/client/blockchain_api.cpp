@@ -220,13 +220,16 @@ vector<feed_entry> detail::client_impl::blockchain_get_feeds_from_delegate( cons
       }
 
       return result_feeds;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name", delegate_name) ) }
+} FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name", delegate_name) ) }
 
-otransaction_record detail::client_impl::blockchain_get_transaction(const string& transaction_id, bool exact ) const
-{
-   auto id = variant( transaction_id ).as<transaction_id_type>();
-   return _chain_db->get_transaction(id, exact);
-}
+pair<transaction_id_type, transaction_record> detail::client_impl::blockchain_get_transaction( const string& transaction_id_prefix,
+                                                                                               bool exact )const
+{ try {
+   const auto id_prefix = variant( transaction_id_prefix ).as<transaction_id_type>();
+   const otransaction_record record = _chain_db->get_transaction( id_prefix, exact );
+   FC_ASSERT( record.valid(), "Transaction not found!" );
+   return std::make_pair( record->trx.id(), *record );
+} FC_CAPTURE_AND_RETHROW( (transaction_id_prefix)(exact) ) }
 
 oblock_record detail::client_impl::blockchain_get_block( const string& block )const
 {
