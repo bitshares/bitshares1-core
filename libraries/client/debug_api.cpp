@@ -127,12 +127,12 @@ void client_impl::debug_start_simulated_time(const fc::time_point& starting_time
 
 void client_impl::debug_advance_time(int32_t delta_time, const std::string& unit /* = "seconds" */)
 {
-   if (unit == "blocks")
+   if ((unit == "block") || (unit == "blocks"))
       delta_time *= BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-   else if (unit == "rounds")
+   else if ((unit == "round") || (unit == "rounds"))
       delta_time *= BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-   else if (unit != "seconds")
-      FC_THROW_EXCEPTION(fc::invalid_arg_exception, "unit must be \"seconds\", \"blocks\", or \"rounds\", was: \"${unit}\"", ("unit", unit));
+   else if ((unit != "second") && (unit != "seconds"))
+      FC_THROW_EXCEPTION(fc::invalid_arg_exception, "unit must be \"second(s)\", \"block(s)\", or \"round(s)\", was: \"${unit}\"", ("unit", unit));
    bts::blockchain::advance_time(delta_time);
 }
 
