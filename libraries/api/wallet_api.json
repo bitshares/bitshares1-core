@@ -606,6 +606,35 @@
         "prerequisites" : ["wallet_open"]
       },
       {
+        "method_name": "wallet_asset_authorize_key",
+        "description": "Authorizes a public key to control funds of a particular asset class.  Requires authority of asset issuer",
+        "return_type": "transaction_record",
+        "parameters" : [
+            {
+              "name" : "paying_account",
+              "type" : "account_name",
+              "description" : "the account that will pay the transaction fee"
+            },
+            {
+              "name" : "symbol",
+              "type" : "asset_symbol",
+              "description" : "the asset granting authorization"
+            },
+            {
+              "name" : "address",
+              "type" : "address",
+              "description" : "the address being granted permission"
+            },
+            {
+               "name" : "meta",
+               "type" : "object_id_type",
+               "description" : "-1 to remove authorization, otherwise a link to an object in the object graph",
+               "default_value" : 0
+            }
+           ],
+        "prerequisites" : ["wallet_unlocked"]
+      },
+      {
         "method_name": "wallet_burn",
         "description": "Burns given amount to the given account.  This will allow you to post message and +/- sentiment on someones account as a form of reputation.",
         "return_type": "transaction_record",
