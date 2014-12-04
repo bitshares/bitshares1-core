@@ -1,33 +1,20 @@
-//#define DEFAULT_LOGGER "blockchain"
-
 #include <bts/blockchain/chain_database.hpp>
+#include <bts/blockchain/chain_database_impl.hpp>
 #include <bts/blockchain/checkpoints.hpp>
 #include <bts/blockchain/config.hpp>
+#include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/genesis_config.hpp>
 #include <bts/blockchain/genesis_json.hpp>
-#include <bts/blockchain/market_records.hpp>
-#include <bts/blockchain/operation_factory.hpp>
+#include <bts/blockchain/market_engine.hpp>
 #include <bts/blockchain/time.hpp>
 
-#include <bts/db/cached_level_map.hpp>
-#include <bts/db/level_map.hpp>
-
 #include <fc/io/fstream.hpp>
-#include <fc/io/json.hpp>
 #include <fc/io/raw_variant.hpp>
-#include <fc/thread/mutex.hpp>
 #include <fc/thread/non_preemptable_scope_check.hpp>
 #include <fc/thread/unique_lock.hpp>
 
-#include <algorithm>
-#include <deque>
-#include <fstream>
 #include <iomanip>
 #include <iostream>
-
-// the definition of detail::chain_database_impl is moved to a separate file so it can be shared by the market_engine(s)
-#include <bts/blockchain/chain_database_impl.hpp>
-#include <bts/blockchain/market_engine.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -333,6 +320,8 @@ namespace bts { namespace blockchain {
          base_asset.current_share_supply = total.amount;
          base_asset.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
          base_asset.collected_fees = 0;
+         base_asset.flags = asset_permissions::none;
+         base_asset.issuer_permissions = asset_permissions::none;
          self->store_asset_record( base_asset );
 
          for( const auto& asset : config.market_assets )
