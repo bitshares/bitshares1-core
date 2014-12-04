@@ -127,7 +127,6 @@ namespace bts { namespace blockchain {
    struct authorize_operation
    {
       static const operation_type_enum type;
-      authorize_operation(){}
 
       asset_id_type    asset_id = 0;
       address          owner;

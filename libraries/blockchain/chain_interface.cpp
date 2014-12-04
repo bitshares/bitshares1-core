@@ -175,11 +175,11 @@ namespace bts { namespace blockchain {
            case( obj_type::normal_object ):
            {
                owners = obj._owners;
-               break;
+               return owners;
            }
            case( obj_type::edge_object ):
            {
-               const edge_record& edge = dynamic_cast<const edge_record&>( obj );
+               const edge_record& edge = obj.as<edge_record>();
                auto from_object = get_object_record( edge.from );
                FC_ASSERT( from_object.valid(), "Unrecognized from object.");
                // Remove the next assert once you deal with max recursion depth for get_object_owners

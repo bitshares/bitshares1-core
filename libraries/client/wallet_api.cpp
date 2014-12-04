@@ -142,10 +142,21 @@ map<transaction_id_type, fc::exception> detail::client_impl::wallet_get_pending_
 }
 wallet_transaction_record detail::client_impl::wallet_asset_authorize_key( const string& paying_account_name,
                                                                            const string& symbol,
-                                                                           const address& key, 
+                                                                           const string& key, 
                                                                            const object_id_type& meta )
 {
-   auto record = _wallet->asset_authorize_key( paying_account_name, symbol, key, meta, true );
+   address addr;
+   try {
+      try { addr = address( public_key_type( key ) ); } 
+      catch ( ... ) { addr = address( key ); }
+   } 
+   catch ( ... )
+   {
+      auto account = _chain_db->get_account_record( key );
+      FC_ASSERT( account.valid() );
+      addr = account->active_key();
+   }
+   auto record = _wallet->asset_authorize_key( paying_account_name, symbol, addr, meta, true );
    _wallet->cache_transaction( record );
    network_broadcast_transaction( record.trx );
    return record;
@@ -481,7 +492,7 @@ wallet_transaction_record detail::client_impl::wallet_object_create(
     obj.user_data = user_data;
     obj._owners = multisig_condition( m, set<address>(real_owners.begin(), real_owners.end()) );
     builder->set_object( account, obj, true )
-            .finalize()
+            .finalize( )
             .sign();
     network_broadcast_transaction( builder->transaction_record.trx );
     return builder->transaction_record;
