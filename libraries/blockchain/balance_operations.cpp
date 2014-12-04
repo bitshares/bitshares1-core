@@ -217,6 +217,8 @@ namespace bts { namespace blockchain {
 
             case withdraw_password_type:
             {
+               FC_ASSERT( !"Not supported yet!" );
+
                auto password_condition = current_balance_record->condition.as<withdraw_with_password>();
                try {
                   if( password_condition.timeout < eval_state._current_state->now() )
