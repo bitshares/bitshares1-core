@@ -4337,7 +4337,18 @@ namespace detail {
                                                   const address& key,
                                                   const object_id_type& meta, bool sign )
    {
-      FC_ASSERT( !"Not Implemented" );
+      if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+      if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
+      auto payer_key = get_owner_public_key( paying_account_name );
+
+      transaction_builder_ptr builder = create_transaction_builder();
+      builder->asset_authorize_key( symbol, key, meta );
+      builder->deduct_balance( payer_key, asset() );
+      builder->finalize();
+
+      if( sign )
+         return builder->sign();
+      return builder->transaction_record;
    }
 
 } } // bts::wallet
