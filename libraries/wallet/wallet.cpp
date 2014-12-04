@@ -2095,8 +2095,8 @@ namespace detail {
       else
           builder->required_signatures.insert( balance->owner() );
 
-      trx.withdraw( balance_id, required_fees.amount );
       trx.operations.push_back( op );
+//      trx.withdraw( balance_id, required_fees.amount );
 
       auto entry = ledger_entry();
       entry.memo = "Set balance vote info";
@@ -2106,6 +2106,7 @@ namespace detail {
 
       record.trx = trx;
       builder->transaction_record = record;
+      builder->sign();
       return *builder;
    } FC_CAPTURE_AND_RETHROW( (balance_id)(voter_address)(selection_method) ) }
 

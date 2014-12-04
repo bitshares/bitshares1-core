@@ -32,7 +32,10 @@
 #define BTS_BLOCKCHAIN_MINIMUM_SHORT_ORDER_SIZE             (BTS_BLOCKCHAIN_PRECISION*100)
 #define BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC                 (2*60*60) // 2 hours for test network
 
-#define BTS_BLOCKCHAIN_VOTE_UPDATE_PERIOD_SEC               (60*60) // 1 hour
+#ifndef WIN32
+#warning Reset update period to 1 hour in real network
+#endif
+#define BTS_BLOCKCHAIN_VOTE_UPDATE_PERIOD_SEC               1 //(60*60) // 1 hour
 
 /**
  * The number of delegates that the blockchain is designed to support

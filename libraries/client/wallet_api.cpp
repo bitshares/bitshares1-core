@@ -1330,19 +1330,21 @@ transaction_builder client_impl::wallet_balance_set_vote_info(const balance_id_t
         auto balance = _chain_db->get_balance_record( balance_id );
         if( balance.valid() && balance->restricted_owner.valid() )
             new_voter = *balance->restricted_owner;
+        else
+            FC_ASSERT(!"Didn't specify a voter address and none currently exists.");
     }
     else
     {
         new_voter = address( voter_address );
     }
-    auto builder = _wallet->set_vote_info( balance_id, new_voter, selection_method );
+    auto builder = _wallet->create_transaction_builder( _wallet->set_vote_info( balance_id, new_voter, selection_method ) );
     if( sign_and_broadcast )
     {
-        auto record = builder.finalize().sign();
+        auto record = builder->sign();
         _wallet->cache_transaction( record );
         network_broadcast_transaction( record.trx );
     }
-    return builder;
+    return *builder;
 }
 
 
