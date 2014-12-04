@@ -205,8 +205,6 @@ namespace bts { namespace blockchain {
 
             case withdraw_password_type:
             {
-               FC_ASSERT( !"Not supported yet!" );
-
                auto password_condition = current_balance_record->condition.as<withdraw_with_password>();
                try {
                   if( password_condition.timeout < eval_state._current_state->now() )
@@ -230,11 +228,8 @@ namespace bts { namespace blockchain {
                } FC_CAPTURE_AND_RETHROW( (password_condition ) )
                break;
             }
-
             case withdraw_option_type:
             {
-               FC_ASSERT( !"Not supported yet!" );
-
                auto option = current_balance_record->condition.as<withdraw_option>();
                try {
                   if( eval_state._current_state->now() > option.date )
