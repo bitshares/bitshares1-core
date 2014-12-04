@@ -1239,24 +1239,8 @@ bool wallet_impl::scan_deposit( const deposit_operation& op, const vector<privat
           }
           break;
        }
-       case withdraw_multi_sig_type:
-       {
-          // TODO: FC_THROW( "withdraw_multi_sig_type not implemented!" );
-          break;
-       }
-       case withdraw_password_type:
-       {
-          // TODO: FC_THROW( "withdraw_password_type not implemented!" );
-          break;
-       }
-       case withdraw_option_type:
-       {
-          // TODO: FC_THROW( "withdraw_option_type not implemented!" );
-          break;
-       }
        default:
        {
-          FC_THROW( "unknown withdraw condition type!" );
           break;
        }
   }
