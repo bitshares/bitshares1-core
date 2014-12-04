@@ -24,8 +24,8 @@ aliases: get_asset
   "current_share_supply": 199999999999901,
   "maximum_share_supply": 1000000000000000,
   "collected_fees": 0,
-  "restricted": false,
-  "retractable": true,
+  "issuer_permissions": 0,
+  "flags": 0,
   "transaction_fee": 0,
   "authority": {
     "required": 0,
@@ -46,8 +46,8 @@ aliases: get_asset
   "current_share_supply": 199999999999901,
   "maximum_share_supply": 1000000000000000,
   "collected_fees": 0,
-  "restricted": false,
-  "retractable": true,
+  "issuer_permissions": 0,
+  "flags": 0,
   "transaction_fee": 0,
   "authority": {
     "required": 0,
