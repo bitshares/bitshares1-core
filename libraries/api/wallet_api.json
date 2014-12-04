@@ -622,8 +622,8 @@
             },
             {
               "name" : "address",
-              "type" : "address",
-              "description" : "the address being granted permission"
+              "type" : "string",
+              "description" : "the address being granted permission, or the public key, or the account name"
             },
             {
                "name" : "meta",
@@ -641,14 +641,14 @@
         "parameters" :
           [
             {
-              "name" : "amount_to_transfer",
+              "name" : "amount_to_burn",
               "type" : "real_amount",
-              "description" : "the amount of shares to transfer"
+              "description" : "the amount of shares to burn"
             },
             {
               "name" : "asset_symbol",
               "type" : "asset_symbol",
-              "description" : "the asset to transfer"
+              "description" : "the asset to burn"
             },
             {
               "name" : "from_account_name",
