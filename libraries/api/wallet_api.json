@@ -2397,7 +2397,7 @@
                  "name" : "vote_method",
                  "type" : "vote_selection_method",
                  "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
-                 "default_value" : "vote_recommended"
+                 "default_value" : "vote_all"
                },
                {
                   "name" : "sign_and_broadcast",

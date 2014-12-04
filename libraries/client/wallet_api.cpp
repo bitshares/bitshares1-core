@@ -492,7 +492,7 @@ wallet_transaction_record detail::client_impl::wallet_object_create(
     obj.user_data = user_data;
     obj._owners = multisig_condition( m, set<address>(real_owners.begin(), real_owners.end()) );
     builder->set_object( account, obj, true )
-            .finalize()
+            .finalize( )
             .sign();
     network_broadcast_transaction( builder->transaction_record.trx );
     return builder->transaction_record;

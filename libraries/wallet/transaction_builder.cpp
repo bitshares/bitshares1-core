@@ -264,6 +264,8 @@ transaction_builder& transaction_builder::set_object(const string& payer_name,
     else
         id = obj.short_id();
     trx.set_object( id, obj );
+    for( auto addr : _wimpl->_blockchain->get_object_owners( obj ).owners )
+        required_signatures.insert( addr );
 
     return *this;
 } FC_CAPTURE_AND_RETHROW( (payer_name)(obj)(create) ) }

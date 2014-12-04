@@ -38,7 +38,7 @@ namespace bts { namespace blockchain {
         template<typename ObjectType>
         ObjectType as()const
         {
-
+            FC_ASSERT( ObjectType::type == this->type(), "Casting to the wrong type!" );
             return fc::raw::unpack<ObjectType>(_data);
         }
 
