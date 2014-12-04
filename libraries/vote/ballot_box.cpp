@@ -195,7 +195,9 @@ public:
          }
          while( !updated_storage_records.empty() )
          {
-            update_index(updated_storage_records.back().first, updated_storage_records.back().second);
+            auto& index = decision_index.get<by_id>();
+            auto id = updated_storage_records.back().first;
+            index.replace(index.find(id), decision_index_record(id, updated_storage_records.back().second));
             updated_storage_records.pop_back();
          }
       } catch (...){
@@ -225,6 +227,8 @@ public:
    void store_record(const signed_voter_decision& decision)
    {
       auto id = decision.digest();
+      if( decision_db.fetch_optional(id) )
+         return;
       decision_storage_record record(decision);
       check_authority(record);
       supercede_latest(record);
@@ -234,12 +238,16 @@ public:
    void store_record(const vote::ballot& ballot)
    {
       auto id = ballot.id();
+      if( ballot_db.fetch_optional(id) )
+         return;
       ballot_db.store(id, ballot);
       update_index(id, ballot);
    }
    void store_record(const vote::contest& contest)
    {
       auto id = contest.id();
+      if( contest_db.fetch_optional(id) )
+         return;
       contest_db.store(id, contest);
       update_index(id, contest);
    }
@@ -534,4 +542,4 @@ vector<digest_type> ballot_box::get_contests_by_contestant(string contestant)
 
 FC_REFLECT_DERIVED( bts::vote::detail::ballot_box_impl::decision_storage_record,
                     (bts::vote::voter_decision),
-                    (voter_key)(timestamp)(authoritative) )
+                    (voter_key)(timestamp)(authoritative)(latest) )
