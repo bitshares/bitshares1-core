@@ -2106,7 +2106,6 @@ namespace detail {
 
       record.trx = trx;
       builder->transaction_record = record;
-      builder->sign();
       return *builder;
    } FC_CAPTURE_AND_RETHROW( (balance_id)(voter_address)(selection_method) ) }
 
