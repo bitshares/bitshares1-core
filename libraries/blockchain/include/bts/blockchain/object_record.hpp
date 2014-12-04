@@ -15,10 +15,9 @@ namespace bts { namespace blockchain {
         edge_object = 3
     };
 
-
+    
     struct object_record
     {
-        object_id_type                _id = -1;
         uint64_t                      short_id()const;
         obj_type                      type()const;
 
@@ -30,9 +29,25 @@ namespace bts { namespace blockchain {
             this->set_id( type, id );
         }
 
+        template<typename ObjectType>
+        object_record(const ObjectType& o)
+        {
+            _data = fc::raw::pack( o );
+        }
+
+        template<typename ObjectType>
+        ObjectType as()const
+        {
+
+            return fc::raw::unpack<ObjectType>(_data);
+        }
+
         void                        set_id( obj_type type, uint64_t number );
 
+
+        object_id_type              _id = -1; // Do not access directly, use short_id()
         variant                     user_data; // user-added metadata for all objects - actual application logic should go in derived class
+        std::vector<char>           _data; // derived class properties
 
         // always use chain_interface->get_object_owners(obj)  instead of accessing this!
         // At least until we migrate all legacy object types
@@ -45,4 +60,4 @@ namespace bts { namespace blockchain {
 } } // bts::blockchain
 
 FC_REFLECT_ENUM( bts::blockchain::obj_type, (null_object)(normal_object)(account_object)(asset_object)(edge_object) );
-FC_REFLECT( bts::blockchain::object_record, (_id)(user_data)(_owners) );
+FC_REFLECT( bts::blockchain::object_record, (_id)(user_data)(_owners)(_data) );
