@@ -13,5 +13,6 @@
         <file>res/ring.png</file>
         <file>res/ballots.json</file>
         <file>res/contests.json</file>
+        <file>res/words</file>
     </qresource>
 </RCC>
