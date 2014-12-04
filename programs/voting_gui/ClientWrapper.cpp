@@ -643,7 +643,7 @@ void ClientWrapper::create_secret()
          int randomLine = *((int*)fc::ecc::private_key::generate().get_secret().data()) % wordCount;
          dictionary.seek(0);
          QByteArray word;
-         for( int l = 0; l < randomLine; ++l ) word = dictionary.readLine().trimmed();
+         for( int l = 0; l < randomLine; ++l ) word = dictionary.readLine().trimmed().toLower();
          if( word.length() > 2 )
          {
             if( i > 0 ) m_secret += " ";
