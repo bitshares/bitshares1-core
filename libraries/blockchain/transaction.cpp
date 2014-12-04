@@ -354,5 +354,13 @@ namespace bts { namespace blockchain {
       }
       return false;
    }
+    void transaction::authorize_key( asset_id_type asset_id, const address& owner, object_id_type meta )
+    {
+       authorize_operation op;
+       op.asset_id = asset_id;
+       op.owner = owner;
+       op.meta_id = meta;
+       operations.push_back( op );
+    }
 
 } } // bts::blockchain

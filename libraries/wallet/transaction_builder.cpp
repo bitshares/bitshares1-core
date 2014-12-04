@@ -861,6 +861,15 @@ transaction_builder& transaction_builder::deposit_to_balance(const balance_id_ty
     return *this;
 }
 
+transaction_builder& transaction_builder::asset_authorize_key( const string& symbol, 
+                                                               const address& owner,  
+                                                               object_id_type meta )
+{ try {
+   const oasset_record asset_record = _wimpl->_blockchain->get_asset_record( symbol );
+   FC_ASSERT( asset_record.valid() );
+   trx.authorize_key( asset_record->id, owner, meta ); 
+} FC_CAPTURE_AND_RETHROW( (symbol)(owner)(meta) ) }
+
 //Time to get desperate
 bool transaction_builder::withdraw_fee()
 {
