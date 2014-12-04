@@ -45,7 +45,7 @@ namespace bts { namespace blockchain {
    } FC_CAPTURE_AND_RETHROW( (name) ) }
 
    /**
-    *  Symbol names must be Alpha Numeric and may have a single '.' in the name that cannot be 
+    *  Symbol names must be Alpha Numeric and may have a single '.' in the name that cannot be
     *  the first or last.
     */
    bool chain_interface::is_valid_symbol_name( const string& symbol )const
@@ -159,7 +159,7 @@ namespace bts { namespace blockchain {
        multisig_condition owners;
        switch( obj.type() )
        {
-           case( obj_type::normal_object ): 
+           case( obj_type::normal_object ):
            {
                owners = obj._owners;
                break;
@@ -231,7 +231,7 @@ namespace bts { namespace blockchain {
       auto oquote_asset = get_asset_record( price_to_pretty_print.quote_asset_id );
       if( !oquote_asset ) FC_CAPTURE_AND_THROW( unknown_asset_id, (price_to_pretty_print.quote_asset_id) );
 
-      return fc::variant(string(price_to_pretty_print.ratio * obase_asset->get_precision() / oquote_asset->get_precision())).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000);
+      return fc::variant(string(price_to_pretty_print.ratio * obase_asset->precision / oquote_asset->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000);
    }
 
    string chain_interface::to_pretty_price( const price& price_to_pretty_print )const
@@ -243,8 +243,8 @@ namespace bts { namespace blockchain {
       if( !oquote_asset ) FC_CAPTURE_AND_THROW( unknown_asset_id, (price_to_pretty_print.quote_asset_id) );
 
       auto tmp = price_to_pretty_print;
-      tmp.ratio *= obase_asset->get_precision();
-      tmp.ratio /= oquote_asset->get_precision();
+      tmp.ratio *= obase_asset->precision;
+      tmp.ratio /= oquote_asset->precision;
 
       return tmp.ratio_string() + " " + oquote_asset->symbol + " / " + obase_asset->symbol;
    } FC_CAPTURE_AND_RETHROW( (price_to_pretty_print) ) }
@@ -290,8 +290,8 @@ namespace bts { namespace blockchain {
       price ugly_price(price_string + " " + std::to_string(quote_record->id) + " / " + std::to_string(base_record->id));
       if( do_precision_dance )
       {
-         ugly_price.ratio *= quote_record->get_precision();
-         ugly_price.ratio /= base_record->get_precision();
+         ugly_price.ratio *= quote_record->precision;
+         ugly_price.ratio /= base_record->precision;
       }
       return ugly_price;
    } FC_CAPTURE_AND_RETHROW( (price_string)(base_symbol)(quote_symbol) ) }
@@ -302,7 +302,7 @@ namespace bts { namespace blockchain {
       const share_type amount = ( a.amount >= 0 ) ? a.amount : -a.amount;
       if( oasset.valid() )
       {
-         const auto precision = oasset->get_precision();
+         const auto precision = oasset->precision;
          string decimal = fc::to_string( precision + ( amount % precision ) );
          decimal[0] = '.';
          const auto str = fc::to_pretty_string( amount / precision ) + decimal + " " + oasset->symbol;

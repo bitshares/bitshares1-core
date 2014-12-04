@@ -8,45 +8,44 @@ namespace bts { namespace blockchain {
       condition = withdraw_condition( withdraw_with_signature( owner ), balance_arg.asset_id, delegate_id );
    }
 
-   // deprecate?
+   // TODO: deprecate?
    address balance_record::owner()const
    {
-       return *owners().begin();
+       const auto& addrs = this->owners();
+       FC_ASSERT( !addrs.empty(), "This balance is screwed." );
+       return *addrs.begin();
    }
 
    set<address> balance_record::owners()const
    {
-      if( condition.type == withdraw_signature_type )
-         return set<address>{ condition.as<withdraw_with_signature>().owner };
-      if( condition.type == withdraw_vesting_type )
-         return set<address>{ condition.as<withdraw_vesting>().owner };
-      if( condition.type == withdraw_multi_sig_type )
-      {
-         return condition.as<withdraw_with_multi_sig>().owners;
-      }
-      FC_ASSERT(!"This balance's condition type doesn't have a true owner.");
+       switch( withdraw_condition_types( condition.type ) )
+       {
+           case withdraw_signature_type:
+               return set<address>{ condition.as<withdraw_with_signature>().owner };
+           case withdraw_vesting_type:
+               return set<address>{ condition.as<withdraw_vesting>().owner };
+           case withdraw_multi_sig_type:
+               return condition.as<withdraw_with_multi_sig>().owners;
+           default:
+               FC_ASSERT(!"This balance's condition type doesn't have a true owner.");
+       }
    }
 
    bool balance_record::is_owner( const address& addr )const
    {
-       try {
-           auto owners = this->owners(); // Can't make distinct calls to owners() for .find/.end
-           if( owners.find( addr ) != owners.end() )
-               return true;
-       } catch (...) {
-       }
-       return false;
+       return this->owners().count( addr ) > 0;
    }
 
    bool balance_record::is_owner( const public_key_type& key )const
    {
-       for( auto addr : owners() )
+       const auto& addrs = this->owners();
+       for( const auto& addr : addrs )
        {
-           if (addr == address(key)) return true;
-           if( addr == address(pts_address(key,false,56))) return true;
-           if( addr == address(pts_address(key,true,56))) return true;
-           if( addr == address(pts_address(key,false,0))) return true;
-           if( addr == address(pts_address(key,true,0))) return true;
+           if( addr == address( key ) ) return true;
+           if( addr == address( pts_address( key, false, 56 ) ) ) return true;
+           if( addr == address( pts_address( key, true, 56 ) ) ) return true;
+           if( addr == address( pts_address( key, false, 0 ) ) ) return true;
+           if( addr == address( pts_address( key, true, 0 ) ) ) return true;
        }
        return false;
    }

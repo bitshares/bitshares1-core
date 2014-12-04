@@ -166,7 +166,8 @@ namespace bts { namespace blockchain {
          FC_ASSERT( !asset_rec->is_balance_frozen() );
          if( asset_rec->is_restricted() )
          {
-            for(auto owner : current_balance_record->owners())
+            const auto& owner_addrs = current_balance_record->owners();
+            for( const auto& owner : owner_addrs )
             {
               FC_ASSERT(eval_state._current_state->get_authorization(asset_rec->id, owner));
             }
@@ -340,7 +341,7 @@ namespace bts { namespace blockchain {
       {
          if( eval_state.verify_authority( asset_rec->authority ) )
          {
-            // 
+            //
          }
       }
 
@@ -352,7 +353,7 @@ namespace bts { namespace blockchain {
          if( !eval_state.check_signature( escrow_condition.sender ) )
              FC_CAPTURE_AND_THROW( missing_signature, (escrow_condition.sender) );
 
-         balance_record new_balance_record( escrow_condition.receiver, 
+         balance_record new_balance_record( escrow_condition.receiver,
                                             asset( amount_to_receiver, escrow_balance_record->asset_id() ),
                                             escrow_balance_record->delegate_slate_id() );
          auto current_receiver_balance = eval_state._current_state->get_balance_record( new_balance_record.id());
@@ -372,7 +373,7 @@ namespace bts { namespace blockchain {
          if( !eval_state.check_signature( escrow_condition.receiver ) )
              FC_CAPTURE_AND_THROW( missing_signature, (escrow_condition.receiver) );
 
-         balance_record new_balance_record( escrow_condition.sender, 
+         balance_record new_balance_record( escrow_condition.sender,
                                             asset( amount_to_sender, escrow_balance_record->asset_id() ),
                                             escrow_balance_record->delegate_slate_id() );
          auto current_sender_balance = eval_state._current_state->get_balance_record( new_balance_record.id());
@@ -390,7 +391,7 @@ namespace bts { namespace blockchain {
              FC_CAPTURE_AND_THROW( missing_signature, (escrow_condition.escrow) );
          // get a balance record for the receiver, create it if necessary and deposit funds
          {
-            balance_record new_balance_record( escrow_condition.receiver, 
+            balance_record new_balance_record( escrow_condition.receiver,
                                                asset( amount_to_receiver, escrow_balance_record->asset_id() ),
                                                escrow_balance_record->delegate_slate_id() );
             auto current_receiver_balance = eval_state._current_state->get_balance_record( new_balance_record.id());
@@ -403,7 +404,7 @@ namespace bts { namespace blockchain {
          }
          //  get a balance record for the sender, create it if necessary and deposit funds
          {
-            balance_record new_balance_record( escrow_condition.sender, 
+            balance_record new_balance_record( escrow_condition.sender,
                                                asset( amount_to_sender, escrow_balance_record->asset_id() ),
                                                escrow_balance_record->delegate_slate_id() );
             auto current_sender_balance = eval_state._current_state->get_balance_record( new_balance_record.id());
@@ -423,7 +424,7 @@ namespace bts { namespace blockchain {
              FC_CAPTURE_AND_THROW( missing_signature, (escrow_condition.receiver) );
          // get a balance record for the receiver, create it if necessary and deposit funds
          {
-            balance_record new_balance_record( escrow_condition.receiver, 
+            balance_record new_balance_record( escrow_condition.receiver,
                                                asset( amount_to_receiver, escrow_balance_record->asset_id() ),
                                                escrow_balance_record->delegate_slate_id() );
             auto current_receiver_balance = eval_state._current_state->get_balance_record( new_balance_record.id());
@@ -436,7 +437,7 @@ namespace bts { namespace blockchain {
          }
          //  get a balance record for the sender, create it if necessary and deposit funds
          {
-            balance_record new_balance_record( escrow_condition.sender, 
+            balance_record new_balance_record( escrow_condition.sender,
                                                asset( amount_to_sender, escrow_balance_record->asset_id() ),
                                                escrow_balance_record->delegate_slate_id() );
             auto current_sender_balance = eval_state._current_state->get_balance_record( new_balance_record.id());

@@ -1322,16 +1322,16 @@ fc::variant_object version_info()
 #endif
 
    fc::mutable_variant_object info;
-   info["blockchain_name"]                   = BTS_BLOCKCHAIN_NAME;
-   info["blockchain_description"]            = BTS_BLOCKCHAIN_DESCRIPTION;
-   info["client_version"]                    = client_version;
-   info["bitshares_toolkit_revision"]        = bts::utilities::git_revision_sha;
-   info["bitshares_toolkit_revision_age"]    = fc::get_approximate_relative_time_string( fc::time_point_sec( bts::utilities::git_revision_unix_timestamp ) );
-   info["fc_revision"]                       = fc::git_revision_sha;
-   info["fc_revision_age"]                   = fc::get_approximate_relative_time_string( fc::time_point_sec( fc::git_revision_unix_timestamp ) );
-   info["compile_date"]                      = "compiled on " __DATE__ " at " __TIME__;
-   info["boost_version"]                     = boost::replace_all_copy(std::string(BOOST_LIB_VERSION), "_", ".");
-   info["openssl_version"]                   = OPENSSL_VERSION_TEXT;
+   info["blockchain_name"]          = BTS_BLOCKCHAIN_NAME;
+   info["blockchain_description"]   = BTS_BLOCKCHAIN_DESCRIPTION;
+   info["client_version"]           = client_version;
+   info["bitshares_revision"]       = bts::utilities::git_revision_sha;
+   info["bitshares_revision_age"]   = fc::get_approximate_relative_time_string( fc::time_point_sec( bts::utilities::git_revision_unix_timestamp ) );
+   info["fc_revision"]              = fc::git_revision_sha;
+   info["fc_revision_age"]          = fc::get_approximate_relative_time_string( fc::time_point_sec( fc::git_revision_unix_timestamp ) );
+   info["compile_date"]             = "compiled on " __DATE__ " at " __TIME__;
+   info["boost_version"]            = boost::replace_all_copy(std::string(BOOST_LIB_VERSION), "_", ".");
+   info["openssl_version"]          = OPENSSL_VERSION_TEXT;
 
    std::string bitness = boost::lexical_cast<std::string>(8 * sizeof(int*)) + "-bit";
 #if defined(__APPLE__)
@@ -1791,6 +1791,11 @@ void client_notification::sign(const fc::ecc::private_key& key)
 fc::ecc::public_key client_notification::signee() const
 {
    return fc::ecc::public_key(signature, digest());
+}
+
+void client::set_client_debug_name(const string& name)
+{
+   return my->set_client_debug_name(name);
 }
 
 /**

@@ -1720,7 +1720,7 @@ namespace detail {
 
       auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
       FC_ASSERT( current_account );
-      auto payer_public_key = get_account_public_key( account_to_publish_under );
+      auto payer_public_key = get_owner_public_key( account_to_publish_under );
       FC_ASSERT( my->_blockchain->is_active_delegate( current_account->id ) );
 
       for( auto item : amount_per_xts )
@@ -1730,11 +1730,11 @@ namespace detail {
          auto base_asset_record  = my->_blockchain->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
 
 
-         asset price_shares( item.second *  quote_asset_record->get_precision(), quote_asset_record->id );
-         asset base_one_quantity( base_asset_record->get_precision(), 0 );
+         asset price_shares( item.second *  quote_asset_record->precision, quote_asset_record->id );
+         asset base_one_quantity( base_asset_record->precision, 0 );
 
         // auto quote_price_shares = price_shares / base_one_quantity;
-         price quote_price_shares( (item.second * quote_asset_record->get_precision()) / base_asset_record->get_precision(), quote_asset_record->id, base_asset_record->id );
+         price quote_price_shares( (item.second * quote_asset_record->precision) / base_asset_record->precision, quote_asset_record->id, base_asset_record->id );
 
          if( item.second > 0 )
          {
@@ -1804,7 +1804,7 @@ namespace detail {
 
       auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
       FC_ASSERT( current_account );
-      auto payer_public_key = get_account_public_key( account_to_publish_under );
+      auto payer_public_key = get_owner_public_key( account_to_publish_under );
       FC_ASSERT( my->_blockchain->is_active_delegate( current_account->id ) );
 
       auto quote_asset_record = my->_blockchain->get_asset_record( amount_asset_symbol );
@@ -1813,7 +1813,7 @@ namespace detail {
       FC_ASSERT( quote_asset_record.valid() );
 
       feed_price quote_price_shares;
-      const double ratio = (amount_per_xts * quote_asset_record->get_precision()) / base_asset_record->get_precision();
+      const double ratio = (amount_per_xts * quote_asset_record->precision) / base_asset_record->precision;
       price& standard_price = quote_price_shares;
       standard_price = price( ratio, quote_asset_record->id, base_asset_record->id );
       quote_price_shares.force_settle = force_settle;
@@ -1887,7 +1887,7 @@ namespace detail {
 
       trx.expiration = blockchain::now() + get_transaction_expiration();
 
-      const auto payer_public_key = get_account_public_key( paying_account );
+      const auto payer_public_key = get_owner_public_key( paying_account );
 
       const auto slate_id = my->select_slate( trx, 0, vote_all );
       if( slate_id == 0 )
@@ -1962,7 +1962,7 @@ namespace detail {
 
       trx.expiration = blockchain::now() + get_transaction_expiration();
 
-      const auto payer_public_key = get_account_public_key( paying_account );
+      const auto payer_public_key = get_owner_public_key( paying_account );
 
       fc::mutable_variant_object public_data;
       if( current_account->public_data.is_object() )
@@ -2351,7 +2351,7 @@ namespace detail {
        memo_data memo;
        if( !recipient_account.empty() )
        {
-           recipient_public_key = get_account_public_key( recipient_account );
+           recipient_public_key = get_owner_public_key( recipient_account );
            const auto shared_secret = private_key.get_shared_secret( recipient_public_key );
            memo = withdraw_condition.decrypt_memo_data( shared_secret );
            found_recipient = true;
@@ -2484,7 +2484,7 @@ namespace detail {
        FC_ASSERT( my->is_valid_account( withdraw_to_account_name ) );
 
        auto asset_rec = my->_blockchain->get_asset_record( asset_id_type(0) );
-       share_type amount_to_withdraw((share_type)(real_amount_to_withdraw * asset_rec->get_precision()));
+       share_type amount_to_withdraw((share_type)(real_amount_to_withdraw * asset_rec->precision));
 
        auto delegate_account_record = my->_blockchain->get_account_record( delegate_name );
        FC_ASSERT( delegate_account_record.valid() );
@@ -2505,7 +2505,7 @@ namespace detail {
        required_signatures.insert( delegate_private_key.get_public_key() );
 
        const auto delegate_public_key = delegate_private_key.get_public_key();
-       public_key_type receiver_public_key = get_account_public_key( withdraw_to_account_name );
+       public_key_type receiver_public_key = get_owner_public_key( withdraw_to_account_name );
 
        const auto slate_id = my->select_slate( trx );
        const string memo_message = "withdraw pay";
@@ -2819,7 +2819,7 @@ namespace detail {
          for( const auto& address_amount : to_address_amounts )
          {
             auto real_amount_to_transfer = address_amount.second;
-            share_type amount_to_transfer((share_type)(real_amount_to_transfer * asset_rec->get_precision()));
+            share_type amount_to_transfer((share_type)(real_amount_to_transfer * asset_rec->precision));
             asset asset_to_transfer( amount_to_transfer, asset_id );
 
             my->withdraw_to_transaction( asset_to_transfer,
@@ -2874,10 +2874,10 @@ namespace detail {
       if( registered_account.valid() )
           FC_THROW_EXCEPTION( duplicate_account_name, "This account name has already been registered!" );
 
-      const auto payer_public_key = get_account_public_key( pay_with_account_name );
+      const auto payer_public_key = get_owner_public_key( pay_with_account_name );
       address from_account_address( payer_public_key );
 
-      const auto account_public_key = get_account_public_key( account_to_register );
+      const auto account_public_key = get_owner_public_key( account_to_register );
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
@@ -2970,7 +2970,7 @@ namespace detail {
 
       if( !my->_blockchain->is_valid_account_name( issuer_account_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("issuer_account_name",issuer_account_name) );
-      auto from_account_address = get_account_public_key( issuer_account_name );
+      auto from_account_address = get_owner_public_key( issuer_account_name );
       auto oname_rec = my->_blockchain->get_account_record( issuer_account_name );
       FC_ASSERT( oname_rec.valid() );
 
@@ -2992,7 +2992,7 @@ namespace detail {
       {
          trx.create_asset( symbol, asset_name,
                            description, data,
-                           asset_record::market_issued_asset, max_share_supply_in_internal_units, precision );
+                           asset_record::market_issuer_id, max_share_supply_in_internal_units, precision );
       }
 
       auto entry = ledger_entry();
@@ -3069,7 +3069,7 @@ namespace detail {
       auto issuer_account = my->_blockchain->get_account_record( asset_record->issuer_account_id );
       FC_ASSERT(issuer_account, "uh oh! no account for valid asset");
 
-      asset shares_to_issue( amount_to_issue * asset_record->get_precision(), asset_record->id );
+      asset shares_to_issue( amount_to_issue * asset_record->precision, asset_record->id );
       my->withdraw_to_transaction( required_fees,
                                    issuer_account->name,
                                    trx,
@@ -3078,7 +3078,7 @@ namespace detail {
       trx.issue( shares_to_issue );
       required_signatures.insert( issuer_account->active_key() );
 
-      public_key_type receiver_public_key = get_account_public_key( to_account_name );
+      public_key_type receiver_public_key = get_owner_public_key( to_account_name );
       owallet_account_record issuer = my->_wallet_db.lookup_account( asset_record->issuer_account_id );
       FC_ASSERT( issuer.valid() );
       owallet_key_record  issuer_key = my->_wallet_db.lookup_key( issuer->owner_address() );
@@ -3444,7 +3444,7 @@ namespace detail {
        // TODO: Throw proper exception
        FC_ASSERT( owner_key_record.valid() && owner_key_record->has_private_key() );
 
-       auto     from_account_key = get_account_public_key( from_account_name );
+       auto     from_account_key = get_owner_public_key( from_account_name );
        address  from_address( from_account_key );
 
        signed_transaction trx;
@@ -3767,18 +3767,13 @@ namespace detail {
       return opt_key->decrypt_private_key( my->_wallet_password );
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
-   /**
-    *  Looks up the public key for an account whether local or in the blockchain, with
-    *  the blockchain taking precendence.
-    */
-   public_key_type wallet::get_account_public_key( const string& account_name )const
+   public_key_type wallet::get_active_public_key( const string& account_name )const
    { try {
       if( !my->_blockchain->is_valid_account_name( account_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
       FC_ASSERT( my->is_unique_account(account_name) );
-      FC_ASSERT( is_open() );
 
-      auto registered_account = my->_blockchain->get_account_record( account_name );
+      const auto registered_account = my->_blockchain->get_account_record( account_name );
       if( registered_account.valid() )
       {
          if( registered_account->is_retracted() )
@@ -3787,7 +3782,31 @@ namespace detail {
          return registered_account->active_key();
       }
 
-      auto opt_account = my->_wallet_db.lookup_account( account_name );
+      FC_ASSERT( is_open() );
+      const auto opt_account = my->_wallet_db.lookup_account( account_name );
+      FC_ASSERT( opt_account.valid(), "Unable to find account '${name}'",
+                ("name",account_name) );
+
+      return opt_account->active_key();
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
+
+   public_key_type wallet::get_owner_public_key( const string& account_name )const
+   { try {
+      if( !my->_blockchain->is_valid_account_name( account_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
+      FC_ASSERT( my->is_unique_account(account_name) );
+
+      const auto registered_account = my->_blockchain->get_account_record( account_name );
+      if( registered_account.valid() )
+      {
+         if( registered_account->is_retracted() )
+             FC_CAPTURE_AND_THROW( account_retracted, (registered_account) );
+
+         return registered_account->owner_key;
+      }
+
+      FC_ASSERT( is_open() );
+      const auto opt_account = my->_wallet_db.lookup_account( account_name );
       FC_ASSERT( opt_account.valid(), "Unable to find account '${name}'",
                 ("name",account_name) );
 
@@ -3934,20 +3953,6 @@ namespace detail {
                 }
              }
              else result.emplace_back(sum);
-
-
-             /*
-             const auto account_address = key_record->account_address;
-             const auto account_record = my->_wallet_db.lookup_account( account_address );
-             const auto name = account_record.valid() ? account_record->name : string( account_address );
-             if( !account_name.empty() && name != account_name ) return;
-
-             const auto balance_id = record.id();
-             const auto pending_record = pending_state->get_balance_record( balance_id );
-             if( !pending_record.valid() ) return;
-             if( !include_empty && pending_record->balance == 0 ) return;
-             balance_records[ name ].push_back( *pending_record );
-             */
           }
       };
 
@@ -3980,7 +3985,7 @@ namespace detail {
           const auto balance_id = record.id();
           const auto pending_record = pending_state->get_balance_record( balance_id );
           if( !pending_record.valid() ) return;
-          if( !include_empty && pending_record->balance == 0 ) return;
+          if( !include_empty && pending_record->get_spendable_balance( pending_state->now() ).amount == 0 ) return;
 
           balance_records[ name ].push_back( *pending_record );
       };
@@ -4230,7 +4235,7 @@ namespace detail {
       if( !account_rec.valid() )
           FC_THROW_EXCEPTION( unknown_account, "Unknown account name!" );
 
-      const auto account_address = address( get_account_public_key( account_name ) );
+      const auto account_address = address( get_owner_public_key( account_name ) );
 
       vector<public_key_type> account_keys;
       const auto keys = my->_wallet_db.get_keys();

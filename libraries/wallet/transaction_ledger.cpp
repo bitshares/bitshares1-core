@@ -735,7 +735,7 @@ bool wallet_impl::scan_update_account( const update_account_operation& op, walle
 
 bool wallet_impl::scan_create_asset( const create_asset_operation& op, wallet_transaction_record& trx_rec )
 {
-   if( op.issuer_account_id != asset_record::market_issued_asset )
+   if( op.issuer_account_id != asset_record::market_issuer_id )
    {
       auto oissuer = _blockchain->get_account_record( op.issuer_account_id );
       FC_ASSERT( oissuer.valid() );

@@ -41,7 +41,7 @@ namespace bts { namespace blockchain {
          std::string parent_symbol = this->symbol.substr( 0, dot_pos );
          oasset_record parent_asset_record = eval_state._current_state->get_asset_record( parent_symbol );
          FC_ASSERT( parent_asset_record.valid() );
-         
+
          if( !eval_state.verify_authority( parent_asset_record->authority ) )
             FC_CAPTURE_AND_THROW( missing_signature, (parent_asset_record->authority) );
       }
@@ -59,7 +59,7 @@ namespace bts { namespace blockchain {
           FC_CAPTURE_AND_THROW( asset_id_in_use, (asset_id) );
 
       oaccount_record issuer_account_record;
-      if( issuer_account_id != asset_record::market_issued_asset )
+      if( issuer_account_id != asset_record::market_issuer_id )
       {
          issuer_account_record = eval_state._current_state->get_account_record( this->issuer_account_id );
          if( NOT issuer_account_record.valid() )
@@ -213,23 +213,23 @@ namespace bts { namespace blockchain {
           // you can only remove these permissions, but not add them if there are current shares
           if( current_asset_record->current_share_supply > 0 )
           {
-             if( this->issuer_permissions & retractable  ) 
-                FC_ASSERT( current_asset_record->issuer_permissions & retractable );   
-             if( this->issuer_permissions & restricted  ) 
-                FC_ASSERT( current_asset_record->issuer_permissions & restricted );   
-             if( this->issuer_permissions & market_halt  ) 
-                FC_ASSERT( current_asset_record->issuer_permissions & market_halt );   
-             if( this->issuer_permissions & balance_halt  ) 
-                FC_ASSERT( current_asset_record->issuer_permissions & balance_halt );   
-             if( this->issuer_permissions & supply_unlimit  ) 
-                FC_ASSERT( current_asset_record->issuer_permissions & supply_unlimit );   
+             if( this->issuer_permissions & retractable  )
+                FC_ASSERT( current_asset_record->issuer_permissions & retractable );
+             if( this->issuer_permissions & restricted  )
+                FC_ASSERT( current_asset_record->issuer_permissions & restricted );
+             if( this->issuer_permissions & market_halt  )
+                FC_ASSERT( current_asset_record->issuer_permissions & market_halt );
+             if( this->issuer_permissions & balance_halt  )
+                FC_ASSERT( current_asset_record->issuer_permissions & balance_halt );
+             if( this->issuer_permissions & supply_unlimit  )
+                FC_ASSERT( current_asset_record->issuer_permissions & supply_unlimit );
           }
           current_asset_record->issuer_permissions  = this->issuer_permissions;
 
-          if( this->flags & restricted   ) FC_ASSERT( current_asset_record->issuer_permissions & restricted );   
-          if( this->flags & retractable  ) FC_ASSERT( current_asset_record->issuer_permissions & retractable );   
-          if( this->flags & market_halt  ) FC_ASSERT( current_asset_record->issuer_permissions & market_halt );   
-          if( this->flags & balance_halt ) FC_ASSERT( current_asset_record->issuer_permissions & balance_halt );   
+          if( this->flags & restricted   ) FC_ASSERT( current_asset_record->issuer_permissions & restricted );
+          if( this->flags & retractable  ) FC_ASSERT( current_asset_record->issuer_permissions & retractable );
+          if( this->flags & market_halt  ) FC_ASSERT( current_asset_record->issuer_permissions & market_halt );
+          if( this->flags & balance_halt ) FC_ASSERT( current_asset_record->issuer_permissions & balance_halt );
           current_asset_record->flags               = this->flags;
 
           current_asset_record->transaction_fee     = this->transaction_fee;
@@ -238,11 +238,11 @@ namespace bts { namespace blockchain {
 
       if( current_asset_record->is_market_issued() )
       {
-         FC_ASSERT( this->issuer_account_id == asset_record::market_issued_asset );
+         FC_ASSERT( this->issuer_account_id == asset_record::market_issuer_id );
       }
       else
       {
-         FC_ASSERT( this->issuer_account_id != asset_record::market_issued_asset );
+         FC_ASSERT( this->issuer_account_id != asset_record::market_issuer_id );
          if( this->issuer_account_id != current_asset_record->issuer_account_id )
          {
             auto issuer_account_record = eval_state._current_state->get_account_record( this->issuer_account_id );
@@ -290,8 +290,8 @@ namespace bts { namespace blockchain {
 
       if( NOT current_asset_record.valid() ) FC_CAPTURE_AND_THROW( unknown_asset_id, (this->asset_id) );
 
+      FC_ASSERT( current_asset_record->is_user_issued() );
       FC_ASSERT( current_asset_record->issuer_permissions & restricted );
-      FC_ASSERT( current_asset_record->issuer_account_id != asset_record::market_issued_asset );
 
       eval_state._current_state->authorize( this->asset_id, this->owner, this->meta_id );
 

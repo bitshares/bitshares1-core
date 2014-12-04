@@ -62,6 +62,8 @@ boost::program_options::variables_map parse_option_variables(int argc, char** ar
 
 int run( int64_t index, fc::optional<string> seed, fc::optional<fc::path> json_outfile )
 {
+     fc::ecc::private_key key;
+    
      if( seed.valid() )
      {
          string effective_seed;
@@ -69,16 +71,17 @@ int run( int64_t index, fc::optional<string> seed, fc::optional<fc::path> json_o
              effective_seed = (*seed)+std::to_string(index);
          else
              effective_seed = (*seed);
-         fc::sha512 hash_effective_seed = fc::sha512::hash(
+         fc::sha256 hash_effective_seed = fc::sha256::hash(
              effective_seed.c_str(),
              effective_seed.length() );
-
-        bts::utilities::set_random_seed_for_testing(hash_effective_seed);
+         key = fc::ecc::private_key::regenerate( hash_effective_seed );
     }
+    else
+        key = fc::ecc::private_key::generate();
+    
     
     if( !json_outfile.valid() )
     {
-        auto key = fc::ecc::private_key::generate();
         auto obj = fc::mutable_variant_object();
 
         obj["public_key"] = public_key_type(key.get_public_key());
@@ -93,7 +96,6 @@ int run( int64_t index, fc::optional<string> seed, fc::optional<fc::path> json_o
     else
     {
         std::cout << "writing new private key to JSON file " << (*json_outfile).string() << "\n";
-        fc::ecc::private_key key(fc::ecc::private_key::generate());
         fc::json::save_to_file(key, (*json_outfile));
 
         std::cout << "bts address: "
