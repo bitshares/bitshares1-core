@@ -11,7 +11,6 @@ ApplicationWindow {
    property url userPhoto
    property url idFrontPhoto
    property url idBackPhoto
-   property string account_name
    property var decisions: ({})
 
    QtObject {

@@ -62,14 +62,14 @@ TaskPage {
          bitshares.initialization_complete.connect(startVerification)
          return;
       }
-      bitshares.initialization_complete.disconnect(startVerification)
-
-      if( account_name == "" ) {
-         console.log("Verification begins")
-         account_name = bitshares.create_voter_account()
-      } else {
-         console.log("Resubmitting verification request.")
+      if( bitshares.accountName === "" ) {
+         console.log("Cannot verify account; voter account is not yet ready.")
+         bitshares.accountNameChanged.connect(startVerification)
+         return;
       }
+
+      bitshares.initialization_complete.disconnect(startVerification)
+      bitshares.accountNameChanged.disconnect(startVerification)
 
       bitshares.begin_verification(window, verifiers, function(response) {
          console.log("Verification submitted: " + response)

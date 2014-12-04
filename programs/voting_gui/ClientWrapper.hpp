@@ -35,7 +35,7 @@ public:
    QString get_data_dir();
    Q_INVOKABLE QString get_info();
 
-   Q_INVOKABLE QString create_voter_account();
+   Q_INVOKABLE void create_voter_account();
    Q_INVOKABLE QJsonObject get_voter_ballot();
    Q_INVOKABLE QJsonArray get_voter_contests();
    Q_INVOKABLE QJsonObject get_contest_by_id(QString contest_id);

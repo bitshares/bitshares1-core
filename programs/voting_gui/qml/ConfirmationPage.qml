@@ -34,6 +34,19 @@ TaskPage {
       anchors.horizontalCenter: parent.horizontalCenter
       height: parent.height / 10
    }
+   SimpleButton {
+      id: ballotBoxButton
+      width: textWidth + 30
+      anchors.top: spinner.bottom
+      anchors.topMargin: 30
+      anchors.horizontalCenter: parent.horizontalCenter
+      height: spinner.height / 2
+      text: "Open Ballot Box"
+      highlighted: true
+      pulsing: true
+      color: "#8800ff00"
+      onClicked: Qt.openUrlExternally("http://review.iddnet.com:4006/ballot-box?voter-id="+bitshares.voterAddress)
+   }
 
    states: [
       State {
@@ -46,17 +59,26 @@ TaskPage {
             target: spinner
             running: true
          }
+         PropertyChanges {
+            target: ballotBoxButton
+            visible: false
+         }
       },
       State {
          name: "FINISHED"
          PropertyChanges {
             target: statusText
             text: qsTr("Congratulations! Your votes have been cast successfully. Thank you for using the Follow My " +
-                       "Vote voting booth.")
+                       "Vote voting booth. You should be able to see your votes counted in the Ballot Box within a " +
+                       "few seconds!")
          }
          PropertyChanges {
             target: spinner
             running: false
+         }
+         PropertyChanges {
+            target: ballotBoxButton
+            visible: true
          }
       }
    ]

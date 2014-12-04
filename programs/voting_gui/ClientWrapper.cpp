@@ -210,11 +210,8 @@ void ClientWrapper::load_election()
    qDebug() << "Loaded" << _contest_map.size() << "contests and" << _ballot_map.size() << "ballots.";
 }
 
-QString ClientWrapper::create_voter_account()
+void ClientWrapper::create_voter_account()
 {
-   //TODO: Make the caller listen to accountNameChanged rather than treating this call as synchronous
-   QEventLoop waiter;
-   connect(this, &ClientWrapper::accountNameChanged, &waiter, &QEventLoop::quit);
    _bitshares_thread.async([this]{
       try {
          string name = "voter-" + string(fc::digest(fc::time_point::now())).substr(0, 8) + ".booth.follow-my-vote";
@@ -231,8 +228,6 @@ QString ClientWrapper::create_voter_account()
          Q_EMIT error(e.to_detail_string().c_str());
       }
    }, __FUNCTION__);
-   waiter.exec();
-   return accountName();
 }
 
 QJsonObject ClientWrapper::get_voter_ballot()
