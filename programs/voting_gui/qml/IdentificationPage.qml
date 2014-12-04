@@ -21,6 +21,7 @@ TaskPage {
    }
 
    function mayProceed() {
+      return true
       for( var i = 0; i < photoButtonRow.children.length; i++ ) {
          var button = photoButtonRow.children[i]
          if( !button.imageSet ) {

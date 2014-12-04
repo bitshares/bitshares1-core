@@ -148,7 +148,7 @@ GridLayout {
 
                writeInDialogLoader.item.acceptedCallback = function(name) {
                   if( name !== "" )
-                     contestantName = name
+                     contestantName = name.toUpperCase()
                   else
                      writeInDialogLoader.item.rejectedCallback()
                }

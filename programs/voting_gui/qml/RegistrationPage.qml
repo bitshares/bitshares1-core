@@ -46,12 +46,12 @@ TaskPage {
          console.log("Request rejected: " + JSON.stringify(response))
          container.state = "REJECTED"
       } else {
-         bitshares.process_accepted_identity(account_name, JSON.stringify(response.verified_identity),
+         bitshares.process_accepted_identity(JSON.stringify(response.verified_identity),
                                              function(acceptance_count)
                                              {
                                                 if( acceptance_count > (verifiers.length / 2) ) {
                                                    container.state = "ACCEPTED"
-                                                   bitshares.begin_registration(account_name, registrars)
+                                                   bitshares.begin_registration(registrars)
                                                 }
                                              })
       }
@@ -71,7 +71,7 @@ TaskPage {
          console.log("Resubmitting verification request.")
       }
 
-      bitshares.begin_verification(window, account_name, verifiers, function(response) {
+      bitshares.begin_verification(window, verifiers, function(response) {
          console.log("Verification submitted: " + response)
          container.state = "POLLING"
          processResponse(JSON.parse(response))
@@ -102,31 +102,44 @@ TaskPage {
       repeat: true
       onTriggered: {
          console.log("Polling verification status....")
-         bitshares.get_verification_request_status(account_name, verifiers, function(response) {
+         bitshares.get_verification_request_status(verifiers, function(response) {
             processResponse(JSON.parse(response))
          })
       }
    }
-   Text {
-      id: statusText
-      anchors.centerIn: parent
-      color: "white"
-      wrapMode: Text.WrapAtWordBoundaryOrAnywhere
-      width: parent.width / 2
-      font.pointSize: Math.max(1, parent.height / 50)
 
-      SequentialAnimation {
-         id: errorAnimation
-         PropertyAnimation { target: statusText; property: "color"; from: "white"; to: "red"; duration: 200 }
-         PropertyAnimation { target: statusText; property: "color"; from: "red"; to: "white"; duration: 200 }
+   ColumnLayout {
+      anchors.fill: parent
+      anchors.topMargin: spacing
+      spacing: 30
+
+      IdentityCard {
+         id: idCard
+         Layout.preferredHeight: parent.height / 2 - statusText.height / 2 - parent.spacing / 2
+         anchors.horizontalCenter: parent.horizontalCenter
+         votingAddress: bitshares.voterAddress
+         photoUrl: window.userPhoto
       }
-   }
-   Spinner {
-      id: spinner
-      anchors.top: statusText.bottom
-      anchors.topMargin: 30
-      anchors.horizontalCenter: parent.horizontalCenter
-      height: parent.height / 10
+      Text {
+         id: statusText
+         color: "white"
+         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+         Layout.preferredWidth: parent.width / 2
+         anchors.horizontalCenter: parent.horizontalCenter
+         font.pointSize: Math.max(1, parent.height / 50)
+
+         SequentialAnimation {
+            id: errorAnimation
+            PropertyAnimation { target: statusText; property: "color"; from: "white"; to: "red"; duration: 200 }
+            PropertyAnimation { target: statusText; property: "color"; from: "red"; to: "white"; duration: 200 }
+         }
+      }
+      Spinner {
+         id: spinner
+         anchors.horizontalCenter: parent.horizontalCenter
+         Layout.preferredHeight: parent.height / 10
+      }
+      Item { Layout.fillHeight: true }
    }
 
    states: [
@@ -145,6 +158,12 @@ TaskPage {
             text: qsTr("Your information is being securely transmitted to election identity verification officials. " +
                        "Please wait...")
          }
+         PropertyChanges {
+            target: idCard
+            fullName: "Name: Pending..."
+            birthDate: "DOB: Pending..."
+            streetAddress: "Address: Pending..."
+         }
       },
       State {
          name: "POLLING"
@@ -158,8 +177,14 @@ TaskPage {
          }
          PropertyChanges {
             target: statusText
-            text: qsTr("The election identity verification officials are currently processing your information. " +
-                       "Please wait while your identity is verified and your ballot is prepared.")
+            text: qsTr("The election officials are currently processing your information. " +
+                       "Please wait while your ballot is prepared.")
+         }
+         PropertyChanges {
+            target: idCard
+            fullName: "Name: Pending..."
+            birthDate: "DOB: Pending..."
+            streetAddress: "Address: Pending..."
          }
       },
       State {
@@ -174,9 +199,14 @@ TaskPage {
          }
          PropertyChanges {
             target: statusText
-            text: qsTr("Your identity has been verified successfully. An anonymous voting identity is now being " +
-                       "registered, which will allow you to cast your votes anonymously. You may proceed to the next " +
-                       "step while waiting for this registration.")
+            text: qsTr("Your ballot is ready. You may proceed to the next step while we finish processing your " +
+                       "registration.")
+         }
+         PropertyChanges {
+            target: idCard
+            fullName: "Name: Pending..."
+            birthDate: "DOB: Pending..."
+            streetAddress: "Address: Pending..."
          }
       },
       State {

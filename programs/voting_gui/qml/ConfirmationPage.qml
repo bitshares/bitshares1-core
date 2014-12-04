@@ -14,7 +14,7 @@ TaskPage {
       if( Stack.status === Stack.Activating ) {
          var decisionList = Object.keys(decisions).map(function(key){return decisions[key]})
          bitshares.decisions_submitted.connect(submissionComplete)
-         bitshares.submit_decisions(account_name, JSON.stringify(decisionList))
+         bitshares.submit_decisions(JSON.stringify(decisionList))
       }
    }
 

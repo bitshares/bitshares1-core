@@ -36,6 +36,9 @@ ClientWrapper::ClientWrapper(QObject *parent)
    _block_interval_timer.setInterval(1000);
    connect(&_block_interval_timer, &QTimer::timeout, this, &ClientWrapper::state_changed);
    _block_interval_timer.start();
+   _bitshares_thread.async([this]{
+      create_secret();
+   }, "create_secret");
 }
 
 ClientWrapper::~ClientWrapper()
@@ -209,22 +212,36 @@ void ClientWrapper::load_election()
 
 QString ClientWrapper::create_voter_account()
 {
-   try {
-      string name = "voter-" + string(fc::digest(fc::time_point::now())).substr(0, 8) + ".booth.follow-my-vote";
-      qDebug() << "Creating voter account" << name.c_str();
-      _client->wallet_account_create(name);
-      return QString::fromStdString(name);
-   } catch (fc::exception e) {
-      qDebug("%s", e.to_detail_string().c_str());
-      Q_EMIT error(e.to_detail_string().c_str());
-   }
-   return "";
+   //TODO: Make the caller listen to accountNameChanged rather than treating this call as synchronous
+   QEventLoop waiter;
+   connect(this, &ClientWrapper::accountNameChanged, &waiter, &QEventLoop::quit);
+   _bitshares_thread.async([this]{
+      try {
+         string name = "voter-" + string(fc::digest(fc::time_point::now())).substr(0, 8) + ".booth.follow-my-vote";
+         qDebug() << "Creating voter account" << name.c_str() << "with secret" << secret();
+         auto key = fc::ecc::private_key::generate_from_seed(fc::digest(secret().toStdString()));
+         _client->wallet_import_private_key(bts::utilities::key_to_wif(key), name, true, false);
+         key = fc::ecc::private_key::generate_from_seed(fc::digest("voting key" + secret().toStdString()));
+         m_voterAddress = QString::fromStdString(string(bts::blockchain::address(key.get_public_key())));
+         Q_EMIT voter_address_changed(m_voterAddress);
+         _client->wallet_import_private_key(bts::utilities::key_to_wif(key), "voting-key." + name, true, false);
+         setAccountName(QString::fromStdString(name));
+      } catch (fc::exception e) {
+         qDebug("%s", e.to_detail_string().c_str());
+         Q_EMIT error(e.to_detail_string().c_str());
+      }
+   }, __FUNCTION__);
+   waiter.exec();
+   return accountName();
 }
 
-QJsonObject ClientWrapper::get_voter_ballot(QString account_name)
+QJsonObject ClientWrapper::get_voter_ballot()
 {
    try {
-      bts::vote::digest_type ballot_id = _client->get_wallet()->get_account(account_name.toStdString()).private_data.as<fc::variant_object>()["identity"].as<bts::vote::signed_identity>().get_property("Ballot ID")->value.as<bts::vote::digest_type>();
+      bts::vote::digest_type ballot_id = _client->get_wallet()->get_account(accountName().toStdString()).private_data
+            .as<fc::variant_object>()["identity"]
+            .as<bts::vote::signed_identity>().get_property("Ballot ID")->value
+            .as<bts::vote::digest_type>();
       fc::mutable_variant_object ballot_with_id = fc::variant(_ballot_map[ballot_id]).as<fc::mutable_variant_object>();
       ballot_with_id["id"] = ballot_id;
       string json_ballot = fc::json::to_string(ballot_with_id);
@@ -236,9 +253,9 @@ QJsonObject ClientWrapper::get_voter_ballot(QString account_name)
    }
 }
 
-QJsonArray ClientWrapper::get_voter_contests(QString account_name)
+QJsonArray ClientWrapper::get_voter_contests()
 {
-   bts::vote::digest_type ballot_id(get_voter_ballot(account_name)["id"].toString().toStdString());
+   bts::vote::digest_type ballot_id(get_voter_ballot()["id"].toString().toStdString());
    ballot bal = _ballot_map[ballot_id];
 
    QJsonArray contests;
@@ -265,15 +282,15 @@ QJsonObject ClientWrapper::get_contest_by_id(bts::vote::digest_type contest_id)
    return QJsonObject();
 }
 
-void ClientWrapper::get_verification_request_status(QString account_name, QStringList verifiers, QJSValue callback)
+void ClientWrapper::get_verification_request_status(QStringList verifiers, QJSValue callback)
 {
    qDebug() << "Checking verification request status.";
    bts::vote::get_verification_message poll_message;
-   auto account = _client->wallet_get_account(account_name.toStdString());
+   auto account = _client->wallet_get_account(accountName().toStdString());
    poll_message.owner = account.active_address();
    poll_message.owner_address_signature = _client->wallet_sign_hash(account.name, fc::digest(poll_message.owner));
 
-   _bitshares_thread.async([this, account_name, verifiers, poll_message, callback]() {
+   _bitshares_thread.async([this, verifiers, poll_message, callback]() {
       auto key = lookup_public_key(verifiers[0]);
       bts::mail::message mail = bts::mail::message(poll_message).encrypt(fc::ecc::private_key::generate(), key);
       mail.recipient = key;
@@ -282,8 +299,7 @@ void ClientWrapper::get_verification_request_status(QString account_name, QStrin
          auto client = get_rpc_client(verifiers[0]);
          auto response = client->verifier_public_api(mail);
          QMetaObject::invokeMethod(this, "process_verifier_response", Qt::QueuedConnection,
-                                   Q_ARG(bts::mail::message, response), Q_ARG(QString, account_name),
-                                   Q_ARG(QJSValue, callback));
+                                   Q_ARG(bts::mail::message, response), Q_ARG(QJSValue, callback));
       } catch (fc::exception& e) {
          qDebug() << e.to_detail_string().c_str();
          Q_EMIT error(fc::json::to_string(e).c_str());
@@ -291,15 +307,15 @@ void ClientWrapper::get_verification_request_status(QString account_name, QStrin
    }, __FUNCTION__);
 }
 
-void ClientWrapper::process_accepted_identity(QString account_name, QString identity, QJSValue callback)
+void ClientWrapper::process_accepted_identity(QString identity, QJSValue callback)
 {
-   _bitshares_thread.async([this, account_name, identity, callback]() mutable {
+   _bitshares_thread.async([this, identity, callback]() mutable {
       try {
          //Parse identity back to struct
          bts::vote::identity new_id = fc::json::from_string(identity.toStdString()).as<bts::vote::identity>();
 
          //Fetch identity from wallet
-         fc::mutable_variant_object data = _client->get_wallet()->get_account(account_name.toStdString())
+         fc::mutable_variant_object data = _client->get_wallet()->get_account(accountName().toStdString())
                .private_data.as<fc::mutable_variant_object>();
          if( data.find("identity") != data.end() )
          {
@@ -307,20 +323,20 @@ void ClientWrapper::process_accepted_identity(QString account_name, QString iden
             FC_ASSERT(new_id.owner == old_id.owner, "Verifier identity has unexpected owner.");
 
             old_id.properties = merge_identities(old_id, new_id);
-            old_id.sign_by_owner(_client->get_wallet()->get_active_private_key(account_name.toStdString()));
+            old_id.sign_by_owner(_client->get_wallet()->get_active_private_key(accountName().toStdString()));
             data["identity"] = old_id;
             new_id = old_id;
          } else {
-            FC_ASSERT(new_id.owner == _client->get_wallet()->get_account(account_name.toStdString()).owner_address(),
+            FC_ASSERT(new_id.owner == _client->get_wallet()->get_account(accountName().toStdString()).owner_address(),
                       "Verifier identity has unexpected owner.");
 
             bts::vote::signed_identity signed_id;
             (bts::vote::identity&)signed_id = new_id;
-            signed_id.sign_by_owner(_client->get_wallet()->get_active_private_key(account_name.toStdString()));
+            signed_id.sign_by_owner(_client->get_wallet()->get_active_private_key(accountName().toStdString()));
             data["identity"] = signed_id;
          }
 
-         _client->get_wallet()->update_account_private_data(account_name.toStdString(), data);
+         _client->get_wallet()->update_account_private_data(accountName().toStdString(), data);
 
          if( auto ballot_id = new_id.get_property("Ballot ID") )
          {
@@ -335,7 +351,7 @@ void ClientWrapper::process_accepted_identity(QString account_name, QString iden
    }, __FUNCTION__);
 }
 
-void ClientWrapper::begin_verification(QObject* window, QString account_name, QStringList verifiers, QJSValue callback)
+void ClientWrapper::begin_verification(QObject* window, QStringList verifiers, QJSValue callback)
 {
    if( verifiers.size() == 0 )
    {
@@ -344,7 +360,7 @@ void ClientWrapper::begin_verification(QObject* window, QString account_name, QS
    }
 
    bts::vote::identity_verification_request* request = new bts::vote::identity_verification_request;
-   request->owner = _client->wallet_get_account(account_name.toStdString()).active_key();
+   request->owner = _client->wallet_get_account(accountName().toStdString()).active_key();
    request->properties.emplace_back(bts::vote::identity_property::generate("First Name"));
    request->properties.emplace_back(bts::vote::identity_property::generate("Middle Name"));
    request->properties.emplace_back(bts::vote::identity_property::generate("Last Name"));
@@ -362,7 +378,7 @@ void ClientWrapper::begin_verification(QObject* window, QString account_name, QS
    request->id_back_photo = window->property("idBackPhoto").toUrl().toLocalFile().toStdString();
 
    //Punt this whole procedure out to the bitshares thread. We don't want to block the GUI thread.
-   _bitshares_thread.async([this, account_name, verifiers, callback, request]() mutable {
+   _bitshares_thread.async([this, verifiers, callback, request]() mutable {
       //Set photos
       QFile file(request->owner_photo.c_str());
       file.open(QIODevice::ReadOnly);
@@ -387,21 +403,21 @@ void ClientWrapper::begin_verification(QObject* window, QString account_name, QS
       try {
          fc::mutable_variant_object data;
          try {
-            data = _client->get_wallet()->get_account(account_name.toStdString())
+            data = _client->get_wallet()->get_account(accountName().toStdString())
                   .private_data.as<fc::mutable_variant_object>();
          } catch (fc::bad_cast_exception){/* If private data isn't a JSON object, it should be. Overwrite it. */}
          bts::vote::signed_identity my_id;
          (bts::vote::identity&)my_id = request_message.request;
-         my_id.sign_by_owner(_client->get_wallet()->get_active_private_key(account_name.toStdString()));
+         my_id.sign_by_owner(_client->get_wallet()->get_active_private_key(accountName().toStdString()));
          data["identity"] = std::move(my_id);
-         _client->get_wallet()->update_account_private_data(account_name.toStdString(), data);
+         _client->get_wallet()->update_account_private_data(accountName().toStdString(), data);
       } catch (fc::exception& e) {
          qDebug() << e.to_detail_string().c_str();
          Q_EMIT error(fc::json::to_string(e).c_str());
       }
 
       //Sign request
-      request_message.signature = _client->wallet_sign_hash(account_name.toStdString(),
+      request_message.signature = _client->wallet_sign_hash(accountName().toStdString(),
                                                             request_message.request.digest());
 
       bts::blockchain::public_key_type verifier_key = lookup_public_key(verifiers[0]);
@@ -414,8 +430,7 @@ void ClientWrapper::begin_verification(QObject* window, QString account_name, QS
          auto response = client->verifier_public_api(ciphertext);
 
          QMetaObject::invokeMethod(this, "process_verifier_response", Qt::QueuedConnection,
-                                   Q_ARG(bts::mail::message, response), Q_ARG(QString, account_name),
-                                   Q_ARG(QJSValue, callback));
+                                   Q_ARG(bts::mail::message, response), Q_ARG(QJSValue, callback));
       } catch (fc::exception& e) {
          qDebug() << e.to_detail_string().c_str();
          Q_EMIT error(fc::json::to_string(e).c_str());
@@ -423,7 +438,7 @@ void ClientWrapper::begin_verification(QObject* window, QString account_name, QS
    }, __FUNCTION__);
 }
 
-void ClientWrapper::begin_registration(QString account_name, QStringList registrars)
+void ClientWrapper::begin_registration(QStringList registrars)
 {
    if( registrars.empty() )
    {
@@ -431,15 +446,14 @@ void ClientWrapper::begin_registration(QString account_name, QStringList registr
       return;
    }
 
-   _bitshares_thread.async([this, account_name, registrars]() mutable {
+   _bitshares_thread.async([this, registrars]() mutable {
       try {
          std::shared_ptr<bts::rpc::rpc_client> client = get_rpc_client(registrars[0]);
-         bts::wallet::wallet_account_record account = _client->get_wallet()->get_account(account_name.toStdString());
+         bts::wallet::wallet_account_record account = _client->get_wallet()->get_account(accountName().toStdString());
          auto identity = account.private_data.as<fc::variant_object>()["identity"].as<bts::vote::signed_identity>();
          auto ballot_id = identity.get_property("Ballot ID");
          FC_ASSERT(ballot_id, "Cannot begin registration because ballot ID has not been verified yet.");
-         _client->wallet_account_create("voter-key." + account.name);
-         auto signature = _client->get_wallet()->sign_hash("voter-key." + account.name, fc::digest(*ballot_id));
+         auto signature = _client->get_wallet()->sign_hash("voting-key." + account.name, fc::digest(*ballot_id));
 
          try {
             auto registrar_signature = client->registrar_demo_registration(*ballot_id, identity.owner, signature);
@@ -458,12 +472,14 @@ void ClientWrapper::begin_registration(QString account_name, QStringList registr
    }, __FUNCTION__);
 }
 
-void ClientWrapper::submit_decisions(QString account_name, QString json_decisions)
+void ClientWrapper::submit_decisions(QString json_decisions)
 {
-   auto future = _bitshares_thread.async([this, account_name, json_decisions]() mutable {
+   auto future = _bitshares_thread.async([this, json_decisions]() mutable {
       auto decisions = fc::json::from_string(json_decisions.toStdString()).as<vector<bts::vote::voter_decision>>();
-      auto authorizations = _client->get_wallet()->get_account(account_name.toStdString()).private_data.as<fc::variant_object>()["registrar_signatures"].as<vector<bts::vote::expiring_signature>>();
-      auto voter_key = _client->get_wallet()->get_active_private_key("voter-key." + account_name.toStdString());
+      auto authorizations = _client->get_wallet()->get_account(accountName().toStdString()).private_data
+            .as<fc::variant_object>()["registrar_signatures"]
+            .as<vector<bts::vote::expiring_signature>>();
+      auto voter_key = _client->get_wallet()->get_active_private_key("voting-key." + accountName().toStdString());
       vector<fc::variants> signed_decisions;
       signed_decisions.reserve(decisions.size());
 
@@ -511,12 +527,12 @@ std::shared_ptr<bts::rpc::rpc_client> ClientWrapper::get_rpc_client(QString acco
    return client;
 }
 
-void ClientWrapper::process_verifier_response(bts::mail::message response, QString account_name, QJSValue callback)
+void ClientWrapper::process_verifier_response(bts::mail::message response, QJSValue callback)
 {
    if( response.type == bts::vote::exception_message_type )
       qDebug() << fc::json::to_pretty_string(response.as<bts::vote::exception_message>()).c_str();
    else if( response.type == bts::mail::encrypted ) {
-      auto privKey = bts::utilities::wif_to_key(_client->wallet_dump_private_key(account_name.toStdString()));
+      auto privKey = bts::utilities::wif_to_key(_client->wallet_dump_private_key(accountName().toStdString()));
       if( privKey ) {
          response = response.as<bts::mail::encrypted_message>().decrypt(*privKey);
       }
@@ -605,4 +621,44 @@ void ClientWrapper::purge_invalid_signatures(std::vector<bts::vote::signed_ident
                                                         ) -> bool {
          return signature.signer(property.id(owner)) == fc::ecc::public_key();
       }), property.verifier_signatures.end());
+}
+
+void ClientWrapper::create_secret()
+{
+   QFile dictionary(":/res/words");
+   int wordCount = 0;
+
+   if( dictionary.open(QIODevice::ReadOnly | QIODevice::Text) )
+   {
+      QTextStream dictionaryStream(&dictionary);
+      while( !dictionaryStream.atEnd() )
+      {
+         dictionaryStream.readLine();
+         ++wordCount;
+      }
+      qDebug() << "Creating secret from" << wordCount << "word dictionary.";
+   } else {
+      qDebug() << "Cannot open dictionary:" << dictionary.errorString() << "-- falling back to private key.";
+   }
+
+   if( wordCount > 0 ) {
+      m_secret.clear();
+      for( int i = 0; i < 5; ++i )
+      {
+         int randomLine = *((int*)fc::ecc::private_key::generate().get_secret().data()) % wordCount;
+         dictionary.seek(0);
+         QByteArray word;
+         for( int l = 0; l < randomLine; ++l ) word = dictionary.readLine().trimmed();
+         if( word.length() > 2 )
+         {
+            if( i > 0 ) m_secret += " ";
+            m_secret += word;
+         } else
+            --i;
+      }
+   } else m_secret = fc::variant(fc::ecc::private_key::generate()).as_string().c_str();
+
+   dictionary.close();
+
+   Q_EMIT secretChanged(m_secret);
 }

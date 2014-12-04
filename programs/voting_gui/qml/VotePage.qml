@@ -14,11 +14,11 @@ TaskPage {
 
    Component.onCompleted: {
       bitshares.load_election()
-      var json_contests = bitshares.get_voter_contests(account_name)
+      var json_contests = bitshares.get_voter_contests()
       for( var index in json_contests ) {
          contests.push(json_contests[index])
       }
-      ballot = bitshares.get_voter_ballot(account_name)
+      ballot = bitshares.get_voter_ballot()
       //Refresh the contest list and scroll back to the top
       contestList.reloadContests()
       contestList.contentY = 0
