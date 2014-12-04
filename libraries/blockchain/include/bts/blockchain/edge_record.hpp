@@ -7,6 +7,7 @@ namespace bts { namespace blockchain {
 
     struct edge_record : object_record
     {
+        static const obj_type type = edge_object;
         object_id_type     from;
         object_id_type     to;
         string             name;
