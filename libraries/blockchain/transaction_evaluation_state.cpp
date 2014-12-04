@@ -13,17 +13,6 @@ namespace bts { namespace blockchain {
    {
    }
 
-   void transaction_evaluation_state::reset()
-   {
-      signed_keys.clear();
-      balance.clear();
-      deposits.clear();
-      withdraws.clear();
-      net_delegate_votes.clear();
-      required_deposits.clear();
-      validation_error.reset();
-   }
-
    bool transaction_evaluation_state::verify_authority( const multisig_meta_info& siginfo )
    {
       uint32_t sig_count = 0;
@@ -90,24 +79,6 @@ namespace bts { namespace blockchain {
       auto current_account = _current_state->get_account_record( id );
       if( !current_account ) FC_CAPTURE_AND_THROW( unknown_account_id, (id) );
       if( !current_account->is_delegate() ) FC_CAPTURE_AND_THROW( not_a_delegate, (id) );
-   }
-
-   void transaction_evaluation_state::add_required_deposit( const address& owner_key, const asset& amount )
-   {
-      FC_ASSERT( trx.delegate_slate_id );
-      balance_id_type balance_id = withdraw_condition(
-                                       withdraw_with_signature( owner_key ),
-                                       amount.asset_id, *trx.delegate_slate_id ).get_address();
-
-      auto itr = required_deposits.find( balance_id );
-      if( itr == required_deposits.end() )
-      {
-         required_deposits[balance_id] = amount;
-      }
-      else
-      {
-         required_deposits[balance_id] += amount;
-      }
    }
 
    void transaction_evaluation_state::update_delegate_votes()
@@ -191,20 +162,10 @@ namespace bts { namespace blockchain {
             _current_state->store_asset_record( *asset_record );
          }
       }
-
-      for( const auto& required_deposit : required_deposits )
-      {
-         auto provided_itr = provided_deposits.find( required_deposit.first );
-
-         if( provided_itr->second < required_deposit.second )
-            FC_CAPTURE_AND_THROW( missing_deposit, (required_deposit) );
-      }
-
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    void transaction_evaluation_state::evaluate( const signed_transaction& trx_arg, bool skip_signature_check )
    { try {
-      reset();
       _skip_signature_check = skip_signature_check;
       try {
         if( _current_state->now() >= trx_arg.expiration )
@@ -234,11 +195,11 @@ namespace bts { namespace blockchain {
               signed_keys.insert( address(pts_address(key,true,0) )   );
            }
         }
-        _current_op_index = 0;
+        current_op_index = 0;
         for( const auto& op : trx.operations )
         {
            evaluate_operation( op );
-           ++_current_op_index;
+           ++current_op_index;
         }
         post_evaluate();
         validate_required_fee();
@@ -280,9 +241,6 @@ namespace bts { namespace blockchain {
       return 0;
    }
 
-   /**
-    *
-    */
    void transaction_evaluation_state::sub_balance( const balance_id_type& balance_id, const asset& amount )
    { try {
       if( balance_id != balance_id_type() )
@@ -318,7 +276,7 @@ namespace bts { namespace blockchain {
           balance[amount.asset_id] = -amount.amount;
       }
 
-      deltas[ _current_op_index ] = amount;
+      deltas[ current_op_index ] = amount;
    } FC_CAPTURE_AND_RETHROW( (balance_id)(amount) ) }
 
    void transaction_evaluation_state::add_balance( const asset& amount )
@@ -335,7 +293,7 @@ namespace bts { namespace blockchain {
       else
          balance_itr->second += amount.amount;
 
-      deltas[ _current_op_index ] = -amount;
+      deltas[ current_op_index ] = -amount;
    } FC_CAPTURE_AND_RETHROW( (amount) ) }
 
    /**

@@ -860,32 +860,32 @@ namespace bts { namespace cli {
         << std::string(175, '-') << "\n";
 
       {
+        const omarket_status status = client->get_chain()->get_market_status( quote_asset_record->id, asset_id_type( 0 ) );
+
         auto ask_itr = bids_asks.second.rbegin();
         auto bid_itr = shorts.begin();
         while( ask_itr != bids_asks.second.rend() || bid_itr != shorts.end() )
         {
           if(bid_itr != shorts.end())
           {
-             wdump((*bid_itr));
-            double ratio = atof(bid_itr->get_price().ratio_string().c_str());
-            ratio *= 100;
-            asset quantity_usd(bid_itr->get_quantity() * short_execution_price); //, bid_itr->get_price()) );
-            asset quantity_xts = bid_itr->get_quantity(); //quantity_usd * max_short_price;
+              const auto& order = *bid_itr;
 
-             wdump((*bid_itr));
-            if( bid_itr->get_price() >= short_execution_price )
-              quantity_usd = ((bid_itr->get_quantity() * short_execution_price));
-            else
-              quantity_usd = (bid_itr->get_quantity() * bid_itr->get_price());
+              out << std::left << std::setw( 26 );
+              if( status.valid() && status->current_feed_price.valid() )
+                  out << client->get_chain()->to_pretty_asset( (order.get_balance() * *status->current_feed_price) / 2 );
+              else if( status.valid() && status->last_valid_feed_price.valid() )
+                  out << client->get_chain()->to_pretty_asset( (order.get_balance() * *status->last_valid_feed_price) / 2 );
+              else
+                  out << "N/A";
 
-            quantity_xts = quantity_usd * short_execution_price;
+              out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_balance() );
 
-            out << std::left << std::setw(26) << client->get_chain()->to_pretty_asset(quantity_usd)
-              << std::setw(20) << client->get_chain()->to_pretty_asset(quantity_xts)
-              << std::right << std::setw(30) << std::fixed << std::setprecision(2) << std::to_string(ratio) + " %";
+              out << std::right << std::setw( 30 ) << std::to_string(100 * atof(order.interest_rate->ratio_string().c_str())) + " %";
 
-            ++bid_itr;
-          } else {
+              ++bid_itr;
+          }
+          else
+          {
               out << string(76, ' ');
           }
 

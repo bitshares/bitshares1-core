@@ -231,29 +231,6 @@ namespace bts { namespace blockchain {
                break;
             }
 
-            case withdraw_option_type:
-            {
-               FC_ASSERT( !"Not supported yet!" );
-
-               auto option = current_balance_record->condition.as<withdraw_option>();
-               try {
-                  if( eval_state._current_state->now() > option.date )
-                  {
-                     if( !eval_state.check_signature( option.optionor ) )
-                        FC_CAPTURE_AND_THROW( missing_signature, (option.optionor) );
-                  }
-                  else // the option hasn't expired
-                  {
-                     if( !eval_state.check_signature( option.optionee ) )
-                        FC_CAPTURE_AND_THROW( missing_signature, (option.optionee) );
-
-                     auto pay_amount = asset( this->amount, current_balance_record->condition.asset_id ) * option.strike_price;
-                     eval_state.add_required_deposit( option.optionee, pay_amount );
-                  }
-               } FC_CAPTURE_AND_RETHROW( (option) )
-               break;
-            }
-
             default:
                FC_CAPTURE_AND_THROW( invalid_withdraw_condition, (current_balance_record->condition) );
          }

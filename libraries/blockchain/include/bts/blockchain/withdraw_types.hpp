@@ -11,15 +11,12 @@ namespace bts { namespace blockchain {
 
    enum withdraw_condition_types
    {
-      /** assumes blockchain already knowws the condition, which
-       * is provided the first time something is withdrawn */
       withdraw_null_type        = 0,
       withdraw_signature_type   = 1,
       withdraw_vesting_type     = 2,
       withdraw_multi_sig_type   = 3,
       withdraw_escrow_type      = 4,
       withdraw_password_type    = 5,
-      withdraw_option_type      = 6
    };
 
    /**
@@ -188,16 +185,6 @@ namespace bts { namespace blockchain {
       optional<titan_memo>            memo;
    };
 
-   struct withdraw_option
-   {
-      static const uint8_t type;
-
-      address              optionor;
-      address              optionee;
-      fc::time_point_sec   date;
-      price                strike_price;
-   };
-
 } } // bts::blockchain
 
 namespace fc {
@@ -212,9 +199,8 @@ FC_REFLECT_ENUM( bts::blockchain::withdraw_condition_types,
         (withdraw_signature_type)
         (withdraw_vesting_type)
         (withdraw_multi_sig_type)
-        (withdraw_password_type)
-        (withdraw_option_type)
         (withdraw_escrow_type)
+        (withdraw_password_type)
         )
 FC_REFLECT( bts::blockchain::withdraw_condition,
         (asset_id)
@@ -256,23 +242,17 @@ FC_REFLECT( bts::blockchain::withdraw_with_multi_sig,
         (owners)
         (memo)
         )
-FC_REFLECT( bts::blockchain::withdraw_with_password,
-        (payee)
-        (payor)
-        (timeout)
-        (password_hash)
-        (memo)
-        )
-FC_REFLECT( bts::blockchain::withdraw_option,
-        (optionor)
-        (optionee)
-        (date)
-        (strike_price)
-        )
 FC_REFLECT( bts::blockchain::withdraw_with_escrow,
         (sender)
         (receiver)
         (escrow)
         (agreement_digest)
+        (memo)
+        )
+FC_REFLECT( bts::blockchain::withdraw_with_password,
+        (payee)
+        (payor)
+        (timeout)
+        (password_hash)
         (memo)
         )

@@ -7,11 +7,10 @@
 namespace bts { namespace blockchain {
 
    const uint8_t withdraw_with_signature::type    = withdraw_signature_type;
-   const uint8_t withdraw_with_multi_sig::type    = withdraw_multi_sig_type;
-   const uint8_t withdraw_with_password::type     = withdraw_password_type;
-   const uint8_t withdraw_option::type            = withdraw_option_type;
-   const uint8_t withdraw_with_escrow::type       = withdraw_escrow_type;
    const uint8_t withdraw_vesting::type           = withdraw_vesting_type;
+   const uint8_t withdraw_with_multi_sig::type    = withdraw_multi_sig_type;
+   const uint8_t withdraw_with_escrow::type       = withdraw_escrow_type;
+   const uint8_t withdraw_with_password::type     = withdraw_password_type;
 
    memo_status::memo_status( const memo_data& memo,
                    bool valid_signature,
@@ -210,27 +209,26 @@ namespace fc {
 
       switch( (withdraw_condition_types) var.type )
       {
+         case withdraw_null_type:
+            obj["data"] = fc::variant();
+            break;
          case withdraw_signature_type:
             obj["data"] = fc::raw::unpack<withdraw_with_signature>( var.data );
-            break;
-         case withdraw_multi_sig_type:
-            obj["data"] = fc::raw::unpack<withdraw_with_multi_sig>( var.data );
-            break;
-         case withdraw_password_type:
-            obj["data"] = fc::raw::unpack<withdraw_with_password>( var.data );
-            break;
-         case withdraw_option_type:
-            obj["data"] = fc::raw::unpack<withdraw_option>( var.data );
-            break;
-         case withdraw_escrow_type:
-            obj["data"] = fc::raw::unpack<withdraw_with_escrow>( var.data );
             break;
          case withdraw_vesting_type:
             obj["data"] = fc::raw::unpack<withdraw_vesting>( var.data );
             break;
-         case withdraw_null_type:
-            obj["data"] = fc::variant();
+         case withdraw_multi_sig_type:
+            obj["data"] = fc::raw::unpack<withdraw_with_multi_sig>( var.data );
             break;
+         case withdraw_escrow_type:
+            obj["data"] = fc::raw::unpack<withdraw_with_escrow>( var.data );
+            break;
+         case withdraw_password_type:
+            obj["data"] = fc::raw::unpack<withdraw_with_password>( var.data );
+            break;
+         default:
+            FC_ASSERT( !"Invalid withdraw condition!" );
       }
       vo = std::move( obj );
    }
@@ -245,26 +243,25 @@ namespace fc {
 
       switch( (withdraw_condition_types) vo.type )
       {
+         case withdraw_null_type:
+            break;
          case withdraw_signature_type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_with_signature>() );
-            break;
-         case withdraw_multi_sig_type:
-            vo.data = fc::raw::pack( obj["data"].as<withdraw_with_multi_sig>() );
-            break;
-         case withdraw_password_type:
-            vo.data = fc::raw::pack( obj["data"].as<withdraw_with_password>() );
-            break;
-         case withdraw_option_type:
-            vo.data = fc::raw::pack( obj["data"].as<withdraw_option>() );
-            break;
-         case withdraw_escrow_type:
-            vo.data = fc::raw::pack( obj["data"].as<withdraw_with_escrow>() );
             break;
          case withdraw_vesting_type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_vesting>() );
             break;
-         case withdraw_null_type:
+         case withdraw_multi_sig_type:
+            vo.data = fc::raw::pack( obj["data"].as<withdraw_with_multi_sig>() );
             break;
+         case withdraw_escrow_type:
+            vo.data = fc::raw::pack( obj["data"].as<withdraw_with_escrow>() );
+            break;
+         case withdraw_password_type:
+            vo.data = fc::raw::pack( obj["data"].as<withdraw_with_password>() );
+            break;
+         default:
+            FC_ASSERT( !"Invalid withdraw condition!" );
       }
    }
 
