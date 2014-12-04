@@ -42,6 +42,23 @@ TaskPage {
 
       return "Unknown contest type."
    }
+   function constructDecisionsModel() {
+      return Object.keys(decisions).map(function(decision_id) {
+         var decision = decisions[decision_id]
+         var contest = bitshares.get_contest_by_id(decision.contest_id)
+         var tags = {}
+         for( var tag in contest.tags )
+            tags[contest.tags[tag][0]] = contest.tags[tag][1]
+         contest.tags = tags
+         return {"contest": contest, "decision": decision}
+      })
+   }
+
+   Stack.onStatusChanged: {
+      if( Stack.status === Stack.Activating )
+         //Force reloading this model on every activation
+         decisionList.model = constructDecisionsModel()
+   }
 
    ColumnLayout {
       anchors {
@@ -72,16 +89,8 @@ TaskPage {
          y: 40
 
          ListView {
+            id: decisionList
             spacing: 10
-            model: Object.keys(decisions).map(function(decision_id) {
-               var decision = decisions[decision_id]
-               var contest = bitshares.get_contest_by_id(decision.contest_id)
-               var tags = {}
-               for( var tag in contest.tags )
-                  tags[contest.tags[tag][0]] = contest.tags[tag][1]
-               contest.tags = tags
-               return {"contest": contest, "decision": decision}
-            })
             delegate: ContestHeader {
                width: parent.width
                leftText: model.modelData.contest.tags.name
