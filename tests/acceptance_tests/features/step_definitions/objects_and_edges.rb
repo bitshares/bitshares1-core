@@ -33,5 +33,4 @@ Then(/^Object with ID (\w+) should have user data (\w+)$/) do |obj, data|
 end
 
 When(/^I make an edge from (\w+) to (\w+) with name (\w+) and value (\w+)$/) do |arg1, arg2|
-      pending # express the regexp above with the code you wish you had
 end

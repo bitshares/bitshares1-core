@@ -11,7 +11,8 @@ Feature: You can make objects with generic data and edges between objects.
         And I wait for one block
         Then Object with ID obj1 should have user data MyUserDataString
     Scenario: I can make an edge from that object!
-        When I make an object obj2 with user data MyUserDataString
+        When I make an object obj1 with user data MyUserDataString
+        And I make an object obj2 with user data OtherUserDataString
         And I make an edge from obj1ID to obj2ID with name Trust and value True
     Scenario: I can make an edge from an account!
     Scenario: I can make an edge from an asset!
