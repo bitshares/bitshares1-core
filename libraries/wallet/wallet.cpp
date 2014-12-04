@@ -4333,4 +4333,12 @@ namespace detail {
        return snapshot_records;
    } FC_CAPTURE_AND_RETHROW() }
 
+   wallet_transaction_record wallet::asset_authorize_key( const string& paying_account_name, 
+                                                  const string& symbol,
+                                                  const address& key,
+                                                  const object_id_type& meta, bool sign )
+   {
+      FC_ASSERT( !"Not Implemented" );
+   }
+
 } } // bts::wallet
