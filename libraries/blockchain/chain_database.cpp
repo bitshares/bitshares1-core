@@ -319,6 +319,8 @@ namespace bts { namespace blockchain {
          base_asset.current_share_supply = total.amount;
          base_asset.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
          base_asset.collected_fees = 0;
+         base_asset.flags = asset_permissions::none;
+         base_asset.issuer_permissions = asset_permissions::none;
          self->store_asset_record( base_asset );
 
          for( const auto& asset : config.market_assets )
