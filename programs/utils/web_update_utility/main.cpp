@@ -19,7 +19,7 @@ int main()
     update_utility util;
     char option;
 
-    cout << "Welcome to the BitShares Toolkit Web Update Utility. This tool is not particularly well-written. This tool is not user friendly. It is not for users. It is for developers. Deal with it.\n\nWould you like to (p)repare a new update, or (s)ign an existing one? ";
+    cout << "Welcome to the BitShares Web Update Utility. This tool is not particularly well-written. This tool is not user friendly. It is not for users. It is for developers. Deal with it.\n\nWould you like to (p)repare a new update, or (s)ign an existing one? ";
     cin >> option;
     option = tolower(option);
 

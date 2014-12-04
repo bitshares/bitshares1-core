@@ -33,13 +33,6 @@ namespace bts { namespace blockchain {
       return fc::ripemd160::hash( enc.result() );
    }
 
-   transaction_id_type signed_transaction::permanent_id()const
-   {
-      signed_transaction copy( *this );
-      copy.signatures.clear();
-      return copy.id();
-   }
-
    void signed_transaction::sign( const fc::ecc::private_key& signer, const digest_type& chain_id )
    {
       signatures.push_back( signer.sign_compact( digest(chain_id) ) );
@@ -254,38 +247,6 @@ namespace bts { namespace blockchain {
       op.delegate_pay_rate = delegate_pay_rate;
       operations.push_back( op );
    }
-
-#if 0
-   void transaction::submit_proposal(account_id_type delegate_id,
-                                     const std::string& subject,
-                                     const std::string& body,
-                                     const std::string& proposal_type,
-                                     const fc::variant& public_data)
-   {
-     submit_proposal_operation op;
-     op.submitting_delegate_id = delegate_id;
-     op.submission_date = blockchain::now();
-     op.subject = subject;
-     op.body = body;
-     op.proposal_type = proposal_type;
-     op.data = public_data;
-     operations.push_back(op);
-   }
-
-   void transaction::vote_proposal(proposal_id_type proposal_id,
-                                   account_id_type voter_id,
-                                   proposal_vote::vote_type vote,
-                                   const string& message )
-   {
-     vote_proposal_operation op;
-     op.id.proposal_id = proposal_id;
-     op.id.delegate_id = voter_id;
-     op.timestamp = blockchain::now();
-     op.vote = vote;
-     op.message = message;
-     operations.push_back(op);
-   }
-#endif
 
    void transaction::create_asset( const std::string& symbol,
                                    const std::string& name,

@@ -56,7 +56,7 @@ transaction_builder& transaction_builder::release_escrow( const account_record& 
    if( trx.expiration == time_point_sec() )
        trx.expiration = blockchain::now() + _wimpl->self->get_transaction_expiration();
 
-   transaction_record.record_id = trx.permanent_id();
+   transaction_record.record_id = trx.id();
    transaction_record.created_time = blockchain::now();
    transaction_record.received_time = transaction_record.created_time;
    return *this;
@@ -296,7 +296,7 @@ transaction_builder& transaction_builder::deposit_asset_with_escrow(const bts::w
    optional<public_key_type> titan_one_time_key;
    if( recipient.is_public_account() )
    {
-      // TODO: user public receiver key...
+      // TODO: user public active receiver key...
    } else {
       auto one_time_key = _wimpl->get_new_private_key(payer.name);
       titan_one_time_key = one_time_key.get_public_key();
@@ -750,7 +750,7 @@ transaction_builder& transaction_builder::finalize( bool pay_fee )
    if( trx.expiration == time_point_sec() )
        trx.expiration = blockchain::now() + _wimpl->self->get_transaction_expiration();
 
-   transaction_record.record_id = trx.permanent_id();
+   transaction_record.record_id = trx.id();
    transaction_record.created_time = blockchain::now();
    transaction_record.received_time = transaction_record.created_time;
 

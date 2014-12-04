@@ -20,50 +20,59 @@ namespace bts { namespace blockchain {
    {
       null_op_type                  = 0,
 
-      /** balance operations */
+      // balances
       withdraw_op_type              = 1,
       deposit_op_type               = 2,
 
-      /** account operations */
+      // accounts
       register_account_op_type      = 3,
       update_account_op_type        = 4,
       withdraw_pay_op_type          = 5,
 
-      /** asset operations */
+      // assets
       create_asset_op_type          = 6,
       update_asset_op_type          = 7,
       issue_asset_op_type           = 8,
 
-      /** delegate operations */
-      fire_delegate_op_type         = 9,
+      // reserved
+      reserved_op_0_type            = 9,
+      reserved_op_1_type            = 10,
+      reserved_op_2_type            = 11,
 
-      /** proposal operations */
-      submit_proposal_op_type       = 10,
-      vote_proposal_op_type         = 11,
-
-      /** market operations */
+      // market
       bid_op_type                   = 12,
       ask_op_type                   = 13,
       short_op_type                 = 14,
       cover_op_type                 = 15,
       add_collateral_op_type        = 16,
-      remove_collateral_op_type     = 17,
+
+      reserved_op_3_type            = 17,
 
       define_delegate_slate_op_type = 18,
 
       update_feed_op_type           = 19,
+
       burn_op_type                  = 20,
-      link_account_op_type          = 21,
-      withdraw_all_op_type          = 22,
+
+      // reserved
+      reserved_op_4_type            = 21,
+      reserved_op_5_type            = 22,
+
       release_escrow_op_type        = 23,
+
       update_block_signing_key_type = 24,
+
+      // relative orders
       relative_bid_op_type          = 25,
       relative_ask_op_type          = 26,
 
       update_balance_vote_op_type   = 27,
 
+      // objects
       set_object_op_type            = 28,
       authorize_op_type             = 29,
+
+      // assets
       update_asset_ext_op_type      = 30,
       cancel_order_op_type          = 31 /** TODO: return funds to balance with same key as order */
    };
@@ -128,20 +137,20 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (create_asset_op_type)
                  (update_asset_op_type)
                  (issue_asset_op_type)
-                 (fire_delegate_op_type)
-                 (submit_proposal_op_type)
-                 (vote_proposal_op_type)
+                 (reserved_op_0_type)
+                 (reserved_op_1_type)
+                 (reserved_op_2_type)
                  (bid_op_type)
                  (ask_op_type)
                  (short_op_type)
                  (cover_op_type)
                  (add_collateral_op_type)
-                 (remove_collateral_op_type)
+                 (reserved_op_3_type)
                  (define_delegate_slate_op_type)
                  (update_feed_op_type)
                  (burn_op_type)
-                 (link_account_op_type)
-                 (withdraw_all_op_type)
+                 (reserved_op_4_type)
+                 (reserved_op_5_type)
                  (release_escrow_op_type)
                  (update_block_signing_key_type)
                  (relative_bid_op_type)

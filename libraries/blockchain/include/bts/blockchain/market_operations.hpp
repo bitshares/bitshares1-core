@@ -100,17 +100,6 @@ namespace bts { namespace blockchain {
         void evaluate( transaction_evaluation_state& eval_state );
    };
 
-   struct remove_collateral_operation
-   {
-        static const operation_type_enum type;
-        remove_collateral_operation():amount(0){}
-
-        share_type   amount;
-        address      owner;
-
-        void evaluate( transaction_evaluation_state& eval_state );
-   };
-
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::bid_operation,               (amount)(bid_index))
@@ -120,5 +109,3 @@ FC_REFLECT( bts::blockchain::relative_ask_operation,      (amount)(ask_index)(li
 FC_REFLECT( bts::blockchain::short_operation,             (amount)(short_index)(limit_price) )
 FC_REFLECT( bts::blockchain::cover_operation,             (amount)(cover_index)(new_cover_price) )
 FC_REFLECT( bts::blockchain::add_collateral_operation,    (amount)(cover_index))
-FC_REFLECT( bts::blockchain::remove_collateral_operation, (amount)(owner))
-

@@ -1,4 +1,5 @@
 #include <bts/api/api_metadata.hpp>
+#include <bts/api/global_api_logger.hpp>
 #include <bts/utilities/string_escape.hpp>
 #include <fc/optional.hpp>
 #include <fc/filesystem.hpp>
@@ -185,6 +186,10 @@ private:
   void generate_named_server_implementation_to_stream(const method_description& method, const std::string& server_classname, std::ostream& stream);
   void generate_server_call_to_client_to_stream(const method_description& method, std::ostream& stream);
   std::string generate_detailed_description_for_method(const method_description& method);
+#if BTS_GLOBAL_API_LOG
+  void create_global_api_entry_log_for_method( std::ostream& cpp_file, const fc::string& client_classname, const method_description& method );
+  void create_global_api_exit_log_for_method( std::ostream& cpp_file, const fc::string& client_classname, const method_description& method );
+#endif
   void write_generated_file_header(std::ostream& stream);
   std::string create_logging_statement_for_method(const method_description& method);
 
@@ -920,6 +925,54 @@ void api_generator::generate_rpc_server_files(const fc::path& rpc_server_output_
   server_cpp_file << "} } // end namespace bts::rpc_stubs\n";
 }
 
+#if BTS_GLOBAL_API_LOG
+void api_generator::create_global_api_entry_log_for_method(
+    std::ostream& cpp_file,
+    const fc::string& client_classname,
+    const method_description& method
+    )
+{
+  cpp_file << "  bts::api::global_api_logger* glog = bts::api::global_api_logger::get_instance();\n"
+              "  uint64_t call_id = 0;\n"
+              "  fc::variants args;\n"
+              "  if( glog != NULL )\n"
+              "  {\n";
+  
+  for( const parameter_description& param : method.parameters )
+  {
+    if( param.type->get_obscure_in_log_files() )
+    {
+      cpp_file << "    if( glog->obscure_passwords() )\n"
+                  "      args.push_back( fc::variant(\"*********\") );\n"
+                  "    else\n"
+                  "      ";
+    }
+    else
+      cpp_file << "    ";
+
+    cpp_file << "args.push_back( " <<
+        param.type->convert_object_of_type_to_variant( param.name )
+        << " );\n";
+  }
+  cpp_file << "    call_id = glog->log_call_started( this, \"" << method.name << "\", args );\n"
+              "  }\n";
+  return;
+}
+
+void api_generator::create_global_api_exit_log_for_method(
+    std::ostream& cpp_file,
+    const fc::string& client_classname,
+    const method_description& method
+    )
+{
+  cpp_file << "    if( call_id != 0 )\n"
+              "      glog->log_call_finished( call_id, this, \"" << method.name << "\", args, "
+           << method.return_type->convert_object_of_type_to_variant( "result" )
+           << " );\n";
+  return;
+}
+#endif
+
 void api_generator::generate_client_files(const fc::path& client_output_dir, const std::string& generated_filename_suffix)
 {
   fc::path client_header_path = client_output_dir / "include" / "bts" / "rpc_stubs";
@@ -950,6 +1003,10 @@ void api_generator::generate_client_files(const fc::path& client_output_dir, con
   interceptor_header_file << "} } // end namespace bts::rpc_stubs\n";
 
   interceptor_cpp_file << "#define DEFAULT_LOGGER \"rpc\"\n";
+#if BTS_GLOBAL_API_LOG
+  interceptor_cpp_file << "#include <bts/api/global_api_logger.hpp>\n";
+  interceptor_cpp_file << "#include <bts/api/conversion_functions.hpp>\n";
+#endif
   interceptor_cpp_file << "#include <bts/rpc_stubs/" << interceptor_classname << ".hpp>\n\n";
   interceptor_cpp_file << "namespace bts { namespace rpc_stubs {\n\n";
 
@@ -958,6 +1015,10 @@ void api_generator::generate_client_files(const fc::path& client_output_dir, con
     interceptor_cpp_file << generate_signature_for_method(method, interceptor_classname, false) << "\n";
     interceptor_cpp_file << "{\n";
     interceptor_cpp_file << "  " << create_logging_statement_for_method(method) << "\n";
+#if BTS_GLOBAL_API_LOG
+    create_global_api_entry_log_for_method( interceptor_cpp_file, interceptor_classname, method );
+    interceptor_cpp_file << "\n";
+#endif
     interceptor_cpp_file << "  struct scope_exit\n";
     interceptor_cpp_file << "  {\n";
     interceptor_cpp_file << "    fc::time_point start_time;\n";
@@ -967,12 +1028,27 @@ void api_generator::generate_client_files(const fc::path& client_output_dir, con
     interceptor_cpp_file << "  try\n";
     interceptor_cpp_file << "  {\n";
     interceptor_cpp_file << "    ";
-    if (!std::dynamic_pointer_cast<void_type_mapping>(method.return_type))
+    bool is_void = !!std::dynamic_pointer_cast<void_type_mapping>(method.return_type);
+#if BTS_GLOBAL_API_LOG
+    if( !is_void )
+      interceptor_cpp_file << method.return_type->get_cpp_return_type() << " result = ";
+    else
+      interceptor_cpp_file << "std::nullptr_t result = nullptr;\n    ";
+#else
+    if( !is_void )
       interceptor_cpp_file << "return ";
+#endif
     std::list<std::string> args;
     for (const parameter_description& param : method.parameters)
       args.push_back(param.name);
     interceptor_cpp_file << "get_impl()->" << method.name << "(" << boost::join(args, ", ") << ");\n";
+#if BTS_GLOBAL_API_LOG
+    create_global_api_exit_log_for_method( interceptor_cpp_file, interceptor_classname, method );
+    if( !is_void )
+      interceptor_cpp_file << "\n    return result;\n";
+    else
+      interceptor_cpp_file << "\n    return;\n";
+#endif
     interceptor_cpp_file << "  }\n";
     interceptor_cpp_file << "  FC_RETHROW_EXCEPTIONS(warn, \"\")\n";
     interceptor_cpp_file << "}\n\n";

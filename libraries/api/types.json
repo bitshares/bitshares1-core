@@ -88,35 +88,6 @@
         "default_example" : "TODO"
       },
       {
-        "type_name" : "proposal_record",
-        "cpp_return_type" : "bts::blockchain::proposal_record",
-        "cpp_include_file" : "bts/blockchain/types.hpp",
-        "default_example" : "TODO"
-      },
-      {
-        "type_name" : "proposal_array",
-        "container_type" : "array",
-        "contained_type" : "proposal_record",
-        "default_example" : "TODO"
-      },
-      {
-        "type_name" : "proposal_vote",
-        "cpp_return_type" : "bts::blockchain::proposal_vote",
-        "cpp_include_file" : "bts/blockchain/types.hpp",
-        "default_example" : "TODO"
-      },
-      {
-        "type_name" : "vote_type",
-        "cpp_return_type" : "bts::blockchain::proposal_vote::vote_type",
-        "default_example" : "yes"
-      },
-      {
-        "type_name" : "proposal_vote_array",
-        "container_type" : "array",
-        "contained_type" : "proposal_vote",
-        "default_example" : "TODO"
-      },
-      {
         "type_name" : "optional_account_record",
         "cpp_return_type" : "fc::optional<bts::blockchain::account_record>",
         "cpp_include_file" : "bts/blockchain/types.hpp",
@@ -297,8 +268,12 @@
         "contained_type" : "blockchain_transaction_record"
       },
       {
-        "type_name" : "blockchain_transaction_record_map",
+        "type_name" : "transaction_record_map",
         "cpp_return_type" : "std::map<bts::blockchain::transaction_id_type, bts::blockchain::transaction_record>"
+      },
+      {
+        "type_name" : "transaction_record_pair",
+        "cpp_return_type" : "std::pair<bts::blockchain::transaction_id_type, bts::blockchain::transaction_record>"
       },
       {
         "type_name" : "signed_transaction",
@@ -310,12 +285,6 @@
         "type_name" : "signed_transaction_array",
         "container_type" : "array",
         "contained_type" : "signed_transaction",
-        "default_example" : "TODO"
-      },
-      {
-        "type_name" : "optional_blockchain_transaction_record",
-        "cpp_return_type" : "fc::optional<bts::blockchain::transaction_record>",
-        "cpp_include_file" : "fc/optional.hpp",
         "default_example" : "TODO"
       },
       {
@@ -522,11 +491,6 @@
         "container_type" : "array",
         "contained_type" : "wallet_account_record",
         "default_example" : "TODO"
-      },
-      {
-        "type_name" : "proposal_id",
-        "cpp_return_type" : "bts::blockchain::proposal_id_type",
-        "cpp_include_file" : "bts/blockchain/types.hpp"
       },
       {
         "type_name" : "address_list",

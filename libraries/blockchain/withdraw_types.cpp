@@ -37,7 +37,7 @@ namespace bts { namespace blockchain {
       return address( *this );
    }
 
-   omemo_status withdraw_with_signature::decrypt_memo_data( const fc::ecc::private_key& receiver_key )const
+   omemo_status withdraw_with_signature::decrypt_memo_data( const fc::ecc::private_key& receiver_key, bool ignore_owner )const
    { try {
       try {
          FC_ASSERT( memo.valid() );
@@ -48,9 +48,8 @@ namespace bts { namespace blockchain {
                                                                            extended_private_key::public_derivation );
          auto secret_public_key = secret_private_key.get_public_key();
 
-         // allow memos to be sent so long as we can decrypt the data.
-         //if( owner != address(secret_public_key) )
-         //   return omemo_status();
+         if( !ignore_owner && owner != address( secret_public_key ) )
+            return omemo_status();
 
          auto memo = decrypt_memo_data( secret );
 
@@ -66,12 +65,12 @@ namespace bts { namespace blockchain {
          }
 
          return memo_status( memo, has_valid_signature, secret_private_key );
-      } 
+      }
       catch ( const fc::aes_exception& e )
       {
          return omemo_status();
       }
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW( (ignore_owner) ) }
 
    public_key_type withdraw_with_signature::encrypt_memo_data(
            const fc::ecc::private_key& one_time_private_key,
@@ -145,7 +144,7 @@ namespace bts { namespace blockchain {
          }
 
          return memo_status( memo, has_valid_signature, secret_private_key );
-      } 
+      }
       catch ( const fc::aes_exception& e )
       {
          return omemo_status();
