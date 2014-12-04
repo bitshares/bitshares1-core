@@ -522,6 +522,7 @@ namespace bts { namespace blockchain {
       auto new_balance_record = eval_state._current_state->get_balance_record( newer_balance_record.id() );
       if( !new_balance_record.valid() )
           new_balance_record = current_balance_record;
+      new_balance_record->condition = new_condition;
 
       if( new_balance_record->balance == 0 )
       {
@@ -546,7 +547,7 @@ namespace bts { namespace blockchain {
 
       // update delegate vote on deposited account..
       if( new_balance_record->condition.delegate_slate_id )
-         eval_state.adjust_vote( current_balance_record->condition.delegate_slate_id, (balance-fee) );
+         eval_state.adjust_vote( new_balance_record->condition.delegate_slate_id, (balance-fee) );
 
       ilog("I'm storing a balance record whose last update is: ${secs}", ("secs", new_balance_record->last_update) );
       eval_state._current_state->store_balance_record( *new_balance_record );

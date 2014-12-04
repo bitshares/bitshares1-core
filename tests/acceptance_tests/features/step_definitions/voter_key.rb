@@ -16,5 +16,5 @@ end
 Then(/^votes for (\w+) should be positive$/) do |acct|
     info = @current_actor.node.exec 'blockchain_get_account', acct
     puts info
-    expect( info["delegate_info"]["votes_for"] > 0 )
+    raise "Vote wasn't updated!" unless info["delegate_info"]["votes_for"] > 0
 end

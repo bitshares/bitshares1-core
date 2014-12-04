@@ -19,7 +19,7 @@ Feature: Delegate a balance's voting power to a different address.
 
     Scenario: You can set the voter key and use it to vote
         When I set voter for balance B1 as VoterAddress
-        And I wait for 3 blocks
+        And I wait for 1 blocks
         And I get balance ID for address: Address1 as B2
         And I switch to wallet voterwallet
         And I approve newdelegate
