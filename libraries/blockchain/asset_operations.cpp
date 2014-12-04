@@ -297,4 +297,18 @@ namespace bts { namespace blockchain {
 
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
+   void create_asset_proposal::evaluate( transaction_evaluation_state& eval_state )
+   { try {
+      oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->asset_id );
+      if( NOT current_asset_record.valid() ) FC_CAPTURE_AND_THROW( unknown_asset_id, (this->asset_id) );
+      FC_ASSERT( current_asset_record->is_user_issued() );
+      FC_ASSERT( !current_asset_record->is_market_issued() );
+
+      if( !eval_state.verify_authority( current_asset_record->authority ) )
+         FC_CAPTURE_AND_THROW( missing_signature, (current_asset_record->authority) );
+
+      current_asset_record->last_proposal_id++;
+      eval_state._current_state->store_asset_proposal( proposal_record( this->asset_id, current_asset_record->last_proposal_id, this->info ) );
+   } FC_CAPTURE_AND_RETHROW( (*this) ) }
+
 } } // bts::blockchain

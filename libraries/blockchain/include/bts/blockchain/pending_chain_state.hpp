@@ -26,6 +26,9 @@ namespace bts { namespace blockchain {
 
          virtual fc::time_point_sec     now()const override;
 
+         virtual void                       store_asset_proposal( const proposal_record& r ) override;
+         virtual optional<proposal_record>  fetch_asset_proposal( asset_id_type asset_id, proposal_id_type proposal_id )const override;
+
          virtual void                   store_burn_record( const burn_record& br ) override;
          virtual oburn_record           fetch_burn_record( const burn_record_key& key )const override;
 
@@ -112,30 +115,31 @@ namespace bts { namespace blockchain {
          // NOTE: this isn't really part of the chain state, but more part of the block state
          vector<market_transaction>                                     market_transactions;
 
-         unordered_map< asset_id_type, asset_record>                    assets;
-         unordered_map< slate_id_type, delegate_slate>                  slates;
-         unordered_map< account_id_type, account_record>                accounts;
-         unordered_map< balance_id_type, balance_record>                balances;
-         unordered_map< string, account_id_type>                        account_id_index;
-         unordered_map< string, asset_id_type>                          symbol_id_index;
-         unordered_map< transaction_id_type, transaction_record>        transactions;
-         unordered_map< chain_property_type, variant>                   properties;
-         unordered_map<address, account_id_type>                        key_to_account;
-         map< market_index_key, order_record>                           bids;
-         map< market_index_key, order_record>                           asks;
-         map< market_index_key, order_record>                           shorts;
-         map< market_index_key, collateral_record>                      collateral;
-         map<time_point_sec, slot_record>                               slots;
-         map<market_history_key, market_history_record>                 market_history;
-         map< std::pair<asset_id_type,asset_id_type>, market_status>    market_statuses;
-         map<operation_type_enum, std::deque<operation>>                recent_operations;
-         map<feed_index, feed_record>                                   feeds;
-         map<burn_record_key,burn_record_value>                         burns;
-         map< market_index_key, order_record>                           relative_bids;
-         map< market_index_key, order_record>                           relative_asks;
-
-         map< object_id_type, object_record >                           objects;
-         map< std::pair<asset_id_type,address>, object_id_type >        authorizations;
+         unordered_map< asset_id_type, asset_record>                       assets;
+         unordered_map< slate_id_type, delegate_slate>                     slates;
+         unordered_map< account_id_type, account_record>                   accounts;
+         unordered_map< balance_id_type, balance_record>                   balances;
+         unordered_map< string, account_id_type>                           account_id_index;
+         unordered_map< string, asset_id_type>                             symbol_id_index;
+         unordered_map< transaction_id_type, transaction_record>           transactions;
+         unordered_map< chain_property_type, variant>                      properties;
+         unordered_map<address, account_id_type>                           key_to_account;
+         map< market_index_key, order_record>                              bids;
+         map< market_index_key, order_record>                              asks;
+         map< market_index_key, order_record>                              shorts;
+         map< market_index_key, collateral_record>                         collateral;
+         map<time_point_sec, slot_record>                                  slots;
+         map<market_history_key, market_history_record>                    market_history;
+         map< std::pair<asset_id_type,asset_id_type>, market_status>       market_statuses;
+         map<operation_type_enum, std::deque<operation>>                   recent_operations;
+         map<feed_index, feed_record>                                      feeds;
+         map<burn_record_key,burn_record_value>                            burns;
+         map< market_index_key, order_record>                              relative_bids;
+         map< market_index_key, order_record>                              relative_asks;
+                                                                           
+         map< object_id_type, object_record >                              objects;
+         map< std::pair<asset_id_type,address>, object_id_type >           authorizations;
+         map< std::pair<asset_id_type,proposal_id_type>, proposal_record > asset_proposals;
 
          std::set<std::pair<asset_id_type, asset_id_type>>              _dirty_markets;
 
@@ -150,5 +154,5 @@ FC_REFLECT( bts::blockchain::pending_chain_state,
             (assets)(slates)(accounts)(balances)(account_id_index)(symbol_id_index)(transactions)
             (properties)(bids)(asks)(shorts)(collateral)(slots)
             (market_statuses)(feeds)(objects)(burns)(relative_bids)(relative_asks)(_dirty_markets)
-            (authorizations)
+            (authorizations)(asset_proposals)
            )

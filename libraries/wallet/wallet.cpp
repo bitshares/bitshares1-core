@@ -1478,7 +1478,7 @@ namespace detail {
            const auto& records = item.second;
            for( const auto& record : records )
            {
-               auto oslate = my->_blockchain->get_delegate_slate( record.delegate_slate_id() );
+               auto oslate = my->_blockchain->get_delegate_slate( record.slate_id() );
                if( oslate.valid() )
                    total += record.get_spendable_balance( my->_blockchain->now() ).amount * oslate->supported_delegates.size();
                total_possible += record.get_spendable_balance( my->_blockchain->now() ).amount * BTS_BLOCKCHAIN_MAX_SLATE_SIZE;
@@ -4126,7 +4126,7 @@ namespace detail {
               const auto balance = obalance->get_spendable_balance( pending_state->now() );
               if( balance.amount <= 0 || balance.asset_id != 0 ) continue;
 
-              const auto slate_id = obalance->delegate_slate_id();
+              const auto slate_id = obalance->slate_id();
               if( slate_id == 0 ) continue;
 
               const auto slate = pending_state->get_delegate_slate( slate_id );
