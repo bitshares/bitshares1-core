@@ -140,6 +140,12 @@ public:
 
    bool databases_open = false;
 
+   ~ballot_box_impl()
+   {
+      if( databases_open )
+         close();
+   }
+
    void check_authority(decision_storage_record& decision)
    {
       decision.authoritative = false;
