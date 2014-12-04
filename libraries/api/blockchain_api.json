@@ -144,7 +144,7 @@
       {
         "method_name": "blockchain_list_feed_prices",
         "description": "Returns a list of all currently valid feed prices",
-        "return_type": "price_array",
+        "return_type": "price_map",
         "parameters" : [],
         "is_const" : true,
         "prerequisites" : ["no_prerequisites"]
