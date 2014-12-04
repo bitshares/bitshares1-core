@@ -140,6 +140,16 @@ map<transaction_id_type, fc::exception> detail::client_impl::wallet_get_pending_
   }
   return errors;
 }
+wallet_transaction_record detail::client_impl::wallet_asset_authorize_key( const string& paying_account_name,
+                                                                           const string& symbol,
+                                                                           const address& key, 
+                                                                           const object_id_type& meta )
+{
+   auto record = _wallet->asset_authorize_key( paying_account_name, symbol, key, meta, true );
+   _wallet->cache_transaction( record );
+   network_broadcast_transaction( record.trx );
+   return record;
+}
 
 wallet_transaction_record detail::client_impl::wallet_publish_slate( const string& publishing_account_name,
                                                                      const string& paying_account_name )
@@ -1329,19 +1339,21 @@ transaction_builder client_impl::wallet_balance_set_vote_info(const balance_id_t
         auto balance = _chain_db->get_balance_record( balance_id );
         if( balance.valid() && balance->restricted_owner.valid() )
             new_voter = *balance->restricted_owner;
+        else
+            FC_ASSERT(!"Didn't specify a voter address and none currently exists.");
     }
     else
     {
         new_voter = address( voter_address );
     }
-    auto builder = _wallet->set_vote_info( balance_id, new_voter, selection_method );
+    auto builder = _wallet->create_transaction_builder( _wallet->set_vote_info( balance_id, new_voter, selection_method ) );
     if( sign_and_broadcast )
     {
-        auto record = builder.finalize().sign();
+        auto record = builder->sign();
         _wallet->cache_transaction( record );
         network_broadcast_transaction( record.trx );
     }
-    return builder;
+    return *builder;
 }
 
 

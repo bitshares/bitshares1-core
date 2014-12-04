@@ -2183,8 +2183,8 @@ namespace detail {
       else
           builder->required_signatures.insert( balance->owner() );
 
-      trx.withdraw( balance_id, required_fees.amount );
       trx.operations.push_back( op );
+//      trx.withdraw( balance_id, required_fees.amount );
 
       auto entry = ledger_entry();
       entry.memo = "Set balance vote info";
@@ -4419,5 +4419,13 @@ namespace detail {
 
        return snapshot_records;
    } FC_CAPTURE_AND_RETHROW() }
+
+   wallet_transaction_record wallet::asset_authorize_key( const string& paying_account_name, 
+                                                  const string& symbol,
+                                                  const address& key,
+                                                  const object_id_type& meta, bool sign )
+   {
+      FC_ASSERT( !"Not Implemented" );
+   }
 
 } } // bts::wallet

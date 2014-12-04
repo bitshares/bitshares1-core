@@ -31,8 +31,6 @@ namespace bts { namespace blockchain {
 
          share_type get_alt_fees()const;
 
-         virtual void reset();
-
          virtual void evaluate( const signed_transaction& trx, bool skip_signature_check = false );
          virtual void evaluate_operation( const operation& op );
          virtual bool verify_authority( const multisig_meta_info& siginfo );
@@ -58,15 +56,6 @@ namespace bts { namespace blockchain {
          bool any_parent_has_signed( const string& account_name )const;
          bool account_or_any_parent_has_signed( const account_record& record )const;
 
-         /**
-          *  subtracts amount from a withdraw_with_signature account with the
-          *  owner_key and amount.asset_id and the delegate_id of the transaction.
-          */
-         void add_required_deposit( const address& owner_key, const asset& amount );
-
-         /** contains address funds were deposited into for use in
-          * incrementing required_deposits balance
-          */
          void sub_balance( const balance_id_type& addr, const asset& amount );
          void add_balance( const asset& amount );
 
@@ -78,17 +67,13 @@ namespace bts { namespace blockchain {
          void validate_asset( const asset& a )const;
 
          signed_transaction                         trx;
+         uint32_t                                   current_op_index = 0;
+
          unordered_set<address>                     signed_keys;
 
          // increases with funds are withdrawn, decreases when funds are deposited or fees paid
          optional<fc::exception>                    validation_error;
 
-         /** every time a deposit is made this balance is increased
-          *  every time a deposit is required this balance is decreased
-          *
-          *  This balance cannot be negative without an error.
-          */
-         unordered_map<balance_id_type, asset>      required_deposits;
          unordered_map<balance_id_type, asset>      provided_deposits;
 
          // track deposits and withdraws by asset type
@@ -114,8 +99,7 @@ namespace bts { namespace blockchain {
           *  @note - this value should always equal the sum of deposits-withdraws
           *  and is maintained for the purpose of seralization.
           */
-         //unordered_map<asset_id_type, share_type>   balance;
-         map<asset_id_type, share_type>   balance;
+         map<asset_id_type, share_type>             balance;
 
          struct vote_state
          {
@@ -133,10 +117,7 @@ namespace bts { namespace blockchain {
          chain_interface*                           _current_state;
          digest_type                                _chain_id;
          bool                                       _skip_signature_check = false;
-
-         uint32_t                                   _current_op_index = 0;
    };
-
    typedef shared_ptr<transaction_evaluation_state> transaction_evaluation_state_ptr;
 
 } } // bts::blockchain
@@ -144,9 +125,9 @@ namespace bts { namespace blockchain {
 FC_REFLECT( bts::blockchain::transaction_evaluation_state::vote_state, (votes_for) )
 FC_REFLECT( bts::blockchain::transaction_evaluation_state,
            (trx)
+           (current_op_index)
            (signed_keys)
            (validation_error)
-           (required_deposits)
            (provided_deposits)
            (deposits)
            (withdraws)

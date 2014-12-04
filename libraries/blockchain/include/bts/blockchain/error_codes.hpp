@@ -16,8 +16,6 @@ enum bts_error_code
    BTS_INVALID_ACCOUNT_ID,
    BTS_INVALID_ASSET_ID,
    BTS_INVALID_DELEGATE_ID,
-   BTS_MISSING_REQUIRED_DEPOSIT,
-   BTS_INSUFFICIENT_REQUIRED_DEPOSIT,
    BTS_INSUFFICIENT_FEE_PAID,
    BTS_DELEGATE_MAX_VOTE_LIMIT,
    BTS_DUPLICATE_TRANSACTION,
@@ -30,7 +28,7 @@ enum bts_error_code
 
 } } // bts::blockchain
 
-FC_REFLECT_ENUM( bts::blockchain::bts_error_code, 
+FC_REFLECT_ENUM( bts::blockchain::bts_error_code,
                  (BTS_UNDEFINED_ADDRESS)
                  (BTS_INSUFFICIENT_FUNDS)
                  (BTS_MISSING_SIGNATURE)
@@ -41,8 +39,6 @@ FC_REFLECT_ENUM( bts::blockchain::bts_error_code,
                  (BTS_INVALID_ACCOUNT_ID)
                  (BTS_INVALID_ASSET_ID)
                  (BTS_INVALID_DELEGATE_ID)
-                 (BTS_MISSING_REQUIRED_DEPOSIT)
-                 (BTS_INSUFFICIENT_REQUIRED_DEPOSIT)
                  (BTS_INSUFFICIENT_FEE_PAID)
                  (BTS_DELEGATE_MAX_VOTE_LIMIT)
                  (BTS_DUPLICATE_TRANSACTION)

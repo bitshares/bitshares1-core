@@ -10,8 +10,12 @@ Given(/I made an account (\w+)$/) do |name|
     @current_actor.node.exec 'wallet_account_create', name
 end
 
-Given(/I register an account (\w+)$/) do |name|
-    @current_actor.node.exec 'wallet_account_register', name, @current_actor.account
+Given(/I register an account (\w+)( as a delegate)?$/) do |name, del|
+    if del
+        @current_actor.node.exec 'wallet_account_register', name, @current_actor.account, "", 1
+    else
+        @current_actor.node.exec 'wallet_account_register', name, @current_actor.account
+    end
 end
 
 Given(/I rename account (\w+) to (\w+)$/) do |old_name, new_name|
