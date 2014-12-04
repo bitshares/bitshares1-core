@@ -2887,12 +2887,26 @@ namespace detail {
       if( new_account_type == public_account )
          meta_info = account_meta_info( public_account );
 
-      trx.register_account( account_to_register,
-                            public_data,
-                            account_public_key, // master
-                            account_public_key, // active
-                            delegate_pay_rate <= 100 ? delegate_pay_rate : -1,
-                            meta_info );
+      // TODO: This is a hack to register with different owner and active keys until the API is fixed
+      try
+      {
+          const wallet_account_record local_account = get_account( account_to_register );
+          trx.register_account( account_to_register,
+                                public_data,
+                                local_account.owner_key,
+                                local_account.active_key(),
+                                delegate_pay_rate <= 100 ? delegate_pay_rate : -1,
+                                meta_info );
+      }
+      catch( ... )
+      {
+          trx.register_account( account_to_register,
+                                public_data,
+                                account_public_key, // master
+                                account_public_key, // active
+                                delegate_pay_rate <= 100 ? delegate_pay_rate : -1,
+                                meta_info );
+      }
 
       const auto pos = account_to_register.find( '.' );
       if( pos != string::npos )
