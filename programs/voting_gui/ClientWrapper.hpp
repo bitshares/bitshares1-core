@@ -20,6 +20,9 @@ class ClientWrapper : public QObject
    Q_PROPERTY(QString info READ get_info NOTIFY state_changed)
    Q_PROPERTY(QString accountName READ accountName WRITE setAccountName NOTIFY accountNameChanged)
    Q_PROPERTY(QString voterAddress READ voter_address NOTIFY voter_address_changed)
+   Q_PROPERTY(QString fullName READ fullName NOTIFY fullNameChanged)
+   Q_PROPERTY(QString streetAddress READ streetAddress NOTIFY streetAddressChanged)
+   Q_PROPERTY(QString birthDate READ birthDate NOTIFY birthDateChanged)
    Q_PROPERTY(QString secret READ secret NOTIFY secretChanged)
 
 public:
@@ -64,6 +67,21 @@ public:
       return m_accountName;
    }
 
+   QString fullName() const
+   {
+      return m_fullName;
+   }
+
+   QString streetAddress() const
+   {
+      return m_streetAddress;
+   }
+
+   QString birthDate() const
+   {
+      return m_birthDate;
+   }
+
 public Q_SLOTS:
    void set_data_dir(QString data_dir);
    void load_election();
@@ -97,6 +115,12 @@ Q_SIGNALS:
 
    void accountNameChanged(QString arg);
 
+   void fullNameChanged(QString arg);
+
+   void streetAddressChanged(QString arg);
+
+   void birthDateChanged(QString arg);
+
 private:
    bts::client::config                  _cfg;
    std::shared_ptr<bts::client::client> _client;
@@ -126,4 +150,7 @@ private:
    QString m_voterAddress;
    QString m_secret;
    QString m_accountName;
+   QString m_fullName;
+   QString m_streetAddress;
+   QString m_birthDate;
 };

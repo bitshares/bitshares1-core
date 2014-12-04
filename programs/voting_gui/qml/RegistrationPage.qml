@@ -224,9 +224,9 @@ TaskPage {
          }
          PropertyChanges {
             target: idCard
-            fullName: "Name: Pending..."
-            birthDate: "DOB: Pending..."
-            streetAddress: "Address: Pending..."
+            fullName: bitshares.fullName
+            birthDate: bitshares.birthDate
+            streetAddress: bitshares.streetAddress
          }
       },
       State {
@@ -248,6 +248,12 @@ TaskPage {
             target: container
             backButtonHighlighted: true
          }
+         PropertyChanges {
+            target: idCard
+            fullName: "Name: Pending..."
+            birthDate: "DOB: Pending..."
+            streetAddress: "Address: Pending..."
+         }
       },
       State {
          name: "REGISTERED"
@@ -263,6 +269,12 @@ TaskPage {
             target: statusText
             text: qsTr("Your identity has been accepted and anonymously registered to vote. Please proceed to the " +
                        "next step.")
+         }
+         PropertyChanges {
+            target: idCard
+            fullName: bitshares.fullName
+            birthDate: bitshares.birthDate
+            streetAddress: bitshares.streetAddress
          }
       }
    ]

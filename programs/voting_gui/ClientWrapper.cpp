@@ -331,6 +331,39 @@ void ClientWrapper::process_accepted_identity(QString identity, QJSValue callbac
             data["identity"] = signed_id;
          }
 
+         string property;
+         if( auto name = new_id.get_property("First Name") )
+            property += " " + name->value.as_string();
+         if( auto name = new_id.get_property("Middle Name") )
+            property += " " + name->value.as_string();
+         if( auto name = new_id.get_property("Last Name") )
+            property += " " + name->value.as_string();
+         if( auto name = new_id.get_property("Name Suffix") )
+            property += " " + name->value.as_string();
+         if( !property.empty() )
+            property.erase(0,1);
+         m_fullName = QString::fromStdString(property);
+         Q_EMIT fullNameChanged(m_fullName);
+         property.clear();
+         if( auto name = new_id.get_property("Address Line 1") )
+            property = name->value.as_string() + "\n";
+         if( auto name = new_id.get_property("Address Line 2") )
+            property += name->value.as_string().empty()? string() : name->value.as_string() + "\n";
+         if( auto name = new_id.get_property("City") )
+            property += name->value.as_string() + ", ";
+         if( auto name = new_id.get_property("State") )
+            property += name->value.as_string() + " ";
+         if( auto name = new_id.get_property("ZIP") )
+            property += name->value.as_string();
+         m_streetAddress = QString::fromStdString(property);
+         Q_EMIT streetAddressChanged(m_streetAddress);
+         property.clear();
+         if( auto name = new_id.get_property("Date of Birth") )
+            property = name->value.as_string();
+         m_birthDate = QString::fromStdString(property).left(10).replace(QRegExp("(\\d{4})-(\\d{2})-(\\d{2})"),
+                                                                         "\\2/\\3/\\1");
+         Q_EMIT birthDateChanged(m_birthDate);
+
          _client->get_wallet()->update_account_private_data(accountName().toStdString(), data);
 
          if( auto ballot_id = new_id.get_property("Ballot ID") )
