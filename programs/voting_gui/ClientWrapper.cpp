@@ -481,7 +481,7 @@ void ClientWrapper::begin_registration(QStringList registrars)
          auto identity = account.private_data.as<fc::variant_object>()["identity"].as<bts::vote::signed_identity>();
          auto ballot_id = identity.get_property("Ballot ID");
          FC_ASSERT(ballot_id, "Cannot begin registration because ballot ID has not been verified yet.");
-         auto signature = _client->get_wallet()->sign_hash("voting-key." + account.name, fc::digest(*ballot_id));
+         auto signature = _client->get_wallet()->sign_hash("voting-key." + account.name, ballot_id->id(identity.owner));
 
          try {
             auto registrar_signature = client->registrar_demo_registration(*ballot_id, identity.owner, signature);

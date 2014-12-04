@@ -153,7 +153,7 @@ public:
       try {
          //FIXME: Need a real way to know this
          const std::unordered_set<address> recognized_registrars = {
-            public_key_type("XTS6pBHGAjnGrYmYKX9Ko26nQokqZf41YcX8FcuCb7zQrLQSUMnS8")
+            public_key_type("XTS7AfNMa1ZUdv7EfhnJCj11km5NM8SRpyDCNcoMQfrEHwpLwuJfW")
          };
          std::unordered_set<address> signatories;
          std::vector<address> recognized_signatories;
@@ -171,6 +171,10 @@ public:
                                signatories.begin(), signatories.end(),
                                std::back_inserter(recognized_signatories));
 
+         elog("Decision has ${v} valid signatures and ${a} acceptable signatures from ${t} total signatures.",
+              ("v", signatories.size())
+              ("a", recognized_signatories.size())
+              ("t", decision.registrar_authorizations.size()));
          decision.authoritative = recognized_signatories.size() > recognized_registrars.size() / 2;
       } catch (...){
          /* In case of error in here, we just declare the decision non-authoritative. */
