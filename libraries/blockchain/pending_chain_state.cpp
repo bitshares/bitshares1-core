@@ -339,7 +339,6 @@ namespace bts { namespace blockchain {
 
    void pending_chain_state::store_balance_record( const balance_record& r )
    {
-       ilog("calling store_balance_record: ${r}", ("r", r));
       balances[r.id()] = r;
    }
 

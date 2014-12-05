@@ -2540,7 +2540,7 @@ namespace bts { namespace blockchain {
              if( key.order_price.quote_asset_id == quote_id &&
                  key.order_price.base_asset_id == base_id  )
              {
-                results.push_back( {bid_order, key, market_itr.value()} );
+                results.push_back( {relative_bid_order, key, market_itr.value()} );
              }
              else break;
 
