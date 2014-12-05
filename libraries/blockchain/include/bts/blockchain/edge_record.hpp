@@ -5,6 +5,7 @@
 
 namespace bts { namespace blockchain {
 
+    struct edge_index_key;
     struct edge_record : object_record
     {
         static const obj_type type = edge_object;
@@ -14,7 +15,10 @@ namespace bts { namespace blockchain {
         variant            value;
 
         edge_record() { this->set_id( edge_object, 0 ); }
+        edge_index_key   index_key();
+        edge_index_key   reverse_index_key();
     };
+    typedef fc::optional<edge_record> oedge_record;
 
     struct edge_index_key
     {
@@ -35,3 +39,4 @@ namespace bts { namespace blockchain {
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::edge_record, (from)(to)(name)(value) );
+FC_REFLECT( bts::blockchain::edge_index_key, (from)(to)(name) );

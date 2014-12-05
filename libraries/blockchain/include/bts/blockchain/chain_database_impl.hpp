@@ -148,6 +148,9 @@ namespace bts { namespace blockchain {
             bts::db::cached_level_map<feed_index, feed_record>                          _feed_db;
 
             bts::db::level_map<object_id_type, object_record>                           _object_db;
+            bts::db::level_map<edge_index_key, object_id_type>                           _edge_index;
+            bts::db::level_map<edge_index_key, object_id_type>                           _reverse_edge_index;
+
             bts::db::level_map<std::pair<asset_id_type,address>, object_id_type>                  _auth_db;
             bts::db::level_map<std::pair<asset_id_type,proposal_id_type>, proposal_record>        _asset_proposal_db;
 
