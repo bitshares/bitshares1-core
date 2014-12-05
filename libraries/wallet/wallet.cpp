@@ -1566,7 +1566,7 @@ namespace detail {
            const auto& records = item.second;
            for( const auto& record : records )
            {
-               auto oslate = my->_blockchain->get_delegate_slate( record.delegate_slate_id() );
+               auto oslate = my->_blockchain->get_delegate_slate( record.slate_id() );
                if( oslate.valid() )
                    total += record.get_spendable_balance( my->_blockchain->now() ).amount * oslate->supported_delegates.size();
                total_possible += record.get_spendable_balance( my->_blockchain->now() ).amount * BTS_BLOCKCHAIN_MAX_SLATE_SIZE;
@@ -2975,28 +2975,63 @@ namespace detail {
       if( new_account_type == public_account )
          meta_info = account_meta_info( public_account );
 
-      trx.register_account( account_to_register,
-                            public_data,
-                            account_public_key, // master
-                            account_public_key, // active
-                            delegate_pay_rate <= 100 ? delegate_pay_rate : -1,
-                            meta_info );
-
-      const auto pos = account_to_register.find( '.' );
-      if( pos != string::npos )
+      // TODO: This is a hack to register with different owner and active keys until the API is fixed
+      try
       {
-        string parent_name;
-        try
-        {
-          parent_name = account_to_register.substr( pos+1, string::npos );
-          const auto parent_acct = get_account( parent_name );
-          required_signatures.insert( parent_acct.active_address() );
-        }
-        catch( const unknown_account& )
-        {
-          FC_THROW_EXCEPTION( unauthorized_child_account, "Need parent account to authorize registration!",
-                              ("child_account",account_to_register)("parent_account",parent_name) );
-        }
+          const wallet_account_record local_account = get_account( account_to_register );
+          trx.register_account( account_to_register,
+                                public_data,
+                                local_account.owner_key,
+                                local_account.active_key(),
+                                delegate_pay_rate <= 100 ? delegate_pay_rate : -1,
+                                meta_info );
+      }
+      catch( ... )
+      {
+          trx.register_account( account_to_register,
+                                public_data,
+                                account_public_key, // master
+                                account_public_key, // active
+                                delegate_pay_rate <= 100 ? delegate_pay_rate : -1,
+                                meta_info );
+      }
+
+      // Verify a parent key is available if required
+      optional<string> parent_name = my->_blockchain->get_parent_account_name( account_to_register );
+      if( parent_name.valid() )
+      {
+          bool have_parent_key = false;
+          for( ; parent_name.valid(); parent_name = my->_blockchain->get_parent_account_name( *parent_name ) )
+          {
+              try
+              {
+                  const wallet_account_record parent_record = get_account( *parent_name );
+                  if( parent_record.is_retracted() )
+                      continue;
+
+                  if( my->_wallet_db.has_private_key( parent_record.active_address() ) )
+                  {
+                      required_signatures.insert( parent_record.active_address() );
+                      have_parent_key = true;
+                      break;
+                  }
+
+                  if( my->_wallet_db.has_private_key( parent_record.owner_address() ) )
+                  {
+                      required_signatures.insert( parent_record.owner_address() );
+                      have_parent_key = true;
+                      break;
+                  }
+              }
+              catch( ... )
+              {
+              }
+          }
+          if( !have_parent_key )
+          {
+              FC_THROW_EXCEPTION( unauthorized_child_account, "Parent account must authorize registration of this child account!",
+                                  ("child_account",account_to_register) );
+          }
       }
 
       auto required_fees = get_transaction_fee();
@@ -4214,7 +4249,7 @@ namespace detail {
               const auto balance = obalance->get_spendable_balance( pending_state->now() );
               if( balance.amount <= 0 || balance.asset_id != 0 ) continue;
 
-              const auto slate_id = obalance->delegate_slate_id();
+              const auto slate_id = obalance->slate_id();
               if( slate_id == 0 ) continue;
 
               const auto slate = pending_state->get_delegate_slate( slate_id );
@@ -4420,7 +4455,7 @@ namespace detail {
        return snapshot_records;
    } FC_CAPTURE_AND_RETHROW() }
 
-   wallet_transaction_record wallet::asset_authorize_key( const string& paying_account_name, 
+   wallet_transaction_record wallet::asset_authorize_key( const string& paying_account_name,
                                                   const string& symbol,
                                                   const address& key,
                                                   const object_id_type& meta, bool sign )

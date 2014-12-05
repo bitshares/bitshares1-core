@@ -87,6 +87,9 @@ namespace bts { namespace blockchain {
          void                               deauthorize( asset_id_type asset_id, const address& owner ) { authorize( asset_id, owner, -1 ); }
          virtual optional<object_id_type>   get_authorization( asset_id_type asset_id, const address& owner )const = 0;
 
+         virtual void                       store_asset_proposal( const proposal_record& r ) = 0;
+         virtual optional<proposal_record>  fetch_asset_proposal( asset_id_type asset_id, proposal_id_type proposal_id )const = 0;
+
          /** converts an asset + asset_id to a more friendly representation using the symbol name */
          string                             to_pretty_asset( const asset& a )const;
          double                             to_pretty_price_double( const price& a )const;

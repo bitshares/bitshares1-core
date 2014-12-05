@@ -65,15 +65,36 @@ namespace bts { namespace blockchain {
       share_type          transaction_fee = 0;
       multisig_meta_info  authority;
 
+      proposal_id_type    last_proposal_id = 0;
+
       /** reserved for future extensions */
       vector<char>        reserved;
    };
    typedef fc::optional<asset_record> oasset_record;
 
+   struct proposal_record
+   {
+      proposal_record(){}
+
+      proposal_record( asset_id_type id, proposal_id_type pid, object_id_type oid = -1 )
+      :asset_id(id),proposal_id(pid),info(oid){}
+
+      proposal_record make_null()const { auto tmp = *this; tmp.info = -1; return tmp; }
+      std::pair<asset_id_type,proposal_id_type> key()const{ return std::make_pair(asset_id,proposal_id); }
+
+      asset_id_type      asset_id      = 0;
+      proposal_id_type   proposal_id   = 0;
+      object_id_type     info          = -1;
+      uint32_t           votes_for     = 0;
+      uint32_t           votes_against = 0;
+   };
+
 } } // bts::blockchain
 
 FC_REFLECT_ENUM( bts::blockchain::asset_permissions,
     (none)(retractable)(restricted)(market_halt)(balance_halt)(supply_unlimit)(all_permissions)(default_permissions) )
+
+FC_REFLECT( bts::blockchain::proposal_record, (asset_id)(proposal_id)(info)(votes_for)(votes_against) );
 
 FC_REFLECT( bts::blockchain::asset_record,
             (id)
@@ -92,4 +113,5 @@ FC_REFLECT( bts::blockchain::asset_record,
             (flags)
             (transaction_fee)
             (authority)
+            (last_proposal_id)
            )

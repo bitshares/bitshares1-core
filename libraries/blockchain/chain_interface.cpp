@@ -1,5 +1,6 @@
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/exceptions.hpp>
+#include <fc/io/raw_variant.hpp>
 
 #include <algorithm>
 #include <locale>

@@ -12,8 +12,25 @@ namespace bts { namespace blockchain {
         object_id_type     to;
         string             name;
         variant            value;
+
+        edge_record() { this->set_id( edge_object, 0 ); }
     };
 
+    struct edge_index_key
+    {
+        object_id_type from;
+        object_id_type to;
+        string name;
+
+        friend bool operator == ( const edge_index_key& a, const edge_index_key& b )
+        {
+            return a.from == b.from && a.to == b.to && a.name == b.name;
+        }
+        friend bool operator < ( const edge_index_key& a, const edge_index_key& b )
+        {
+            return std::tie(a.from, a.to, a.name) < std::tie(b.from, b.to, b.name);
+        }
+    };
 
 } } // bts::blockchain
 

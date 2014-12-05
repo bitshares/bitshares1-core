@@ -560,6 +560,35 @@ vector<object_record> detail::client_impl::wallet_object_list( const string& acc
     return ret;
 } FC_CAPTURE_AND_RETHROW( (account) ) }
 
+transaction_builder detail::client_impl::wallet_set_edge(
+                                            const string& paying_account,
+                                            const object_id_type& from,
+                                            const object_id_type& to,
+                                            const string& name,
+                                            const variant& value )
+{ try {
+    auto builder = _wallet->create_transaction_builder();
+    edge_record edge;
+    edge.from = from;
+    edge.to = to;
+    edge.name = name;
+    edge.value = value;
+
+    // TODO if edge exists...
+    bool exists = false;
+    uint32_t existing_id = 1;
+    if( exists )
+    {
+        edge.set_id( edge_object, existing_id );
+        builder->set_object( paying_account, object_record(edge), false );
+    }
+    else
+    {
+        builder->set_object( paying_account, object_record(edge), true );
+    }
+    builder->finalize().sign();
+    return *builder;
+} FC_CAPTURE_AND_RETHROW( (paying_account)(from)(to)(name)(value) ) }
 
 
 

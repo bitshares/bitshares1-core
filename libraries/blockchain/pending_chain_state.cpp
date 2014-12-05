@@ -74,6 +74,7 @@ namespace bts { namespace blockchain {
       for( const auto& item : slots )           prev_state->store_slot_record( item.second );
       for( const auto& item : market_history )  prev_state->store_market_history_record( item.first, item.second );
       for( const auto& item : market_statuses ) prev_state->store_market_status( item.second );
+      for( const auto& item : asset_proposals ) prev_state->store_asset_proposal( item.second );
       for( const auto& item : feeds )           prev_state->set_feed( item.second );
       for( const auto& items : recent_operations )
       {
@@ -138,6 +139,12 @@ namespace bts { namespace blockchain {
          auto prev_value = prev_state->get_account_record( item.first );
          if( !!prev_value ) undo_state->store_account_record( *prev_value );
          else undo_state->store_account_record( item.second.make_null() );
+      }
+      for( const auto& item : asset_proposals )
+      {
+         auto prev_value = prev_state->fetch_asset_proposal( item.first.first, item.first.second );
+         if( !!prev_value ) undo_state->store_asset_proposal( *prev_value );
+         else undo_state->store_asset_proposal( item.second.make_null() );
       }
       for( const auto& item : balances )
       {
@@ -599,6 +606,18 @@ namespace bts { namespace blockchain {
       if( itr->second != -1 )
          return itr->second;
       return optional<object_id_type>();
+   }
+   void                       pending_chain_state::store_asset_proposal( const proposal_record& r ) 
+   {
+      asset_proposals[std::make_pair( r.asset_id, r.proposal_id )] = r;
+   }
+
+   optional<proposal_record>  pending_chain_state::fetch_asset_proposal( asset_id_type asset_id, proposal_id_type proposal_id )const 
+   {
+      chain_interface_ptr prev_state = _prev_state.lock();
+      auto itr = asset_proposals.find( std::make_pair( asset_id, proposal_id ) );
+      if( itr != asset_proposals.end() ) return itr->second;
+      return prev_state->fetch_asset_proposal( asset_id, proposal_id );
    }
 
 } } // bts::blockchain

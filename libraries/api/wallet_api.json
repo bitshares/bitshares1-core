@@ -369,6 +369,41 @@
         "aliases" : ["object_list"]
       },
       {
+        "method_name": "wallet_set_edge",
+        "description": "Create or update an edge object.",
+        "return_type": "transaction_builder",
+        "parameters" :
+          [
+            {
+              "name" : "paying_account",
+              "type" : "account_name",
+              "description" : "Account that will pay for this transaction"
+            },
+            {
+              "name" : "from",
+              "type" : "object_id_type",
+              "description" : ""
+            },
+            {
+              "name" : "to",
+              "type" : "object_id_type",
+              "description" : "Account that will pay for this transaction"
+            },
+            {
+              "name" : "name",
+              "type" : "string",
+              "description" : "The edge name (the 'key', used in index)"
+            },
+            {
+              "name" : "value",
+              "type" : "variant",
+              "description" : "The edge 'value', not part of the index"
+            }
+          ],
+        "prerequisites" : ["wallet_unlocked"],
+        "aliases" : ["set_edge"]
+      },
+      {
         "method_name": "wallet_account_transaction_history",
         "description": "Lists transaction history for the specified account",
         "return_type": "pretty_transactions",
