@@ -47,6 +47,7 @@ namespace bts { namespace wallet {
   FC_DECLARE_DERIVED_EXCEPTION( invalid_slate,              bts::wallet::wallet_exception, 20040, "invalid slate" );
   FC_DECLARE_DERIVED_EXCEPTION( private_key_not_found,      bts::wallet::wallet_exception, 20041, "private key not found" );
   FC_DECLARE_DERIVED_EXCEPTION( invalid_cancel,             bts::wallet::wallet_exception, 20042, "invalid cancel" );
+  FC_DECLARE_DERIVED_EXCEPTION( account_not_registered,     bts::wallet::wallet_exception, 20043, "account not registered" );
   // registered in wallet.cpp
 
 } } // bts::wallet

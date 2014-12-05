@@ -3013,7 +3013,8 @@ namespace detail {
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("issuer_account_name",issuer_account_name) );
       auto from_account_address = get_owner_public_key( issuer_account_name );
       auto oname_rec = my->_blockchain->get_account_record( issuer_account_name );
-      FC_ASSERT( oname_rec.valid() );
+      if( !oname_rec.valid() )
+          FC_THROW_EXCEPTION( account_not_registered, "Assets can only be created by registered accounts", ("issuer_account_name",issuer_account_name) );
 
       my->withdraw_to_transaction( required_fees,
                                    issuer_account_name,
