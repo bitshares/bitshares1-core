@@ -543,6 +543,11 @@ void run_regression_test(fc::path test_dir, bool with_network)
     std::vector<bts::client::client_ptr> clients;
     while (std::getline(test_config_file, line))
     {
+      if( (line.length() >= 8) && (line.substr(0, 8) == "genesis ") )
+      {
+          genesis_json_file = line.substr( 8 );
+          continue;
+      }
       line += " --disable-default-peers ";
       line += " --log-commands ";
       line += " --ulog=0 ";
