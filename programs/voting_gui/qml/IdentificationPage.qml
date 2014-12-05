@@ -24,7 +24,7 @@ TaskPage {
       return true
       for( var i = 0; i < photoButtonRow.children.length; i++ ) {
          var button = photoButtonRow.children[i]
-         if( !button.imageSet ) {
+         if( !button.imageAccepted ) {
             return false
          }
       }
@@ -33,7 +33,7 @@ TaskPage {
    function cannotProceedAlert() {
       for( var i = 0; i < photoButtonRow.children.length; i++ ) {
          var button = photoButtonRow.children[i]
-         if( !button.imageSet ) {
+         if( !button.imageAccepted ) {
             button.errorAlert()
          }
       }
@@ -90,7 +90,7 @@ TaskPage {
          onCollapsed: {
             if( hasImage ) {
                d.currentButton.currentImage = "file:" + camera.imageCapture.capturedImagePath
-               d.currentButton.imageAccepted = true
+               d.currentButton.acceptImage()
             }
             d.currentButton = null
             d.snapper.visible = false
@@ -134,6 +134,11 @@ TaskPage {
          onClicked: d.startSnapshot(this, "qrc:/res/person_silhouette.png")
          labelText: qsTr("Your Photo")
          onCurrentImageChanged: window.userPhoto = currentImage
+         imageAccepted: window.userPhotoAccepted
+
+         function acceptImage() {
+            window.userPhotoAccepted = true
+         }
       }
       PhotoButton {
          id: idFrontPhotoButton
@@ -142,6 +147,11 @@ TaskPage {
          onClicked: d.startSnapshot(this, "qrc:/res/id_front.png")
          labelText: qsTr("ID Card Front")
          onCurrentImageChanged: window.idFrontPhoto = currentImage
+         imageAccepted: window.idFrontPhotoAccepted
+
+         function acceptImage() {
+            window.idFrontPhotoAccepted = true
+         }
       }
       PhotoButton {
          id: idBackPhotoButton
@@ -150,6 +160,22 @@ TaskPage {
          onClicked: d.startSnapshot(this, "qrc:/res/id_back.png")
          labelText: qsTr("ID Card Back")
          onCurrentImageChanged: window.idBackPhoto = currentImage
+         imageAccepted: window.idBackPhotoAccepted
+
+         function acceptImage() {
+            window.idBackPhotoAccepted = true
+         }
       }
+   }
+   Text {
+      anchors.top: photoButtonRow.bottom
+      anchors.horizontalCenter: parent.horizontalCenter
+      width: parent.width * .9
+      wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+      color: "red"
+      font.pointSize: window.height * .02
+      visible: window.rejectionReason
+      text: "Your identity has been rejected. Please retake any photos which are no longer checkmarked and try " +
+            "again.\nVerifier comment: " + window.rejectionReason
    }
 }

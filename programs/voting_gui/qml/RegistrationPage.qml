@@ -45,6 +45,13 @@ TaskPage {
       if( !response.accepted ) {
          console.log("Request rejected: " + JSON.stringify(response))
          container.state = "REJECTED"
+         window.userPhotoAccepted = response.owner_photo_valid
+         window.idFrontPhotoAccepted = response.id_front_photo_valid
+         window.idBackPhotoAccepted = response.id_back_photo_valid
+         if( response.rejection_reason )
+            window.rejectionReason = response.rejection_reason
+         else
+            window.rejectionReason = "Unacceptable photo."
       } else {
          bitshares.process_accepted_identity(JSON.stringify(response.verified_identity),
                                              function(acceptance_count)
@@ -70,6 +77,8 @@ TaskPage {
 
       bitshares.initialization_complete.disconnect(startVerification)
       bitshares.accountNameChanged.disconnect(startVerification)
+
+      window.rejectionReason = ""
 
       bitshares.begin_verification(window, verifiers, function(response) {
          console.log("Verification submitted: " + response)
@@ -159,7 +168,7 @@ TaskPage {
          anchors.horizontalCenter: parent.horizontalCenter
          horizontalAlignment: TextInput.AlignHCenter
          font.family: "courier"
-         font.pointSize: Math.max(1, parent.height * .03)
+         font.pointSize: Math.max(1, parent.height * .02)
          text: bitshares.secret
       }
       Item { Layout.fillHeight: true }
@@ -243,6 +252,7 @@ TaskPage {
          }
          PropertyChanges {
             target: statusText
+            color: "red"
             text: qsTr("The election identity officials have rejected your identity. Please return to the previous " +
                        "step, correct any problems, and resubmit your request.")
          }

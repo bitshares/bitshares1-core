@@ -9,8 +9,12 @@ ApplicationWindow {
    title: qsTr("Voting Booth")
 
    property url userPhoto
+   property bool userPhotoAccepted
    property url idFrontPhoto
+   property bool idFrontPhotoAccepted
    property url idBackPhoto
+   property bool idBackPhotoAccepted
+   property string rejectionReason
    property var decisions: ({})
 
    QtObject {
