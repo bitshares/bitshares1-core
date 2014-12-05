@@ -14,7 +14,10 @@ namespace bts { namespace blockchain {
       market_halt           = 1 << 2, ///<! The issuer can/did freeze all markets
       balance_halt          = 1 << 3, ///<! The issuer can/did freeze all balances
       supply_unlimit        = 1 << 4, ///<! The issuer can change the supply at will
-      default_permissions   = retractable | market_halt | balance_halt | supply_unlimit,
+      // all flags need to be in default_permissions, if a flag is excluded here
+      //   then the flag will be unable to active in issuer permissions
+      //   and hence useless for all practical purposes
+      default_permissions   = retractable | restricted | market_halt | balance_halt | supply_unlimit,
       all_permissions       = 0xffffffff
    };
 
