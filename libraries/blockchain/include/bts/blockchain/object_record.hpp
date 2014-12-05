@@ -44,9 +44,10 @@ namespace bts { namespace blockchain {
         }
 
         void                        set_id( obj_type type, uint64_t number );
+        void                        make_null(); // default object has "base object" type, not null type
 
 
-        object_id_type              _id = -1; // Do not access directly, use short_id()
+        object_id_type              _id = 0; // Do not access directly, use short_id()
         variant                     user_data; // user-added metadata for all objects - actual application logic should go in derived class
         std::vector<char>           _data; // derived class properties
 

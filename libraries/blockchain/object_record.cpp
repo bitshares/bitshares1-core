@@ -20,5 +20,9 @@ namespace bts { namespace blockchain {
         _id = (uint64_t(type) << 48) | number;
     }
 
+    void     object_record::make_null()
+    {
+        _id = -1;
+    }
 
 }} // bts::blockchain

@@ -1781,7 +1781,7 @@ namespace bts { namespace blockchain {
    }
 
 
-    oobject_record             chain_database::get_object_record( object_id_type id )
+    oobject_record             chain_database::get_object_record( const object_id_type& id )
     {
        return my->_object_db.fetch_optional( id );
     }

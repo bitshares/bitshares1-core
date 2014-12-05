@@ -820,6 +820,50 @@
         ],
         "is_const"   : false,
         "prerequisites" : ["no_prerequisites"]
+      },
+      {
+        "method_name": "blockchain_get_object",
+        "description": "Get a particular object with a known ID",
+        "return_type": "object_record",
+        "parameters" :
+          [
+            {
+              "name" : "id",
+              "type" : "object_id_type",
+              "description" : ""
+            }
+          ],
+        "prerequisites" : ["wallet_unlocked"],
+        "aliases" : ["get_object"],
+        "is_const": true
+      },
+      {
+        "method_name": "blockchain_get_edges",
+        "description": "Get all edges with given properties",
+        "return_type": "edge_array",
+        "parameters" :
+          [
+            {
+              "name" : "from",
+              "type" : "object_id_type",
+              "description" : ""
+            },
+            {
+              "name" : "to",
+              "type" : "object_id_type",
+              "description" : "",
+              "default_value" : -1
+            },
+            {
+              "name" : "name",
+              "type" : "string",
+              "description" : "",
+              "default_value" : ""
+            }
+          ],
+        "prerequisites" : ["wallet_unlocked"],
+        "aliases" : ["get_edges"],
+        "is_const": true
       }
     ]
 }

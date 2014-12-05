@@ -631,4 +631,18 @@ void client_impl::blockchain_broadcast_transaction(const signed_transaction& trx
    network_broadcast_transaction(trx);
 }
 
+
+object_record client_impl::blockchain_get_object( const object_id_type& id )const
+{
+        FC_ASSERT(!"unimplemented!");
+}
+
+vector<edge_record> client_impl::blockchain_get_edges( const object_id_type& from,
+                                                       const object_id_type& to,
+                                                       const string& name )const
+{
+        FC_ASSERT(!"unimplemented!");
+}
+
+
 } } } // namespace bts::client::detail

@@ -1,4 +1,4 @@
-When(/^I make an object (\w+) with user data (\w+)$/) do |obj, data|
+When(/^I make an object: (\w+)  with user data: (\w+)$/) do |obj, data|
     @objects ||= {}
     current_objects = @current_actor.node.exec 'wallet_object_list', @current_actor.account
     @current_actor.node.exec 'wallet_object_create', @current_actor.account, data
@@ -20,7 +20,7 @@ When(/^I make an object (\w+) with user data (\w+)$/) do |obj, data|
     puts @objects
 end
 
-Then(/^Object with ID (\w+) should have user data (\w+)$/) do |obj, data|
+Then(/^Object with ID: (\w+)  should have user data: (\w+)$/) do |obj, data|
     id = @objects[obj]["_id"]
     objects = @current_actor.node.exec 'wallet_object_list', @current_actor.account
     object = {}
@@ -32,5 +32,12 @@ Then(/^Object with ID (\w+) should have user data (\w+)$/) do |obj, data|
     raise "Wrong user data!" unless object["user_data"] == data
 end
 
-When(/^I make an edge from (\w+) to (\w+) with name (\w+) and value (\w+)$/) do |arg1, arg2|
+When(/^I make an edge from (\w+) to (\w+) with name (\w+) and value (\w+)$/) do |from, to, name, value|
+    @current_actor.node.exec 'wallet_set_edge', @current_actor.account, @objects[from], @objects[to], name, value
+end
+
+Then(/^Edge from (\w+) to (\w+) named (\w+) should have value (\w+)$/) do |from, to, name, value|
+    edges = @current_actor.node.exec 'blockchain_get_edges', @current_actor.account, @objects[from], @objects[to], name
+    raise "Somehow there are multiple edge object for a unique id", unless edges.length <= 1
+    raise "Edge has wrong value!" unless edges[0]["value"] == value
 end

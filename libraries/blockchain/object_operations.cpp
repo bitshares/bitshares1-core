@@ -18,9 +18,11 @@ namespace bts { namespace blockchain {
         }
         else if( this->id == 0 )
         {
+            ilog("@1 Object type: ${t}", ("t", this->obj.type()));
             auto next_id = eval_state._current_state->new_object_id(this->obj.type());
             obj = this->obj;
             obj.set_id( this->obj.type(), next_id );
+            ilog("@2 Object type: ${t}", ("t", this->obj.type()));
             switch( obj.type() )
             {
                 case( base_object ):
