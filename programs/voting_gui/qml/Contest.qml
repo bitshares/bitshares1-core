@@ -8,12 +8,17 @@ Rectangle {
    border.width: 2
    border.color: "grey"
    color: "#aa000000"
-   height: expanded? content.y + content.height : header.height
+   height: expanded? expandedHeight : collapsedHeight
    clip: true
 
    property bool expanded: false
-   property alias fontSize: content.fontSize
    property alias decision: content.decision
+   property real fontSize
+   readonly property real collapsedHeight: header.height
+   readonly property real expandedHeight: content.y + content.height
+
+   signal expansionComplete
+   signal collapseComplete
 
    function setDecision(decision) {
       if( typeof decision !== "undefined" )
@@ -37,7 +42,17 @@ Rectangle {
       anchors.top: header.bottom
       height: childrenRect.y + childrenRect.height + contestContainer.radius
       width: parent.width
+      fontSize: contestContainer.fontSize
    }
 
-   Behavior on height { NumberAnimation { easing.type: "InOutQuint" } }
+   Behavior on height {
+      SequentialAnimation {
+         NumberAnimation { easing.type: "InOutQuint" }
+         ScriptAction { script: {
+               if( expanded ) contestContainer.expansionComplete()
+               else contestContainer.collapseComplete()
+            }
+         }
+      }
+   }
 }

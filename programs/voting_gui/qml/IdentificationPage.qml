@@ -42,7 +42,10 @@ TaskPage {
    Component.onCompleted: {
       imageDir = utilities.make_temporary_directory()
       console.log("Image directory: " + imageDir)
-      bitshares.create_voter_account()
+      if( bitshares.initialized )
+         bitshares.create_voter_account()
+      else
+         bitshares.initialization_complete.connect(bitshares.create_voter_account)
    }
 
    QtObject {

@@ -222,7 +222,8 @@ void ClientWrapper::create_voter_account()
          m_voterAddress = QString::fromStdString(string(bts::blockchain::address(key.get_public_key())));
          Q_EMIT voter_address_changed(m_voterAddress);
          _client->wallet_import_private_key(bts::utilities::key_to_wif(key), "voting-key." + name, true, false);
-         setAccountName(QString::fromStdString(name));
+         m_accountName = QString::fromStdString(name);
+         Q_EMIT accountNameChanged(m_accountName);
       } catch (fc::exception e) {
          qDebug("%s", e.to_detail_string().c_str());
          Q_EMIT error(e.to_detail_string().c_str());

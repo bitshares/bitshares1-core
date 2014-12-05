@@ -18,7 +18,8 @@ GridLayout {
          if( contestantButtonsGroup.item.current !== null && contestantButtonsGroup.item.current.checked ) {
             if( "contestantIndex" in contestantButtonsGroup.item.current ) {
                decision["voter_opinions"] = [[contestantButtonsGroup.item.current.contestantIndex, 1]]
-            } else {
+            } else if( contestantButtonsGroup.item.current.contestantName !==
+                       contestantButtonsGroup.item.current.placeHolderText ) {
                decision["write_in_names"] = [contestantButtonsGroup.item.current.contestantName]
                decision["voter_opinions"] = [[contestantList.count, 1]]
             }
@@ -32,7 +33,8 @@ GridLayout {
                decision["voter_opinions"].push([i, 1])
          }
          for( i = 0; i < writeInRepeater.count; i++ ) {
-            if( writeInRepeater.itemAt(i).checked ) {
+            if( writeInRepeater.itemAt(i).checked &&
+                  writeInRepeater.itemAt(i).contestantName !== writeInRepeater.itemAt(i).placeHolderText ) {
                decision["voter_opinions"].push([contestantList.count + writeInCount, 1])
                decision["write_in_names"].push(writeInRepeater.itemAt(i).contestantName)
                writeInCount++

@@ -62,15 +62,30 @@ TaskPage {
                onDecisionChanged: {
                   //Immediately upon creation, the decision is changed to an empty object. Ignore this.
                   if( initialized ) {
-                     if( "voter_opinions" in decision ) {
+                     if( "voter_opinions" in decision && decision.voter_opinions.length > 0 ) {
                         var stored_decision = decision
                         stored_decision["contest_id"] = id
                         stored_decision["ballot_id"] = ballot.id
                         decisions[id] = stored_decision
+                        // @disable-check M126 -- We want the type coercion on this comparison.
+                        if( !("vote many limit" in tags) || decision.voter_opinions.length == tags["vote many limit"] ) {
+                           expanded = false
+                           var nextItem = contestList.itemAt(x+width/2, y+height+collapsedHeight/2)
+                           if( nextItem ) {
+                              nextItem.expanded = true
+                           } else {
+                              var reposition = function() {
+                                 contestList.positionViewAtEnd()
+                                 collapseComplete.disconnect(reposition)
+                              }
+                              collapseComplete.connect(reposition)
+                           }
+                        }
                      } else
                         delete decisions[id]
                   }
                }
+               onExpansionComplete: contestList.positionViewAtIndex(index, ListView.Contain)
                Component.onCompleted: {
                   setDecision(decisions[id])
                   initialized = true

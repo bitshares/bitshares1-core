@@ -2,7 +2,7 @@ import QtQuick 2.3
 import QtQuick.Controls 1.2
 
 TaskPage {
-   backButtonVisible: false
+   onBackClicked: window.previousPage()
    nextButtonVisible: false
    state: "SUBMITTING"
 
