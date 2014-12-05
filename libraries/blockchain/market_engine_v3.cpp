@@ -1,3 +1,4 @@
+#include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/market_engine_v3.hpp>
 
 #define BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT_V3             (BTS_BLOCKCHAIN_INITIAL_SHARES/4000)

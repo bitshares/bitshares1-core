@@ -39,8 +39,8 @@ void withdraw_operation::evaluate_v3( transaction_evaluation_state& eval_state )
    }
    // update delegate vote on withdrawn account..
 
-   if( current_balance_record->condition.asset_id == 0 && current_balance_record->condition.delegate_slate_id )
-      eval_state.adjust_vote( current_balance_record->condition.delegate_slate_id, -this->amount );
+   if( current_balance_record->condition.asset_id == 0 && current_balance_record->condition.slate_id )
+      eval_state.adjust_vote( current_balance_record->condition.slate_id, -this->amount );
 
    auto asset_rec = eval_state._current_state->get_asset_record( current_balance_record->condition.asset_id );
    FC_ASSERT( asset_rec.valid() );

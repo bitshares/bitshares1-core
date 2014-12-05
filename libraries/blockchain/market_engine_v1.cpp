@@ -1,3 +1,4 @@
+#include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/market_engine_v1.hpp>
 
 namespace bts { namespace blockchain { namespace detail {

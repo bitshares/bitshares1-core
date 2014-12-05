@@ -80,8 +80,8 @@ void deposit_operation::evaluate_v1( transaction_evaluation_state& eval_state )
 
     eval_state.sub_balance( deposit_balance_id, asset(this->amount, cur_record->condition.asset_id) );
 
-    if( cur_record->condition.asset_id == 0 && cur_record->condition.delegate_slate_id )
-       eval_state.adjust_vote( cur_record->condition.delegate_slate_id, this->amount );
+    if( cur_record->condition.asset_id == 0 && cur_record->condition.slate_id )
+       eval_state.adjust_vote( cur_record->condition.slate_id, this->amount );
 
     eval_state._current_state->store_balance_record( *cur_record );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
@@ -124,8 +124,8 @@ void withdraw_operation::evaluate_v1( transaction_evaluation_state& eval_state )
       current_balance_record->balance -= this->amount;
       current_balance_record->last_update = eval_state._current_state->now();
 
-      if( current_balance_record->condition.asset_id == 0 && current_balance_record->condition.delegate_slate_id )
-         eval_state.adjust_vote( current_balance_record->condition.delegate_slate_id, -this->amount );
+      if( current_balance_record->condition.asset_id == 0 && current_balance_record->condition.slate_id )
+         eval_state.adjust_vote( current_balance_record->condition.slate_id, -this->amount );
 
       eval_state._current_state->store_balance_record( *current_balance_record );
       eval_state.add_balance( asset(this->amount, current_balance_record->condition.asset_id) );

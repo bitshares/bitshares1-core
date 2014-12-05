@@ -1,3 +1,4 @@
+#include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/market_engine_v5.hpp>
 
 #include <bts/blockchain/fork_blocks.hpp>
