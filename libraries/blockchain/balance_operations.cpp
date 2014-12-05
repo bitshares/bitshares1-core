@@ -137,12 +137,13 @@ namespace bts { namespace blockchain {
 
        auto asset_rec = eval_state._current_state->get_asset_record( cur_record->condition.asset_id );
 
-#ifndef WIN32
-#warning [UNEXPECTED HARDFORK] Nothing bad, but how did this happen?
-#endif
        if( eval_state._current_state->get_head_block_num() >= BTS_V0_4_26_FORK_BLOCK_NUM )
        {
            if( asset_rec->is_market_issued() ) FC_ASSERT( cur_record->condition.slate_id == 0 );
+       }
+       else if( cur_record->condition.asset_id != 0 && cur_record->condition.slate_id != 0 )
+       {
+           cur_record->condition.slate_id = 0;
        }
 
        FC_ASSERT( asset_rec.valid() );
