@@ -152,11 +152,13 @@ TaskPage {
                     "your votes in the future. If anyone else gets this passphrase, they can change your votes as " +
                     "well. Your passphrase is:")
       }
-      Text {
+      TextField {
          id: secretText
-         color: "white"
-         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+         readOnly: true
+         Layout.preferredWidth: parent.width * 2/3
          anchors.horizontalCenter: parent.horizontalCenter
+         horizontalAlignment: TextInput.AlignHCenter
+         font.family: "courier"
          font.pointSize: Math.max(1, parent.height * .03)
          text: bitshares.secret
       }
