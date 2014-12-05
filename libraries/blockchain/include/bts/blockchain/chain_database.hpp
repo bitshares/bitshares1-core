@@ -297,7 +297,7 @@ namespace bts { namespace blockchain {
          virtual void                       store_recent_operation( const operation& o )override;
 
          virtual void                       store_object_record( const object_record& obj )override;
-         virtual oobject_record             get_object_record( object_id_type id )override;
+         virtual oobject_record             get_object_record( const object_id_type& id )override;
 
          virtual oorder_record              get_bid_record( const market_index_key& )const override;
          virtual oorder_record              get_ask_record( const market_index_key& )const override;

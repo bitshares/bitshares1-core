@@ -53,7 +53,10 @@ substitutions = dict([
     ("1CbkZbefm25BYFeUUUQGEvt9HYWh39hvJk", "1M69AMjAkeKkk6YfuEECZzbz54EnXijzvk"),
     ("13XnJ6zKd6qgK5Uu4zJw4bdPT8M7232ZBf", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"),
     ("PbXSuic9B1iEmgMiWqW93cdXFvPQsHXdUc", "PfSQYEJYKN3YTmk74BwXy6fk2StTJczaQw"),
-    ("PitE7xxJvjzkVcs6BT5yRxV55YJqgFrhCU", "PfSQYEJYKN3YTmk74BwXy6fk2StTJczaQw")
+    ("PitE7xxJvjzkVcs6BT5yRxV55YJqgFrhCU", "PfSQYEJYKN3YTmk74BwXy6fk2StTJczaQw"),
+
+    ("Pe9F7tmq8Wxd2bCkFrW6nc4h5RASAzHAWC", "PmBR2p6uYY1SKhB9FbdHMbSGcqjEGsfK2n"),
+    ("1376AFc3gfic94o9yK1dx7JMMqxzfbssrg", "1gD8zEUgPN6imT3uGUqVVnxT5agAH9r4Y")
 ])
 
 

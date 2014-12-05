@@ -3013,7 +3013,8 @@ namespace detail {
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("issuer_account_name",issuer_account_name) );
       auto from_account_address = get_owner_public_key( issuer_account_name );
       auto oname_rec = my->_blockchain->get_account_record( issuer_account_name );
-      FC_ASSERT( oname_rec.valid() );
+      if( !oname_rec.valid() )
+          FC_THROW_EXCEPTION( account_not_registered, "Assets can only be created by registered accounts", ("issuer_account_name",issuer_account_name) );
 
       my->withdraw_to_transaction( required_fees,
                                    issuer_account_name,
@@ -3060,8 +3061,8 @@ namespace detail {
            const optional<double>& maximum_share_supply,
            const optional<uint64_t>& precision,
            const share_type& issuer_fee,
-           uint32_t issuer_perms,
            uint32_t flags,
+           uint32_t issuer_perms,
            const string& issuer_account_name,
            uint32_t required_sigs,
            const vector<address>& authority,
@@ -3071,12 +3072,17 @@ namespace detail {
       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
 
-      auto  issuer_account = my->_blockchain->get_account_record( issuer_account_name );
-      FC_ASSERT( issuer_account.valid() );
+      optional<account_id_type> issuer_account_id;
+      if( issuer_account_name != "" )
+      {
+         auto issuer_account = my->_blockchain->get_account_record( issuer_account_name );
+         FC_ASSERT( issuer_account.valid() );
+         issuer_account_id = issuer_account->id;
+	  }
 
       transaction_builder_ptr builder = create_transaction_builder();
       builder->update_asset( symbol, name, description, public_data, maximum_share_supply, precision,
-                             issuer_fee, issuer_perms, flags, issuer_account->id, required_sigs, authority );
+                             issuer_fee, flags, issuer_perms, issuer_account_id, required_sigs, authority );
       builder->finalize();
 
       if( sign )

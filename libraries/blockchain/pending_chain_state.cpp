@@ -370,7 +370,7 @@ namespace bts { namespace blockchain {
         recent_op_queue.pop_front();
    }
 
-   oobject_record pending_chain_state::get_object_record(object_id_type id)
+   oobject_record pending_chain_state::get_object_record(const object_id_type& id)
    {
        if( objects.find(id) != objects.end() )
            return oobject_record(objects[id]);

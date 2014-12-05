@@ -63,7 +63,7 @@ tests/failed_tests.log
 tests/regression_tests/_newtest
 testnet_setup_log.txt
 
-snapshots/
+snapshots/*.json
 
 BitShares.dmg
 _CPack_Packages/*

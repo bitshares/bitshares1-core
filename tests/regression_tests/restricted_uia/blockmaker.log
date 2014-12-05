@@ -1,0 +1,3 @@
+default (unlocked) >>> debug_wait_for_block_by_number 5 absolute
+OK
+default (unlocked) >>> quit

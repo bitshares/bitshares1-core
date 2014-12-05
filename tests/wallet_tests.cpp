@@ -18,6 +18,8 @@
 
 #include <fc/network/http/connection.hpp>
 
+#include <fc/string.hpp>
+
 #include <boost/filesystem.hpp>
 #include <boost/bind.hpp>
 
@@ -543,6 +545,14 @@ void run_regression_test(fc::path test_dir, bool with_network)
     std::vector<bts::client::client_ptr> clients;
     while (std::getline(test_config_file, line))
     {
+      line = fc::trim( line );
+      if( line.length() == 0 )
+          continue;
+      if( (line.length() >= 8) && (line.substr(0, 8) == "genesis ") )
+      {
+          genesis_json_file = line.substr( 8 );
+          continue;
+      }
       line += " --disable-default-peers ";
       line += " --log-commands ";
       line += " --ulog=0 ";

@@ -43,6 +43,16 @@ balances = [[k["pts_address"],  init_balance] for k in  init_keys
          ]+[[k["pts_address"], angel_balance] for k in angel_keys
          ]+[[k["pts_address"],  name_balance] for k in  name_keys]
 
+BTS_BLOCKCHAIN_MAX_SHARES = (1000*1000*1000*1000*1000)
+BTS_BLOCKCHAIN_INITIAL_SHARES = (BTS_BLOCKCHAIN_MAX_SHARES // 5)
+
+total_balance = sum(b[1] for b in balances)
+
+ballast_keys = create_keys("ballast", 1)
+ballast_balance = BTS_BLOCKCHAIN_INITIAL_SHARES - total_balance
+
+balances += [[k["pts_address"], ballast_balance] for k in ballast_keys]
+
 genesis_json = {
   "timestamp" : "2014-02-02T18:00:00",
 
