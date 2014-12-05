@@ -177,7 +177,6 @@ namespace bts { namespace blockchain {
          virtual void                       store_object_record( const object_record& obj )                 = 0;
          virtual oobject_record             get_object_record( object_id_type id )                          = 0;
 
-
          virtual void                       apply_deterministic_updates(){}
 
          virtual asset_id_type              last_asset_id()const;

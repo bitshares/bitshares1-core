@@ -138,6 +138,7 @@ namespace bts { namespace blockchain {
          map< market_index_key, order_record>                              relative_asks;
                                                                            
          map< object_id_type, object_record >                              objects;
+
          map< edge_index_key, object_id_type >                             edge_index;
          map< edge_index_key, object_id_type >                             reverse_edge_index;
 

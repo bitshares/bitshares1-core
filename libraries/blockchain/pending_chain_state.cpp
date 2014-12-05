@@ -379,6 +379,26 @@ namespace bts { namespace blockchain {
 
    void pending_chain_state::store_object_record(const object_record& obj)
    {
+        // Set indices
+        switch( obj.type() )
+        {
+            case account_object:
+            case asset_object:
+                FC_ASSERT(!"You cannot store these object types via object interface yet!");
+                break;
+            case edge_object:
+            {
+                auto edge = obj.as<edge_record>();
+                edge_index[ edge.index_key() ] = edge._id;
+                reverse_edge_index[ edge.reverse_index_key() ] = edge._id;
+                break;
+            }
+            case base_object:
+                break;
+            default:
+                break;
+        }
+
        objects[obj._id] = obj;
    }
 

@@ -132,6 +132,8 @@ namespace bts { namespace blockchain {
           _feed_db.open( data_dir / "index/feed_db" );
 
           _object_db.open( data_dir / "index/object_db" );
+          _edge_index.open( data_dir / "index/edge_index" );
+          _reverse_edge_index.open( data_dir / "index/reverse_edge_index" );
 
           _market_status_db.open( data_dir / "index/market_status_db" );
           _market_history_db.open( data_dir / "index/market_history_db" );
@@ -1281,6 +1283,9 @@ namespace bts { namespace blockchain {
       my->_market_transactions_db.close();
 
       my->_object_db.close();
+      my->_edge_index.close();
+      my->_reverse_edge_index.close();
+
       my->_auth_db.close();
       my->_asset_proposal_db.close();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
@@ -1783,6 +1788,24 @@ namespace bts { namespace blockchain {
 
     void                       chain_database::store_object_record( const object_record& obj )
     {
+        // Set indices
+        switch( obj.type() )
+        {
+            case account_object:
+            case asset_object:
+                FC_ASSERT(!"You cannot store these object types via object interface yet!");
+                break;
+            case edge_object:
+            {
+                auto edge = obj.as<edge_record>();
+                my->_edge_index.store( edge.index_key(), edge._id );
+                my->_reverse_edge_index.store( edge.reverse_index_key(), edge._id );
+                break;
+            }
+            case base_object:
+            default:
+                break;
+        }
         my->_object_db.store( obj._id, obj );
     }
 
@@ -3429,6 +3452,14 @@ namespace bts { namespace blockchain {
        my->_object_db.export_to_json( next_path );
        ulog( "Dumped ${p}", ("p",next_path) );
 
+       next_path = dir / "_edge_index.json";
+       my->_edge_index.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_reverse_edge_index.json";
+       my->_reverse_edge_index.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
        next_path = dir / "_market_status_db.json";
        my->_market_status_db.export_to_json( next_path );
        ulog( "Dumped ${p}", ("p",next_path) );
@@ -3445,7 +3476,7 @@ namespace bts { namespace blockchain {
                            (_block_num_to_id_db)(_block_id_to_block_record_db)(_block_id_to_block_data_db)(_known_transactions) \
                            (_id_to_transaction_record_db)(_pending_transaction_db)(_pending_fee_index)(_asset_db)(_balance_db) \
                            (_burn_db)(_account_db)(_address_to_account_db)(_account_index_db)(_symbol_index_db)(_delegate_vote_index_db) \
-                           (_slot_record_db)(_ask_db)(_bid_db)(_short_db)(_collateral_db)(_feed_db)(_object_db)(_market_status_db)(_market_history_db) \
+                           (_slot_record_db)(_ask_db)(_bid_db)(_short_db)(_collateral_db)(_feed_db)(_object_db)(_edge_index)(_reverse_edge_index)(_market_status_db)(_market_history_db) \
                            (_recent_operations)
 #define GET_DATABASE_SIZE(r, data, elem) stats[BOOST_PP_STRINGIZE(elem)] = my->elem.size();
      BOOST_PP_SEQ_FOR_EACH(GET_DATABASE_SIZE, _, CHAIN_DB_DATABASES)

@@ -160,7 +160,7 @@ namespace bts { namespace blockchain {
        multisig_condition owners;
        switch( obj.type() )
        {
-           case( obj_type::normal_object ):
+           case( obj_type::base_object ):
            {
                owners = obj._owners;
                return owners;
