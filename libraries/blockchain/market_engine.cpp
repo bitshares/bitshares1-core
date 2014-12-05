@@ -1,5 +1,7 @@
+#include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/market_engine.hpp>
 #include <fc/real128.hpp>
+#include <algorithm>
 
 namespace bts { namespace blockchain { namespace detail {
 

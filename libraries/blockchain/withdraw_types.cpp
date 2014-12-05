@@ -204,7 +204,7 @@ namespace fc {
       using namespace bts::blockchain;
       fc::mutable_variant_object obj;
       obj["asset_id"] = var.asset_id;
-      obj["delegate_slate_id"] = var.delegate_slate_id;
+      obj["slate_id"] = var.slate_id;
       obj["type"] =  var.type;
 
       switch( (withdraw_condition_types) var.type )
@@ -238,31 +238,31 @@ namespace fc {
       using namespace bts::blockchain;
       auto obj = var.get_object();
       from_variant( obj["asset_id"], vo.asset_id );
-      from_variant( obj["delegate_slate_id"], vo.delegate_slate_id );
+      from_variant( obj["slate_id"], vo.slate_id );
       from_variant( obj["type"], vo.type );
 
       switch( (withdraw_condition_types) vo.type )
       {
          case withdraw_null_type:
-            break;
+            return;
          case withdraw_signature_type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_with_signature>() );
-            break;
+            return;
          case withdraw_vesting_type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_vesting>() );
-            break;
+            return;
          case withdraw_multi_sig_type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_with_multi_sig>() );
-            break;
+            return;
          case withdraw_escrow_type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_with_escrow>() );
-            break;
+            return;
          case withdraw_password_type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_with_password>() );
-            break;
-         default:
-            FC_ASSERT( !"Invalid withdraw condition!" );
+            return;
+         // no default, cause waning for unimplemented
       }
+      FC_ASSERT( !"Invalid withdraw condition!" );
    }
 
    void to_variant( const bts::blockchain::memo_data& var,  variant& vo )

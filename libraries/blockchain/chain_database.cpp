@@ -1,33 +1,20 @@
-//#define DEFAULT_LOGGER "blockchain"
-
 #include <bts/blockchain/chain_database.hpp>
+#include <bts/blockchain/chain_database_impl.hpp>
 #include <bts/blockchain/checkpoints.hpp>
 #include <bts/blockchain/config.hpp>
+#include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/genesis_config.hpp>
 #include <bts/blockchain/genesis_json.hpp>
-#include <bts/blockchain/market_records.hpp>
-#include <bts/blockchain/operation_factory.hpp>
+#include <bts/blockchain/market_engine.hpp>
 #include <bts/blockchain/time.hpp>
 
-#include <bts/db/cached_level_map.hpp>
-#include <bts/db/level_map.hpp>
-
 #include <fc/io/fstream.hpp>
-#include <fc/io/json.hpp>
 #include <fc/io/raw_variant.hpp>
-#include <fc/thread/mutex.hpp>
 #include <fc/thread/non_preemptable_scope_check.hpp>
 #include <fc/thread/unique_lock.hpp>
 
-#include <algorithm>
-#include <deque>
-#include <fstream>
 #include <iomanip>
 #include <iostream>
-
-// the definition of detail::chain_database_impl is moved to a separate file so it can be shared by the market_engine(s)
-#include <bts/blockchain/chain_database_impl.hpp>
-#include <bts/blockchain/market_engine.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -125,6 +112,7 @@ namespace bts { namespace blockchain {
           _asset_db.open( data_dir / "index/asset_db" );
           _balance_db.open( data_dir / "index/balance_db" );
           _auth_db.open( data_dir / "index/auth_db" );
+          _asset_proposal_db.open( data_dir / "index/asset_proposal_db" );
           _burn_db.open( data_dir / "index/burn_db" );
           _account_db.open( data_dir / "index/account_db" );
           _address_to_account_db.open( data_dir / "index/address_to_account_db" );
@@ -332,6 +320,8 @@ namespace bts { namespace blockchain {
          base_asset.current_share_supply = total.amount;
          base_asset.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
          base_asset.collected_fees = 0;
+         base_asset.flags = asset_permissions::none;
+         base_asset.issuer_permissions = asset_permissions::none;
          self->store_asset_record( base_asset );
 
          for( const auto& asset : config.market_assets )
@@ -1292,6 +1282,7 @@ namespace bts { namespace blockchain {
 
       my->_object_db.close();
       my->_auth_db.close();
+      my->_asset_proposal_db.close();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    account_record chain_database::get_delegate_record_for_signee( const public_key_type& block_signee )const
@@ -2274,11 +2265,11 @@ namespace bts { namespace blockchain {
       for (auto balance_itr = my->_balance_db.begin(); balance_itr.valid(); ++balance_itr)
       {
         balance_record balance = balance_itr.value();
-        if (balance.delegate_slate_id() == 0)
+        if (balance.slate_id() == 0)
           continue;
         if (balance.asset_id() == 0)
         {
-          odelegate_slate slate = get_delegate_slate(balance.delegate_slate_id());
+          odelegate_slate slate = get_delegate_slate(balance.slate_id());
           FC_ASSERT(slate.valid(), "Unknown slate ID found in balance.");
 
           for (account_id_type delegate : slate->supported_delegates)
@@ -3472,6 +3463,22 @@ namespace bts { namespace blockchain {
    optional<object_id_type>    chain_database::get_authorization( asset_id_type asset_id, const address& owner )const
    {
       return my->_auth_db.fetch_optional( std::make_pair( asset_id, owner ) );
+   }
+   void                       chain_database::store_asset_proposal( const proposal_record& r ) 
+   {
+      if( r.info == -1 )
+      {
+         my->_asset_proposal_db.remove( r.key() );
+      }
+      else
+      {
+         my->_asset_proposal_db.store( r.key(), r );
+      }
+   }
+
+   optional<proposal_record>  chain_database::fetch_asset_proposal( asset_id_type asset_id, proposal_id_type proposal_id )const 
+   {
+      return my->_asset_proposal_db.fetch_optional( std::make_pair(asset_id,proposal_id) );
    }
 
 } } // bts::blockchain

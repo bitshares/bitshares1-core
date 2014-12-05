@@ -52,6 +52,16 @@ namespace bts { namespace blockchain {
        void evaluate( transaction_evaluation_state& eval_state );
    };
 
+   struct create_asset_proposal
+   {
+      static const operation_type_enum type;
+
+      asset_id_type  asset_id = 0;
+      object_id_type info = 0;
+
+      void evaluate( transaction_evaluation_state& eval_state );
+   };
+
    /**
     * This operation updates an existing issuer record provided
     * it is signed by a proper key.
@@ -127,7 +137,6 @@ namespace bts { namespace blockchain {
    struct authorize_operation
    {
       static const operation_type_enum type;
-      authorize_operation(){}
 
       asset_id_type    asset_id = 0;
       address          owner;
@@ -160,6 +169,7 @@ FC_REFLECT( bts::blockchain::update_asset_operation,
             (maximum_share_supply)
             (precision)
             )
+
 FC_REFLECT_DERIVED( bts::blockchain::update_asset_ext_operation, 
                     (bts::blockchain::update_asset_operation),
                     (flags)
@@ -167,6 +177,8 @@ FC_REFLECT_DERIVED( bts::blockchain::update_asset_ext_operation,
                     (issuer_account_id)
                     (transaction_fee)
                     (authority) )
+
+FC_REFLECT( bts::blockchain::create_asset_proposal, (asset_id)(info) );
 
 FC_REFLECT( bts::blockchain::issue_asset_operation,
             (amount)

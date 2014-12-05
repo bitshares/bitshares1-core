@@ -1478,7 +1478,7 @@ namespace detail {
            const auto& records = item.second;
            for( const auto& record : records )
            {
-               auto oslate = my->_blockchain->get_delegate_slate( record.delegate_slate_id() );
+               auto oslate = my->_blockchain->get_delegate_slate( record.slate_id() );
                if( oslate.valid() )
                    total += record.get_spendable_balance( my->_blockchain->now() ).amount * oslate->supported_delegates.size();
                total_possible += record.get_spendable_balance( my->_blockchain->now() ).amount * BTS_BLOCKCHAIN_MAX_SLATE_SIZE;
@@ -2887,12 +2887,26 @@ namespace detail {
       if( new_account_type == public_account )
          meta_info = account_meta_info( public_account );
 
-      trx.register_account( account_to_register,
-                            public_data,
-                            account_public_key, // master
-                            account_public_key, // active
-                            delegate_pay_rate <= 100 ? delegate_pay_rate : -1,
-                            meta_info );
+      // TODO: This is a hack to register with different owner and active keys until the API is fixed
+      try
+      {
+          const wallet_account_record local_account = get_account( account_to_register );
+          trx.register_account( account_to_register,
+                                public_data,
+                                local_account.owner_key,
+                                local_account.active_key(),
+                                delegate_pay_rate <= 100 ? delegate_pay_rate : -1,
+                                meta_info );
+      }
+      catch( ... )
+      {
+          trx.register_account( account_to_register,
+                                public_data,
+                                account_public_key, // master
+                                account_public_key, // active
+                                delegate_pay_rate <= 100 ? delegate_pay_rate : -1,
+                                meta_info );
+      }
 
       const auto pos = account_to_register.find( '.' );
       if( pos != string::npos )
@@ -4126,7 +4140,7 @@ namespace detail {
               const auto balance = obalance->get_spendable_balance( pending_state->now() );
               if( balance.amount <= 0 || balance.asset_id != 0 ) continue;
 
-              const auto slate_id = obalance->delegate_slate_id();
+              const auto slate_id = obalance->slate_id();
               if( slate_id == 0 ) continue;
 
               const auto slate = pending_state->get_delegate_slate( slate_id );
@@ -4337,7 +4351,18 @@ namespace detail {
                                                   const address& key,
                                                   const object_id_type& meta, bool sign )
    {
-      FC_ASSERT( !"Not Implemented" );
+      if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+      if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
+      auto payer_key = get_owner_public_key( paying_account_name );
+
+      transaction_builder_ptr builder = create_transaction_builder();
+      builder->asset_authorize_key( symbol, key, meta );
+      builder->deduct_balance( payer_key, asset() );
+      builder->finalize();
+
+      if( sign )
+         return builder->sign();
+      return builder->transaction_record;
    }
 
 } } // bts::wallet

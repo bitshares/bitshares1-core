@@ -280,6 +280,10 @@ namespace bts { namespace wallet {
                                         asset cover_amount,
                                         const order_id_type& order_id);
 
+      transaction_builder& asset_authorize_key( const string& symbol, 
+                                                const address& owner,  
+                                                object_id_type meta );
+
       transaction_builder& update_block_signing_key( const string& authorizing_account_name,
                                                      const string& delegate_name,
                                                      const public_key_type& block_signing_key );

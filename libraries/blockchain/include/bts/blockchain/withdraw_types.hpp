@@ -25,14 +25,14 @@ namespace bts { namespace blockchain {
     */
    struct withdraw_condition
    {
-      withdraw_condition():asset_id(0),delegate_slate_id(0),type(withdraw_null_type){}
+      withdraw_condition():asset_id(0),slate_id(0),type(withdraw_null_type){}
 
       template<typename WithdrawType>
       withdraw_condition( const WithdrawType& t, asset_id_type asset_id_arg = 0, slate_id_type delegate_id_arg = 0 )
       {
          type = WithdrawType::type;
          asset_id = asset_id_arg;
-         delegate_slate_id = delegate_id_arg;
+         slate_id = delegate_id_arg;
          data = fc::raw::pack( t );
       }
 
@@ -46,7 +46,7 @@ namespace bts { namespace blockchain {
       balance_id_type get_address()const;
 
       asset_id_type                                     asset_id;
-      slate_id_type                                     delegate_slate_id = 0;
+      slate_id_type                                     slate_id = 0;
       fc::enum_type<uint8_t, withdraw_condition_types>  type = withdraw_null_type;
       std::vector<char>                                 data;
    };
@@ -204,7 +204,7 @@ FC_REFLECT_ENUM( bts::blockchain::withdraw_condition_types,
         )
 FC_REFLECT( bts::blockchain::withdraw_condition,
         (asset_id)
-        (delegate_slate_id)
+        (slate_id)
         (type)
         (data)
         )

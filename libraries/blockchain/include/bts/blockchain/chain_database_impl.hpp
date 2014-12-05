@@ -1,30 +1,8 @@
 #pragma once
-//#define DEFAULT_LOGGER "blockchain"
 
 #include <bts/blockchain/chain_database.hpp>
-#include <bts/blockchain/checkpoints.hpp>
-#include <bts/blockchain/config.hpp>
-#include <bts/blockchain/genesis_config.hpp>
-#include <bts/blockchain/genesis_json.hpp>
-#include <bts/blockchain/market_records.hpp>
-#include <bts/blockchain/operation_factory.hpp>
-#include <bts/blockchain/time.hpp>
-
 #include <bts/db/cached_level_map.hpp>
-#include <bts/db/level_map.hpp>
-
-#include <fc/io/fstream.hpp>
-#include <fc/io/json.hpp>
-#include <fc/io/raw_variant.hpp>
 #include <fc/thread/mutex.hpp>
-#include <fc/thread/non_preemptable_scope_check.hpp>
-#include <fc/thread/unique_lock.hpp>
-
-#include <algorithm>
-#include <deque>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
 
 namespace bts { namespace blockchain {
 
@@ -170,7 +148,8 @@ namespace bts { namespace blockchain {
             bts::db::cached_level_map<feed_index, feed_record>                          _feed_db;
 
             bts::db::level_map<object_id_type, object_record>                           _object_db;
-            bts::db::level_map<std::pair<asset_id_type,address>, object_id_type>        _auth_db;
+            bts::db::level_map<std::pair<asset_id_type,address>, object_id_type>                  _auth_db;
+            bts::db::level_map<std::pair<asset_id_type,proposal_id_type>, proposal_record>        _asset_proposal_db;
 
             bts::db::cached_level_map<std::pair<asset_id_type,asset_id_type>, market_status> _market_status_db;
             bts::db::cached_level_map<market_history_key, market_history_record>        _market_history_db;

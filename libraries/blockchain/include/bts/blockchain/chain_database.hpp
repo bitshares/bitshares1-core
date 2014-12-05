@@ -199,6 +199,8 @@ namespace bts { namespace blockchain {
          virtual oburn_record        fetch_burn_record( const burn_record_key& key )const override;
          vector<burn_record>         fetch_burn_records( const string& account_name )const;
 
+         virtual void                       store_asset_proposal( const proposal_record& r ) override;
+         virtual optional<proposal_record>  fetch_asset_proposal( asset_id_type asset_id, proposal_id_type proposal_id )const override;
 
          map<balance_id_type, balance_record>  get_balances( const string& first,
                                                              uint32_t limit )const;

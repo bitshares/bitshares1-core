@@ -125,12 +125,15 @@ namespace bts { namespace blockchain {
        cur_record->balance += this->amount;
        eval_state.sub_balance( deposit_balance_id, asset( this->amount, cur_record->condition.asset_id ) );
 
-       if( cur_record->condition.asset_id == 0 && cur_record->condition.delegate_slate_id )
-          eval_state.adjust_vote( cur_record->condition.delegate_slate_id, this->amount );
+       if( cur_record->condition.asset_id == 0 && cur_record->condition.slate_id )
+          eval_state.adjust_vote( cur_record->condition.slate_id, this->amount );
 
        cur_record->last_update = eval_state._current_state->now();
 
        auto asset_rec = eval_state._current_state->get_asset_record( cur_record->condition.asset_id );
+
+       if( asset_rec->is_market_issued() ) FC_ASSERT( cur_record->condition.slate_id == 0 );
+
        FC_ASSERT( asset_rec.valid() );
        if( asset_rec->is_restricted() )
        {
@@ -205,8 +208,6 @@ namespace bts { namespace blockchain {
 
             case withdraw_password_type:
             {
-               FC_ASSERT( !"Not supported yet!" );
-
                auto password_condition = current_balance_record->condition.as<withdraw_with_password>();
                try {
                   if( password_condition.timeout < eval_state._current_state->now() )
@@ -237,8 +238,8 @@ namespace bts { namespace blockchain {
       }
 
       // update delegate vote on withdrawn account..
-      if( current_balance_record->condition.asset_id == 0 && current_balance_record->condition.delegate_slate_id )
-         eval_state.adjust_vote( current_balance_record->condition.delegate_slate_id, -this->amount );
+      if( current_balance_record->condition.asset_id == 0 && current_balance_record->condition.slate_id )
+         eval_state.adjust_vote( current_balance_record->condition.slate_id, -this->amount );
 
       if( asset_rec->is_market_issued() )
       {
@@ -287,6 +288,7 @@ namespace bts { namespace blockchain {
 
       if( account_id != 0 ) // you can offer burnt offerings to God if you like... otherwise it must be an account
       {
+          // TODO: support burning to any OBJECT ID not just accounts
           const oaccount_record account_rec = eval_state._current_state->get_account_record( abs( this->account_id ) );
           FC_ASSERT( account_rec.valid() );
       }
@@ -332,7 +334,7 @@ namespace bts { namespace blockchain {
 
          balance_record new_balance_record( escrow_condition.receiver,
                                             asset( amount_to_receiver, escrow_balance_record->asset_id() ),
-                                            escrow_balance_record->delegate_slate_id() );
+                                            escrow_balance_record->slate_id() );
          auto current_receiver_balance = eval_state._current_state->get_balance_record( new_balance_record.id());
 
          if( current_receiver_balance )
@@ -352,7 +354,7 @@ namespace bts { namespace blockchain {
 
          balance_record new_balance_record( escrow_condition.sender,
                                             asset( amount_to_sender, escrow_balance_record->asset_id() ),
-                                            escrow_balance_record->delegate_slate_id() );
+                                            escrow_balance_record->slate_id() );
          auto current_sender_balance = eval_state._current_state->get_balance_record( new_balance_record.id());
 
          if( current_sender_balance )
@@ -370,7 +372,7 @@ namespace bts { namespace blockchain {
          {
             balance_record new_balance_record( escrow_condition.receiver,
                                                asset( amount_to_receiver, escrow_balance_record->asset_id() ),
-                                               escrow_balance_record->delegate_slate_id() );
+                                               escrow_balance_record->slate_id() );
             auto current_receiver_balance = eval_state._current_state->get_balance_record( new_balance_record.id());
 
             if( current_receiver_balance )
@@ -383,7 +385,7 @@ namespace bts { namespace blockchain {
          {
             balance_record new_balance_record( escrow_condition.sender,
                                                asset( amount_to_sender, escrow_balance_record->asset_id() ),
-                                               escrow_balance_record->delegate_slate_id() );
+                                               escrow_balance_record->slate_id() );
             auto current_sender_balance = eval_state._current_state->get_balance_record( new_balance_record.id());
 
             if( current_sender_balance )
@@ -403,7 +405,7 @@ namespace bts { namespace blockchain {
          {
             balance_record new_balance_record( escrow_condition.receiver,
                                                asset( amount_to_receiver, escrow_balance_record->asset_id() ),
-                                               escrow_balance_record->delegate_slate_id() );
+                                               escrow_balance_record->slate_id() );
             auto current_receiver_balance = eval_state._current_state->get_balance_record( new_balance_record.id());
 
             if( current_receiver_balance )
@@ -416,7 +418,7 @@ namespace bts { namespace blockchain {
          {
             balance_record new_balance_record( escrow_condition.sender,
                                                asset( amount_to_sender, escrow_balance_record->asset_id() ),
-                                               escrow_balance_record->delegate_slate_id() );
+                                               escrow_balance_record->slate_id() );
             auto current_sender_balance = eval_state._current_state->get_balance_record( new_balance_record.id());
 
             if( current_sender_balance )
@@ -451,9 +453,13 @@ namespace bts { namespace blockchain {
 #ifndef WIN32
 #warning figure out how to set the real fee here
 #endif
-      if( current_balance_record->condition.delegate_slate_id )
+
+      auto asset_rec = eval_state._current_state->get_asset_record( current_balance_record->condition.asset_id );
+      if( asset_rec->is_market_issued() ) FC_ASSERT( current_balance_record->condition.slate_id == 0 );
+
+      if( current_balance_record->condition.slate_id )
       {
-          eval_state.adjust_vote( current_balance_record->condition.delegate_slate_id, -balance );
+          eval_state.adjust_vote( current_balance_record->condition.slate_id, -balance );
       }
       current_balance_record->balance -= balance;
       current_balance_record->last_update = eval_state._current_state->now();
@@ -462,7 +468,7 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_balance_record( *current_balance_record );
 
       auto new_restricted_owner = current_balance_record->restricted_owner;
-      auto new_slate = current_balance_record->condition.delegate_slate_id;
+      auto new_slate = current_balance_record->condition.slate_id;
 
 
       if( this->new_restricted_owner.valid() && (this->new_restricted_owner != new_restricted_owner) )
@@ -523,8 +529,8 @@ namespace bts { namespace blockchain {
       eval_state.add_balance( asset(fee, 0) );
 
       // update delegate vote on deposited account..
-      if( new_balance_record->condition.delegate_slate_id )
-         eval_state.adjust_vote( new_balance_record->condition.delegate_slate_id, (balance-fee) );
+      if( new_balance_record->condition.slate_id )
+         eval_state.adjust_vote( new_balance_record->condition.slate_id, (balance-fee) );
 
       ilog("I'm storing a balance record whose last update is: ${secs}", ("secs", new_balance_record->last_update) );
       eval_state._current_state->store_balance_record( *new_balance_record );
