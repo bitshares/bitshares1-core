@@ -1,4 +1,4 @@
->>> debug_deterministic_private_keys 0 101 "init" true
+default (unlocked) >>> debug_deterministic_private_keys 0 101 "init" true
 [
   "5JZAeEjgszF9kXVpFsAK9wsVer2L3z9WwY63DT7p9kLNZUFYyRQ",
   "5KegApb8VGr1CAtUJH4a41KGqX1ZMK2ik64YCjRD3LR95k7LJAS",
