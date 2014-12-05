@@ -3071,12 +3071,17 @@ namespace detail {
       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
 
-      auto  issuer_account = my->_blockchain->get_account_record( issuer_account_name );
-      FC_ASSERT( issuer_account.valid() );
+      optional<account_id_type> issuer_account_id;
+      if( issuer_account_name != "" )
+      {
+         auto issuer_account = my->_blockchain->get_account_record( issuer_account_name );
+         FC_ASSERT( issuer_account.valid() );
+         issuer_account_id = issuer_account->id;
+	  }
 
       transaction_builder_ptr builder = create_transaction_builder();
       builder->update_asset( symbol, name, description, public_data, maximum_share_supply, precision,
-                             issuer_fee, issuer_perms, flags, issuer_account->id, required_sigs, authority );
+                             issuer_fee, issuer_perms, flags, issuer_account_id, required_sigs, authority );
       builder->finalize();
 
       if( sign )

@@ -297,7 +297,7 @@ namespace bts { namespace wallet {
                                          const share_type& issuer_fee,
                                          uint32_t issuer_perms,
                                          uint32_t flags,
-                                         account_id_type issuer_account_id,
+                                         const optional<account_id_type> issuer_account_id,
                                          uint32_t required_sigs,
                                          const vector<address>& authority 
                                        );
