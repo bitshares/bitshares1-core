@@ -1,0 +1,28 @@
+>>> wallet_set_automatic_backups false
+>>> debug_advance_time 1 second
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> wallet_account_create alice
+>>> debug_deterministic_private_keys 0 1 alice true alice
+>>> wallet_asset_create TEST TestName alice "Gringotts goblins' gold" 1000000.0 100 null false
+>>> wallet_account_register alice alice
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> wallet_asset_create TEST TestName alice "Gringotts goblins' gold" 1000000.0 100 null false
+>>> debug_deterministic_private_keys 0 1 angel true alice
+>>> wallet_asset_create TEST TestName alice "Gringotts goblins' gold" 1000000.0 100 null false
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> history
+>>> blockchain_get_asset TEST
+>>> wallet_asset_update TEST null null null null null 0 ["restricted"] ["restricted", "retractable", "market_halt"]
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> info
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> quit
