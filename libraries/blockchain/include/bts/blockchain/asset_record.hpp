@@ -58,8 +58,8 @@ namespace bts { namespace blockchain {
       share_type          current_share_supply = 0;
       share_type          maximum_share_supply = 0;
       share_type          collected_fees = 0;
-      uint32_t            issuer_permissions = default_permissions;
       uint32_t            flags = retractable;
+      uint32_t            issuer_permissions = default_permissions;
       /**
        *  The issuer can specify a transaction fee (of the asset type)
        *  that will be paid to the issuer with every transaction that
@@ -112,8 +112,8 @@ FC_REFLECT( bts::blockchain::asset_record,
             (current_share_supply)
             (maximum_share_supply)
             (collected_fees)
-            (issuer_permissions)
             (flags)
+            (issuer_permissions)
             (transaction_fee)
             (authority)
             (last_proposal_id)

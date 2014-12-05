@@ -3060,8 +3060,8 @@ namespace detail {
            const optional<double>& maximum_share_supply,
            const optional<uint64_t>& precision,
            const share_type& issuer_fee,
-           uint32_t issuer_perms,
            uint32_t flags,
+           uint32_t issuer_perms,
            const string& issuer_account_name,
            uint32_t required_sigs,
            const vector<address>& authority,
@@ -3081,7 +3081,7 @@ namespace detail {
 
       transaction_builder_ptr builder = create_transaction_builder();
       builder->update_asset( symbol, name, description, public_data, maximum_share_supply, precision,
-                             issuer_fee, issuer_perms, flags, issuer_account_id, required_sigs, authority );
+                             issuer_fee, flags, issuer_perms, issuer_account_id, required_sigs, authority );
       builder->finalize();
 
       if( sign )

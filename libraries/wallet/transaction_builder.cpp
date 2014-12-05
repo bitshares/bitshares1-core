@@ -693,8 +693,8 @@ transaction_builder& transaction_builder::update_asset( const string& symbol,
                                                         const optional<double>& maximum_share_supply,
                                                         const optional<uint64_t>& precision,
                                                         const share_type& issuer_fee,
-                                                        uint32_t issuer_perms,
                                                         uint32_t flags,
+                                                        uint32_t issuer_perms,
                                                         const optional<account_id_type> issuer_account_id,
                                                         uint32_t required_sigs,
                                                         const vector<address>& authority 
@@ -714,7 +714,7 @@ transaction_builder& transaction_builder::update_asset( const string& symbol,
         new_issuer_account_id = asset_record->issuer_account_id;
 
     trx.update_asset_ext( asset_record->id, name, description, public_data, maximum_share_supply, precision,
-                          issuer_fee, issuer_perms, flags, new_issuer_account_id, required_sigs, authority );
+                          issuer_fee, flags, issuer_perms, new_issuer_account_id, required_sigs, authority );
     deduct_balance( issuer_account_record->active_key(), asset() );
 
     ledger_entry entry;
