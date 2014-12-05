@@ -1,4 +1,5 @@
 #include <bts/blockchain/pending_chain_state.hpp>
+#include <fc/io/raw_variant.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -609,13 +610,13 @@ namespace bts { namespace blockchain {
       return burn_record( itr->first, itr->second );
    }
 
-   void  pending_chain_state::authorize( asset_id_type asset_id, const address& owner, object_id_type oid  ) 
+   void  pending_chain_state::authorize( asset_id_type asset_id, const address& owner, object_id_type oid  )
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       authorizations[std::make_pair(asset_id,owner)] = oid;
    }
 
-   optional<object_id_type>  pending_chain_state::get_authorization( asset_id_type asset_id, const address& owner )const 
+   optional<object_id_type>  pending_chain_state::get_authorization( asset_id_type asset_id, const address& owner )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto index = std::make_pair( asset_id, owner );
@@ -625,12 +626,12 @@ namespace bts { namespace blockchain {
          return itr->second;
       return optional<object_id_type>();
    }
-   void                       pending_chain_state::store_asset_proposal( const proposal_record& r ) 
+   void                       pending_chain_state::store_asset_proposal( const proposal_record& r )
    {
       asset_proposals[std::make_pair( r.asset_id, r.proposal_id )] = r;
    }
 
-   optional<proposal_record>  pending_chain_state::fetch_asset_proposal( asset_id_type asset_id, proposal_id_type proposal_id )const 
+   optional<proposal_record>  pending_chain_state::fetch_asset_proposal( asset_id_type asset_id, proposal_id_type proposal_id )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto itr = asset_proposals.find( std::make_pair( asset_id, proposal_id ) );

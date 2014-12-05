@@ -260,7 +260,7 @@ namespace fc {
          case withdraw_password_type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_with_password>() );
             return;
-         // no default, cause waning for unimplemented
+         // No default to force compiler warning
       }
       FC_ASSERT( !"Invalid withdraw condition!" );
    }
