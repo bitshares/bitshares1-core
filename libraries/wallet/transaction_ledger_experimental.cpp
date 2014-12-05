@@ -1,16 +1,12 @@
+#include <bts/blockchain/time.hpp>
 #include <bts/wallet/exceptions.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/wallet/wallet_impl.hpp>
-
-#include <bts/blockchain/time.hpp>
-
-// TODO: Temporary
-#include <fc/io/json.hpp>
+#include <fc/io/json.hpp> // TODO: Temporary
 
 using namespace bts::wallet;
 using namespace bts::wallet::detail;
 
-// TODO: Handle vesting sharedrop balances
 void wallet_impl::scan_genesis_experimental( const account_balance_record_summary_type& account_balances )
 { try {
     transaction_ledger_entry record;
@@ -33,9 +29,9 @@ void wallet_impl::scan_genesis_experimental( const account_balance_record_summar
         }
     }
 
-    record.operation_notes[ 0 ] = "import snapshot keys";
+    record.operation_notes[ 0 ] = "import founder keys";
 
-    _wallet_db.experimental_transactions[ record.id ] = record;
+    _wallet_db.experimental_transactions[ record.id ] = record; // TODO
 } FC_CAPTURE_AND_RETHROW( (account_balances) ) }
 
 void wallet_impl::scan_block_experimental( uint32_t block_num,
@@ -47,11 +43,18 @@ void wallet_impl::scan_block_experimental( uint32_t block_num,
     const vector<transaction_record> transaction_records = _blockchain->get_transactions_for_block( block_header.id() );
     for( const transaction_evaluation_state& eval_state : transaction_records )
     {
-        scan_transaction_experimental( eval_state, block_num, block_header.timestamp,
-                                       account_keys, account_balances, account_names, true );
+        try
+        {
+            scan_transaction_experimental( eval_state, block_num, block_header.timestamp,
+                                           account_keys, account_balances, account_names, true );
+        }
+        catch( ... )
+        {
+        }
     }
 } FC_CAPTURE_AND_RETHROW( (block_num)(account_balances)(account_names) ) }
 
+// For initiating manual transaction scanning
 transaction_ledger_entry wallet_impl::scan_transaction_experimental( const transaction_evaluation_state& eval_state,
                                                                      uint32_t block_num,
                                                                      const time_point_sec& timestamp,
@@ -89,7 +92,7 @@ transaction_ledger_entry wallet_impl::scan_transaction_experimental( const trans
 
     const transaction_id_type transaction_id = eval_state.trx.id();
     const transaction_id_type& record_id = transaction_id;
-    const bool existing_record = _wallet_db.experimental_transactions.count( record_id ) > 0;
+    const bool existing_record = _wallet_db.experimental_transactions.count( record_id ) > 0; // TODO
     if( existing_record )
         record = _wallet_db.experimental_transactions.at( record_id );
 
@@ -105,6 +108,13 @@ transaction_ledger_entry wallet_impl::scan_transaction_experimental( const trans
     return record;
 } FC_CAPTURE_AND_RETHROW( (eval_state)(block_num)(timestamp)(account_balances)(account_names)(overwrite_existing) ) }
 
+/* This is the master transaction scanning function. The brief layout:
+ * - Perform some initialization
+ * - Define lambdas for scanning each supported operation
+ *   - These return true if the operation is relevant to this wallet
+ * - Scan the transaction's operations
+ * - Perform some cleanup and record-keeping
+ */
 void wallet_impl::scan_transaction_experimental( const transaction_evaluation_state& eval_state,
                                                  const map<private_key_type, string>& account_keys,
                                                  const map<address, string>& account_balances,
@@ -116,23 +126,27 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
     uint16_t withdrawal_count = 0;
     vector<memo_status> titan_memos;
 
+    // Used by scan_withdraw and scan_deposit below
     const auto collect_balance = [&]( const balance_id_type& balance_id, const asset& delta_amount ) -> bool
     {
-        if( account_balances.count( balance_id ) > 0 )
+        // TODO: Need to handle other withdraw condition types
+        if( account_balances.count( balance_id ) > 0 ) // First check canonical labels
         {
-            const string& delta_label = account_balances.at( balance_id );
             // TODO: Need to save balance labels locally before emptying them so they can be deleted from the chain
+            // OR keep the owner information around in the eval state and keep track of that somehow
+            const string& delta_label = account_balances.at( balance_id );
             record.delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
             return true;
         }
-        else if( record.delta_labels.count( op_index ) > 0 )
+        else if( record.delta_labels.count( op_index ) > 0 ) // Next check custom labels
         {
             const string& delta_label = record.delta_labels.at( op_index );
             record.delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
             return account_names.count( delta_label ) > 0;
         }
-        else
+        else // Fallback to using the balance id as the label
         {
+            // TODO: We should use the owner, not the ID -- also see case 1 above
             const string delta_label = string( balance_id );
             record.delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
             return false;
@@ -155,7 +169,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
 
         const auto scan_withdraw_with_signature = [&]( const withdraw_with_signature& condition ) -> bool
         {
-            if( condition.memo.valid() ) // titan
+            if( condition.memo.valid() ) // TODO: This could be TITAN or public
             {
                 if( record.delta_labels.count( op_index ) == 0 )
                 {
@@ -173,6 +187,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
                             omemo_status status;
                             _scanner_threads[ key_index % _num_scanner_threads ]->async( [&]()
                             {
+                                // TODO: Need to also handle non-TITAN memos
                                 status = condition.decrypt_memo_data( key );
                             }, "decrypt memo" ).wait();
 
@@ -202,7 +217,6 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
                         }
                         catch( const fc::exception& e )
                         {
-                            elog( "unexpected exception waiting on memo decryption task ${e}", ("e",e.to_detail_string()) );
                         }
                     }
                 }
@@ -369,40 +383,43 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
         return false;
     };
 
-    bool my_transaction = false;
+    bool relevant_to_me = false;
     for( const auto& op : eval_state.trx.operations )
     {
         switch( operation_type_enum( op.type ) )
         {
             case withdraw_op_type:
-                my_transaction |= scan_withdraw( op.as<withdraw_operation>() );
+                relevant_to_me |= scan_withdraw( op.as<withdraw_operation>() );
                 break;
             case deposit_op_type:
-                my_transaction |= scan_deposit( op.as<deposit_operation>() );
+                relevant_to_me |= scan_deposit( op.as<deposit_operation>() );
                 break;
             case register_account_op_type:
-                my_transaction |= scan_register_account( op.as<register_account_operation>() );
+                relevant_to_me |= scan_register_account( op.as<register_account_operation>() );
                 break;
             case update_account_op_type:
-                my_transaction |= scan_update_account( op.as<update_account_operation>() );
+                relevant_to_me |= scan_update_account( op.as<update_account_operation>() );
                 break;
             case withdraw_pay_op_type:
-                my_transaction |= scan_withdraw_pay( op.as<withdraw_pay_operation>() );
+                relevant_to_me |= scan_withdraw_pay( op.as<withdraw_pay_operation>() );
                 break;
             case create_asset_op_type:
-                my_transaction |= scan_create_asset( op.as<create_asset_operation>() );
+                relevant_to_me |= scan_create_asset( op.as<create_asset_operation>() );
                 break;
             case update_asset_op_type:
-                // Not yet exposed to users
+                // TODO
                 break;
             case issue_asset_op_type:
-                my_transaction |= scan_issue_asset( op.as<issue_asset_operation>() );
+                relevant_to_me |= scan_issue_asset( op.as<issue_asset_operation>() );
+                break;
+            case create_asset_prop_op_type:
+                // TODO
                 break;
             case bid_op_type:
                 // TODO
                 break;
             case ask_op_type:
-                my_transaction |= scan_ask( op.as<ask_operation>() );
+                relevant_to_me |= scan_ask( op.as<ask_operation>() );
                 break;
             case short_op_type:
                 // TODO
@@ -410,16 +427,47 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
             case cover_op_type:
                 // TODO
                 break;
+            case add_collateral_op_type:
+                // TODO
+                break;
             case define_delegate_slate_op_type:
                 // Don't care; do nothing
                 break;
             case update_feed_op_type:
-                my_transaction |= scan_update_feed( op.as<update_feed_operation>() );
+                relevant_to_me |= scan_update_feed( op.as<update_feed_operation>() );
                 break;
             case burn_op_type:
-                my_transaction |= scan_burn( op.as<burn_operation>() );
+                relevant_to_me |= scan_burn( op.as<burn_operation>() );
+                break;
+            case release_escrow_op_type:
+                // TODO
+                break;
+            case update_block_signing_key_type:
+                // TODO
+                break;
+            case relative_bid_op_type:
+                // TODO
+                break;
+            case relative_ask_op_type:
+                // TODO
+                break;
+            case update_balance_vote_op_type:
+                // TODO
+                break;
+            case set_object_op_type:
+                // TODO
+                break;
+            case authorize_op_type:
+                // TODO
+                break;
+            case update_asset_ext_op_type:
+                // TODO
+                break;
+            case cancel_order_op_type:
+                // TODO
                 break;
             default:
+                // Ignore everything else
                 break;
         }
 
@@ -462,12 +510,11 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
                 record.delta_labels[ i ] = account_name;
         }
 
-        scan_transaction_experimental( eval_state, account_keys, account_balances, account_names, record, store_record );
         return true;
     };
 
     if( rescan_with_titan_info() )
-        return;
+        return scan_transaction_experimental( eval_state, account_keys, account_balances, account_names, record, store_record );
 
     for( const auto& delta_item : eval_state.balance )
     {
@@ -475,7 +522,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
         record.delta_amounts[ "FEE" ][ delta_amount.asset_id ] += delta_amount.amount;
     }
 
-    if( my_transaction && store_record )
+    if( relevant_to_me && store_record ) // TODO
     {
         ulog( "wallet_transaction_record_v2:\n${rec}", ("rec",fc::json::to_pretty_string( record )) );
         _wallet_db.experimental_transactions[ record.id ] = record;
@@ -524,7 +571,7 @@ void wallet::add_transaction_note_experimental( const string& transaction_id_pre
        FC_THROW_EXCEPTION( transaction_not_found, "Transaction not found!", ("transaction_id_prefix",transaction_id_prefix) );
 
    const auto record_id = transaction_record->trx.id();
-   if( my->_wallet_db.experimental_transactions.count( record_id ) == 0 )
+   if( my->_wallet_db.experimental_transactions.count( record_id ) == 0 ) // TODO
        FC_THROW_EXCEPTION( transaction_not_found, "Transaction not found!", ("transaction_id_prefix",transaction_id_prefix) );
 
    auto record = my->_wallet_db.experimental_transactions[ record_id ];
@@ -557,7 +604,7 @@ set<pretty_transaction_experimental> wallet::transaction_history_experimental( c
        }
    }
 
-   for( const auto& item : my->_wallet_db.experimental_transactions )
+   for( const auto& item : my->_wallet_db.experimental_transactions ) // TODO
    {
        history.insert( to_pretty_transaction_experimental( item.second ) );
    }
@@ -612,9 +659,9 @@ pretty_transaction_experimental wallet::to_pretty_transaction_experimental( cons
        {
            const asset delta_amount( delta_item.second, delta_item.first );
            if( delta_amount.amount >= 0)
-               result.outputs.push_back( std::make_pair( label, delta_amount ) );
+               result.outputs.emplace_back( label, delta_amount );
            else
-               result.inputs.push_back( std::make_pair( label, -delta_amount ) );
+               result.inputs.emplace_back( label, -delta_amount );
        }
    }
 
