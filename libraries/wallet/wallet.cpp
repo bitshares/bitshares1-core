@@ -2908,21 +2908,42 @@ namespace detail {
                                 meta_info );
       }
 
-      const auto pos = account_to_register.find( '.' );
-      if( pos != string::npos )
+      // Verify a parent key is available if required
+      optional<string> parent_name = my->_blockchain->get_parent_account_name( account_to_register );
+      if( parent_name.valid() )
       {
-        string parent_name;
-        try
-        {
-          parent_name = account_to_register.substr( pos+1, string::npos );
-          const auto parent_acct = get_account( parent_name );
-          required_signatures.insert( parent_acct.active_address() );
-        }
-        catch( const unknown_account& )
-        {
-          FC_THROW_EXCEPTION( unauthorized_child_account, "Need parent account to authorize registration!",
-                              ("child_account",account_to_register)("parent_account",parent_name) );
-        }
+          bool have_parent_key = false;
+          for( ; parent_name.valid(); parent_name = my->_blockchain->get_parent_account_name( *parent_name ) )
+          {
+              try
+              {
+                  const wallet_account_record parent_record = get_account( *parent_name );
+                  if( parent_record.is_retracted() )
+                      continue;
+
+                  if( my->_wallet_db.has_private_key( parent_record.active_address() ) )
+                  {
+                      required_signatures.insert( parent_record.active_address() );
+                      have_parent_key = true;
+                      break;
+                  }
+
+                  if( my->_wallet_db.has_private_key( parent_record.owner_address() ) )
+                  {
+                      required_signatures.insert( parent_record.owner_address() );
+                      have_parent_key = true;
+                      break;
+                  }
+              }
+              catch( ... )
+              {
+              }
+          }
+          if( !have_parent_key )
+          {
+              FC_THROW_EXCEPTION( unauthorized_child_account, "Parent account must authorize registration of this child account!",
+                                  ("child_account",account_to_register) );
+          }
       }
 
       auto required_fees = get_transaction_fee();
@@ -4346,7 +4367,7 @@ namespace detail {
        return snapshot_records;
    } FC_CAPTURE_AND_RETHROW() }
 
-   wallet_transaction_record wallet::asset_authorize_key( const string& paying_account_name, 
+   wallet_transaction_record wallet::asset_authorize_key( const string& paying_account_name,
                                                   const string& symbol,
                                                   const address& key,
                                                   const object_id_type& meta, bool sign )
