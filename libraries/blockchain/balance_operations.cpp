@@ -195,14 +195,14 @@ namespace bts { namespace blockchain {
                 break;
             }
 
-            case withdraw_multi_sig_type:
+            case withdraw_multisig_type:
             {
-               auto multi_sig = current_balance_record->condition.as<withdraw_with_multi_sig>();
+               auto multisig = current_balance_record->condition.as<withdraw_with_multisig>();
                uint32_t valid_signatures = 0;
-               for( auto sig : multi_sig.owners )
+               for( const auto& sig : multisig.owners )
                   valid_signatures += eval_state.check_signature( sig );
-               if( valid_signatures < multi_sig.required )
-                  FC_CAPTURE_AND_THROW( missing_signature, (valid_signatures)(multi_sig) );
+               if( valid_signatures < multisig.required )
+                  FC_CAPTURE_AND_THROW( missing_signature, (valid_signatures)(multisig) );
                break;
             }
 
@@ -473,7 +473,7 @@ namespace bts { namespace blockchain {
 
       if( this->new_restricted_owner.valid() && (this->new_restricted_owner != new_restricted_owner) )
       {
-          for( auto owner : current_balance_record->owners() ) //eventually maybe multisig can delegate vote
+          for( const auto& owner : current_balance_record->owners() ) //eventually maybe multisig can delegate vote
           {
               if( !eval_state.check_signature( owner ) )
                   FC_CAPTURE_AND_THROW( missing_signature, (owner) );

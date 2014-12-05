@@ -129,7 +129,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
     // Used by scan_withdraw and scan_deposit below
     const auto collect_balance = [&]( const balance_id_type& balance_id, const asset& delta_amount ) -> bool
     {
-        // TODO: Need to handle other withdraw condition types
+        // TODO: Handle other withdraw types by adding their small ids as values in account_balances outside
         if( account_balances.count( balance_id ) > 0 ) // First check canonical labels
         {
             // TODO: Need to save balance labels locally before emptying them so they can be deleted from the chain

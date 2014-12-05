@@ -8,7 +8,7 @@ namespace bts { namespace blockchain {
 
    const uint8_t withdraw_with_signature::type    = withdraw_signature_type;
    const uint8_t withdraw_vesting::type           = withdraw_vesting_type;
-   const uint8_t withdraw_with_multi_sig::type    = withdraw_multi_sig_type;
+   const uint8_t withdraw_with_multisig::type     = withdraw_multisig_type;
    const uint8_t withdraw_with_escrow::type       = withdraw_escrow_type;
    const uint8_t withdraw_with_password::type     = withdraw_password_type;
 
@@ -218,8 +218,8 @@ namespace fc {
          case withdraw_vesting_type:
             obj["data"] = fc::raw::unpack<withdraw_vesting>( var.data );
             break;
-         case withdraw_multi_sig_type:
-            obj["data"] = fc::raw::unpack<withdraw_with_multi_sig>( var.data );
+         case withdraw_multisig_type:
+            obj["data"] = fc::raw::unpack<withdraw_with_multisig>( var.data );
             break;
          case withdraw_escrow_type:
             obj["data"] = fc::raw::unpack<withdraw_with_escrow>( var.data );
@@ -251,8 +251,8 @@ namespace fc {
          case withdraw_vesting_type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_vesting>() );
             return;
-         case withdraw_multi_sig_type:
-            vo.data = fc::raw::pack( obj["data"].as<withdraw_with_multi_sig>() );
+         case withdraw_multisig_type:
+            vo.data = fc::raw::pack( obj["data"].as<withdraw_with_multisig>() );
             return;
          case withdraw_escrow_type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_with_escrow>() );
