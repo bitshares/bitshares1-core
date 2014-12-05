@@ -4,7 +4,6 @@
 #include <bts/wallet/wallet_impl.hpp>
 
 #include <bts/blockchain/time.hpp>
-
 #include <bts/cli/pretty.hpp>
 #include <bts/utilities/git_revision.hpp>
 #include <bts/utilities/key_conversion.hpp>
@@ -1283,46 +1282,54 @@ namespace detail {
    void wallet::rename_account( const string& old_account_name,
                                  const string& new_account_name )
    { try {
+      FC_ASSERT( is_open() );
       if( !my->_blockchain->is_valid_account_name( old_account_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid old account name!", ("old_account_name",old_account_name) );
       if( !my->_blockchain->is_valid_account_name( new_account_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid new account name!", ("new_account_name",new_account_name) );
 
-      FC_ASSERT( is_open() );
+      optional<public_key_type> old_key;
       auto registered_account = my->_blockchain->get_account_record( old_account_name );
-      auto local_account = my->_wallet_db.lookup_account( old_account_name );
-      if( registered_account.valid()
-          && !(local_account && local_account->owner_key != registered_account->owner_key) )
-          FC_THROW_EXCEPTION( invalid_name, "You cannot rename a registered account!" );
+      bool have_registered = false;
+      for( const auto& item : my->_wallet_db.get_accounts() )
+      {
+          const wallet_account_record& local_account = item.second;
+          if( local_account.name != old_account_name )
+              continue;
+
+          if( !registered_account.valid() || registered_account->owner_key != local_account.owner_key )
+          {
+              old_key = local_account.owner_key;
+              break;
+          }
+
+          have_registered |= registered_account.valid() && registered_account->owner_key == local_account.owner_key;
+      }
+
+      if( !old_key.valid() )
+      {
+          if( registered_account.valid() )
+              FC_THROW_EXCEPTION( key_already_registered, "You cannot rename a registered account!" );
+
+          FC_THROW_EXCEPTION( unknown_account, "Unknown account name!", ("old_account_name", old_account_name) );
+      }
+
+      registered_account = my->_blockchain->get_account_record( *old_key );
+      if( registered_account.valid() && registered_account->name != new_account_name )
+      {
+          FC_THROW_EXCEPTION( key_already_registered, "That account is already registered to a different name!",
+                              ("desired_name",new_account_name)("registered_name",registered_account->name) );
+      }
 
       registered_account = my->_blockchain->get_account_record( new_account_name );
       if( registered_account.valid() )
-          FC_THROW_EXCEPTION( invalid_name, "Your new account name is already registered!" );
+          FC_THROW_EXCEPTION( duplicate_account_name, "Your new account name is already registered!" );
 
-      auto old_account = my->_wallet_db.lookup_account( old_account_name );
-      FC_ASSERT( old_account.valid() );
-      auto old_key = old_account->owner_key;
+      const auto new_account = my->_wallet_db.lookup_account( new_account_name );
+      if( new_account.valid() )
+          FC_THROW_EXCEPTION( duplicate_account_name, "You already have the new account name in your wallet!" );
 
-      //Check for duplicate names in wallet
-      if( !my->is_unique_account(old_account_name) )
-      {
-        //Find the wallet record that is not in the blockchain; or is, but under a different name
-        auto wallet_accounts = my->_wallet_db.get_accounts();
-        for( const auto& wallet_account : wallet_accounts )
-        {
-          if( wallet_account.second.name == old_account_name )
-          {
-            auto record = my->_blockchain->get_account_record(wallet_account.second.owner_key);
-            if( !(record.valid() && record->name == old_account_name) )
-              old_key = wallet_account.second.owner_key;
-          }
-        }
-      }
-
-      auto new_account = my->_wallet_db.lookup_account( new_account_name );
-      FC_ASSERT( !new_account.valid() );
-
-      my->_wallet_db.rename_account( old_key, new_account_name );
+      my->_wallet_db.rename_account( *old_key, new_account_name );
    } FC_CAPTURE_AND_RETHROW( (old_account_name)(new_account_name) ) }
 
    /**

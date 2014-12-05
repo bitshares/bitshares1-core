@@ -53,14 +53,35 @@ price market_order::get_price( const price& relative )const
    switch( order_type_enum(type) )
    {
       case relative_bid_order:
-      case relative_ask_order:
+      {
+         price abs_price;
          if( relative != price() )
-            return market_index.order_price + relative;
+            abs_price = market_index.order_price + relative;
          else
-            return market_index.order_price;
+            abs_price = market_index.order_price;
+         if( state.limit_price )
+            abs_price = std::min( abs_price, *state.limit_price );
+         return abs_price;
+      }
+      case relative_ask_order:
+      {
+         price abs_price;
+         if( relative != price() )
+            abs_price = market_index.order_price + relative;
+         else
+            abs_price = market_index.order_price;
+         if( state.limit_price )
+            abs_price = std::max( abs_price, *state.limit_price );
+         return abs_price;
+      }
+      case short_order:
+        if( relative == price() )
+           return market_index.order_price;
+        if( state.limit_price ) 
+           return std::min( *state.limit_price, relative );
+        return relative;
       case bid_order:
       case ask_order:
-      case short_order:
       case cover_order:
         return market_index.order_price;
       case null_order:
