@@ -274,6 +274,7 @@ struct voter_decision
    map<fc::signed_int, fc::signed_int> voter_opinions;
    digest_type ballot_id;
    vector<expiring_signature> registrar_authorizations;
+   fc::time_point_sec timestamp;
 
    digest_type digest()const
    {
@@ -353,7 +354,7 @@ FC_REFLECT( bts::vote::contestant, (name)(description) )
 FC_REFLECT( bts::vote::contest, (description)(tags)(contestants) )
 FC_REFLECT( bts::vote::ballot, (title)(description)(contests) )
 FC_REFLECT( bts::vote::voter_decision, (contest_id)(ballot_id)(write_in_names)(voter_opinions)
-            (registrar_authorizations) )
+            (registrar_authorizations)(timestamp) )
 FC_REFLECT_DERIVED( bts::vote::signed_voter_decision, (bts::vote::voter_decision), (voter_signature) )
 FC_REFLECT( bts::vote::cast_decision, (decision_id)(contest_id)(ballot_id)(write_in_names)(voter_opinions)(voter_id)
             (timestamp)(authoritative)(latest) )

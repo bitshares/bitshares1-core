@@ -515,6 +515,7 @@ void ClientWrapper::submit_decisions(QString json_decisions)
       for( bts::vote::voter_decision& decision : decisions )
       {
          decision.registrar_authorizations = authorizations;
+         decision.timestamp = fc::time_point::now();
          signed_decisions.emplace_back(fc::variants(1, fc::variant(bts::vote::signed_voter_decision(decision, voter_key))));
       }
 
