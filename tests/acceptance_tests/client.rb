@@ -43,6 +43,7 @@ class BitSharesNode
   
   def start(wait=false)
     log "starting node '#{@name}', http port: #{@options[:http_port]}, rpc port: #{@options[:rpc_port]}, p2p port: #{@options[:p2p_port]} \n#{@command}"
+    log ""
 
     stdin, out, wait_thr = Open3.popen2e(@command)
     @handler = {stdin: stdin, out: out, wait_thr: wait_thr}
@@ -127,7 +128,7 @@ class BitSharesNode
   @@completion_proc = proc { |s| @@completion_list.grep( /^#{Regexp.escape(s)}/ ) }
 
   def interactive_mode
-    STDOUT.puts "\nentering node '#{@name}' interactive mode, enter 'exit' or 'quite' to exit"
+    STDOUT.puts "\nentering node '#{@name}' interactive mode, enter 'exit' or 'quit' to exit"
     ignore_errors = @rpc_instance.ignore_errors
     @rpc_instance.ignore_errors = true
     echo_off = @rpc_instance.echo_off
