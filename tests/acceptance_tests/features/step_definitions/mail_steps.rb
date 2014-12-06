@@ -2,9 +2,13 @@ Given /^I run a mail server/  do
     account = @current_actor.account
     rpc_port = @testnet.mail_node.options[:rpc_port]
     pay_from = 'angel'
-    result = @current_actor.node.exec 'wallet_account_update_registration', account, pay_from,
-        { :mail_server_endpoint => "127.0.0.1:#{rpc_port}" }
-  
+    result = @current_actor.node.exec 'blockchain_get_account', account
+    public_data = result["public_data"] || {}
+    public_data["mail_server_endpoint"] = "127.0.0.1:#{rpc_port}"
+    public_data["mail_servers"] = [account] #also, uses own mail server
+    result = @current_actor.node.exec\
+        'wallet_account_update_registration', account, pay_from, public_data
+    #puts result
     @testnet.mail_node.start # just to create the config file
     @testnet.wait_nodes [@testnet.mail_node]
     @testnet.mail_node.stop
@@ -17,9 +21,14 @@ end
 Given /^I use mail server accounts: (.*)/  do |accounts|
     account = @current_actor.account
     pay_from = 'angel'
-    mail_servers = accounts.scan /\w+/
-    result = @current_actor.node.exec 'wallet_account_update_registration', account, pay_from,
-        { :mail_servers => mail_servers }
+    new_mail_servers = accounts.scan /\w+/
+    result = @current_actor.node.exec 'blockchain_get_account', account
+    public_data = result["public_data"] || {}
+    mail_servers = public_data["mail_servers"]
+    mail_servers = public_data["mail_servers"] = [] unless mail_servers
+    mail_servers.push *new_mail_servers
+    result = @current_actor.node.exec\
+        'wallet_account_update_registration', account, pay_from, public_data
     #puts result
 end
 
