@@ -10,7 +10,7 @@ module BitShares
 
   class TestNet
 
-    attr_reader :delegate_node, :alice_node, :bob_node, :running
+    attr_reader :delegate_node, :alice_node, :bob_node, :mail_node, :running
 
     TEMPDIR = 'tmp'
 
@@ -19,6 +19,7 @@ module BitShares
       @delegate_node = nil
       @alice_node = nil
       @bob_node = nil
+      @mail_node = nil
       @p2p_port = 10000 + Random.rand(10000)
       @running = false
 
@@ -83,6 +84,7 @@ module BitShares
 
       @bob_node.exec 'wallet_import_private_key', balancekeys[3], 'angel', true, true
       @bob_node.exec 'wallet_backup_create', td('bob_wallet_backup.json')
+      
     end
 
     def quick_bootstrap
@@ -112,16 +114,27 @@ module BitShares
     end
 
     def start
-      @delegate_node = BitSharesNode.new @client_binary, name: 'delegate', data_dir: td('delegate'), genesis: 'genesis.json', http_port: 5690, p2p_port: @p2p_port, delegate: true, logger: @logger
+      @delegate_node = BitSharesNode.new @client_binary, name: 'delegate', data_dir: td('delegate'), genesis: 'genesis.json', http_port: 5690, rpc_port: 6690, p2p_port: @p2p_port, delegate: true, logger: @logger
       @delegate_node.start
 
-      @alice_node = BitSharesNode.new @client_binary, name: 'alice', data_dir: td('alice'), genesis: 'genesis.json', http_port: 5691, p2p_port: @p2p_port, logger: @logger
+      @alice_node = BitSharesNode.new @client_binary, name: 'alice', data_dir: td('alice'), genesis: 'genesis.json', http_port: 5691, rpc_port: 6691, p2p_port: @p2p_port, logger: @logger
       @alice_node.start
 
-      @bob_node = BitSharesNode.new @client_binary, name: 'bob', data_dir: td('bob'), genesis: 'genesis.json', http_port: 5692, p2p_port: @p2p_port, logger: @logger
+      @bob_node = BitSharesNode.new @client_binary, name: 'bob', data_dir: td('bob'), genesis: 'genesis.json', http_port: 5692, rpc_port: 6692, p2p_port: @p2p_port, logger: @logger
       @bob_node.start
+      
+      @mail_node = BitSharesNode.new @client_binary, name: 'mail', data_dir: td('mail'), genesis: 'genesis.json', http_port: 5693, rpc_port: 6693, p2p_port: @p2p_port, logger: @logger
+      
+      @mail_node.start
+      wait_nodes [@mail_node]
+      config = @mail_node.get_config
+      config['mail_server_enabled'] = true
+      @mail_node.stop
+      puts "Re-configuring mail server..."
+      @mail_node.save_config(config)
+      @mail_node.start
 
-      nodes = [@delegate_node, @alice_node, @bob_node]
+      nodes = [@delegate_node, @alice_node, @bob_node, @mail_node]
       wait_nodes(nodes)
     end
 
@@ -130,17 +143,21 @@ module BitShares
       recreate_dir td('delegate')
       recreate_dir td('alice')
       recreate_dir td('bob')
+      recreate_dir td('mail')
 
       quick = File.exist?(td('delegate_wallet_backup.json'))
 
-      @delegate_node = BitSharesNode.new @client_binary, name: 'delegate', data_dir: td('delegate'), genesis: 'genesis.json', http_port: 5690, p2p_port: @p2p_port, delegate: true, logger: @logger
+      @delegate_node = BitSharesNode.new @client_binary, name: 'delegate', data_dir: td('delegate'), genesis: 'genesis.json', http_port: 5690, rpc_port: 6690, p2p_port: @p2p_port, delegate: true, logger: @logger
       @delegate_node.start
 
-      @alice_node = BitSharesNode.new @client_binary, name: 'alice', data_dir: td('alice'), genesis: 'genesis.json', http_port: 5691, p2p_port: @p2p_port, logger: @logger
+      @alice_node = BitSharesNode.new @client_binary, name: 'alice', data_dir: td('alice'), genesis: 'genesis.json', http_port: 5691, rpc_port: 6691, p2p_port: @p2p_port, logger: @logger
       @alice_node.start
 
-      @bob_node = BitSharesNode.new @client_binary, name: 'bob', data_dir: td('bob'), genesis: 'genesis.json', http_port: 5692, p2p_port: @p2p_port, logger: @logger
+      @bob_node = BitSharesNode.new @client_binary, name: 'bob', data_dir: td('bob'), genesis: 'genesis.json', http_port: 5692, rpc_port: 6692, p2p_port: @p2p_port, logger: @logger
       @bob_node.start
+      
+      @mail_node = BitSharesNode.new @client_binary, name: 'mail', data_dir: td('mail'), genesis: 'genesis.json', http_port: 5693, rpc_port: 6693, p2p_port: @p2p_port, logger: @logger
+      # Don't start it here, instead mail_steps.rb will start it on request
 
       wait_nodes([@delegate_node, @alice_node, @bob_node])
 
@@ -162,12 +179,14 @@ module BitShares
       @delegate_node.stop
       @alice_node.stop if @alice_node
       @bob_node.stop if @bob_node
+      @mail_node.stop if @mail_node and @mail_node.running
       @running = false
     end
 
     def pause
       @alice_node.exec 'execute_command_line', 'enable_raw'
       @bob_node.exec 'execute_command_line', 'enable_raw'
+      @mail_node.exec 'execute_command_line', 'enable_raw' if @mail_node.running
       while true
         STDOUT.puts '@pause: use the following urls to access the nodes via browser:'
         STDOUT.puts "- delegate node: #{@delegate_node.url}"
