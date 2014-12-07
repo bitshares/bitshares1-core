@@ -177,7 +177,7 @@ namespace bts { namespace blockchain {
          virtual void                       store_object_record( const object_record& obj )                 = 0;
          virtual oobject_record             get_object_record( const object_id_type& id )                   = 0;
 
-         virtual oedge_record               get_edge( const object_id_type& id )const;
+         virtual oedge_record               get_edge( const object_id_type& id );
          virtual oedge_record               get_edge( const object_id_type& from,
                                                       const object_id_type& to,
                                                       const string& name )const;

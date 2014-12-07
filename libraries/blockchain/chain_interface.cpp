@@ -209,10 +209,17 @@ namespace bts { namespace blockchain {
    } FC_CAPTURE_AND_RETHROW( (obj.short_id())(obj.type())(obj) ) }
 
 
-    oedge_record               chain_interface::get_edge( const object_id_type& id )const
+    oedge_record               chain_interface::get_edge( const object_id_type& id )
     {
-        FC_ASSERT(!"unimplemented!");
+        auto object = get_object_record( id );
+        if( NOT object.valid() )
+            return oedge_record();
+        FC_ASSERT( object->type() == edge_object, "This object is not an edge!"); // TODO check form ID as first check
+        return object->as<edge_record>();
     }
+
+
+
     oedge_record               chain_interface::get_edge( const object_id_type& from,
                                          const object_id_type& to,
                                          const string& name )const
@@ -224,7 +231,6 @@ namespace bts { namespace blockchain {
     {
         FC_ASSERT(!"unimplemented!");
     }
-
     map<object_id_type, map<string, edge_record>> chain_interface::get_edges( const object_id_type& from )const
     {
         FC_ASSERT(!"unimplemented!");
