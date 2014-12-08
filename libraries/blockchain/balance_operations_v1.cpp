@@ -68,6 +68,14 @@ void deposit_operation::evaluate_v1( transaction_evaluation_state& eval_state )
     if( this->amount <= 0 )
        FC_CAPTURE_AND_THROW( negative_deposit, (amount) );
 
+    switch( withdraw_condition_types( this->condition.type ) )
+    {
+       case withdraw_signature_type:
+          break;
+       default:
+          FC_CAPTURE_AND_THROW( invalid_withdraw_condition, (*this) );
+    }
+
     auto deposit_balance_id = this->balance_id();
 
     auto cur_record = eval_state._current_state->get_balance_record( deposit_balance_id );
