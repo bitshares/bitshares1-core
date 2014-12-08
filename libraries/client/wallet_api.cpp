@@ -1453,7 +1453,7 @@ string client_impl::wallet_generate_brain_seed()const
 
    uint16_t* keys = (uint16_t*)&secret;
    for( uint32_t i = 0; i < 9; ++i )
-      result += word_list[i%word_list_size] + string(" ");
+      result += word_list[keys[i]%word_list_size] + string(" ");
 
    result += string( address(priv_key.get_public_key()) ).substr(4); 
 
