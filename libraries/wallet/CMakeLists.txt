@@ -10,6 +10,7 @@ add_library( bts_wallet
              mail.cpp
              login.cpp
              wallet.cpp
+             words.cpp
              ${HEADERS}
            )
 
