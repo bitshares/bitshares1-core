@@ -55,10 +55,29 @@ end
 
 Then /(\w+) should receive my message/ do |name|
     actor = get_actor(name)
+    current_account = @current_actor.account
     mail_check_new_messages = actor.node.exec 'mail_check_new_messages'
-    raise 'Expecting 1 message, instead got #{mail_check_new_messages}' unless mail_check_new_messages == 1
+    raise "Expecting 1 message, instead got #{mail_check_new_messages}" unless mail_check_new_messages == 1
     #puts 'mail_check_new_messages', mail_check_new_messages
     mail_inbox = actor.node.exec 'mail_inbox'
     #puts 'mail_inbox',mail_inbox
-    raise 'Expecting 1 message, instead got #{mail_inbox}' unless mail_inbox and mail_inbox.length == 1
+    raise "Expecting 1 message, instead got #{mail_inbox}" unless mail_inbox and mail_inbox.length == 1
+    raise "Expecting sender to be #{current_account}" unless current_account == mail_inbox[0]["sender"]
+    raise "Excecting recipient to be #{name}" unless name == mail_inbox[0]["recipient"]
+end
+
+Then /(\w+) should delete my message/ do |name|
+    actor = get_actor(name)
+    current_account = @current_actor.account
+    actor.node.exec 'mail_check_new_messages'
+    mail_inbox = actor.node.exec 'mail_inbox'
+    raise "Expecting 1 message, instead got #{mail_inbox}" unless mail_inbox and mail_inbox.length == 1
+    raise "Expecting sender to be #{current_account}" unless current_account == mail_inbox[0]["sender"]
+    raise "Excecting recipient to be #{name}" unless name == mail_inbox[0]["recipient"]
+    id = mail_inbox[0]["id"]
+    result = actor.node.exec 'mail_remove_message', id
+    mail_inbox = actor.node.exec 'mail_inbox'
+    if mail_inbox.length == 1
+        raise "Mail id #{id} was not deleted" if mail_inbox[0]["id"] == id
+    end
 end

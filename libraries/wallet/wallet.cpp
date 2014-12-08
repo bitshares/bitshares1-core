@@ -1685,12 +1685,10 @@ namespace detail {
 	   vector<std::pair<string, wallet_transaction_record>> result;
 	   const vector<wallet_account_record> accounts = this->list_my_accounts();
 
-	   for( auto acct : accounts )
+	   for( const auto& acct : accounts )
 	   {
 		   auto current_account = my->_blockchain->get_account_record( acct.name );
-		   if( !current_account )
-			   continue;
-		   if( !my->_blockchain->is_active_delegate( current_account->id ) )
+		   if( !current_account.valid() || current_account->is_retracted() || !current_account->is_delegate() )
 			   continue;
 	       wallet_transaction_record tr = this->publish_feeds(
 	           acct.name,
@@ -1726,13 +1724,11 @@ namespace detail {
       trx.expiration = blockchain::now() + get_transaction_expiration();
 
       auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
-      FC_ASSERT( current_account );
+      FC_ASSERT( current_account.valid() );
       auto payer_public_key = get_owner_public_key( account_to_publish_under );
-      FC_ASSERT( my->_blockchain->is_active_delegate( current_account->id ) );
 
-      for( auto item : amount_per_xts )
+      for( const auto& item : amount_per_xts )
       {
-         ilog( "${item}", ("item", item) );
          auto quote_asset_record = my->_blockchain->get_asset_record( item.first );
          auto base_asset_record  = my->_blockchain->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
 
@@ -1740,7 +1736,7 @@ namespace detail {
          asset price_shares( item.second *  quote_asset_record->precision, quote_asset_record->id );
          asset base_one_quantity( base_asset_record->precision, 0 );
 
-        // auto quote_price_shares = price_shares / base_one_quantity;
+         // auto quote_price_shares = price_shares / base_one_quantity;
          price quote_price_shares( (item.second * quote_asset_record->precision) / base_asset_record->precision, quote_asset_record->id, base_asset_record->id );
 
          if( item.second > 0 )
@@ -1810,9 +1806,8 @@ namespace detail {
       trx.expiration = blockchain::now() + get_transaction_expiration();
 
       auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
-      FC_ASSERT( current_account );
+      FC_ASSERT( current_account.valid() );
       auto payer_public_key = get_owner_public_key( account_to_publish_under );
-      FC_ASSERT( my->_blockchain->is_active_delegate( current_account->id ) );
 
       auto quote_asset_record = my->_blockchain->get_asset_record( amount_asset_symbol );
       auto base_asset_record  = my->_blockchain->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
@@ -1829,7 +1824,7 @@ namespace detail {
       if( amount_per_xts > 0 )
       {
          trx.publish_feed( my->_blockchain->get_asset_id( amount_asset_symbol ),
-                           current_account->id, fc::variant( price(quote_price_shares) )  );
+                           current_account->id, fc::variant( price( quote_price_shares ) )  );
       }
       else
       {

@@ -12,3 +12,4 @@ Feature: Mail server features
         Given I'm Alice
         When I send mail to bob
         Then bob should receive my message
+        Then bob should delete my message

@@ -64,7 +64,7 @@ default (unlocked) >>> blockchain_get_asset TEST
   "current_share_supply": 0,
   "maximum_share_supply": 100000000,
   "collected_fees": 0,
-  "flags": 1,
+  "flags": 0,
   "issuer_permissions": 31,
   "transaction_fee": 0,
   "authority": {
