@@ -642,7 +642,7 @@ object_record client_impl::blockchain_get_object( const object_id_type& id )cons
 vector<edge_record> client_impl::blockchain_get_edges( const object_id_type& from,
                                                        const object_id_type& to,
                                                        const string& name )const
-{
+{ try {
     vector<edge_record> edges;
     if( name != "" )
     {
@@ -664,7 +664,7 @@ vector<edge_record> client_impl::blockchain_get_edges( const object_id_type& fro
                 edges.push_back( p2.second );
     }
     return edges;
-}
+} FC_CAPTURE_AND_RETHROW( (from)(to)(name) ) }
 
 
 } } } // namespace bts::client::detail

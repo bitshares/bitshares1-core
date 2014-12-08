@@ -33,11 +33,13 @@ Then(/^Object with ID: (\w+)  should have user data: (\w+)$/) do |obj, data|
 end
 
 When(/^I make an edge from (\w+) to (\w+) with name (\w+) and value (\w+)$/) do |from, to, name, value|
-    @current_actor.node.exec 'wallet_set_edge', @current_actor.account, @objects[from], @objects[to], name, value
+    @current_actor.node.exec 'wallet_set_edge', @current_actor.account, @objects[from]["_id"], @objects[to]["_id"], name, value
 end
 
 Then(/^Edge from (\w+) to (\w+) named (\w+) should have value (\w+)$/) do |from, to, name, value|
-    edges = @current_actor.node.exec 'blockchain_get_edges', @objects[from], @objects[to], name
+    puts @objects
+    edges = @current_actor.node.exec 'blockchain_get_edges', @objects[from]["_id"], @objects[to]["_id"], name
+    puts edges
     raise "Somehow there are multiple edge object for a unique id" unless edges.length <= 1
     raise "Edge has wrong value!" unless edges[0]["value"] == value
 end

@@ -846,7 +846,7 @@
             {
               "name" : "from",
               "type" : "object_id_type",
-              "description" : ""
+              "description" : -1
             },
             {
               "name" : "to",
