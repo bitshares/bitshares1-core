@@ -1,6 +1,7 @@
 #include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/market_engine_v7.hpp>
 #include <fc/real128.hpp>
+#include <algorithm>
 
 #include <bts/blockchain/fork_blocks.hpp>
 
