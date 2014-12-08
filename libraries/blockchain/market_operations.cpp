@@ -16,7 +16,6 @@ namespace bts { namespace blockchain {
       if( this->bid_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (bid_index.order_price) );
 
-
       auto owner = this->bid_index.owner;
 
       auto base_asset_rec = eval_state._current_state->get_asset_record( bid_index.order_price.base_asset_id );
@@ -28,8 +27,7 @@ namespace bts { namespace blockchain {
       if( quote_asset_rec->is_restricted() )
          FC_ASSERT( eval_state._current_state->get_authorization( quote_asset_rec->id, owner ) );
 
-      bool issuer_override = quote_asset_rec->is_retractable() && eval_state.verify_authority( quote_asset_rec->authority );
-
+      const bool issuer_override = quote_asset_rec->is_retractable() && eval_state.verify_authority( quote_asset_rec->authority );
       if( !issuer_override && !eval_state.check_signature( owner ) )
          FC_CAPTURE_AND_THROW( missing_signature, (bid_index.owner) );
 
@@ -122,7 +120,6 @@ namespace bts { namespace blockchain {
       //auto check   = eval_state._current_state->get_bid_record( this->bid_index );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-
    /**
     *  If the amount is negative then it will withdraw/cancel the bid assuming
     *  it is signed by the owner and there is sufficient funds.
@@ -145,8 +142,7 @@ namespace bts { namespace blockchain {
       if( quote_asset_rec->is_restricted() )
          FC_ASSERT( eval_state._current_state->get_authorization( quote_asset_rec->id, owner ) );
 
-      bool issuer_override = base_asset_rec->is_retractable() && eval_state.verify_authority( base_asset_rec->authority );
-
+      const bool issuer_override = base_asset_rec->is_retractable() && eval_state.verify_authority( base_asset_rec->authority );
       if( !issuer_override && !eval_state.check_signature( owner ) )
          FC_CAPTURE_AND_THROW( missing_signature, (ask_index.owner) );
 
@@ -157,7 +153,6 @@ namespace bts { namespace blockchain {
       eval_state.validate_asset( delta_amount );
 
       auto current_ask   = eval_state._current_state->get_ask_record( this->ask_index );
-
 
       if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
       if( this->amount <  0 ) // withdraw
@@ -213,7 +208,6 @@ namespace bts { namespace blockchain {
 
       auto current_ask   = eval_state._current_state->get_ask_record( this->ask_index );
 
-
       if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
       if( this->amount <  0 ) // withdraw
       {
@@ -241,7 +235,6 @@ namespace bts { namespace blockchain {
 
       eval_state._current_state->store_relative_ask_record( this->ask_index, *current_ask );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
-
 
    void short_operation::evaluate( transaction_evaluation_state& eval_state )
    {
@@ -315,7 +308,6 @@ namespace bts { namespace blockchain {
       if( !eval_state.check_signature( cover_index.owner ) )
          FC_CAPTURE_AND_THROW( missing_signature, (cover_index.owner) );
 
-
       // subtract this from the transaction
       eval_state.sub_balance( balance_id_type(), delta_amount );
 
@@ -331,8 +323,7 @@ namespace bts { namespace blockchain {
       if( elapsed_sec < 0 ) elapsed_sec = 0;
 
       const asset principle = asset( current_cover->payoff_balance, delta_amount.asset_id );
-      asset total_debt = detail::market_engine::get_interest_owed( principle, current_cover->interest_rate,
-                                                                   elapsed_sec ) + principle;
+      asset total_debt = detail::market_engine::get_interest_owed( principle, current_cover->interest_rate, elapsed_sec ) + principle;
 
       asset principle_paid;
       asset interest_paid;
