@@ -1802,6 +1802,7 @@ namespace bts { namespace blockchain {
                 auto edge = obj.as<edge_record>();
                 my->_edge_index.store( edge.index_key(), edge._id );
                 my->_reverse_edge_index.store( edge.reverse_index_key(), edge._id );
+                ilog("Storing edge: ${e}", ("e", edge));
                 break;
             }
             case base_object:
