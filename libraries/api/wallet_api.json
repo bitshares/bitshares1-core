@@ -2761,6 +2761,15 @@
             }
          ],
          "prerequisites" : ["wallet_unlocked"]
-      }
+      },
+      {
+         "method_name" : "wallet_generate_brain_seed",
+         "description" : "Generates a human friendly brain wallet key starting with a public salt as the first word",
+         "return_type" : "string",
+         "parameters"  : [
+         ],
+         "is_const" : true,
+         "prerequisites" : []
+      },
     ]
 }

@@ -68,13 +68,13 @@ namespace bts { namespace blockchain {
          balance_id_type                    get_multisig_balance_id( uint32_t m,
                                                                      const vector<address>& addrs )const
          {
-             withdraw_with_multi_sig condition;
+             withdraw_with_multisig condition;
              condition.required = m;
              condition.owners = set<address>(addrs.begin(), addrs.end());
              auto balance = balance_record(condition);
              return balance.id();
          }
-         
+
          std::vector<account_id_type>       get_active_delegates()const;
          void                               set_active_delegates( const std::vector<account_id_type>& id );
          bool                               is_active_delegate( const account_id_type& id )const;
@@ -214,6 +214,8 @@ namespace bts { namespace blockchain {
          virtual std::set<std::pair<asset_id_type, asset_id_type>> get_dirty_markets()const;
 
          virtual void                       set_market_transactions( vector<market_transaction> trxs )      = 0;
+
+         virtual void                       index_transaction( const address& addr, const transaction_id_type& trx_id ) = 0;
    };
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;
 

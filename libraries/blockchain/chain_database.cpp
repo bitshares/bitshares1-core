@@ -111,6 +111,7 @@ namespace bts { namespace blockchain {
 
           _asset_db.open( data_dir / "index/asset_db" );
           _balance_db.open( data_dir / "index/balance_db" );
+          _address_to_trx_index.open( data_dir / "index/address_to_trx_db" );
           _auth_db.open( data_dir / "index/auth_db" );
           _asset_proposal_db.open( data_dir / "index/asset_proposal_db" );
           _burn_db.open( data_dir / "index/burn_db" );
@@ -1260,6 +1261,7 @@ namespace bts { namespace blockchain {
 
       my->_asset_db.close();
       my->_balance_db.close();
+      my->_address_to_trx_index.close();
       my->_burn_db.close();
       my->_account_db.close();
       my->_address_to_account_db.close();
@@ -3573,6 +3575,27 @@ namespace bts { namespace blockchain {
    optional<proposal_record>  chain_database::fetch_asset_proposal( asset_id_type asset_id, proposal_id_type proposal_id )const 
    {
       return my->_asset_proposal_db.fetch_optional( std::make_pair(asset_id,proposal_id) );
+   }
+   void     chain_database::index_transaction( const address& addr, const transaction_id_type& trx_id )
+   {
+      my->_address_to_trx_index.store( std::make_pair(addr,trx_id), char(0) );
+   }
+   vector<transaction_record>  chain_database::fetch_address_transactions( const address& addr )
+   {
+      vector<transaction_record> results;
+      auto itr = my->_address_to_trx_index.lower_bound( std::make_pair(addr, transaction_id_type()) );
+      while( itr.valid() )
+      {
+         auto key = itr.key();
+         if( key.first != addr ) 
+            break;
+
+         if( auto otrx = get_transaction( key.second ) )
+            results.push_back( *otrx );
+
+         ++itr;
+      }
+      return results;
    }
 
 } } // bts::blockchain

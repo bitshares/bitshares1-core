@@ -148,7 +148,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( amount.amount > 0, "amount: ${amount}", ("amount",amount) );
       deposit_operation op;
       op.amount = amount.amount;
-      op.condition = withdraw_condition( withdraw_with_multi_sig{multsig_info.required,multsig_info.owners}, amount.asset_id, slate_id );
+      op.condition = withdraw_condition( withdraw_with_multisig{multsig_info.required,multsig_info.owners}, amount.asset_id, slate_id );
       operations.push_back( op );
    }
 

@@ -395,10 +395,10 @@ namespace bts { namespace wallet {
                  const string& account_name,
                  bool sign
                  );
-         wallet_transaction_record asset_authorize_key( const string& paying_account_name, 
+         wallet_transaction_record asset_authorize_key( const string& paying_account_name,
                                                         const string& symbol,
                                                         const address& key,
-                                                        const object_id_type& meta, 
+                                                        const object_id_type& meta,
                                                         bool sign = true );
 
          wallet_transaction_record update_block_signing_key(

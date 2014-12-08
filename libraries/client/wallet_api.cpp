@@ -3,6 +3,7 @@
 #include <bts/utilities/key_conversion.hpp>
 #include <bts/wallet/config.hpp>
 #include <bts/wallet/exceptions.hpp>
+#include <bts/wallet/words.hpp>
 #include <fc/network/resolve.hpp>
 #include <fc/network/url.hpp>
 #include <fc/network/http/connection.hpp>
@@ -1443,6 +1444,20 @@ int32_t client_impl::wallet_regenerate_keys( const std::string& account, uint32_
 {
    _wallet->auto_backup( "before_key_regeneration" );
    return _wallet->regenerate_keys( account, number_to_regenerate );
+}
+string client_impl::wallet_generate_brain_seed()const
+{
+   string result;
+   auto priv_key = fc::ecc::private_key::generate();
+   auto secret = priv_key.get_secret();
+
+   uint16_t* keys = (uint16_t*)&secret;
+   for( uint32_t i = 0; i < 9; ++i )
+      result += word_list[i%word_list_size] + string(" ");
+
+   result += string( address(priv_key.get_public_key()) ).substr(4); 
+
+   return result;
 }
 
 } } } // namespace bts::client::detail

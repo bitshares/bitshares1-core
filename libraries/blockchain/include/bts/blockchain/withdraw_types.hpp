@@ -14,9 +14,9 @@ namespace bts { namespace blockchain {
       withdraw_null_type        = 0,
       withdraw_signature_type   = 1,
       withdraw_vesting_type     = 2,
-      withdraw_multi_sig_type   = 3,
+      withdraw_multisig_type    = 3,
       withdraw_escrow_type      = 4,
-      withdraw_password_type    = 5,
+      withdraw_password_type    = 5
    };
 
    /**
@@ -128,7 +128,7 @@ namespace bts { namespace blockchain {
        share_type           original_balance = 0;
    };
 
-   struct withdraw_with_multi_sig
+   struct withdraw_with_multisig
    {
       static const uint8_t    type;
 
@@ -198,7 +198,7 @@ FC_REFLECT_ENUM( bts::blockchain::withdraw_condition_types,
         (withdraw_null_type)
         (withdraw_signature_type)
         (withdraw_vesting_type)
-        (withdraw_multi_sig_type)
+        (withdraw_multisig_type)
         (withdraw_escrow_type)
         (withdraw_password_type)
         )
@@ -237,7 +237,7 @@ FC_REFLECT( bts::blockchain::withdraw_vesting,
         (duration)
         (original_balance)
         )
-FC_REFLECT( bts::blockchain::withdraw_with_multi_sig,
+FC_REFLECT( bts::blockchain::withdraw_with_multisig,
         (required)
         (owners)
         (memo)
