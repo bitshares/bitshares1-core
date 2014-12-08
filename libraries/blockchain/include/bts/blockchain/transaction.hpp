@@ -122,7 +122,7 @@ namespace bts { namespace blockchain {
                          uint32_t issuer_permissions,
                          account_id_type issuer_account_id,
                          uint32_t required_sigs,
-                         const vector<address>& authority 
+                         const vector<address>& authority
                          );
 
       void burn( const asset& quantity,
