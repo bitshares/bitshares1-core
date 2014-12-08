@@ -19,4 +19,4 @@ namespace bts { namespace blockchain {
 
 }} // bts::blockchain
 
-FC_REFLECT( bts::blockchain::set_object_operation, (id)(edge) )
+FC_REFLECT( bts::blockchain::set_edge_operation, (id)(edge) )
