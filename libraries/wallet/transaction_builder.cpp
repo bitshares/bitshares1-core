@@ -270,6 +270,16 @@ transaction_builder& transaction_builder::set_object(const string& payer_name,
     return *this;
 } FC_CAPTURE_AND_RETHROW( (payer_name)(obj)(create) ) }
 
+transaction_builder& transaction_builder::set_edge(const string& payer_name,
+                                                   const edge_record& edge )
+{ try {
+    auto payer = _wimpl->self->get_account( payer_name );
+    deduct_balance( payer.owner_address(), asset() );
+    for( auto addr : _wimpl->_blockchain->get_object_owners( edge ).owners )
+        required_signatures.insert( addr );
+    return *this;
+} FC_CAPTURE_AND_RETHROW( (payer_name)(edge) ) }
+
 
 transaction_builder& transaction_builder::deposit_asset_with_escrow(const bts::wallet::wallet_account_record& payer,
                                                         const bts::blockchain::account_record& recipient,

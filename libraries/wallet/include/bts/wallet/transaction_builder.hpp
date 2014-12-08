@@ -201,6 +201,10 @@ namespace bts { namespace wallet {
                                       const object_record& obj,
                                       bool create );
 
+      transaction_builder& set_edge(const string& payer_name,
+                                    const edge_record& obj );
+
+
 
       transaction_builder& withdraw_from_balance(const balance_id_type& from,
                                                  const share_type& amount);
