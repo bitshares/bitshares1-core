@@ -5,7 +5,7 @@ BitShares Mac OS X Build Instructions
 
 2. Install Homebrew by following the instructions here: http://brew.sh/
 
-3. Configure and update Homebrew:
+3. Initialize Homebrew:
    ```
    brew doctor
    brew update
@@ -14,51 +14,45 @@ BitShares Mac OS X Build Instructions
 4. Install dependencies:
    ```
    brew install boost cmake git openssl readline
-   ```
-
-5. Link upgraded OpenSSL and Readline:
-   ```
    brew link --force openssl readline
    ```
 
-6. *Optional.* To support importing Bitcoin wallet files:
+5. *Optional.* To support importing Bitcoin wallet files:
    ```
    brew install berkeley-db
    ```
 
-7. *Optional.* To use TCMalloc in LevelDB:
+6. *Optional.* To use TCMalloc in LevelDB:
    ```
    brew install google-perftools
    ```
 
-8. Clone the BitShares repository:
+7. Clone the BitShares repository:
    ```
    git clone git@github.com:BitShares/bitshares.git
    cd bitshares
    ```
 
-9. *Optional.* To help contribute changes:
+8. Build BitShares:
    ```
-   git checkout develop
-   ```
-
-10. Build BitShares:
-   ```
-   git submodule init
-   git submodule update
+   git submodule update --init
    cmake .
    make
    ```
 
-11. *Optional*. To build the desktop GUI:
+9. *Optional*. Install dependencies for the GUI:
    ```
-    cd programs/web_wallet/
-    npm install lineman-angular
-    npm install lineman-less
-    cd ../..
-    export CMAKE_PREFIX_PATH=~/Qt/5.3/clang_64/
-    make buildweb
-    cmake -DINCLUDE_QT_WALLET=TRUE
-    make
+   brew install node qt5
    ```
-   By default, the web wallet will not be rebuilt even after pulling new changes. To force the web wallet to rebuild, use `make forcebuildweb`.
+
+10. *Optional*. Build the GUI:
+   ```
+   cd programs/web_wallet
+   npm install .
+   cd ../..
+   make buildweb
+   export CMAKE_PREFIX_PATH=/usr/local/opt/qt5/
+   cmake -DINCLUDE_QT_WALLET=1 .
+   make
+   ```
+   Note: By default, the web wallet will not be rebuilt even after pulling new changes. To force the web wallet to rebuild, use `make forcebuildweb`.
