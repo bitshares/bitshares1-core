@@ -21,7 +21,9 @@ TaskPage {
    }
 
    function mayProceed() {
-      return true
+      if( secretText.text.length !== 0 )
+         secretText.accepted()
+
       for( var i = 0; i < photoButtonRow.children.length; i++ ) {
          var button = photoButtonRow.children[i]
          if( !button.imageAccepted ) {
@@ -89,8 +91,7 @@ TaskPage {
          }
          onCollapsed: {
             if( hasImage ) {
-               d.currentButton.currentImage = "file:" + camera.imageCapture.capturedImagePath
-               d.currentButton.acceptImage()
+               d.currentButton.acceptImage("file:" + camera.imageCapture.capturedImagePath)
             }
             d.currentButton = null
             d.snapper.visible = false
@@ -117,65 +118,109 @@ TaskPage {
       }
    }
 
-   RowLayout {
-      id: photoButtonRow
-      anchors {
-         left: parent.left
-         right: parent.right
-         verticalCenter: parent.verticalCenter
-         verticalCenterOffset: -height / 3
-      }
-      height: width / 5 + spacing * 2;
+   ColumnLayout {
+      anchors.fill: parent
+      spacing: height / 40
 
-      PhotoButton {
-         id: userPhotoButton
-         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-         Layout.fillHeight: true
-         onClicked: d.startSnapshot(this, "qrc:/res/person_silhouette.png")
-         labelText: qsTr("Your Photo")
-         onCurrentImageChanged: window.userPhoto = currentImage
-         imageAccepted: window.userPhotoAccepted
+      Item { Layout.fillHeight: true }
+      RowLayout {
+         id: photoButtonRow
+         Layout.preferredWidth: parent.width
+         Layout.preferredHeight: width / 5 + spacing * 2;
 
-         function acceptImage() {
-            window.userPhotoAccepted = true
+         PhotoButton {
+            id: userPhotoButton
+            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+            Layout.preferredHeight: parent.height
+            onClicked: d.startSnapshot(this, "qrc:/res/person_silhouette.png")
+            labelText: qsTr("Your Photo")
+            currentImage: window.userPhoto
+            imageAccepted: window.userPhotoAccepted
+
+            function acceptImage(path) {
+               window.userPhoto = path
+               window.userPhotoAccepted = true
+               bitshares.storeImage(path, "user_photo")
+            }
+         }
+         PhotoButton {
+            id: idFrontPhotoButton
+            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+            Layout.preferredHeight: parent.height
+            onClicked: d.startSnapshot(this, "qrc:/res/id_front.png")
+            labelText: qsTr("ID Card Front")
+            currentImage: window.idFrontPhoto
+            imageAccepted: window.idFrontPhotoAccepted
+
+            function acceptImage(path) {
+               window.idFrontPhoto = path
+               window.idFrontPhotoAccepted = true
+               bitshares.storeImage(path, "id_front_photo")
+            }
+         }
+         PhotoButton {
+            id: idBackPhotoButton
+            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+            Layout.preferredHeight: parent.height
+            onClicked: d.startSnapshot(this, "qrc:/res/id_back.png")
+            labelText: qsTr("ID Card Back")
+            currentImage: window.idBackPhoto
+            imageAccepted: window.idBackPhotoAccepted
+
+            function acceptImage(path) {
+               window.idBackPhoto = path
+               window.idBackPhotoAccepted = true
+               bitshares.storeImage(path, "id_back_photo")
+            }
          }
       }
-      PhotoButton {
-         id: idFrontPhotoButton
-         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-         Layout.fillHeight: true
-         onClicked: d.startSnapshot(this, "qrc:/res/id_front.png")
-         labelText: qsTr("ID Card Front")
-         onCurrentImageChanged: window.idFrontPhoto = currentImage
-         imageAccepted: window.idFrontPhotoAccepted
+      Text {
+         anchors.top: photoButtonRow.bottom
+         anchors.horizontalCenter: parent.horizontalCenter
+         width: parent.width * .9
+         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+         color: "red"
+         font.pointSize: window.height * .02
+         visible: window.rejectionReason
+         text: "Your identity has been rejected. Please retake any photos which are no longer checkmarked and try " +
+               "again.\nVerifier comment: " + window.rejectionReason
+      }
+      Column{
+         Layout.fillWidth: true
+         Rectangle { color: "#22ffffff"; width: parent.width; implicitHeight: 3 }
+         Text {
+            anchors.horizontalCenter: parent.horizontalCenter
+            color: "white"
+            font.pixelSize: window.height * .05
+            text: "OR"
+         }
+         Rectangle { color: "#22ffffff"; width: parent.width; implicitHeight: 3 }
+      }
+      TextField {
+         id: secretText
+         Layout.preferredWidth: parent.width * 2/3
+         anchors.horizontalCenter: parent.horizontalCenter
+         horizontalAlignment: TextInput.AlignHCenter
+         font.family: "courier"
+         font.pointSize: Math.max(1, parent.height * .02)
+         placeholderText: qsTr("Enter your secret passphrase here")
+         onAccepted: {
+            var reload = function() {
+               if( bitshares.secret === text ) {
+                  window.userPhoto = "image://bitshares/user_photo"
+                  window.idFrontPhoto = "image://bitshares/id_front_photo"
+                  window.idBackPhoto = "image://bitshares/id_back_photo"
+                  window.userPhotoAccepted = true
+                  window.idFrontPhotoAccepted = true
+                  window.idBackPhotoAccepted = true
+                  bitshares.secretChanged.disconnect(reload)
+               }
+            }
+            bitshares.secretChanged.connect(reload)
 
-         function acceptImage() {
-            window.idFrontPhotoAccepted = true
+            bitshares.reload_from_secret(text)
          }
       }
-      PhotoButton {
-         id: idBackPhotoButton
-         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-         Layout.fillHeight: true
-         onClicked: d.startSnapshot(this, "qrc:/res/id_back.png")
-         labelText: qsTr("ID Card Back")
-         onCurrentImageChanged: window.idBackPhoto = currentImage
-         imageAccepted: window.idBackPhotoAccepted
-
-         function acceptImage() {
-            window.idBackPhotoAccepted = true
-         }
-      }
-   }
-   Text {
-      anchors.top: photoButtonRow.bottom
-      anchors.horizontalCenter: parent.horizontalCenter
-      width: parent.width * .9
-      wrapMode: Text.WrapAtWordBoundaryOrAnywhere
-      color: "red"
-      font.pointSize: window.height * .02
-      visible: window.rejectionReason
-      text: "Your identity has been rejected. Please retake any photos which are no longer checkmarked and try " +
-            "again.\nVerifier comment: " + window.rejectionReason
+      Item { Layout.fillHeight: true }
    }
 }

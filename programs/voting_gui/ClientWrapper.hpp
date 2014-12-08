@@ -7,13 +7,14 @@
 #include <QJSValue>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QQuickImageProvider>
 
 #include <bts/rpc/rpc_server.hpp>
 #include <bts/rpc/rpc_client.hpp>
 #include <bts/client/client.hpp>
 #include <bts/net/upnp.hpp>
 
-class ClientWrapper : public QObject
+class ClientWrapper : public QObject, public QQuickImageProvider
 {
    Q_OBJECT
    Q_PROPERTY(bool initialized READ is_initialized NOTIFY initialization_complete)
@@ -34,6 +35,9 @@ public:
    void wait_for_initialized() {
       _init_complete.wait();
    }
+
+   QImage requestImage(const QString& id, QSize* size, const QSize& requestedSize);
+   Q_INVOKABLE void storeImage(QString path, QString id);
 
    QString get_data_dir();
    Q_INVOKABLE QString get_info();
@@ -91,6 +95,8 @@ public Q_SLOTS:
    void process_accepted_identity(QString identity, QJSValue callback);
    void begin_registration(QStringList registrars);
    void submit_decisions(QString json_decisions);
+
+   void reload_from_secret(QString secret);
 
    void setAccountName(QString arg)
    {

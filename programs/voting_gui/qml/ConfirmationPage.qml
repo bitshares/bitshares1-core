@@ -53,7 +53,7 @@ TaskPage {
          name: "SUBMITTING"
          PropertyChanges {
             target: statusText
-            text: qsTr("Your votes are now being cast. Please wait...")
+            text: qsTr("Your ballot is now being cast. Please wait...")
          }
          PropertyChanges {
             target: spinner
@@ -68,7 +68,7 @@ TaskPage {
          name: "FINISHED"
          PropertyChanges {
             target: statusText
-            text: qsTr("Congratulations! Your votes have been cast successfully. Thank you for using the Follow My " +
+            text: qsTr("Congratulations! Your ballot has been cast successfully. Thank you for using the Follow My " +
                        "Vote voting booth. You should be able to see your votes counted in the Ballot Box within a " +
                        "few seconds!")
          }

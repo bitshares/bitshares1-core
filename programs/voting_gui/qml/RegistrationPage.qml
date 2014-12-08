@@ -157,7 +157,7 @@ TaskPage {
          anchors.horizontalCenter: parent.horizontalCenter
          font.pointSize: Math.max(1, parent.height * .03)
          text: qsTr("Your information has been securely stored, and can only be retrieved with the following " +
-                    "passphrase. Please write this passphrase down and keep it secret, as you will need it to change " +
+                    "passphrase. Please write this passphrase down and keep it secret, as you will need it if you wish to change " +
                     "your votes in the future. If anyone else gets this passphrase, they can change your votes as " +
                     "well. Your passphrase is:")
       }

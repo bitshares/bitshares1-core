@@ -19,6 +19,7 @@ int main(int argc, char *argv[])
    QQmlDebuggingEnabler enabler;
 
    QQmlApplicationEngine engine;
+   engine.addImageProvider(QLatin1String("bitshares"), client);
    QQmlContext* context = engine.rootContext();
    context->setContextProperty("bitshares", client);
    context->setContextProperty("utilities", new Utilities(client));

@@ -18,6 +18,7 @@
 #include <QDir>
 #include <QDebug>
 #include <QJsonObject>
+#include <QImage>
 
 #include <iostream>
 
@@ -29,6 +30,7 @@ using bts::vote::digest_type;
 
 ClientWrapper::ClientWrapper(QObject *parent)
    : QObject(parent),
+     QQuickImageProvider(QQmlImageProviderBase::Image, QQmlImageProviderBase::ForceAsynchronousImageLoading),
      _main_thread(&fc::thread::current()),
      _bitshares_thread("bitshares"),
      _settings("BitShares", BTS_BLOCKCHAIN_NAME)
@@ -173,6 +175,22 @@ void ClientWrapper::initialize()
       qDebug() << "Initialization complete.";
       Q_EMIT initialization_complete();
    });
+}
+
+QImage ClientWrapper::requestImage(const QString& id, QSize* size, const QSize& requestedSize)
+{
+   QImage image(get_data_dir() + "/" + id + ".jpg");
+   if( size )
+      *size = image.size();
+   return image;
+}
+
+void ClientWrapper::storeImage(QString path, QString id)
+{
+   path = path.remove("file:");
+   QString destPath = get_data_dir() + "/" + id + ".jpg";
+   qDebug() << "Saving image at" << path << "as" << destPath;
+   QImage(path).scaledToHeight(480, Qt::SmoothTransformation).save(destPath);
 }
 
 
@@ -484,9 +502,15 @@ void ClientWrapper::begin_registration(QStringList registrars)
          FC_ASSERT(ballot_id, "Cannot begin registration because ballot ID has not been verified yet.");
          auto signature = _client->get_wallet()->sign_hash("voting-key." + account.name, ballot_id->id(identity.owner));
 
+         auto data = account.private_data.as<fc::mutable_variant_object>();
+         if( data.find("registrar_signatures") != data.end() ) {
+            //FIXME: The above check is incredibly naive
+            Q_EMIT registered();
+            return;
+         }
+
          try {
             auto registrar_signature = client->registrar_demo_registration(*ballot_id, identity.owner, signature);
-            auto data = account.private_data.as<fc::mutable_variant_object>();
             data["registrar_signatures"] = std::vector<bts::vote::expiring_signature>({registrar_signature});
             _client->get_wallet()->update_account_private_data(account.name, data);
             Q_EMIT registered();
@@ -528,6 +552,23 @@ void ClientWrapper::submit_decisions(QString json_decisions)
       if( e )
          Q_EMIT error(fc::exception(*e).to_detail_string().c_str());
    });
+}
+
+void ClientWrapper::reload_from_secret(QString secret)
+{
+   auto key = fc::ecc::private_key::generate_from_seed(fc::digest(secret.toStdString()));
+   bts::wallet::owallet_account_record account;
+   _bitshares_thread.async([this, key, &account] {
+      account = _client->get_wallet()->get_account_for_address(key.get_public_key());
+   }).wait();
+
+   if( account ) {
+      setAccountName(QString::fromStdString(account->name));
+      m_secret = secret;
+      Q_EMIT secretChanged(secret);
+      m_voterAddress = QString::fromStdString(string(_client->wallet_get_account("voting-key." + account->name).active_address()));
+      Q_EMIT voter_address_changed(m_voterAddress);
+   }
 }
 
 bts::blockchain::public_key_type ClientWrapper::lookup_public_key(QString account_name)

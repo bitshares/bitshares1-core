@@ -77,8 +77,8 @@ TaskPage {
          color: "white"
          wrapMode: Text.WrapAtWordBoundaryOrAnywhere
          font.pointSize: window.height * .02
-         text: qsTr("Your votes have not yet been cast. Please review them below and go back to make any " +
-                    "necessary revisions, then click the Next button below to cast your votes.")
+         text: qsTr("Your ballot has not yet been cast. Please review your ballot below and go back to make any " +
+                    "necessary revisions. When satisfied, click the Next button below to cast your ballot.")
       }
       ScrollView {
          Layout.fillHeight: true

@@ -22,20 +22,15 @@ if( APPLE )
     set( MACOSX_BUNDLE_COPYRIGHT "(C) 2014 God" )
 endif()
 
-# Find necessary Qt packages
 find_package(Qt5Core)
-find_package(Qt5Gui)
-find_package(Qt5Qml)
-find_package(Qt5Widgets)
-find_package(Qt5Multimedia)
 add_definitions(-DQT_NO_KEYWORDS)
 
 qt5_add_resources(qrc_sources qml.qrc res.qrc)
 file(GLOB qml_files qml/*.qml)
 
 add_executable(voting_booth WIN32 MACOSX_BUNDLE main.cpp ClientWrapper.cpp Utilities.cpp ${qrc_sources} ${qml_files})
+qt5_use_modules(voting_booth Widgets Quick Gui Qml Multimedia)
 
-target_link_libraries(voting_booth Qt5::Core Qt5::Gui Qt5::Qml Qt5::Widgets Qt5::Multimedia
-   bts_wallet bts_rpc bts_cli bts_blockchain bts_db bts_net bts_client fc
+target_link_libraries(voting_booth bts_wallet bts_rpc bts_cli bts_blockchain bts_db bts_net bts_client fc
    ${READLINE_LIBRARIES} ${CMAKE_DL_LIBS} ${PLATFORM_SPECIFIC_LIBS}
    ${crypto_library} ${CrashRpt_LIBRARIES} ${ZLIB_LIBRARY} upnpc-static)
