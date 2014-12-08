@@ -11,7 +11,11 @@ namespace bts { namespace blockchain {
    {
       static const operation_type_enum type;
 
-      int64_t id = 0;
+      set_edge_operation(){}
+      set_edge_operation( const edge_record& edge )
+          :edge(edge)
+      {}
+
       edge_record edge;
 
       void evaluate( transaction_evaluation_state& eval_state );
@@ -19,4 +23,4 @@ namespace bts { namespace blockchain {
 
 }} // bts::blockchain
 
-FC_REFLECT( bts::blockchain::set_edge_operation, (id)(edge) )
+FC_REFLECT( bts::blockchain::set_edge_operation, (edge) )
