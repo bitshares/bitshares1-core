@@ -124,14 +124,6 @@ module BitShares
       @bob_node.start
       
       @mail_node = BitSharesNode.new @client_binary, name: 'mail', data_dir: td('mail'), genesis: 'genesis.json', http_port: 5693, rpc_port: 6693, p2p_port: @p2p_port, logger: @logger
-      
-      @mail_node.start
-      wait_nodes [@mail_node]
-      config = @mail_node.get_config
-      config['mail_server_enabled'] = true
-      @mail_node.stop
-      puts "Re-configuring mail server..."
-      @mail_node.save_config(config)
       @mail_node.start
 
       nodes = [@delegate_node, @alice_node, @bob_node, @mail_node]
@@ -192,7 +184,7 @@ module BitShares
         STDOUT.puts "- delegate node: #{@delegate_node.url}"
         STDOUT.puts "- alice node: #{@alice_node.url}"
         STDOUT.puts "- bob node: #{@bob_node.url}"
-        STDOUT.puts 'or press [d],[a] or [b] to have console access'
+        STDOUT.puts 'or press [d],[a], [b], or [m] to have console access'
         STDOUT.puts 'or press any other key to shutdown testnet and continue..'
         c = ''
         begin
@@ -209,6 +201,8 @@ module BitShares
           @alice_node.interactive_mode
         elsif c == 'b'
           @bob_node.interactive_mode
+        elsif c == 'm'
+          @mail_node.interactive_mode
         else
           break
         end
