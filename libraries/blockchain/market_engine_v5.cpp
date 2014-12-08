@@ -3,6 +3,8 @@
 
 #include <bts/blockchain/fork_blocks.hpp>
 
+#include <algorithm>
+
 namespace bts { namespace blockchain { namespace detail {
 
   market_engine_v5::market_engine_v5( pending_chain_state_ptr ps, chain_database_impl& cdi )
