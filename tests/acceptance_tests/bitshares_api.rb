@@ -33,6 +33,12 @@ module BitShares
         BitShares::API::rpc.request("blockchain_" + name.to_s, params)
       end
     end
+    
+    class Mail
+      def self.method_missing(name, *params)
+        BitShares::API::rpc.request("mail_" + name.to_s, params)
+      end
+    end
 
     class Misc
       def self.method_missing(name, *params)
@@ -62,7 +68,7 @@ module BitShares
         return if @echo_off
         if @logger then @logger.info s else puts s end
       end
-
+      
       def request(method, params = nil)
         params = params || []
         log "[#{@instance_name}] request: #{method} #{params.join(' ')}"

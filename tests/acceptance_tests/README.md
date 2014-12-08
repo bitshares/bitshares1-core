@@ -77,6 +77,8 @@ In order to access the nodes via web wallet you need to create htdocs symlink to
   
 And open http://localhost:5690 (or 5691/5692) in your browser.
 
+* RPC username and password: user pass
+* Wallet Password: password
 
 
 ### Troubleshooting
@@ -89,4 +91,10 @@ If something happens during network bootstrap stage try to remove tmp directory 
 
 ```bash
   $ ruby testnet.rb --create
+```
+
+Start a testnet, this can also be used after running an individual test:
+
+```bash
+  $ ruby testnet.rb
 ```

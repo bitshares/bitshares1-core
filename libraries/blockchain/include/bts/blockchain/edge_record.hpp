@@ -22,9 +22,9 @@ namespace bts { namespace blockchain {
 
     struct edge_index_key
     {
-        object_id_type from;
-        object_id_type to;
-        string name;
+        object_id_type from = 0;
+        object_id_type to = 0;
+        string name = "";
 
         friend bool operator == ( const edge_index_key& a, const edge_index_key& b )
         {

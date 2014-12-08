@@ -177,15 +177,15 @@ namespace bts { namespace blockchain {
          virtual void                       store_object_record( const object_record& obj )                 = 0;
          virtual oobject_record             get_object_record( const object_id_type& id )                   = 0;
 
-         virtual oedge_record               get_edge( const object_id_type& id )const;
+
+         oedge_record                       get_edge( const object_id_type& id );
          virtual oedge_record               get_edge( const object_id_type& from,
                                                       const object_id_type& to,
-                                                      const string& name )const;
+                                                      const string& name )const                             = 0;
          virtual map<string, edge_record>   get_edges( const object_id_type& from,
-                                                       const object_id_type& to )const;
+                                                       const object_id_type& to )const                      = 0;
          virtual map<object_id_type, map<string, edge_record>>
-                                            get_edges( const object_id_type& from )const;
-
+                                            get_edges( const object_id_type& from )const                    = 0;
 
 
          virtual void                       apply_deterministic_updates(){}
