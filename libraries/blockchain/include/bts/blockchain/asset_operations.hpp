@@ -94,10 +94,9 @@ namespace bts { namespace blockchain {
         * A restricted asset can only be held/controlled by keys
         * on the authorized list.
         */
-       uint32_t           flags = none;
-       uint32_t           issuer_permissions = default_permissions;
+       uint32_t           flags = 0;
+       uint32_t           issuer_permissions = -1;
        account_id_type    issuer_account_id;
-       
        
        /**
         *  The issuer can specify a transaction fee (of the asset type) 

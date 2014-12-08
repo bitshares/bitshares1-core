@@ -164,6 +164,9 @@ namespace bts { namespace blockchain {
 
          optional<time_point_sec>    get_next_producible_block_timestamp( const vector<account_id_type>& delegate_ids )const;
 
+         virtual void                index_transaction( const address& addr, const transaction_id_type& trx_id ) override;
+         vector<transaction_record>  fetch_address_transactions( const address& addr );
+
          uint32_t                    get_block_num( const block_id_type& )const;
          signed_block_header         get_block_header( const block_id_type& )const;
          signed_block_header         get_block_header( uint32_t block_num )const;
