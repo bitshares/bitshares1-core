@@ -12,18 +12,18 @@ Returns:
   wallet_account_record
 default (unlocked) >>> wallet_get_account testaccount
 {
-  "index": 313,
+  "index": 314,
   "id": 0,
   "name": "testaccount",
   "public_data": null,
   "owner_key": "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt",
   "active_key_history": [[
       "2014-06-20T14:40:30",
-      "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
+      "XTS5AQGjeRu5sEBvvERaV8i1tstV1fx2ywGUmvWgsBPEjFoR27oQg"
     ]
   ],
   "registration_date": "1970-01-01T00:00:00",
-  "last_update": "1970-01-01T00:00:00",
+  "last_update": "2014-06-20T14:40:30",
   "delegate_info": null,
   "meta_data": null,
   "is_my_account": true,

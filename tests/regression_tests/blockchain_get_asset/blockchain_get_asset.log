@@ -24,13 +24,14 @@ aliases: get_asset
   "current_share_supply": 199999999999901,
   "maximum_share_supply": 1000000000000000,
   "collected_fees": 0,
-  "issuer_permissions": 0,
   "flags": 0,
+  "issuer_permissions": 0,
   "transaction_fee": 0,
   "authority": {
     "required": 0,
     "owners": []
-  }
+  },
+  "last_proposal_id": 0
 }
 (wallet closed) >>> blockchain_get_asset 0
 {
@@ -46,12 +47,13 @@ aliases: get_asset
   "current_share_supply": 199999999999901,
   "maximum_share_supply": 1000000000000000,
   "collected_fees": 0,
-  "issuer_permissions": 0,
   "flags": 0,
+  "issuer_permissions": 0,
   "transaction_fee": 0,
   "authority": {
     "required": 0,
     "owners": []
-  }
+  },
+  "last_proposal_id": 0
 }
 (wallet closed) >>> quit

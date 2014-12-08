@@ -17,10 +17,10 @@ Parameters:
   block (string, required): the number or id of the block to get transactions from
 
 Returns:
-  blockchain_transaction_record_map
+  transaction_record_map
 default (unlocked) >>> blockchain_get_block_transactions 2
 [[
-    "0253bd2f3eef296d8a844dbed501fcd5af0ac385",{
+    "cb42296b4e905567f49b879d7b9868d8ec2e0c49",{
       "trx": {
         "expiration": "2014-06-20T15:40:30",
         "delegate_slate_id": null,
@@ -30,13 +30,13 @@ default (unlocked) >>> blockchain_get_block_transactions 2
               "amount": 10000000,
               "condition": {
                 "asset_id": 0,
-                "delegate_slate_id": 0,
+                "slate_id": 0,
                 "type": "withdraw_signature_type",
                 "data": {
-                  "owner": "XTSDprESyEmE1cteA4qA8aJBaeypbY626aqu",
+                  "owner": "XTSDFRTiYUY5pDAxBdAEJ8ckbUi9EZgnm7kw",
                   "memo": {
                     "one_time_key": "XTS87YMmAemcZkuecYie5nY5q5oVhupccvbM95E7g8puVCgFGQmPT",
-                    "encrypted_memo_data": "54820a503f953e57cac1ee761a1319450f34b5345af452d1e4ded3e1fbb82024b575d04175548bce60da65f0e3a18e6034ae5cbcaf8b11cd526439e4bc91fed6"
+                    "encrypted_memo_data": "df9d1a6c60a33f0a496bdc161bd2abb7d8eb924f840451a5ee84c1dd2cf4359d819fd39300d9955b1b99164cef45ca0a5dbb9d675430b5bbbfd2c977a502a4e6"
                   }
                 }
               }
@@ -51,9 +51,10 @@ default (unlocked) >>> blockchain_get_block_transactions 2
           }
         ],
         "signatures": [
-          "1f9466129b87592faa524519aaf04dcdf992bda62c65c8ea30ae789937177cd91ee4a3f68b565b47f3ba63527b0a27ece12f04dbbc71967c8fe7b66d4e8bf6a39d"
+          "1f9466129b87592faa524519aaf04dcdf992bda62c65c8ea30ae789937177cd91eff69b46bbda7eca8509c5b91e27eb3d1991ba6e3724f62843dc61627b91c876a"
         ]
       },
+      "current_op_index": 2,
       "signed_keys": [
         "XTSDG4CLPoePEPHaRaDszT4ix8gA1ghTb6FF",
         "XTSEbFjCRUUsoN3FUJTeBbWX7SZx1bMrFzUH",
@@ -62,9 +63,8 @@ default (unlocked) >>> blockchain_get_block_transactions 2
         "XTSPcpRoTjhdb9KBYXmsFB3nfe2BYiZV88Be"
       ],
       "validation_error": null,
-      "required_deposits": [],
       "provided_deposits": [[
-          "XTS3xpJBYf6A6PCEKzwN7GHGJHijxdABFnux",{
+          "XTS2ARvyMbamQZcjduNxA2PcFZsyq6S8KPXo",{
             "amount": 10000000,
             "asset_id": 0
           }

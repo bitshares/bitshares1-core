@@ -14,10 +14,10 @@ Registered: <d-ign></d-ign>
 Last Updated: <d-ign></d-ign>
 Owner Key: XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt
 Active Key History:
-- XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt, last used <d-ign></d-ign>
+- XTS5AQGjeRu5sEBvvERaV8i1tstV1fx2ywGUmvWgsBPEjFoR27oQg, last used <d-ign></d-ign>
 Not a delegate.
 default (unlocked) >>> wallet_rename_account thief thiever
-Command failed with exception: invalid account name (20017)
+Command failed with exception: key belongs to other account (20032)
 You cannot rename a registered account!
 
 

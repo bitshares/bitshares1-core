@@ -84,7 +84,7 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 <d-ign></d-ign>0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>1         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.50000 XTS   <d-ign></d-ign>
 <d-ign></d-ign>1         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>3         testaccount2        ASK-f6aa4a6b        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>3         testaccount2        ASK-855dde5c        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> balance testaccount2
 ACCOUNT                         BALANCE                     
 ============================================================
@@ -101,11 +101,11 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 <d-ign></d-ign>0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>1         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.50000 XTS   <d-ign></d-ign>
 <d-ign></d-ign>1         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>3         testaccount2        ASK-f6aa4a6b        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>3         testaccount2        ASK-855dde5c        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> blockchain_market_list_asks XMO XTS
 TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
 ==================================================================================================================================================================
-ask_order           100.00000 XTS       4. XMO / XTS                  100.00000 XTS       400.00 XMO          N/A                 f6aa4a6bcf2d2ba3c634d522fcd6eb43b0ecc347
+ask_order           100.00000 XTS       4. XMO / XTS                  100.00000 XTS       400.00 XMO          N/A                 855dde5c7ee9e4c5210b6c339d91ff2d5d58c6bb
 default (unlocked) >>> balance testaccount2
 ACCOUNT                         BALANCE                     
 ============================================================
@@ -113,5 +113,5 @@ testaccount2                    9,899.50000 XTS
 default (unlocked) >>> wallet_market_order_list XMO XTS
 TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
 ==================================================================================================================================================================
-ask_order           100.00000 XTS       4. XMO / XTS                  100.00000 XTS       400.00 XMO          N/A                 f6aa4a6bcf2d2ba3c634d522fcd6eb43b0ecc347
+ask_order           100.00000 XTS       4. XMO / XTS                  100.00000 XTS       400.00 XMO          N/A                 855dde5c7ee9e4c5210b6c339d91ff2d5d58c6bb
 default (unlocked) >>> quit
