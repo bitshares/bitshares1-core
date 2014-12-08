@@ -18,6 +18,18 @@ TaskPage {
       }
    }
 
+   IdentityCard {
+      id: idCard
+      height: parent.height / 4
+      anchors.bottom: statusText.top
+      anchors.bottomMargin: 30
+      anchors.horizontalCenter: parent.horizontalCenter
+      votingAddress: bitshares.voterAddress
+      fullName: bitshares.fullName
+      birthDate: bitshares.birthDate
+      streetAddress: bitshares.streetAddress
+      photoUrl: window.userPhoto
+   }
    Text {
       id: statusText
       anchors.centerIn: parent
@@ -45,7 +57,7 @@ TaskPage {
       highlighted: true
       pulsing: true
       color: "#8800ff00"
-      onClicked: Qt.openUrlExternally("http://review.iddnet.com:4006/ballot-box?voter-id="+bitshares.voterAddress)
+      onClicked: Qt.openUrlExternally("http://fmv-demo-rig.local:5555/ballot-box?voter-id="+bitshares.voterAddress)
    }
 
    states: [

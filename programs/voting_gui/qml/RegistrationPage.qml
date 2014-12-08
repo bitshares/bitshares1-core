@@ -26,7 +26,6 @@ TaskPage {
       return true
    }
    function cannotProceedAlert() {
-      console.log("error")
       errorAnimation.restart()
    }
    function processResponse(response) {

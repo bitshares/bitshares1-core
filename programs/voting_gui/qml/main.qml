@@ -7,6 +7,7 @@ ApplicationWindow {
    width: 1280
    height: 1024
    title: qsTr("Voting Booth")
+   visibility: "FullScreen"
 
    property url userPhoto
    property bool userPhotoAccepted

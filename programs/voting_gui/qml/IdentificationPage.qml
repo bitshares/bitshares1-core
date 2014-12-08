@@ -218,7 +218,14 @@ TaskPage {
             }
             bitshares.secretChanged.connect(reload)
 
-            bitshares.reload_from_secret(text)
+            var checkSecret = function() {
+               bitshares.reload_from_secret(text)
+               bitshares.initialization_complete.disconnect(checkSecret)
+            }
+            if( !bitshares.initialized )
+               bitshares.initialization_complete.connect(checkSecret)
+            else
+               checkSecret()
          }
       }
       Item { Layout.fillHeight: true }

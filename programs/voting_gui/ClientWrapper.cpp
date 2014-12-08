@@ -19,6 +19,7 @@
 #include <QDebug>
 #include <QJsonObject>
 #include <QImage>
+#include <QHostInfo>
 
 #include <iostream>
 
@@ -579,9 +580,9 @@ bts::blockchain::public_key_type ClientWrapper::lookup_public_key(QString accoun
       account_key = account->active_key();
    else {
       if( account_name == "verifier" )
-         account_key = bts::blockchain::public_key_type("XTS6LNgKuUmEH18TxXWDEeqMtYYQBBXWfE1ZDdSx95jjCJvnwnoGy");
+         account_key = bts::blockchain::public_key_type("XTS6oJm7nNoe6ZtuVuGppsGVsPHwRfmvMTXv8sf4n7pCCV13tf8qw");
       else if( account_name == "registrar" )
-         account_key = bts::blockchain::public_key_type("XTS7AfNMa1ZUdv7EfhnJCj11km5NM8SRpyDCNcoMQfrEHwpLwuJfW");
+         account_key = bts::blockchain::public_key_type("XTS86YqwToZ2DtRxkjf1J4hik9viibipZZ9keP6X5brjXjYXGfGYg");
       else
          Q_EMIT error(QString("Could not find account %1.").arg(account_name));
    }
@@ -592,7 +593,7 @@ bts::blockchain::public_key_type ClientWrapper::lookup_public_key(QString accoun
 std::shared_ptr<bts::rpc::rpc_client> ClientWrapper::get_rpc_client(QString account)
 {
    auto client = std::make_shared<bts::rpc::rpc_client>();
-   client->connect_to(fc::ip::endpoint(fc::ip::address("69.90.132.209"), 3000));
+   client->connect_to(fc::ip::endpoint::from_string(QHostInfo::fromName("fmv-demo-rig.local").addresses().first().toString().toStdString() + ":3000"));
    client->login("bob", "bob");
 
    return client;
