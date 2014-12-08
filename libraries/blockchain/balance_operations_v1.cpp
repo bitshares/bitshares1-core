@@ -83,9 +83,6 @@ void deposit_operation::evaluate_v1( transaction_evaluation_state& eval_state )
     if( cur_record->condition.asset_id == 0 && cur_record->condition.slate_id )
        eval_state.adjust_vote( cur_record->condition.slate_id, this->amount );
 
-    if( cur_record->condition.asset_id != 0 && cur_record->condition.slate_id != 0 )
-        cur_record->condition.slate_id = 0;
-
     eval_state._current_state->store_balance_record( *cur_record );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
 

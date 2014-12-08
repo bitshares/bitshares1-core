@@ -141,10 +141,6 @@ namespace bts { namespace blockchain {
        {
            if( asset_rec->is_market_issued() ) FC_ASSERT( cur_record->condition.slate_id == 0 );
        }
-       else if( cur_record->condition.asset_id != 0 && cur_record->condition.slate_id != 0 )
-       {
-           cur_record->condition.slate_id = 0;
-       }
 
        FC_ASSERT( asset_rec.valid() );
        if( asset_rec->is_restricted() )
