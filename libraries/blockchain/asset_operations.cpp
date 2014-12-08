@@ -317,6 +317,11 @@ namespace bts { namespace blockchain {
 
    void create_asset_proposal::evaluate( transaction_evaluation_state& eval_state )
    { try {
+#ifndef WIN32
+#warning [SOFTFORK] Remove this check after BTS_V0_4_26_FORK_BLOCK_NUM has passed
+#endif
+      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_26_FORK_BLOCK_NUM );
+
       oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->asset_id );
       if( NOT current_asset_record.valid() ) FC_CAPTURE_AND_THROW( unknown_asset_id, (this->asset_id) );
       FC_ASSERT( current_asset_record->is_user_issued() );
