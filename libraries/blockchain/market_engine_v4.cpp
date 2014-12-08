@@ -1,6 +1,8 @@
 #include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/market_engine_v4.hpp>
 
+#include <algorithm>
+
 namespace bts { namespace blockchain { namespace detail {
 
       market_engine_v4::market_engine_v4( pending_chain_state_ptr ps, chain_database_impl& cdi )

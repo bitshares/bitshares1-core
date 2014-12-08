@@ -3,6 +3,8 @@
 
 #include <bts/blockchain/fork_blocks.hpp>
 
+#include <algorithm>
+
 namespace bts { namespace blockchain { namespace detail {
 
       // This is used to save & restore the _current_ask with its previous value, required to
