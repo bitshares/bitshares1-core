@@ -195,7 +195,20 @@ vector<feed_entry> detail::client_impl::blockchain_get_feeds_for_asset(const std
          result_feeds.push_back({"MARKET", 0, _chain_db->now(), _chain_db->get_asset_symbol(asset_id), _chain_db->to_pretty_price_double(*omedian_price)});
 
       return result_feeds;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("asset",asset) ) }
+} FC_RETHROW_EXCEPTIONS( warn, "", ("asset",asset) ) }
+
+double detail::client_impl::blockchain_median_feed_price( const string& asset )const
+{
+   asset_id_type asset_id;
+   if( !std::all_of( asset.begin(), asset.end(), ::isdigit) )
+      asset_id = _chain_db->get_asset_id(asset);
+   else
+      asset_id = std::stoi( asset );
+   auto omedian_price = _chain_db->get_median_delegate_price(asset_id, asset_id_type( 0 ));
+   if( omedian_price )
+      return _chain_db->to_pretty_price_double( *omedian_price );
+   return 0;
+}
 
 vector<feed_entry> detail::client_impl::blockchain_get_feeds_from_delegate( const string& delegate_name )const
 { try {
@@ -262,7 +275,7 @@ account_balance_summary_type detail::client_impl::blockchain_get_account_public_
   return ret;
 } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
-map<balance_id_type, balance_record> detail::client_impl::blockchain_list_address_balances( const string& raw_addr )const
+map<balance_id_type, balance_record> detail::client_impl::blockchain_list_address_balances( const string& raw_addr, const time_point& after )const
 {
     address addr;
     try {
@@ -270,7 +283,21 @@ map<balance_id_type, balance_record> detail::client_impl::blockchain_list_addres
     } catch (...) {
         addr = address( pts_address( raw_addr ) );
     }
-    return _chain_db->get_balances_for_address( addr );
+    auto result =  _chain_db->get_balances_for_address( addr );
+    for( auto itr = result.begin(); itr != result.end(); )
+    {
+       if( fc::time_point(itr->second.last_update) < after )
+          itr = result.erase(itr);
+       else
+          ++itr;
+    }
+    return result;
+}
+map<transaction_id_type, transaction_record> detail::client_impl::blockchain_list_address_transactions( const string& raw_addr, 
+                                                                                                        const time_point& after )const
+{
+   map<transaction_id_type,transaction_record> results;
+   return results;
 }
 
 map<balance_id_type, balance_record> detail::client_impl::blockchain_list_key_balances( const public_key_type& key )const
