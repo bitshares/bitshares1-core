@@ -75,7 +75,17 @@ namespace bts { namespace blockchain {
          virtual void                   store_recent_operation( const operation& o )override;
 
          virtual void                   store_object_record( const object_record& obj )override;
-         virtual oobject_record         get_object_record( object_id_type id )override;
+         virtual oobject_record         get_object_record( const object_id_type& id )override;
+
+
+         virtual oedge_record               get_edge( const object_id_type& from,
+                                                      const object_id_type& to,
+                                                      const string& name )const          override;
+         virtual map<string, edge_record>   get_edges( const object_id_type& from,
+                                                       const object_id_type& to )const   override;
+         virtual map<object_id_type, map<string, edge_record>>
+                                        get_edges( const object_id_type& from )const override;
+
 
          virtual variant                get_property( chain_property_enum property_id )const override;
          virtual void                   set_property( chain_property_enum property_id, const variant& property_value )override;
@@ -138,6 +148,7 @@ namespace bts { namespace blockchain {
          map< market_index_key, order_record>                              relative_asks;
                                                                            
          map< object_id_type, object_record >                              objects;
+
          map< edge_index_key, object_id_type >                             edge_index;
          map< edge_index_key, object_id_type >                             reverse_edge_index;
 

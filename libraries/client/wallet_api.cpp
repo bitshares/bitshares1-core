@@ -482,7 +482,7 @@ wallet_transaction_record detail::client_impl::wallet_object_create(
                                             const vector<address>& owners )
 { try {
     auto builder = _wallet->create_transaction_builder();
-    object_record obj( obj_type::normal_object, 0 );
+    object_record obj( obj_type::base_object, 0 );
     vector<address> real_owners = owners;
     if( m == -1 ) // default value - can't use 0 because 0 is a valid number of owners
     {

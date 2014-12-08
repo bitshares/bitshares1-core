@@ -693,9 +693,9 @@ transaction_builder& transaction_builder::update_asset( const string& symbol,
                                                         const optional<double>& maximum_share_supply,
                                                         const optional<uint64_t>& precision,
                                                         const share_type& issuer_fee,
-                                                        uint32_t issuer_perms,
                                                         uint32_t flags,
-                                                        account_id_type issuer_account_id,
+                                                        uint32_t issuer_perms,
+                                                        const optional<account_id_type> issuer_account_id,
                                                         uint32_t required_sigs,
                                                         const vector<address>& authority 
                                                         )
@@ -706,9 +706,15 @@ transaction_builder& transaction_builder::update_asset( const string& symbol,
     const oaccount_record issuer_account_record = _wimpl->_blockchain->get_account_record( asset_record->issuer_account_id );
     if( !issuer_account_record.valid() )
         FC_THROW_EXCEPTION( unknown_account, "Unknown issuer account id!" );
+    
+    account_id_type new_issuer_account_id;
+    if( issuer_account_id.valid() )
+        new_issuer_account_id = *issuer_account_id;
+    else
+        new_issuer_account_id = asset_record->issuer_account_id;
 
     trx.update_asset_ext( asset_record->id, name, description, public_data, maximum_share_supply, precision,
-                          issuer_fee, issuer_perms, flags, issuer_account_id, required_sigs, authority );
+                          issuer_fee, flags, issuer_perms, new_issuer_account_id, required_sigs, authority );
     deduct_balance( issuer_account_record->active_key(), asset() );
 
     ledger_entry entry;

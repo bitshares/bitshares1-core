@@ -148,7 +148,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( amount.amount > 0, "amount: ${amount}", ("amount",amount) );
       deposit_operation op;
       op.amount = amount.amount;
-      op.condition = withdraw_condition( withdraw_with_multi_sig{multsig_info.required,multsig_info.owners}, amount.asset_id, slate_id );
+      op.condition = withdraw_condition( withdraw_with_multisig{multsig_info.required,multsig_info.owners}, amount.asset_id, slate_id );
       operations.push_back( op );
    }
 
@@ -285,8 +285,8 @@ namespace bts { namespace blockchain {
                                    const optional<double>& maximum_share_supply,
                                    const optional<uint64_t>& precision,
                                    const share_type& issuer_fee,
-                                   uint32_t issuer_permissions,
                                    uint32_t  flags,
+                                   uint32_t issuer_permissions,
                                    account_id_type issuer_account_id,
                                    uint32_t required_sigs,
                                    const vector<address>& authority 

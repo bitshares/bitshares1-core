@@ -631,4 +631,40 @@ void client_impl::blockchain_broadcast_transaction(const signed_transaction& trx
    network_broadcast_transaction(trx);
 }
 
+
+object_record client_impl::blockchain_get_object( const object_id_type& id )const
+{
+    auto oobj = _chain_db->get_object_record( id );
+    FC_ASSERT( oobj.valid(), "No such object!" );
+    return *oobj;
+}
+
+vector<edge_record> client_impl::blockchain_get_edges( const object_id_type& from,
+                                                       const object_id_type& to,
+                                                       const string& name )const
+{
+    vector<edge_record> edges;
+    if( name != "" )
+    {
+        auto oedge = _chain_db->get_edge( from, to, name );
+        if( oedge.valid() )
+            edges.push_back( *oedge );
+    }
+    else if( to != -1 )
+    {
+        auto name_map = _chain_db->get_edges( from, to );
+        for( auto pair : name_map )
+            edges.push_back( pair.second );
+    }
+    else
+    {
+        auto from_map = _chain_db->get_edges( from );
+        for( auto p1 : from_map )
+            for( auto p2 : p1.second )
+                edges.push_back( p2.second );
+    }
+    return edges;
+}
+
+
 } } } // namespace bts::client::detail

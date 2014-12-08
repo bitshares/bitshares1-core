@@ -1,11 +1,21 @@
 #include <bts/blockchain/balance_record.hpp>
+#include <boost/algorithm/string.hpp>
 
 namespace bts { namespace blockchain {
 
    balance_record::balance_record( const address& owner, const asset& balance_arg, slate_id_type delegate_id )
    {
-      balance = balance_arg.amount;
-      condition = withdraw_condition( withdraw_with_signature( owner ), balance_arg.asset_id, delegate_id );
+       balance = balance_arg.amount;
+       condition = withdraw_condition( withdraw_with_signature( owner ), balance_arg.asset_id, delegate_id );
+   }
+
+   string balance_record::small_id()const
+   {
+       string type_prefix = string( this->condition.type );
+       type_prefix = type_prefix.substr( 9 );
+       type_prefix = type_prefix.substr( 0, type_prefix.find( "_" ) );
+       boost::to_upper( type_prefix );
+       return type_prefix + "-" + string( this->id() ).substr( string( BTS_ADDRESS_PREFIX ).size(), 8 );
    }
 
    // TODO: deprecate?
@@ -24,8 +34,8 @@ namespace bts { namespace blockchain {
                return set<address>{ condition.as<withdraw_with_signature>().owner };
            case withdraw_vesting_type:
                return set<address>{ condition.as<withdraw_vesting>().owner };
-           case withdraw_multi_sig_type:
-               return condition.as<withdraw_with_multi_sig>().owners;
+           case withdraw_multisig_type:
+               return condition.as<withdraw_with_multisig>().owners;
            default:
                FC_ASSERT(!"This balance's condition type doesn't have a true owner.");
        }
@@ -56,7 +66,7 @@ namespace bts { namespace blockchain {
        {
            case withdraw_signature_type:
            case withdraw_escrow_type:
-           case withdraw_multi_sig_type:
+           case withdraw_multisig_type:
            {
                return asset( balance, condition.asset_id );
            }

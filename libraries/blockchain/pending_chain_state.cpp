@@ -1,4 +1,5 @@
 #include <bts/blockchain/pending_chain_state.hpp>
+#include <fc/io/raw_variant.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -341,7 +342,6 @@ namespace bts { namespace blockchain {
 
    void pending_chain_state::store_balance_record( const balance_record& r )
    {
-       ilog("calling store_balance_record: ${r}", ("r", r));
       balances[r.id()] = r;
    }
 
@@ -372,7 +372,7 @@ namespace bts { namespace blockchain {
         recent_op_queue.pop_front();
    }
 
-   oobject_record pending_chain_state::get_object_record(object_id_type id)
+   oobject_record pending_chain_state::get_object_record(const object_id_type& id)
    {
        if( objects.find(id) != objects.end() )
            return oobject_record(objects[id]);
@@ -381,8 +381,45 @@ namespace bts { namespace blockchain {
 
    void pending_chain_state::store_object_record(const object_record& obj)
    {
+        // Set indices
+        switch( obj.type() )
+        {
+            case account_object:
+            case asset_object:
+                FC_ASSERT(!"You cannot store these object types via object interface yet!");
+                break;
+            case edge_object:
+            {
+                auto edge = obj.as<edge_record>();
+                edge_index[ edge.index_key() ] = edge._id;
+                reverse_edge_index[ edge.reverse_index_key() ] = edge._id;
+                break;
+            }
+            case base_object:
+                break;
+            default:
+                break;
+        }
+
        objects[obj._id] = obj;
    }
+
+    oedge_record               pending_chain_state::get_edge( const object_id_type& from,
+                                         const object_id_type& to,
+                                         const string& name )const
+    {
+        FC_ASSERT(!"unimplemented!");
+    }
+    map<string, edge_record>   pending_chain_state::get_edges( const object_id_type& from,
+                                          const object_id_type& to )const
+    {
+        FC_ASSERT(!"unimplemented!");
+    }
+    map<object_id_type, map<string, edge_record>> pending_chain_state::get_edges( const object_id_type& from )const
+    {
+        FC_ASSERT(!"unimplemented!");
+    }
+
 
 
    fc::variant pending_chain_state::get_property( chain_property_enum property_id )const
@@ -591,13 +628,13 @@ namespace bts { namespace blockchain {
       return burn_record( itr->first, itr->second );
    }
 
-   void  pending_chain_state::authorize( asset_id_type asset_id, const address& owner, object_id_type oid  ) 
+   void  pending_chain_state::authorize( asset_id_type asset_id, const address& owner, object_id_type oid  )
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       authorizations[std::make_pair(asset_id,owner)] = oid;
    }
 
-   optional<object_id_type>  pending_chain_state::get_authorization( asset_id_type asset_id, const address& owner )const 
+   optional<object_id_type>  pending_chain_state::get_authorization( asset_id_type asset_id, const address& owner )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto index = std::make_pair( asset_id, owner );
@@ -607,12 +644,12 @@ namespace bts { namespace blockchain {
          return itr->second;
       return optional<object_id_type>();
    }
-   void                       pending_chain_state::store_asset_proposal( const proposal_record& r ) 
+   void                       pending_chain_state::store_asset_proposal( const proposal_record& r )
    {
       asset_proposals[std::make_pair( r.asset_id, r.proposal_id )] = r;
    }
 
-   optional<proposal_record>  pending_chain_state::fetch_asset_proposal( asset_id_type asset_id, proposal_id_type proposal_id )const 
+   optional<proposal_record>  pending_chain_state::fetch_asset_proposal( asset_id_type asset_id, proposal_id_type proposal_id )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto itr = asset_proposals.find( std::make_pair( asset_id, proposal_id ) );

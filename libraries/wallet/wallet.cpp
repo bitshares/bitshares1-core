@@ -4,7 +4,6 @@
 #include <bts/wallet/wallet_impl.hpp>
 
 #include <bts/blockchain/time.hpp>
-
 #include <bts/cli/pretty.hpp>
 #include <bts/utilities/git_revision.hpp>
 #include <bts/utilities/key_conversion.hpp>
@@ -1371,46 +1370,54 @@ namespace detail {
    void wallet::rename_account( const string& old_account_name,
                                  const string& new_account_name )
    { try {
+      FC_ASSERT( is_open() );
       if( !my->_blockchain->is_valid_account_name( old_account_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid old account name!", ("old_account_name",old_account_name) );
       if( !my->_blockchain->is_valid_account_name( new_account_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid new account name!", ("new_account_name",new_account_name) );
 
-      FC_ASSERT( is_open() );
+      optional<public_key_type> old_key;
       auto registered_account = my->_blockchain->get_account_record( old_account_name );
-      auto local_account = my->_wallet_db.lookup_account( old_account_name );
-      if( registered_account.valid()
-          && !(local_account && local_account->owner_key != registered_account->owner_key) )
-          FC_THROW_EXCEPTION( invalid_name, "You cannot rename a registered account!" );
+      bool have_registered = false;
+      for( const auto& item : my->_wallet_db.get_accounts() )
+      {
+          const wallet_account_record& local_account = item.second;
+          if( local_account.name != old_account_name )
+              continue;
+
+          if( !registered_account.valid() || registered_account->owner_key != local_account.owner_key )
+          {
+              old_key = local_account.owner_key;
+              break;
+          }
+
+          have_registered |= registered_account.valid() && registered_account->owner_key == local_account.owner_key;
+      }
+
+      if( !old_key.valid() )
+      {
+          if( registered_account.valid() )
+              FC_THROW_EXCEPTION( key_already_registered, "You cannot rename a registered account!" );
+
+          FC_THROW_EXCEPTION( unknown_account, "Unknown account name!", ("old_account_name", old_account_name) );
+      }
+
+      registered_account = my->_blockchain->get_account_record( *old_key );
+      if( registered_account.valid() && registered_account->name != new_account_name )
+      {
+          FC_THROW_EXCEPTION( key_already_registered, "That account is already registered to a different name!",
+                              ("desired_name",new_account_name)("registered_name",registered_account->name) );
+      }
 
       registered_account = my->_blockchain->get_account_record( new_account_name );
       if( registered_account.valid() )
-          FC_THROW_EXCEPTION( invalid_name, "Your new account name is already registered!" );
+          FC_THROW_EXCEPTION( duplicate_account_name, "Your new account name is already registered!" );
 
-      auto old_account = my->_wallet_db.lookup_account( old_account_name );
-      FC_ASSERT( old_account.valid() );
-      auto old_key = old_account->owner_key;
+      const auto new_account = my->_wallet_db.lookup_account( new_account_name );
+      if( new_account.valid() )
+          FC_THROW_EXCEPTION( duplicate_account_name, "You already have the new account name in your wallet!" );
 
-      //Check for duplicate names in wallet
-      if( !my->is_unique_account(old_account_name) )
-      {
-        //Find the wallet record that is not in the blockchain; or is, but under a different name
-        auto wallet_accounts = my->_wallet_db.get_accounts();
-        for( const auto& wallet_account : wallet_accounts )
-        {
-          if( wallet_account.second.name == old_account_name )
-          {
-            auto record = my->_blockchain->get_account_record(wallet_account.second.owner_key);
-            if( !(record.valid() && record->name == old_account_name) )
-              old_key = wallet_account.second.owner_key;
-          }
-        }
-      }
-
-      auto new_account = my->_wallet_db.lookup_account( new_account_name );
-      FC_ASSERT( !new_account.valid() );
-
-      my->_wallet_db.rename_account( old_key, new_account_name );
+      my->_wallet_db.rename_account( *old_key, new_account_name );
    } FC_CAPTURE_AND_RETHROW( (old_account_name)(new_account_name) ) }
 
    /**
@@ -3094,7 +3101,8 @@ namespace detail {
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("issuer_account_name",issuer_account_name) );
       auto from_account_address = get_owner_public_key( issuer_account_name );
       auto oname_rec = my->_blockchain->get_account_record( issuer_account_name );
-      FC_ASSERT( oname_rec.valid() );
+      if( !oname_rec.valid() )
+          FC_THROW_EXCEPTION( account_not_registered, "Assets can only be created by registered accounts", ("issuer_account_name",issuer_account_name) );
 
       my->withdraw_to_transaction( required_fees,
                                    issuer_account_name,
@@ -3141,8 +3149,8 @@ namespace detail {
            const optional<double>& maximum_share_supply,
            const optional<uint64_t>& precision,
            const share_type& issuer_fee,
-           uint32_t issuer_perms,
            uint32_t flags,
+           uint32_t issuer_perms,
            const string& issuer_account_name,
            uint32_t required_sigs,
            const vector<address>& authority,
@@ -3152,12 +3160,17 @@ namespace detail {
       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
 
-      auto  issuer_account = my->_blockchain->get_account_record( issuer_account_name );
-      FC_ASSERT( issuer_account.valid() );
+      optional<account_id_type> issuer_account_id;
+      if( issuer_account_name != "" )
+      {
+         auto issuer_account = my->_blockchain->get_account_record( issuer_account_name );
+         FC_ASSERT( issuer_account.valid() );
+         issuer_account_id = issuer_account->id;
+	  }
 
       transaction_builder_ptr builder = create_transaction_builder();
       builder->update_asset( symbol, name, description, public_data, maximum_share_supply, precision,
-                             issuer_fee, issuer_perms, flags, issuer_account->id, required_sigs, authority );
+                             issuer_fee, flags, issuer_perms, issuer_account_id, required_sigs, authority );
       builder->finalize();
 
       if( sign )

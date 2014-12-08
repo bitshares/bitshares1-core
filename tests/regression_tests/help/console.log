@@ -29,11 +29,13 @@ blockchain_get_block_hash <block_number>
 blockchain_get_block_signee <block>                                                                 
 blockchain_get_block_transactions <block>                                                           
 blockchain_get_delegate_slot_records <delegate_name> [start_block_num] [count]                      
+blockchain_get_edges <from> [to] [name]                                                             
 blockchain_get_feeds_for_asset <asset>                                                              
 blockchain_get_feeds_from_delegate <delegate_name>                                                  
 blockchain_get_info                                                                                 
+blockchain_get_object <id>                                                                          
 blockchain_get_security_state                                                                       
-blockchain_get_transaction <transaction_id> [exact]                                                 
+blockchain_get_transaction <transaction_id_prefix> [exact]                                          
 blockchain_is_synced                                                                                
 blockchain_list_accounts [first_account_name] [limit]                                               
 blockchain_list_active_delegates [first] [count]                                                    
@@ -64,9 +66,11 @@ blockchain_verify_signature <signer> <hash> <signature>
 builder_finalize_and_sign <builder>                                                                 
 debug_advance_time <delta_time_seconds> [unit]                                                      
 debug_clear_errors [start_time] [first_error_number] [limit]                                        
+debug_deterministic_private_keys [start] [count] [prefix] [import] [account_name] [create_new_account] [rescan] 
 debug_enable_output <enable_flag>                                                                   
 debug_filter_output_for_tests <enable_flag>                                                         
 debug_get_call_statistics                                                                           
+debug_get_client_name                                                                               
 debug_list_errors [first_error_number] [limit] [filename]                                           
 debug_list_errors_brief [first_error_number] [limit] [filename]                                     
 debug_start_simulated_time <new_simulated_time>                                                     
@@ -137,14 +141,15 @@ wallet_account_yield [account_name]
 wallet_add_contact_account <account_name> <account_key>                                             
 wallet_add_transaction_note_experimental <transaction_id> <note>                                    
 wallet_address_create <account_name> [label] [legacy_network_byte]                                  
+wallet_asset_authorize_key <paying_account> <symbol> <address> [meta]                               
 wallet_asset_create <symbol> <asset_name> <issuer_name> <description> <maximum_share_supply> <precision> [public_data] [is_market_issued] 
 wallet_asset_issue <amount> <symbol> <to_account_name> [memo_message]                               
-wallet_asset_update <symbol> [name] [description] [public_data] [maximum_share_supply] [precision] [issuer_transaction_fee] [restricted] [retractable] [required_sigs] [authority] 
+wallet_asset_update <symbol> [name] [description] [public_data] [maximum_share_supply] [precision] [issuer_transaction_fee] [flags] [issuer_permissions] [issuer_account_name] [required_sigs] [authority] 
 wallet_backup_create <json_filename>                                                                
 wallet_backup_restore <json_filename> <wallet_name> <imported_wallet_passphrase>                    
 wallet_balance_set_vote_info <balance_id> [voter_address] [vote_method] [sign_and_broadcast]        
 wallet_builder_add_signature <builder> [broadcast]                                                  
-wallet_burn <amount_to_transfer> <asset_symbol> <from_account_name> <for_or_against> <to_account_name> [public_message] [anonymous] 
+wallet_burn <amount_to_burn> <asset_symbol> <from_account_name> <for_or_against> <to_account_name> [public_message] [anonymous] 
 wallet_change_passphrase <passphrase>                                                               
 wallet_check_sharedrop                                                                              
 wallet_check_vote_proportion <account>                                                              
@@ -215,6 +220,7 @@ wallet_rescan_blockchain [first_block_number] [num_blocks] [fast_scan]
 wallet_scan_transaction <transaction_id> [overwrite_existing]                                       
 wallet_scan_transaction_experimental <transaction_id> [overwrite_existing]                          
 wallet_set_automatic_backups <enabled>                                                              
+wallet_set_edge <paying_account> <from> <to> <name> <value>                                         
 wallet_set_preferred_mail_servers <account_name> <server_list> [paying_account]                     
 wallet_set_setting <name> <value>                                                                   
 wallet_set_transaction_expiration_time <seconds>                                                    

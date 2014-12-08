@@ -72,13 +72,13 @@ namespace bts { namespace blockchain {
          balance_id_type                    get_multisig_balance_id( uint32_t m,
                                                                      const vector<address>& addrs )const
          {
-             withdraw_with_multi_sig condition;
+             withdraw_with_multisig condition;
              condition.required = m;
              condition.owners = set<address>(addrs.begin(), addrs.end());
              auto balance = balance_record(condition);
              return balance.id();
          }
-         
+
          std::vector<account_id_type>       get_active_delegates()const;
          void                               set_active_delegates( const std::vector<account_id_type>& id );
          bool                               is_active_delegate( const account_id_type& id )const;
@@ -179,7 +179,17 @@ namespace bts { namespace blockchain {
          virtual vector<operation>          get_recent_operations( operation_type_enum t )                  = 0;
 
          virtual void                       store_object_record( const object_record& obj )                 = 0;
-         virtual oobject_record             get_object_record( object_id_type id )                          = 0;
+         virtual oobject_record             get_object_record( const object_id_type& id )                   = 0;
+
+
+         oedge_record                       get_edge( const object_id_type& id );
+         virtual oedge_record               get_edge( const object_id_type& from,
+                                                      const object_id_type& to,
+                                                      const string& name )const                             = 0;
+         virtual map<string, edge_record>   get_edges( const object_id_type& from,
+                                                       const object_id_type& to )const                      = 0;
+         virtual map<object_id_type, map<string, edge_record>>
+                                            get_edges( const object_id_type& from )const                    = 0;
 
 
          virtual void                       apply_deterministic_updates(){}

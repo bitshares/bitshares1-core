@@ -26,9 +26,17 @@ wallet (unlocked) >>> wallet_account_balance testaccount
 No balances found.
 wallet (unlocked) >>> wallet_list_my_accounts 
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       BLOCK PRODUCTION ENABLED 
-testaccount                        XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt           NO                    NO             0              N/A                      
+testaccount                        XTS5AQGjeRu5sEBvvERaV8i1tstV1fx2ywGUmvWgsBPEjFoR27oQg           NO                    NO             0              N/A                      
 wallet (unlocked) >>> wallet_account_list_public_keys testaccount
 [{
+    "hex": "0224218aaf2aa51dec20d8cf619e89e6ca9d3e6e70878fed7a32bee8787c371979",
+    "native_pubkey": "XTS5AQGjeRu5sEBvvERaV8i1tstV1fx2ywGUmvWgsBPEjFoR27oQg",
+    "native_address": "XTSMNAMFHWLkAb77ECrscyRQNQKES2GfY5ve",
+    "pts_normal_address": "PuLxL4UXnLsFBvHVnSZpmN9hAP1eWqCXLZ",
+    "pts_compressed_address": "PrV8DcHjZpvJep9CCjwxPZiGY6bbS7Q5C4",
+    "btc_normal_address": "1NRBBynQ2EvBPeUeQwuycLudv8apo1wedb",
+    "btc_compressed_address": "1KZM5XbboiyErYLLqFJ7EYUDHrAmWqkSNJ"
+  },{
     "hex": "02f969a87ca684e235b95bff54981ab2125aa331969e290ea9278645b2988892ff",
     "native_pubkey": "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt",
     "native_address": "XTSEz7eoMUssHQBeeH5xLr38Rg8RSJXYBebN",
@@ -42,6 +50,14 @@ wallet (unlocked) >>> wallet_account_rename testaccount myaccount
 OK
 wallet (unlocked) >>> wallet_account_list_public_keys myaccount
 [{
+    "hex": "0224218aaf2aa51dec20d8cf619e89e6ca9d3e6e70878fed7a32bee8787c371979",
+    "native_pubkey": "XTS5AQGjeRu5sEBvvERaV8i1tstV1fx2ywGUmvWgsBPEjFoR27oQg",
+    "native_address": "XTSMNAMFHWLkAb77ECrscyRQNQKES2GfY5ve",
+    "pts_normal_address": "PuLxL4UXnLsFBvHVnSZpmN9hAP1eWqCXLZ",
+    "pts_compressed_address": "PrV8DcHjZpvJep9CCjwxPZiGY6bbS7Q5C4",
+    "btc_normal_address": "1NRBBynQ2EvBPeUeQwuycLudv8apo1wedb",
+    "btc_compressed_address": "1KZM5XbboiyErYLLqFJ7EYUDHrAmWqkSNJ"
+  },{
     "hex": "02f969a87ca684e235b95bff54981ab2125aa331969e290ea9278645b2988892ff",
     "native_pubkey": "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt",
     "native_address": "XTSEz7eoMUssHQBeeH5xLr38Rg8RSJXYBebN",
@@ -53,7 +69,7 @@ wallet (unlocked) >>> wallet_account_list_public_keys myaccount
 ]
 wallet (unlocked) >>> wallet_list_my_accounts
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       BLOCK PRODUCTION ENABLED 
-myaccount                          XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt           NO                    NO             0              N/A                      
+myaccount                          XTS5AQGjeRu5sEBvvERaV8i1tstV1fx2ywGUmvWgsBPEjFoR27oQg           NO                    NO             0              N/A                      
 wallet (unlocked) >>> wallet_account_transaction_history myaccount
 No transactions found.
 wallet (unlocked) >>> wallet_account_update_private_data myaccount "1234 test private data"
@@ -70,7 +86,7 @@ wallet (unlocked) >>> wallet_account_set_favorite myaccount
 OK
 wallet (unlocked) >>> wallet_list_favorite_accounts 
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
-myaccount                          XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt           NO                    YES            0         
+myaccount                          XTS5AQGjeRu5sEBvvERaV8i1tstV1fx2ywGUmvWgsBPEjFoR27oQg           NO                    YES            0         
 wallet (unlocked) >>> wallet_account_set_favorite myaccount false
 OK
 wallet (unlocked) >>> wallet_list_favorite_accounts 
@@ -79,13 +95,13 @@ wallet (unlocked) >>> wallet_add_contact_account test XTS5nkoz8qNcLPF8w7xSpnf6CC
 OK
 wallet (unlocked) >>> wallet_list_accounts
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
-myaccount                          XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt           NO                    NO             0         
+myaccount                          XTS5AQGjeRu5sEBvvERaV8i1tstV1fx2ywGUmvWgsBPEjFoR27oQg           NO                    NO             0         
 test                               XTS5nkoz8qNcLPF8w7xSpnf6CCFcgioGMDqsvw7G7hgEvMAxL6fCc           NO                    NO             0         
 wallet (unlocked) >>> wallet_remove_contact_account test
 OK
 wallet (unlocked) >>> wallet_list_accounts
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
-myaccount                          XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt           NO                    NO             0         
+myaccount                          XTS5AQGjeRu5sEBvvERaV8i1tstV1fx2ywGUmvWgsBPEjFoR27oQg           NO                    NO             0         
 wallet (unlocked) >>> wallet_set_setting t1 123456
 OK
 wallet (unlocked) >>> wallet_lock

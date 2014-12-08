@@ -395,10 +395,10 @@ namespace bts { namespace wallet {
                  const string& account_name,
                  bool sign
                  );
-         wallet_transaction_record asset_authorize_key( const string& paying_account_name, 
+         wallet_transaction_record asset_authorize_key( const string& paying_account_name,
                                                         const string& symbol,
                                                         const address& key,
-                                                        const object_id_type& meta, 
+                                                        const object_id_type& meta,
                                                         bool sign = true );
 
          wallet_transaction_record update_block_signing_key(
@@ -426,8 +426,8 @@ namespace bts { namespace wallet {
                  const optional<double>& maximum_share_supply,
                  const optional<uint64_t>& precision,
                  const share_type& issuer_fee,
-                 uint32_t issuer_perms,
                  uint32_t flags,
+                 uint32_t issuer_perms,
                  const string& issuer_account_name,
                  uint32_t required_sigs,
                  const vector<address>& authority,

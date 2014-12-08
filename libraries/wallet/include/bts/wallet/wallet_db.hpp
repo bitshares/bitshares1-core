@@ -114,7 +114,7 @@ namespace bts { namespace wallet {
       private:
          optional<wallet_master_key_record>                             wallet_master_key;
          /** maps wallet_record_index to accounts */
-         unordered_map<int32_t,wallet_account_record>                   accounts;
+         unordered_map<int32_t, wallet_account_record>                  accounts;
          unordered_map<address, wallet_key_record>                      keys;
          unordered_map<transaction_id_type, wallet_transaction_record>  transactions;
          map<property_enum, wallet_property_record>                     properties;

@@ -238,10 +238,11 @@ namespace bts { namespace blockchain {
           }
           current_asset_record->issuer_permissions  = this->issuer_permissions;
 
-          if( this->flags & restricted   ) FC_ASSERT( current_asset_record->issuer_permissions & restricted );
-          if( this->flags & retractable  ) FC_ASSERT( current_asset_record->issuer_permissions & retractable );
-          if( this->flags & market_halt  ) FC_ASSERT( current_asset_record->issuer_permissions & market_halt );
-          if( this->flags & balance_halt ) FC_ASSERT( current_asset_record->issuer_permissions & balance_halt );
+          if( this->flags & restricted     ) FC_ASSERT( current_asset_record->issuer_permissions & restricted     );
+          if( this->flags & retractable    ) FC_ASSERT( current_asset_record->issuer_permissions & retractable    );
+          if( this->flags & market_halt    ) FC_ASSERT( current_asset_record->issuer_permissions & market_halt    );
+          if( this->flags & balance_halt   ) FC_ASSERT( current_asset_record->issuer_permissions & balance_halt   );
+          if( this->flags & supply_unlimit ) FC_ASSERT( current_asset_record->issuer_permissions & supply_unlimit );
           current_asset_record->flags               = this->flags;
 
           current_asset_record->transaction_fee     = this->transaction_fee;

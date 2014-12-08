@@ -173,7 +173,7 @@ namespace bts { namespace blockchain {
        multisig_condition owners;
        switch( obj.type() )
        {
-           case( obj_type::normal_object ):
+           case( obj_type::base_object ):
            {
                owners = obj._owners;
                return owners;
@@ -219,7 +219,16 @@ namespace bts { namespace blockchain {
            }
        }
        FC_ASSERT(!"This code path should not happen.");
-   } FC_CAPTURE_AND_RETHROW( (obj) ) }
+   } FC_CAPTURE_AND_RETHROW( (obj.short_id())(obj.type())(obj) ) }
+
+    oedge_record               chain_interface::get_edge( const object_id_type& id )
+    {
+        auto object = get_object_record( id );
+        if( NOT object.valid() )
+            return oedge_record();
+        FC_ASSERT( object->type() == edge_object, "This object is not an edge!"); // TODO check form ID as first check
+        return object->as<edge_record>();
+    }
 
    vector<account_id_type> chain_interface::get_active_delegates()const
    { try {

@@ -1,4 +1,3 @@
-@account
 Feature: Account creation, deletion, and registration features
 
     Background:
