@@ -99,6 +99,17 @@ namespace bts { namespace blockchain {
        if( this->amount <= 0 )
           FC_CAPTURE_AND_THROW( negative_deposit, (amount) );
 
+       switch( withdraw_condition_types( this->condition.type ) )
+       {
+          case withdraw_signature_type:
+          case withdraw_vesting_type:
+          case withdraw_multisig_type:
+          case withdraw_escrow_type:
+             break;
+          default:
+             FC_CAPTURE_AND_THROW( invalid_withdraw_condition, (*this) );
+       }
+
        const balance_id_type deposit_balance_id = this->balance_id();
 
        obalance_record cur_record = eval_state._current_state->get_balance_record( deposit_balance_id );

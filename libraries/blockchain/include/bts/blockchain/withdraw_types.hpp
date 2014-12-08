@@ -14,7 +14,7 @@ namespace bts { namespace blockchain {
       withdraw_null_type        = 0,
       withdraw_signature_type   = 1,
       withdraw_vesting_type     = 2,
-      withdraw_multisig_type   = 3,
+      withdraw_multisig_type    = 3,
       withdraw_escrow_type      = 4,
       withdraw_password_type    = 5
    };
