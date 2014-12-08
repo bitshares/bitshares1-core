@@ -402,6 +402,23 @@ namespace bts { namespace blockchain {
        objects[obj._id] = obj;
    }
 
+    oedge_record               pending_chain_state::get_edge( const object_id_type& from,
+                                         const object_id_type& to,
+                                         const string& name )const
+    {
+        FC_ASSERT(!"unimplemented!");
+    }
+    map<string, edge_record>   pending_chain_state::get_edges( const object_id_type& from,
+                                          const object_id_type& to )const
+    {
+        FC_ASSERT(!"unimplemented!");
+    }
+    map<object_id_type, map<string, edge_record>> pending_chain_state::get_edges( const object_id_type& from )const
+    {
+        FC_ASSERT(!"unimplemented!");
+    }
+
+
 
    fc::variant pending_chain_state::get_property( chain_property_enum property_id )const
    {
