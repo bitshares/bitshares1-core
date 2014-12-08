@@ -53,8 +53,8 @@ namespace bts { namespace blockchain {
       share_type          current_share_supply = 0;
       share_type          maximum_share_supply = 0;
       share_type          collected_fees = 0;
-      uint32_t            flags = 0;
-      uint32_t            issuer_permissions = -1;
+      uint32_t            flags;
+      uint32_t            issuer_permissions;
       /**
        *  The issuer can specify a transaction fee (of the asset type)
        *  that will be paid to the issuer with every transaction that
