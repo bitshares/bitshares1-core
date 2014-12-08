@@ -263,7 +263,7 @@ transaction_builder& transaction_builder::set_object(const string& payer_name,
         id = 0;
     else
         id = obj.short_id();
-    trx.set_object( id, obj );
+    trx.set_object( obj );
     for( auto addr : _wimpl->_blockchain->get_object_owners( obj ).owners )
         required_signatures.insert( addr );
 

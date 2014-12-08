@@ -11,55 +11,23 @@ namespace bts { namespace blockchain {
     void set_object_operation::evaluate( transaction_evaluation_state& eval_state )
     { try {
         object_record obj;
-
-        if( this->id < 0 )
+        auto oobj = eval_state._current_state->get_object_record( this->obj._id );
+        if( oobj.valid() )
         {
-            FC_ASSERT(! "unimplemented: set_object with negative id" );
-        }
-        else if( this->id == 0 )
-        {
-            ilog("@1 Object type: ${t}", ("t", this->obj.type()));
-            auto next_id = eval_state._current_state->new_object_id(this->obj.type());
-            obj = this->obj;
-            obj.set_id( this->obj.type(), next_id );
-            ilog("@2 Object type: ${t}", ("t", this->obj.type()));
-            switch( obj.type() )
-            {
-                case( base_object ):
-                case( edge_object ):
-                {
-                    auto owners = eval_state._current_state->get_object_owners( obj );
-                    if( NOT eval_state.check_multisig( owners ) )
-                        FC_CAPTURE_AND_THROW( missing_signature, ( owners ) );
-                    break;
-                }
-                case( account_object ):
-                case( asset_object ):
-                    FC_ASSERT(!"Storing legacy objects via object interface is not supported yet.");
-                default:
-                    FC_ASSERT(!"Unsupported object type!");
-            }
-        }
-        else // id > 0
-        {
-            auto real_id = object_record( this->obj.type(), this->id )._id;
-            auto oobj = eval_state._current_state->get_object_record( real_id );
-            FC_ASSERT( oobj.valid(), "No object with that ID.");
             obj = *oobj;
             auto owners = eval_state._current_state->get_object_owners( obj );
-            switch( obj.type() )
-            {
-                case( base_object ):
-                case( edge_object ):
-                {
-                    if( NOT eval_state.check_multisig( owners ) )
-                        FC_CAPTURE_AND_THROW( missing_signature, (owners) );
-                }
-                case( account_object ):
-                case( asset_object ):
-                default:
-                    FC_ASSERT(!"Unimplemented!");
-            }
+            if( NOT eval_state.check_multisig( owners ) )
+                FC_CAPTURE_AND_THROW( missing_signature, (owners) );
+        }
+        else
+        {
+            FC_ASSERT( this->obj.type() == base_object, "Can't use this to set a base object!" );
+            auto next_id = eval_state._current_state->new_object_id( base_object );
+            obj = this->obj;
+            obj.set_id( this->obj.type(), next_id );
+            auto owners = eval_state._current_state->get_object_owners( obj );
+            if( NOT eval_state.check_multisig( owners ) )
+                FC_CAPTURE_AND_THROW( missing_signature, ( owners ) );
         }
         eval_state._current_state->store_object_record( obj );
     } FC_CAPTURE_AND_RETHROW( (*this)(eval_state) ) }
