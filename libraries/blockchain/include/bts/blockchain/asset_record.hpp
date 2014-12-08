@@ -13,12 +13,7 @@ namespace bts { namespace blockchain {
       restricted            = 1 << 1, ///<! The issuer whitelists public keys
       market_halt           = 1 << 2, ///<! The issuer can/did freeze all markets
       balance_halt          = 1 << 3, ///<! The issuer can/did freeze all balances
-      supply_unlimit        = 1 << 4, ///<! The issuer can change the supply at will
-      // all flags need to be in default_permissions, if a flag is excluded here
-      //   then the flag will be unable to active in issuer permissions
-      //   and hence useless for all practical purposes
-      default_permissions   = retractable | restricted | market_halt | balance_halt | supply_unlimit,
-      all_permissions       = 0xffffffff
+      supply_unlimit        = 1 << 4  ///<! The issuer can change the supply at will
    };
 
    struct asset_record
@@ -58,8 +53,8 @@ namespace bts { namespace blockchain {
       share_type          current_share_supply = 0;
       share_type          maximum_share_supply = 0;
       share_type          collected_fees = 0;
-      uint32_t            flags = retractable;
-      uint32_t            issuer_permissions = default_permissions;
+      uint32_t            flags = 0;
+      uint32_t            issuer_permissions = -1;
       /**
        *  The issuer can specify a transaction fee (of the asset type)
        *  that will be paid to the issuer with every transaction that
@@ -95,26 +90,37 @@ namespace bts { namespace blockchain {
 } } // bts::blockchain
 
 FC_REFLECT_ENUM( bts::blockchain::asset_permissions,
-    (none)(retractable)(restricted)(market_halt)(balance_halt)(supply_unlimit)(all_permissions)(default_permissions) )
-
-FC_REFLECT( bts::blockchain::proposal_record, (asset_id)(proposal_id)(info)(votes_for)(votes_against) );
+        (none)
+        (retractable)
+        (restricted)
+        (market_halt)
+        (balance_halt)
+        (supply_unlimit)
+        )
+FC_REFLECT( bts::blockchain::proposal_record,
+        (asset_id)
+        (proposal_id)
+        (info)
+        (votes_for)
+        (votes_against)
+        );
 
 FC_REFLECT( bts::blockchain::asset_record,
-            (id)
-            (symbol)
-            (name)
-            (description)
-            (public_data)
-            (issuer_account_id)
-            (precision)
-            (registration_date)
-            (last_update)
-            (current_share_supply)
-            (maximum_share_supply)
-            (collected_fees)
-            (flags)
-            (issuer_permissions)
-            (transaction_fee)
-            (authority)
-            (last_proposal_id)
-           )
+        (id)
+        (symbol)
+        (name)
+        (description)
+        (public_data)
+        (issuer_account_id)
+        (precision)
+        (registration_date)
+        (last_update)
+        (current_share_supply)
+        (maximum_share_supply)
+        (collected_fees)
+        (flags)
+        (issuer_permissions)
+        (transaction_fee)
+        (authority)
+        (last_proposal_id)
+        )
