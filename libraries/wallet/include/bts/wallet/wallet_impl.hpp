@@ -85,8 +85,6 @@ class wallet_impl : public chain_observer
               bool overwrite_existing = false
               );
 
-      void scan_genesis_experimental( const account_balance_record_summary_type& account_balances );
-
       void scan_block_experimental( uint32_t block_num,
                                     const map<private_key_type, string>& account_keys,
                                     const map<address, string>& account_balances,

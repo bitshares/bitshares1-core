@@ -4,6 +4,7 @@
 #include <bts/blockchain/market_operations.hpp>
 #include <bts/blockchain/feed_operations.hpp>
 #include <bts/blockchain/object_operations.hpp>
+#include <bts/blockchain/edge_operations.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/blockchain/transaction.hpp>
 
@@ -38,10 +39,16 @@ namespace bts { namespace blockchain {
       signatures.push_back( signer.sign_compact( digest(chain_id) ) );
    }
 
-   void transaction::set_object( int64_t id, const object_record& obj )
+   void transaction::set_object( const object_record& obj )
    {
-      operations.emplace_back( set_object_operation( id, obj ) );
+      operations.emplace_back( set_object_operation( obj ) );
    }
+
+   void transaction::set_edge( const edge_record& edge )
+   {
+      operations.emplace_back( set_edge_operation( edge ) );
+   }
+
 
    void transaction::define_delegate_slate( delegate_slate s )
    {

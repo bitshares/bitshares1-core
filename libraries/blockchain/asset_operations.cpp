@@ -90,6 +90,13 @@ namespace bts { namespace blockchain {
       new_record.current_share_supply   = 0;
       new_record.maximum_share_supply   = this->maximum_share_supply;
       new_record.collected_fees         = 0;
+      // Initialize flags and issuer_permissions here, instead of
+      //   in the struct definition, so that the initialization value
+      //   may depend on e.g. block number.  This supports future
+      //   hardforks which may want to add new permissions for future
+      //   assets without applying them to existing assets.
+      new_record.flags                  = 0;
+      new_record.issuer_permissions     = retractable | restricted | market_halt | balance_halt | supply_unlimit;
 
       if( issuer_account_record )
       {

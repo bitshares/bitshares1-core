@@ -36,13 +36,14 @@ namespace bts { namespace blockchain {
       create_asset_prop_op_type     = 9,
 
       // reserved
-      reserved_op_1_type            = 10,
+      // reserved_op_1_type         = 10, // Skip; see below
       reserved_op_2_type            = 11,
 
       // market
       bid_op_type                   = 12,
       ask_op_type                   = 13,
       short_op_type                 = 14, // Deprecated by short_op_v2_type
+      short_op_v2_type              = 34,
       cover_op_type                 = 15,
       add_collateral_op_type        = 16,
 
@@ -74,9 +75,22 @@ namespace bts { namespace blockchain {
 
       // assets
       update_asset_ext_op_type      = 30,
-      cancel_order_op_type          = 31,
+      cancel_order_op_type          = 31, /** TODO: return funds to balance with same key as order */
 
-      short_op_v2_type              = 34
+      // edges
+      set_edge_op_type              = 32,
+
+      // sites
+      site_create_op_type           = 33,  // creates an auction as well
+      site_update_op_type           = 10, // 34 was taken; see above
+
+      // auctions
+      auction_start_op_type         = 35,
+      auction_bid_op_type           = 36,
+
+      // sales
+      make_sale_op_type             = 37,
+      buy_sale_op_type              = 38   // makes a buy or an offer
    };
 
    /**
@@ -140,12 +154,11 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (update_asset_op_type)
                  (issue_asset_op_type)
                  (create_asset_prop_op_type)
-                 (reserved_op_1_type)
                  (reserved_op_2_type)
                  (bid_op_type)
                  (ask_op_type)
-                 (short_op_v2_type)
                  (short_op_type)
+                 (short_op_v2_type)
                  (cover_op_type)
                  (add_collateral_op_type)
                  (reserved_op_3_type)
@@ -163,6 +176,13 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (authorize_op_type)
                  (update_asset_ext_op_type)
                  (cancel_order_op_type)
+                 (set_edge_op_type)
+                 (site_create_op_type)
+                 (site_update_op_type)
+                 (auction_start_op_type)
+                 (auction_bid_op_type)
+                 (make_sale_op_type)
+                 (buy_sale_op_type)
                  )
 
 FC_REFLECT( bts::blockchain::operation, (type)(data) )

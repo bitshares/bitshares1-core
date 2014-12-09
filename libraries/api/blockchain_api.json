@@ -284,11 +284,38 @@
               "name" : "addr",
               "type" : "string",
               "description" : "address to scan for"
+            },
+            {
+               "name" : "chanced_since",
+               "type" : "timestamp",
+               "description" : "Filter all balances that haven't chanced since the provided timestamp",
+               "default_value" : ""
             }
         ],
         "is_const" : true,
         "prerequisites" : ["no_prerequisites"],
         "aliases" : ["list_address_balances"]
+      },
+      {
+        "method_name": "blockchain_list_address_transactions",
+        "description": "Lists all transactions that involve the provided address after the specified time",
+        "return_type": "transaction_record_map",
+        "parameters" : [
+            {
+              "name" : "addr",
+              "type" : "string",
+              "description" : "address to scan for"
+            },
+            {
+               "name" : "filter_before",
+               "type" : "timestamp",
+               "description" : "Filter all transactions that occured prior to the specified timestamp",
+               "default_value" : ""
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["list_address_transactions"]
       },
       {
          "method_name" : "blockchain_get_account_public_balance",
@@ -303,6 +330,20 @@
             ],
          "is_const" : true,
          "prerequisites" : ["wallet_open"]
+      },
+      {
+         "method_name" : "blockchain_median_feed_price",
+         "description" : "Get the account record for a given name",
+         "return_type" : "real_amount",
+         "parameters"  : [
+               {
+                  "name" : "symbol",
+                  "type" : "asset_symbol",
+                  "description" : "the asset symbol to fetch the median price of in BTS"
+               }
+            ],
+         "is_const" : true,
+         "prerequisites" : []
       },
       {
         "method_name": "blockchain_list_key_balances",
@@ -846,7 +887,7 @@
             {
               "name" : "from",
               "type" : "object_id_type",
-              "description" : ""
+              "description" : -1
             },
             {
               "name" : "to",

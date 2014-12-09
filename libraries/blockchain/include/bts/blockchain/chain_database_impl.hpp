@@ -160,12 +160,12 @@ namespace bts { namespace blockchain {
 
             /**
              *  This index is to facilitate light weight clients and is intended mostly for
-             *  block explorers and other APIs serving data.  
+             *  block explorers and other APIs serving data.
              */
-            bts::db::level_map< pair<address,transaction_id_type>, int>                _address_to_trx_index;
+            bts::db::level_map< pair<address,transaction_id_type>, int>                 _address_to_trx_index;
 
-            bts::db::level_map<pair<asset_id_type,address>, object_id_type>                  _auth_db;
-            bts::db::level_map<pair<asset_id_type,proposal_id_type>, proposal_record>        _asset_proposal_db;
+            bts::db::level_map<pair<asset_id_type,address>, object_id_type>             _auth_db;
+            bts::db::level_map<pair<asset_id_type,proposal_id_type>, proposal_record>   _asset_proposal_db;
 
             bts::db::cached_level_map<std::pair<asset_id_type,asset_id_type>, market_status> _market_status_db;
             bts::db::cached_level_map<market_history_key, market_history_record>        _market_history_db;

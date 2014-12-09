@@ -5,6 +5,7 @@
 #include <bts/blockchain/withdraw_types.hpp>
 #include <bts/blockchain/account_record.hpp>
 #include <bts/blockchain/object_record.hpp>
+#include <bts/blockchain/edge_record.hpp>
 
 #include <fc/reflect/variant.hpp>
 
@@ -38,7 +39,8 @@ namespace bts { namespace blockchain {
 
       void issue( const asset& amount_to_issue );
 
-      void set_object( int64_t id, const object_record& obj );
+      void set_object( const object_record& obj );
+      void set_edge( const edge_record& edge );
 
       void define_delegate_slate( delegate_slate s );
 

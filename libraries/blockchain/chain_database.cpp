@@ -1881,6 +1881,7 @@ namespace bts { namespace blockchain {
                 auto edge = obj.as<edge_record>();
                 my->_edge_index.store( edge.index_key(), edge._id );
                 my->_reverse_edge_index.store( edge.reverse_index_key(), edge._id );
+                ilog("Storing edge: ${e}", ("e", edge));
                 break;
             }
             case base_object:
@@ -2970,7 +2971,9 @@ namespace bts { namespace blockchain {
        {
            for( auto itr = my->_short_db.begin(); itr.valid(); ++itr )
            {
-               const auto order = market_order( short_order, itr.key(), itr.value() );
+               const market_index_key& key = itr.key();
+               const order_record& record = itr.value();
+               const auto order = market_order( short_order, key, record, record.balance, key.order_price );
                if( filter( order ) )
                {
                    orders.push_back( order );
@@ -3666,7 +3669,7 @@ namespace bts { namespace blockchain {
       while( itr.valid() )
       {
          auto key = itr.key();
-         if( key.first != addr ) 
+         if( key.first != addr )
             break;
 
          if( auto otrx = get_transaction( key.second ) )

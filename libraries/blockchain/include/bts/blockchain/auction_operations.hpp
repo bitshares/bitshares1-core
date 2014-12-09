@@ -4,23 +4,20 @@
 
 namespace bts { namespace blockchain {
 
-   /**
-    *  Defines or updates an object.
-    */
-   struct set_object_operation
+   struct auction_start_operation : operation
    {
       static const operation_type_enum type;
-
-      set_object_operation(){}
-      set_object_operation( const object_record& obj )
-          :obj(obj)
-      {}
-
-      object_record obj;
 
       void evaluate( transaction_evaluation_state& eval_state );
    };
 
+   struct auction_bid_operation : operation
+   {
+      static const operation_type_enum type;
+
+      void evaluate( transaction_evaluation_state& eval_state );
+   };
+
+
 }} // bts::blockchain
 
-FC_REFLECT( bts::blockchain::set_object_operation, (obj) );

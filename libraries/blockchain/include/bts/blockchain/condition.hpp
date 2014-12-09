@@ -31,6 +31,8 @@ namespace bts { namespace blockchain {
     // delegate_fraud
     // timelock
     // BTC spv utxo claim
+    // cross-chain trading
+    // 
 
 }} // bts::blockchain
 
