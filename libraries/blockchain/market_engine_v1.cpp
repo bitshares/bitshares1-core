@@ -366,9 +366,10 @@ namespace bts { namespace blockchain { namespace detail {
          while( _current_bid && _collateral_itr.valid() )
          {
             auto cover_ask = market_order( cover_order,
-                                     _collateral_itr.key(),
-                                     order_record(_collateral_itr.value().payoff_balance),
-                                     _collateral_itr.value().collateral_balance  );
+                                           _collateral_itr.key(),
+                                           order_record( _collateral_itr.value().payoff_balance ),
+                                           _collateral_itr.value().collateral_balance,
+                                           price() );
 
             if( cover_ask.get_price().quote_asset_id == _quote_id &&
                 cover_ask.get_price().base_asset_id == _base_id )
