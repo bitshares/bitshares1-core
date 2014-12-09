@@ -50,9 +50,9 @@ BitShares Mac OS X Build Instructions
    cd programs/web_wallet
    npm install .
    cd ../..
-   make buildweb
    export CMAKE_PREFIX_PATH=/usr/local/opt/qt5/
    cmake -DINCLUDE_QT_WALLET=1 .
+   make buildweb
    make
    ```
    Note: By default, the web wallet will not be rebuilt even after pulling new changes. To force the web wallet to rebuild, use `make forcebuildweb`.
