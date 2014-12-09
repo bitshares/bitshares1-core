@@ -1,6 +1,7 @@
 file(GLOB HEADERS "include/bts/wallet/*.hpp")
 
 add_library( bts_wallet
+             light_wallet.cpp
              wallet_records.cpp
              wallet_db.cpp
              bitcoin.cpp
