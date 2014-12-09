@@ -3986,7 +3986,7 @@ namespace detail {
 
       const auto scan_balance = [&]( const balance_record& record )
       {
-          if( record.snapshot_info.valid() && !((1 << uint8_t( withdraw_null_type )) & withdraw_type_mask) ) return;
+          //if( record.snapshot_info.valid() && !((1 << uint8_t( withdraw_null_type )) & withdraw_type_mask) ) return;
           if( !((1 << uint8_t( record.condition.type )) & withdraw_type_mask) ) return;
 
           const auto key_record = my->_wallet_db.lookup_key( record.owner() );
