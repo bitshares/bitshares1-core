@@ -144,7 +144,21 @@ namespace bts { namespace blockchain {
           _market_history_db.open( data_dir / "index/market_history_db" );
 
           _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
+
+          _revalidatable_future_blocks_db.open( data_dir / "index/future_blocks_db" );
+          clear_invalidation_of_future_blocks();
+
       } FC_CAPTURE_AND_RETHROW( (data_dir) ) }
+
+      
+      void chain_database_impl::clear_invalidation_of_future_blocks()
+      {
+        for (auto block_id_itr = _revalidatable_future_blocks_db.begin(); block_id_itr.valid(); ++block_id_itr)
+        {
+          mark_as_unchecked( block_id_itr.key() );
+        }
+      }
+
 
       digest_type chain_database_impl::initialize_genesis( const optional<path>& genesis_file, bool chain_id_only )
       { try {
@@ -350,6 +364,7 @@ namespace bts { namespace blockchain {
             self->store_asset_record( rec );
          }
 
+         //add fork_data for the genesis block to the fork database
          block_fork_data gen_fork;
          gen_fork.is_valid = true;
          gen_fork.is_included = true;
@@ -405,16 +420,18 @@ namespace bts { namespace blockchain {
          _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
       }
 
-      std::pair<block_id_type, block_fork_data> chain_database_impl::recursive_mark_as_linked( const std::unordered_set<block_id_type>& ids )
+      std::pair<block_id_type, block_fork_data> chain_database_impl::recursive_mark_as_linked(const std::unordered_set<block_id_type>& ids)
       {
          block_fork_data longest_fork;
          uint32_t highest_block_num = 0;
          block_id_type last_block_id;
 
          std::unordered_set<block_id_type> next_ids = ids;
+         //while there are any next blocks for current block number being processed
          while( next_ids.size() )
          {
-            std::unordered_set<block_id_type> pending;
+            std::unordered_set<block_id_type> pending; //builds list of all next blocks for the current block number being processed
+            //mark as linked all blocks at the current block number being processed
             for( const auto& item : next_ids )
             {
                 block_fork_data record = _fork_db.fetch( item );
@@ -423,6 +440,7 @@ namespace bts { namespace blockchain {
                 //ilog( "store: ${id} => ${data}", ("id",item)("data",record) );
                 _fork_db.store( item, record );
 
+                //keep one of the block ids of the current block number being processed (simplify this code)
                 auto block_record = _block_id_to_block_record_db.fetch(item);
                 if( block_record.block_num > highest_block_num )
                 {
@@ -431,7 +449,7 @@ namespace bts { namespace blockchain {
                     longest_fork = record;
                 }
             }
-            next_ids = pending;
+            next_ids = pending; //conceptually this increments the current block number being processed
          }
 
          return std::make_pair(last_block_id, longest_fork);
@@ -445,6 +463,7 @@ namespace bts { namespace blockchain {
             for( const auto& item : next_ids )
             {
                 block_fork_data record = _fork_db.fetch( item );
+                assert(!record.valid()); //make sure we don't invalidate a previously validated record
                 record.is_valid = false;
                 record.invalid_reason = reason;
                 pending.insert( record.next_blocks.begin(), record.next_blocks.end() );
@@ -480,6 +499,19 @@ namespace bts { namespace blockchain {
       std::pair<block_id_type, block_fork_data> chain_database_impl::store_and_index( const block_id_type& block_id,
                                                                                       const full_block& block_data )
       { try {
+          //we should never try to store a block we've already seen (verify not in any of our databases)
+          assert(!_block_id_to_block_data_db.fetch_optional(block_id));
+          #ifndef NDEBUG
+          {
+            //check block id is not in fork_data, or if it is, make sure it's just a placeholder for block we are waiting for
+            optional<block_fork_data> fork_data = _fork_db.fetch_optional(block_id);
+            assert(!fork_data || !fork_data->is_known);
+            //check block not in parallel_blocks database
+            vector<block_id_type> parallel_blocks = fetch_blocks_at_number( block_data.block_num );
+            assert( std::find(parallel_blocks.begin(), parallel_blocks.end(), block_id) == parallel_blocks.end());
+          }
+          #endif
+
           auto now = blockchain::now();
           //ilog( "block_number: ${n}   id: ${id}  prev: ${prev}",
           //      ("n",block_data.block_num)("id",block_id)("prev",block_data.previous) );
@@ -498,20 +530,21 @@ namespace bts { namespace blockchain {
               _block_id_to_block_record_db.store( block_id, record );
           }
 
-          // update the parallel block list
+          // update the parallel block list (fork_number_db):
+          // get vector of all blocks with same block number, add this block to that list, then update the database
           vector<block_id_type> parallel_blocks = fetch_blocks_at_number( block_data.block_num );
+          //if block not in parallel block list, add it
           if (std::find( parallel_blocks.begin(), parallel_blocks.end(), block_id ) == parallel_blocks.end())
           {
-            // don't add the block to the list if it's already there.
             // TODO: do we need to execute any of the rest of this function (or, for that matter, its caller) if the block is already there
             parallel_blocks.push_back( block_id );
             _fork_number_db.store( block_data.block_num, parallel_blocks );
           }
 
-          // now find how it links in.
+          // Tell our previous block that we are one of it's next blocks (update previous block's next_blocks set)
           block_fork_data prev_fork_data;
           auto prev_itr = _fork_db.find( block_data.previous );
-          if( prev_itr.valid() ) // we already know about its previous
+          if( prev_itr.valid() ) // we already know about its previous (note: we always know about genesis block)
           {
              ilog( "           we already know about its previous: ${p}", ("p",block_data.previous) );
              prev_fork_data = prev_itr.value();
@@ -519,42 +552,69 @@ namespace bts { namespace blockchain {
              //ilog( "              ${id} = ${record}", ("id",prev_itr.key())("record",prev_fork_data) );
              _fork_db.store( prev_itr.key(), prev_fork_data );
           }
-          else
+          else //if we don't know about the previous block even as a placeholder, create a placeholder for the previous block (placeholder block defaults as unlinked)
           {
              elog( "           we don't know about its previous: ${p}", ("p",block_data.previous) );
-
-             // create it... we do not know about the previous block so
-             // we must create it and assume it is not linked...
-             prev_fork_data.next_blocks.insert(block_id);
-             prev_fork_data.is_linked = block_data.previous == block_id_type(); //false;
+             prev_fork_data.next_blocks.insert(block_id); //tell placeholder block about new block
+             prev_fork_data.is_linked = false; //this is only a placeholder, we don't know what its previous block is, so it can't be linked
              //ilog( "              ${id} = ${record}", ("id",block_data.previous)("record",prev_fork_data) );
              _fork_db.store( block_data.previous, prev_fork_data );
           }
 
-          block_fork_data current_fork;
           auto cur_itr = _fork_db.find( block_id );
-          current_fork.is_known = true;
-          if( cur_itr.valid() )
-          {
-             current_fork = cur_itr.value();
-             ilog( "          current_fork: ${fork}", ("fork",current_fork) );
-             ilog( "          prev_fork: ${prev_fork}", ("prev_fork",prev_fork_data) );
-             if( !current_fork.is_linked && prev_fork_data.is_linked )
-             {
-                // we found the missing link
-                current_fork.is_linked = true;
-                auto longest_fork = recursive_mark_as_linked( current_fork.next_blocks );
-                _fork_db.store( block_id, current_fork );
+          if( cur_itr.valid() ) //if placeholder was previously created for block
+          { 
+            block_fork_data current_fork = cur_itr.value();
+            current_fork.is_known = true; //was placeholder, now a known block
+            ilog( "          current_fork: ${fork}", ("fork",current_fork) );
+            ilog( "          prev_fork: ${prev_fork}", ("prev_fork",prev_fork_data) );
+            // if new block is linked to genesis block, recursively mark all its next blocks as linked and return longest descendant block
+            assert(!current_fork.is_linked);
+            if( prev_fork_data.is_linked )
+            {
+              current_fork.is_linked = true;
+              //if previous block is invalid, mark the new block as invalid too (block can't be valid if any previous block in its chain is invalid)
+              bool prev_block_is_invalid = prev_fork_data.is_valid && !*prev_fork_data.is_valid;
+              if (prev_block_is_invalid)
+              {
+                current_fork.is_valid = false;
+                current_fork.invalid_reason = prev_fork_data.invalid_reason;
+              }
+              _fork_db.store( block_id, current_fork ); //update placeholder fork_block record with block data
+              if (prev_block_is_invalid) //if previous block was invalid, mark all descendants as invalid and return current_block
+              {
+                recursive_mark_as_invalid(current_fork.next_blocks, *prev_fork_data.invalid_reason );
+                return std::make_pair(block_id, current_fork);
+              }
+              else //we have a potentially viable alternate chain, mark the descendant blocks as linked and return the longest end block from descendant chains
+              {
+                std::pair<block_id_type,block_fork_data> longest_fork = recursive_mark_as_linked(current_fork.next_blocks);
                 return longest_fork;
-             }
+              }
+            }
+            else //this new block is not linked to genesis block, so no point in determining its longest descendant block, just return it and let it be skipped over
+            {
+              _fork_db.store( block_id, current_fork ); //update placeholder fork_block record with block data
+              return std::make_pair(block_id, current_fork);
+            }
           }
-          else
+          else //no placeholder exists for this new block, just set its link flag 
           {
-             current_fork.is_linked = prev_fork_data.is_linked;
-             //ilog( "          current_fork: ${id} = ${fork}", ("id",block_id)("fork",current_fork) );
+            block_fork_data current_fork;
+            current_fork.is_known = true;
+            current_fork.is_linked = prev_fork_data.is_linked; //is linked if it's previous block is linked
+            bool prev_block_is_invalid = prev_fork_data.is_valid && !*prev_fork_data.is_valid;
+            if (prev_block_is_invalid)
+            {
+              current_fork.is_valid = false;
+              current_fork.invalid_reason = prev_fork_data.invalid_reason;
+            }
+            //ilog( "          current_fork: ${id} = ${fork}", ("id",block_id)("fork",current_fork) );
+            _fork_db.store( block_id, current_fork ); //add new fork_block record to database
+            //this is first time we've seen this block mentioned, so we don't know about any linked descendants from it,
+            //and therefore this is the last block in this chain that we know about, so just return that
+            return std::make_pair(block_id, current_fork);
           }
-          _fork_db.store( block_id, current_fork );
-          return std::make_pair(block_id, current_fork);
       } FC_CAPTURE_AND_RETHROW( (block_id) ) }
 
       void chain_database_impl::mark_invalid(const block_id_type& block_id , const fc::exception& reason)
@@ -562,10 +622,38 @@ namespace bts { namespace blockchain {
          // fetch the fork data for block_id, mark it as invalid and
          // then mark every item after it as invalid as well.
          auto fork_data = _fork_db.fetch( block_id );
+         assert(!fork_data.valid()); //make sure we're not invalidating a block that we previously have validated
          fork_data.is_valid = false;
          fork_data.invalid_reason = reason;
          _fork_db.store( block_id, fork_data );
          recursive_mark_as_invalid( fork_data.next_blocks, reason );
+      }
+
+      void chain_database_impl::mark_as_unchecked(const block_id_type& block_id)
+      {
+        // fetch the fork data for block_id, mark it as unchecked
+        auto fork_data = _fork_db.fetch( block_id );
+        assert(!fork_data.valid()); //make sure we're not unchecking a block that we previously have validated
+        fork_data.is_valid.reset(); //mark as unchecked (i.e. we will check validity again later during switch_to_fork)
+        fork_data.invalid_reason.reset();
+        dlog( "store: ${id} => ${data}", ("id",block_id)("data",fork_data) );
+        _fork_db.store( block_id, fork_data );
+        // then mark every block after it as unchecked as well.
+        std::unordered_set<block_id_type>& next_ids = fork_data.next_blocks;
+        while( next_ids.size() )
+        {
+          std::unordered_set<block_id_type> pending_blocks_for_next_loop_iteration;
+          for( const auto& next_block_id : next_ids )
+          {
+            block_fork_data record = _fork_db.fetch( next_block_id );
+            record.is_valid.reset(); //mark as unchecked (i.e. we will check validity again later during switch_to_fork)
+            record.invalid_reason.reset();
+            pending_blocks_for_next_loop_iteration.insert( record.next_blocks.begin(), record.next_blocks.end() );
+            dlog( "store: ${id} => ${data}", ("id",next_block_id)("data",record) );
+            _fork_db.store( next_block_id, record );
+          }
+          next_ids = pending_blocks_for_next_loop_iteration;
+        }
       }
 
       void chain_database_impl::mark_included( const block_id_type& block_id, bool included )
@@ -587,9 +675,11 @@ namespace bts { namespace blockchain {
 
       void chain_database_impl::switch_to_fork( const block_id_type& block_id )
       { try {
+         if (block_id == _head_block_id) //if block_id is current head block, do nothing
+           return; //this is necessary to avoid unnecessarily popping the head block in this case
+
          ilog( "switch from fork ${id} to ${to_id}", ("id",_head_block_id)("to_id",block_id) );
          vector<block_id_type> history = get_fork_history( block_id );
-         FC_ASSERT( history.size() > 0 );
          while( history.back() != _head_block_id )
          {
             ilog( "    pop ${id}", ("id",_head_block_id) );
@@ -983,6 +1073,7 @@ namespace bts { namespace blockchain {
 
       void chain_database_impl::pop_block()
       { try {
+         assert(_head_block_header.block_num != 0);
          if( _head_block_header.block_num == 0 )
          {
             wlog( "attempting to pop block 0" );
@@ -1294,6 +1385,8 @@ namespace bts { namespace blockchain {
 
       my->_auth_db.close();
       my->_asset_proposal_db.close();
+
+      my->_revalidatable_future_blocks_db.close();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    account_record chain_database::get_delegate_record_for_signee( const public_key_type& block_signee )const
@@ -1470,13 +1563,14 @@ namespace bts { namespace blockchain {
     */
    block_fork_data chain_database::push_block( const full_block& block_data )
    { try {
-      if( get_head_block_num() > BTS_BLOCKCHAIN_MAX_UNDO_HISTORY &&
-          block_data.block_num <= (get_head_block_num() - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY) )
+      uint32_t head_block_num = get_head_block_num();
+      if(  head_block_num > BTS_BLOCKCHAIN_MAX_UNDO_HISTORY &&
+          block_data.block_num <= (head_block_num - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY) )
         FC_THROW_EXCEPTION(block_older_than_undo_history,
                            "block ${new_block_hash} (number ${new_block_num}) is on a fork older than "
                            "our undo history would allow us to switch to (current head block is number ${head_block_num}, undo history is ${undo_history})",
                            ("new_block_hash", block_data.id())("new_block_num", block_data.block_num)
-                           ("head_block_num", get_head_block_num())("undo_history", BTS_BLOCKCHAIN_MAX_UNDO_HISTORY));
+                           ("head_block_num", head_block_num)("undo_history", BTS_BLOCKCHAIN_MAX_UNDO_HISTORY));
 
       // only allow a single fiber attempt to push blocks at any given time,
       // this method is not re-entrant.
@@ -1494,43 +1588,65 @@ namespace bts { namespace blockchain {
       auto current_head_id = my->_head_block_id;
 
       std::pair<block_id_type, block_fork_data> longest_fork = my->store_and_index( block_id, block_data );
-      optional<block_fork_data> new_fork_data = get_block_fork_data(block_id);
-      FC_ASSERT(new_fork_data, "can't get fork data for a block we just successfully pushed");
+      assert(get_block_fork_data(block_id) && "can't get fork data for a block we just successfully pushed");
 
-      //ilog( "previous ${p} ==? current ${c}", ("p",block_data.previous)("c",current_head_id) );
-      if( block_data.previous == current_head_id )
-      {
-         // attempt to extend chain
-         my->extend_chain( block_data );
-         new_fork_data = get_block_fork_data(block_id);
-         FC_ASSERT(new_fork_data, "can't get fork data for a block we just successfully pushed");
+      /*
+      store_and_index has returned the potential chain with the longest_fork (highest block number other than possible the current head block number)
+      if (longest_fork is linked and not known to be invalid and is higher than the current head block number)
+        highest_unchecked_block_number = longest_fork blocknumber;
+        do             
+          foreach next_fork_to_try in all blocks at same block number
+              if (next_fork_try is linked and not known to be invalid)
+                try 
+                  switch_to_fork(next_fork_to_try) //this throws if block in fork is invalid, then we'll try another fork
+                  return
+                catch block from future and add to database for potential revalidation on startup or if we get from another peer later
+                catch any other invalid block and do nothing
+          --highest_unchecked_block_number
+        while(highest_unchecked_block_number > 0)
+      */
+      if (longest_fork.second.can_link())
+      {      
+        full_block longest_fork_block = my->_block_id_to_block_data_db.fetch(longest_fork.first);
+        uint32_t highest_unchecked_block_number = longest_fork_block.block_num;
+        if (highest_unchecked_block_number > head_block_num)
+        {
+          do 
+          {
+            optional<vector<block_id_type>> parallel_blocks = my->_fork_number_db.fetch_optional(highest_unchecked_block_number);
+            if (parallel_blocks)
+              //for all blocks at same block number
+              for (block_id_type next_fork_to_try_id : *parallel_blocks)
+              {
+                block_fork_data next_fork_to_try = my->_fork_db.fetch(next_fork_to_try_id);
+                if (next_fork_to_try.can_link())
+                  try 
+                  {
+                    my->switch_to_fork(next_fork_to_try_id); //verify this works if next_fork_to_try is current head block
+                    /* Store processing time */
+                    auto record = get_block_record( block_id );
+                    FC_ASSERT( record.valid() );
+                    record->processing_time = time_point::now() - processing_start_time;
+                    my->_block_id_to_block_record_db.store( block_id, *record );
+                    return *get_block_fork_data(block_id);
+                  }
+                  catch (time_in_future& e)
+                  {
+                    // Blocks from the future can become valid later, so keep a list of these blocks that we can iterate over
+                    // whenever we think our clock time has changed from it's standard flow
+                    my->_revalidatable_future_blocks_db.store(block_id, 0);
+                    ilog("fork rejected because it has block with time in future, storing block id for revalidation later");
+                  }
+                  catch (fc::exception& e) //swallow any invalidation exceptions except for time_in_future invalidations
+                  {                     
+                    ilog("fork permanently rejected as it has permanently invalid block");
+                  }
+              }
+            --highest_unchecked_block_number;
+          } while(highest_unchecked_block_number > 0); // while condition should only fail if we've never received a valid block yet
+        } //end if fork is longer than current chain (including possibly by extending chain)
       }
-      else if( longest_fork.second.can_link() &&
-               my->_block_id_to_block_record_db.fetch(longest_fork.first).block_num > my->_head_block_header.block_num )
-      {
-         try {
-            my->switch_to_fork( longest_fork.first );
-            new_fork_data = get_block_fork_data(block_id);
-            FC_ASSERT(new_fork_data, "can't get fork data for a block we just successfully pushed");
-         }
-         catch ( const fc::canceled_exception& )
-         {
-            throw;
-         }
-         catch ( const fc::exception& e )
-         {
-            wlog( "attempt to switch to fork failed: ${e}, reverting", ("e",e.to_detail_string() ) );
-            my->switch_to_fork( current_head_id );
-         }
-      }
-
-      /* Store processing time */
-      auto record = get_block_record( block_id );
-      FC_ASSERT( record.valid() );
-      record->processing_time = time_point::now() - processing_start_time;
-      my->_block_id_to_block_record_db.store( block_id, *record );
-
-      return *new_fork_data;
+      return *get_block_fork_data(block_id);
    } FC_CAPTURE_AND_RETHROW( (block_data) )  }
 
   std::vector<block_id_type> chain_database::get_fork_history( const block_id_type& id )
@@ -1798,7 +1914,7 @@ namespace bts { namespace blockchain {
         {
             case base_object:
             {
-                ilog("@n storing object record in chain DB");
+                ilog("@n storing a base_object record in chain DB");
                 my->_object_db.store( obj._id, obj );
                 break;
             }
@@ -1810,7 +1926,8 @@ namespace bts { namespace blockchain {
             }
             case account_object:
             case asset_object:
-            case auction_object:
+            case throttled_auction_object:
+            case user_auction_object:
             case site_object:
             default:
                 FC_ASSERT(!"You cannot store these object types via object interface yet!");

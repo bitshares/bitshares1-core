@@ -201,6 +201,7 @@ namespace bts { namespace blockchain {
          virtual object_id_type             new_object_id( obj_type type );
 
          virtual multisig_condition         get_object_owners( const object_record& obj );
+         virtual object_id_type             get_owner_object( const object_id_type& obj );
 
          virtual uint32_t                   get_head_block_num()const                                       = 0;
 
