@@ -441,6 +441,28 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
         return key_record.valid() && key_record->has_private_key();
     };
 
+    const auto scan_add_collateral = [&]( const add_collateral_operation& op ) -> bool
+    {
+        const market_order order( cover_order, op.cover_index, op.amount );
+        const string delta_label = "MARGIN-" + string( order.get_id() );
+
+        const auto scan_delta = [&]( const asset& delta_amount ) -> bool
+        {
+            raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+            return false;
+        };
+        eval_state.scan_deltas( op_index, scan_delta );
+
+        if( record.operation_notes.count( op_index ) == 0 )
+        {
+            const string note = "collateralize " + delta_label;
+            record.operation_notes[ op_index ] = note;
+        }
+
+        const owallet_key_record& key_record = _wallet_db.lookup_key( op.cover_index.owner );
+        return key_record.valid() && key_record->has_private_key();
+    };
+
     const auto scan_update_feed = [&]( const update_feed_operation& op ) -> bool
     {
         const oasset_record asset_record = _blockchain->get_asset_record( op.feed.feed_id );
@@ -531,7 +553,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
                 relevant_to_me |= scan_cover( op.as<cover_operation>() );
                 break;
             case add_collateral_op_type:
-                // TODO
+                relevant_to_me |= scan_add_collateral( op.as<add_collateral_operation>() );
                 break;
             case define_delegate_slate_op_type:
                 // Don't care; do nothing
