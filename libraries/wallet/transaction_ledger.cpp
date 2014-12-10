@@ -257,16 +257,27 @@ void wallet_impl::scan_registered_accounts()
 {
    _blockchain->scan_accounts( [&]( const blockchain::account_record& scanned_account_record )
    {
-        // TODO: check owner key as well!
-        auto key_rec =_wallet_db.lookup_key( scanned_account_record.active_key() );
-        if( key_rec.valid() && key_rec->has_private_key() )
+        const auto account_record = _wallet_db.lookup_account( scanned_account_record.name );
+        if( account_record.valid() )
         {
-           auto existing_account_record = _wallet_db.lookup_account( key_rec->account_address );
-           if( existing_account_record.valid() )
-              _wallet_db.store_account( scanned_account_record );
+            _wallet_db.store_account( scanned_account_record );
+            return;
         }
+
+        auto key_record = _wallet_db.lookup_key( scanned_account_record.owner_address() );
+        if( !key_record.valid() || !key_record->has_private_key() )
+        {
+            key_record = _wallet_db.lookup_key( scanned_account_record.active_address() );
+            if( !key_record.valid() || !key_record->has_private_key() )
+            {
+                if( scanned_account_record.is_delegate() )
+                    key_record = _wallet_db.lookup_key( scanned_account_record.signing_address() );
+            }
+        }
+
+        if( key_record.valid() && key_record->has_private_key() )
+            _wallet_db.store_account( scanned_account_record );
    } );
-   ilog( "account scan complete" );
 }
 
 void wallet_impl::scan_block( uint32_t block_num, const vector<private_key_type>& keys, const time_point_sec& received_time )
