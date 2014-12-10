@@ -93,6 +93,8 @@ namespace bts { namespace blockchain {
       bts::blockchain::operation_factory::instance().register_operation<update_asset_ext_operation>();
       bts::blockchain::operation_factory::instance().register_operation<create_asset_proposal>();
 
+      bts::blockchain::operation_factory::instance().register_operation<set_edge_operation>();
+
       return true;
    }();
 

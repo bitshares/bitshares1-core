@@ -43,4 +43,4 @@ Technical support can be obtained from the [BitSharesTalk Technical Support Foru
 
 License
 -------
-The BitShares source code is in the public domain under the Unlicense. See the [LICENSE file](https://github.com/BitShares/bitshares/blob/master/LICENSE.md) for more information.
+The BitShares source code is in the public domain under the Unlicense. See the [LICENSE](https://github.com/BitShares/bitshares/blob/master/LICENSE.txt) for more information.

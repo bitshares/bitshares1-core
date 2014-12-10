@@ -179,8 +179,9 @@ namespace bts { namespace blockchain {
          virtual vector<operation>          get_recent_operations( operation_type_enum t )                  = 0;
 
          virtual void                       store_object_record( const object_record& obj )                 = 0;
-         virtual oobject_record             get_object_record( const object_id_type& id )                   = 0;
+         virtual oobject_record             get_object_record( const object_id_type& id )const              = 0;
 
+         virtual void                       store_edge_record( const edge_record& edge )                    = 0;
 
          oedge_record                       get_edge( const object_id_type& id );
          virtual oedge_record               get_edge( const object_id_type& from,
@@ -204,6 +205,7 @@ namespace bts { namespace blockchain {
          virtual object_id_type             new_object_id( obj_type type );
 
          virtual multisig_condition         get_object_owners( const object_record& obj );
+         virtual object_id_type             get_owner_object( const object_id_type& obj );
 
          virtual uint32_t                   get_head_block_num()const                                       = 0;
 

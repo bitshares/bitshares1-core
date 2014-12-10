@@ -372,15 +372,20 @@ namespace bts { namespace blockchain {
         recent_op_queue.pop_front();
    }
 
-   oobject_record pending_chain_state::get_object_record(const object_id_type& id)
+   oobject_record pending_chain_state::get_object_record(const object_id_type& id)const
    {
-       if( objects.find(id) != objects.end() )
-           return oobject_record(objects[id]);
-       return oobject_record();
+       chain_interface_ptr prev_state = _prev_state.lock();
+       auto itr = objects.find( id );
+       if( itr != objects.end() )
+           return oobject_record(itr->second);
+       else if( prev_state )
+           return prev_state->get_object_record( id );
+        return oobject_record();
    }
 
    void pending_chain_state::store_object_record(const object_record& obj)
    {
+        ilog("@n storing object in pending_chain_state");
         // Set indices
         switch( obj.type() )
         {
@@ -390,25 +395,45 @@ namespace bts { namespace blockchain {
                 break;
             case edge_object:
             {
+                ilog("@n it is an edge");
                 auto edge = obj.as<edge_record>();
-                edge_index[ edge.index_key() ] = edge._id;
-                reverse_edge_index[ edge.reverse_index_key() ] = edge._id;
+                store_edge_record( edge );
                 break;
             }
             case base_object:
+            {
+                ilog("@n it is a base object");
+                objects[obj._id] = obj;
                 break;
+            }
             default:
                 break;
         }
 
-       objects[obj._id] = obj;
    }
+
+    void                       pending_chain_state::store_edge_record( const edge_record& edge )
+    {
+        edge_index[ edge.index_key() ] = edge._id;
+        reverse_edge_index[ edge.reverse_index_key() ] = edge._id;
+        objects[edge._id] = edge;
+        ilog("@n after storing edge in pending state:");
+        ilog("@n      as an object: ${o}", ("o", objects[edge._id]));
+        ilog("@n      as an edge: ${e}", ("e", objects[edge._id].as<edge_record>()));
+    }
 
     oedge_record               pending_chain_state::get_edge( const object_id_type& from,
                                          const object_id_type& to,
                                          const string& name )const
     {
-        FC_ASSERT(!"unimplemented!");
+        edge_index_key key;
+        key.from = from; key.to = to; key.name = name;
+        auto itr = edge_index.find( key );
+        if( itr == edge_index.end() )
+            return oedge_record();
+        auto obj = get_object_record( itr->second );
+        FC_ASSERT(obj.valid(), "This edge was in the index, but it has no object record");
+        return obj->as<edge_record>();
     }
     map<string, edge_record>   pending_chain_state::get_edges( const object_id_type& from,
                                           const object_id_type& to )const

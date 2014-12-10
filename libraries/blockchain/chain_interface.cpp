@@ -168,6 +168,13 @@ namespace bts { namespace blockchain {
       return next_id;
    }
 
+   // Get an object for whom get_object_owners(o) will not throw and will represent
+   // the condition that is also the owner for this given object
+   object_id_type       chain_interface::get_owner_object( const object_id_type& obj )
+   {
+       FC_ASSERT(!"unimplemented");
+   }
+
    multisig_condition   chain_interface::get_object_owners( const object_record& obj )
    { try {
        multisig_condition owners;

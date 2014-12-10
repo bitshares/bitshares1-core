@@ -1,6 +1,8 @@
 #pragma once
 #include <bts/blockchain/types.hpp>
 #include <bts/blockchain/object_record.hpp>
+#include <fc/reflect/reflect.hpp>
+#include <fc/io/raw_fwd.hpp>
 
 
 namespace bts { namespace blockchain {
@@ -15,8 +17,8 @@ namespace bts { namespace blockchain {
         variant            value;
 
         edge_record() { this->set_id( edge_object, 0 ); }
-        edge_index_key   index_key();
-        edge_index_key   reverse_index_key();
+        edge_index_key   index_key()const;
+        edge_index_key   reverse_index_key()const;
     };
     typedef fc::optional<edge_record> oedge_record;
 
@@ -38,5 +40,5 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
-FC_REFLECT( bts::blockchain::edge_record, (from)(to)(name)(value) );
 FC_REFLECT( bts::blockchain::edge_index_key, (from)(to)(name) );
+FC_REFLECT( bts::blockchain::edge_record, (from)(to)(name)(value) );

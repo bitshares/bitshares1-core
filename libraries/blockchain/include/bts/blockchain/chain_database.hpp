@@ -44,7 +44,7 @@ namespace bts { namespace blockchain {
       fc::optional<bool>           is_valid;
       fc::optional<fc::exception>  invalid_reason;
       bool                         is_included; ///< is included in the current chain database
-      bool                         is_known; ///< do we know the content of this block
+      bool                         is_known; ///< do we know the content of this block (false if placeholder)
    };
 
    struct fork_record
@@ -300,9 +300,10 @@ namespace bts { namespace blockchain {
          virtual void                       store_recent_operation( const operation& o )override;
 
          virtual void                       store_object_record( const object_record& obj )override;
-         virtual oobject_record             get_object_record( const object_id_type& id )override;
+         virtual oobject_record             get_object_record( const object_id_type& id )const override;
 
 
+        virtual void                       store_edge_record( const edge_record& edge )override;
         virtual oedge_record               get_edge( const object_id_type& from,
                                                   const object_id_type& to,
                                                   const string& name )const          override;

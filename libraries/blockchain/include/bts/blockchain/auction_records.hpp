@@ -9,9 +9,11 @@ namespace bts { namespace blockchain {
 
     struct user_auction_record : object_record
     {
-        static const obj_type type = throttled_auction_object;
+        static const obj_type type = user_auction_object;
 
         object_id_type                   item;
+        object_id_type                   original_owner;
+        object_id_type                   beneficiary;
         time_point_sec                   expiration;
         asset                            buy_now;
         int                              user_fee; // fee or kickback as part per million
@@ -23,11 +25,13 @@ namespace bts { namespace blockchain {
         asset                            bid_total;
         asset                            total_fees;
 
-        bool                             is_complete();
-        object_id_type                   original_winner(); // what the owner of item was when this auction was won
-    }
+        bool                             object_claimed;  // The auction winner can claim
+        bool                             balance_claimed;
 
+        bool                             is_complete( const chain_interface& chain );
+    };
 
+    // This is currently only created by site operations, not by auction_start!
     struct throttled_auction_record : object_record
     {
         static const obj_type type = throttled_auction_object;
@@ -41,9 +45,9 @@ namespace bts { namespace blockchain {
         time_point_sec                   time_in_spotlight;
         int                              fee; // fee or kickback as part per million
 
-        bool                             is_complete();
+        bool                             is_complete( const chain_interface& chain );
         object_id_type                   original_winner(); // what the owner of item was when this was won
-    }
+    };
 
 
     struct throttled_auction_index_key
@@ -52,15 +56,42 @@ namespace bts { namespace blockchain {
         asset                 bid;
         time_point_sec        time;
 
-        friend bool operator == (const auction_index_key& a, const auction_index_key& b)
+        friend bool operator == (const throttled_auction_index_key& a, const throttled_auction_index_key& b)
         {
-            return std::tie(a.item, a.price) == std::tie(b.item, b.price);
+            return std::tie(a.item, a.bid) == std::tie(b.item, b.bid);
         }
-        friend bool operator < (const auction_index_key& a, const auction_index_key& b)
+        friend bool operator < (const throttled_auction_index_key& a, const throttled_auction_index_key& b)
         {
-            return std::tie(a.price, b.bid_time, b.item) > std::tie(b.price, a.bid_time, a.item);
+            return std::tie(a.bid, b.time, b.item) > std::tie(b.bid, a.time, a.item);
         }
     };
 
 
 }} //bts::blockchain
+
+FC_REFLECT( bts::blockchain::user_auction_record,
+        (item)
+        (original_owner)
+        (beneficiary)
+        (expiration)
+        (buy_now)
+        (user_fee)
+        (previous_bidder)
+        (previous_bid)
+        (previous_bid_time)
+        (bid_count)
+        (bid_total)
+        (total_fees)
+        (object_claimed)
+        (balance_claimed)
+        )
+FC_REFLECT( bts::blockchain::throttled_auction_record,
+        (item)
+        (bidder)
+        (bid)
+        (bid_time)
+        (prior_bid)
+        (time_in_spotlight)
+        (fee)
+        )
+FC_REFLECT( bts::blockchain::throttled_auction_index_key, (item)(bid)(time) )

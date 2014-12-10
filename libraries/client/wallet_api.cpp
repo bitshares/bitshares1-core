@@ -575,19 +575,9 @@ transaction_builder detail::client_impl::wallet_set_edge(
     edge.name = name;
     edge.value = value;
 
-    // TODO if edge exists...
-    bool exists = false;
-    uint32_t existing_id = 1;
-    if( exists )
-    {
-        edge.set_id( edge_object, existing_id );
-        builder->set_object( paying_account, object_record(edge), false );
-    }
-    else
-    {
-        builder->set_object( paying_account, object_record(edge), true );
-    }
+    builder->set_edge( paying_account, edge );
     builder->finalize().sign();
+    network_broadcast_transaction( builder->transaction_record.trx );
     return *builder;
 } FC_CAPTURE_AND_RETHROW( (paying_account)(from)(to)(name)(value) ) }
 
@@ -1132,6 +1122,38 @@ vector<bts::wallet::escrow_summary> client_impl::wallet_escrow_summary( const st
 account_balance_summary_type client_impl::wallet_account_balance( const string& account_name )const
 {
   return _wallet->get_account_balances( account_name, false );
+}
+
+account_extended_balance_type client_impl::wallet_account_balance_extended( const string& account_name )const
+{
+    const map<string, vector<balance_record>>& balance_records = _wallet->get_account_balance_records( account_name, false, -1 );
+
+    map<string, map<string, map<asset_id_type, share_type>>> raw_balances;
+    for( const auto& item : balance_records )
+    {
+        const string& account_name = item.first;
+        for( const auto& balance_record : item.second )
+        {
+            const asset& balance = balance_record.get_spendable_balance( _chain_db->get_pending_state()->now() );
+            raw_balances[ account_name ][ balance_record.condition.type_label() ][ balance.asset_id ] += balance.amount;
+        }
+    }
+
+    map<string, map<string, vector<asset>>> extended_balances;
+    for( const auto& item : raw_balances )
+    {
+        const string& account_name = item.first;
+        for( const auto& type_item : item.second )
+        {
+            const string& type_label = type_item.first;
+            for( const auto& balance_item : type_item.second )
+            {
+                extended_balances[ account_name ][ type_label ].emplace_back( balance_item.second, balance_item.first );
+            }
+        }
+    }
+
+    return extended_balances;
 }
 
 account_balance_id_summary_type client_impl::wallet_account_balance_ids( const string& account_name )const
