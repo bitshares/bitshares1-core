@@ -148,7 +148,7 @@ namespace bts { namespace blockchain {
           FC_CAPTURE_AND_THROW( missing_signature, (*this) );
 
       account->delegate_info->pay_balance -= this->amount;
-      eval_state.net_delegate_votes[ account_id ].votes_for -= this->amount;
+      eval_state.net_delegate_votes[ account_id ] -= this->amount;
       eval_state.add_balance( asset( this->amount, 0 ) );
 
       eval_state._current_state->store_account_record( *account );

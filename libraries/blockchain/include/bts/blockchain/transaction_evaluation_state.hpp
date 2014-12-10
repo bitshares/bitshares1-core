@@ -39,16 +39,17 @@ namespace bts { namespace blockchain {
           * the operation such as updating fees paid etc.
           */
          virtual void post_evaluate();
+
          /** can be specalized to handle many different forms of
           * fee payment.
           */
          virtual void validate_required_fee();
+
          /**
           * apply collected vote changes
           */
          virtual void update_delegate_votes();
-         virtual void verify_delegate_id( account_id_type id )const;
-         // virtual void verify_slate_id( slate_id_type id )const;
+         virtual void verify_delegate_id( const account_id_type& id )const;
 
          bool check_signature( const address& a )const;
          bool check_multisig( const multisig_condition& a )const;
@@ -66,29 +67,29 @@ namespace bts { namespace blockchain {
 
          void validate_asset( const asset& a )const;
 
-         signed_transaction                         trx;
-         uint32_t                                   current_op_index = 0;
+         void scan_deltas( uint32_t op_index, function<void( const asset& )> callback )const;
 
-         unordered_set<address>                     signed_keys;
+         signed_transaction                             trx;
+         uint32_t                                       current_op_index = 0;
+
+         unordered_set<address>                         signed_keys;
 
          // increases with funds are withdrawn, decreases when funds are deposited or fees paid
-         optional<fc::exception>                    validation_error;
-
-         unordered_map<balance_id_type, asset>      provided_deposits;
+         optional<fc::exception>                        validation_error;
 
          // track deposits and withdraws by asset type
-         unordered_map<asset_id_type, asset>        deposits;
-         unordered_map<asset_id_type, asset>        withdraws;
-         unordered_map<asset_id_type, share_type>   yield;
+         unordered_map<asset_id_type, share_type>       deposits;
+         unordered_map<asset_id_type, share_type>       withdraws;
+         unordered_map<asset_id_type, share_type>       yield;
 
-         map<uint32_t, asset>                       deltas;
+         map<uint32_t, map<asset_id_type, share_type>>  deltas;
 
-         asset                                      required_fees;
+         asset                                          required_fees;
          /**
           *  The total fees paid by in alternative asset types (like BitUSD) calculated
           *  by using the lowest ask.
           */
-         asset                                      alt_fees_paid;
+         asset                                          alt_fees_paid;
 
          /**
           *  As operation withdraw funds, input balance grows...
@@ -99,42 +100,34 @@ namespace bts { namespace blockchain {
           *  @note - this value should always equal the sum of deposits-withdraws
           *  and is maintained for the purpose of seralization.
           */
-         map<asset_id_type, share_type>             balance;
+         map<asset_id_type, share_type>                 balance;
 
-         struct vote_state
-         {
-            vote_state():votes_for(0){}
-
-            int64_t votes_for;
-         };
          /**
           *  Tracks the votes for or against each delegate based upon
           *  the deposits and withdraws to addresses.
           */
-         unordered_map<account_id_type, vote_state> net_delegate_votes;
+         unordered_map<account_id_type, int64_t>        net_delegate_votes;
 
          // not serialized
-         chain_interface*                           _current_state;
-         digest_type                                _chain_id;
-         bool                                       _skip_signature_check = false;
+         chain_interface*                               _current_state = nullptr;
+         digest_type                                    _chain_id;
+         bool                                           _skip_signature_check = false;
    };
    typedef shared_ptr<transaction_evaluation_state> transaction_evaluation_state_ptr;
 
 } } // bts::blockchain
 
-FC_REFLECT( bts::blockchain::transaction_evaluation_state::vote_state, (votes_for) )
 FC_REFLECT( bts::blockchain::transaction_evaluation_state,
-           (trx)
-           (current_op_index)
-           (signed_keys)
-           (validation_error)
-           (provided_deposits)
-           (deposits)
-           (withdraws)
-           (yield)
-           (deltas)
-           (required_fees)
-           (alt_fees_paid)
-           (balance)
-           (net_delegate_votes)
-          )
+        (trx)
+        (current_op_index)
+        (signed_keys)
+        (validation_error)
+        (deposits)
+        (withdraws)
+        (yield)
+        (deltas)
+        (required_fees)
+        (alt_fees_paid)
+        (balance)
+        (net_delegate_votes)
+        )

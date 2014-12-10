@@ -117,6 +117,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
                                                  transaction_ledger_entry& record,
                                                  bool store_record )
 { try {
+    /*
     map<string, map<asset_id_type, share_type>> raw_delta_amounts;
     uint16_t op_index = 0;
     uint16_t withdrawal_count = 0;
@@ -151,7 +152,13 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
     const auto scan_withdraw = [&]( const withdraw_operation& op ) -> bool
     {
         ++withdrawal_count;
-        return collect_balance( op.balance_id, eval_state.deltas.at( op_index ) );
+        bool relevant_to_me = false;
+        const auto scan_delta = [&]( const asset& delta_amount )
+        {
+            relevant_to_me |= collect_balance( op.balance_id, delta_amount );
+        };
+        eval_state.scan_deltas( op_index, scan_delta );
+        return relevant_to_me;
     };
 
     // TODO: Recipient address label and memo message needs to be saved at time of creation by sender
@@ -264,6 +271,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
         const string& account_name = account_record.valid() ? account_record->name : std::to_string( op.account_id );
 
         const string delta_label = "INCOME-" + account_name;
+        const auto scan_delta = [&]( const asset& delta_amount )
         const asset& delta_amount = eval_state.deltas.at( op_index );
         raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
 
@@ -623,6 +631,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
         ulog( "wallet_transaction_record_v2:\n${rec}", ("rec",fc::json::to_pretty_string( record )) );
         _wallet_db.experimental_transactions[ record.id ] = record;
     }
+    */
 } FC_CAPTURE_AND_RETHROW( (eval_state)(account_balances)(account_names)(record)(store_record) ) }
 
 transaction_ledger_entry wallet_impl::apply_transaction_experimental( const signed_transaction& transaction )
