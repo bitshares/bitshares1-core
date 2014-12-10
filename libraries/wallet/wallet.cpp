@@ -187,8 +187,7 @@ namespace detail {
 
    void wallet_impl::scan_chain_task( uint32_t start, uint32_t end, bool fast_scan )
    { try {
-      auto min_end = std::min<size_t>( _blockchain->get_head_block_num(), end );
-
+      const auto min_end = std::min<size_t>( _blockchain->get_head_block_num(), end );
       fc::oexception scan_exception;
       try
       {
@@ -197,7 +196,7 @@ namespace detail {
               const auto& accounts = _wallet_db.get_accounts();
               for( const auto& acct : accounts )
               {
-                 auto blockchain_acct_rec = _blockchain->get_account_record( acct.second.id );
+                 auto blockchain_acct_rec = _blockchain->get_account_record( acct.second.owner_address() );
                  if( blockchain_acct_rec.valid() )
                      _wallet_db.store_account( *blockchain_acct_rec );
               }
@@ -530,9 +529,8 @@ namespace detail {
 
    void wallet_impl::scan_state()
    { try {
-      ilog( "WALLET: Scanning blockchain state" );
-      scan_balances();
       scan_registered_accounts();
+      scan_balances();
    } FC_CAPTURE_AND_RETHROW() }
 
    /**
@@ -1415,35 +1413,32 @@ namespace detail {
 
    void wallet::scan_chain( uint32_t start, uint32_t end, bool fast_scan )
    { try {
-      FC_ASSERT( is_open() );
-      FC_ASSERT( is_unlocked() );
-      elog( "WALLET SCANNING CHAIN!" );
+       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
 
-      if( start == 0 )
-      {
-         my->scan_state();
-         ++start;
-      }
+       if( !get_transaction_scanning() )
+       {
+           my->_scan_progress = -1;
+           ulog( "Wallet transaction scanning is disabled!" );
+           return;
+       }
 
-      if( !get_transaction_scanning() )
-      {
-         my->_scan_progress = -1;
-         ulog( "Wallet transaction scanning is disabled!" );
-         return;
-      }
+       try
+       {
+           my->_scan_in_progress.cancel_and_wait( "wallet::scan_chain()" );
+       }
+       catch( const fc::exception& )
+       {
+       }
 
-      // cancel the current scan...
-      try
-      {
-        my->_scan_in_progress.cancel_and_wait("wallet::scan_chain()");
-      }
-      catch (const fc::exception& e)
-      {
-        wlog("Unexpected exception caught while canceling the previous scan_chain_task : ${e}", ("e", e.to_detail_string()));
-      }
+       if( start == 0 )
+       {
+           my->scan_state();
+           ++start;
+       }
 
-      my->_scan_in_progress = fc::async( [=](){ my->scan_chain_task( start, end, fast_scan ); }, "scan_chain_task" );
-      my->_scan_in_progress.on_complete([](fc::exception_ptr ep){if (ep) elog( "Error during chain scan: ${e}", ("e", ep->to_detail_string()));});
+       my->_scan_in_progress = fc::async( [=](){ my->scan_chain_task( start, end, fast_scan ); }, "scan_chain_task" );
+       my->_scan_in_progress.on_complete([](fc::exception_ptr ep){if (ep) elog( "Error during chain scan: ${e}", ("e", ep->to_detail_string()));});
    } FC_CAPTURE_AND_RETHROW( (start)(end) ) }
 
    vote_summary wallet::get_vote_proportion( const string& account_name )
