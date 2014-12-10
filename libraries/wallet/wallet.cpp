@@ -2081,10 +2081,10 @@ namespace detail {
    } FC_CAPTURE_AND_RETHROW( (balance_id)(voter_address)(selection_method) ) }
 
 
-   wallet_transaction_record wallet::update_block_signing_key(
+   wallet_transaction_record wallet::update_signing_key(
            const string& authorizing_account_name,
            const string& delegate_name,
-           const public_key_type& block_signing_key,
+           const public_key_type& signing_key,
            bool sign
            )
    { try {
@@ -2092,13 +2092,13 @@ namespace detail {
       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
 
       transaction_builder_ptr builder = create_transaction_builder();
-      builder->update_block_signing_key( authorizing_account_name, delegate_name, block_signing_key );
+      builder->update_signing_key( authorizing_account_name, delegate_name, signing_key );
       builder->finalize();
 
       if( sign )
          return builder->sign();
       return builder->transaction_record;
-   } FC_CAPTURE_AND_RETHROW( (authorizing_account_name)(delegate_name)(block_signing_key)(sign) ) }
+   } FC_CAPTURE_AND_RETHROW( (authorizing_account_name)(delegate_name)(signing_key)(sign) ) }
 
    void wallet::repair_records( const optional<string>& collecting_account_name )
    { try {

@@ -154,8 +154,7 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_account_record( *account );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-
-   void update_block_signing_key::evaluate( transaction_evaluation_state& eval_state )
+   void update_signing_key_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
       oaccount_record account_rec = eval_state._current_state->get_account_record( this->account_id );
       if( !account_rec.valid() )
@@ -167,14 +166,14 @@ namespace bts { namespace blockchain {
       if( !account_rec->is_delegate() )
           FC_CAPTURE_AND_THROW( not_a_delegate, (*account_rec) );
 
-      oaccount_record existing_record = eval_state._current_state->get_account_record( this->block_signing_key );
+      oaccount_record existing_record = eval_state._current_state->get_account_record( this->signing_key );
       if( existing_record.valid() )
           FC_CAPTURE_AND_THROW( account_key_in_use, (*existing_record) );
 
       if( !eval_state.check_signature( account_rec->signing_address() ) && !eval_state.account_or_any_parent_has_signed( *account_rec ) )
           FC_CAPTURE_AND_THROW( missing_signature, (*this) );
 
-      account_rec->set_signing_key( eval_state._current_state->get_head_block_num(), this->block_signing_key );
+      account_rec->set_signing_key( eval_state._current_state->get_head_block_num(), this->signing_key );
       account_rec->last_update = eval_state._current_state->now();
 
       eval_state._current_state->store_account_record( *account_rec );

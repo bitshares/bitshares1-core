@@ -60,7 +60,7 @@ namespace bts { namespace blockchain {
 
       release_escrow_op_type        = 23,
 
-      update_block_signing_key_type = 24,
+      update_signing_key_op_type    = 24,
 
       // relative orders
       relative_bid_op_type          = 25,
@@ -167,7 +167,7 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (reserved_op_4_type)
                  (reserved_op_5_type)
                  (release_escrow_op_type)
-                 (update_block_signing_key_type)
+                 (update_signing_key_op_type)
                  (relative_bid_op_type)
                  (relative_ask_op_type)
                  (update_balance_vote_op_type)

@@ -203,11 +203,11 @@ wallet_transaction_record detail::client_impl::wallet_collect_vested_balances( c
     return record;
 }
 
-wallet_transaction_record detail::client_impl::wallet_delegate_update_block_signing_key( const string& authorizing_account_name,
-                                                                                         const string& delegate_name,
-                                                                                         const public_key_type& block_signing_key )
+wallet_transaction_record detail::client_impl::wallet_delegate_update_signing_key( const string& authorizing_account_name,
+                                                                                   const string& delegate_name,
+                                                                                   const public_key_type& signing_key )
 {
-   auto record = _wallet->update_block_signing_key( authorizing_account_name, delegate_name, block_signing_key, true );
+   auto record = _wallet->update_signing_key( authorizing_account_name, delegate_name, signing_key, true );
    _wallet->cache_transaction( record );
    network_broadcast_transaction( record.trx );
    return record;
