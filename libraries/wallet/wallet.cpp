@@ -8,8 +8,9 @@
 #include <bts/utilities/git_revision.hpp>
 #include <bts/utilities/key_conversion.hpp>
 
-#include <thread>
+#include <algorithm>
 #include <fstream>
+#include <thread>
 
 namespace bts { namespace wallet {
 
@@ -188,64 +189,72 @@ namespace detail {
    { try {
       auto min_end = std::min<size_t>( _blockchain->get_head_block_num(), end );
 
+      fc::oexception scan_exception;
       try
       {
-        const auto now = blockchain::now();
-        _scan_progress = 0;
+          // Update local accounts
+          {
+              const auto& accounts = _wallet_db.get_accounts();
+              for( const auto& acct : accounts )
+              {
+                 auto blockchain_acct_rec = _blockchain->get_account_record( acct.second.id );
+                 if( blockchain_acct_rec.valid() )
+                     _wallet_db.store_account( *blockchain_acct_rec );
+              }
+          }
 
-        // Collect private keys
-        const auto account_keys = _wallet_db.get_account_private_keys( _wallet_password );
-        vector<private_key_type> private_keys;
-        private_keys.reserve( account_keys.size() );
-        for( const auto& item : account_keys )
-            private_keys.push_back( item.first );
+          const auto now = blockchain::now();
+          _scan_progress = 0;
 
-        if( min_end > start + 1 )
-            ulog( "Beginning scan at block ${n}...", ("n",start) );
+          // Collect private keys
+          const auto account_keys = _wallet_db.get_account_private_keys( _wallet_password );
+          vector<private_key_type> private_keys;
+          private_keys.reserve( account_keys.size() );
+          for( const auto& item : account_keys )
+              private_keys.push_back( item.first );
 
-        for( auto block_num = start; !_scan_in_progress.canceled() && block_num <= min_end; ++block_num )
-        {
-            try
-            {
-                scan_block( block_num, private_keys, now );
-            }
-            catch( ... )
-            {
-            }
+          if( min_end > start + 1 )
+              ulog( "Beginning scan at block ${n}...", ("n",start) );
 
-            _scan_progress = float(block_num-start)/(min_end-start+1);
-            self->set_last_scanned_block_number( block_num );
+          uint32_t last_scanned_block_num = std::min( {self->get_last_scanned_block_number(), start - 1, start} );
+          for( auto block_num = start; !_scan_in_progress.canceled() && block_num <= min_end; ++block_num )
+          {
+              try
+              {
+                  scan_block( block_num, private_keys, now );
+                  last_scanned_block_num = block_num;
+              }
+              catch( const fc::exception& )
+              {
+              }
 
-            if( block_num > start )
-            {
-                if( (block_num - start) % 10000 == 0 )
-                    ulog( "Scanning ${p} done...", ("p",cli::pretty_percent( _scan_progress, 1 )) );
+              _scan_progress = float(block_num-start)/(min_end-start+1);
+              if( block_num > start )
+              {
+                  if( (block_num - start) % 10000 == 0 )
+                      ulog( "Scanning ${p} done...", ("p",cli::pretty_percent( _scan_progress, 1 )) );
 
-                if( !fast_scan && (block_num - start) % 100 == 0 )
-                    fc::usleep( fc::microseconds( 100 ) );
-            }
-        }
+                  if( !fast_scan && (block_num - start) % 100 == 0 )
+                      fc::usleep( fc::microseconds( 100 ) );
+              }
+          }
 
-        // Update local accounts
-        {
-            const auto accounts = _wallet_db.get_accounts();
-            for( auto acct : accounts )
-            {
-               auto blockchain_acct_rec = _blockchain->get_account_record( acct.second.id );
-               if( blockchain_acct_rec.valid() )
-                   _wallet_db.store_account( *blockchain_acct_rec );
-            }
-        }
+          self->set_last_scanned_block_number( last_scanned_block_num );
 
-        _scan_progress = 1;
-        if( min_end > start + 1 )
-            ulog( "Scan completed." );
+          _scan_progress = 1;
+          if( min_end > start + 1 )
+              ulog( "Scan completed." );
       }
-      catch(...)
+      catch( const fc::exception& e )
       {
-        _scan_progress = -1;
-        ulog( "Scan failure." );
-        throw;
+          scan_exception = e;
+      }
+
+      if( scan_exception.valid() )
+      {
+          _scan_progress = -1;
+          ulog( "Scan failure." );
+          throw *scan_exception;
       }
    } FC_CAPTURE_AND_RETHROW( (start)(end)(fast_scan) ) }
 
