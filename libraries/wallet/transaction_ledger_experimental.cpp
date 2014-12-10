@@ -117,7 +117,6 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
                                                  transaction_ledger_entry& record,
                                                  bool store_record )
 { try {
-    /*
     map<string, map<asset_id_type, share_type>> raw_delta_amounts;
     uint16_t op_index = 0;
     uint16_t withdrawal_count = 0;
@@ -152,13 +151,11 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
     const auto scan_withdraw = [&]( const withdraw_operation& op ) -> bool
     {
         ++withdrawal_count;
-        bool relevant_to_me = false;
-        const auto scan_delta = [&]( const asset& delta_amount )
+        const auto scan_delta = [&]( const asset& delta_amount ) -> bool
         {
-            relevant_to_me |= collect_balance( op.balance_id, delta_amount );
+            return collect_balance( op.balance_id, delta_amount );
         };
-        eval_state.scan_deltas( op_index, scan_delta );
-        return relevant_to_me;
+        return eval_state.scan_deltas( op_index, scan_delta );
     };
 
     // TODO: Recipient address label and memo message needs to be saved at time of creation by sender
@@ -166,7 +163,6 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
     const auto scan_deposit = [&]( const deposit_operation& op ) -> bool
     {
         const balance_id_type balance_id = op.balance_id();
-        const asset& delta_amount = eval_state.deltas.at( op_index );
 
         const auto scan_withdraw_with_signature = [&]( const withdraw_with_signature& condition ) -> bool
         {
@@ -223,7 +219,11 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
                 }
             }
 
-            return collect_balance( balance_id, delta_amount );
+            const auto scan_delta = [&]( const asset& delta_amount ) -> bool
+            {
+                return collect_balance( balance_id, delta_amount );
+            };
+            return eval_state.scan_deltas( op_index, scan_delta );
         };
 
         switch( withdraw_condition_types( op.condition.type ) )
@@ -271,11 +271,13 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
         const string& account_name = account_record.valid() ? account_record->name : std::to_string( op.account_id );
 
         const string delta_label = "INCOME-" + account_name;
-        const auto scan_delta = [&]( const asset& delta_amount )
-        const asset& delta_amount = eval_state.deltas.at( op_index );
-        raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+        const auto scan_delta = [&]( const asset& delta_amount ) -> bool
+        {
+            raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+            return account_names.count( account_name ) > 0;
+        };
 
-        return account_names.count( account_name ) > 0;
+        return eval_state.scan_deltas( op_index, scan_delta );
     };
 
     const auto scan_create_asset = [&]( const create_asset_operation& op ) -> bool
@@ -294,27 +296,36 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
 
     const auto scan_issue_asset = [&]( const issue_asset_operation& op ) -> bool
     {
-        const asset& delta_amount = eval_state.deltas.at( op_index );
-        const oasset_record asset_record = _blockchain->get_asset_record( delta_amount.asset_id );
-        string account_name = "GOD";
-        if( asset_record.valid() )
+        const auto scan_delta = [&]( const asset& delta_amount ) -> bool
         {
-            const oaccount_record account_record = _blockchain->get_account_record( asset_record->issuer_account_id );
-            account_name = account_record.valid() ? account_record->name : std::to_string( asset_record->issuer_account_id );
-        }
+            const oasset_record asset_record = _blockchain->get_asset_record( delta_amount.asset_id );
+            string account_name = "GOD";
+            if( asset_record.valid() )
+            {
+                const oaccount_record account_record = _blockchain->get_account_record( asset_record->issuer_account_id );
+                account_name = account_record.valid() ? account_record->name : std::to_string( asset_record->issuer_account_id );
+            }
 
-        const string delta_label = "ISSUER-" + account_name;
-        raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+            const string delta_label = "ISSUER-" + account_name;
+            raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
 
-        return account_names.count( account_name ) > 0;
+            return account_names.count( account_name ) > 0;
+        };
+
+        return eval_state.scan_deltas( op_index, scan_delta );
     };
 
     const auto scan_bid = [&]( const bid_operation& op ) -> bool
     {
         const market_order order( bid_order, op.bid_index, op.amount );
         const string& delta_label = order.get_small_id();
-        const asset& delta_amount = eval_state.deltas.at( op_index );
-        raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+
+        const auto scan_delta = [&]( const asset& delta_amount ) -> bool
+        {
+            raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+            return false;
+        };
+        eval_state.scan_deltas( op_index, scan_delta );
 
         if( record.operation_notes.count( op_index ) == 0 )
         {
@@ -342,8 +353,13 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
     {
         const market_order order( ask_order, op.ask_index, op.amount );
         const string& delta_label = order.get_small_id();
-        const asset& delta_amount = eval_state.deltas.at( op_index );
-        raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+
+        const auto scan_delta = [&]( const asset& delta_amount ) -> bool
+        {
+            raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+            return false;
+        };
+        eval_state.scan_deltas( op_index, scan_delta );
 
         if( record.operation_notes.count( op_index ) == 0 )
         {
@@ -371,8 +387,13 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
     {
         const market_order order( short_order, op.short_index, op.amount );
         const string& delta_label = order.get_small_id();
-        const asset& delta_amount = eval_state.deltas.at( op_index );
-        raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+
+        const auto scan_delta = [&]( const asset& delta_amount ) -> bool
+        {
+            raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+            return false;
+        };
+        eval_state.scan_deltas( op_index, scan_delta );
 
         if( record.operation_notes.count( op_index ) == 0 )
         {
@@ -402,8 +423,13 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
     {
         const market_order order( cover_order, op.cover_index, op.amount );
         const string& delta_label = order.get_small_id();
-        const asset& delta_amount = eval_state.deltas.at( op_index );
-        raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+
+        const auto scan_delta = [&]( const asset& delta_amount ) -> bool
+        {
+            raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+            return false;
+        };
+        eval_state.scan_deltas( op_index, scan_delta );
 
         if( record.operation_notes.count( op_index ) == 0 )
         {
@@ -631,7 +657,6 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
         ulog( "wallet_transaction_record_v2:\n${rec}", ("rec",fc::json::to_pretty_string( record )) );
         _wallet_db.experimental_transactions[ record.id ] = record;
     }
-    */
 } FC_CAPTURE_AND_RETHROW( (eval_state)(account_balances)(account_names)(record)(store_record) ) }
 
 transaction_ledger_entry wallet_impl::apply_transaction_experimental( const signed_transaction& transaction )

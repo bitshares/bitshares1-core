@@ -263,20 +263,20 @@ namespace bts { namespace blockchain {
          FC_CAPTURE_AND_THROW( unknown_asset_id, (asset_to_validate) );
    } FC_CAPTURE_AND_RETHROW( (asset_to_validate) ) }
 
-   void transaction_evaluation_state::scan_deltas( uint32_t op_index, function<void( const asset& )> callback )const
+   bool transaction_evaluation_state::scan_deltas( uint32_t op_index, function<bool( const asset& )> callback )const
    { try {
+       bool ret = false;
        for( const auto& item : deltas )
        {
            const uint32_t index = item.first;
-           if( index == op_index || op_index == -1 )
+           if( index != op_index ) continue;
+           for( const auto& delta_item : item.second )
            {
-               for( const auto& delta_item : item.second )
-               {
-                   const asset delta_amount( delta_item.second, delta_item.first );
-                   callback( delta_amount );
-               }
+               const asset delta_amount( delta_item.second, delta_item.first );
+               ret |= callback( delta_amount );
            }
        }
+       return ret;
    } FC_CAPTURE_AND_RETHROW( (op_index) ) }
 
 } } // bts::blockchain
