@@ -51,7 +51,7 @@ string pretty_age( const time_point_sec& timestamp, bool from_now, const string&
     }
     else
         str = fc::get_approximate_relative_time_string(timestamp);
-    if(FILTER_OUTPUT_FOR_TESTS)
+    if( FILTER_OUTPUT_FOR_TESTS )
         return "<d-ign>" + str + "</d-ign>";
     else
         return str;
@@ -432,7 +432,7 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
         const auto& delegate_name = client->blockchain_get_block_signee( std::to_string( block_record.block_num ) );
 
         out << std::setw( 32 );
-        if(FILTER_OUTPUT_FOR_TESTS) out << "<d-ign>" << delegate_name << "</d-ign>";
+        if( FILTER_OUTPUT_FOR_TESTS ) out << "<d-ign>" << delegate_name << "</d-ign>";
         else out << pretty_shorten( delegate_name, 31 );
 
         out << std::setw(  8 ) << block_record.user_transaction_ids.size();
@@ -594,6 +594,7 @@ string pretty_experimental_transaction_list( const set<pretty_transaction_experi
         { "block",      10 },
         { "inputs",     40 },
         { "outputs",    40 },
+        { "balances",   40 },
         { "notes",      32 },
         { "id",          8 }
     };
@@ -620,6 +621,7 @@ string pretty_experimental_transaction_list( const set<pretty_transaction_experi
 
         while( line_count < transaction.inputs.size()
                || line_count < transaction.outputs.size()
+               || line_count < transaction.balances.size()
                || line_count < transaction.notes.size() )
         {
             out << std::setw( field_widths.at( "timestamp" ) );
@@ -684,6 +686,21 @@ string pretty_experimental_transaction_list( const set<pretty_transaction_experi
                 out << "";
             }
 
+            out << std::setw( field_widths.at( "balances" ) );
+            if( line_count < transaction.balances.size() )
+            {
+                const auto& item = transaction.balances.at( line_count );
+                const string& label = item.first;
+                const asset& delta = item.second;
+                string balance = " => " + client->get_chain()->to_pretty_asset( delta );
+                balance = pretty_shorten( label, field_widths.at( "balances" ) - balance.size() - 1 ) + balance;
+                out << balance;
+            }
+            else
+            {
+                out << "";
+            }
+
             out << std::setw( field_widths.at( "notes" ) );
             if( line_count < transaction.notes.size() )
             {
@@ -703,7 +720,7 @@ string pretty_experimental_transaction_list( const set<pretty_transaction_experi
                     out << "VIRTUAL";
                 else
                 {
-                  if(FILTER_OUTPUT_FOR_TESTS)
+                  if( FILTER_OUTPUT_FOR_TESTS )
                     out << "<d-ign>" << string(*transaction.transaction_id).substr(0, field_widths.at("id")) << "</d-ign>";
                   else
                     out << string( *transaction.transaction_id ).substr( 0, field_widths.at( "id" ) );

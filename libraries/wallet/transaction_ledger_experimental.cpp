@@ -117,6 +117,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
                                                  transaction_ledger_entry& record,
                                                  bool store_record )
 { try {
+    map<string, map<asset_id_type, share_type>> raw_delta_amounts;
     uint16_t op_index = 0;
     uint16_t withdrawal_count = 0;
     vector<memo_status> titan_memos;
@@ -129,20 +130,20 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
             // TODO: Need to save balance labels locally before emptying them so they can be deleted from the chain
             // OR keep the owner information around in the eval state and keep track of that somehow
             const string& delta_label = account_balances.at( balance_id );
-            record.delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+            raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
             return true;
         }
         else if( record.delta_labels.count( op_index ) > 0 ) // Next check custom labels
         {
             const string& delta_label = record.delta_labels.at( op_index );
-            record.delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+            raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
             return account_names.count( delta_label ) > 0;
         }
         else // Fallback to using the balance id as the label
         {
             // TODO: We should use the owner, not the ID -- also see case 1 above
             const string delta_label = string( balance_id );
-            record.delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+            raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
             return false;
         }
     };
@@ -266,7 +267,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
 
         const string delta_label = "INCOME-" + account_name;
         const asset& delta_amount = eval_state.deltas.at( op_index );
-        record.delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+        raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
 
         return account_names.count( account_name ) > 0;
     };
@@ -298,7 +299,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
         const string& account_name = account_record->name;
 
         const string delta_label = "ISSUER-" + account_name;
-        record.delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+        raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
 
         return account_names.count( account_name ) > 0;
     };
@@ -308,7 +309,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
         const market_order order( ask_order, op.ask_index, op.amount );
         const string delta_label = order.get_small_id();
         const asset& delta_amount = eval_state.deltas.at( op_index );
-        record.delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+        raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
 
         if( record.operation_notes.count( op_index ) == 0 )
         {
@@ -354,7 +355,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
     {
         const string delta_label = "INCINERATOR";
         const asset& delta_amount = op.amount;
-        record.delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+        raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
 
         const account_id_type& account_id = op.account_id;
         const oaccount_record account_record = _blockchain->get_account_record( abs( account_id ) );
@@ -496,8 +497,6 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
         else
             return false;
 
-        record.delta_amounts.clear();
-
         for( uint16_t i = 0; i < eval_state.trx.operations.size(); ++i )
         {
             if( operation_type_enum( eval_state.trx.operations.at( i ).type ) == withdraw_op_type )
@@ -513,7 +512,14 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
     for( const auto& delta_item : eval_state.balance )
     {
         const asset delta_amount( delta_item.second, delta_item.first );
-        record.delta_amounts[ "FEE" ][ delta_amount.asset_id ] += delta_amount.amount;
+        raw_delta_amounts[ "FEE" ][ delta_amount.asset_id ] += delta_amount.amount;
+    }
+
+    for( const auto& item : raw_delta_amounts )
+    {
+        const string& delta_label = item.first;
+        for( const auto& delta_item : item.second )
+            record.delta_amounts[ delta_label ].emplace_back( delta_item.second, delta_item.first );
     }
 
     if( relevant_to_me && store_record ) // TODO
@@ -617,11 +623,8 @@ set<pretty_transaction_experimental> wallet::transaction_history_experimental( c
            if( !std::any_of( account_records.begin(), account_records.end(), has_label ) )
                continue;
 
-           for( const auto& delta_item : item.second )
-           {
-               const asset delta_amount( delta_item.second, delta_item.first );
+           for( const asset& delta_amount : item.second )
                balances[ label ][ delta_amount.asset_id ] += delta_amount.amount;
-           }
        }
 
        for( const auto& item : balances )
@@ -646,14 +649,13 @@ pretty_transaction_experimental wallet::to_pretty_transaction_experimental( cons
 
    for( const auto& item : record.delta_amounts )
    {
-       const string& label = item.first;
-       for( const auto& delta_item : item.second )
+       const string& delta_label = item.first;
+       for( const asset& delta_amount : item.second )
        {
-           const asset delta_amount( delta_item.second, delta_item.first );
            if( delta_amount.amount >= 0)
-               result.outputs.emplace_back( label, delta_amount );
+               result.outputs.emplace_back( delta_label, delta_amount );
            else
-               result.inputs.emplace_back( label, -delta_amount );
+               result.inputs.emplace_back( delta_label, -delta_amount );
        }
    }
 
