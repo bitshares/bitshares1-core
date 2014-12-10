@@ -1316,14 +1316,6 @@ namespace detail {
       my->_wallet_db.rename_account( *old_key, new_account_name );
    } FC_CAPTURE_AND_RETHROW( (old_account_name)(new_account_name) ) }
 
-   /**
-    *  If we already have a key record for key, then set the private key.
-    *  If we do not have a key record,
-    *     If account_name is a valid existing account, then create key record
-    *       with that account as parent.
-    *     If account_name is not set, then lookup account with key in the blockchain
-    *       add contact account using data from blockchain and then set the private key
-    */
    public_key_type wallet::import_private_key( const private_key_type& new_private_key,
                                                const optional<string>& account_name,
                                                bool create_account )
@@ -2155,7 +2147,7 @@ namespace detail {
        FC_ASSERT( num_keys_to_regenerate > 0 );
 
        owallet_account_record account_record = my->_wallet_db.lookup_account( account_name );
-       FC_ASSERT( account_record.valid() && account_record->is_my_account );
+       FC_ASSERT( account_record.valid() );
 
        // Update local account records with latest global state
        my->scan_registered_accounts();
