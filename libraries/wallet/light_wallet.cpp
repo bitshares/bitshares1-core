@@ -1,4 +1,8 @@
 #include <bts/wallet/light_wallet.hpp>
+#include <fc/network/resolve.hpp>
+#include <fc/crypto/aes.hpp>
+#include <fc/reflect/variant.hpp>
+#include <bts/blockchain/time.hpp>
 
 namespace bts { namespace wallet {
 
@@ -30,13 +34,14 @@ namespace bts { namespace wallet {
 
    void light_wallet::disconnect()
    {
-      auto json_con = _rpc.get_json_connection()const;
-      if( json_con ) json_con->close();
+      // TODO: note there is no clear way of closing the json connection 
+      auto json_con = _rpc.get_json_connection();
+      //if( json_con ) json_con->close();
    }
 
    void light_wallet::open( const fc::path& wallet_json )
    {
-      _data = fc::json::from_file( wallet_json )
+      _data = fc::json::from_file<light_wallet_data>( wallet_json );
    }
 
    void light_wallet::close()
@@ -51,19 +56,19 @@ namespace bts { namespace wallet {
       if( !_private_key )
       {
           auto pass_key = fc::sha512::hash( password );
-          auto key_secret_data = fc::aes_decrypt( pass_key, _data.encrypted_private_key );
+          auto key_secret_data = fc::aes_decrypt( pass_key, _data->encrypted_private_key );
           _private_key = fc::raw::unpack<fc::ecc::private_key>( key_secret_data );
       }
    } FC_CAPTURE_AND_RETHROW() }
 
-   bool light_wallet::is_unlocked()const { return _private_key; }
-   bool light_wallet::is_open()const { return _data; }
+   bool light_wallet::is_unlocked()const { return _private_key.valid(); }
+   bool light_wallet::is_open()const { return _data.valid(); }
 
    void light_wallet::change_password( const string& new_password )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-      auto pass_key = fc::sha512::hash( password );
+      auto pass_key = fc::sha512::hash( new_password );
       _data->encrypted_private_key = fc::aes_decrypt( pass_key, fc::raw::pack( *_private_key ) );
       save();
    } FC_CAPTURE_AND_RETHROW() }
@@ -76,7 +81,7 @@ namespace bts { namespace wallet {
    void light_wallet::create( const fc::path& wallet_json, 
                               const string& password, 
                               const string& brain_seed, 
-                              const string& salt = string() )
+                              const string& salt )
    {
       // initialize the wallet data
       _wallet_file = wallet_json;
@@ -91,16 +96,19 @@ namespace bts { namespace wallet {
       // set the password
       auto pass_key = fc::sha512::hash( password );
       _data->encrypted_private_key = fc::aes_decrypt( pass_key, fc::raw::pack( *_private_key ) );
-      _data.user_account.owner = _private_key->get_public_key();
-      _data.user_account.public_data = mutable_variant_object( "salt", salt );
-      _data.user_account.meta_data = account_meta_info( public_account );
+      _data->user_account.owner_key = _private_key->get_public_key();
+      _data->user_account.public_data = mutable_variant_object( "salt", salt );
+      _data->user_account.meta_data = account_meta_info( public_account );
+      // TODO: set active key to be the first child of the owner key, the light wallet
+      // should never store the owner master key.  It should only be recoverable with
+      // the brain_seed + salt
    }
 
    void light_wallet::request_register_account( const string& account_name )
    { try {
       FC_ASSERT( is_open() );
-      _data->account.name = fc::to_lower(account_name);
-      _rpc->request_register_account( _data->account );
+      _data->user_account.name = fc::to_lower(account_name);
+      _rpc.request_register_account( _data->user_account );
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
    
    void light_wallet::transfer( double amount, 
@@ -116,8 +124,12 @@ namespace bts { namespace wallet {
       auto to_account  = _rpc.blockchain_get_account( to_account_name );
       FC_ASSERT( to_account.valid() );
 
-      auto median_feed_price = get_median_feed_price( symbol );
-      share_type = get_fee( symbol );
+      asset fee = get_fee( symbol );
+      (void)fee; // TODO use this
+
+      // TODO include a fee payable to the light wallet service provider
+      // TODO support multi-sig balances through service provider which
+      // will perform N factor authentication
 
    } FC_CAPTURE_AND_RETHROW( (amount)(symbol)(to_account_name)(memo) ) }
 
@@ -142,13 +154,13 @@ namespace bts { namespace wallet {
          auto quote_rec = get_asset_record( symbol );
          FC_ASSERT( base_rec && quote_rec );
 
-         opt = price( price_ratio * (quote_rec.precision / base_rec.precision), 
+         opt = price( price_ratio * (quote_rec->precision / base_rec->precision), 
                       base_rec->id, quote_rec->id );
       }
 
       if( opt && is_open() )
       {
-         _data->price_cache[symbol] = std::make_pair( fc::time_point::now(), *opt );
+         _data->price_cache[symbol] = std::make_pair( *opt, fc::time_point::now() );
       }
       return opt;
    }
@@ -157,17 +169,17 @@ namespace bts { namespace wallet {
    { try {
       auto symbol_asset = get_asset_record(symbol);
       FC_ASSERT( symbol_asset.valid() );
-      if( symbol_asset.id != 0 )
+      if( symbol_asset->id != 0 )
       {
          oprice median_feed = get_median_feed_price( symbol );
          if( median_feed )
-            return asset( 2*BTS_LIGHT_WALLET_DEFAULT_FEE, 0 ) * median_feed;
+            return asset( 2*BTS_LIGHT_WALLET_DEFAULT_FEE, 0 ) * *median_feed;
       }
       return asset( BTS_LIGHT_WALLET_DEFAULT_FEE, 0 );
-   } FC_CAPTURE_AND_RETHROW( (symbol) }
+   } FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
 
-   void light_wallet::sync_balance()
+   void light_wallet::sync_balance( bool resync_all )
    { try {
       FC_ASSERT( is_open() );
 
@@ -182,7 +194,8 @@ namespace bts { namespace wallet {
 
       auto sync_time = bts::blockchain::now();
 
-      auto new_balances = _rpc.blockchain_list_address_balances( _data->account.active_key(), _data->last_balance_sync_time );
+      auto new_balances = _rpc.blockchain_list_address_balances( string(address(_data->user_account.active_key())), 
+                                                                 _data->last_balance_sync_time );
       for( auto item : new_balances )
          _data->balance_record_cache[item.first] = item.second;
 
@@ -197,9 +210,10 @@ namespace bts { namespace wallet {
          return; // too fast
 
       auto sync_time = bts::blockchain::now();
-      auto new_trxs = _rpc.blockchain_list_address_transactions( _data->account.active_key(), _data->last_transaction_sync_time );
+      auto new_trxs = _rpc.blockchain_list_address_transactions( string(address(_data->user_account.active_key())), 
+                                                                 _data->last_transaction_sync_time );
       for( auto item : new_trxs )
-         _data.transaction_record_cache[item.first] = item.second;
+         _data->transaction_record_cache[item.first] = item.second;
       _data->last_transaction_sync_time = sync_time;
    }
 
@@ -208,10 +222,10 @@ namespace bts { namespace wallet {
       if( is_open() )
       {
          for( auto item : _data->asset_record_cache )
-            if( item.symbol == symbol )
+            if( item.second.symbol == symbol )
                return item.second;
       }
-      auto result = _rpc->get_asset( symbol );
+      auto result = _rpc.blockchain_get_asset( symbol );
       if( result )
          _data->asset_record_cache[result->id] = *result;
       return result;

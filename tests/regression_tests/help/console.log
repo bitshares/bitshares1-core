@@ -12,6 +12,7 @@ Returns:
 aliases: h
 (wallet closed) >>> help
 about                                                                                               
+approve_register_account <account_salt> <paying_account_name>                                       
 batch <method_name> <parameters_list>                                                               
 blockchain_broadcast_transaction <trx>                                                              
 blockchain_calculate_debt <asset> [include_interest]                                                
@@ -39,7 +40,8 @@ blockchain_get_transaction <transaction_id_prefix> [exact]
 blockchain_is_synced                                                                                
 blockchain_list_accounts [first_account_name] [limit]                                               
 blockchain_list_active_delegates [first] [count]                                                    
-blockchain_list_address_balances <addr>                                                             
+blockchain_list_address_balances <addr> [chanced_since]                                             
+blockchain_list_address_transactions <addr> [filter_before]                                         
 blockchain_list_assets [first_symbol] [limit]                                                       
 blockchain_list_balances [first_balance_id] [limit]                                                 
 blockchain_list_blocks [first_block_number] [limit]                                                 
@@ -61,6 +63,7 @@ blockchain_market_order_book <quote_symbol> <base_symbol> [limit]
 blockchain_market_order_history <quote_symbol> <base_symbol> [skip_count] [limit] [owner]           
 blockchain_market_price_history <quote_symbol> <base_symbol> <start_time> <duration> [granularity]  
 blockchain_market_status <quote_symbol> <base_symbol>                                               
+blockchain_median_feed_price <symbol>                                                               
 blockchain_unclaimed_genesis                                                                        
 blockchain_verify_signature <signer> <hash> <signature>                                             
 builder_finalize_and_sign <builder>                                                                 
@@ -117,6 +120,7 @@ network_list_potential_peers
 network_set_advanced_node_parameters <params>                                                       
 network_set_allowed_peers <allowed_peers>                                                           
 ntp_update_time                                                                                     
+request_register_account <account>                                                                  
 rpc_set_password [password]                                                                         
 rpc_set_username [username]                                                                         
 rpc_start_server [port]                                                                             
@@ -161,6 +165,7 @@ wallet_delegate_update_block_signing_key <authorizing_account_name> <delegate_na
 wallet_delegate_withdraw_pay <delegate_name> <to_account_name> <amount_to_withdraw>                 
 wallet_dump_private_key <input>                                                                     
 wallet_escrow_summary [account_name]                                                                
+wallet_generate_brain_seed                                                                          
 wallet_get_account <account_name>                                                                   
 wallet_get_account_public_address <account_name>                                                    
 wallet_get_info                                                                                     

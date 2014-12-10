@@ -4,6 +4,8 @@
 #include <fc/crypto/aes.hpp>
 #include <fc/reflect/variant.hpp>
 
+#include <boost/algorithm/string.hpp>
+
 namespace bts { namespace blockchain {
 
    const uint8_t withdraw_with_signature::type    = withdraw_signature_type;
@@ -34,6 +36,15 @@ namespace bts { namespace blockchain {
    balance_id_type withdraw_condition::get_address()const
    {
       return address( *this );
+   }
+
+   string withdraw_condition::type_label()const
+   {
+      string label = string( this->type );
+      label = label.substr( 9 );
+      label = label.substr( 0, label.find( "_" ) );
+      boost::to_upper( label );
+      return label;
    }
 
    omemo_status withdraw_with_signature::decrypt_memo_data( const fc::ecc::private_key& receiver_key, bool ignore_owner )const

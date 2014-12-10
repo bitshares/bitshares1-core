@@ -1,5 +1,4 @@
 #include <bts/blockchain/balance_record.hpp>
-#include <boost/algorithm/string.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -7,15 +6,6 @@ namespace bts { namespace blockchain {
    {
        balance = balance_arg.amount;
        condition = withdraw_condition( withdraw_with_signature( owner ), balance_arg.asset_id, delegate_id );
-   }
-
-   string balance_record::small_id()const
-   {
-       string type_prefix = string( this->condition.type );
-       type_prefix = type_prefix.substr( 9 );
-       type_prefix = type_prefix.substr( 0, type_prefix.find( "_" ) );
-       boost::to_upper( type_prefix );
-       return type_prefix + "-" + string( this->id() ).substr( string( BTS_ADDRESS_PREFIX ).size(), 8 );
    }
 
    // TODO: deprecate?

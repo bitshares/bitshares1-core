@@ -130,6 +130,10 @@ namespace bts { namespace blockchain {
           _relative_bid_db.open( data_dir / "index/relative_bid_db" );
           _short_db.open( data_dir / "index/short_db" );
           _collateral_db.open( data_dir / "index/collateral_db" );
+
+          for( auto itr = _collateral_db.begin(); itr.valid(); ++itr )
+             _collateral_expiration_index.insert( {itr.key().order_price.quote_asset_id, itr.value().expiration, itr.key() } );
+
           _feed_db.open( data_dir / "index/feed_db" );
 
           _object_db.open( data_dir / "index/object_db" );
@@ -2487,9 +2491,24 @@ namespace bts { namespace blockchain {
    void chain_database::store_collateral_record( const market_index_key& key, const collateral_record& collateral )
    {
       if( collateral.is_null() )
+      {
+         auto old_record = my->_collateral_db.fetch_optional(key);
+         if( old_record && old_record->expiration != collateral.expiration)
+         {
+            my->_collateral_expiration_index.erase( {key.order_price.quote_asset_id,  old_record->expiration, key } );
+         }
          my->_collateral_db.remove( key );
+      }
       else
+      {
+         auto old_record = my->_collateral_db.fetch_optional(key);
+         if( old_record && old_record->expiration != collateral.expiration)
+         {
+            my->_collateral_expiration_index.erase( {key.order_price.quote_asset_id,  old_record->expiration, key } );
+            my->_collateral_expiration_index.insert( {key.order_price.quote_asset_id, collateral.expiration, key } );
+         }
          my->_collateral_db.store( key, collateral );
+      }
    }
 
    string chain_database::get_asset_symbol( const asset_id_type& asset_id )const
@@ -2899,7 +2918,9 @@ namespace bts { namespace blockchain {
        {
            for( auto itr = my->_short_db.begin(); itr.valid(); ++itr )
            {
-               const auto order = market_order( short_order, itr.key(), itr.value() );
+               const market_index_key& key = itr.key();
+               const order_record& record = itr.value();
+               const auto order = market_order( short_order, key, record, record.balance, key.order_price );
                if( filter( order ) )
                {
                    orders.push_back( order );
@@ -3568,7 +3589,7 @@ namespace bts { namespace blockchain {
    {
       return my->_auth_db.fetch_optional( std::make_pair( asset_id, owner ) );
    }
-   void                       chain_database::store_asset_proposal( const proposal_record& r ) 
+   void                       chain_database::store_asset_proposal( const proposal_record& r )
    {
       if( r.info == -1 )
       {
@@ -3580,7 +3601,7 @@ namespace bts { namespace blockchain {
       }
    }
 
-   optional<proposal_record>  chain_database::fetch_asset_proposal( asset_id_type asset_id, proposal_id_type proposal_id )const 
+   optional<proposal_record>  chain_database::fetch_asset_proposal( asset_id_type asset_id, proposal_id_type proposal_id )const
    {
       return my->_asset_proposal_db.fetch_optional( std::make_pair(asset_id,proposal_id) );
    }
@@ -3595,7 +3616,7 @@ namespace bts { namespace blockchain {
       while( itr.valid() )
       {
          auto key = itr.key();
-         if( key.first != addr ) 
+         if( key.first != addr )
             break;
 
          if( auto otrx = get_transaction( key.second ) )

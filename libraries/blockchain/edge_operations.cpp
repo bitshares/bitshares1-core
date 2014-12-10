@@ -2,6 +2,7 @@
 #include <bts/blockchain/edge_operations.hpp>
 #include <bts/blockchain/edge_record.hpp>
 #include <bts/blockchain/exceptions.hpp>
+#include <fc/io/raw_variant.hpp>
 
 namespace bts { namespace blockchain {
 
