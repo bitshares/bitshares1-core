@@ -12,6 +12,7 @@ Returns:
 aliases: h
 (wallet closed) >>> help
 about                                                                                               
+approve_register_account <account_salt> <paying_account_name>                                       
 batch <method_name> <parameters_list>                                                               
 blockchain_broadcast_transaction <trx>                                                              
 blockchain_calculate_debt <asset> [include_interest]                                                
@@ -119,6 +120,7 @@ network_list_potential_peers
 network_set_advanced_node_parameters <params>                                                       
 network_set_allowed_peers <allowed_peers>                                                           
 ntp_update_time                                                                                     
+request_register_account <account>                                                                  
 rpc_set_password [password]                                                                         
 rpc_set_username [username]                                                                         
 rpc_start_server [port]                                                                             

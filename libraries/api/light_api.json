@@ -1,0 +1,37 @@
+
+{
+  "category": "Wallet Methods",
+  "methods" : [
+  {
+     "method_name" : "request_register_account",
+     "description" : "Adds an account record to the request queue",
+     "return_type" : "bool",
+     "parameters" : [
+       {
+          "name" : "account",
+          "type" : "account_record",
+          "description" : "the account to be registered"
+       }
+      ],
+      "prerequisites" : ["no_prerequisites"],
+  },
+  {
+     "method_name" : "approve_register_account",
+     "description" : "Adds an account record to the request queue",
+     "return_type" : "bool",
+     "parameters" : [
+       {
+          "name" : "account_salt",
+          "type" : "string",
+          "description" : "the salt property of the registered account"
+       },
+       {
+          "name" : "paying_account_name",
+          "type" : "account_name",
+          "description" : "the name of the account that should pay"
+       }
+      ],
+      "prerequisites" :["json_authenticated", "wallet_unlocked"]
+  }
+
+] }

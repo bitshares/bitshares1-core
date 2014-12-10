@@ -1,0 +1,8 @@
+1) Test Margin Call
+2) Test Expired Short
+3) Test Uncovered Margin Call (because there were no orders)
+4) Test Uncovered Margin Call (because there were no orders) && Expired at the same time
+5) Test Expired Short and Margin Call at the same time (by placing order after test 4)
+
+Generally speaking verify code coverage of market engine by unit tests.
+

@@ -143,14 +143,14 @@ map<transaction_id_type, fc::exception> detail::client_impl::wallet_get_pending_
 }
 wallet_transaction_record detail::client_impl::wallet_asset_authorize_key( const string& paying_account_name,
                                                                            const string& symbol,
-                                                                           const string& key, 
+                                                                           const string& key,
                                                                            const object_id_type& meta )
 {
    address addr;
    try {
-      try { addr = address( public_key_type( key ) ); } 
+      try { addr = address( public_key_type( key ) ); }
       catch ( ... ) { addr = address( key ); }
-   } 
+   }
    catch ( ... )
    {
       auto account = _chain_db->get_account_record( key );
@@ -575,19 +575,9 @@ transaction_builder detail::client_impl::wallet_set_edge(
     edge.name = name;
     edge.value = value;
 
-    // TODO if edge exists...
-    bool exists = false;
-    uint32_t existing_id = 1;
-    if( exists )
-    {
-        edge.set_id( edge_object, existing_id );
-        builder->set_object( paying_account, object_record(edge), false );
-    }
-    else
-    {
-        builder->set_object( paying_account, object_record(edge), true );
-    }
+    builder->set_edge( paying_account, edge );
     builder->finalize().sign();
+    network_broadcast_transaction( builder->transaction_record.trx );
     return *builder;
 } FC_CAPTURE_AND_RETHROW( (paying_account)(from)(to)(name)(value) ) }
 
@@ -1129,16 +1119,46 @@ vector<bts::wallet::escrow_summary> client_impl::wallet_escrow_summary( const st
    return _wallet->get_escrow_balances( account_name );
 }
 
-account_balance_summary_type client_impl::wallet_account_balance( const string& account_name,
-                                                                  const withdraw_condition_types& withdraw_condition )const
+account_balance_summary_type client_impl::wallet_account_balance( const string& account_name )const
 {
-  return _wallet->get_account_balances( account_name, false, 1 << uint8_t( withdraw_condition ) );
+  return _wallet->get_account_balances( account_name, false );
 }
 
-account_balance_id_summary_type client_impl::wallet_account_balance_ids( const string& account_name,
-                                                                         const withdraw_condition_types& withdraw_condition )const
+account_extended_balance_type client_impl::wallet_account_balance_extended( const string& account_name )const
 {
-  return _wallet->get_account_balance_ids( account_name, false, 1 << uint8_t( withdraw_condition ) );
+    const map<string, vector<balance_record>>& balance_records = _wallet->get_account_balance_records( account_name, false, -1 );
+
+    map<string, map<string, map<asset_id_type, share_type>>> raw_balances;
+    for( const auto& item : balance_records )
+    {
+        const string& account_name = item.first;
+        for( const auto& balance_record : item.second )
+        {
+            const asset& balance = balance_record.get_spendable_balance( _chain_db->get_pending_state()->now() );
+            raw_balances[ account_name ][ balance_record.condition.type_label() ][ balance.asset_id ] += balance.amount;
+        }
+    }
+
+    map<string, map<string, vector<asset>>> extended_balances;
+    for( const auto& item : raw_balances )
+    {
+        const string& account_name = item.first;
+        for( const auto& type_item : item.second )
+        {
+            const string& type_label = type_item.first;
+            for( const auto& balance_item : type_item.second )
+            {
+                extended_balances[ account_name ][ type_label ].emplace_back( balance_item.second, balance_item.first );
+            }
+        }
+    }
+
+    return extended_balances;
+}
+
+account_balance_id_summary_type client_impl::wallet_account_balance_ids( const string& account_name )const
+{
+  return _wallet->get_account_balance_ids( account_name, false );
 }
 
 account_balance_summary_type client_impl::wallet_account_yield( const string& account_name )const
@@ -1455,7 +1475,7 @@ string client_impl::wallet_generate_brain_seed()const
    for( uint32_t i = 0; i < 9; ++i )
       result += word_list[keys[i]%word_list_size] + string(" ");
 
-   result += string( address(priv_key.get_public_key()) ).substr(4); 
+   result += string( address(priv_key.get_public_key()) ).substr(4);
 
    return result;
 }
