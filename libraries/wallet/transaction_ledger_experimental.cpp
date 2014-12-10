@@ -247,8 +247,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
     const auto scan_update_account = [&]( const update_account_operation& op ) -> bool
     {
         const oaccount_record account_record = _blockchain->get_account_record( op.account_id );
-        FC_ASSERT( account_record.valid() );
-        const string& account_name = account_record->name;
+        const string& account_name = account_record.valid() ? account_record->name : std::to_string( op.account_id );
 
         if( record.operation_notes.count( op_index ) == 0 )
         {
@@ -262,8 +261,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
     const auto scan_withdraw_pay = [&]( const withdraw_pay_operation& op ) -> bool
     {
         const oaccount_record account_record = _blockchain->get_account_record( op.account_id );
-        FC_ASSERT( account_record.valid() );
-        const string& account_name = account_record->name;
+        const string& account_name = account_record.valid() ? account_record->name : std::to_string( op.account_id );
 
         const string delta_label = "INCOME-" + account_name;
         const asset& delta_amount = eval_state.deltas.at( op_index );
@@ -274,10 +272,8 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
 
     const auto scan_create_asset = [&]( const create_asset_operation& op ) -> bool
     {
-        // TODO: Issuer could be asset_record::market_issued_asset
         const oaccount_record account_record = _blockchain->get_account_record( op.issuer_account_id );
-        FC_ASSERT( account_record.valid() );
-        const string& account_name = account_record->name;
+        const string& account_name = account_record.valid() ? account_record->name : string( "MARKET" );
 
         if( record.operation_notes.count( op_index ) == 0 )
         {
@@ -292,11 +288,12 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
     {
         const asset& delta_amount = eval_state.deltas.at( op_index );
         const oasset_record asset_record = _blockchain->get_asset_record( delta_amount.asset_id );
-        FC_ASSERT( asset_record.valid() );
-
-        const oaccount_record account_record = _blockchain->get_account_record( asset_record->issuer_account_id );
-        FC_ASSERT( account_record.valid() );
-        const string& account_name = account_record->name;
+        string account_name = "GOD";
+        if( asset_record.valid() )
+        {
+            const oaccount_record account_record = _blockchain->get_account_record( asset_record->issuer_account_id );
+            account_name = account_record.valid() ? account_record->name : std::to_string( asset_record->issuer_account_id );
+        }
 
         const string delta_label = "ISSUER-" + account_name;
         raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
@@ -304,10 +301,10 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
         return account_names.count( account_name ) > 0;
     };
 
-    const auto scan_ask = [&]( const ask_operation& op ) -> bool
+    const auto scan_bid = [&]( const bid_operation& op ) -> bool
     {
-        const market_order order( ask_order, op.ask_index, op.amount );
-        const string delta_label = order.get_small_id();
+        const market_order order( bid_order, op.bid_index, op.amount );
+        const string& delta_label = order.get_small_id();
         const asset& delta_amount = eval_state.deltas.at( op_index );
         raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
 
@@ -317,9 +314,10 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
 
             if( op.amount >= 0 )
             {
-                const oasset_record asset_record = _blockchain->get_asset_record( op.ask_index.order_price.base_asset_id );
-                FC_ASSERT( asset_record.valid() );
-                note = "sell " + asset_record->symbol + " @ " + _blockchain->to_pretty_price( op.ask_index.order_price );
+                const asset_id_type& base_asset_id = op.bid_index.order_price.base_asset_id;
+                const oasset_record& asset_record = _blockchain->get_asset_record( base_asset_id );
+                const string& asset_symbol = asset_record.valid() ? asset_record->symbol : std::to_string( base_asset_id );
+                note = "buy " + asset_symbol + " @ " + _blockchain->to_pretty_price( op.bid_index.order_price );
             }
             else
             {
@@ -329,7 +327,37 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
             record.operation_notes[ op_index ] = note;
         }
 
-        const owallet_key_record key_record = _wallet_db.lookup_key( op.ask_index.owner );
+        const owallet_key_record& key_record = _wallet_db.lookup_key( op.bid_index.owner );
+        return key_record.valid() && key_record->has_private_key();
+    };
+
+    const auto scan_ask = [&]( const ask_operation& op ) -> bool
+    {
+        const market_order order( ask_order, op.ask_index, op.amount );
+        const string& delta_label = order.get_small_id();
+        const asset& delta_amount = eval_state.deltas.at( op_index );
+        raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+
+        if( record.operation_notes.count( op_index ) == 0 )
+        {
+            string note;
+
+            if( op.amount >= 0 )
+            {
+                const asset_id_type& base_asset_id = op.ask_index.order_price.base_asset_id;
+                const oasset_record& asset_record = _blockchain->get_asset_record( base_asset_id );
+                const string& asset_symbol = asset_record.valid() ? asset_record->symbol : std::to_string( base_asset_id );
+                note = "sell " + asset_symbol + " @ " + _blockchain->to_pretty_price( op.ask_index.order_price );
+            }
+            else
+            {
+                note = "cancel " + delta_label;
+            }
+
+            record.operation_notes[ op_index ] = note;
+        }
+
+        const owallet_key_record& key_record = _wallet_db.lookup_key( op.ask_index.owner );
         return key_record.valid() && key_record->has_private_key();
     };
 
@@ -411,7 +439,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
                 // TODO
                 break;
             case bid_op_type:
-                // TODO
+                relevant_to_me |= scan_bid( op.as<bid_operation>() );
                 break;
             case ask_op_type:
                 relevant_to_me |= scan_ask( op.as<ask_operation>() );

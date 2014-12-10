@@ -692,7 +692,7 @@ string pretty_experimental_transaction_list( const set<pretty_transaction_experi
                 const auto& item = transaction.balances.at( line_count );
                 const string& label = item.first;
                 const asset& delta = item.second;
-                string balance = " => " + client->get_chain()->to_pretty_asset( delta );
+                string balance = " : " + client->get_chain()->to_pretty_asset( delta );
                 balance = pretty_shorten( label, field_widths.at( "balances" ) - balance.size() - 1 ) + balance;
                 out << balance;
             }
