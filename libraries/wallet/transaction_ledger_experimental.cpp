@@ -389,6 +389,24 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
         return key_record.valid() && key_record->has_private_key();
     };
 
+    // TODO: replace small id with type_label + id
+    const auto scan_cover = [&]( const cover_operation& op ) -> bool
+    {
+        const market_order order( cover_order, op.cover_index, op.amount );
+        const string& delta_label = order.get_small_id();
+        const asset& delta_amount = eval_state.deltas.at( op_index );
+        raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+
+        if( record.operation_notes.count( op_index ) == 0 )
+        {
+            const string note = "repay " + delta_label;
+            record.operation_notes[ op_index ] = note;
+        }
+
+        const owallet_key_record& key_record = _wallet_db.lookup_key( op.cover_index.owner );
+        return key_record.valid() && key_record->has_private_key();
+    };
+
     const auto scan_update_feed = [&]( const update_feed_operation& op ) -> bool
     {
         const oasset_record asset_record = _blockchain->get_asset_record( op.feed.feed_id );
@@ -476,7 +494,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
                 relevant_to_me |= scan_short( op.as<short_operation>() );
                 break;
             case cover_op_type:
-                // TODO
+                relevant_to_me |= scan_cover( op.as<cover_operation>() );
                 break;
             case add_collateral_op_type:
                 // TODO
@@ -515,6 +533,27 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
                 // TODO
                 break;
             case cancel_order_op_type:
+                // TODO
+                break;
+            case set_edge_op_type:
+                // TODO
+                break;
+            case site_create_op_type:
+                // TODO
+                break;
+            case site_update_op_type:
+                // TODO
+                break;
+            case auction_start_op_type:
+                // TODO
+                break;
+            case auction_bid_op_type:
+                // TODO
+                break;
+            case make_sale_op_type:
+                // TODO
+                break;
+            case buy_sale_op_type:
                 // TODO
                 break;
             default:
