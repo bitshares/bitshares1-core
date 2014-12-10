@@ -1779,12 +1779,6 @@
             "type" : "account_name",
             "description" : "the account to get a balance for, or leave empty for all accounts",
             "default_value" : ""
-         },
-         {
-            "name" : "withdraw_condition",
-            "type" : "withdraw_condition_type",
-            "description" : "the withdraw condition type to return balances for",
-            "default_value" : "withdraw_signature_type"
          }
          ],
          "is_const" : true,
@@ -1801,12 +1795,6 @@
             "type" : "account_name",
             "description" : "the account to list balance ids for, or leave empty for all accounts",
             "default_value" : ""
-         },
-         {
-            "name" : "withdraw_condition",
-            "type" : "withdraw_condition_type",
-            "description" : "the withdraw condition type to return balance ids for",
-            "default_value" : "withdraw_signature_type"
          }
          ],
          "is_const" : true,

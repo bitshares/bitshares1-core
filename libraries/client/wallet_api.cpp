@@ -143,14 +143,14 @@ map<transaction_id_type, fc::exception> detail::client_impl::wallet_get_pending_
 }
 wallet_transaction_record detail::client_impl::wallet_asset_authorize_key( const string& paying_account_name,
                                                                            const string& symbol,
-                                                                           const string& key, 
+                                                                           const string& key,
                                                                            const object_id_type& meta )
 {
    address addr;
    try {
-      try { addr = address( public_key_type( key ) ); } 
+      try { addr = address( public_key_type( key ) ); }
       catch ( ... ) { addr = address( key ); }
-   } 
+   }
    catch ( ... )
    {
       auto account = _chain_db->get_account_record( key );
@@ -1129,16 +1129,14 @@ vector<bts::wallet::escrow_summary> client_impl::wallet_escrow_summary( const st
    return _wallet->get_escrow_balances( account_name );
 }
 
-account_balance_summary_type client_impl::wallet_account_balance( const string& account_name,
-                                                                  const withdraw_condition_types& withdraw_condition )const
+account_balance_summary_type client_impl::wallet_account_balance( const string& account_name )const
 {
-  return _wallet->get_account_balances( account_name, false, 1 << uint8_t( withdraw_condition ) );
+  return _wallet->get_account_balances( account_name, false );
 }
 
-account_balance_id_summary_type client_impl::wallet_account_balance_ids( const string& account_name,
-                                                                         const withdraw_condition_types& withdraw_condition )const
+account_balance_id_summary_type client_impl::wallet_account_balance_ids( const string& account_name )const
 {
-  return _wallet->get_account_balance_ids( account_name, false, 1 << uint8_t( withdraw_condition ) );
+  return _wallet->get_account_balance_ids( account_name, false );
 }
 
 account_balance_summary_type client_impl::wallet_account_yield( const string& account_name )const
@@ -1455,7 +1453,7 @@ string client_impl::wallet_generate_brain_seed()const
    for( uint32_t i = 0; i < 9; ++i )
       result += word_list[keys[i]%word_list_size] + string(" ");
 
-   result += string( address(priv_key.get_public_key()) ).substr(4); 
+   result += string( address(priv_key.get_public_key()) ).substr(4);
 
    return result;
 }
