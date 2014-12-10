@@ -19,6 +19,8 @@ namespace bts { namespace wallet {
    typedef map<string, int64_t> account_vote_summary_type;
    typedef std::pair<order_type_enum, vector<string>> order_description;
 
+   typedef map<string, map<string, vector<asset>>> account_extended_balance_type;
+
    enum delegate_status_flags
    {
        any_delegate_status      = 0,
