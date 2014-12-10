@@ -78,7 +78,7 @@ default (unlocked) >>> blockchain_get_asset TEST
 default (unlocked) >>> wallet_asset_update TEST null null null null null 0 ["restricted"] ["restricted", "retractable", "market_halt"]
 {
   "index": 0,
-  "record_id": "94c50ff72c830a0a8626d5eddc4fe57d9aad722f",
+  "record_id": "e8abaa480a5a2c2729c9f85cdc094c6330fb898d",
   "block_num": 0,
   "is_virtual": false,
   "is_confirmed": false,
@@ -114,8 +114,8 @@ default (unlocked) >>> wallet_asset_update TEST null null null null null 0 ["res
       }
     ],
     "signatures": [
-      "1f39b353ca907cdc39e0947d8d0c4de080e5e72ab69341e17b8a52e14f9b26bd516b1b065c61178607baaf1c9857fdd4c669bafc362c86f2e1a257efe71037fae4",
-      "20b59e7566a382732aa36d4357eb604d9667cc49b9d996c6517584453aba272ee73af2e55a6c53abbce8ff8e02a43c8b928a658983eaf181ad82be798dcc5d36ca"
+      "1f39b353ca907cdc39e0947d8d0c4de080e5e72ab69341e17b8a52e14f9b26bd5129099b30687ac5d241de4f2f45e597ec5ef53fd5812ebf18caa3b0f651d75edf",
+      "20b59e7566a382732aa36d4357eb604d9667cc49b9d996c6517584453aba272ee7d015b70513cfefab6c85df6b23a2dd8b6394f90488acaf1496a64c41971b35f3"
     ]
   },
   "ledger_entries": [{
