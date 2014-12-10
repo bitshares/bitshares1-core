@@ -44,7 +44,7 @@ namespace bts { namespace blockchain {
       fc::optional<bool>           is_valid;
       fc::optional<fc::exception>  invalid_reason;
       bool                         is_included; ///< is included in the current chain database
-      bool                         is_known; ///< do we know the content of this block
+      bool                         is_known; ///< do we know the content of this block (false if placeholder)
    };
 
    struct fork_record
