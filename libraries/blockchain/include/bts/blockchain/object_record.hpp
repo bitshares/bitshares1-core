@@ -16,8 +16,9 @@ namespace bts { namespace blockchain {
         account_object = 1,
         asset_object = 2,
         edge_object = 3,
-        auction_object = 4,
-        site_object = 5
+        user_auction_object = 4,
+        throttled_auction_object = 5,
+        site_object = 6
     };
 
     
@@ -101,6 +102,7 @@ namespace bts { namespace blockchain {
         // always use chain_interface->get_object_owners(obj)  instead of accessing this!
         // At least until we migrate all legacy object types
         multisig_condition          _owners;
+        object_id_type              owner_object; // If this points to itself, then the condition is _owners
 
     };
 
@@ -108,7 +110,7 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
-FC_REFLECT_ENUM( bts::blockchain::obj_type, (null_object)(base_object)(account_object)(asset_object)(edge_object)(auction_object)(site_object) );
+FC_REFLECT_ENUM( bts::blockchain::obj_type, (null_object)(base_object)(account_object)(asset_object)(edge_object)(user_auction_object)(throttled_auction_object)(site_object) );
 FC_REFLECT( bts::blockchain::object_record, (_id)(user_data)(_owners)(_data) );
 /*
 namespace fc {

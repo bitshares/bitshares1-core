@@ -6,11 +6,14 @@ namespace bts { namespace blockchain {
 
     void site_create_operation::evaluate( transaction_evaluation_state& eval_state ) 
     {
+        // Create a site whose owner is the DAC.
+        // Create a new auction for the site.
         FC_ASSERT(!"unimplemented");
     }
 
     void site_update_operation::evaluate( transaction_evaluation_state& eval_state ) 
     {
+        // Check the owner of the site.
         FC_ASSERT(!"unimplemented");
     }
 

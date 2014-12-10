@@ -89,7 +89,18 @@ namespace bts { namespace blockchain {
 
       // sales
       make_sale_op_type             = 37,
-      buy_sale_op_type              = 38   // makes a buy or an offer
+      buy_sale_op_type              = 38  // makes a buy or an offer
+
+      /* 
+      // events
+      make_event_op_type            = 39,
+      resolve_event_op_type         = 40,
+
+      // prediction markets
+      make_lsmr_market              = 41,
+      buy_lsmr_share                = 42,
+      redeem_lsmr_share             = 43
+      */
    };
 
    /**

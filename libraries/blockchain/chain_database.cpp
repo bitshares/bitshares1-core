@@ -1798,7 +1798,7 @@ namespace bts { namespace blockchain {
         {
             case base_object:
             {
-                ilog("@n storing object record in chain DB");
+                ilog("@n storing a base_object record in chain DB");
                 my->_object_db.store( obj._id, obj );
                 break;
             }
@@ -1810,7 +1810,8 @@ namespace bts { namespace blockchain {
             }
             case account_object:
             case asset_object:
-            case auction_object:
+            case throttled_auction_object:
+            case user_auction_object:
             case site_object:
             default:
                 FC_ASSERT(!"You cannot store these object types via object interface yet!");
