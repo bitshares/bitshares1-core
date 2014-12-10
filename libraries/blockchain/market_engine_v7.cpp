@@ -72,12 +72,25 @@ namespace bts { namespace blockchain { namespace detail {
           else _short_itr = _db_impl._short_db.last();
 
           _feed_price = _db_impl.self->get_median_delegate_price( _quote_id, _base_id );
-          // Market issued assets cannot match until the first time there is a median feed
-          if( quote_asset->is_market_issued() && (!base_asset->is_market_issued() || _pending_state->get_head_block_num() < BTS_V0_4_26_FORK_BLOCK_NUM) )
+          if( _pending_state->get_head_block_num() >= BTS_V0_4_26_FORK_BLOCK_NUM )
           {
-              const omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
-              if( (!market_stat.valid() || !market_stat->last_valid_feed_price.valid()) && !_feed_price.valid() )
-                  FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id)(base_id) );
+              // Market issued assets cannot match until the first time there is a median feed; assume feed price base id 0
+              if( quote_asset->is_market_issued() && base_asset->id == asset_id_type( 0 ) )
+              {
+                  const omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
+                  if( (!market_stat.valid() || !market_stat->last_valid_feed_price.valid()) && !_feed_price.valid() )
+                      FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id)(base_id) );
+              }
+          }
+          else
+          {
+              // Market issued assets cannot match until the first time there is a median feed
+              if( quote_asset->is_market_issued() )
+              {
+                  const omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
+                  if( (!market_stat.valid() || !market_stat->last_valid_feed_price.valid()) && !_feed_price.valid() )
+                      FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id)(base_id) );
+              }
           }
 
           // prime the pump, to make sure that margin calls (asks) have a bid to check against.

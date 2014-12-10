@@ -79,9 +79,6 @@ namespace bts { namespace blockchain { namespace detail {
 
           _feed_price = _db_impl.self->get_median_delegate_price( _quote_id, _base_id );
 
-#ifndef WIN32
-#warning [HARDFORK] add this to old version
-#endif
           // Market issued assets cannot match until the first time there is a median feed; assume feed price base id 0
           if( quote_asset->is_market_issued() && base_asset->id == asset_id_type( 0 ) )
           {
