@@ -132,6 +132,10 @@ namespace bts { namespace blockchain {
           _relative_bid_db.open( data_dir / "index/relative_bid_db" );
           _short_db.open( data_dir / "index/short_db" );
           _collateral_db.open( data_dir / "index/collateral_db" );
+
+          for( auto itr = _collateral_db.begin(); itr.valid(); ++itr )
+             _collateral_expiration_index.insert( {itr.key().order_price.quote_asset_id, itr.value().expiration, itr.key() } );
+
           _feed_db.open( data_dir / "index/feed_db" );
 
           _object_db.open( data_dir / "index/object_db" );
@@ -2559,9 +2563,24 @@ namespace bts { namespace blockchain {
    void chain_database::store_collateral_record( const market_index_key& key, const collateral_record& collateral )
    {
       if( collateral.is_null() )
+      {
+         auto old_record = my->_collateral_db.fetch_optional(key);
+         if( old_record && old_record->expiration != collateral.expiration)
+         {
+            my->_collateral_expiration_index.erase( {key.order_price.quote_asset_id,  old_record->expiration, key } );
+         }
          my->_collateral_db.remove( key );
+      }
       else
+      {
+         auto old_record = my->_collateral_db.fetch_optional(key);
+         if( old_record && old_record->expiration != collateral.expiration)
+         {
+            my->_collateral_expiration_index.erase( {key.order_price.quote_asset_id,  old_record->expiration, key } );
+            my->_collateral_expiration_index.insert( {key.order_price.quote_asset_id, collateral.expiration, key } );
+         }
          my->_collateral_db.store( key, collateral );
+      }
    }
 
    string chain_database::get_asset_symbol( const asset_id_type& asset_id )const

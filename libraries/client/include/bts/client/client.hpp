@@ -112,10 +112,20 @@ namespace bts { namespace client {
           fc::logging_config  logging;
           string              wallet_callback_url;
           string              client_debug_name;
+          double              relay_fee = double(BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE)/BTS_BLOCKCHAIN_PRECISION;
+          double              light_relay_fee = double(BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE)/BTS_BLOCKCHAIN_PRECISION;
+          /** relay account name is used to specify the name of the account that must be paid when
+           * network_broadcast_transaction is called by a light weight client.  If it is unset then
+           * no fee will be charged.  The fee charged by the light server will be the fee charged
+           * light_relay_fee for allowing general network transactions to propagate.  In effect, light clients
+           * pay 2x the fees, one to the relay_account_name and one to the network delegates.
+           */
+          string              relay_account_name;
 
           fc::optional<std::string> growl_notify_endpoint;
           fc::optional<std::string> growl_password;
           fc::optional<std::string> growl_bitshares_client_identifier;
+
     };
 
 
@@ -214,5 +224,9 @@ FC_REFLECT( bts::client::config,
             (client_debug_name)
             (growl_notify_endpoint)
             (growl_password)
-            (growl_bitshares_client_identifier) )
+            (growl_bitshares_client_identifier)
+            (relay_fee)
+            (light_relay_fee)
+            (relay_account_name)
+           )
 

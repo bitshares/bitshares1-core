@@ -1612,6 +1612,7 @@ void client::configure_from_command_line(int argc, char** argv)
                                           my->_config.chain_server.listen_port));
       ulog("Starting a chain server on port ${port}", ("port", my->_chain_server->get_listening_port()));
    }
+   my->_chain_db->set_relay_fee( my->_config.relay_fee * BTS_BLOCKCHAIN_PRECISION );
 } //configure_from_command_line
 
 fc::future<void> client::start()

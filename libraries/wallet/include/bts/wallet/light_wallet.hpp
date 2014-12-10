@@ -1,10 +1,17 @@
 #pragma once
+#include <bts/blockchain/types.hpp>
 #include <bts/blockchain/account_record.hpp>
+#include <bts/blockchain/balance_record.hpp>
+#include <bts/blockchain/block_record.hpp>
+#include <bts/blockchain/asset_record.hpp>
+#include <bts/rpc/rpc_client.hpp>
+#include <bts/wallet/config.hpp>
 
 #define BTS_LIGHT_WALLET_PORT 8899
 #define BTS_LIGHT_WALLET_DEFAULT_FEE  BTS_WALLET_DEFAULT_TRANSACTION_FEE
 
 namespace bts { namespace wallet {
+   using namespace bts::blockchain;
 
    struct light_wallet_data
    {
@@ -39,15 +46,17 @@ namespace bts { namespace wallet {
          ~light_wallet();
 
          void connect( const string& host, const string& user = "any", const string& pass = "none", uint16_t port = 0 );
-         void is_connected()const;
+         bool is_connected()const;
          void disconnect();
 
          void open( const fc::path& wallet_json );
          void save();
          void close();
+         bool is_open()const;
 
          void unlock( const string& password );
          void lock();
+         bool is_unlocked()const;
          void change_password( const string& new_password );
 
          void create( const fc::path& wallet_json, 
@@ -69,6 +78,7 @@ namespace bts { namespace wallet {
 
          set<string,double> balance()const;
 
+         optional<asset_record> get_asset_record( const string& symbol );
 
          bts::rpc::rpc_client             _rpc;
          fc::path                         _wallet_file;

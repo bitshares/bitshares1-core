@@ -152,7 +152,9 @@ namespace bts { namespace blockchain {
             bts::db::cached_level_map<market_index_key, order_record>                   _relative_bid_db;
             bts::db::cached_level_map<market_index_key, order_record>                   _short_db;
             bts::db::cached_level_map<market_index_key, collateral_record>              _collateral_db;
+            set< expiration_index >                                                     _collateral_expiration_index; 
             bts::db::cached_level_map<feed_index, feed_record>                          _feed_db;
+
 
             bts::db::level_map<object_id_type, object_record>                           _object_db;
             bts::db::level_map<edge_index_key, object_id_type>                          _edge_index;
