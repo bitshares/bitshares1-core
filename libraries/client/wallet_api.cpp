@@ -1134,8 +1134,26 @@ account_extended_balance_type client_impl::wallet_account_balance_extended( cons
         const string& account_name = item.first;
         for( const auto& balance_record : item.second )
         {
+            string type_label;
+            if( balance_record.snapshot_info.valid() )
+            {
+                switch( withdraw_condition_types( balance_record.condition.type ) )
+                {
+                    case withdraw_signature_type:
+                        type_label = "GENESIS";
+                        break;
+                    case withdraw_vesting_type:
+                        type_label = "SHAREDROP";
+                        break;
+                    default:
+                        break;
+                }
+            }
+            if( type_label.empty() )
+                type_label = balance_record.condition.type_label();
+
             const asset& balance = balance_record.get_spendable_balance( _chain_db->get_pending_state()->now() );
-            raw_balances[ account_name ][ balance_record.condition.type_label() ][ balance.asset_id ] += balance.amount;
+            raw_balances[ account_name ][ type_label ][ balance.asset_id ] += balance.amount;
         }
     }
 
