@@ -3985,6 +3985,8 @@ namespace detail {
       {
           if( !((1 << uint8_t( record.condition.type )) & withdraw_type_mask) ) return;
 
+#ifndef BTS_TEST_NETWORK
+          // This makes testing too difficult
           if( record.snapshot_info.valid() )
           {
               if( !((1 << uint8_t( withdraw_null_type )) & withdraw_type_mask) )
@@ -3994,6 +3996,7 @@ namespace detail {
           {
               return;
           }
+#endif
 
           const auto key_record = my->_wallet_db.lookup_key( record.owner() );
           if( !key_record.valid() || !key_record->has_private_key() ) return;
