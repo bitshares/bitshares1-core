@@ -843,7 +843,7 @@ namespace bts { namespace cli {
              else
                out << "+";
           }
-          else 
+          else
             out << " ";
           out << std::left << std::setw(30) << (fc::to_string(client->get_chain()->to_pretty_price_double(abs_price)) + " " + quote_asset_record->symbol)
             << std::right << std::setw(23) << client->get_chain()->to_pretty_asset(ask_itr->get_quantity( feed_price ))

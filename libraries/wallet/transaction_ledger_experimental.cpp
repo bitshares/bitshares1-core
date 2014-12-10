@@ -311,7 +311,6 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
         if( record.operation_notes.count( op_index ) == 0 )
         {
             string note;
-
             if( op.amount >= 0 )
             {
                 const asset_id_type& base_asset_id = op.bid_index.order_price.base_asset_id;
@@ -341,7 +340,6 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
         if( record.operation_notes.count( op_index ) == 0 )
         {
             string note;
-
             if( op.amount >= 0 )
             {
                 const asset_id_type& base_asset_id = op.ask_index.order_price.base_asset_id;
@@ -358,6 +356,36 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
         }
 
         const owallet_key_record& key_record = _wallet_db.lookup_key( op.ask_index.owner );
+        return key_record.valid() && key_record->has_private_key();
+    };
+
+    const auto scan_short = [&]( const short_operation& op ) -> bool
+    {
+        const market_order order( short_order, op.short_index, op.amount );
+        const string& delta_label = order.get_small_id();
+        const asset& delta_amount = eval_state.deltas.at( op_index );
+        raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+
+        if( record.operation_notes.count( op_index ) == 0 )
+        {
+            string note;
+            if( op.amount >= 0 )
+            {
+                const price& interest_rate = op.short_index.order_price;
+                const asset_id_type& quote_asset_id = interest_rate.quote_asset_id;
+                const oasset_record& asset_record = _blockchain->get_asset_record( quote_asset_id );
+                const string& asset_symbol = asset_record.valid() ? asset_record->symbol : std::to_string( quote_asset_id );
+                note = "short " + asset_symbol + " @ " + std::to_string( 100 * atof( interest_rate.ratio_string().c_str() ) ) + " %";
+            }
+            else
+            {
+                note = "cancel " + delta_label;
+            }
+
+            record.operation_notes[ op_index ] = note;
+        }
+
+        const owallet_key_record& key_record = _wallet_db.lookup_key( op.short_index.owner );
         return key_record.valid() && key_record->has_private_key();
     };
 
@@ -445,7 +473,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
                 relevant_to_me |= scan_ask( op.as<ask_operation>() );
                 break;
             case short_op_type:
-                // TODO
+                relevant_to_me |= scan_short( op.as<short_operation>() );
                 break;
             case cover_op_type:
                 // TODO
@@ -540,7 +568,8 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
     for( const auto& delta_item : eval_state.balance )
     {
         const asset delta_amount( delta_item.second, delta_item.first );
-        raw_delta_amounts[ "FEE" ][ delta_amount.asset_id ] += delta_amount.amount;
+        if( delta_amount.amount != 0 )
+            raw_delta_amounts[ "FEE" ][ delta_amount.asset_id ] += delta_amount.amount;
     }
 
     for( const auto& item : raw_delta_amounts )
