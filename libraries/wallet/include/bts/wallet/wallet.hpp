@@ -393,8 +393,10 @@ namespace bts { namespace wallet {
                  const string& account_to_pay_with,
                  bool sign
                  );
-         wallet_transaction_record collect_vested(
+         wallet_transaction_record collect_withdraw_types(
                  const string& account_name,
+                 uint32_t withdraw_type_mask,
+                 bool snapshots_only,
                  bool sign
                  );
          wallet_transaction_record asset_authorize_key( const string& paying_account_name,
@@ -547,11 +549,11 @@ namespace bts { namespace wallet {
          vector<escrow_summary>             get_escrow_balances( const string& account_name );
 
          account_balance_record_summary_type get_account_balance_records( const string& account_name = "", bool include_empty = true,
-                 uint32_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ) )const;
+                 uint32_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ), bool snapshots_only = false )const;
          account_balance_id_summary_type    get_account_balance_ids( const string& account_name = "", bool include_empty = true,
-                 uint32_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ) )const;
+                 uint32_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ), bool snapshots_only = false )const;
          account_balance_summary_type       get_account_balances( const string& account_name = "", bool include_empty = true,
-                 uint32_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ) )const;
+                 uint32_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ), bool snapshots_only = false )const;
 
          account_balance_summary_type       get_account_yield( const string& account_name = "" )const;
          asset                              asset_worth( const asset& base, const string& price_in_symbol )const;

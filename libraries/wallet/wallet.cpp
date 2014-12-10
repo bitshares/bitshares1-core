@@ -1979,7 +1979,8 @@ namespace detail {
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(account_to_pay_with)(sign) ) }
 
-   wallet_transaction_record wallet::collect_vested( const string& account_name, bool sign )
+   wallet_transaction_record wallet::collect_withdraw_types( const string& account_name, uint32_t withdraw_type_mask,
+                                                             bool snapshots_only, bool sign )
    { try {
       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
@@ -1988,7 +1989,7 @@ namespace detail {
       if( !account_record.valid() || !account_record->is_my_account )
           FC_CAPTURE_AND_THROW( unknown_receive_account, (account_name) );
 
-      const auto balance_records = get_account_balance_records( account_name, false, 1 << uint8_t( withdraw_vesting_type ) );
+      const auto balance_records = get_account_balance_records( account_name, false, withdraw_type_mask, snapshots_only );
       if( balance_records.find( account_name ) == balance_records.end() )
           FC_CAPTURE_AND_THROW( insufficient_funds, (account_name) );
 
@@ -3973,7 +3974,7 @@ namespace detail {
 
    // TODO: Handle multiple owners
    account_balance_record_summary_type wallet::get_account_balance_records( const string& account_name, bool include_empty,
-                                                                            uint32_t withdraw_type_mask )const
+                                                                            uint32_t withdraw_type_mask, bool snapshots_only )const
    { try {
       if( !is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
 
@@ -3982,8 +3983,17 @@ namespace detail {
 
       const auto scan_balance = [&]( const balance_record& record )
       {
-          //if( record.snapshot_info.valid() && !((1 << uint8_t( withdraw_null_type )) & withdraw_type_mask) ) return;
           if( !((1 << uint8_t( record.condition.type )) & withdraw_type_mask) ) return;
+
+          if( record.snapshot_info.valid() )
+          {
+              if( !((1 << uint8_t( withdraw_null_type )) & withdraw_type_mask) )
+                  return;
+          }
+          else if( snapshots_only )
+          {
+              return;
+          }
 
           const auto key_record = my->_wallet_db.lookup_key( record.owner() );
           if( !key_record.valid() || !key_record->has_private_key() ) return;
@@ -4007,11 +4017,12 @@ namespace detail {
    } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_type_mask) ) }
 
    account_balance_id_summary_type wallet::get_account_balance_ids( const string& account_name, bool include_empty,
-                                                                    uint32_t withdraw_type_mask )const
+                                                                    uint32_t withdraw_type_mask, bool snapshots_only )const
    { try {
       map<string, vector<balance_id_type>> balance_ids;
 
-      const map<string, vector<balance_record>>& items = get_account_balance_records( account_name, include_empty, withdraw_type_mask );
+      const map<string, vector<balance_record>>& items = get_account_balance_records( account_name, include_empty,
+                                                                                      withdraw_type_mask, snapshots_only );
       for( const auto& item : items )
       {
           const auto& name = item.first;
@@ -4025,11 +4036,12 @@ namespace detail {
    } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_type_mask) ) }
 
    account_balance_summary_type wallet::get_account_balances( const string& account_name, bool include_empty,
-                                                              uint32_t withdraw_type_mask )const
+                                                              uint32_t withdraw_type_mask, bool snapshots_only )const
    { try {
       map<string, map<asset_id_type, share_type>> balances;
 
-      const map<string, vector<balance_record>>& items = get_account_balance_records( account_name, include_empty, withdraw_type_mask );
+      const map<string, vector<balance_record>>& items = get_account_balance_records( account_name, include_empty,
+                                                                                      withdraw_type_mask, snapshots_only );
       for( const auto& item : items )
       {
           const auto& name = item.first;

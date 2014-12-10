@@ -2487,6 +2487,19 @@
          "prerequisites" : ["wallet_unlocked"]
       },
       {
+         "method_name" : "wallet_collect_genesis_balances",
+         "description" : "Collect specified account's genesis balances",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+                "name" : "account_name",
+                "type" : "account_name",
+                "description" : "account to collect genesis balances for"
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
          "method_name" : "wallet_collect_vested_balances",
          "description" : "Collect specified account's vested balances",
          "return_type" : "transaction_record",

@@ -181,12 +181,26 @@ wallet_transaction_record detail::client_impl::wallet_publish_version( const str
    return record;
 }
 
+wallet_transaction_record detail::client_impl::wallet_collect_genesis_balances( const string& account_name )
+{
+    uint32_t withdraw_type_mask = 0;
+    withdraw_type_mask |= 1 << withdraw_null_type;
+    withdraw_type_mask |= 1 << withdraw_signature_type;
+    auto record = _wallet->collect_withdraw_types( account_name, withdraw_type_mask, true, true );
+    _wallet->cache_transaction( record );
+    network_broadcast_transaction( record.trx );
+    return record;
+}
+
 wallet_transaction_record detail::client_impl::wallet_collect_vested_balances( const string& account_name )
 {
-   auto record = _wallet->collect_vested( account_name, true );
-   _wallet->cache_transaction( record );
-   network_broadcast_transaction( record.trx );
-   return record;
+    uint32_t withdraw_type_mask = 0;
+    withdraw_type_mask |= 1 << withdraw_null_type;
+    withdraw_type_mask |= 1 << withdraw_vesting_type;
+    auto record = _wallet->collect_withdraw_types( account_name, withdraw_type_mask, false, true );
+    _wallet->cache_transaction( record );
+    network_broadcast_transaction( record.trx );
+    return record;
 }
 
 wallet_transaction_record detail::client_impl::wallet_delegate_update_block_signing_key( const string& authorizing_account_name,
