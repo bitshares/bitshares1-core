@@ -56,6 +56,8 @@ namespace bts { namespace blockchain { namespace detail {
           _short_itr         = _db_impl._short_db.lower_bound( market_index_key( next_pair ) );
           _collateral_itr    = _db_impl._collateral_db.lower_bound( market_index_key( next_pair ) );
 
+          _collateral_expiration_itr  = _db_impl._collateral_expiration_index.lower_bound( { quote_id, time_point(), market_index_key( price(0,quote_id,base_id) ) } );
+
           int last_orders_filled = -1;
           asset trading_volume(0, base_id);
           price opening_price, closing_price;
@@ -698,19 +700,52 @@ namespace bts { namespace blockchain { namespace detail {
         {
             _current_collat_record = _collateral_itr.value();
             // Don't cover unless the price is below the feed price or margin position is expired
-            if( (_feed_price.valid() && cover_ask.get_price() > *_feed_price)
-                || _current_collat_record.expiration <= _pending_state->now() )
+            if( (_feed_price.valid() && cover_ask.get_price() > *_feed_price) )
             {
                 _current_ask = cover_ask;
                 --_collateral_itr;
                 return _current_ask.valid();
             }
             --_collateral_itr;
-            continue;
+            break;
         }
         _collateral_itr.reset();
         break;
       }
+
+      /**
+       *  Process expired collateral positions.
+       */
+      while( _collateral_expiration_itr != _db_impl._collateral_expiration_index.end() )
+      {
+         if( _collateral_expiration_itr->quote_id != _quote_id ) 
+            break;
+
+         if( _collateral_expiration_itr->expiration > fc::time_point(_pending_state->now()) )
+            break;
+
+         auto val = _db_impl._collateral_db.fetch( _collateral_expiration_itr->key );
+         const auto cover_ask = market_order( cover_order,
+                                                _collateral_expiration_itr->key,
+                                                order_record(val.payoff_balance),
+                                                val.collateral_balance,
+                                                val.interest_rate,
+                                                val.expiration);
+
+         ++_collateral_expiration_itr;
+
+         // if we have a feed price and margin was called above then don't process it
+         if( !(_feed_price.valid() && cover_ask.get_price() > *_feed_price) )  
+         {
+            _current_ask = cover_ask;
+            return true;
+         } // else continue to next item
+      }
+
+
+      /**
+       *  Expired margin positions take second priority based upon age
+       */
 
       if( _ask_itr.valid() )
       {

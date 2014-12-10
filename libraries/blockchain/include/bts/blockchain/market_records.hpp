@@ -30,6 +30,22 @@ namespace bts { namespace blockchain {
         return std::tie(a.order_price, a.owner) < std::tie(b.order_price, b.owner);
       }
    };
+  struct expiration_index
+  {
+     asset_id_type      quote_id;
+     time_point         expiration;
+     market_index_key   key;
+
+     friend bool operator < ( const expiration_index& a, const expiration_index& b )
+     {
+        return std::tie( a.quote_id, a.expiration, a.key )  < std::tie( b.quote_id, b.expiration, b.key );
+     }
+     friend bool operator == ( const expiration_index& a, const expiration_index& b )
+     {
+        return std::tie( a.quote_id, a.expiration, a.key )  == std::tie( b.quote_id, b.expiration, b.key );
+     }
+
+  };
 
    struct market_history_key
    {
