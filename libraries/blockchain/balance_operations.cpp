@@ -330,9 +330,9 @@ namespace bts { namespace blockchain {
    void release_escrow_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
 #ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_4_26_FORK_BLOCK_NUM has passed
+#warning [SOFTFORK] Remove this check after BTS_V0_4_27_FORK_BLOCK_NUM has passed
 #endif
-      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_26_FORK_BLOCK_NUM );
+      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_27_FORK_BLOCK_NUM );
 
       auto escrow_balance_record = eval_state._current_state->get_balance_record( this->escrow_id );
       FC_ASSERT( escrow_balance_record.valid() );
@@ -476,9 +476,9 @@ namespace bts { namespace blockchain {
    void update_balance_vote_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
 #ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_4_26_FORK_BLOCK_NUM has passed
+#warning [SOFTFORK] Remove this check after BTS_V0_4_27_FORK_BLOCK_NUM has passed
 #endif
-      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_26_FORK_BLOCK_NUM );
+      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_27_FORK_BLOCK_NUM );
 
       auto current_balance_record = eval_state._current_state->get_balance_record( this->balance_id );
       FC_ASSERT( current_balance_record.valid(), "No such balance!" );
