@@ -7,33 +7,6 @@
 using namespace bts::wallet;
 using namespace bts::wallet::detail;
 
-void wallet_impl::scan_genesis_experimental( const account_balance_record_summary_type& account_balances )
-{ try {
-    transaction_ledger_entry record;
-    record.id = fc::ripemd160::hash( string( "GENESIS" ) );
-    record.block_num = 0;
-    record.timestamp = _blockchain->get_genesis_timestamp();
-
-    for( const auto& item : account_balances )
-    {
-        const string& account_name = item.first;
-        for( const auto& balance_record : item.second )
-        {
-            if( !balance_record.snapshot_info.valid() )
-                continue;
-
-            const string& claim_addr = balance_record.snapshot_info->original_address;
-            const asset delta_amount = asset( balance_record.snapshot_info->original_balance, balance_record.condition.asset_id );
-            record.delta_amounts[ claim_addr ][ delta_amount.asset_id ] -= delta_amount.amount;
-            record.delta_amounts[ account_name ][ delta_amount.asset_id ] += delta_amount.amount;
-        }
-    }
-
-    record.operation_notes[ 0 ] = "import founder keys";
-
-    _wallet_db.experimental_transactions[ record.id ] = record; // TODO
-} FC_CAPTURE_AND_RETHROW( (account_balances) ) }
-
 void wallet_impl::scan_block_experimental( uint32_t block_num,
                                            const map<private_key_type, string>& account_keys,
                                            const map<address, string>& account_balances,
@@ -62,13 +35,35 @@ transaction_ledger_entry wallet_impl::scan_transaction_experimental( const trans
 { try {
     const map<private_key_type, string> account_keys = _wallet_db.get_account_private_keys( _wallet_password );
 
+    // TODO: Move this into a separate function
     map<address, string> account_balances;
-    const account_balance_id_summary_type balance_id_summary = self->get_account_balance_ids();
-    for( const auto& balance_item : balance_id_summary )
+    const account_balance_record_summary_type balance_record_summary = self->get_account_balance_records( "", true, -1 );
+    for( const auto& balance_item : balance_record_summary )
     {
         const string& account_name = balance_item.first;
-        for( const auto& balance_id : balance_item.second )
-            account_balances[ balance_id ] = account_name;
+        for( const auto& balance_record : balance_item.second )
+        {
+            const balance_id_type& balance_id = balance_record.id();
+            switch( withdraw_condition_types( balance_record.condition.type ) )
+            {
+                case withdraw_signature_type:
+                    if( balance_record.snapshot_info.valid() )
+                        account_balances[ balance_id ] = "GENESIS-" + balance_record.snapshot_info->original_address;
+                    else
+                        account_balances[ balance_id ] = account_name;
+                    break;
+                case withdraw_vesting_type:
+                    if( balance_record.snapshot_info.valid() )
+                    {
+                        account_balances[ balance_id ] = "SHAREDROP-" + balance_record.snapshot_info->original_address;
+                        break;
+                    }
+                    // else fall through
+                default:
+                    account_balances[ balance_id ] = balance_record.condition.type_label() + "-" + string( balance_id );
+                    break;
+            }
+        }
     }
 
     set<string> account_names;
@@ -129,7 +124,6 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
     // Used by scan_withdraw and scan_deposit below
     const auto collect_balance = [&]( const balance_id_type& balance_id, const asset& delta_amount ) -> bool
     {
-        // TODO: Handle other withdraw types by adding their small ids as values in account_balances outside
         if( account_balances.count( balance_id ) > 0 ) // First check canonical labels
         {
             // TODO: Need to save balance labels locally before emptying them so they can be deleted from the chain
@@ -155,7 +149,6 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
 
     const auto scan_withdraw = [&]( const withdraw_operation& op ) -> bool
     {
-        // TODO: If withdrawing vesting balance, then set delta label appropriately and override account name
         ++withdrawal_count;
         return collect_balance( op.balance_id, eval_state.deltas.at( op_index ) );
     };
@@ -229,6 +222,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
         {
             case withdraw_signature_type:
                 return scan_withdraw_with_signature( op.condition.as<withdraw_with_signature>() );
+            // TODO: Other withdraw types
             default:
                 break;
         }
@@ -587,8 +581,6 @@ set<pretty_transaction_experimental> wallet::transaction_history_experimental( c
 { try {
    FC_ASSERT( is_open() );
    FC_ASSERT( is_unlocked() );
-
-   my->scan_genesis_experimental( get_account_balance_records() );
 
    set<pretty_transaction_experimental> history;
 

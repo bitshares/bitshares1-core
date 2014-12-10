@@ -200,22 +200,6 @@ namespace detail {
         for( const auto& item : account_keys )
             private_keys.push_back( item.first );
 
-         // Collect balances
-        map<address, string> account_balances;
-        const account_balance_id_summary_type balance_id_summary = self->get_account_balance_ids();
-        for( const auto& balance_item : balance_id_summary )
-        {
-            const string& account_name = balance_item.first;
-            for( const auto& balance_id : balance_item.second )
-                account_balances[ balance_id ] = account_name;
-        }
-
-        // Collect accounts
-        set<string> account_names;
-        const vector<wallet_account_record> accounts = self->list_my_accounts();
-        for( const wallet_account_record& account : accounts )
-            account_names.insert( account.name );
-
         if( min_end > start + 1 )
             ulog( "Beginning scan at block ${n}...", ("n",start) );
 
@@ -229,15 +213,6 @@ namespace detail {
             {
             }
 
-#ifdef BTS_TEST_NETWORK
-            try
-            {
-                scan_block_experimental( block_num, account_keys, account_balances, account_names );
-            }
-            catch( ... )
-            {
-            }
-#endif
             _scan_progress = float(block_num-start)/(min_end-start+1);
             self->set_last_scanned_block_number( block_num );
 
@@ -1446,9 +1421,6 @@ namespace detail {
       if( start == 0 )
       {
          my->scan_state();
-#ifdef BTS_TEST_NETWORK
-         my->scan_genesis_experimental( get_account_balance_records() );
-#endif
          ++start;
       }
 
@@ -1567,7 +1539,7 @@ namespace detail {
       }
    }
 
-   vector<wallet_account_record> wallet::get_my_delegates(int delegates_to_retrieve)const
+   vector<wallet_account_record> wallet::get_my_delegates( uint32_t delegates_to_retrieve )const
    {
       FC_ASSERT( is_open() );
       vector<wallet_account_record> delegate_records;
@@ -4003,17 +3975,18 @@ namespace detail {
       return result;
    }
 
+   // TODO: Handle multiple owners
    account_balance_record_summary_type wallet::get_account_balance_records( const string& account_name, bool include_empty,
-                                                                            uint8_t withdraw_type_mask )const
+                                                                            uint32_t withdraw_type_mask )const
    { try {
-      if( !is_open() )
-          FC_CAPTURE_AND_THROW( wallet_closed );
+      if( !is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
 
       map<string, vector<balance_record>> balance_records;
       const auto pending_state = my->_blockchain->get_pending_state();
 
       const auto scan_balance = [&]( const balance_record& record )
       {
+          //if( record.snapshot_info.valid() && !((1 << uint8_t( withdraw_null_type )) & withdraw_type_mask) ) return;
           if( !((1 << uint8_t( record.condition.type )) & withdraw_type_mask) ) return;
 
           const auto key_record = my->_wallet_db.lookup_key( record.owner() );
@@ -4038,7 +4011,7 @@ namespace detail {
    } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_type_mask) ) }
 
    account_balance_id_summary_type wallet::get_account_balance_ids( const string& account_name, bool include_empty,
-                                                                    uint8_t withdraw_type_mask )const
+                                                                    uint32_t withdraw_type_mask )const
    { try {
       map<string, vector<balance_id_type>> balance_ids;
 
@@ -4056,7 +4029,7 @@ namespace detail {
    } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_type_mask) ) }
 
    account_balance_summary_type wallet::get_account_balances( const string& account_name, bool include_empty,
-                                                              uint8_t withdraw_type_mask )const
+                                                              uint32_t withdraw_type_mask )const
    { try {
       map<string, map<asset_id_type, share_type>> balances;
 

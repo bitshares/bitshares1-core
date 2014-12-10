@@ -21,11 +21,11 @@ namespace bts { namespace wallet {
 
    enum delegate_status_flags
    {
-       any_delegate_status      = 0x00,
-       enabled_delegate_status  = 0x01,
-       active_delegate_status   = 0x02,
-       disabled_delegate_status = 0x04,
-       inactive_delegate_status = 0x08
+       any_delegate_status      = 0,
+       enabled_delegate_status  = 1 << 0,
+       active_delegate_status   = 1 << 1,
+       disabled_delegate_status = 1 << 2,
+       inactive_delegate_status = 1 << 3
    };
 
    class wallet
@@ -179,7 +179,7 @@ namespace bts { namespace wallet {
          void set_delegate_block_production( const string& delegate_id, bool enabled = true );
 
          ///@param delegates_to_retrieve Type is delegate_status_flags. Uses int type to allow ORing multiple flags
-         vector<wallet_account_record> get_my_delegates( int delegates_to_retrieve = any_delegate_status )const;
+         vector<wallet_account_record> get_my_delegates( uint32_t delegates_to_retrieve = any_delegate_status )const;
 
          optional<time_point_sec> get_next_producible_block_timestamp( const vector<wallet_account_record>& delegate_records )const;
 
@@ -545,11 +545,11 @@ namespace bts { namespace wallet {
          vector<escrow_summary>             get_escrow_balances( const string& account_name );
 
          account_balance_record_summary_type get_account_balance_records( const string& account_name = "", bool include_empty = true,
-                 uint8_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ) )const;
+                 uint32_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ) )const;
          account_balance_id_summary_type    get_account_balance_ids( const string& account_name = "", bool include_empty = true,
-                 uint8_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ) )const;
+                 uint32_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ) )const;
          account_balance_summary_type       get_account_balances( const string& account_name = "", bool include_empty = true,
-                 uint8_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ) )const;
+                 uint32_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ) )const;
 
          account_balance_summary_type       get_account_yield( const string& account_name = "" )const;
          asset                              asset_worth( const asset& base, const string& price_in_symbol )const;
