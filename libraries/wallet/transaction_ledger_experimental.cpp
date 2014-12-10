@@ -318,7 +318,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
     const auto scan_bid = [&]( const bid_operation& op ) -> bool
     {
         const market_order order( bid_order, op.bid_index, op.amount );
-        const string& delta_label = order.get_small_id();
+        const string delta_label = "BID-" + string( order.get_id() );
 
         const auto scan_delta = [&]( const asset& delta_amount ) -> bool
         {
@@ -352,7 +352,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
     const auto scan_ask = [&]( const ask_operation& op ) -> bool
     {
         const market_order order( ask_order, op.ask_index, op.amount );
-        const string& delta_label = order.get_small_id();
+        const string delta_label = "ASK-" + string( order.get_id() );
 
         const auto scan_delta = [&]( const asset& delta_amount ) -> bool
         {
@@ -386,7 +386,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
     const auto scan_short = [&]( const short_operation& op ) -> bool
     {
         const market_order order( short_order, op.short_index, op.amount );
-        const string& delta_label = order.get_small_id();
+        const string delta_label = "SHORT-" + string( order.get_id() );
 
         const auto scan_delta = [&]( const asset& delta_amount ) -> bool
         {
@@ -418,11 +418,11 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
         return key_record.valid() && key_record->has_private_key();
     };
 
-    // TODO: replace small id with type_label + id
+    // TODO: Delete deprecated market_order::get_small_id()
     const auto scan_cover = [&]( const cover_operation& op ) -> bool
     {
         const market_order order( cover_order, op.cover_index, op.amount );
-        const string& delta_label = order.get_small_id();
+        const string delta_label = "MARGIN-" + string( order.get_id() );
 
         const auto scan_delta = [&]( const asset& delta_amount ) -> bool
         {
