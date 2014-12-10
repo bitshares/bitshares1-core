@@ -1783,36 +1783,44 @@ namespace bts { namespace blockchain {
    }
 
 
-    oobject_record             chain_database::get_object_record( const object_id_type& id )
+    oobject_record             chain_database::get_object_record( const object_id_type& id )const
     {
        return my->_object_db.fetch_optional( id );
     }
 
     void                       chain_database::store_object_record( const object_record& obj )
-    {
-        // Set indices
+    { try { 
         switch( obj.type() )
         {
-            case account_object:
-            case asset_object:
-                FC_ASSERT(!"You cannot store these object types via object interface yet!");
+            case base_object:
+            {
+                ilog("@n storing object record in chain DB");
+                my->_object_db.store( obj._id, obj );
                 break;
+            }
             case edge_object:
             {
                 auto edge = obj.as<edge_record>();
-                my->_edge_index.store( edge.index_key(), edge._id );
-                my->_reverse_edge_index.store( edge.reverse_index_key(), edge._id );
-                ilog("Storing edge: ${e}", ("e", edge));
+                store_edge_record( edge );
                 break;
             }
-            case base_object:
+            case account_object:
+            case asset_object:
+            case auction_object:
+            case site_object:
             default:
+                FC_ASSERT(!"You cannot store these object types via object interface yet!");
                 break;
         }
-        my->_object_db.store( obj._id, obj );
-    }
+    } FC_CAPTURE_AND_RETHROW( (obj) ) }
 
-
+    void                       chain_database::store_edge_record( const edge_record& edge )
+    { try {
+        ilog("@n storing edge in chain DB: ${e}", ("e", edge));
+        my->_edge_index.store( edge.index_key(), edge._id );
+        my->_reverse_edge_index.store( edge.reverse_index_key(), edge._id );
+        my->_object_db.store( edge._id, edge );
+    } FC_CAPTURE_AND_RETHROW( (edge) ) }
 
     oedge_record               chain_database::get_edge( const object_id_type& from,
                                          const object_id_type& to,

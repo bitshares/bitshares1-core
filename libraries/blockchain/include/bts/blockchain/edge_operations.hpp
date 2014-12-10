@@ -1,6 +1,10 @@
 #pragma once
 #include <bts/blockchain/operations.hpp>
 #include <bts/blockchain/edge_record.hpp>
+#include <fc/io/enum_type.hpp>
+#include <fc/io/raw.hpp>
+#include <fc/io/raw_fwd.hpp>
+#include <fc/reflect/reflect.hpp>
 
 namespace bts { namespace blockchain {
 

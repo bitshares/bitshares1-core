@@ -9,6 +9,12 @@ namespace bts { namespace blockchain {
     // if ID is positive, update the existing object
     void set_edge_operation::evaluate( transaction_evaluation_state& eval_state )
     { try {
+        ilog("@n set_edge operation with edge: ${e}", ("e", this->edge));
+        auto obj = object_record( edge );
+        ilog("@n edge's basic object properties:");
+        ilog("@n   _id: ${id}, type: ${type}, short_id: ${short}",
+                ("id", obj._id)("type", obj.type())("short", obj.short_id()));
+
         // Validate the contents in the proposed edge
         auto from = eval_state._current_state->get_object_record( this->edge.from );
         auto to = eval_state._current_state->get_object_record( this->edge.from );
@@ -19,18 +25,22 @@ namespace bts { namespace blockchain {
         if( NOT eval_state.check_multisig( owners ) )
             FC_CAPTURE_AND_THROW( missing_signature, ( owners ) );
 
+        ilog("@n getting edge");
         auto edge = eval_state._current_state->get_edge( this->edge.from, this->edge.to, this->edge.name );
 
         if( edge.valid() )
         {
+            ilog("@n edge exists, synchronizing object IDs");
             this->edge._id = edge->_id;
         }
         else
         {
+            ilog("@n no existing edge, getting new object ID");
             auto next_id = eval_state._current_state->new_object_id( edge_object );
             this->edge.set_id( edge_object, next_id );
         }
-        eval_state._current_state->store_object_record( object_record(edge) );
+        ilog("@n storing the edge");
+        eval_state._current_state->store_edge_record( this->edge );
     } FC_CAPTURE_AND_RETHROW( (*this)(eval_state) ) }
 
 }} // bts::blockchain

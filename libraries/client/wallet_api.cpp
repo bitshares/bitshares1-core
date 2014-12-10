@@ -575,19 +575,9 @@ transaction_builder detail::client_impl::wallet_set_edge(
     edge.name = name;
     edge.value = value;
 
-    // TODO if edge exists...
-    bool exists = false;
-    uint32_t existing_id = 1;
-    if( exists )
-    {
-        edge.set_id( edge_object, existing_id );
-        builder->set_object( paying_account, object_record(edge), false );
-    }
-    else
-    {
-        builder->set_object( paying_account, object_record(edge), true );
-    }
+    builder->set_edge( paying_account, edge );
     builder->finalize().sign();
+    network_broadcast_transaction( builder->transaction_record.trx );
     return *builder;
 } FC_CAPTURE_AND_RETHROW( (paying_account)(from)(to)(name)(value) ) }
 

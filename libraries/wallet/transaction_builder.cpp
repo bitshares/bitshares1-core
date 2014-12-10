@@ -273,8 +273,10 @@ transaction_builder& transaction_builder::set_object(const string& payer_name,
 transaction_builder& transaction_builder::set_edge(const string& payer_name,
                                                    const edge_record& edge )
 { try {
+    ilog("@n building a set_edge transactoin");
     auto payer = _wimpl->self->get_account( payer_name );
     deduct_balance( payer.owner_address(), asset() );
+    trx.set_edge( edge );
     for( auto addr : _wimpl->_blockchain->get_object_owners( edge ).owners )
         required_signatures.insert( addr );
     return *this;

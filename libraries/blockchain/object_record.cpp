@@ -26,3 +26,14 @@ namespace bts { namespace blockchain {
     }
 
 }} // bts::blockchain
+/*
+namespace fc {
+   void to_variant( const bts::blockchain::object_record& var,  variant& vo )
+   {
+   }
+
+   void from_variant( const variant& var,  bts::blockchain::object_record& vo )
+   {
+   }
+}
+*/
