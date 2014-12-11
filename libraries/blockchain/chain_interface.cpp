@@ -55,15 +55,14 @@ namespace bts { namespace blockchain {
            return false;
 
        int dots = 0;
-       std::locale loc;
-       for( const auto& c : symbol )
+       for( char c : symbol )
        {
            if( c == '.' )
            {
               if( ++dots > 1 )
                return false;
            }
-           else if( !std::isalnum( c, loc ) || !std::isupper( c, loc ) )
+           else if( !std::isalnum( c, std::locale::classic() ) || !std::isupper( c, std::locale::classic() ) )
                return false;
        }
        if( symbol.back() == '.' ) return false;
