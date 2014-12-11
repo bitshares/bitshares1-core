@@ -250,7 +250,14 @@ namespace fc {
       using namespace bts::blockchain;
       auto obj = var.get_object();
       from_variant( obj["asset_id"], vo.asset_id );
-      from_variant( obj["slate_id"], vo.slate_id );
+      try
+      {
+          from_variant( obj["slate_id"], vo.slate_id );
+      }
+      catch( const fc::key_not_found_exception& )
+      {
+          from_variant( obj["delegate_slate_id"], vo.slate_id );
+      }
       from_variant( obj["type"], vo.type );
 
       switch( (withdraw_condition_types) vo.type )
