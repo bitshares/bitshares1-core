@@ -91,6 +91,7 @@ namespace bts { namespace blockchain {
             return fc::raw::unpack<ObjectType>(_data);
         }
 
+        void                        set_id( object_id_type );
         void                        set_id( obj_type type, uint64_t number );
         void                        make_null();
 
@@ -99,7 +100,7 @@ namespace bts { namespace blockchain {
         variant                     user_data; // user-added metadata for all objects - actual application logic should go in derived class
         vector<char>                _data; // derived class properties
 
-        // always use chain_interface->get_object_owners(obj)  instead of accessing this!
+        // always use chain_interface->get_object_condition(obj)  instead of accessing this!
         // At least until we migrate all legacy object types
         multisig_condition          _owners;
         object_id_type              owner_object; // If this points to itself, then the condition is _owners

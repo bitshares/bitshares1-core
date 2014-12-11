@@ -548,7 +548,7 @@ vector<object_record> detail::client_impl::wallet_object_list( const string& acc
     const auto acct_keys = _wallet->get_public_keys_in_account( account );
     const auto scan_object = [&]( const object_record& obj )
     {
-        for( auto owner : pending_state->get_object_owners( obj ).owners )
+        for( auto owner : pending_state->get_object_condition( obj ).owners )
         {
             for( auto key : acct_keys )
             {

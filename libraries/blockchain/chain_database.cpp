@@ -1935,6 +1935,31 @@ namespace bts { namespace blockchain {
         }
     } FC_CAPTURE_AND_RETHROW( (obj) ) }
 
+
+
+    void                       chain_database::store_site_record( const site_record& site )
+    {
+        my->_site_index.store(site.site_name, site._id);
+        my->_object_db.store(site._id, site);
+        ilog("@n after storing site in chain DB:");
+        ilog("@n      as an object: ${o}", ("o", object_record(site)));
+        ilog("@n      as a site: ${s}", ("s", site));
+    }
+
+   osite_record  chain_database::lookup_site( const string& site_name )const
+   { try {
+       auto site_id = my->_site_index.fetch_optional( site_name );
+       if( site_id.valid() )
+       {
+           auto obj = my->_object_db.fetch( *site_id );
+           return obj.as<site_record>();
+       }
+       return osite_record();
+   } FC_CAPTURE_AND_RETHROW( (site_name) ) }
+
+
+
+
     void                       chain_database::store_edge_record( const edge_record& edge )
     { try {
         ilog("@n storing edge in chain DB: ${e}", ("e", edge));

@@ -157,6 +157,8 @@ namespace bts { namespace blockchain {
             bts::db::level_map<edge_index_key, object_id_type>                          _edge_index;
             bts::db::level_map<edge_index_key, object_id_type>                          _reverse_edge_index;
 
+            bts::db::level_map<string, object_id_type>                                  _site_index;
+
             /**
              *  This index is to facilitate light weight clients and is intended mostly for
              *  block explorers and other APIs serving data.

@@ -264,7 +264,7 @@ transaction_builder& transaction_builder::set_object(const string& payer_name,
     else
         id = obj.short_id();
     trx.set_object( obj );
-    for( auto addr : _wimpl->_blockchain->get_object_owners( obj ).owners )
+    for( auto addr : _wimpl->_blockchain->get_object_condition( obj ).owners )
         required_signatures.insert( addr );
 
     return *this;
@@ -277,7 +277,7 @@ transaction_builder& transaction_builder::set_edge(const string& payer_name,
     auto payer = _wimpl->self->get_account( payer_name );
     deduct_balance( payer.owner_address(), asset() );
     trx.set_edge( edge );
-    for( auto addr : _wimpl->_blockchain->get_object_owners( edge ).owners )
+    for( auto addr : _wimpl->_blockchain->get_object_condition( edge ).owners )
         required_signatures.insert( addr );
     return *this;
 } FC_CAPTURE_AND_RETHROW( (payer_name)(edge) ) }

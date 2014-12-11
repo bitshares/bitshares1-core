@@ -17,7 +17,7 @@ namespace bts { namespace blockchain {
         {
             ilog("@n object exists");
             obj = object_record( *oobj );
-            auto owners = eval_state._current_state->get_object_owners( obj );
+            auto owners = eval_state._current_state->get_object_condition( obj );
             if( NOT eval_state.check_multisig( owners ) )
                 FC_CAPTURE_AND_THROW( missing_signature, (owners) );
         }
@@ -28,7 +28,7 @@ namespace bts { namespace blockchain {
             auto next_id = eval_state._current_state->new_object_id( base_object );
             obj = object_record( this->obj );
             obj.set_id( this->obj.type(), next_id );
-            auto owners = eval_state._current_state->get_object_owners( obj );
+            auto owners = eval_state._current_state->get_object_condition( obj );
             if( NOT eval_state.check_multisig( owners ) )
                 FC_CAPTURE_AND_THROW( missing_signature, ( owners ) );
         }
