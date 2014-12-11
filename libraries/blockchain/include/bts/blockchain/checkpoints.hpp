@@ -4,7 +4,7 @@
 
 const static std::map<uint32_t, bts::blockchain::block_id_type> CHECKPOINT_BLOCKS
 {
-    {       1, bts::blockchain::block_id_type( "8abcfb93c52f999e3ef5288c4f837f4f15af5521" ) }/*,
+    {       1, bts::blockchain::block_id_type( "8abcfb93c52f999e3ef5288c4f837f4f15af5521" ) },
     {  100000, bts::blockchain::block_id_type( "96f98d49722848a6a47ad04aece8b9f93c9e9c23" ) },
     {  200000, bts::blockchain::block_id_type( "222ddc49db592103c51ad22cdc4140185ef564d9" ) },
     {  300000, bts::blockchain::block_id_type( "0d1d0b8f7f1f4590f8e083edc03869383ed74e3e" ) },
@@ -18,5 +18,4 @@ const static std::map<uint32_t, bts::blockchain::block_id_type> CHECKPOINT_BLOCK
     { 1100000, bts::blockchain::block_id_type( "bec7da4758ad453a49a9d9d4128acb92a1fdfd04" ) },
     { 1200000, bts::blockchain::block_id_type( "9e514e0f0a17d78be7c0045f9f22a253812c6c92" ) },
     { 1234000, bts::blockchain::block_id_type( "ea7d1c9d8021a8c4cea5d397c1d9f1f6c72aa957" ) }
-    */
 };
