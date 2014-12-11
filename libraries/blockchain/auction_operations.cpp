@@ -9,6 +9,8 @@ namespace bts { namespace blockchain {
     // Always a user auction
     void auction_start_operation::evaluate( transaction_evaluation_state& eval_state ) 
     {
+        FC_ASSERT( !"This operation is not enabled yet!" );
+
         auto chain = eval_state._current_state;
         FC_ASSERT( eval_state.check_update_permission( this->item_id ), "You don't have permission to update that item" );
 
@@ -47,6 +49,8 @@ namespace bts { namespace blockchain {
 
     void auction_bid_operation::evaluate( transaction_evaluation_state& eval_state ) 
     {
+        FC_ASSERT( !"This operation is not enabled yet!" );
+
         auto object = eval_state._current_state->get_object_record( this->auction_id );
         FC_ASSERT( object.valid(), "No such auction.");
         if( object->type() == obj_type::user_auction_object )
@@ -59,6 +63,8 @@ namespace bts { namespace blockchain {
 
     void user_auction_claim_operation::evaluate( transaction_evaluation_state& eval_state )
     { try {
+        FC_ASSERT( !"This operation is not enabled yet!" );
+
         auto chain = eval_state._current_state;   
         auto obj = chain->get_object_record( this->auction_id );
         FC_ASSERT( obj.valid(), "No such auction." );

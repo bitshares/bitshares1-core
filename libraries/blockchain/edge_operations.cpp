@@ -10,6 +10,8 @@ namespace bts { namespace blockchain {
     // if ID is positive, update the existing object
     void set_edge_operation::evaluate( transaction_evaluation_state& eval_state )
     { try {
+        FC_ASSERT( !"This operation is not enabled yet!" );
+
         ilog("@n set_edge operation with edge: ${e}", ("e", this->edge));
         auto obj = object_record( edge );
         ilog("@n edge's basic object properties:");
