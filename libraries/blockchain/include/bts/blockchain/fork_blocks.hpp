@@ -30,6 +30,8 @@
 
 #define BTS_CHECK_CANONICAL_SIGNATURE_FORK_BLOCK_NUM BTS_V0_4_25_FORK_BLOCK_NUM
 
+#define FORK_25 1249400 // FIXME
+
 #define BTS_FORK_TO_UNIX_TIME_LIST  ((BTS_V0_4_0_FORK_BLOCK_NUM,   "0.4.0",     1408064036)) \
                                     ((BTS_V0_4_9_FORK_2_BLOCK_NUM, "0.4.9",     1409193626)) \
                                     ((BTS_V0_4_10_FORK_BLOCK_NUM,  "0.4.10",    1409437355)) \

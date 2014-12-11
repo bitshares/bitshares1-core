@@ -112,7 +112,9 @@ namespace bts { namespace blockchain {
       if( prev_state )
       {
          auto prop = prev_state->get_property(chain_id);
-         FC_ASSERT( unique_transactions.insert(rec.trx.digest( prop.as<digest_type>() )).second );
+         auto insert_result = unique_transactions.insert(rec.trx.digest( prop.as<digest_type>() ));
+         if (get_head_block_num()  >= FORK_25)
+           FC_ASSERT(insert_result.second, "duplicate transaction error");
       }
 
       for( const auto& op : rec.trx.operations )
