@@ -232,14 +232,15 @@ namespace fc {
          case withdraw_multisig_type:
             obj["data"] = fc::raw::unpack<withdraw_with_multisig>( var.data );
             break;
-         case withdraw_escrow_type:
-            obj["data"] = fc::raw::unpack<withdraw_with_escrow>( var.data );
-            break;
          case withdraw_password_type:
             obj["data"] = fc::raw::unpack<withdraw_with_password>( var.data );
             break;
-         default:
-            FC_ASSERT( !"Invalid withdraw condition!" );
+         case withdraw_reserved_type:
+            break;
+         case withdraw_escrow_type:
+            obj["data"] = fc::raw::unpack<withdraw_with_escrow>( var.data );
+            break;
+         // No default to force compiler warning
       }
       vo = std::move( obj );
    }
@@ -265,11 +266,13 @@ namespace fc {
          case withdraw_multisig_type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_with_multisig>() );
             return;
-         case withdraw_escrow_type:
-            vo.data = fc::raw::pack( obj["data"].as<withdraw_with_escrow>() );
-            return;
          case withdraw_password_type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_with_password>() );
+            return;
+         case withdraw_reserved_type:
+            return;
+         case withdraw_escrow_type:
+            vo.data = fc::raw::pack( obj["data"].as<withdraw_with_escrow>() );
             return;
          // No default to force compiler warning
       }
