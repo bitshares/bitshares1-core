@@ -128,6 +128,17 @@ module BitShares
 
       nodes = [@delegate_node, @alice_node, @bob_node, @mail_node]
       wait_nodes(nodes)
+      
+      @delegate_node.exec 'wallet_open', 'default'
+      @delegate_node.exec 'wallet_unlock', '9999999', 'password'
+      @delegate_node.exec 'wallet_delegate_set_block_production', 'ALL', true
+      
+      @alice_node.exec 'wallet_open', 'default'
+      @alice_node.exec 'wallet_unlock', '9999999', 'password'
+      
+      @bob_node.exec 'wallet_open', 'default'
+      @bob_node.exec 'wallet_unlock', '9999999', 'password'
+      
     end
 
     def create
