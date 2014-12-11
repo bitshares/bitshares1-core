@@ -1,11 +1,10 @@
 default (unlocked) >>> help wallet_account_balance
 Usage:
-wallet_account_balance [account_name] [withdraw_condition]                                            Lists the total asset balances for the specified account
+wallet_account_balance [account_name]                                                                 Lists the total asset balances for the specified account
 Lists the total asset balances for the specified account
 
 Parameters:
   account_name (account_name, optional, defaults to ""): the account to get a balance for, or leave empty for all accounts
-  withdraw_condition (withdraw_condition_type, optional, defaults to "withdraw_signature_type"): the withdraw condition type to return balances for
 
 Returns:
   account_balance_summary_type
@@ -15,4 +14,43 @@ default (unlocked) >>> wallet_account_balance delegate0
 ACCOUNT                         BALANCE                     
 ============================================================
 delegate0                       19,801,980.19801 XTS        
+default (unlocked) >>> help wallet_account_balance_extended
+Usage:
+wallet_account_balance_extended [account_name]                                                        Lists the total asset balances across all withdraw condition types for the specified account
+Lists the total asset balances across all withdraw condition types for the specified account
+
+Parameters:
+  account_name (account_name, optional, defaults to ""): the account to get a balance for, or leave empty for all accounts
+
+Returns:
+  account_extended_balance_type
+default (unlocked) >>> wallet_account_balance_extended delegate0
+[[
+    "delegate0",[[
+        "SIGNATURE",[{
+            "amount": 1980198019801,
+            "asset_id": 0
+          }
+        ]
+      ]
+    ]
+  ]
+]
+default (unlocked) >>> help wallet_account_balance_ids
+Usage:
+wallet_account_balance_ids [account_name]                                                             Lists the balance record ids for the specified account
+Lists the balance record ids for the specified account
+
+Parameters:
+  account_name (account_name, optional, defaults to ""): the account to list balance ids for, or leave empty for all accounts
+
+Returns:
+  account_balance_id_summary_type
+default (unlocked) >>> wallet_account_balance_ids delegate0
+[[
+    "delegate0",[
+      "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz"
+    ]
+  ]
+]
 default (unlocked) >>> quit
