@@ -387,6 +387,7 @@ namespace bts { namespace blockchain {
         return oobject_record();
    }
 
+   //TODO this should not use a switch
    void pending_chain_state::store_object_record(const object_record& obj)
    {
         ilog("@n storing object in pending_chain_state");

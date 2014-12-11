@@ -177,7 +177,9 @@ namespace bts { namespace blockchain {
            }
            case( obj_type::edge_object ):
            {
+               ilog("@n object: ${o}", ("o", obj));
                const edge_record& edge = obj.as<edge_record>();
+               ilog("@n edge: ${e}", ("e", edge));
                auto from_object = get_object_record( edge.from );
                FC_ASSERT( from_object.valid(), "Unrecognized from object.");
                return get_object_condition( *from_object, depth+1 );

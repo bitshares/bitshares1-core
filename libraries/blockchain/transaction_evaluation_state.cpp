@@ -29,11 +29,9 @@ namespace bts { namespace blockchain {
    bool transaction_evaluation_state::check_multisig( const multisig_condition& condition )const
    { try {
 
-      if( _skip_signature_check )
-          return true;
       auto valid = 0;
       for( auto addr : condition.owners )
-          if( signed_keys.find( addr) != signed_keys.end() )
+          if( check_signature( addr ) )
               valid++;
       return valid >= condition.required;
 

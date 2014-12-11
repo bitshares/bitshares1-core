@@ -3,6 +3,8 @@
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/pending_chain_state.hpp>
 
+#define BTS_CHECK_CANONICAL_SIGNATURE_FORK_BLOCK_NUM 1
+
 namespace bts { namespace blockchain {
 
    namespace detail { class chain_database_impl; }

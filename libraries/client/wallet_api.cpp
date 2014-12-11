@@ -543,12 +543,16 @@ transaction_builder detail::client_impl::wallet_object_transfer(
 
 vector<object_record> detail::client_impl::wallet_object_list( const string& account )
 { try {
+    ilog("@n called wallet_object_list");
     vector<object_record> ret;
     const auto pending_state = _chain_db->get_pending_state();
     const auto acct_keys = _wallet->get_public_keys_in_account( account );
     const auto scan_object = [&]( const object_record& obj )
     {
-        for( auto owner : pending_state->get_object_condition( obj ).owners )
+        ilog("@n scan_object callback for object: ${o}", ("o", obj));
+        auto condition = pending_state->get_object_condition( obj );
+        ilog("@n condition is: ${c}", ("c", condition));
+        for( auto owner : condition.owners )
         {
             for( auto key : acct_keys )
             {

@@ -1931,6 +1931,8 @@ namespace bts { namespace blockchain {
             {
                 ilog("@n storing a base_object record in chain DB");
                 my->_object_db.store( obj._id, obj );
+                auto o = my->_object_db.fetch_optional( obj._id );
+                ilog("@n fetched it again as a sanity check: ${o}", ("o", o));
                 break;
             }
             case edge_object:
@@ -2118,8 +2120,10 @@ namespace bts { namespace blockchain {
    void chain_database::scan_objects( function<void( const object_record& )> callback )const
    {
         auto itr = my->_object_db.begin();
+        ilog("@n starting object db scan");
         while( itr.valid() )
         {
+           ilog("@n scanning object: ${o}", ("o", itr.value()));
            callback( itr.value() );
            ++itr;
         }
