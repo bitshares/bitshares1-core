@@ -15,8 +15,9 @@ namespace bts { namespace blockchain {
       withdraw_signature_type   = 1,
       withdraw_vesting_type     = 2,
       withdraw_multisig_type    = 3,
-      withdraw_escrow_type      = 4,
-      withdraw_password_type    = 5
+      withdraw_password_type    = 4,
+      withdraw_reserved_type    = 5,
+      withdraw_escrow_type      = 6
    };
 
    /**
@@ -200,8 +201,9 @@ FC_REFLECT_ENUM( bts::blockchain::withdraw_condition_types,
         (withdraw_signature_type)
         (withdraw_vesting_type)
         (withdraw_multisig_type)
-        (withdraw_escrow_type)
         (withdraw_password_type)
+        (withdraw_reserved_type)
+        (withdraw_escrow_type)
         )
 FC_REFLECT( bts::blockchain::withdraw_condition,
         (asset_id)
