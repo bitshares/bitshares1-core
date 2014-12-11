@@ -96,18 +96,24 @@ namespace bts { namespace blockchain {
       return prev_state->get_transaction( trx_id, exact );
    }
 
-   bool pending_chain_state::is_known_transaction( const transaction_id_type& id )
+   bool pending_chain_state::is_known_transaction( fc::time_point_sec exp, const digest_type& id )
    { try {
-      auto itr = transactions.find( id );
-      if( itr != transactions.end() ) return true;
+      auto itr = unique_transactions.find( id );
+      if( itr != unique_transactions.end() ) return true;
       chain_interface_ptr prev_state = _prev_state.lock();
-      return prev_state->is_known_transaction( id );
+      return prev_state->is_known_transaction( exp, id );
    } FC_CAPTURE_AND_RETHROW( (id) ) }
 
    void pending_chain_state::store_transaction( const transaction_id_type& id,
                                                 const transaction_record& rec )
    {
+      chain_interface_ptr prev_state = _prev_state.lock();
       transactions[id] = rec;
+      if( prev_state )
+      {
+         auto prop = prev_state->get_property(chain_id);
+         FC_ASSERT( unique_transactions.insert(rec.trx.digest( prop.as<digest_type>() )).second );
+      }
 
       for( const auto& op : rec.trx.operations )
         store_recent_operation(op);
