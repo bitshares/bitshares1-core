@@ -186,7 +186,7 @@ namespace bts { namespace blockchain {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void transaction_evaluation_state::evaluate( const signed_transaction& trx_arg, bool skip_signature_check )
+   void transaction_evaluation_state::evaluate( const signed_transaction& trx_arg, bool skip_signature_check, bool enforce_canonical )
    { try {
       _skip_signature_check = skip_signature_check;
       try {
@@ -212,7 +212,7 @@ namespace bts { namespace blockchain {
            auto digest = trx_arg.digest( _chain_id );
            for( const auto& sig : trx.signatures )
            {
-              auto key = fc::ecc::public_key( sig, digest ).serialize();
+              auto key = fc::ecc::public_key( sig, digest, enforce_canonical ).serialize();
               signed_keys.insert( address(key) );
               signed_keys.insert( address(pts_address(key,false,56) ) );
               signed_keys.insert( address(pts_address(key,true,56) )  );
