@@ -198,7 +198,7 @@ namespace bts { namespace blockchain {
 
         auto trx_id = trx_arg.id();
 
-        if( _current_state->is_known_transaction( trx_id ) )
+        if( _current_state->is_known_transaction( trx_arg.expiration, trx_arg.digest( _chain_id ) ) )
            FC_CAPTURE_AND_THROW( duplicate_transaction, (trx_id) );
 
         trx = trx_arg;

@@ -96,6 +96,7 @@ namespace bts { namespace blockchain {
              */
             pending_chain_state_ptr                                                     _pending_trx_state;
 
+
             chain_database*                                                             self = nullptr;
             unordered_set<chain_observer*>                                              _observers;
             digest_type                                                                 _chain_id;
@@ -119,7 +120,7 @@ namespace bts { namespace blockchain {
 
             bts::db::level_map<block_id_type,full_block>                                _block_id_to_block_data_db;
 
-            std::unordered_set<transaction_id_type>                                     _known_transactions;
+            map<fc::time_point_sec, unordered_set<digest_type> >                        _unique_transactions;
             bts::db::level_map<transaction_id_type,transaction_record>                  _id_to_transaction_record_db;
 
             signed_block_header                                                         _head_block_header;
