@@ -132,7 +132,8 @@ namespace bts { namespace blockchain {
                                                                              bool override_limits = true );
 
          vector<transaction_evaluation_state_ptr> get_pending_transactions()const;
-         bool                                     is_known_transaction( fc::time_point_sec exp, const digest_type& trx_id );
+         virtual bool                             is_known_transaction( const fc::time_point_sec& exp,
+                                                                        const digest_type& trx_id )const override;
 
          /** Produce a block for the given timeslot, the block is not signed because that is the
           *  role of the wallet.

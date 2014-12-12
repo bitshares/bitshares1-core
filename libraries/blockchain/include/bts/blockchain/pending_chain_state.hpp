@@ -40,7 +40,7 @@ namespace bts { namespace blockchain {
          virtual odelegate_slate        get_delegate_slate( slate_id_type id )const override;
          virtual void                   store_delegate_slate( slate_id_type id, const delegate_slate& slate ) override;
 
-         virtual bool                   is_known_transaction( fc::time_point_sec exp, const digest_type& trx_id ) override;
+         virtual bool                   is_known_transaction( const fc::time_point_sec& exp, const digest_type& trx_id )const override;
          virtual otransaction_record    get_transaction( const transaction_id_type& trx_id, bool exact = true )const override;
 
          virtual void                   store_transaction( const transaction_id_type&, const transaction_record&  ) override;
@@ -141,7 +141,7 @@ namespace bts { namespace blockchain {
          unordered_map< string, account_id_type>                           account_id_index;
          unordered_map< string, asset_id_type>                             symbol_id_index;
          unordered_map< transaction_id_type, transaction_record>           transactions;
-         unordered_set< digest_type >                                      unique_transactions; 
+         unordered_set< digest_type >                                      unique_transactions;
          unordered_map< chain_property_type, variant>                      properties;
          unordered_map<address, account_id_type>                           key_to_account;
          map< market_index_key, order_record>                              bids;
@@ -156,7 +156,7 @@ namespace bts { namespace blockchain {
          map<burn_record_key,burn_record_value>                            burns;
          map< market_index_key, order_record>                              relative_bids;
          map< market_index_key, order_record>                              relative_asks;
-                                                                           
+
          map< object_id_type, object_record >                              objects;
 
          map< edge_index_key, object_id_type >                             edge_index;
