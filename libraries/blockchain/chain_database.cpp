@@ -104,7 +104,6 @@ namespace bts { namespace blockchain {
           _block_id_to_block_data_db.open( data_dir / "raw_chain/block_id_to_block_data_db" );
           _id_to_transaction_record_db.open( data_dir / "index/id_to_transaction_record_db" );
 
-
           _pending_transaction_db.open( data_dir / "index/pending_transaction_db" );
 
           _asset_db.open( data_dir / "index/asset_db" );
@@ -1241,9 +1240,16 @@ namespace bts { namespace blockchain {
 
              my->initialize_genesis( genesis_file );
 
+             // Load block num -> id db into memory and clear from disk for re-indexing
              map<uint32_t, block_id_type> num_to_id;
-             for (auto itr = my->_block_num_to_id_db.begin(); itr.valid(); ++itr)
-                 num_to_id[itr.key()] = itr.value();
+             {
+                 for (auto itr = my->_block_num_to_id_db.begin(); itr.valid(); ++itr)
+                     num_to_id[itr.key()] = itr.value();
+
+                 my->_block_num_to_id_db.close();
+                 fc::remove_all( data_dir / "raw_chain/block_num_to_id_db" );
+                 my->_block_num_to_id_db.open( data_dir / "raw_chain/block_num_to_id_db" );
+             }
 
              if( !reindex_status_callback )
                  std::cout << "Please be patient, this will take a few minutes...\r\nRe-indexing database..." << std::flush << std::fixed;
