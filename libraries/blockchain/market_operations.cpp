@@ -77,10 +77,7 @@ namespace bts { namespace blockchain {
     */
    void relative_bid_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-#ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_4_27_FORK_BLOCK_NUM has passed
-#endif
-      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_27_FORK_BLOCK_NUM );
+      FC_ASSERT( !"This operation is not enabled yet!" );
 
       if( this->bid_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (bid_index.order_price) );
@@ -199,10 +196,7 @@ namespace bts { namespace blockchain {
     */
    void relative_ask_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-#ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_4_27_FORK_BLOCK_NUM has passed
-#endif
-      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_27_FORK_BLOCK_NUM );
+      FC_ASSERT( !"This operation is not enabled yet!" );
 
       if( this->ask_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (ask_index.order_price) );
