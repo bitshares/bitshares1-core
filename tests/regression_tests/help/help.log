@@ -126,8 +126,9 @@ rpc_set_username [username]
 rpc_start_server [port]                                                                             
 stop                                                                                                
 validate_address <address>                                                                          
-wallet_account_balance [account_name] [withdraw_condition]                                          
-wallet_account_balance_ids [account_name] [withdraw_condition]                                      
+wallet_account_balance [account_name]                                                               
+wallet_account_balance_extended [account_name]                                                      
+wallet_account_balance_ids [account_name]                                                           
 wallet_account_create <account_name> [private_data]                                                 
 wallet_account_list_public_keys <account_name>                                                      
 wallet_account_order_list [account_name] [limit]                                                    

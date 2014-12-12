@@ -17,14 +17,14 @@ namespace bts { namespace blockchain {
       return fc::ripemd160::hash( enc.result() );
    }
 
-   bool signed_block_header::validate_signee( const fc::ecc::public_key& expected_signee )const
+   bool signed_block_header::validate_signee( const fc::ecc::public_key& expected_signee, bool enforce_canonical )const
    { 
-      return fc::ecc::public_key( delegate_signature, digest() ) == expected_signee;
+      return fc::ecc::public_key( delegate_signature, digest(), enforce_canonical ) == expected_signee;
    }
 
-   public_key_type signed_block_header::signee()const
+   public_key_type signed_block_header::signee( bool enforce_canonical )const
    { 
-      return fc::ecc::public_key( delegate_signature, digest() );
+      return fc::ecc::public_key( delegate_signature, digest(), enforce_canonical );
    }
 
    void signed_block_header::sign( const fc::ecc::private_key& signer )

@@ -3,6 +3,8 @@
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/pending_chain_state.hpp>
 
+#define BTS_CHECK_CANONICAL_SIGNATURE_FORK_BLOCK_NUM 1
+
 namespace bts { namespace blockchain {
 
    namespace detail { class chain_database_impl; }
@@ -132,7 +134,7 @@ namespace bts { namespace blockchain {
                                                                              bool override_limits = true );
 
          vector<transaction_evaluation_state_ptr> get_pending_transactions()const;
-         bool                                     is_known_transaction( const transaction_id_type& trx_id );
+         bool                                     is_known_transaction( fc::time_point_sec exp, const digest_type& trx_id );
 
          /** Produce a block for the given timeslot, the block is not signed because that is the
           *  role of the wallet.
@@ -303,7 +305,12 @@ namespace bts { namespace blockchain {
          virtual oobject_record             get_object_record( const object_id_type& id )const override;
 
 
+        virtual void                       store_site_record( const site_record& site )override;
+        virtual osite_record               lookup_site( const string& site_name) const override;
+
         virtual void                       store_edge_record( const edge_record& edge )override;
+
+
         virtual oedge_record               get_edge( const object_id_type& from,
                                                   const object_id_type& to,
                                                   const string& name )const          override;
