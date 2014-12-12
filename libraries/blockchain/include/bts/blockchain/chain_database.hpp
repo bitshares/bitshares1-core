@@ -132,7 +132,8 @@ namespace bts { namespace blockchain {
                                                                              bool override_limits = true );
 
          vector<transaction_evaluation_state_ptr> get_pending_transactions()const;
-         bool                                     is_known_transaction( const transaction_id_type& trx_id );
+         virtual bool                             is_known_transaction( const fc::time_point_sec& exp,
+                                                                        const digest_type& trx_id )const override;
 
          /** Produce a block for the given timeslot, the block is not signed because that is the
           *  role of the wallet.
@@ -303,7 +304,12 @@ namespace bts { namespace blockchain {
          virtual oobject_record             get_object_record( const object_id_type& id )const override;
 
 
+        virtual void                       store_site_record( const site_record& site )override;
+        virtual osite_record               lookup_site( const string& site_name) const override;
+
         virtual void                       store_edge_record( const edge_record& edge )override;
+
+
         virtual oedge_record               get_edge( const object_id_type& from,
                                                   const object_id_type& to,
                                                   const string& name )const          override;
@@ -366,6 +372,8 @@ namespace bts { namespace blockchain {
          {
              FC_ASSERT( false, "this shouldn't be called directly" );
          }
+
+         void track_chain_statistics( bool status = true );
 
       private:
          unique_ptr<detail::chain_database_impl> my;

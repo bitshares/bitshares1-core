@@ -819,7 +819,11 @@ bool client_impl::has_item(const bts::net::item_id& id)
 
    if (id.item_type == trx_message_type)
    {
-      return _chain_db->is_known_transaction( id.item_hash );
+      //return _chain_db->is_known_transaction( id.item_hash );
+      // TODO: the performance of get_transaction is much slower than is_known_transaction,
+      // but we do not have enough information to call is_known_transaction because it depends 
+      // upon the transaction digest + expiration date and we only have the trx id.
+      return _chain_db->get_transaction( id.item_hash ).valid();
    }
    return false;
 }
@@ -1248,6 +1252,8 @@ void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_pat
       bool attempt_to_recover_database = false;
       try
       {
+         ulog( "Tracking Statistics: ${s}", ("s",my->_config.track_statistics ) );
+         my->_chain_db->track_chain_statistics( my->_config.track_statistics );
          my->_chain_db->open( data_dir / "chain", genesis_file_path, reindex_status_callback );
       }
       catch( const db::db_in_use_exception& e )

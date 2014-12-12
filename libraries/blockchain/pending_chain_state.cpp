@@ -96,18 +96,24 @@ namespace bts { namespace blockchain {
       return prev_state->get_transaction( trx_id, exact );
    }
 
-   bool pending_chain_state::is_known_transaction( const transaction_id_type& id )
+   bool pending_chain_state::is_known_transaction( const fc::time_point_sec& exp, const digest_type& id )const
    { try {
-      auto itr = transactions.find( id );
-      if( itr != transactions.end() ) return true;
+      auto itr = unique_transactions.find( id );
+      if( itr != unique_transactions.end() ) return true;
       chain_interface_ptr prev_state = _prev_state.lock();
-      return prev_state->is_known_transaction( id );
+      return prev_state->is_known_transaction( exp, id );
    } FC_CAPTURE_AND_RETHROW( (id) ) }
 
    void pending_chain_state::store_transaction( const transaction_id_type& id,
                                                 const transaction_record& rec )
    {
+      chain_interface_ptr prev_state = _prev_state.lock();
       transactions[id] = rec;
+      if( prev_state )
+      {
+         auto prop = prev_state->get_property(chain_id);
+         FC_ASSERT( unique_transactions.insert(rec.trx.digest( prop.as<digest_type>() )).second );
+      }
 
       for( const auto& op : rec.trx.operations )
         store_recent_operation(op);
@@ -381,6 +387,7 @@ namespace bts { namespace blockchain {
         return oobject_record();
    }
 
+   //TODO this should not use a switch
    void pending_chain_state::store_object_record(const object_record& obj)
    {
         ilog("@n storing object in pending_chain_state");
@@ -404,6 +411,13 @@ namespace bts { namespace blockchain {
                 objects[obj._id] = obj;
                 break;
             }
+            case site_object:
+            {
+                ilog("@n it is a site");
+                auto site = obj.as<site_record>();
+                store_site_record( site );
+                break;
+            }
             default:
                 break;
         }
@@ -418,6 +432,15 @@ namespace bts { namespace blockchain {
         ilog("@n after storing edge in pending state:");
         ilog("@n      as an object: ${o}", ("o", objects[edge._id]));
         ilog("@n      as an edge: ${e}", ("e", objects[edge._id].as<edge_record>()));
+    }
+
+    void                       pending_chain_state::store_site_record( const site_record& site )
+    {
+        site_index[site.site_name] = site._id;
+        objects[site._id] = site;
+        ilog("@n after storing site in pending state:");
+        ilog("@n      as an object: ${o}", ("o", objects[site._id]));
+        ilog("@n      as a site: ${s}", ("s", objects[site._id].as<site_record>()));
     }
 
     oedge_record               pending_chain_state::get_edge( const object_id_type& from,
@@ -443,6 +466,22 @@ namespace bts { namespace blockchain {
         FC_ASSERT(!"unimplemented!");
     }
 
+
+
+   osite_record  pending_chain_state::lookup_site( const string& site_name)const
+   { try {
+       auto prev_state = _prev_state.lock();
+       auto itr = site_index.find( site_name );
+       if( itr != site_index.end() )
+       {
+           auto site = get_object_record( itr->second );
+           FC_ASSERT( site.valid(), "A new index was in the pending chain state, but the record was not there" );
+           return site->as<site_record>();
+       }
+       if( prev_state )
+           return prev_state->lookup_site( site_name );
+       return osite_record();
+   } FC_CAPTURE_AND_RETHROW( (site_name) ) }
 
 
    fc::variant pending_chain_state::get_property( chain_property_enum property_id )const

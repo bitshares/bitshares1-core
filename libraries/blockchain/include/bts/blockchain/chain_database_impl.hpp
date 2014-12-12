@@ -96,6 +96,7 @@ namespace bts { namespace blockchain {
              */
             pending_chain_state_ptr                                                     _pending_trx_state;
 
+
             chain_database*                                                             self = nullptr;
             unordered_set<chain_observer*>                                              _observers;
             digest_type                                                                 _chain_id;
@@ -119,7 +120,7 @@ namespace bts { namespace blockchain {
 
             bts::db::level_map<block_id_type,full_block>                                _block_id_to_block_data_db;
 
-            std::unordered_set<transaction_id_type>                                     _known_transactions;
+            map<fc::time_point_sec, unordered_set<digest_type> >                        _unique_transactions;
             bts::db::level_map<transaction_id_type,transaction_record>                  _id_to_transaction_record_db;
 
             signed_block_header                                                         _head_block_header;
@@ -157,6 +158,8 @@ namespace bts { namespace blockchain {
             bts::db::level_map<edge_index_key, object_id_type>                          _edge_index;
             bts::db::level_map<edge_index_key, object_id_type>                          _reverse_edge_index;
 
+            bts::db::level_map<string, object_id_type>                                  _site_index;
+
             /**
              *  This index is to facilitate light weight clients and is intended mostly for
              *  block explorers and other APIs serving data.
@@ -170,6 +173,8 @@ namespace bts { namespace blockchain {
             bts::db::cached_level_map<market_history_key, market_history_record>        _market_history_db;
 
             std::map<operation_type_enum, std::deque<operation>>                        _recent_operations;
+
+            bool _track_stats = true;
       };
   } // end namespace bts::blockchain::detail
 } } // end namespace bts::blockchain

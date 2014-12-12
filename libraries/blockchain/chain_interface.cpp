@@ -55,15 +55,14 @@ namespace bts { namespace blockchain {
            return false;
 
        int dots = 0;
-       std::locale loc;
-       for( const auto& c : symbol )
+       for( const char& c : symbol )
        {
            if( c == '.' )
            {
               if( ++dots > 1 )
                return false;
            }
-           else if( !std::isalnum( c, loc ) || !std::isupper( c, loc ) )
+           else if( !std::isalnum( c, std::locale::classic() ) || !std::isupper( c, std::locale::classic() ) )
                return false;
        }
        if( symbol.back() == '.' ) return false;
@@ -155,40 +154,44 @@ namespace bts { namespace blockchain {
       return next_id;
    }
 
-   // Get an object for whom get_object_owners(o) will not throw and will represent
+   // Get an object for whom get_object_condition(o) will not throw and will represent
    // the condition that is also the owner for this given object
    object_id_type       chain_interface::get_owner_object( const object_id_type& obj )
    {
        FC_ASSERT(!"unimplemented");
    }
 
-   multisig_condition   chain_interface::get_object_owners( const object_record& obj )
+   multisig_condition   chain_interface::get_object_condition( const object_record& obj, int depth )
    { try {
-       multisig_condition owners;
+       if( depth >= 100 )//BTS_OWNER_DEPENDENCY_MAX_DEPTH )
+           FC_ASSERT(!"Cannot determine object condition.");
+       multisig_condition condition;
        switch( obj.type() )
        {
            case( obj_type::base_object ):
            {
-               owners = obj._owners;
-               return owners;
+               if( obj.owner_object == obj._id )
+                   return obj._owners;
+               else
+                   return get_object_condition( obj.owner_object, depth+1 );
            }
            case( obj_type::edge_object ):
            {
+               ilog("@n object: ${o}", ("o", obj));
                const edge_record& edge = obj.as<edge_record>();
+               ilog("@n edge: ${e}", ("e", edge));
                auto from_object = get_object_record( edge.from );
                FC_ASSERT( from_object.valid(), "Unrecognized from object.");
-               // Remove the next assert once you deal with max recursion depth for get_object_owners
-               FC_ASSERT( from_object->type() != obj_type::edge_object, "You can't make an edge from an edge yet.");
-               return get_object_owners( *from_object );
+               return get_object_condition( *from_object, depth+1 );
            }
            case( obj_type::account_object ):
            {
                auto account_id = obj.short_id();
                auto oacct = get_account_record( account_id );
                FC_ASSERT( oacct.valid(), "No such account object!");
-               owners.owners.insert( oacct->owner_address() );
-               owners.required = 1;
-               return owners;
+               condition.owners.insert( oacct->owner_address() );
+               condition.required = 1;
+               return condition;
            }
            case( obj_type::asset_object ):
            {
@@ -198,9 +201,9 @@ namespace bts { namespace blockchain {
                {
                    auto oacct = get_account_record( oasset->issuer_account_id );
                    FC_ASSERT(!"This asset has an issuer but the issuer account doens't exist. Crap!");
-                   owners.owners.insert( oacct->owner_address() );
-                   owners.required = 1;
-                   return owners;
+                   condition.owners.insert( oacct->owner_address() );
+                   condition.required = 1;
+                   return condition;
                }
                else
                {
@@ -209,7 +212,7 @@ namespace bts { namespace blockchain {
            }
            default:
            {
-               FC_ASSERT(!"I don't know how to get the owners for this object type!");
+               FC_ASSERT(!"I don't know how to get the condition for this object type!");
            }
        }
        FC_ASSERT(!"This code path should not happen.");

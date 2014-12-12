@@ -289,7 +289,7 @@
                "name" : "chanced_since",
                "type" : "timestamp",
                "description" : "Filter all balances that haven't chanced since the provided timestamp",
-               "default_value" : ""
+               "default_value" : "1970-1-1T00:00:01"
             }
         ],
         "is_const" : true,

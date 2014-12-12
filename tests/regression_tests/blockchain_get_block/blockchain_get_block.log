@@ -16,13 +16,13 @@ default (unlocked) >>> debug_wait_for_block_by_number 1
 OK
 default (unlocked) >>> blockchain_get_block 1
 {
-  "previous": "0000000000000000000000000000000000000000",
+  "previous": "<d-ign></d-ign>",
   "block_num": 1,
   "timestamp": "2014-06-20T14:40:30",
   "transaction_digest": "c8cf12fe3180ed901a58a0697a522f1217de72d04529bd255627a4ad6164f0f0",
-  "next_secret_hash": "7c3d613b3c7407fb30be265bc5c8085cbd81c772",
+  "next_secret_hash": "<d-ign></d-ign>",
   "previous_secret": "0000000000000000000000000000000000000000",
-  "delegate_signature": "20385151cfea10d2faf4ccc3431afd1cd2af2b4042734d1da1841fe62df4e84e5af0e6e384572ec123c5a6a4d5afc405cb13b34c43e6fc12c64b31128385473539",
+  "delegate_signature": "<d-ign></d-ign>",
   "user_transaction_ids": [],
   "signee_shares_issued": 5000000,
   "signee_fees_collected": 0,
@@ -38,13 +38,13 @@ default (unlocked) >>> debug_wait_for_block_by_number 2
 OK
 default (unlocked) >>> blockchain_get_block 2
 {
-  "previous": "be65bf3271baf68ace61084830450d2291be0189",
+  "previous": "<d-ign></d-ign>",
   "block_num": 2,
   "timestamp": "2014-06-20T14:40:50",
   "transaction_digest": "c8cf12fe3180ed901a58a0697a522f1217de72d04529bd255627a4ad6164f0f0",
-  "next_secret_hash": "2849d01b92b6a0f9f6599c22315b58cba614a4a8",
+  "next_secret_hash": "<d-ign></d-ign>",
   "previous_secret": "0000000000000000000000000000000000000000",
-  "delegate_signature": "201aa5a8312a52af80cdb1d876c62023ff91d434ed35487a69cb047513ff613b2330a20577ac835d4974c9cd76fa09e74d36d1860f14ddb7b56d09138b27c20b64",
+  "delegate_signature": "<d-ign></d-ign>",
   "user_transaction_ids": [],
   "signee_shares_issued": 5000000,
   "signee_fees_collected": 0,
@@ -60,13 +60,13 @@ default (unlocked) >>> debug_wait_for_block_by_number 3
 OK
 default (unlocked) >>> blockchain_get_block 3
 {
-  "previous": "d89ddde123fffbaa71f09d28347f8a2f68e299e7",
+  "previous": "<d-ign></d-ign>",
   "block_num": 3,
   "timestamp": "2014-06-20T14:41:00",
   "transaction_digest": "c8cf12fe3180ed901a58a0697a522f1217de72d04529bd255627a4ad6164f0f0",
-  "next_secret_hash": "a6185d295868817c6940f0d0784ad2efbcabf836",
+  "next_secret_hash": "<d-ign></d-ign>",
   "previous_secret": "0000000000000000000000000000000000000000",
-  "delegate_signature": "1f9466129b87592faa524519aaf04dcdf992bda62c65c8ea30ae789937177cd91e5f7775a13434f115b35c96c527318e5cf6767846bf0f01a8f17ac559250ab3dd",
+  "delegate_signature": "<d-ign></d-ign>",
   "user_transaction_ids": [],
   "signee_shares_issued": 5000000,
   "signee_fees_collected": 0,
@@ -82,13 +82,13 @@ default (unlocked) >>> debug_wait_for_block_by_number 4
 OK
 default (unlocked) >>> blockchain_get_block 4
 {
-  "previous": "d27436aa99e1fa46f044891c318c418253fea103",
+  "previous": "<d-ign></d-ign>",
   "block_num": 4,
   "timestamp": "2014-06-20T14:41:10",
   "transaction_digest": "c8cf12fe3180ed901a58a0697a522f1217de72d04529bd255627a4ad6164f0f0",
-  "next_secret_hash": "fcf56e0f23d2df4d50d803a9206f419b2f5e0f38",
+  "next_secret_hash": "<d-ign></d-ign>",
   "previous_secret": "0000000000000000000000000000000000000000",
-  "delegate_signature": "1f2b4503925f1656d010053986a88f7ac4b2229637bd2841baff4a85e2d3ccd1e1dbd9ecd465b321b26b5566048240d0ff2e4fad52a9704f341070082b1108e12a",
+  "delegate_signature": "<d-ign></d-ign>",
   "user_transaction_ids": [],
   "signee_shares_issued": 5000000,
   "signee_fees_collected": 0,

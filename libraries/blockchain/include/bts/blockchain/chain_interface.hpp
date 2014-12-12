@@ -5,6 +5,7 @@
 #include <bts/blockchain/balance_record.hpp>
 #include <bts/blockchain/object_record.hpp>
 #include <bts/blockchain/edge_record.hpp>
+#include <bts/blockchain/site_record.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
 #include <bts/blockchain/block_record.hpp>
 #include <bts/blockchain/delegate_slate.hpp>
@@ -139,10 +140,10 @@ namespace bts { namespace blockchain {
                                                               const order_record& )                         = 0;
 
          virtual void                       store_relative_bid_record( const market_index_key& key,
-                                                              const order_record& )                         = 0;
+                                                                       const order_record& )                = 0;
 
          virtual void                       store_relative_ask_record( const market_index_key& key,
-                                                              const order_record& )                         = 0;
+                                                                       const order_record& )                = 0;
 
          virtual void                       store_short_record( const market_index_key& key,
                                                                 const order_record& )                       = 0;
@@ -156,7 +157,8 @@ namespace bts { namespace blockchain {
          virtual oaccount_record            get_account_record( const account_id_type& id )const            = 0;
          virtual oaccount_record            get_account_record( const address& owner )const                 = 0;
 
-         virtual bool                       is_known_transaction( const transaction_id_type& trx_id )       = 0;
+         virtual bool                       is_known_transaction( const fc::time_point_sec&,
+                                                                  const digest_type& trx_id )const          = 0;
 
          virtual otransaction_record        get_transaction( const transaction_id_type& trx_id,
                                                              bool exact = true )const                       = 0;
@@ -178,6 +180,7 @@ namespace bts { namespace blockchain {
          virtual oobject_record             get_object_record( const object_id_type& id )const              = 0;
 
          virtual void                       store_edge_record( const edge_record& edge )                    = 0;
+         virtual void                       store_site_record( const site_record& edge )                    = 0;
 
          oedge_record                       get_edge( const object_id_type& id );
          virtual oedge_record               get_edge( const object_id_type& from,
@@ -188,6 +191,7 @@ namespace bts { namespace blockchain {
          virtual map<object_id_type, map<string, edge_record>>
                                             get_edges( const object_id_type& from )const                    = 0;
 
+         virtual osite_record               lookup_site( const string& site_name) const                    = 0;
 
          virtual void                       apply_deterministic_updates(){}
 
@@ -200,7 +204,7 @@ namespace bts { namespace blockchain {
          virtual object_id_type             last_object_id()const;
          virtual object_id_type             new_object_id( obj_type type );
 
-         virtual multisig_condition         get_object_owners( const object_record& obj );
+         virtual multisig_condition         get_object_condition( const object_record& obj, int depth = 0 );
          virtual object_id_type             get_owner_object( const object_id_type& obj );
 
          virtual uint32_t                   get_head_block_num()const                                       = 0;

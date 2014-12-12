@@ -4,6 +4,8 @@ When(/^I make an object: (\w+)  with user data: (\w+)$/) do |obj, data|
     @current_actor.node.exec 'wallet_object_create', @current_actor.account, data
     @current_actor.node.wait_new_block
     new_objects = @current_actor.node.exec 'wallet_object_list', @current_actor.account
+    puts current_objects
+    puts new_objects
 
     new_objects.each do |new|
         found = false
@@ -23,6 +25,7 @@ end
 Then(/^Object with ID: (\w+)  should have user data: (\w+)$/) do |obj, data|
     id = @objects[obj]["_id"]
     objects = @current_actor.node.exec 'wallet_object_list', @current_actor.account
+    puts objects
     object = {}
     objects.each do |o|
         if o["_id"] == id
