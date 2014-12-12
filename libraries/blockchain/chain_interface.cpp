@@ -55,7 +55,7 @@ namespace bts { namespace blockchain {
            return false;
 
        int dots = 0;
-       for( char c : symbol )
+       for( const char& c : symbol )
        {
            if( c == '.' )
            {
