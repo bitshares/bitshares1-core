@@ -22,8 +22,8 @@ namespace bts { namespace blockchain {
    struct signed_block_header : public block_header
    {
        block_id_type    id()const;
-       bool             validate_signee( const fc::ecc::public_key& expected_signee, bool enforce_canoncial = false  )const;
-       public_key_type  signee( bool enforce_canoncial = false )const;
+       bool             validate_signee( const fc::ecc::public_key& expected_signee, bool enforce_canonical = true )const;
+       public_key_type  signee( bool enforce_canonical = true )const;
        void             sign( const fc::ecc::private_key& signer );
 
        signature_type delegate_signature;

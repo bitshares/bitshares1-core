@@ -92,7 +92,7 @@ namespace bts { namespace blockchain {
       make_sale_op_type             = 37,
       buy_sale_op_type              = 38  // makes a buy or an offer
 
-      /* 
+      /*  devshares
       // events
       make_event_op_type            = 39,
       resolve_event_op_type         = 40,

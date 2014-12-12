@@ -24,7 +24,7 @@ namespace bts { namespace blockchain {
         FC_ASSERT( from.valid(), "That 'from' object does not exist!" );
         FC_ASSERT( to.valid(), "That 'to' object does not exist!" );
 
-        auto owners = eval_state._current_state->get_object_owners( *from );
+        auto owners = eval_state._current_state->get_object_condition( *from );
         if( NOT eval_state.check_multisig( owners ) )
             FC_CAPTURE_AND_THROW( missing_signature, ( owners ) );
 

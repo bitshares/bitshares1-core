@@ -720,7 +720,7 @@ namespace bts { namespace blockchain {
                transaction_evaluation_state_ptr trx_eval_state =
                       std::make_shared<transaction_evaluation_state>(pending_state.get(), _chain_id);
                trx_eval_state->evaluate( trx, _skip_signature_verification, 
-                                         block.block_num > BTS_CHECK_CANONICAL_SIGNATURE_FORK_BLOCK_NUM );
+                                         block.block_num >= BTS_CHECK_CANONICAL_SIGNATURE_FORK_BLOCK_NUM );
                //ilog( "evaluation: ${e}", ("e",*trx_eval_state) );
                // TODO:  capture the evaluation state with a callback for wallets...
                // summary.transaction_states.emplace_back( std::move(trx_eval_state) );
@@ -989,7 +989,7 @@ namespace bts { namespace blockchain {
                block_signee = self->get_slot_signee( block_data.timestamp, self->get_active_delegates() ).signing_key();
             else
                /* We need the block_signee's key in several places and computing it is expensive, so compute it here and pass it down */
-               block_signee = block_data.signee( block_data.block_num > BTS_CHECK_CANONICAL_SIGNATURE_FORK_BLOCK_NUM );
+               block_signee = block_data.signee( block_data.block_num >= BTS_CHECK_CANONICAL_SIGNATURE_FORK_BLOCK_NUM );
 
             auto checkpoint_itr = CHECKPOINT_BLOCKS.find(block_data.block_num);
             if( checkpoint_itr != CHECKPOINT_BLOCKS.end() && checkpoint_itr->second != block_id )
@@ -1541,7 +1541,7 @@ namespace bts { namespace blockchain {
       pending_chain_state_ptr          pend_state = std::make_shared<pending_chain_state>(my->_pending_trx_state);
       transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>(pend_state.get(), my->_chain_id);
 
-      trx_eval_state->evaluate( trx, false, pend_state->get_head_block_num() > BTS_CHECK_CANONICAL_SIGNATURE_FORK_BLOCK_NUM );
+      trx_eval_state->evaluate( trx, false, pend_state->get_head_block_num() >= BTS_CHECK_CANONICAL_SIGNATURE_FORK_BLOCK_NUM );
       auto fees = trx_eval_state->get_fees() + trx_eval_state->alt_fees_paid.amount;
       if( fees < required_fees )
       {
@@ -1562,7 +1562,7 @@ namespace bts { namespace blockchain {
           transaction_evaluation_state_ptr eval_state = std::make_shared<transaction_evaluation_state>( pending_state.get(), my->_chain_id );
 
           eval_state->evaluate( transaction, false, 
-                                pending_state->get_head_block_num() > BTS_CHECK_CANONICAL_SIGNATURE_FORK_BLOCK_NUM ); 
+                                pending_state->get_head_block_num() >= BTS_CHECK_CANONICAL_SIGNATURE_FORK_BLOCK_NUM ); 
           auto fees = eval_state->get_fees();
           if( fees < min_fee )
              FC_CAPTURE_AND_THROW( insufficient_relay_fee, (fees)(min_fee) );
@@ -2010,6 +2010,8 @@ namespace bts { namespace blockchain {
             {
                 ilog("@n storing a base_object record in chain DB");
                 my->_object_db.store( obj._id, obj );
+                auto o = my->_object_db.fetch_optional( obj._id );
+                ilog("@n fetched it again as a sanity check: ${o}", ("o", o));
                 break;
             }
             case edge_object:
@@ -2028,6 +2030,31 @@ namespace bts { namespace blockchain {
                 break;
         }
     } FC_CAPTURE_AND_RETHROW( (obj) ) }
+
+
+
+    void                       chain_database::store_site_record( const site_record& site )
+    {
+        my->_site_index.store(site.site_name, site._id);
+        my->_object_db.store(site._id, site);
+        ilog("@n after storing site in chain DB:");
+        ilog("@n      as an object: ${o}", ("o", object_record(site)));
+        ilog("@n      as a site: ${s}", ("s", site));
+    }
+
+   osite_record  chain_database::lookup_site( const string& site_name )const
+   { try {
+       auto site_id = my->_site_index.fetch_optional( site_name );
+       if( site_id.valid() )
+       {
+           auto obj = my->_object_db.fetch( *site_id );
+           return obj.as<site_record>();
+       }
+       return osite_record();
+   } FC_CAPTURE_AND_RETHROW( (site_name) ) }
+
+
+
 
     void                       chain_database::store_edge_record( const edge_record& edge )
     { try {
@@ -2176,8 +2203,10 @@ namespace bts { namespace blockchain {
    void chain_database::scan_objects( function<void( const object_record& )> callback )const
    {
         auto itr = my->_object_db.begin();
+        ilog("@n starting object db scan");
         while( itr.valid() )
         {
+           ilog("@n scanning object: ${o}", ("o", itr.value()));
            callback( itr.value() );
            ++itr;
         }

@@ -47,6 +47,9 @@ namespace bts { namespace blockchain {
 
         bool                             is_complete( const chain_interface& chain );
         object_id_type                   original_winner(); // what the owner of item was when this was won
+
+
+        throttled_auction_record( const object_id_type item );
     };
 
 

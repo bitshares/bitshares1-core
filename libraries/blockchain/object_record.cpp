@@ -25,6 +25,11 @@ namespace bts { namespace blockchain {
         _id = -1;
     }
 
+    void     object_record::set_id( object_id_type id)
+    {
+        _id =  id;
+    }
+
 }} // bts::blockchain
 /*
 namespace fc {

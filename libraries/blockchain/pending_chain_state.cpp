@@ -393,6 +393,7 @@ namespace bts { namespace blockchain {
         return oobject_record();
    }
 
+   //TODO this should not use a switch
    void pending_chain_state::store_object_record(const object_record& obj)
    {
         ilog("@n storing object in pending_chain_state");
@@ -416,6 +417,13 @@ namespace bts { namespace blockchain {
                 objects[obj._id] = obj;
                 break;
             }
+            case site_object:
+            {
+                ilog("@n it is a site");
+                auto site = obj.as<site_record>();
+                store_site_record( site );
+                break;
+            }
             default:
                 break;
         }
@@ -430,6 +438,15 @@ namespace bts { namespace blockchain {
         ilog("@n after storing edge in pending state:");
         ilog("@n      as an object: ${o}", ("o", objects[edge._id]));
         ilog("@n      as an edge: ${e}", ("e", objects[edge._id].as<edge_record>()));
+    }
+
+    void                       pending_chain_state::store_site_record( const site_record& site )
+    {
+        site_index[site.site_name] = site._id;
+        objects[site._id] = site;
+        ilog("@n after storing site in pending state:");
+        ilog("@n      as an object: ${o}", ("o", objects[site._id]));
+        ilog("@n      as a site: ${s}", ("s", objects[site._id].as<site_record>()));
     }
 
     oedge_record               pending_chain_state::get_edge( const object_id_type& from,
@@ -455,6 +472,22 @@ namespace bts { namespace blockchain {
         FC_ASSERT(!"unimplemented!");
     }
 
+
+
+   osite_record  pending_chain_state::lookup_site( const string& site_name)const
+   { try {
+       auto prev_state = _prev_state.lock();
+       auto itr = site_index.find( site_name );
+       if( itr != site_index.end() )
+       {
+           auto site = get_object_record( itr->second );
+           FC_ASSERT( site.valid(), "A new index was in the pending chain state, but the record was not there" );
+           return site->as<site_record>();
+       }
+       if( prev_state )
+           return prev_state->lookup_site( site_name );
+       return osite_record();
+   } FC_CAPTURE_AND_RETHROW( (site_name) ) }
 
 
    fc::variant pending_chain_state::get_property( chain_property_enum property_id )const

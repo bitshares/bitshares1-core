@@ -3072,6 +3072,8 @@ namespace detail {
                                    trx,
                                    required_signatures );
 
+      required_signatures.insert(oname_rec->active_key());
+
       //check this way to avoid overflow
       FC_ASSERT(BTS_BLOCKCHAIN_MAX_SHARES / precision > max_share_supply);
       share_type max_share_supply_in_internal_units = max_share_supply * precision;

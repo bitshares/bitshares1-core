@@ -23,7 +23,7 @@ namespace bts { namespace blockchain {
         static const operation_type_enum type;
 
         object_id_type                   site_id;
-        multisig_condition               owners;
+        object_id_type                   owner_id;
         variant                          user_data;
         asset                            lease_payment;
 
