@@ -1598,7 +1598,7 @@ namespace bts { namespace blockchain {
 
       auto processing_start_time = time_point::now();
       auto block_id = block_data.id();
-      auto current_head_id = my->_head_block_id;
+      //auto current_head_id = my->_head_block_id;
 
       std::pair<block_id_type, block_fork_data> longest_fork = my->store_and_index( block_id, block_data );
       assert(get_block_fork_data(block_id) && "can't get fork data for a block we just successfully pushed");
