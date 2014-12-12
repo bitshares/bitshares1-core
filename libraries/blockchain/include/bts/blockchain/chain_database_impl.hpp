@@ -173,6 +173,8 @@ namespace bts { namespace blockchain {
             bts::db::cached_level_map<market_history_key, market_history_record>        _market_history_db;
 
             std::map<operation_type_enum, std::deque<operation>>                        _recent_operations;
+
+            bool _track_stats = true;
       };
   } // end namespace bts::blockchain::detail
 } } // end namespace bts::blockchain
