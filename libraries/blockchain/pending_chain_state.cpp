@@ -96,7 +96,7 @@ namespace bts { namespace blockchain {
       return prev_state->get_transaction( trx_id, exact );
    }
 
-   bool pending_chain_state::is_known_transaction( fc::time_point_sec exp, const digest_type& id )
+   bool pending_chain_state::is_known_transaction( const fc::time_point_sec& exp, const digest_type& id )const
    { try {
       auto itr = unique_transactions.find( id );
       if( itr != unique_transactions.end() ) return true;

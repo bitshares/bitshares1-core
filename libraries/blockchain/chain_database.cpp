@@ -144,7 +144,7 @@ namespace bts { namespace blockchain {
           _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
 
           _revalidatable_future_blocks_db.open( data_dir / "index/future_blocks_db" );
-
+          clear_invalidation_of_future_blocks();
 
           for( auto itr = _id_to_transaction_record_db.begin(); itr.valid(); ++itr )
           {
@@ -152,11 +152,8 @@ namespace bts { namespace blockchain {
              if( val.trx.expiration > self->now() )
                 _unique_transactions[val.trx.expiration].insert( val.trx.digest(_chain_id) );
           }
-          clear_invalidation_of_future_blocks();
-
       } FC_CAPTURE_AND_RETHROW( (data_dir) ) }
 
-      
       void chain_database_impl::clear_invalidation_of_future_blocks()
       {
         for (auto block_id_itr = _revalidatable_future_blocks_db.begin(); block_id_itr.valid(); ++block_id_itr)
@@ -164,7 +161,6 @@ namespace bts { namespace blockchain {
           mark_as_unchecked( block_id_itr.key() );
         }
       }
-
 
       digest_type chain_database_impl::initialize_genesis( const optional<path>& genesis_file, bool chain_id_only )
       { try {
@@ -569,7 +565,7 @@ namespace bts { namespace blockchain {
 
           auto cur_itr = _fork_db.find( block_id );
           if( cur_itr.valid() ) //if placeholder was previously created for block
-          { 
+          {
             block_fork_data current_fork = cur_itr.value();
             current_fork.is_known = true; //was placeholder, now a known block
             ilog( "          current_fork: ${fork}", ("fork",current_fork) );
@@ -604,7 +600,7 @@ namespace bts { namespace blockchain {
               return std::make_pair(block_id, current_fork);
             }
           }
-          else //no placeholder exists for this new block, just set its link flag 
+          else //no placeholder exists for this new block, just set its link flag
           {
             block_fork_data current_fork;
             current_fork.is_known = true;
@@ -1607,10 +1603,10 @@ namespace bts { namespace blockchain {
       store_and_index has returned the potential chain with the longest_fork (highest block number other than possible the current head block number)
       if (longest_fork is linked and not known to be invalid and is higher than the current head block number)
         highest_unchecked_block_number = longest_fork blocknumber;
-        do             
+        do
           foreach next_fork_to_try in all blocks at same block number
               if (next_fork_try is linked and not known to be invalid)
-                try 
+                try
                   switch_to_fork(next_fork_to_try) //this throws if block in fork is invalid, then we'll try another fork
                   return
                 catch block from future and add to database for potential revalidation on startup or if we get from another peer later
@@ -1619,12 +1615,12 @@ namespace bts { namespace blockchain {
         while(highest_unchecked_block_number > 0)
       */
       if (longest_fork.second.can_link())
-      {      
+      {
         full_block longest_fork_block = my->_block_id_to_block_data_db.fetch(longest_fork.first);
         uint32_t highest_unchecked_block_number = longest_fork_block.block_num;
         if (highest_unchecked_block_number > head_block_num)
         {
-          do 
+          do
           {
             optional<vector<block_id_type>> parallel_blocks = my->_fork_number_db.fetch_optional(highest_unchecked_block_number);
             if (parallel_blocks)
@@ -1633,7 +1629,7 @@ namespace bts { namespace blockchain {
               {
                 block_fork_data next_fork_to_try = my->_fork_db.fetch(next_fork_to_try_id);
                 if (next_fork_to_try.can_link())
-                  try 
+                  try
                   {
                     my->switch_to_fork(next_fork_to_try_id); //verify this works if next_fork_to_try is current head block
                     /* Store processing time */
@@ -1651,7 +1647,7 @@ namespace bts { namespace blockchain {
                     ilog("fork rejected because it has block with time in future, storing block id for revalidation later");
                   }
                   catch (fc::exception& e) //swallow any invalidation exceptions except for time_in_future invalidations
-                  {                     
+                  {
                     ilog("fork permanently rejected as it has permanently invalid block");
                   }
               }
@@ -1922,7 +1918,7 @@ namespace bts { namespace blockchain {
     }
 
     void                       chain_database::store_object_record( const object_record& obj )
-    { try { 
+    { try {
         switch( obj.type() )
         {
             case base_object:
@@ -3230,7 +3226,7 @@ namespace bts { namespace blockchain {
       return history;
    }
 
-   bool chain_database::is_known_transaction( fc::time_point_sec exp, const digest_type& id )
+   bool chain_database::is_known_transaction( const fc::time_point_sec& exp, const digest_type& id )const
    {
       auto itr = my->_unique_transactions.find(exp);
       if( itr != my->_unique_transactions.end() )
