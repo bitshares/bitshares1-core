@@ -20,7 +20,7 @@ Returns:
   transaction_record_map
 default (unlocked) >>> blockchain_get_block_transactions 2
 [[
-    "cb42296b4e905567f49b879d7b9868d8ec2e0c49",{
+    "6e0236d0683eab7f5a5f54ce6c244c583c6b270b",{
       "trx": {
         "expiration": "2014-06-20T15:40:30",
         "delegate_slate_id": null,
@@ -51,7 +51,7 @@ default (unlocked) >>> blockchain_get_block_transactions 2
           }
         ],
         "signatures": [
-          "1f9466129b87592faa524519aaf04dcdf992bda62c65c8ea30ae789937177cd91eff69b46bbda7eca8509c5b91e27eb3d1991ba6e3724f62843dc61627b91c876a"
+          "1f7a101ede52c43d9e32ab851bdfb3ca727d28ed1dc25fa4466878a006d54ed27f430a38b16631d27455afc08fd8146063db62ee6777082cdac5828a2e5f0cf3f1"
         ]
       },
       "current_op_index": 2,
