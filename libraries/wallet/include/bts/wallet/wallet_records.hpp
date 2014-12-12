@@ -121,8 +121,6 @@ namespace bts { namespace wallet {
        bool                             block_production_enabled = false;
        uint32_t                         last_used_gen_sequence = 0;
        variant                          private_data;
-
-       address                          account_address; // Deprecated
    };
 
    template<typename RecordTypeName, wallet_record_type_enum RecordTypeNumber>
@@ -328,7 +326,6 @@ FC_REFLECT_DERIVED( bts::wallet::account_data, (bts::blockchain::account_record)
         (block_production_enabled)
         (last_used_gen_sequence)
         (private_data)
-        (account_address)
         )
 
 FC_REFLECT( bts::wallet::master_key,
