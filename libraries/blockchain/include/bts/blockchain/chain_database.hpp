@@ -373,6 +373,8 @@ namespace bts { namespace blockchain {
              FC_ASSERT( false, "this shouldn't be called directly" );
          }
 
+         void track_chain_statistics( bool status = true );
+
       private:
          unique_ptr<detail::chain_database_impl> my;
    };
