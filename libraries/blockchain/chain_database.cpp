@@ -106,7 +106,6 @@ namespace bts { namespace blockchain {
           _block_id_to_block_data_db.open( data_dir / "raw_chain/block_id_to_block_data_db" );
           _id_to_transaction_record_db.open( data_dir / "index/id_to_transaction_record_db" );
 
-
           _pending_transaction_db.open( data_dir / "index/pending_transaction_db" );
 
           _asset_db.open( data_dir / "index/asset_db" );
@@ -132,7 +131,7 @@ namespace bts { namespace blockchain {
           _collateral_db.open( data_dir / "index/collateral_db" );
 
           for( auto itr = _collateral_db.begin(); itr.valid(); ++itr )
-             _collateral_expiration_index.insert( {itr.key().order_price.quote_asset_id, itr.value().expiration, itr.key() } );
+             _collateral_expiration_index.insert( expiration_index{itr.key().order_price.quote_asset_id, itr.value().expiration, itr.key()} );
 
           _feed_db.open( data_dir / "index/feed_db" );
 
@@ -327,13 +326,11 @@ namespace bts { namespace blockchain {
          }
 
          asset total;
-         auto itr = _balance_db.begin();
-         while( itr.valid() )
+         for( auto itr = _balance_db.begin(); itr.valid(); ++itr )
          {
             const asset ind( itr.value().balance, itr.value().condition.asset_id );
             FC_ASSERT( ind.amount >= 0, "", ("record",itr.value()) );
             total += ind;
-            ++itr;
          }
 
          int32_t asset_id = 0;
@@ -1319,9 +1316,16 @@ namespace bts { namespace blockchain {
 
              my->initialize_genesis( genesis_file );
 
+             // Load block num -> id db into memory and clear from disk for re-indexing
              map<uint32_t, block_id_type> num_to_id;
-             for (auto itr = my->_block_num_to_id_db.begin(); itr.valid(); ++itr)
-                 num_to_id[itr.key()] = itr.value();
+             {
+                 for( auto itr = my->_block_num_to_id_db.begin(); itr.valid(); ++itr )
+                     num_to_id.emplace_hint( num_to_id.end(), itr.key(), itr.value() );
+
+                 my->_block_num_to_id_db.close();
+                 fc::remove_all( data_dir / "raw_chain/block_num_to_id_db" );
+                 my->_block_num_to_id_db.open( data_dir / "raw_chain/block_num_to_id_db" );
+             }
 
              if( !reindex_status_callback )
                  std::cout << "Please be patient, this will take a few minutes...\r\nRe-indexing database..." << std::flush << std::fixed;
@@ -1359,16 +1363,15 @@ namespace bts { namespace blockchain {
                  }
              };
 
-             if (num_to_id.empty()) {
-                 auto block_itr = id_to_data_orig.begin();
-                 while( block_itr.valid() ) {
+             if (num_to_id.empty())
+             {
+                 for( auto block_itr = id_to_data_orig.begin(); block_itr.valid(); ++block_itr )
                      insert_block(block_itr.value());
-                     ++block_itr;
-                 }
              }
              else
              {
-                 for (const auto& num_id : num_to_id) {
+                 for (const auto& num_id : num_to_id)
+                 {
                      auto oblock = id_to_data_orig.fetch_optional(num_id.second);
                      if (oblock)
                          insert_block(*oblock);
@@ -1395,11 +1398,10 @@ namespace bts { namespace blockchain {
           my->_chain_id = db_chain_id;
 
           //  process the pending transactions to cache by fees
-          auto pending_itr = my->_pending_transaction_db.begin();
-          wlog( "loading pending trx..." );
-          while( pending_itr.valid() )
+          for( auto pending_itr = my->_pending_transaction_db.begin(); pending_itr.valid(); ++pending_itr )
           {
-             try {
+             try
+             {
                 auto trx = pending_itr.value();
                 wlog( " loading pending transaction ${trx}", ("trx",trx) );
                 auto trx_id = trx.id();
@@ -1412,7 +1414,6 @@ namespace bts { namespace blockchain {
              {
                 wlog( "error processing pending transaction: ${e}", ("e",e.to_detail_string() ) );
              }
-             ++pending_itr;
           }
       }
       catch (...)
@@ -1723,14 +1724,14 @@ namespace bts { namespace blockchain {
                     my->_block_id_to_block_record_db.store( block_id, *record );
                     return *get_block_fork_data(block_id);
                   }
-                  catch (time_in_future& e)
+                  catch (const time_in_future& e)
                   {
                     // Blocks from the future can become valid later, so keep a list of these blocks that we can iterate over
                     // whenever we think our clock time has changed from it's standard flow
                     my->_revalidatable_future_blocks_db.store(block_id, 0);
                     ilog("fork rejected because it has block with time in future, storing block id for revalidation later");
                   }
-                  catch (fc::exception& e) //swallow any invalidation exceptions except for time_in_future invalidations
+                  catch (const fc::exception& e) //swallow any invalidation exceptions except for time_in_future invalidations
                   {
                     ilog("fork permanently rejected as it has permanently invalid block");
                   }
@@ -2177,43 +2178,29 @@ namespace bts { namespace blockchain {
 
    void chain_database::scan_assets( function<void( const asset_record& )> callback )const
    {
-        auto asset_itr = my->_asset_db.begin();
-        while( asset_itr.valid() )
-        {
+       for( auto asset_itr = my->_asset_db.begin(); asset_itr.valid(); ++asset_itr )
            callback( asset_itr.value() );
-           ++asset_itr;
-        }
    }
 
    void chain_database::scan_balances( function<void( const balance_record& )> callback )const
    {
-        auto balances = my->_balance_db.begin();
-        while( balances.valid() )
-        {
+        for( auto balances = my->_balance_db.begin(); balances.valid(); ++balances )
            callback( balances.value() );
-           ++balances;
-        }
    }
 
    void chain_database::scan_accounts( function<void( const account_record& )> callback )const
    {
-        auto name_itr = my->_account_db.begin();
-        while( name_itr.valid() )
-        {
+        for( auto name_itr = my->_account_db.begin(); name_itr.valid(); ++name_itr )
            callback( name_itr.value() );
-           ++name_itr;
-        }
    }
 
    void chain_database::scan_objects( function<void( const object_record& )> callback )const
    {
-        auto itr = my->_object_db.begin();
         ilog("@n starting object db scan");
-        while( itr.valid() )
+        for( auto itr = my->_object_db.begin(); itr.valid(); ++itr )
         {
            ilog("@n scanning object: ${o}", ("o", itr.value()));
            callback( itr.value() );
-           ++itr;
         }
    }
 
@@ -3582,15 +3569,14 @@ namespace bts { namespace blockchain {
 
    asset chain_database::unclaimed_genesis()
    {
-        auto balance = my->_balance_db.begin();
         asset unclaimed_total(0);
         auto genesis_date = get_genesis_timestamp();
 
-        while (balance.valid()) {
+        for( auto balance = my->_balance_db.begin(); balance.valid(); ++balance )
+        {
             if (balance.value().last_update <= genesis_date)
                 unclaimed_total.amount += balance.value().balance;
 
-            ++balance;
         }
 
         return unclaimed_total;
@@ -3665,7 +3651,7 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_burn_record( const burn_record& br )
    {
-      if( !my->_track_stats ) 
+      if( !my->_track_stats )
          return;
 
       if( br.is_null() )
