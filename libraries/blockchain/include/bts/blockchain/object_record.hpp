@@ -84,8 +84,8 @@ namespace bts { namespace blockchain {
         {
             set_id( ObjectType::type, o.short_id() );
             user_data = o.user_data;
-            _owners = o._owners;
             owner_object = o.owner_object;
+            _owners = o._owners;
             _data = fc::raw::pack<ObjectType>( o );
         }
 

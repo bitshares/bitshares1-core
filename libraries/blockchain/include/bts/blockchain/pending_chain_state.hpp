@@ -159,9 +159,9 @@ namespace bts { namespace blockchain {
 
          map< object_id_type, object_record >                              objects;
 
-         map< edge_index_key, object_id_type >                             edge_index;
-         map< edge_index_key, object_id_type >                             reverse_edge_index;
-         map< string, object_id_type >                                     site_index;
+         map< edge_index_key, edge_record >                                edge_index;
+         map< edge_index_key, edge_record >                                reverse_edge_index;
+         map< string, site_record >                                        site_index;
 
          map< std::pair<asset_id_type,address>, object_id_type >           authorizations;
          map< std::pair<asset_id_type,proposal_id_type>, proposal_record > asset_proposals;

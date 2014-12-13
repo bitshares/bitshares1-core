@@ -426,8 +426,8 @@ namespace bts { namespace blockchain {
 
     void                       pending_chain_state::store_edge_record( const edge_record& edge )
     {
-        edge_index[ edge.index_key() ] = edge._id;
-        reverse_edge_index[ edge.reverse_index_key() ] = edge._id;
+        edge_index[ edge.index_key() ] = edge;
+        reverse_edge_index[ edge.reverse_index_key() ] = edge;
         objects[edge._id] = edge;
         ilog("@n after storing edge in pending state:");
         ilog("@n      as an object: ${o}", ("o", objects[edge._id]));
@@ -436,7 +436,7 @@ namespace bts { namespace blockchain {
 
     void                       pending_chain_state::store_site_record( const site_record& site )
     {
-        site_index[site.site_name] = site._id;
+        site_index[site.site_name] = site;
         objects[site._id] = site;
         ilog("@n after storing site in pending state:");
         ilog("@n      as an object: ${o}", ("o", objects[site._id]));
@@ -452,9 +452,12 @@ namespace bts { namespace blockchain {
         auto itr = edge_index.find( key );
         if( itr == edge_index.end() )
             return oedge_record();
+        return itr->second;
+        /*
         auto obj = get_object_record( itr->second );
         FC_ASSERT(obj.valid(), "This edge was in the index, but it has no object record");
         return obj->as<edge_record>();
+        */
     }
     map<string, edge_record>   pending_chain_state::get_edges( const object_id_type& from,
                                           const object_id_type& to )const
@@ -474,9 +477,12 @@ namespace bts { namespace blockchain {
        auto itr = site_index.find( site_name );
        if( itr != site_index.end() )
        {
+           return itr->second;
+           /*
            auto site = get_object_record( itr->second );
            FC_ASSERT( site.valid(), "A new index was in the pending chain state, but the record was not there" );
            return site->as<site_record>();
+           */
        }
        if( prev_state )
            return prev_state->lookup_site( site_name );
