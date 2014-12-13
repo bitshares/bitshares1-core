@@ -3,13 +3,14 @@ Feature: User Issued Assets
   I want to issue my own IOUs on BitShares exchange
   So I can profit from charging BitShares users a fee for depositing/withdrawing my IOUs
 
+
   Background: Alice creates asset and issues all shares to herself
     Given I'm Alice
     And I received 100,000,000 XTS from angel
     And I wait for 2 blocks
     When I create asset ALCBTC (max shares: 1,000,000)
     And I wait for one block
-    When I issue 500,000 ALCBTC shares to myself
+    When I issue 500,000 ALCBTC to myself
     And I wait for one block
     Then I should have 500,000 ALCBTC
     And Bob should see the following assets:
@@ -44,7 +45,7 @@ Feature: User Issued Assets
     And Bob waits for 2 blocks
     Then Alice should have 498,000 ALCBTC
     And Bob should have 2,000 ALCBTC
-    And Bob should have 90 USD minus fee
+    And Bob should have around 90 USD minus fee
 
 
 #  on ramp scenario (not intended to run) :
