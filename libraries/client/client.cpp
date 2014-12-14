@@ -1252,6 +1252,8 @@ void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_pat
       bool attempt_to_recover_database = false;
       try
       {
+         ulog( "Tracking Statistics: ${s}", ("s",my->_config.track_statistics ) );
+         my->_chain_db->track_chain_statistics( my->_config.track_statistics );
          my->_chain_db->open( data_dir / "chain", genesis_file_path, reindex_status_callback );
       }
       catch( const db::db_in_use_exception& e )
