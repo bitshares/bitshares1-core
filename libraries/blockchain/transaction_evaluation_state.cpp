@@ -206,9 +206,11 @@ namespace bts { namespace blockchain {
 
         auto trx_id = trx_arg.id();
 
-        if( _current_state->is_known_transaction( trx_arg.expiration, trx_arg.digest( _chain_id ) ) )
-          if (_current_state->get_head_block_num() >= FORK_25)
-            FC_CAPTURE_AND_THROW( duplicate_transaction, (trx_id) );
+        if( _current_state->get_head_block_num() >= BTS_V0_4_26_FORK_BLOCK_NUM )
+        {
+            if( _current_state->is_known_transaction( trx_arg.expiration, trx_arg.digest( _chain_id ) ) )
+                FC_CAPTURE_AND_THROW( duplicate_transaction, (trx_id) );
+        }
 
         trx = trx_arg;
         if( !_skip_signature_check )

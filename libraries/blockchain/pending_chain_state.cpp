@@ -115,8 +115,8 @@ namespace bts { namespace blockchain {
       {
          auto prop = prev_state->get_property(chain_id);
          auto insert_result = unique_transactions.insert(rec.trx.digest( prop.as<digest_type>() ));
-         if (get_head_block_num()  >= FORK_25)
-           FC_ASSERT(insert_result.second, "duplicate transaction error");
+         if( get_head_block_num() >= BTS_V0_4_26_FORK_BLOCK_NUM )
+           FC_ASSERT( insert_result.second, "duplicate transaction error" );
       }
 
       for( const auto& op : rec.trx.operations )

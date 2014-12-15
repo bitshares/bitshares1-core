@@ -72,7 +72,7 @@ namespace bts { namespace blockchain { namespace detail {
           else _short_itr = _db_impl._short_db.last();
 
           _feed_price = _db_impl.self->get_median_delegate_price( _quote_id, _base_id );
-          if( _pending_state->get_head_block_num() >= BTS_V0_4_26_FORK_BLOCK_NUM )
+          if( _pending_state->get_head_block_num() >= BTS_V0_4_28_FORK_BLOCK_NUM )
           {
               // Market issued assets cannot match until the first time there is a median feed; assume feed price base id 0
               if( quote_asset->is_market_issued() && base_asset->id == asset_id_type( 0 ) )
