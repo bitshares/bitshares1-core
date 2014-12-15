@@ -1651,11 +1651,11 @@ namespace bts { namespace blockchain {
                     // Blocks from the future can become valid later, so keep a list of these blocks that we can iterate over
                     // whenever we think our clock time has changed from it's standard flow
                     my->_revalidatable_future_blocks_db.store(block_id, 0);
-                    ilog("fork rejected because it has block with time in future, storing block id for revalidation later");
+                    wlog("fork rejected because it has block with time in future, storing block id for revalidation later");
                   }
                   catch (const fc::exception& e) //swallow any invalidation exceptions except for time_in_future invalidations
                   {
-                    ilog("fork permanently rejected as it has permanently invalid block");
+                    wlog("fork permanently rejected as it has permanently invalid block");
                   }
               }
             --highest_unchecked_block_number;
