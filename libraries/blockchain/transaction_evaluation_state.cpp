@@ -18,8 +18,13 @@ namespace bts { namespace blockchain {
    bool transaction_evaluation_state::verify_authority( const multisig_meta_info& siginfo )
    {
       uint32_t sig_count = 0;
+      ilog("@n verifying authority");
       for( const auto item : siginfo.owners )
+      {
          sig_count += check_signature( item );
+         ilog("@n sig_count: ${s}", ("s", sig_count));
+      }
+      ilog("@n required: ${s}", ("s", siginfo.required));
       return sig_count >= siginfo.required;
    }
 
