@@ -15,6 +15,13 @@ When(/^(\w+) issues? ([\d,]+) ([A-Z]+) to (\w+)$/) do |name, amount, symbol, to_
   actor.node.exec 'wallet_asset_issue', amount, symbol, to.account, 'minted shares'
 end
 
+When(/^(\w+) issues? ([\d,]+) ([A-Z]+) to account: (\w+)$/) do |name, amount, symbol, to_name|
+  actor = get_actor(name)
+  amount.gsub!(',','')
+  actor.node.exec 'wallet_asset_issue', amount, symbol, to_name, 'minted shares'
+end
+
+
 Then(/^(\w+) should see the following assets:$/) do |name, table|
   actor = get_actor(name)
   assets = table.hashes.map { |r| r }
