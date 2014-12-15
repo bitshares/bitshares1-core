@@ -1956,7 +1956,7 @@ namespace bts { namespace blockchain {
 
     void                       chain_database::store_site_record( const site_record& site )
     {
-        my->_site_index.store(site.site_name, site._id);
+        my->_site_index.store(site.site_name, site);
         my->_object_db.store(site._id, site);
         ilog("@n after storing site in chain DB:");
         ilog("@n      as an object: ${o}", ("o", object_record(site)));
@@ -1965,11 +1965,14 @@ namespace bts { namespace blockchain {
 
    osite_record  chain_database::lookup_site( const string& site_name )const
    { try {
-       auto site_id = my->_site_index.fetch_optional( site_name );
-       if( site_id.valid() )
+       auto site = my->_site_index.fetch_optional( site_name );
+       if( site.valid() )
        {
+           return site;
+           /*
            auto obj = my->_object_db.fetch( *site_id );
            return obj.as<site_record>();
+           */
        }
        return osite_record();
    } FC_CAPTURE_AND_RETHROW( (site_name) ) }
@@ -1980,9 +1983,8 @@ namespace bts { namespace blockchain {
     void                       chain_database::store_edge_record( const edge_record& edge )
     { try {
         ilog("@n storing edge in chain DB: ${e}", ("e", edge));
-        my->_edge_index.store( edge.index_key(), edge._id );
-        if( my->_track_stats )
-           my->_reverse_edge_index.store( edge.reverse_index_key(), edge._id );
+        my->_edge_index.store( edge.index_key(), edge );
+        my->_reverse_edge_index.store( edge.reverse_index_key(), edge );
         my->_object_db.store( edge._id, edge );
     } FC_CAPTURE_AND_RETHROW( (edge) ) }
 
@@ -1992,6 +1994,8 @@ namespace bts { namespace blockchain {
     {
         edge_index_key key;
         key.from = from; key.to = to; key.name = name;
+        return my->_edge_index.fetch_optional( key );
+        /*
         auto id = my->_edge_index.fetch_optional( key );
         if( NOT id.valid() )
             return oedge_record();
@@ -2000,22 +2004,26 @@ namespace bts { namespace blockchain {
             return oedge_record();
         auto edge = obj->as<edge_record>();
         return edge;
+        */
     }
     map<string, edge_record>   chain_database::get_edges( const object_id_type& from,
-                                          const object_id_type& to )const
+                                                          const object_id_type& to )const
     {
         map<string, edge_record> ret;
         edge_index_key key;
         key.from = from; key.to = to;
         auto itr = my->_edge_index.find( key );
-        while( itr.valid() )
+        while( itr.valid() && itr.value().from != from && itr.value().to != to)
         {
+            ret[itr.value().name] = itr.value();
+            /*
             auto obj = my->_object_db.fetch_optional( itr.value() );
             FC_ASSERT( obj.valid(), "Edge in index but not in object DB" );
             auto edge = obj->as<edge_record>();
             if (edge.from != from || edge.to != to)
                 break;
             ret[edge.name] = edge;
+            */
         }
         return ret;
     }
@@ -2024,12 +2032,15 @@ namespace bts { namespace blockchain {
         map<object_id_type, map<string, edge_record>> ret;
         edge_index_key key;
         key.from = from;
-        auto itr = my->_edge_index.find( key );
+        auto itr = my->_edge_index.lower_bound( key );
         while( itr.valid() )
         {
+            auto edge = itr.value();
+            /*
             auto obj = my->_object_db.fetch_optional( itr.value() );
             FC_ASSERT( obj.valid(), "Edge in index but not in object DB" );
             auto edge = obj->as<edge_record>();
+            */
             if (edge.from != from)
                 break;
             if( ret.find(edge.from) != ret.end() )
@@ -2042,6 +2053,7 @@ namespace bts { namespace blockchain {
                 by_name[edge.name] = edge;
                 ret[edge.to] = by_name;
             }
+            ++itr;
         }
         return ret;
     }
