@@ -26,7 +26,7 @@ namespace bts { namespace blockchain {
       {
             _pending_fee_index.clear();
 
-            vector<pair<digest_type,time_point_sec>> trx_to_discard;
+            vector<digest_type> trx_to_discard;
 
             _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
             unsigned num_pending_transaction_considered = 0;
@@ -34,8 +34,8 @@ namespace bts { namespace blockchain {
             while( itr.valid() )
             {
                 signed_transaction trx = itr.value();
-                pair<digest_type,time_point_sec> trx_id = itr.key();
-                assert(trx_id.first == trx.digest(_chain_id));
+                digest_type trx_id = itr.key();
+                assert(trx_id == trx.digest(_chain_id));
                 try
                 {
                   transaction_evaluation_state_ptr eval_state = self->evaluate_transaction( trx, _relay_fee );
@@ -107,7 +107,7 @@ namespace bts { namespace blockchain {
           _id_to_transaction_record_db.open( data_dir / "index/id_to_transaction_record_db" );
 
 
-          _pending_transaction_db.open( data_dir / "index/pending_transaction2_db" );
+          _pending_transaction_db.open( data_dir / "index/pending_transaction3_db" );
 
           _asset_db.open( data_dir / "index/asset_db" );
           _balance_db.open( data_dir / "index/balance_db" );
@@ -410,7 +410,7 @@ namespace bts { namespace blockchain {
 
          for( const signed_transaction& trx : blk.user_transactions )
          {
-            auto id = std::make_pair( trx.digest(_chain_id), trx.expiration );
+            auto id = trx.digest(_chain_id);
        //     confirmed_trx_ids.insert( id );
             _pending_transaction_db.remove( id );
          }
@@ -1402,7 +1402,7 @@ namespace bts { namespace blockchain {
                 auto trx = pending_itr.value();
                 wlog( " loading pending transaction ${trx}", ("trx",trx) );
                 auto trx_id = trx.id();
-                auto id = std::make_pair( trx.digest(my->_chain_id), trx.expiration );
+                auto id = trx.digest(my->_chain_id);
                 auto eval_state = evaluate_transaction( trx, my->_relay_fee );
                 share_type fees = eval_state->get_fees();
                 my->_pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
@@ -2192,7 +2192,7 @@ namespace bts { namespace blockchain {
       if (override_limits)
         wlog("storing new local transaction with id ${id}", ("id", trx_id));
 
-      auto id = std::make_pair( trx.digest(my->_chain_id), trx.expiration );
+      auto id =  trx.digest(my->_chain_id);
       auto current_itr = my->_pending_transaction_db.find(id);
       if( current_itr.valid() )
         return nullptr;
