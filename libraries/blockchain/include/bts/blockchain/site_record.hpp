@@ -1,6 +1,8 @@
 #pragma once
 #include <bts/blockchain/types.hpp>
 #include <bts/blockchain/object_record.hpp>
+#include <bts/blockchain/asset.hpp>
+#include <fc/time.hpp>
 
 
 namespace bts { namespace blockchain {
@@ -8,7 +10,8 @@ namespace bts { namespace blockchain {
 
     struct site_record 
     {
-        static const obj_type type = site_object;
+        static const obj_type type;
+
         string                 site_name;
         time_point_sec         expiration;
         asset                  renewal_fee; // monthly
