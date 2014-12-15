@@ -24,7 +24,7 @@ namespace bts { namespace blockchain {
       {
             _pending_fee_index.clear();
 
-            vector<transaction_id_type> trx_to_discard;
+            vector<digest_type> trx_to_discard;
 
             _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
             unsigned num_pending_transaction_considered = 0;
@@ -32,14 +32,14 @@ namespace bts { namespace blockchain {
             while( itr.valid() )
             {
                 signed_transaction trx = itr.value();
-                transaction_id_type trx_id = itr.key();
-                assert(trx_id == trx.id());
+                digest_type trx_id = itr.key();
+                assert(trx_id == trx.digest(_chain_id));
                 try
                 {
                   transaction_evaluation_state_ptr eval_state = self->evaluate_transaction( trx, _relay_fee );
                   share_type fees = eval_state->get_fees();
-                  _pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
-                  wlog("revalidated pending transaction id ${id}", ("id", trx_id));
+                  _pending_fee_index[ fee_index( fees, trx.id() ) ] = eval_state;
+                  wlog("revalidated pending transaction id ${id} ${i}", ("id", trx_id)("i",trx.id()));
                 }
                 catch ( const fc::canceled_exception& )
                 {
@@ -392,12 +392,12 @@ namespace bts { namespace blockchain {
 
       void chain_database_impl::clear_pending( const full_block& blk )
       {
-         std::unordered_set<transaction_id_type> confirmed_trx_ids;
+      //   std::unordered_set<std::pair<digest_type,time_point_sec> > confirmed_trx_ids;
 
          for( const signed_transaction& trx : blk.user_transactions )
          {
-            auto id = trx.id();
-            confirmed_trx_ids.insert( id );
+            auto id = trx.digest(_chain_id);
+       //     confirmed_trx_ids.insert( id );
             _pending_transaction_db.remove( id );
          }
 
@@ -1327,10 +1327,11 @@ namespace bts { namespace blockchain {
                 auto trx = pending_itr.value();
                 wlog( " loading pending transaction ${trx}", ("trx",trx) );
                 auto trx_id = trx.id();
+                auto id = trx.digest(my->_chain_id);
                 auto eval_state = evaluate_transaction( trx, my->_relay_fee );
                 share_type fees = eval_state->get_fees();
                 my->_pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
-                my->_pending_transaction_db.store( trx_id, trx );
+                my->_pending_transaction_db.store( id, trx );
              }
              catch ( const fc::exception& e )
              {
@@ -1980,81 +1981,35 @@ namespace bts { namespace blockchain {
 
 
 
-    void                       chain_database::store_edge_record( const edge_record& edge )
+    void            chain_database::store_edge_record( const object_record& edge )
     { try {
         ilog("@n storing edge in chain DB: ${e}", ("e", edge));
-        my->_edge_index.store( edge.index_key(), edge );
-        my->_reverse_edge_index.store( edge.reverse_index_key(), edge );
+        auto edge_data = edge.as<edge_record>();
+        my->_edge_index.store( edge_data.index_key(), edge._id );
+        my->_reverse_edge_index.store( edge_data.reverse_index_key(), edge._id );
         my->_object_db.store( edge._id, edge );
     } FC_CAPTURE_AND_RETHROW( (edge) ) }
 
-    oedge_record               chain_database::get_edge( const object_id_type& from,
+    oobject_record  chain_database::get_edge( const object_id_type& from,
                                          const object_id_type& to,
                                          const string& name )const
     {
-        edge_index_key key;
-        key.from = from; key.to = to; key.name = name;
-        return my->_edge_index.fetch_optional( key );
-        /*
-        auto id = my->_edge_index.fetch_optional( key );
-        if( NOT id.valid() )
-            return oedge_record();
-        auto obj = my->_object_db.fetch_optional( *id );
-        if( NOT obj.valid() )
-            return oedge_record();
-        auto edge = obj->as<edge_record>();
-        return edge;
-        */
+        edge_index_key key( from, to, name );
+        auto object_id = my->_edge_index.fetch_optional( key );
+        if( object_id )
+           return get_object_record( *object_id );
+        return oobject_record();
     }
-    map<string, edge_record>   chain_database::get_edges( const object_id_type& from,
-                                                          const object_id_type& to )const
+    map<string, object_record>   chain_database::get_edges( const object_id_type& from,
+                                                            const object_id_type& to )const
     {
         map<string, edge_record> ret;
-        edge_index_key key;
-        key.from = from; key.to = to;
-        auto itr = my->_edge_index.find( key );
-        while( itr.valid() && itr.value().from != from && itr.value().to != to)
-        {
-            ret[itr.value().name] = itr.value();
-            /*
-            auto obj = my->_object_db.fetch_optional( itr.value() );
-            FC_ASSERT( obj.valid(), "Edge in index but not in object DB" );
-            auto edge = obj->as<edge_record>();
-            if (edge.from != from || edge.to != to)
-                break;
-            ret[edge.name] = edge;
-            */
-        }
         return ret;
     }
-    map<object_id_type, map<string, edge_record>> chain_database::get_edges( const object_id_type& from )const
+
+    map<object_id_type, map<string, object_record>> chain_database::get_edges( const object_id_type& from )const
     {
-        map<object_id_type, map<string, edge_record>> ret;
-        edge_index_key key;
-        key.from = from;
-        auto itr = my->_edge_index.lower_bound( key );
-        while( itr.valid() )
-        {
-            auto edge = itr.value();
-            /*
-            auto obj = my->_object_db.fetch_optional( itr.value() );
-            FC_ASSERT( obj.valid(), "Edge in index but not in object DB" );
-            auto edge = obj->as<edge_record>();
-            */
-            if (edge.from != from)
-                break;
-            if( ret.find(edge.from) != ret.end() )
-            {
-                ret[edge.to][edge.name] = edge;
-            }
-            else
-            {
-                map<string, edge_record> by_name;
-                by_name[edge.name] = edge;
-                ret[edge.to] = by_name;
-            }
-            ++itr;
-        }
+        map<object_id_type, map<string, object_record>> ret;
         return ret;
     }
 
@@ -2139,7 +2094,8 @@ namespace bts { namespace blockchain {
       if (override_limits)
         wlog("storing new local transaction with id ${id}", ("id", trx_id));
 
-      auto current_itr = my->_pending_transaction_db.find(trx_id);
+      auto id =  trx.digest(my->_chain_id);
+      auto current_itr = my->_pending_transaction_db.find(id);
       if( current_itr.valid() )
         return nullptr;
 
@@ -2160,7 +2116,7 @@ namespace bts { namespace blockchain {
       //   FC_CAPTURE_AND_THROW( insufficient_relay_fee, (fees)(my->_relay_fee) );
 
       my->_pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
-      my->_pending_transaction_db.store( trx_id, trx );
+      my->_pending_transaction_db.store( id, trx );
 
       return eval_state;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx) ) }

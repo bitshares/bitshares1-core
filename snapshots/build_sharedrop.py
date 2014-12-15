@@ -100,10 +100,12 @@ with open("vote-aug-21-noFMV.json") as vote:
 
 # Follow my vote dev stake
 with open("fmv-key.json") as fmvkey:
-    item = json.load(fmvkey)[0]
-    exodus_balances.append(item)
-    bts_added += item[1]
-    print "FMV allocation: " + str(item[1])
+    items = json.load(fmvkey)
+    for item in items:
+        print item
+        exodus_balances.append(item)
+        bts_added += item[1]
+        print "FMV allocation: " + str(item[1])
 
 
 pangel_dns = 0 # PaNGEL address

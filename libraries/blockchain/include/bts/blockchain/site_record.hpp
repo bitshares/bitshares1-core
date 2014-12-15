@@ -6,7 +6,7 @@
 namespace bts { namespace blockchain {
 
 
-    struct site_record : object_record
+    struct site_record 
     {
         static const obj_type type = site_object;
         string                 site_name;
@@ -16,8 +16,8 @@ namespace bts { namespace blockchain {
         
 
         site_record() { site_record(""); }
-        site_record( const string& name, const object_id_type auction_id = 0)
-            :site_name(name),expiration(0),renewal_fee(asset())
+        site_record( const string& name )
+        :site_name(name),expiration(0),renewal_fee(asset())
         {}
     };
 

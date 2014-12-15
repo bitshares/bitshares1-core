@@ -20,7 +20,7 @@ namespace bts { namespace blockchain {
           :edge(edge)
       {}
 
-      edge_record edge;
+      object_record edge;
 
       void evaluate( transaction_evaluation_state& eval_state );
    };
