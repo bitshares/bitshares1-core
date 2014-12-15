@@ -8,6 +8,8 @@
 #include <bts/blockchain/market_engine.hpp>
 #include <bts/blockchain/time.hpp>
 
+#include <bts/blockchain/edge_record.hpp>
+
 #include <fc/io/fstream.hpp>
 #include <fc/io/raw_variant.hpp>
 #include <fc/thread/non_preemptable_scope_check.hpp>
@@ -1938,8 +1940,7 @@ namespace bts { namespace blockchain {
             }
             case edge_object:
             {
-                auto edge = obj.as<edge_record>();
-                store_edge_record( edge );
+                store_edge_record( obj );
                 break;
             }
             case account_object:
@@ -1957,11 +1958,13 @@ namespace bts { namespace blockchain {
 
     void                       chain_database::store_site_record( const site_record& site )
     {
+        /*
         my->_site_index.store(site.site_name, site);
         my->_object_db.store(site._id, site);
         ilog("@n after storing site in chain DB:");
         ilog("@n      as an object: ${o}", ("o", object_record(site)));
         ilog("@n      as a site: ${s}", ("s", site));
+        */
     }
 
    osite_record  chain_database::lookup_site( const string& site_name )const
@@ -1981,81 +1984,37 @@ namespace bts { namespace blockchain {
 
 
 
-    void                       chain_database::store_edge_record( const edge_record& edge )
+    void            chain_database::store_edge_record( const object_record& edge )
     { try {
         ilog("@n storing edge in chain DB: ${e}", ("e", edge));
-        my->_edge_index.store( edge.index_key(), edge );
-        my->_reverse_edge_index.store( edge.reverse_index_key(), edge );
+        auto edge_data = edge.as<edge_record>();
+        my->_edge_index.store( edge_data.index_key(), edge._id );
+        my->_reverse_edge_index.store( edge_data.reverse_index_key(), edge._id );
         my->_object_db.store( edge._id, edge );
     } FC_CAPTURE_AND_RETHROW( (edge) ) }
 
-    oedge_record               chain_database::get_edge( const object_id_type& from,
-                                         const object_id_type& to,
-                                         const string& name )const
+    oobject_record  chain_database::get_edge( const object_id_type& from,
+                                             const object_id_type& to,
+                                             const string& name )const
     {
-        edge_index_key key;
-        key.from = from; key.to = to; key.name = name;
-        return my->_edge_index.fetch_optional( key );
-        /*
-        auto id = my->_edge_index.fetch_optional( key );
-        if( NOT id.valid() )
-            return oedge_record();
-        auto obj = my->_object_db.fetch_optional( *id );
-        if( NOT obj.valid() )
-            return oedge_record();
-        auto edge = obj->as<edge_record>();
-        return edge;
-        */
+        edge_index_key key( from, to, name );
+        auto object_id = my->_edge_index.fetch_optional( key );
+        if( object_id )
+           return get_object_record( *object_id );
+        return oobject_record();
     }
-    map<string, edge_record>   chain_database::get_edges( const object_id_type& from,
-                                                          const object_id_type& to )const
+    map<string, object_record>   chain_database::get_edges( const object_id_type& from,
+                                                            const object_id_type& to )const
     {
-        map<string, edge_record> ret;
-        edge_index_key key;
-        key.from = from; key.to = to;
-        auto itr = my->_edge_index.find( key );
-        while( itr.valid() && itr.value().from != from && itr.value().to != to)
-        {
-            ret[itr.value().name] = itr.value();
-            /*
-            auto obj = my->_object_db.fetch_optional( itr.value() );
-            FC_ASSERT( obj.valid(), "Edge in index but not in object DB" );
-            auto edge = obj->as<edge_record>();
-            if (edge.from != from || edge.to != to)
-                break;
-            ret[edge.name] = edge;
-            */
-        }
+        FC_ASSERT(!"unimplemented");
+        map<string, object_record> ret;
         return ret;
     }
-    map<object_id_type, map<string, edge_record>> chain_database::get_edges( const object_id_type& from )const
+
+    map<object_id_type, map<string, object_record>> chain_database::get_edges( const object_id_type& from )const
     {
-        map<object_id_type, map<string, edge_record>> ret;
-        edge_index_key key;
-        key.from = from;
-        auto itr = my->_edge_index.lower_bound( key );
-        while( itr.valid() )
-        {
-            auto edge = itr.value();
-            /*
-            auto obj = my->_object_db.fetch_optional( itr.value() );
-            FC_ASSERT( obj.valid(), "Edge in index but not in object DB" );
-            auto edge = obj->as<edge_record>();
-            */
-            if (edge.from != from)
-                break;
-            if( ret.find(edge.from) != ret.end() )
-            {
-                ret[edge.to][edge.name] = edge;
-            }
-            else
-            {
-                map<string, edge_record> by_name;
-                by_name[edge.name] = edge;
-                ret[edge.to] = by_name;
-            }
-            ++itr;
-        }
+        FC_ASSERT(!"unimplemented");
+        map<object_id_type, map<string, object_record>> ret;
         return ret;
     }
 
