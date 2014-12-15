@@ -2,7 +2,7 @@
 #include <bts/blockchain/types.hpp>
 #include <map>
 
-const static std::map<uint32_t, bts::blockchain::block_id_type> CHECKPOINT_BLOCKS
+static std::map<uint32_t, bts::blockchain::block_id_type> CHECKPOINT_BLOCKS
 {
     {       1, bts::blockchain::block_id_type( "8abcfb93c52f999e3ef5288c4f837f4f15af5521" ) },
     {  100000, bts::blockchain::block_id_type( "96f98d49722848a6a47ad04aece8b9f93c9e9c23" ) },

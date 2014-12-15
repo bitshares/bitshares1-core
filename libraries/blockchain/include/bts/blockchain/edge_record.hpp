@@ -4,19 +4,17 @@
 #include <fc/reflect/reflect.hpp>
 #include <fc/io/raw_fwd.hpp>
 
-
 namespace bts { namespace blockchain {
 
     struct edge_index_key;
-    struct edge_record : object_record
+    struct edge_record 
     {
-        static const obj_type type = edge_object;
+        static const obj_type type;
         object_id_type     from;
         object_id_type     to;
         string             name;
         variant            value;
 
-        edge_record() { this->set_id( edge_object, 0 ); }
         edge_index_key   index_key()const;
         edge_index_key   reverse_index_key()const;
     };
@@ -24,13 +22,16 @@ namespace bts { namespace blockchain {
 
     struct edge_index_key
     {
-        object_id_type from = 0;
-        object_id_type to = 0;
-        string name = "";
+        edge_index_key( object_id_type f = 0, object_id_type t = 0, const string& n = "")
+        :from(f),to(t),name(n){}
+
+        object_id_type from;
+        object_id_type to;
+        string         name;
 
         friend bool operator == ( const edge_index_key& a, const edge_index_key& b )
         {
-            return a.from == b.from && a.to == b.to && a.name == b.name;
+            return std::tie(a.from, a.to, a.name) == std::tie(b.from, b.to, b.name);
         }
         friend bool operator < ( const edge_index_key& a, const edge_index_key& b )
         {

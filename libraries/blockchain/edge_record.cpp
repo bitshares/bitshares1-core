@@ -3,6 +3,7 @@
 #include <fc/exception/exception.hpp>
 
 namespace bts { namespace blockchain {
+    const obj_type edge_record::type = edge_object;
 
     edge_index_key edge_record::index_key()const
     {

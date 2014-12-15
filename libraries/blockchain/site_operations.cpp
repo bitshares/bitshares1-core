@@ -19,12 +19,11 @@ namespace bts { namespace blockchain {
         // Create a new auction for the site.
         auto auction_id = chain->new_object_id( obj_type::throttled_auction_object );
         auto site_id = chain->new_object_id( obj_type::site_object );
-        auto site = site_record( this->site_name, site_id );
+        auto site = site_record( this->site_name );
         auto auction = throttled_auction_record( site_id );
-        auction.set_id( auction_id );
 
-        chain->store_object_record( site );
-        chain->store_object_record( auction );
+        chain->store_object_record( object_record( site, site_id ) );
+        chain->store_object_record( object_record( auction, auction_id ) );
     }
 
     void site_update_operation::evaluate( transaction_evaluation_state& eval_state ) 
@@ -43,9 +42,10 @@ namespace bts { namespace blockchain {
                     "You are not paying the rewnewal fee with the correct asset type." );
             existing_site.expiration += (60*60*24*30) * (this->lease_payment.amount / existing_site.renewal_fee.amount);
         }
-        existing_site.user_data = this->user_data;
-        existing_site.owner_object = this->owner_id;
-        chain->store_object_record( existing_site );
+        obj->user_data = this->user_data;
+        obj->owner_object = this->owner_id;
+        obj->set_data( existing_site );
+        chain->store_object_record( *obj );
     }
 
 

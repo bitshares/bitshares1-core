@@ -174,6 +174,14 @@ namespace bts { namespace blockchain {
        FC_ASSERT(!"unimplemented");
    }
 
+   multisig_condition   chain_interface::get_object_condition( const object_id_type& id, int depth )
+   { try {
+       auto oobj = get_object_record( id );
+       FC_ASSERT( oobj.valid(), "No such object!" );
+       return get_object_condition( *oobj, depth );
+   } FC_CAPTURE_AND_RETHROW( (id ) ) }
+
+
    multisig_condition   chain_interface::get_object_condition( const object_record& obj, int depth )
    { try {
        if( depth >= 100 )//BTS_OWNER_DEPENDENCY_MAX_DEPTH )
@@ -231,13 +239,13 @@ namespace bts { namespace blockchain {
        FC_ASSERT(!"This code path should not happen.");
    } FC_CAPTURE_AND_RETHROW( (obj.short_id())(obj.type())(obj) ) }
 
-    oedge_record               chain_interface::get_edge( const object_id_type& id )
+    oobject_record               chain_interface::get_edge( const object_id_type& id )
     {
         auto object = get_object_record( id );
         if( NOT object.valid() )
-            return oedge_record();
+            return oobject_record();
         FC_ASSERT( object->type() == edge_object, "This object is not an edge!"); // TODO check form ID as first check
-        return object->as<edge_record>();
+        return object;
     }
 
    vector<account_id_type> chain_interface::get_active_delegates()const

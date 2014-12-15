@@ -27,79 +27,37 @@ namespace bts { namespace blockchain {
         uint64_t                      short_id()const;
         obj_type                      type()const;
 
-        virtual ~object_record() {}
-        object_record( const object_id_type& id ):_id(id){}
-        object_record( const obj_type& type, const uint64_t& id )
+        object_record( obj_type type_arg = base_object, uint64_t id = 0)
         {
-            this->set_id( type, id );
+            this->set_id( type_arg, id );
             owner_object = 0;
         }
-
-        object_record()
-        {
-            this->set_id( base_object, 0 );
-            owner_object = 0;
-        }
-
-        object_record( const object_record& o )
-            :_id(o._id),user_data(o.user_data),_data(o._data),_owners(o._owners),owner_object(o.owner_object)
-        {
-        }
-
-        object_record( object_record&& o )
-            :_data(std::move( o._data ))
-        {
-             _id = o._id;
-            _owners = o._owners;
-            user_data = o.user_data;
-            owner_object = o.owner_object;
-        }
-
-        object_record& operator=( const object_record& o )
-        {
-            if( this == &o ) return *this;
-            _id = o._id;
-            _data = o._data;
-            _owners = o._owners;
-            user_data = o.user_data;
-            owner_object = o.owner_object;
-            return *this;
-        }
-
-        object_record& operator=( object_record&& o )
-        {
-            if( this == &o ) return *this;
-             _id = o._id;
-             _data = std::move( o._data );
-             _owners = o._owners;
-             user_data = o.user_data;
-             owner_object = o.owner_object;
-             return *this;
-        }    
-             
              
         template<typename ObjectType>
-        object_record(const ObjectType& o)
-            :_data( fc::raw::pack( o ) )
+        object_record(const ObjectType& o, object_id_type id )
+        :_data( fc::raw::pack( o ) )
         {
-            set_id( ObjectType::type, o.short_id() );
-            user_data = o.user_data;
-            owner_object = o.owner_object;
-            _owners = o._owners;
-            _data = fc::raw::pack<ObjectType>( o );
+           set_id( id );
+        }
+
+        template<typename ObjectType>
+        void set_data( const ObjectType& o )
+        {
+           FC_ASSERT( ObjectType::type == this->type()  );
+           _data = fc::raw::pack(o);
         }
 
         template<typename ObjectType>
         ObjectType as()const
         {
-            FC_ASSERT( ObjectType::type == this->type(), "Casting to the wrong type!" );
+            FC_ASSERT( ObjectType::type == this->type(), "Casting to the wrong type! ${expected} != ${requested}", 
+                     ("expected",type())("requested",ObjectType::type) );
             return fc::raw::unpack<ObjectType>(_data);
         }
 
         void                        set_id( object_id_type );
         void                        set_id( obj_type type, uint64_t number );
         void                        make_null();
-
 
         object_id_type              _id = 0; // Do not access directly, use short_id()
         variant                     user_data; // user-added metadata for all objects - actual application logic should go in derived class
