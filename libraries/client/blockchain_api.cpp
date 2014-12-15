@@ -675,20 +675,20 @@ vector<edge_record> client_impl::blockchain_get_edges( const object_id_type& fro
     {
         auto oedge = _chain_db->get_edge( from, to, name );
         if( oedge.valid() )
-            edges.push_back( *oedge );
+            edges.push_back( oedge->as<edge_record>() );
     }
     else if( to != -1 )
     {
         auto name_map = _chain_db->get_edges( from, to );
         for( auto pair : name_map )
-            edges.push_back( pair.second );
+            edges.push_back( pair.second.as<edge_record>() );
     }
     else
     {
         auto from_map = _chain_db->get_edges( from );
         for( auto p1 : from_map )
             for( auto p2 : p1.second )
-                edges.push_back( p2.second );
+                edges.push_back( p2.second.as<edge_record>() );
     }
     return edges;
 } FC_CAPTURE_AND_RETHROW( (from)(to)(name) ) }

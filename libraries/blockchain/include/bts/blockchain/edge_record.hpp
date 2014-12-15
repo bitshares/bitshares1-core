@@ -23,7 +23,7 @@ namespace bts { namespace blockchain {
 
     struct edge_index_key
     {
-        edge_index_key( object_id_type f = 0, object_id_type t = 0, const string& n )
+        edge_index_key( object_id_type f = 0, object_id_type t = 0, const string& n = "")
         :from(f),to(t),name(n){}
 
         object_id_type from;

@@ -15,7 +15,7 @@ namespace bts { namespace blockchain {
 
         ilog("@n edge's basic object properties:");
         ilog("@n   _id: ${id}, type: ${type}, short_id: ${short}",
-                ("id", obj._id)("type", obj.type())("short", obj.short_id()));
+                ("id", edge._id)("type", edge.type())("short", edge.short_id()));
 
         // Validate the contents in the proposed edge
         auto from = eval_state._current_state->get_object_record( edge_data.from );
@@ -33,13 +33,13 @@ namespace bts { namespace blockchain {
         if( !existing_edge.valid() )
         {
             ilog("@n edge exists, synchronizing object IDs");
-            existing_edge = object_record(edge_record());
+            existing_edge = object_record(edge_record(), 0);
             auto next_id = eval_state._current_state->new_object_id( edge_object );
             existing_edge->_id = next_id;
         }
-        existing_edge.set_data( edge_data );
+        existing_edge->set_data( edge_data );
         ilog("@n storing the edge");
-        eval_state._current_state->store_edge_record( existing_edge );
+        eval_state._current_state->store_edge_record( *existing_edge );
     } FC_CAPTURE_AND_RETHROW( (*this)(eval_state) ) }
 
 }} // bts::blockchain
