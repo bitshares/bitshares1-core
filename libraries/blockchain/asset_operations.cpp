@@ -94,7 +94,7 @@ namespace bts { namespace blockchain {
       //   hardforks which may want to add new permissions for future
       //   assets without applying them to existing assets.
       new_record.flags                  = 0;
-      new_record.issuer_permissions     = retractable | restricted | market_halt | balance_halt | supply_unlimit;
+      new_record.issuer_permissions     = retractable | market_halt | balance_halt | supply_unlimit;
 
       if( issuer_account_record )
       {
@@ -181,6 +181,7 @@ namespace bts { namespace blockchain {
           FC_ASSERT( !this->precision.valid() );
       }
 
+      ilog("@n Verifying authority: ${a}", ("a", current_asset_record->authority));
       if( !eval_state.verify_authority( current_asset_record->authority ) )
           FC_CAPTURE_AND_THROW( missing_signature, (current_asset_record->authority) );
 
