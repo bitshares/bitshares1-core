@@ -133,7 +133,7 @@ namespace bts { namespace blockchain {
             signed_block_header                                                         _head_block_header;
             block_id_type                                                               _head_block_id;
 
-            bts::db::level_map<digest_type, signed_transaction>                         _pending_transaction_db;
+            bts::db::level_map<std::pair<digest_type,time_point_sec>, signed_transaction>  _pending_transaction_db;
             std::map<fee_index, transaction_evaluation_state_ptr>                          _pending_fee_index;
 
             bts::db::cached_level_map<asset_id_type, asset_record>                      _asset_db;
