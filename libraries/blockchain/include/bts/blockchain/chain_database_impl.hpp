@@ -155,8 +155,8 @@ namespace bts { namespace blockchain {
 
 
             bts::db::level_map<object_id_type, object_record>                           _object_db;
-            bts::db::level_map<edge_index_key, edge_record>                             _edge_index;
-            bts::db::level_map<edge_index_key, edge_record>                             _reverse_edge_index;
+            bts::db::level_map<edge_index_key, object_id_type/*edge id*/>               _edge_index;
+            bts::db::level_map<edge_index_key, object_id_type/*edge id*/>               _reverse_edge_index;
 
             bts::db::level_map<string, site_record>                                     _site_index;
 

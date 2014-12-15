@@ -6,19 +6,19 @@
 namespace bts { namespace blockchain {
 
 
-    struct sale_record : object_record
+    struct sale_record 
     {
         static const obj_type type = sale_object;
-        object_id_type                 item;
+        object_id_type                 item = 0;
         asset                          price;
     }
 
     struct sale_offer_record : object_record
     {
         static const obj_type type = sale_offer_object;
-        object_id_type        sale_id;
+        object_id_type        sale_id = 0;
         asset                 offer;
-        object_id_type        new_owner_id;
+        object_id_type        new_owner_id = 0;
 
 
         // This can act as its own index
