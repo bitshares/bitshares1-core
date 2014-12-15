@@ -26,7 +26,7 @@ namespace bts { namespace blockchain {
       {
             _pending_fee_index.clear();
 
-            vector<pair<digest_type,time_point_sec>> trx_to_discard;
+            vector<transaction_id_type> trx_to_discard;
 
             _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
             unsigned num_pending_transaction_considered = 0;
@@ -34,14 +34,14 @@ namespace bts { namespace blockchain {
             while( itr.valid() )
             {
                 signed_transaction trx = itr.value();
-                pair<digest_type,time_point_sec> trx_id = itr.key();
-                assert(trx_id.first == trx.digest(_chain_id));
+                transaction_id_type trx_id = itr.key();
+                assert(trx_id == trx.id());
                 try
                 {
                   transaction_evaluation_state_ptr eval_state = self->evaluate_transaction( trx, _relay_fee );
                   share_type fees = eval_state->get_fees();
-                  _pending_fee_index[ fee_index( fees, trx.id() ) ] = eval_state;
-                  wlog("revalidated pending transaction id ${id} ${i}", ("id", trx_id)("i",trx.id()));
+                  _pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
+                  wlog("revalidated pending transaction id ${id}", ("id", trx_id));
                 }
                 catch ( const fc::canceled_exception& )
                 {
@@ -107,7 +107,7 @@ namespace bts { namespace blockchain {
           _id_to_transaction_record_db.open( data_dir / "index/id_to_transaction_record_db" );
 
 
-          _pending_transaction_db.open( data_dir / "index/pending_transaction2_db" );
+          _pending_transaction_db.open( data_dir / "index/pending_transaction_db" );
 
           _asset_db.open( data_dir / "index/asset_db" );
           _balance_db.open( data_dir / "index/balance_db" );
@@ -406,12 +406,12 @@ namespace bts { namespace blockchain {
 
       void chain_database_impl::clear_pending( const full_block& blk )
       {
-      //   std::unordered_set<std::pair<digest_type,time_point_sec> > confirmed_trx_ids;
+         std::unordered_set<transaction_id_type> confirmed_trx_ids;
 
          for( const signed_transaction& trx : blk.user_transactions )
          {
-            auto id = std::make_pair( trx.digest(_chain_id), trx.expiration );
-       //     confirmed_trx_ids.insert( id );
+            auto id = trx.id();
+            confirmed_trx_ids.insert( id );
             _pending_transaction_db.remove( id );
          }
 
@@ -1402,11 +1402,10 @@ namespace bts { namespace blockchain {
                 auto trx = pending_itr.value();
                 wlog( " loading pending transaction ${trx}", ("trx",trx) );
                 auto trx_id = trx.id();
-                auto id = std::make_pair( trx.digest(my->_chain_id), trx.expiration );
                 auto eval_state = evaluate_transaction( trx, my->_relay_fee );
                 share_type fees = eval_state->get_fees();
                 my->_pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
-                my->_pending_transaction_db.store( id, trx );
+                my->_pending_transaction_db.store( trx_id, trx );
              }
              catch ( const fc::exception& e )
              {
@@ -2192,8 +2191,7 @@ namespace bts { namespace blockchain {
       if (override_limits)
         wlog("storing new local transaction with id ${id}", ("id", trx_id));
 
-      auto id = std::make_pair( trx.digest(my->_chain_id), trx.expiration );
-      auto current_itr = my->_pending_transaction_db.find(id);
+      auto current_itr = my->_pending_transaction_db.find(trx_id);
       if( current_itr.valid() )
         return nullptr;
 
@@ -2214,7 +2212,7 @@ namespace bts { namespace blockchain {
       //   FC_CAPTURE_AND_THROW( insufficient_relay_fee, (fees)(my->_relay_fee) );
 
       my->_pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
-      my->_pending_transaction_db.store( id, trx );
+      my->_pending_transaction_db.store( trx_id, trx );
 
       return eval_state;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx) ) }
