@@ -2091,7 +2091,6 @@ namespace bts { namespace blockchain {
         }
    }
 
-
    /** this should throw if the trx is invalid */
    transaction_evaluation_state_ptr chain_database::store_pending_transaction( const signed_transaction& trx, bool override_limits )
    { try {
