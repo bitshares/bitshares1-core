@@ -27,9 +27,9 @@ add_definitions(-DQT_NO_KEYWORDS)
 
 file(GLOB qml_files qml/*.qml)
 
-add_executable(light_wallet WIN32 MACOSX_BUNDLE main.cpp ${qml_files})
-qt5_use_modules(light_wallet Quick Gui Qml)
+add_executable(LightWallet WIN32 MACOSX_BUNDLE main.cpp LightWallet.cpp ${qml_files})
+qt5_use_modules(LightWallet Quick Gui Qml)
 
-target_link_libraries(light_wallet bts_rpc bts_blockchain bts_db fc
+target_link_libraries(LightWallet bts_light_wallet fc
    ${READLINE_LIBRARIES} ${CMAKE_DL_LIBS} ${PLATFORM_SPECIFIC_LIBS}
    ${crypto_library} ${CrashRpt_LIBRARIES} ${ZLIB_LIBRARY} upnpc-static)
