@@ -1016,8 +1016,7 @@
 
         ],
         "prerequisites": ["json_authenticated"],
-        "aliases": ["withdraw_from_address"],
-        "is_const": true
+        "aliases": ["withdraw_from_address"]
     },
     {
         "method_name": "wallet_withdraw_from_legacy_address",

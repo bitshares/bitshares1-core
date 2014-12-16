@@ -38,7 +38,7 @@
 #endif
 
 #ifdef BTS_TEST_NETWORK
-#define BTS_BLOCKCHAIN_VOTE_UPDATE_PERIOD_SEC               10
+#define BTS_BLOCKCHAIN_VOTE_UPDATE_PERIOD_SEC               40
 #else
 #define BTS_BLOCKCHAIN_VOTE_UPDATE_PERIOD_SEC               (60*60) // 1 hour
 #endif
