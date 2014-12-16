@@ -1,48 +1,57 @@
 #define DEFAULT_LOGGER "client"
 
+#include <bts/client/build_info.hpp>
 #include <bts/client/client.hpp>
 #include <bts/client/client_impl.hpp>
 #include <bts/client/messages.hpp>
-#include <bts/net/exceptions.hpp>
-#include <bts/net/chain_downloader.hpp>
+
+#include <bts/db/level_map.hpp>
+#include <bts/utilities/git_revision.hpp>
+
 #include <bts/blockchain/chain_database.hpp>
+#include <bts/blockchain/checkpoints.hpp>
+#include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
-#include <bts/blockchain/exceptions.hpp>
-#include <bts/utilities/git_revision.hpp>
+
+#include <bts/net/chain_downloader.hpp>
+#include <bts/net/exceptions.hpp>
+
+#include <bts/api/common_api.hpp>
 #include <bts/rpc/rpc_client.hpp>
 #include <bts/rpc/rpc_server.hpp>
-#include <bts/api/common_api.hpp>
+
 #include <bts/mail/server.hpp>
 #include <bts/mail/client.hpp>
-#include <bts/client/build_info.hpp>
-#include <bts/db/level_map.hpp>
 
+#include <fc/log/file_appender.hpp>
+#include <fc/log/logger.hpp>
+#include <fc/log/logger_config.hpp>
+
+#include <fc/filesystem.hpp>
+#include <fc/git_revision.hpp>
 #include <fc/reflect/variant.hpp>
+
 #include <fc/io/fstream.hpp>
 #include <fc/io/json.hpp>
+#include <fc/io/raw.hpp>
+
+#include <fc/thread/non_preemptable_scope_check.hpp>
+#include <fc/thread/thread.hpp>
+
 #include <fc/network/http/connection.hpp>
 #include <fc/network/resolve.hpp>
+
 #include <fc/crypto/base58.hpp>
 #include <fc/crypto/elliptic.hpp>
 #include <fc/crypto/hex.hpp>
-#include <fc/thread/thread.hpp>
-#include <fc/thread/non_preemptable_scope_check.hpp>
-#include <fc/log/logger.hpp>
-#include <fc/log/file_appender.hpp>
-#include <fc/log/logger_config.hpp>
-#include <fc/io/raw.hpp>
-#include <fc/filesystem.hpp>
-#include <fc/git_revision.hpp>
 
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/filesystem/fstream.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/range/adaptor/reversed.hpp>
 #include <boost/range/algorithm/reverse.hpp>
-#include <boost/range/adaptor/reversed.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/algorithm/string/replace.hpp>
 #include <boost/version.hpp>
-
-#include <boost/filesystem/fstream.hpp>
 
 #include <openssl/opensslv.h>
 
@@ -80,8 +89,9 @@ const string BTS_MESSAGE_MAGIC = "BitShares Signed Message:\n";
 fc::logging_config create_default_logging_config( const fc::path&, bool enable_ulog );
 fc::path get_data_dir(const program_options::variables_map& option_variables);
 config load_config( const fc::path& datadir, bool enable_ulog );
-void  load_and_configure_chain_database(const fc::path& datadir,
-                                        const program_options::variables_map& option_variables);
+void load_checkpoints( const fc::path& data_dir );
+void load_and_configure_chain_database( const fc::path& datadir,
+                                        const program_options::variables_map& option_variables );
 
 program_options::variables_map parse_option_variables(int argc, char** argv)
 {
@@ -453,7 +463,46 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       std::srand( std::time( 0 ) );
       std::random_shuffle( cfg.default_peers.begin(), cfg.default_peers.end() );
       return cfg;
-   } FC_RETHROW_EXCEPTIONS( warn, "unable to load config file ${cfg}", ("cfg",datadir/"config.json")) }
+} FC_RETHROW_EXCEPTIONS( warn, "unable to load config file ${cfg}", ("cfg",datadir/"config.json")) }
+
+void load_checkpoints( const fc::path& data_dir )
+{ try {
+    const fc::path checkpoint_file = data_dir / "checkpoints.json";
+
+    decltype( CHECKPOINT_BLOCKS ) user_checkpoints;
+    fc::oexception file_exception;
+    if( fc::exists( checkpoint_file ) )
+    {
+        try
+        {
+            user_checkpoints = fc::json::from_file( checkpoint_file ).as<decltype( user_checkpoints )>();
+        }
+        catch( const fc::exception& e )
+        {
+            file_exception = e;
+        }
+    }
+
+    if( !std::includes( CHECKPOINT_BLOCKS.begin(), CHECKPOINT_BLOCKS.end(), user_checkpoints.begin(), user_checkpoints.end() ) )
+    {
+        ulog( "Using blockchain checkpoints from file: ${x}", ("x",checkpoint_file.preferred_string()) );
+        CHECKPOINT_BLOCKS = user_checkpoints;
+        return;
+    }
+
+    if( !file_exception.valid() )
+    {
+        fc::remove_all( checkpoint_file );
+        fc::json::save_to_file( CHECKPOINT_BLOCKS, checkpoint_file );
+    }
+    else
+    {
+        ulog( "Error loading blockchain checkpoints from file: ${x}", ("x",checkpoint_file.preferred_string()) );
+    }
+
+    if( !CHECKPOINT_BLOCKS.empty() )
+        ulog( "Using built-in blockchain checkpoints" );
+} FC_CAPTURE_AND_RETHROW( (data_dir) ) }
 
 namespace detail
 {
@@ -821,7 +870,7 @@ bool client_impl::has_item(const bts::net::item_id& id)
    {
       //return _chain_db->is_known_transaction( id.item_hash );
       // TODO: the performance of get_transaction is much slower than is_known_transaction,
-      // but we do not have enough information to call is_known_transaction because it depends 
+      // but we do not have enough information to call is_known_transaction because it depends
       // upon the transaction digest + expiration date and we only have the trx id.
       return _chain_db->get_transaction( id.item_hash ).valid();
    }
@@ -1227,77 +1276,76 @@ void client::simulate_disconnect( bool state )
 
 void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_path, std::function<void(float)> reindex_status_callback )
 { try {
-      my->_config = load_config( data_dir, my->_enable_ulog );
+    my->_config = load_config( data_dir, my->_enable_ulog );
 
-      //std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
-      fc::configure_logging( my->_config.logging );
-      // re-register the _user_appender which was overwritten by configure_logging()
-      fc::logger::get( "user" ).add_appender( my->_user_appender );
+    //std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
+    fc::configure_logging( my->_config.logging );
+    // re-register the _user_appender which was overwritten by configure_logging()
+    fc::logger::get( "user" ).add_appender( my->_user_appender );
 
-      try
-      {
-         my->_exception_db.open( data_dir / "exceptions", true );
-      }
-      catch( const db::db_in_use_exception& e )
-      {
-         if( e.to_string().find("Corruption") != string::npos )
-         {
-            elog("Exception database corrupted. Deleting it and attempting to recover.");
-            fc::remove_all( data_dir / "exceptions" );
-            my->_exception_db.open( data_dir / "exceptions", true );
-         }
-         //FIXME: is it really correct to continue here without rethrowing?
-      }
+    try
+    {
+       my->_exception_db.open( data_dir / "exceptions", true );
+    }
+    catch( const db::db_in_use_exception& e )
+    {
+       if( e.to_string().find("Corruption") != string::npos )
+       {
+          elog("Exception database corrupted. Deleting it and attempting to recover.");
+          fc::remove_all( data_dir / "exceptions" );
+          my->_exception_db.open( data_dir / "exceptions", true );
+       }
+       //FIXME: is it really correct to continue here without rethrowing?
+    }
 
-      bool attempt_to_recover_database = false;
-      try
-      {
-         ulog( "Tracking Statistics: ${s}", ("s",my->_config.track_statistics ) );
-         my->_chain_db->track_chain_statistics( my->_config.track_statistics );
-         my->_chain_db->open( data_dir / "chain", genesis_file_path, reindex_status_callback );
-      }
-      catch( const db::db_in_use_exception& e )
-      {
-         if (e.to_string().find("Corruption") != string::npos)
-         {
-            elog("Chain database corrupted. Deleting it and attempting to recover.");
-            attempt_to_recover_database = true;
-         }
-         //FIXME: is it really correct to continue here without rethrowing?
-      }
-      catch ( const wrong_chain_id& )
-      {
-         elog("Wrong chain ID. Deleting database and attempting to recover.");
-         attempt_to_recover_database = true;
-      }
+    load_checkpoints( data_dir );
 
-      if (attempt_to_recover_database)
-      {
-         fc::remove_all(data_dir / "chain");
-         my->_chain_db->open(data_dir / "chain", genesis_file_path, reindex_status_callback);
-      }
+    bool attempt_to_recover_database = false;
+    try
+    {
+       ulog( "Tracking Statistics: ${s}", ("s",my->_config.track_statistics ) );
+       my->_chain_db->track_chain_statistics( my->_config.track_statistics );
+       my->_chain_db->open( data_dir / "chain", genesis_file_path, reindex_status_callback );
+    }
+    catch( const db::db_in_use_exception& e )
+    {
+       if (e.to_string().find("Corruption") != string::npos)
+       {
+          elog("Chain database corrupted. Deleting it and attempting to recover.");
+          attempt_to_recover_database = true;
+       }
+       //FIXME: is it really correct to continue here without rethrowing?
+    }
+    catch ( const wrong_chain_id& )
+    {
+       elog("Wrong chain ID. Deleting database and attempting to recover.");
+       attempt_to_recover_database = true;
+    }
 
-      my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db, my->_config.wallet_enabled );
-      my->_wallet->set_data_directory( data_dir / "wallets" );
+    if (attempt_to_recover_database)
+    {
+       fc::remove_all(data_dir / "chain");
+       my->_chain_db->open(data_dir / "chain", genesis_file_path, reindex_status_callback);
+    }
 
-      if (my->_config.mail_server_enabled)
-      {
-         my->_mail_server = std::make_shared<bts::mail::server>();
-         my->_mail_server->open( data_dir / "mail" );
-      }
-      my->_mail_client = std::make_shared<bts::mail::client>(my->_wallet, my->_chain_db);
-      my->_mail_client->open( data_dir / "mail_client" );
+    my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db, my->_config.wallet_enabled );
+    my->_wallet->set_data_directory( data_dir / "wallets" );
 
-      //if we are using a simulated network, _p2p_node will already be set by client's constructor
-      if (!my->_p2p_node)
-         my->_p2p_node = std::make_shared<bts::net::node>(my->_user_agent);
-      my->_p2p_node->set_node_delegate(my.get());
+    if (my->_config.mail_server_enabled)
+    {
+       my->_mail_server = std::make_shared<bts::mail::server>();
+       my->_mail_server->open( data_dir / "mail" );
+    }
+    my->_mail_client = std::make_shared<bts::mail::client>(my->_wallet, my->_chain_db);
+    my->_mail_client->open( data_dir / "mail_client" );
 
-      my->start_rebroadcast_pending_loop();
+    //if we are using a simulated network, _p2p_node will already be set by client's constructor
+    if (!my->_p2p_node)
+       my->_p2p_node = std::make_shared<bts::net::node>(my->_user_agent);
+    my->_p2p_node->set_node_delegate(my.get());
 
-
-
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
+    my->start_rebroadcast_pending_loop();
+} FC_CAPTURE_AND_RETHROW( (data_dir) ) }
 
 client::~client()
 {

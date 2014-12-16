@@ -8,6 +8,8 @@
 #include <bts/blockchain/market_engine.hpp>
 #include <bts/blockchain/time.hpp>
 
+#include <bts/blockchain/edge_record.hpp>
+
 #include <fc/io/fstream.hpp>
 #include <fc/io/raw_variant.hpp>
 #include <fc/thread/non_preemptable_scope_check.hpp>
@@ -1651,11 +1653,11 @@ namespace bts { namespace blockchain {
                     // Blocks from the future can become valid later, so keep a list of these blocks that we can iterate over
                     // whenever we think our clock time has changed from it's standard flow
                     my->_revalidatable_future_blocks_db.store(block_id, 0);
-                    ilog("fork rejected because it has block with time in future, storing block id for revalidation later");
+                    wlog("fork rejected because it has block with time in future, storing block id for revalidation later");
                   }
                   catch (const fc::exception& e) //swallow any invalidation exceptions except for time_in_future invalidations
                   {
-                    ilog("fork permanently rejected as it has permanently invalid block");
+                    wlog("fork permanently rejected as it has permanently invalid block");
                   }
               }
             --highest_unchecked_block_number;
@@ -1938,8 +1940,7 @@ namespace bts { namespace blockchain {
             }
             case edge_object:
             {
-                auto edge = obj.as<edge_record>();
-                store_edge_record( edge );
+                store_edge_record( obj );
                 break;
             }
             case account_object:
@@ -1957,11 +1958,13 @@ namespace bts { namespace blockchain {
 
     void                       chain_database::store_site_record( const site_record& site )
     {
+        /*
         my->_site_index.store(site.site_name, site);
         my->_object_db.store(site._id, site);
         ilog("@n after storing site in chain DB:");
         ilog("@n      as an object: ${o}", ("o", object_record(site)));
         ilog("@n      as a site: ${s}", ("s", site));
+        */
     }
 
    osite_record  chain_database::lookup_site( const string& site_name )const
@@ -1991,8 +1994,8 @@ namespace bts { namespace blockchain {
     } FC_CAPTURE_AND_RETHROW( (edge) ) }
 
     oobject_record  chain_database::get_edge( const object_id_type& from,
-                                         const object_id_type& to,
-                                         const string& name )const
+                                             const object_id_type& to,
+                                             const string& name )const
     {
         edge_index_key key( from, to, name );
         auto object_id = my->_edge_index.fetch_optional( key );
@@ -2003,12 +2006,14 @@ namespace bts { namespace blockchain {
     map<string, object_record>   chain_database::get_edges( const object_id_type& from,
                                                             const object_id_type& to )const
     {
-        map<string, edge_record> ret;
+        FC_ASSERT(!"unimplemented");
+        map<string, object_record> ret;
         return ret;
     }
 
     map<object_id_type, map<string, object_record>> chain_database::get_edges( const object_id_type& from )const
     {
+        FC_ASSERT(!"unimplemented");
         map<object_id_type, map<string, object_record>> ret;
         return ret;
     }

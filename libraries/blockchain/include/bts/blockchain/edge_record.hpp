@@ -4,13 +4,12 @@
 #include <fc/reflect/reflect.hpp>
 #include <fc/io/raw_fwd.hpp>
 
-
 namespace bts { namespace blockchain {
 
     struct edge_index_key;
     struct edge_record 
     {
-        static const obj_type type = edge_object;
+        static const obj_type type;
         object_id_type     from;
         object_id_type     to;
         string             name;
@@ -23,7 +22,7 @@ namespace bts { namespace blockchain {
 
     struct edge_index_key
     {
-        edge_index_key( object_id_type f = 0, object_id_type t = 0, const string& n )
+        edge_index_key( object_id_type f = 0, object_id_type t = 0, const string& n = "")
         :from(f),to(t),name(n){}
 
         object_id_type from;

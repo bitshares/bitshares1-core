@@ -40,17 +40,17 @@ namespace bts { namespace blockchain {
            set_id( id );
         }
 
-        object_record::set_data( const ObjectType& o )
+        template<typename ObjectType>
+        void set_data( const ObjectType& o )
         {
-           FC_ASSERT( ObjectType::type == this->type(), "Casting to the wrong type! ${actual} != ${requested}", 
-                     ("expected",type())("requested",ObjectType::type) );
+           FC_ASSERT( ObjectType::type == this->type()  );
            _data = fc::raw::pack(o);
         }
 
         template<typename ObjectType>
         ObjectType as()const
         {
-            FC_ASSERT( ObjectType::type == this->type(), "Casting to the wrong type! ${actual} != ${requested}", 
+            FC_ASSERT( ObjectType::type == this->type(), "Casting to the wrong type! ${expected} != ${requested}", 
                      ("expected",type())("requested",ObjectType::type) );
             return fc::raw::unpack<ObjectType>(_data);
         }
