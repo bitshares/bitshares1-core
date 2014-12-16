@@ -2246,7 +2246,7 @@ namespace bts { namespace blockchain {
 
          try
          {
-            trx_eval_state->evaluate( item->trx, false, true );
+            trx_eval_state->evaluate( item->trx, false, false );
             // TODO: what about fees in other currencies?
             total_fees += trx_eval_state->get_fees( 0 );
             /* Apply temporary state to block state */
