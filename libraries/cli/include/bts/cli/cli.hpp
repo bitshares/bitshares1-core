@@ -65,4 +65,14 @@ namespace bts { namespace cli {
    };
    typedef std::shared_ptr<cli> cli_ptr;
 
+   string get_line(
+      std::istream* input_stream,
+      std::ostream* out,
+      const string& prompt = CLI_PROMPT_SUFFIX,
+      bool no_echo = false,
+      fc::thread* cin_thread = nullptr,
+      bool saved_out = false,
+      std::ostream* input_stream_log = nullptr
+      );
+
 } } // bts::cli

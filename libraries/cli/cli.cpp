@@ -15,6 +15,7 @@
 #include <fc/reflect/variant.hpp>
 #include <fc/thread/thread.hpp>
 #include <fc/thread/non_preemptable_scope_check.hpp>
+#include <fc/optional.hpp>
 #include <fc/variant.hpp>
 
 #include <boost/algorithm/string/join.hpp>
@@ -49,6 +50,68 @@ namespace bts { namespace cli {
   FC_DECLARE_EXCEPTION( cli_exception, 11000, "CLI Error" )
   FC_DECLARE_DERIVED_EXCEPTION( abort_cli_command, bts::cli::cli_exception, 11001, "command aborted by user" );
   FC_DECLARE_DERIVED_EXCEPTION( exit_cli_command, bts::cli::cli_exception, 11002, "exit CLI client requested by user" );
+
+  string get_line(
+      std::istream* input_stream,
+      std::ostream* out,
+      const string& prompt,          // = CLI_PROMPT_SUFFIX
+      bool no_echo,                  // = false
+      fc::thread* cin_thread,        // = nullptr
+      bool saved_out,                // = false
+      std::ostream* input_stream_log // = nullptr
+      )
+  {
+          if( input_stream == nullptr )
+             FC_CAPTURE_AND_THROW( bts::cli::exit_cli_command ); //_input_stream != nullptr );
+
+          //FC_ASSERT( _self->is_interactive() );
+          string line;
+          if ( no_echo )
+          {
+              *out << prompt;
+              // there is no need to add input to history when echo is off, so both Windows and Unix implementations are same
+              fc::set_console_echo(false);
+              sync_call( cin_thread, [&](){ std::getline( *input_stream, line ); }, "getline");
+              fc::set_console_echo(true);
+              *out << std::endl;
+          }
+          else
+          {
+          #ifdef HAVE_READLINE
+            if (input_stream == &std::cin)
+            {
+              char* line_read = nullptr;
+              out->flush(); //readline doesn't use cin, so we must manually flush _out
+              line_read = readline(prompt.c_str());
+              if(line_read && *line_read)
+                  add_history(line_read);
+              if( line_read == nullptr )
+                 FC_THROW_EXCEPTION( fc::eof_exception, "" );
+              line = line_read;
+              free(line_read);
+            }
+          else
+            {
+              *out <<prompt;
+              sync_call( cin_thread, [&](){ std::getline( *input_stream, line ); }, "getline");
+            }
+          #else
+            *out <<prompt;
+            sync_call( cin_thread, [&](){ std::getline( *input_stream, line ); }, "getline");
+          #endif
+          if ( input_stream_log != nullptr )
+            {
+            out->flush();
+            if (saved_out)
+              *input_stream_log << CLI_PROMPT_SUFFIX;
+            *input_stream_log << line << std::endl;
+            }
+          }
+
+          boost::trim(line);
+          return line;
+    }
+
 
   namespace detail
   {
@@ -236,61 +299,20 @@ namespace bts { namespace cli {
               return true;
             } FC_RETHROW_EXCEPTIONS( warn, "", ("command",line) ) }
 
-
             string get_line( const string& prompt = CLI_PROMPT_SUFFIX, bool no_echo = false)
             {
                   if( _quit ) return std::string();
-                  if( _input_stream == nullptr )
-                     FC_CAPTURE_AND_THROW( bts::cli::exit_cli_command ); //_input_stream != nullptr );
-
-                  //FC_ASSERT( _self->is_interactive() );
-                  string line;
-                  if ( no_echo )
-                  {
-                      *_out << prompt;
-                      // there is no need to add input to history when echo is off, so both Windows and Unix implementations are same
-                      fc::set_console_echo(false);
-                      _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }, "getline").wait();
-                      fc::set_console_echo(true);
-                      *_out << std::endl;
-                  }
-                  else
-                  {
-                  #ifdef HAVE_READLINE
-                    if (_input_stream == &std::cin)
-                    {
-                      char* line_read = nullptr;
-                      _out->flush(); //readline doesn't use cin, so we must manually flush _out
-                      line_read = readline(prompt.c_str());
-                      if(line_read && *line_read)
-                          add_history(line_read);
-                      if( line_read == nullptr )
-                         FC_THROW_EXCEPTION( fc::eof_exception, "" );
-                      line = line_read;
-                      free(line_read);
-                    }
-                  else
-                    {
-                      *_out <<prompt;
-                      _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }, "getline" ).wait();
-                    }
-                  #else
-                    *_out <<prompt;
-                    _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }, "getline").wait();
-                  #endif
-                  if (_input_stream_log)
-                    {
-                    _out->flush();
-                    if (_saved_out)
-                      *_input_stream_log << CLI_PROMPT_SUFFIX;
-                    *_input_stream_log << line << std::endl;
-                    }
-                  }
-
-                  boost::trim(line);
-                  return line;
+                  return bts::cli::get_line(
+                      _input_stream,
+                      _out,
+                      prompt,
+                      no_echo,
+                      &_cin_thread,
+                      _saved_out,
+                      _input_stream_log ? &*_input_stream_log : nullptr
+                      );
             }
-
+            
             fc::variants parse_interactive_command(fc::buffered_istream& argument_stream, const string& command)
             {
               try
