@@ -2211,10 +2211,10 @@ namespace bts { namespace blockchain {
 
       const signed_block_header head_block = get_head_block();
 
-      new_block.previous           = head_block.id();
-      new_block.block_num          = head_block.block_num + 1;
-      new_block.timestamp          = block_timestamp;
-      new_block.transaction_digest = digest_block( new_block ).calculate_transaction_digest();
+      new_block.previous            = head_block.id();
+      new_block.block_num           = head_block.block_num + 1;
+      new_block.timestamp           = block_timestamp;
+      new_block.transaction_digest  = digest_block( new_block ).calculate_transaction_digest();
 
       return new_block;
    } FC_CAPTURE_AND_RETHROW( (block_timestamp)(max_block_transaction_count)(max_block_size)(max_transaction_size)
