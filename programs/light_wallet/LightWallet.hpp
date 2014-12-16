@@ -69,6 +69,8 @@ public Q_SLOTS:
    void unlockWallet(QString password);
    void lockWallet();
 
+   void clearBrainKey();
+
 Q_SIGNALS:
    void walletExistsChanged(bool exists);
    void errorConnecting(QString error);

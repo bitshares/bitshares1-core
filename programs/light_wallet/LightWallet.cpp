@@ -5,6 +5,7 @@
 
 #include <QStandardPaths>
 #include <QDebug>
+#include <QSettings>
 
 #define IN_THREAD m_walletThread.async([&] {
 #define END_THREAD }, __FUNCTION__);
@@ -61,6 +62,7 @@ void LightWallet::createWallet(QString password)
    Q_EMIT walletExistsChanged(walletExists());
    Q_EMIT openChanged(isOpen());
    Q_EMIT unlockedChanged(isUnlocked());
+   QSettings().setValue(QStringLiteral("brainKey"), m_brainKey);
    END_THREAD
 }
 
@@ -75,6 +77,10 @@ void LightWallet::openWallet()
    }
 
    Q_EMIT openChanged(isOpen());
+
+   m_brainKey = QSettings().value(QStringLiteral("brainKey"), QString()).toString();
+   if( !m_brainKey.isEmpty() )
+      Q_EMIT brainKeyChanged(m_brainKey);
    END_THREAD
 }
 
@@ -112,6 +118,13 @@ void LightWallet::lockWallet()
    m_wallet.lock();
    Q_EMIT unlockedChanged(isUnlocked());
    END_THREAD
+}
+
+void LightWallet::clearBrainKey()
+{
+   QSettings().remove(QStringLiteral("brainKey"));
+   m_brainKey.clear();
+   Q_EMIT brainKeyChanged(m_brainKey);
 }
 
 void LightWallet::generateBrainKey()
