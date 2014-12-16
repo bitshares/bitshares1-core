@@ -238,7 +238,7 @@ namespace bts { namespace blockchain {
       }
       for( const auto& item : objects )
       {
-         undo_state->store_object_record( item.second )
+         undo_state->store_object_record( item.second );
       }
 
       const auto dirty_markets = prev_state->get_dirty_markets();
