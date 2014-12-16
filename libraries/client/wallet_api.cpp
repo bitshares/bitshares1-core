@@ -1,9 +1,9 @@
 #include <bts/client/client.hpp>
 #include <bts/client/client_impl.hpp>
 #include <bts/utilities/key_conversion.hpp>
+#include <bts/utilities/words.hpp>
 #include <bts/wallet/config.hpp>
 #include <bts/wallet/exceptions.hpp>
-#include <bts/wallet/words.hpp>
 #include <fc/network/resolve.hpp>
 #include <fc/network/url.hpp>
 #include <fc/network/http/connection.hpp>
