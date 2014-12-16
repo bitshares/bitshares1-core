@@ -2767,7 +2767,7 @@
       },
       {
          "method_name" : "wallet_generate_brain_seed",
-         "description" : "Generates a human friendly brain wallet key starting with a public salt as the first word",
+         "description" : "Generates a human friendly brain wallet key starting with a public salt as the last word",
          "return_type" : "string",
          "parameters"  : [
          ],

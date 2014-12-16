@@ -1,0 +1,105 @@
+{
+  "category": "Delegate Methods",
+  "methods" :
+    [
+      {
+        "method_name": "delegate_get_settings",
+        "description": "Returns current settings used during local block production",
+        "return_type": "json_object",
+        "parameters" : [],
+        "is_const"   : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
+      },
+      {
+        "method_name": "delegate_set_network_min_connection_count",
+        "description": "Set minimum network connection count required for block production",
+        "return_type": "uint32_t",
+        "parameters" :
+          [
+            {
+              "name" : "count",
+              "type" : "uint32_t",
+              "description" : "minimum network connection count"
+            }
+          ],
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
+      },
+      {
+        "method_name": "delegate_set_block_max_production_time",
+        "description": "Set maximum time spent producing a block",
+        "return_type": "uint32_t",
+        "parameters" :
+          [
+            {
+              "name" : "time",
+              "type" : "uint32_t",
+              "description" : "maximum production time in milliseconds"
+            }
+          ],
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
+      },
+      {
+        "method_name": "delegate_set_block_max_transaction_count",
+        "description": "Set maximum number of transactions allowed in a block",
+        "return_type": "uint32_t",
+        "parameters" :
+          [
+            {
+              "name" : "count",
+              "type" : "uint32_t",
+              "description" : "maximum transaction count"
+            }
+          ],
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
+      },
+      {
+        "method_name": "delegate_set_block_max_size",
+        "description": "Set maximum block size allowed",
+        "return_type": "uint32_t",
+        "parameters" :
+          [
+            {
+              "name" : "size",
+              "type" : "uint32_t",
+              "description" : "maximum block size in bytes"
+            }
+          ],
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
+      },
+      {
+        "method_name": "delegate_set_transaction_max_size",
+        "description": "Set maximum transaction size allowed",
+        "return_type": "uint32_t",
+        "parameters" :
+          [
+            {
+              "name" : "size",
+              "type" : "uint32_t",
+              "description" : "maximum transaction size in bytes"
+            }
+          ],
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
+      },
+      {
+        "method_name": "delegate_set_transaction_min_fee",
+        "description": "Set minimum transaction fee allowed",
+        "return_type": "share_type",
+        "parameters" :
+          [
+            {
+              "name" : "fee",
+              "type" : "share_type",
+              "description" : "minimum transaction fee"
+            }
+          ],
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
+      }
+    ]
+}
