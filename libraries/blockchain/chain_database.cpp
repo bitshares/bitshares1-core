@@ -2211,7 +2211,7 @@ namespace bts { namespace blockchain {
 
       const signed_block_header head_block = get_head_block();
 
-      new_block.previous            = head_block.id();
+      new_block.previous            = head_block.block_num > 0 ? head_block.id() : block_id_type();
       new_block.block_num           = head_block.block_num + 1;
       new_block.timestamp           = block_timestamp;
       new_block.transaction_digest  = digest_block( new_block ).calculate_transaction_digest();
