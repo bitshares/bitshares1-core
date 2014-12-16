@@ -346,7 +346,7 @@ void interpreter::cmd_x(const fc::variants& cmd)
             {
                 args[i] = fc::format_string(args[i].get_string(), v_effective_ctx);
             }
-            std::cout << "      " << args[i].as_string() << "\n";
+            std::cout << "      " << fc::json::to_string(args[i]) << "\n";
         }
         
         fc::optional<fc::variant> result;
