@@ -29,9 +29,9 @@ Returns:
 
 aliases: blockchain_get_pending_transactions, list_pending
 default (unlocked) >>> blockchain_list_pending_transactions
-    TXN ID      SIZE          OPERATION COUNT          SIGNATURE COUNT
-----------------------------------------------------------------------
-   <d-ign></d-ign>       244                        2                        1
+         TXN ID             EXPIRES      SIZE          OPERATION COUNT          SIGNATURE COUNT
+----------------------------------------------------------------------------------------------------
+        <d-ign></d-ign>             <d-ign></d-ign>       244                        2                        1
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 2
