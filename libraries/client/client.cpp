@@ -469,13 +469,13 @@ void load_checkpoints( const fc::path& data_dir )
 { try {
     const fc::path checkpoint_file = data_dir / "checkpoints.json";
 
-    decltype( CHECKPOINT_BLOCKS ) user_checkpoints;
+    decltype( CHECKPOINT_BLOCKS ) external_checkpoints;
     fc::oexception file_exception;
     if( fc::exists( checkpoint_file ) )
     {
         try
         {
-            user_checkpoints = fc::json::from_file( checkpoint_file ).as<decltype( user_checkpoints )>();
+            external_checkpoints = fc::json::from_file( checkpoint_file ).as<decltype( external_checkpoints )>();
         }
         catch( const fc::exception& e )
         {
@@ -483,11 +483,14 @@ void load_checkpoints( const fc::path& data_dir )
         }
     }
 
-    if( !std::includes( CHECKPOINT_BLOCKS.begin(), CHECKPOINT_BLOCKS.end(), user_checkpoints.begin(), user_checkpoints.end() ) )
+    if( !external_checkpoints.empty() )
     {
-        ulog( "Using blockchain checkpoints from file: ${x}", ("x",checkpoint_file.preferred_string()) );
-        CHECKPOINT_BLOCKS = user_checkpoints;
-        return;
+        if( CHECKPOINT_BLOCKS.empty() || external_checkpoints.crbegin()->first >= CHECKPOINT_BLOCKS.crbegin()->first )
+        {
+            ulog( "Using blockchain checkpoints from file: ${x}", ("x",checkpoint_file.preferred_string()) );
+            CHECKPOINT_BLOCKS = external_checkpoints;
+            return;
+        }
     }
 
     if( !file_exception.valid() )
