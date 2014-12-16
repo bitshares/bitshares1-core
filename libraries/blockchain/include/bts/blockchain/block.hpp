@@ -8,10 +8,8 @@ namespace bts { namespace blockchain {
    {
        digest_type  digest()const;
 
-       block_header():block_num(0){}
-
        block_id_type        previous;
-       uint32_t             block_num;
+       uint32_t             block_num = 0;
        fc::time_point_sec   timestamp;
        digest_type          transaction_digest;
        /** used for random number generation on the blockchain */
@@ -39,12 +37,14 @@ namespace bts { namespace blockchain {
        bool                             validate_digest()const;
        bool                             validate_unique()const;
        digest_type                      calculate_transaction_digest()const;
+
        std::vector<transaction_id_type> user_transaction_ids;
    };
 
    struct full_block : public signed_block_header
    {
        size_t               block_size()const;
+
        signed_transactions  user_transactions;
 
        operator digest_block()const;

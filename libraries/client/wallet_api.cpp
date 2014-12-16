@@ -1,9 +1,9 @@
 #include <bts/client/client.hpp>
 #include <bts/client/client_impl.hpp>
 #include <bts/utilities/key_conversion.hpp>
+#include <bts/utilities/words.hpp>
 #include <bts/wallet/config.hpp>
 #include <bts/wallet/exceptions.hpp>
-#include <bts/wallet/words.hpp>
 #include <fc/network/resolve.hpp>
 #include <fc/network/url.hpp>
 #include <fc/network/http/connection.hpp>
@@ -401,7 +401,7 @@ transaction_builder detail::client_impl::wallet_withdraw_from_address(
                                                     const string& to,
                                                     const vote_selection_method& vote_method,
                                                     bool sign,
-                                                    const string& builder_path )const
+                                                    const string& builder_path )
 {
     address to_address;
     try {
@@ -417,7 +417,10 @@ transaction_builder detail::client_impl::wallet_withdraw_from_address(
     builder->deposit_to_balance( to_address, ugly_asset, vote_method );
     builder->finalize( false );
     if( sign )
+    {
         builder->sign();
+        network_broadcast_transaction( builder->transaction_record.trx );
+    }
     _wallet->write_latest_builder( *builder, builder_path );
     return *builder;
 }

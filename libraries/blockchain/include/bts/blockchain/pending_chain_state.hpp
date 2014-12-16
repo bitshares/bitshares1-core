@@ -81,13 +81,13 @@ namespace bts { namespace blockchain {
          virtual void                       store_site_record( const site_record& site )override;
          virtual osite_record               lookup_site( const string& site_name)const override;
 
-         virtual void                       store_edge_record( const edge_record& edge )override;
-         virtual oedge_record               get_edge( const object_id_type& from,
+         virtual void                       store_edge_record( const object_record& edge )override;
+         virtual oobject_record               get_edge( const object_id_type& from,
                                                       const object_id_type& to,
                                                       const string& name )const          override;
-         virtual map<string, edge_record>   get_edges( const object_id_type& from,
+         virtual map<string, object_record>   get_edges( const object_id_type& from,
                                                        const object_id_type& to )const   override;
-         virtual map<object_id_type, map<string, edge_record>>
+         virtual map<object_id_type, map<string, object_record>>
                                         get_edges( const object_id_type& from )const override;
 
 
@@ -161,7 +161,7 @@ namespace bts { namespace blockchain {
 
          map< edge_index_key, object_id_type >                             edge_index;
          map< edge_index_key, object_id_type >                             reverse_edge_index;
-         map< string, object_id_type >                                     site_index;
+         map< string, site_record >                                        site_index;
 
          map< std::pair<asset_id_type,address>, object_id_type >           authorizations;
          map< std::pair<asset_id_type,proposal_id_type>, proposal_record > asset_proposals;

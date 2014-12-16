@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include <bts/wallet/words.hpp>
+#include <bts/utilities/words.hpp>
 
 const const_char_ptr word_list[] = { 
 "a",

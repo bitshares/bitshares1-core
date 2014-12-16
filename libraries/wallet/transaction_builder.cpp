@@ -277,7 +277,8 @@ transaction_builder& transaction_builder::set_edge(const string& payer_name,
     auto payer = _wimpl->self->get_account( payer_name );
     deduct_balance( payer.owner_address(), asset() );
     trx.set_edge( edge );
-    for( auto addr : _wimpl->_blockchain->get_object_condition( object_record( edge ) ).owners )
+    auto obj = object_record( edge, edge_object, 0 );
+    for( auto addr : _wimpl->_blockchain->get_object_condition( obj ).owners )
         required_signatures.insert( addr );
     return *this;
 } FC_CAPTURE_AND_RETHROW( (payer_name)(edge) ) }
@@ -736,6 +737,7 @@ transaction_builder& transaction_builder::update_asset( const string& symbol,
 
     transaction_record.ledger_entries.push_back( entry );
 
+    ilog("@n adding authority to required signatures: ${a}", ("a", asset_record->authority));
     for( auto owner : asset_record->authority.owners )
        required_signatures.insert( owner );
     return *this;
@@ -785,10 +787,13 @@ wallet_transaction_record& transaction_builder::sign()
    {
       //Ignore exceptions; this function operates on a best-effort basis, and doesn't actually have to succeed.
       try {
+         ilog( "@n trying to sign for address ${a}", ("a",address));
          trx.sign(_wimpl->self->get_private_key(address), chain_id);
+         ilog( "@n    and I succeeded");
       } catch( const fc::exception& e )
       {
          wlog( "unable to sign for address ${a}:\n${e}", ("a",address)("e",e.to_detail_string()) );
+         ilog( "@n unable to sign for address ${a}:\n${e}", ("a",address)("e",e.to_detail_string()) );
       }
    }
 

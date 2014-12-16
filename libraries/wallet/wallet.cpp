@@ -3081,6 +3081,7 @@ namespace detail {
       FC_ASSERT(asset_record.valid(), "no such asset record");
       auto issuer_account = my->_blockchain->get_account_record( asset_record->issuer_account_id );
       FC_ASSERT(issuer_account, "uh oh! no account for valid asset");
+      auto authority = asset_record->authority;
 
       asset shares_to_issue( amount_to_issue * asset_record->precision, asset_record->id );
       my->withdraw_to_transaction( required_fees,
@@ -3089,7 +3090,9 @@ namespace detail {
                                    required_signatures );
 
       trx.issue( shares_to_issue );
-      required_signatures.insert( issuer_account->active_key() );
+      for( auto owner : authority.owners )
+          required_signatures.insert( owner );
+//      required_signatures.insert( issuer_account->active_key() );
 
       public_key_type receiver_public_key = get_owner_public_key( to_account_name );
       owallet_account_record issuer = my->_wallet_db.lookup_account( asset_record->issuer_account_id );

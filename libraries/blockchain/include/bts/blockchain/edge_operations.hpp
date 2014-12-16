@@ -17,10 +17,10 @@ namespace bts { namespace blockchain {
 
       set_edge_operation(){}
       set_edge_operation( const edge_record& edge )
-          :edge(edge)
+          :edge(object_record( edge, edge_object, 0 ))
       {}
 
-      edge_record edge;
+      object_record edge;
 
       void evaluate( transaction_evaluation_state& eval_state );
    };
