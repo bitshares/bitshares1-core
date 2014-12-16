@@ -646,8 +646,13 @@ void client_impl::delegate_loop()
             FC_ASSERT( (now - *next_block_time) < fc::seconds( BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC ),
                        "You missed your slot at time: ${t}!", ("t",*next_block_time) );
 
-            full_block next_block = _chain_db->generate_block( *next_block_time );
+            full_block next_block = _chain_db->generate_block( *next_block_time,
+                                                               _max_block_transaction_count, _max_block_size,
+                                                               _max_transaction_size, _min_transaction_fee,
+                                                               _max_block_production_time );
+
             _wallet->sign_block( next_block );
+
             on_new_block( next_block, next_block.id(), false );
 
             _p2p_node->broadcast( block_message( next_block ) );
