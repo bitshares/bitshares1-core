@@ -1659,7 +1659,7 @@ namespace bts { namespace blockchain {
    block_fork_data chain_database::push_block( const full_block& block_data )
    { try {
       uint32_t head_block_num = get_head_block_num();
-      if(  head_block_num > BTS_BLOCKCHAIN_MAX_UNDO_HISTORY &&
+      if( head_block_num > BTS_BLOCKCHAIN_MAX_UNDO_HISTORY &&
           block_data.block_num <= (head_block_num - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY) )
         FC_THROW_EXCEPTION(block_older_than_undo_history,
                            "block ${new_block_hash} (number ${new_block_num}) is on a fork older than "
@@ -1711,7 +1711,7 @@ namespace bts { namespace blockchain {
             optional<vector<block_id_type>> parallel_blocks = my->_fork_number_db.fetch_optional(highest_unchecked_block_number);
             if (parallel_blocks)
               //for all blocks at same block number
-              for (block_id_type next_fork_to_try_id : *parallel_blocks)
+              for (const block_id_type& next_fork_to_try_id : *parallel_blocks)
               {
                 block_fork_data next_fork_to_try = my->_fork_db.fetch(next_fork_to_try_id);
                 if (next_fork_to_try.can_link())
@@ -2174,7 +2174,6 @@ namespace bts { namespace blockchain {
         }
    }
 
-
    /** this should throw if the trx is invalid */
    transaction_evaluation_state_ptr chain_database::store_pending_transaction( const signed_transaction& trx, bool override_limits )
    { try {
@@ -2220,63 +2219,90 @@ namespace bts { namespace blockchain {
       return trxs;
    }
 
-   full_block chain_database::generate_block( const time_point_sec& timestamp )
+   full_block chain_database::generate_block( const time_point_sec& block_timestamp,
+                                              size_t max_block_transaction_count, size_t max_block_size,
+                                              size_t max_transaction_size, share_type min_transaction_fee,
+                                              const fc::microseconds& max_block_production_time )
    { try {
-      auto start_time = time_point::now();
+      const time_point start_time = time_point::now();
 
-      pending_chain_state_ptr pending_state = std::make_shared<pending_chain_state>( shared_from_this() );
+      const pending_chain_state_ptr pending_state = std::make_shared<pending_chain_state>( shared_from_this() );
       if( pending_state->get_head_block_num() >= BTS_V0_4_9_FORK_BLOCK_NUM )
-         my->execute_markets( timestamp, pending_state );
-      auto pending_trx = get_pending_transactions();
+          my->execute_markets( block_timestamp, pending_state );
 
-      full_block next_block;
-      size_t block_size = 0;
-      share_type total_fees = 0;
-
-      // TODO: Sort pending transactions by highest fee
-      for( const auto& item : pending_trx )
+      full_block new_block;
+      size_t block_size = new_block.block_size();
+      if( max_block_transaction_count > 0 && max_block_size > block_size )
       {
-         auto trx_size = item->trx.data_size();
-         if( block_size + trx_size > BTS_BLOCKCHAIN_MAX_BLOCK_SIZE ) break;
-         block_size += trx_size;
+          // Evaluate pending transactions
+          const vector<transaction_evaluation_state_ptr> pending_trx = get_pending_transactions();
+          for( const transaction_evaluation_state_ptr& item : pending_trx )
+          {
+              if( time_point::now() - start_time >= max_block_production_time )
+                  break;
 
-         /* Make modifications to temporary state */
-         auto pending_trx_state = std::make_shared<pending_chain_state>( pending_state );
-         auto trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_trx_state.get(), my->_chain_id );
+              const signed_transaction& new_transaction = item->trx;
+              try
+              {
+                  // Evaluate transaction size
+                  const size_t transaction_size = new_transaction.data_size();
+                  if( transaction_size > max_transaction_size )
+                  {
+                      wlog( "Excluding transaction ${id} of size ${size} because it exceeds transaction size limit ${limit}",
+                            ("id",new_transaction.id())("size",transaction_size)("limit",max_transaction_size) );
+                      continue;
+                  }
+                  else if( block_size + transaction_size > max_block_size )
+                  {
+                      wlog( "Excluding transaction ${id} of size ${size} because block would exceed block size limit ${limit}",
+                            ("id",new_transaction.id())("size",transaction_size)("limit",max_block_size) );
+                      continue;
+                  }
+                  block_size += transaction_size;
 
-         try
-         {
-            trx_eval_state->evaluate( item->trx, false, false );
-            // TODO: what about fees in other currencies?
-            total_fees += trx_eval_state->get_fees( 0 );
-            /* Apply temporary state to block state */
-            pending_trx_state->apply_changes();
-            next_block.user_transactions.push_back( item->trx );
-         }
-         catch ( const fc::canceled_exception& )
-         {
-            throw;
-         }
-         catch( const fc::exception& e )
-         {
-            wlog( "Pending transaction was found to be invalid in context of block\n ${trx} \n${e}",
-                  ("trx",fc::json::to_pretty_string(item->trx))("e",e.to_detail_string()) );
-         }
+                  auto pending_trx_state = std::make_shared<pending_chain_state>( pending_state );
+                  auto trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_trx_state.get(), my->_chain_id );
 
-         /* Limit the time we spend evaluating transactions */
-         if( time_point::now() - start_time > fc::seconds(5) )
-            break;
+                  // Evaluate transaction in a temporary context
+                  trx_eval_state->evaluate( new_transaction, false, false );
+
+                  const share_type transaction_fee = trx_eval_state->get_fees( 0 ) + trx_eval_state->alt_fees_paid.amount;
+                  if( transaction_fee < min_transaction_fee )
+                  {
+                      wlog( "Excluding transaction ${id} with fee ${fee} because it does not meet transaction fee limit ${limit}",
+                            ("id",new_transaction.id())("fee",transaction_fee)("limit",min_transaction_fee) );
+                      continue;
+                  }
+
+                  // Apply transaction to pending state
+                  pending_trx_state->apply_changes();
+
+                  new_block.user_transactions.push_back( new_transaction );
+                  if( new_block.user_transactions.size() >= max_block_transaction_count )
+                      break;
+              }
+              catch( const fc::canceled_exception& )
+              {
+                  throw;
+              }
+              catch( const fc::exception& e )
+              {
+                  wlog( "Pending transaction was found to be invalid in context of block\n${trx}\n${e}",
+                        ("trx",fc::json::to_pretty_string( new_transaction ))("e",e.to_detail_string()) );
+              }
+          }
       }
 
-      auto head_block = get_head_block();
+      const signed_block_header head_block = get_head_block();
 
-      next_block.previous           = head_block.block_num ? head_block.id() : block_id_type();
-      next_block.block_num          = head_block.block_num + 1;
-      next_block.timestamp          = timestamp;
-      next_block.transaction_digest = digest_block( next_block ).calculate_transaction_digest();
+      new_block.previous            = head_block.id();
+      new_block.block_num           = head_block.block_num + 1;
+      new_block.timestamp           = block_timestamp;
+      new_block.transaction_digest  = digest_block( new_block ).calculate_transaction_digest();
 
-      return next_block;
-   } FC_CAPTURE_AND_RETHROW( (timestamp) ) }
+      return new_block;
+   } FC_CAPTURE_AND_RETHROW( (block_timestamp)(max_block_transaction_count)(max_block_size)(max_transaction_size)
+                             (min_transaction_fee)(max_block_production_time) ) }
 
    void chain_database::add_observer( chain_observer* observer )
    {

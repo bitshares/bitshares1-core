@@ -3,6 +3,7 @@ When(/^I do transfer (\d+) (\w+) from accountname: (\w+) to address: (\w+)$/) do
 end
 
 When(/^I do transfer (\d+) (\w+) from address: (\w+) to account: (\w+)$/) do |amount, symbol, address, account|
+    puts @current_actor.node.exec 'wallet_list_my_accounts'
     builder = @current_actor.node.exec 'wallet_withdraw_from_address', amount, symbol, @addresses[address], account
     @current_actor.node.exec 'wallet_builder_add_signature', builder, true
 end
@@ -21,6 +22,6 @@ When(/^I do transfer (\d+) (\w+) from (legacy )?address: (\w+) to public account
 end
 
 When(/^I do offline transfer (\d+) (\w+) from address: (\w+) to address: (\w+) as (\w+)$/) do |amount, symbol, from, to, builder_id|
-    @addresses[builder_id] = @current_actor.node.exec 'wallet_withdraw_from_address', amount, symbol, @addresses[from], @addresses[to]
+    @addresses[builder_id] = @current_actor.node.exec 'wallet_withdraw_from_address', amount, symbol, @addresses[from], @addresses[to], false
 end
 

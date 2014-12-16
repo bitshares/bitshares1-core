@@ -3,20 +3,20 @@
 #include <bts/cli/cli.hpp>
 #include <bts/client/notifier.hpp>
 #include <bts/db/level_map.hpp>
-#include <bts/net/upnp.hpp>
 #include <bts/net/chain_server.hpp>
+#include <bts/net/upnp.hpp>
 
 #include <fc/log/appender.hpp>
 
-#include <boost/iostreams/tee.hpp>
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/rolling_mean.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
 #include <boost/program_options.hpp>
 #include <boost/iostreams/stream.hpp>
-#include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics/stats.hpp>
-#include <boost/accumulators/statistics/rolling_mean.hpp>
+#include <boost/iostreams/tee.hpp>
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
 namespace bts { namespace client {
 
@@ -259,14 +259,13 @@ public:
    wallet_ptr                                              _wallet = nullptr;
    std::shared_ptr<bts::mail::server>                      _mail_server = nullptr;
    std::shared_ptr<bts::mail::client>                      _mail_client = nullptr;
-   fc::future<void>                                        _delegate_loop_complete;
-   bool                                                    _delegate_loop_first_run = true;
    fc::time_point                                          _last_sync_status_message_time;
    bool                                                    _last_sync_status_message_indicated_in_sync;
    uint32_t                                                _last_sync_status_head_block;
    uint32_t                                                _remaining_items_to_sync;
    boost::accumulators::accumulator_set<double, boost::accumulators::stats<boost::accumulators::tag::rolling_mean> > _sync_speed_accumulator;
 
+   // Chain downloader
    fc::future<void>                                        _chain_downloader_future;
    bool                                                    _chain_downloader_running = false;
    uint32_t                                                _chain_downloader_blocks_remaining = 0;
@@ -281,7 +280,17 @@ public:
    config                                                  _config;
    logging_exception_db                                    _exception_db;
 
+   // Delegate block production
+   fc::future<void>                                        _delegate_loop_complete;
+   bool                                                    _delegate_loop_first_run = true;
    uint32_t                                                _min_delegate_connection_count = BTS_MIN_DELEGATE_CONNECTION_COUNT;
+
+   size_t                                                  _max_block_transaction_count = -1;
+   size_t                                                  _max_block_size = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
+   size_t                                                  _max_transaction_size = -1;
+   share_type                                              _min_transaction_fee = BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE;
+   fc::microseconds                                        _max_block_production_time = fc::seconds( 3 );
+
    //start by assuming not syncing, network won't send us a msg if we start synced and stay synched.
    //at worst this means we might briefly sending some pending transactions while not synched.
    bool                                                    _sync_mode = false;
@@ -294,7 +303,7 @@ public:
    const unsigned                                          _blockchain_synopsis_size_limit;
 
    fc::future<void>                                        _client_done;
-   
+
    uint32_t                                                _debug_last_wait_block;
 
    void wallet_http_callback( const string& url, const ledger_entry& e );

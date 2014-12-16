@@ -87,6 +87,7 @@ disk_usage
 execute_command_line <input>                                                                        
 execute_script <script>                                                                             
 get_info                                                                                            
+get_registration_requests                                                                           
 help [command_name]                                                                                 
 http_start_server [port]                                                                            
 mail_archive_message <message_id>                                                                   

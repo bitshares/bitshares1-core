@@ -870,28 +870,31 @@ void api_generator::generate_rpc_server_files(const fc::path& rpc_server_output_
   server_cpp_file << "{\n";
   for (const method_description& method : _methods)
   {
-    server_cpp_file << "  // register method " << method.name << "\n";
-    server_cpp_file << "  bts::api::method_data " << method.name << "_method_metadata{\"" << method.name << "\", nullptr,\n";
-    server_cpp_file << "    /* description */ " << bts::utilities::escape_string_for_c_source_code(method.brief_description) << ",\n";
-    server_cpp_file << "    /* returns */ \"" << method.return_type->get_type_name() << "\",\n";
-    server_cpp_file << "    /* params: */ {";
+    server_cpp_file << "  {\n";
+    server_cpp_file << "    // register method " << method.name << "\n";
+    server_cpp_file << "    bts::api::method_data " << method.name << "_method_metadata{\"" << method.name << "\", nullptr,\n";
+    server_cpp_file << "      /* description */ " << bts::utilities::escape_string_for_c_source_code(method.brief_description) << ",\n";
+    server_cpp_file << "      /* returns */ \"" << method.return_type->get_type_name() << "\",\n";
+    server_cpp_file << "      /* params: */ {";
     bool first_parameter = true;
     for (const parameter_description& parameter : method.parameters)
     {
       if (first_parameter)
         first_parameter = false;
       else
-        server_cpp_file << ",\n  ";
-      server_cpp_file << "    {\"" << parameter.name << "\", \"" << parameter.type->get_type_name() <<  "\", bts::api::";
+        server_cpp_file << ",";
+      server_cpp_file << "\n        {\"" << parameter.name << "\", \"" << parameter.type->get_type_name() <<  "\", bts::api::";
       if (parameter.default_value)
         server_cpp_file << "optional_positional, fc::variant(fc::json::from_string(" << bts::utilities::escape_string_for_c_source_code(fc::json::to_string(parameter.default_value)) << "))}";
       else
         server_cpp_file << "required_positional, fc::ovariant()}";
     }
-    server_cpp_file <<  "},\n";
-    server_cpp_file << "    /* prerequisites */ (bts::api::method_prerequisites)" << (int)method.prerequisites << ", \n";
-    server_cpp_file << "    /* detailed description */ " << bts::utilities::escape_string_for_c_source_code(generate_detailed_description_for_method(method)) << ",\n";
-    server_cpp_file << "    /* aliases */ {";
+    if( !first_parameter )
+      server_cpp_file << "\n      ";
+    server_cpp_file << "},\n";
+    server_cpp_file << "      /* prerequisites */ (bts::api::method_prerequisites) " << (int)method.prerequisites << ",\n";
+    server_cpp_file << "      /* detailed description */ " << bts::utilities::escape_string_for_c_source_code(generate_detailed_description_for_method(method)) << ",\n";
+    server_cpp_file << "      /* aliases */ {";
     if (!method.aliases.empty())
     {
       bool first = true;
@@ -906,7 +909,8 @@ void api_generator::generate_rpc_server_files(const fc::path& rpc_server_output_
     }
     server_cpp_file << "}};\n";
       
-    server_cpp_file << "  store_method_metadata(" << method.name << "_method_metadata);\n\n";
+    server_cpp_file << "    store_method_metadata(" << method.name << "_method_metadata);\n";
+    server_cpp_file << "  }\n\n";
   }
   server_cpp_file << "}\n\n";
 

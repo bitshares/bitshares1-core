@@ -138,7 +138,12 @@ namespace bts { namespace blockchain {
          /** Produce a block for the given timeslot, the block is not signed because that is the
           *  role of the wallet.
           */
-         full_block                  generate_block( const time_point_sec& timestamp );
+         full_block                  generate_block( const time_point_sec& block_timestamp,
+                                                     size_t max_block_transaction_count = -1,
+                                                     size_t max_block_size = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE,
+                                                     size_t max_transaction_size = -1,
+                                                     share_type min_transaction_fee = BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE,
+                                                     const fc::microseconds& max_block_production_time = fc::seconds( 3 ) );
 
          /**
           *  The chain ID is the hash of the initial_config loaded when the

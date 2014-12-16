@@ -185,7 +185,7 @@ void context::create_client(const std::string& name)
 
 fc::path context::get_data_dir_for_client(const std::string& name) const
 {
-    return this->basedir / name;
+    return this->basedir / "client" / name;
 }
 
 void context::get_clients_by_variant(const fc::variant& spec, std::vector<client_context_ptr>& result, int depth)
@@ -346,7 +346,7 @@ void interpreter::cmd_x(const fc::variants& cmd)
             {
                 args[i] = fc::format_string(args[i].get_string(), v_effective_ctx);
             }
-            std::cout << "      " << args[i].as_string() << "\n";
+            std::cout << "      " << fc::json::to_string(args[i]) << "\n";
         }
         
         fc::optional<fc::variant> result;
@@ -412,12 +412,69 @@ void interpreter::cmd_x(const fc::variants& cmd)
     return;
 }
 
+void run_single_tscript(
+    const fc::path& genesis_json_filename,
+    const fc::path& tscript_filename
+    )
+{
+    FC_ASSERT( fc::is_regular_file(tscript_filename) );
+
+    // delete client directories
+    fc::remove_all( "tmp/client" );
+
+    bts::tscript::interpreter interp;
+    interp.ctx->set_genesis(genesis_json_filename);
+    interp.run_file(tscript_filename);
+    return;
+}
+
+inline bool startswith(
+    const std::string& a,
+    const std::string& prefix
+    )
+{
+    size_t m = prefix.length(), n = a.length();
+    return (m <= n) && (0 == a.compare( 0, m, prefix ));
+}
+
+inline bool endswith(
+    const std::string& a,
+    const std::string& suffix
+    )
+{
+    size_t m = suffix.length(), n = a.length();
+    return (m <= n) && (0 == a.compare( n-m, m, suffix ));
+}
+
+void run_tscripts(
+    const fc::path& genesis_json_filename,
+    const fc::path& target_filename
+    )
+{
+    if( !fc::is_directory(target_filename) )
+    {
+        run_single_tscript( genesis_json_filename, target_filename );
+        return;
+    }
+
+    for( fc::recursive_directory_iterator it(target_filename), it_end;
+         it != it_end; ++it )
+    {
+        fc::path filename = (*it);
+        if( !fc::is_regular_file(filename) )
+            continue;
+        if( !endswith(filename.string(), ".tscript") )
+            continue;
+        run_single_tscript(genesis_json_filename, filename);
+    }
+    return;
+}
+
 } }
 
 int main(int argc, char **argv, char **envp)
 {
-    bts::tscript::interpreter interp;
-    interp.ctx->set_genesis("tmp/genesis.json");
-    interp.run_file(fc::path("tests/drltc_tests/tscript/simple.tscript"));
+    for( int i=1; i<argc; i++ )
+        bts::tscript::run_tscripts( "tmp/genesis.json", argv[i] );
     return 0;
 }
