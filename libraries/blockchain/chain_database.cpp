@@ -1997,9 +1997,10 @@ namespace bts { namespace blockchain {
                                              const object_id_type& to,
                                              const string& name )const
     {
+        ilog("@n getting edge with key: (${f}, ${t}, ${n})", ("f",from)("t",to)("n",name));
         edge_index_key key( from, to, name );
         auto object_id = my->_edge_index.fetch_optional( key );
-        if( object_id )
+        if( object_id.valid() )
            return get_object_record( *object_id );
         return oobject_record();
     }
