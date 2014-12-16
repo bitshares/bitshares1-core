@@ -10,7 +10,7 @@
 #define BTS_LIGHT_WALLET_PORT 8899
 #define BTS_LIGHT_WALLET_DEFAULT_FEE  50000 // 0.5 XTS
 
-namespace bts { namespace wallet {
+namespace bts { namespace light_wallet {
    using namespace bts::blockchain;
 
    struct light_wallet_data
@@ -87,7 +87,7 @@ namespace bts { namespace wallet {
    };
 
 } }
-FC_REFLECT( bts::wallet::light_wallet_data, 
+FC_REFLECT( bts::light_wallet::light_wallet_data,
             (encrypted_private_key)
             (user_account)
             (balance_record_cache)
@@ -96,4 +96,4 @@ FC_REFLECT( bts::wallet::light_wallet_data,
             (price_cache)
             (memos) );
 
-FC_REFLECT( bts::wallet::light_transaction_summary, (when)(from)(to)(amount)(symbol)(fee)(fee_symbol)(memo)(status) );
+FC_REFLECT( bts::light_wallet::light_transaction_summary, (when)(from)(to)(amount)(symbol)(fee)(fee_symbol)(memo)(status) );
