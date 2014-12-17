@@ -83,6 +83,13 @@ debug_wait <wait_time>
 debug_wait_block_interval <wait_time_in_block_intervals>                                            
 debug_wait_for_block_by_number <block_number> [type]                                                
 debug_write_errors_to_file [path] [start_time]                                                      
+delegate_get_settings                                                                               
+delegate_set_block_max_production_time <time>                                                       
+delegate_set_block_max_size <size>                                                                  
+delegate_set_block_max_transaction_count <count>                                                    
+delegate_set_network_min_connection_count <count>                                                   
+delegate_set_transaction_max_size <size>                                                            
+delegate_set_transaction_min_fee <fee>                                                              
 disk_usage                                                                                          
 execute_command_line <input>                                                                        
 execute_script <script>                                                                             
