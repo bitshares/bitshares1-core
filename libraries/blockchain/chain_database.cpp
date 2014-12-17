@@ -3404,7 +3404,6 @@ namespace bts { namespace blockchain {
            if( account.delegate_info.valid() )
            {
                auto address = account.active_address();
-
                if( snapshot.find( address ) != snapshot.end() )
                    snapshot[address] += account.delegate_info->pay_balance;
                else
@@ -3412,6 +3411,57 @@ namespace bts { namespace blockchain {
 
            }
        }
+
+       // ask balances
+       for( auto ask_itr = my->_ask_db.begin(); ask_itr.valid(); ++ask_itr )
+       {
+           const market_index_key market_index = ask_itr.key();
+           if( market_index.order_price.base_asset_id == 0 )
+           {
+               auto address = ask_itr.key().owner;
+               auto balance = ask_itr.value().balance;
+               if( snapshot.find( address ) != snapshot.end() )
+                   snapshot[address] += balance;
+               else
+                   snapshot[address] = balance;
+           }
+       }
+       for( auto ask_itr = my->_relative_ask_db.begin(); ask_itr.valid(); ++ask_itr )
+       {
+           const market_index_key market_index = ask_itr.key();
+           if( market_index.order_price.base_asset_id == 0 )
+           {
+               auto address = ask_itr.key().owner;
+               auto balance = ask_itr.value().balance;
+               if( snapshot.find( address ) != snapshot.end() )
+                   snapshot[address] += balance;
+               else
+                   snapshot[address] = balance;
+           }
+       }
+
+       // Add short balances
+       for( auto short_itr = my->_short_db.begin(); short_itr.valid(); ++short_itr )
+       {
+           auto address = short_itr.key().owner;
+           auto balance = short_itr.value().balance;
+           if( snapshot.find( address ) != snapshot.end() )
+               snapshot[address] += balance;
+           else
+               snapshot[address] = balance;
+       }
+
+       // Add collateral balances
+       for( auto collateral_itr = my->_collateral_db.begin(); collateral_itr.valid(); ++collateral_itr )
+       {
+           auto address = collateral_itr.key().owner;
+           auto balance = collateral_itr.value().collateral_balance;
+           if( snapshot.find( address ) != snapshot.end() )
+               snapshot[address] += balance;
+           else
+               snapshot[address] = balance;
+       }
+
 
        for( auto pair : snapshot )
        {
