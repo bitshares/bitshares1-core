@@ -25,6 +25,7 @@ ApplicationWindow {
       property color buttonHoverColor: "#2BB4FF"
       property color buttonPressedColor: "#264D87"
       property color buttonTextColor: "white"
+      property color errorGlowColor: "red"
 
       property real spacing: 40
       property real margins: 20
@@ -37,45 +38,10 @@ ApplicationWindow {
       id: wallet
    }
 
-   ColumnLayout {
+   WelcomeLayout {
+      id: welcomeBox
       anchors.fill: parent
       anchors.margins: visuals.margins
-      spacing: visuals.spacing
-
-      Item {
-         Layout.preferredHeight: window.orientation === Qt.PortraitOrientation?
-                                    window.height / 4 : window.height / 6
-      }
-      Label {
-         anchors.horizontalCenter: parent.horizontalCenter
-         horizontalAlignment: Text.AlignHCenter
-         text: "Welcome to BitShares"
-         color: visuals.textColor
-         font.pixelSize: visuals.textBaseSize * 1.5
-         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
-      }
-      Label {
-         anchors.horizontalCenter: parent.horizontalCenter
-         visible: !wallet.walletExists
-         text: "To get started, create a password below"
-         color: visuals.lightTextColor
-         font.pixelSize: visuals.textBaseSize
-         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
-      }
-      ColumnLayout {
-         Layout.fillWidth: true
-         PasswordField {
-            Layout.fillWidth: true
-            id: passwordField
-            placeholderText: qsTr("Create a Password")
-         }
-         Button {
-            style: WalletButtonStyle {}
-            text: "Begin"
-            Layout.fillWidth: true
-            Layout.preferredHeight: passwordField.height
-         }
-      }
-      Item { Layout.fillHeight: true }
+      firstTime: !wallet.walletExists
    }
 }
