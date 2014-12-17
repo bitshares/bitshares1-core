@@ -50,7 +50,7 @@ namespace bts { namespace blockchain {
    {
       digest_block db( (signed_block_header&)*this );
       db.user_transaction_ids.reserve( user_transactions.size() );
-      for( auto item : user_transactions )
+      for( const auto& item : user_transactions )
          db.user_transaction_ids.push_back( item.id() );
       return db;
    }
@@ -63,7 +63,7 @@ namespace bts { namespace blockchain {
    bool digest_block::validate_unique()const
    {
       std::unordered_set<transaction_id_type> trx_ids;
-      for( auto id : user_transaction_ids )
+      for( const auto& id : user_transaction_ids )
          if( !trx_ids.insert(id).second ) return false;
       return true;
    }
