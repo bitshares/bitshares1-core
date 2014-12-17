@@ -679,16 +679,16 @@ namespace bts { namespace blockchain {
          if (block_id == _head_block_id) //if block_id is current head block, do nothing
            return; //this is necessary to avoid unnecessarily popping the head block in this case
 
-         ilog( "switch from fork ${id} to ${to_id}", ("id",_head_block_id)("to_id",block_id) );
+         elog( "switch from fork ${id} to ${to_id}", ("id",_head_block_id)("to_id",block_id) );
          vector<block_id_type> history = get_fork_history( block_id );
          while( history.back() != _head_block_id )
          {
-            ilog( "    pop ${id}", ("id",_head_block_id) );
+            elog( "    pop ${id}", ("id",_head_block_id) );
             pop_block();
          }
          for( int32_t i = history.size()-2; i >= 0 ; --i )
          {
-            ilog( "    extend ${i}", ("i",history[i]) );
+            elog( "    extend ${i}", ("i",history[i]) );
             extend_chain( self->get_block( history[i] ) );
          }
       } FC_CAPTURE_AND_RETHROW( (block_id) ) }
@@ -1027,7 +1027,7 @@ namespace bts { namespace blockchain {
          }
          catch ( const fc::exception& e )
          {
-            wlog( "error applying block: ${e}", ("e",e.to_detail_string() ));
+            elog( "error applying block: ${e}", ("e",e.to_detail_string() ));
             mark_invalid( block_id, e );
             throw;
          }
@@ -1584,11 +1584,18 @@ namespace bts { namespace blockchain {
       uint32_t head_block_num = get_head_block_num();
       if( head_block_num > BTS_BLOCKCHAIN_MAX_UNDO_HISTORY &&
           block_data.block_num <= (head_block_num - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY) )
+      {
+        elog( "block ${new_block_hash} (number ${new_block_num}) is on a fork older than "
+               "our undo history would allow us to switch to (current head block is number ${head_block_num}, undo history is ${undo_history})",
+                           ("new_block_hash", block_data.id())("new_block_num", block_data.block_num)
+                           ("head_block_num", head_block_num)("undo_history", BTS_BLOCKCHAIN_MAX_UNDO_HISTORY));
+
         FC_THROW_EXCEPTION(block_older_than_undo_history,
                            "block ${new_block_hash} (number ${new_block_num}) is on a fork older than "
                            "our undo history would allow us to switch to (current head block is number ${head_block_num}, undo history is ${undo_history})",
                            ("new_block_hash", block_data.id())("new_block_num", block_data.block_num)
                            ("head_block_num", head_block_num)("undo_history", BTS_BLOCKCHAIN_MAX_UNDO_HISTORY));
+      }
 
       // only allow a single fiber attempt to push blocks at any given time,
       // this method is not re-entrant.
@@ -1629,6 +1636,7 @@ namespace bts { namespace blockchain {
         uint32_t highest_unchecked_block_number = longest_fork_block.block_num;
         if (highest_unchecked_block_number > head_block_num)
         {
+
           do
           {
             optional<vector<block_id_type>> parallel_blocks = my->_fork_number_db.fetch_optional(highest_unchecked_block_number);
@@ -1663,6 +1671,10 @@ namespace bts { namespace blockchain {
             --highest_unchecked_block_number;
           } while(highest_unchecked_block_number > 0); // while condition should only fail if we've never received a valid block yet
         } //end if fork is longer than current chain (including possibly by extending chain)
+      }
+      else
+      {
+         elog( "unable to link longest fork ${f}", ("f", longest_fork) );
       }
       return *get_block_fork_data(block_id);
    } FC_CAPTURE_AND_RETHROW( (block_data) )  }
