@@ -4,8 +4,8 @@
 
 namespace bts { namespace blockchain {
 
-   transaction_evaluation_state::transaction_evaluation_state( chain_interface* current_state, digest_type chain_id )
-   :_current_state( current_state ),_chain_id(chain_id),_skip_signature_check(false)
+   transaction_evaluation_state::transaction_evaluation_state( chain_interface* current_state )
+   :_current_state( current_state )
    {
    }
 
@@ -199,18 +199,16 @@ namespace bts { namespace blockchain {
         if( (_current_state->now() + BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC) < trx_arg.expiration )
            FC_CAPTURE_AND_THROW( invalid_transaction_expiration, (trx_arg)(_current_state->now()) );
 
-        auto trx_id = trx_arg.id();
-
-        if( _current_state->is_known_transaction( trx_arg.expiration, trx_arg.digest( _chain_id ) ) )
-           FC_CAPTURE_AND_THROW( duplicate_transaction, (trx_id) );
+        const auto trx_digest = trx_arg.digest( _current_state->chain_id() );
+        if( _current_state->is_known_transaction( trx_arg.expiration, trx_digest ) )
+           FC_CAPTURE_AND_THROW( duplicate_transaction, (trx_arg.id()) );
 
         trx = trx_arg;
         if( !_skip_signature_check )
         {
-           auto digest = trx_arg.digest( _chain_id );
            for( const auto& sig : trx.signatures )
            {
-              auto key = fc::ecc::public_key( sig, digest, enforce_canonical ).serialize();
+              auto key = fc::ecc::public_key( sig, trx_digest, enforce_canonical ).serialize();
               signed_keys.insert( address(key) );
               signed_keys.insert( address(pts_address(key,false,56) ) );
               signed_keys.insert( address(pts_address(key,true,56) )  );

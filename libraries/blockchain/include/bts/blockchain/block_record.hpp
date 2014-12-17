@@ -26,6 +26,10 @@ namespace bts { namespace blockchain {
                           const transaction_evaluation_state& s )
       :transaction_evaluation_state(s),chain_location(loc){}
 
+      bool               is_null()const   { return chain_location.block_num == -1 && chain_location.trx_num == -1; }
+      transaction_record make_null()const { transaction_record cpy( *this ); cpy.chain_location = transaction_location( -1, -1 );
+                                            return cpy; }
+
       transaction_location chain_location;
    };
    typedef optional<transaction_record> otransaction_record;
