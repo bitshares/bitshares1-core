@@ -509,8 +509,10 @@ namespace bts { namespace blockchain {
           if( NOT eval_state.check_signature( *restricted_owner ) )
           {
               for( const auto& owner : current_balance_record->owners() ) //eventually maybe multisig can delegate vote
+              {
                   if( NOT eval_state.check_signature( owner ) )
                       FC_CAPTURE_AND_THROW( missing_signature, (owner) );
+              }
           }
           new_slate = this->new_slate;
       }
