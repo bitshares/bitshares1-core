@@ -3384,6 +3384,43 @@ namespace bts { namespace blockchain {
        return my->_feed_db.fetch_optional( i );
    }
 
+   map<address, share_type> chain_database::generate_snapshot()const
+   {
+       auto snapshot = map<address, share_type>();
+       // normal balances
+       for( auto balance_itr = my->_balance_db.begin(); balance_itr.valid(); ++balance_itr )
+       {
+           const balance_record balance = balance_itr.value();
+           if( snapshot.find( balance.id() ) != snapshot.end() )
+               snapshot[balance.id()] += balance.get_spendable_balance( now() ).amount;
+           else
+               snapshot[balance.id()] = balance.get_spendable_balance( now() ).amount;
+       }
+
+       // pay balances
+       for( auto account_itr = my->_account_db.begin(); account_itr.valid(); ++account_itr )
+       {
+           const account_record account = account_itr.value();
+           if( account.delegate_info.valid() )
+           {
+               auto address = account.active_address();
+
+               if( snapshot.find( address ) != snapshot.end() )
+                   snapshot[address] += account.delegate_info->pay_balance;
+               else
+                   snapshot[address] = account.delegate_info->pay_balance;
+
+           }
+       }
+
+       for( auto pair : snapshot )
+       {
+           if( pair.second == 0 )
+               snapshot.erase( pair.first );
+       }
+       return snapshot;
+   }
+
    asset chain_database::calculate_supply( const asset_id_type& asset_id )const
    {
        const auto record = get_asset_record( asset_id );

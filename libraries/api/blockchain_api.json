@@ -12,6 +12,15 @@
         "aliases" : ["getconfig","get_config", "config", "blockchain_get_config"]
       },
       {
+        "method_name": "blockchain_generate_snapshot",
+        "description": "",
+        "return_type": "snapshot_map",
+        "parameters" : [],
+        "is_const"   : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
+      },
+      {
         "method_name": "blockchain_calculate_supply",
         "description": "Calculate the total supply of an asset from the current blockchain database state",
         "return_type": "asset",
