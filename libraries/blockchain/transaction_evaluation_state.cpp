@@ -209,7 +209,15 @@ namespace bts { namespace blockchain {
         if( _current_state->get_head_block_num() >= BTS_V0_4_26_FORK_BLOCK_NUM )
         {
             if( _current_state->is_known_transaction( trx_arg.expiration, trx_arg.digest( _chain_id ) ) )
-                FC_CAPTURE_AND_THROW( duplicate_transaction, (trx_id) );
+            {
+                auto current_trx = _current_state->get_transaction( trx_arg.id() );
+                if( current_trx )
+                   FC_CAPTURE_AND_THROW( duplicate_transaction, (trx_id)(current_trx) );
+                else
+                {
+                   elog( "WARNING: unable to find existing transaction, false positive" );
+                }
+            }
         }
 
         trx = trx_arg;
