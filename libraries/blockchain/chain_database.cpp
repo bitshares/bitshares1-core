@@ -2074,7 +2074,7 @@ namespace bts { namespace blockchain {
         if( record_to_store.trx.expiration > this->now() )
         {
            auto insert_result = my->_unique_transactions[record_to_store.trx.expiration].insert( record_to_store.trx.digest(my->_chain_id) );
-           if( !insert_result.second ) 
+           if( !insert_result.second )
               FC_CAPTURE_AND_THROW( duplicate_transaction, (record_to_store) );
         }
       }
@@ -3413,7 +3413,7 @@ namespace bts { namespace blockchain {
            }
        }
 
-       for( auto pair : snapshot )
+       for( const auto& pair : snapshot )
        {
            if( pair.second == 0 )
                snapshot.erase( pair.first );

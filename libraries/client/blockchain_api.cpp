@@ -293,7 +293,7 @@ map<balance_id_type, balance_record> detail::client_impl::blockchain_list_addres
     }
     return result;
 }
-map<transaction_id_type, transaction_record> detail::client_impl::blockchain_list_address_transactions( const string& raw_addr, 
+map<transaction_id_type, transaction_record> detail::client_impl::blockchain_list_address_transactions( const string& raw_addr,
                                                                                                         const time_point& after )const
 {
    map<transaction_id_type,transaction_record> results;
@@ -387,7 +387,7 @@ map<address, share_type>  client_impl::blockchain_generate_snapshot()const
 {
     auto snapshot = _chain_db->generate_snapshot();
     share_type total = 0;
-    for( auto pair : snapshot )
+    for( const auto& pair : snapshot )
     {
         total += pair.second;
     }
