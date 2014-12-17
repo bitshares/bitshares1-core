@@ -242,7 +242,7 @@ namespace bts { namespace blockchain {
       }
       for( const auto& item : objects )
       {
-         undo_state->store_object_record( object_record( item.second, item.first ) );
+         undo_state->store_object_record( item.second );
       }
 
       const auto dirty_markets = prev_state->get_dirty_markets();
@@ -387,13 +387,12 @@ namespace bts { namespace blockchain {
        chain_interface_ptr prev_state = _prev_state.lock();
        auto itr = objects.find( id );
        if( itr != objects.end() )
-           return oobject_record(itr->second);
+           return itr->second;
        else if( prev_state )
            return prev_state->get_object_record( id );
         return oobject_record();
    }
 
-   //TODO this should not use a switch
    void pending_chain_state::store_object_record(const object_record& obj)
    {
         ilog("@n storing object in pending_chain_state");
@@ -431,6 +430,9 @@ namespace bts { namespace blockchain {
 
     void                       pending_chain_state::store_edge_record( const object_record& edge )
     {
+        ilog("@n existing edge before storing edge in pending state:");
+        ilog("@n      as an object: ${o}", ("o", objects[edge._id]));
+        ilog("@n      as an edge: ${e}", ("e", objects[edge._id].as<edge_record>()));
         auto edge_data = edge.as<edge_record>();
         edge_index[ edge_data.index_key() ] = edge._id;
         reverse_edge_index[ edge_data.reverse_index_key() ] = edge._id;
@@ -442,6 +444,7 @@ namespace bts { namespace blockchain {
 
     void                       pending_chain_state::store_site_record( const site_record& site )
     {
+        FC_ASSERT(!"unimplemented");
         /*
         site_index[site.site_name] = site;
         objects[site._id] = site;

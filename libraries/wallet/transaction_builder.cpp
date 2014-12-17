@@ -277,7 +277,8 @@ transaction_builder& transaction_builder::set_edge(const string& payer_name,
     auto payer = _wimpl->self->get_account( payer_name );
     deduct_balance( payer.owner_address(), asset() );
     trx.set_edge( edge );
-    for( auto addr : _wimpl->_blockchain->get_object_condition( object_record( edge, 0 ) ).owners )
+    auto obj = object_record( edge, edge_object, 0 );
+    for( auto addr : _wimpl->_blockchain->get_object_condition( obj ).owners )
         required_signatures.insert( addr );
     return *this;
 } FC_CAPTURE_AND_RETHROW( (payer_name)(edge) ) }

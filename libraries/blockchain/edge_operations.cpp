@@ -15,7 +15,7 @@ namespace bts { namespace blockchain {
         ilog("@n set_edge operation with edge: ${e}", ("e", this->edge));
         auto edge_data = edge.as<edge_record>();
 
-        ilog("@n edge's basic object properties:");
+        ilog("@n edge's properties:");
         ilog("@n   _id: ${id}, type: ${type}, short_id: ${short}",
                 ("id", edge._id)("type", edge.type())("short", edge.short_id()));
 
@@ -35,7 +35,7 @@ namespace bts { namespace blockchain {
         if( !existing_edge.valid() )
         {
             ilog("@n edge exists, synchronizing object IDs");
-            existing_edge = object_record(edge_record(), 0);
+            existing_edge = object_record(edge_data, edge_object, 0);
             auto next_id = eval_state._current_state->new_object_id( edge_object );
             existing_edge->_id = next_id;
         }

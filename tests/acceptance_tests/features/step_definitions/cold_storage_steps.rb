@@ -22,6 +22,6 @@ When(/^I do transfer (\d+) (\w+) from (legacy )?address: (\w+) to public account
 end
 
 When(/^I do offline transfer (\d+) (\w+) from address: (\w+) to address: (\w+) as (\w+)$/) do |amount, symbol, from, to, builder_id|
-    @addresses[builder_id] = @current_actor.node.exec 'wallet_withdraw_from_address', amount, symbol, @addresses[from], @addresses[to], false
+    @addresses[builder_id] = @current_actor.node.exec 'wallet_withdraw_from_address', amount, symbol, @addresses[from], @addresses[to], "vote_none", false
 end
 

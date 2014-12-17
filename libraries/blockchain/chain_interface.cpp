@@ -177,13 +177,14 @@ namespace bts { namespace blockchain {
    multisig_condition   chain_interface::get_object_condition( const object_id_type& id, int depth )
    { try {
        auto oobj = get_object_record( id );
-       FC_ASSERT( oobj.valid(), "No such object!" );
+       FC_ASSERT( oobj.valid(), "No such object (id: ${id}", ("id", id) );
        return get_object_condition( *oobj, depth );
    } FC_CAPTURE_AND_RETHROW( (id ) ) }
 
 
    multisig_condition   chain_interface::get_object_condition( const object_record& obj, int depth )
    { try {
+       ilog("@n getting object condition for object: ${o}", ("o", obj));
        if( depth >= 100 )//BTS_OWNER_DEPENDENCY_MAX_DEPTH )
            FC_ASSERT(!"Cannot determine object condition.");
        multisig_condition condition;

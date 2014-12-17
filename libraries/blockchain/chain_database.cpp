@@ -1661,11 +1661,18 @@ namespace bts { namespace blockchain {
       uint32_t head_block_num = get_head_block_num();
       if( head_block_num > BTS_BLOCKCHAIN_MAX_UNDO_HISTORY &&
           block_data.block_num <= (head_block_num - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY) )
+      {
+        elog( "block ${new_block_hash} (number ${new_block_num}) is on a fork older than "
+               "our undo history would allow us to switch to (current head block is number ${head_block_num}, undo history is ${undo_history})",
+                           ("new_block_hash", block_data.id())("new_block_num", block_data.block_num)
+                           ("head_block_num", head_block_num)("undo_history", BTS_BLOCKCHAIN_MAX_UNDO_HISTORY));
+
         FC_THROW_EXCEPTION(block_older_than_undo_history,
                            "block ${new_block_hash} (number ${new_block_num}) is on a fork older than "
                            "our undo history would allow us to switch to (current head block is number ${head_block_num}, undo history is ${undo_history})",
                            ("new_block_hash", block_data.id())("new_block_num", block_data.block_num)
                            ("head_block_num", head_block_num)("undo_history", BTS_BLOCKCHAIN_MAX_UNDO_HISTORY));
+      }
 
       // only allow a single fiber attempt to push blocks at any given time,
       // this method is not re-entrant.
@@ -1740,6 +1747,10 @@ namespace bts { namespace blockchain {
             --highest_unchecked_block_number;
           } while(highest_unchecked_block_number > 0); // while condition should only fail if we've never received a valid block yet
         } //end if fork is longer than current chain (including possibly by extending chain)
+      }
+      else
+      {
+         elog( "unable to link longest fork ${f}", ("f", longest_fork) );
       }
       return *get_block_fork_data(block_id);
    } FC_CAPTURE_AND_RETHROW( (block_data) )  }
@@ -2076,9 +2087,10 @@ namespace bts { namespace blockchain {
                                              const object_id_type& to,
                                              const string& name )const
     {
+        ilog("@n getting edge with key: (${f}, ${t}, ${n})", ("f",from)("t",to)("n",name));
         edge_index_key key( from, to, name );
         auto object_id = my->_edge_index.fetch_optional( key );
-        if( object_id )
+        if( object_id.valid() )
            return get_object_record( *object_id );
         return oobject_record();
     }
@@ -2141,7 +2153,10 @@ namespace bts { namespace blockchain {
         {
            auto insert_result = my->_unique_transactions[record_to_store.trx.expiration].insert( record_to_store.trx.digest(my->_chain_id) );
            if( get_head_block_num() >= BTS_V0_4_26_FORK_BLOCK_NUM )
-             FC_ASSERT( insert_result.second, "transaction not unique" );
+           {
+               if( !insert_result.second )
+                  FC_CAPTURE_AND_THROW( duplicate_transaction, (record_to_store) );
+           }
         }
       }
    } FC_CAPTURE_AND_RETHROW( (record_id)(record_to_store) ) }
@@ -3449,6 +3464,43 @@ namespace bts { namespace blockchain {
    ofeed_record chain_database::get_feed( const feed_index& i )const
    {
        return my->_feed_db.fetch_optional( i );
+   }
+
+   map<address, share_type> chain_database::generate_snapshot()const
+   {
+       auto snapshot = map<address, share_type>();
+       // normal balances
+       for( auto balance_itr = my->_balance_db.begin(); balance_itr.valid(); ++balance_itr )
+       {
+           const balance_record balance = balance_itr.value();
+           if( snapshot.find( balance.id() ) != snapshot.end() )
+               snapshot[balance.id()] += balance.get_spendable_balance( now() ).amount;
+           else
+               snapshot[balance.id()] = balance.get_spendable_balance( now() ).amount;
+       }
+
+       // pay balances
+       for( auto account_itr = my->_account_db.begin(); account_itr.valid(); ++account_itr )
+       {
+           const account_record account = account_itr.value();
+           if( account.delegate_info.valid() )
+           {
+               auto address = account.active_address();
+
+               if( snapshot.find( address ) != snapshot.end() )
+                   snapshot[address] += account.delegate_info->pay_balance;
+               else
+                   snapshot[address] = account.delegate_info->pay_balance;
+
+           }
+       }
+
+       for( const auto& pair : snapshot )
+       {
+           if( pair.second == 0 )
+               snapshot.erase( pair.first );
+       }
+       return snapshot;
    }
 
    asset chain_database::calculate_supply( const asset_id_type& asset_id )const

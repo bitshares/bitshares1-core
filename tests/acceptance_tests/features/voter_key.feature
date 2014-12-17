@@ -26,6 +26,6 @@ Feature: Delegate a balance's voting power to a different address.
         And I update vote for balance B2
         And I wait for one block
         And I get balance ID for address: Address1 as B3
-        And I do transfer 50 XTS from address: Address1 to account: alice
+        #        And I do transfer 50 XTS from address: Address1 to account: alice       TODO this should fail
         And I wait for one block
         Then votes for newdelegate should be positive
