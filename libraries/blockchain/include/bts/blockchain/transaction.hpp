@@ -34,7 +34,7 @@ namespace bts { namespace blockchain {
        *  must pay the bidder the proper amount.  When making this payout
        *  the system needs to know which delegate_id to use.
        */
-      optional<slate_id_type>     delegate_slate_id; // delegate being voted for in required payouts
+      optional<slate_id_type>     slate_id;
       vector<operation>           operations;
 
       void issue( const asset& amount_to_issue );
@@ -193,6 +193,6 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
-FC_REFLECT( bts::blockchain::transaction, (expiration)(delegate_slate_id)(operations) )
+FC_REFLECT( bts::blockchain::transaction, (expiration)(slate_id)(operations) )
 FC_REFLECT_DERIVED( bts::blockchain::signed_transaction, (bts::blockchain::transaction), (signatures) )
 FC_REFLECT( bts::blockchain::transaction_location, (block_num)(trx_num) )
