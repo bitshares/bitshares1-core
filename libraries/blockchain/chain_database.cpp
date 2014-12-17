@@ -679,16 +679,16 @@ namespace bts { namespace blockchain {
          if (block_id == _head_block_id) //if block_id is current head block, do nothing
            return; //this is necessary to avoid unnecessarily popping the head block in this case
 
-         elog( "switch from fork ${id} to ${to_id}", ("id",_head_block_id)("to_id",block_id) );
+         ilog( "switch from fork ${id} to ${to_id}", ("id",_head_block_id)("to_id",block_id) );
          vector<block_id_type> history = get_fork_history( block_id );
          while( history.back() != _head_block_id )
          {
-            elog( "    pop ${id}", ("id",_head_block_id) );
+            ilog( "    pop ${id}", ("id",_head_block_id) );
             pop_block();
          }
          for( int32_t i = history.size()-2; i >= 0 ; --i )
          {
-            elog( "    extend ${i}", ("i",history[i]) );
+            ilog( "    extend ${i}", ("i",history[i]) );
             extend_chain( self->get_block( history[i] ) );
          }
       } FC_CAPTURE_AND_RETHROW( (block_id) ) }
@@ -1027,7 +1027,7 @@ namespace bts { namespace blockchain {
          }
          catch ( const fc::exception& e )
          {
-            elog( "error applying block: ${e}", ("e",e.to_detail_string() ));
+            wlog( "error applying block: ${e}", ("e",e.to_detail_string() ));
             mark_invalid( block_id, e );
             throw;
          }
@@ -1636,7 +1636,6 @@ namespace bts { namespace blockchain {
         uint32_t highest_unchecked_block_number = longest_fork_block.block_num;
         if (highest_unchecked_block_number > head_block_num)
         {
-
           do
           {
             optional<vector<block_id_type>> parallel_blocks = my->_fork_number_db.fetch_optional(highest_unchecked_block_number);
