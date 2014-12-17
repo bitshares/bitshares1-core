@@ -2060,7 +2060,11 @@ namespace bts { namespace blockchain {
         if( my->_track_stats )
            my->_id_to_transaction_record_db.store( record_id, record_to_store );
         if( record_to_store.trx.expiration > this->now() )
-           FC_ASSERT( my->_unique_transactions[record_to_store.trx.expiration].insert( record_to_store.trx.digest(my->_chain_id) ).second );
+        {
+           auto insert_result = my->_unique_transactions[record_to_store.trx.expiration].insert( record_to_store.trx.digest(my->_chain_id) );
+           if( !insert_result.second ) 
+              FC_CAPTURE_AND_THROW( duplicate_transaction, (record_to_store) );
+        }
       }
    } FC_CAPTURE_AND_RETHROW( (record_id)(record_to_store) ) }
 
