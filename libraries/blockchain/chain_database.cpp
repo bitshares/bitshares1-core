@@ -3390,7 +3390,7 @@ namespace bts { namespace blockchain {
        for( auto balance_itr = my->_balance_db.begin(); balance_itr.valid(); ++balance_itr )
        {
            const balance_record balance = balance_itr.value();
-           if( snapshot.find( balance.id() ) != snapshot.end() )
+           if( snapshot.find( balance.owner() ) != snapshot.end() )
                snapshot[balance.owner()] += balance.get_spendable_balance( now() ).amount;
            else
                snapshot[balance.owner()] = balance.get_spendable_balance( now() ).amount;
