@@ -114,7 +114,7 @@ void light_wallet::create( const fc::path& wallet_json,
 
    // set the password
    auto pass_key = fc::sha512::hash( password );
-   _data->encrypted_private_key = fc::aes_decrypt( pass_key, fc::raw::pack( *_private_key ) );
+   _data->encrypted_private_key = fc::aes_encrypt( pass_key, fc::raw::pack( *_private_key ) );
    _data->user_account.owner_key = _private_key->get_public_key();
    _data->user_account.public_data = mutable_variant_object( "salt", salt );
    _data->user_account.meta_data = account_meta_info( public_account );

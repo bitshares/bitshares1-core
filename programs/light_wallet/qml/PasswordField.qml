@@ -4,12 +4,15 @@ import QtQuick.Layouts 1.1
 import QtGraphicalEffects 1.0
 
 RowLayout {
+   id: passwordForm
    property alias placeholderText: passwordText.placeholderText
    property alias password: passwordText.text
 
    function errorGlow() {
       errorGlow.pulse()
    }
+
+   signal accepted
 
    TextField {
       id: passwordText
@@ -18,6 +21,8 @@ RowLayout {
       echoMode: button.pressed? TextInput.Normal : TextInput.Password
       inputMethodHints: Qt.ImhSensitiveData | Qt.ImhHiddenText
       readOnly: button.pressed
+
+      onAccepted: passwordForm.accepted()
 
       SequentialAnimation {
          id: scrollTextAnimation

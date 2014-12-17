@@ -43,5 +43,11 @@ ApplicationWindow {
       anchors.fill: parent
       anchors.margins: visuals.margins
       firstTime: !wallet.walletExists
+
+      onPasswordEntered: {
+         if( firstTime ) {
+            wallet.createWallet(password)
+         }
+      }
    }
 }

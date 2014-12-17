@@ -2,6 +2,9 @@
 
 #include <QObject>
 #include <QString>
+#include <QStandardPaths>
+#include <QDir>
+#include <QDebug>
 
 #include <bts/light_wallet/light_wallet.hpp>
 
@@ -22,7 +25,11 @@ class LightWallet : public QObject
 public:
    LightWallet()
       : m_walletThread("Wallet Implementation Thread")
-   {}
+   {
+      auto path = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+      qDebug() << "Creating data directory:" << path;
+      QDir(path).mkpath(".");
+   }
    ~LightWallet(){}
 
    bool walletExists() const;
@@ -83,6 +90,9 @@ Q_SIGNALS:
 
 private:
    fc::thread m_walletThread;
+   QString m_dataDir = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+   fc::path m_walletPath = fc::path(m_dataDir.toStdWString())
+         / "wallet_data.json";
    bts::light_wallet::light_wallet m_wallet;
    QString m_connectionError;
    QString m_openError;

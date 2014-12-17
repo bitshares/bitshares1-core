@@ -7,7 +7,7 @@ ColumnLayout {
 
    property bool firstTime: true
 
-   signal passwordEntered
+   signal passwordEntered(string password)
    
    Item {
       Layout.preferredHeight: window.orientation === Qt.PortraitOrientation?
@@ -24,12 +24,13 @@ ColumnLayout {
    Label {
       anchors.horizontalCenter: parent.horizontalCenter
       Layout.fillWidth: true
-      visible: firstTime
       text: qsTr("To get started, create a password below.\n" +
                  "This password can be short and easy to remember.")
       color: visuals.lightTextColor
       font.pixelSize: visuals.textBaseSize
       wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+
+      Component.onCompleted: visible = firstTime
    }
    ColumnLayout {
       Layout.fillWidth: true
@@ -38,16 +39,20 @@ ColumnLayout {
          Layout.fillWidth: true
          placeholderText: firstTime?
                              qsTr("Create a Password") : qsTr("Enter Password")
+         onAccepted: openButton.clicked()
       }
       Button {
+         id: openButton
          style: WalletButtonStyle {}
-         text: qsTr("Begin")
+         text: firstTime? qsTr("Begin") : qsTr("Open")
          Layout.fillWidth: true
          Layout.preferredHeight: passwordField.height
 
          onClicked: {
             if( passwordField.password.length < 1 ) {
                passwordField.errorGlow()
+            } else {
+               passwordEntered(passwordField.password)
             }
          }
       }

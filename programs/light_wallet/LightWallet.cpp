@@ -3,16 +3,11 @@
 
 #include <bts/utilities/words.hpp>
 
-#include <QStandardPaths>
 #include <QDebug>
 #include <QSettings>
 
 #define IN_THREAD m_walletThread.async([&] {
 #define END_THREAD }, __FUNCTION__);
-
-const static fc::path wallet_path = fc::path(QStandardPaths::writableLocation(QStandardPaths::DataLocation)
-                                             .toStdWString())
-      / "wallet_data.json";
 
 inline static QString normalize(const QString& key)
 {
@@ -21,7 +16,7 @@ inline static QString normalize(const QString& key)
 
 bool LightWallet::walletExists() const
 {
-   return fc::exists(wallet_path);
+   return fc::exists(m_walletPath);
 }
 
 void LightWallet::connectToServer(QString host, uint16_t port, QString user, QString password)
@@ -58,7 +53,15 @@ void LightWallet::createWallet(QString password)
    std::string salt(bts::blockchain::address(fc::ecc::private_key::generate().get_public_key()));
    salt.erase(0, strlen(BTS_ADDRESS_PREFIX));
 
-   m_wallet.create(wallet_path, convert(password), convert(normalize(m_brainKey)), salt);
+   qDebug() << "Creating wallet:" << password << m_brainKey << salt.c_str();
+   qDebug() << "Wallet path:" << m_walletPath.generic_string().c_str();
+
+   try {
+      m_wallet.create(m_walletPath, convert(password), convert(normalize(m_brainKey)), salt);
+   } catch (fc::exception e) {
+      qDebug() << "Exception when creating wallet:" << e.to_detail_string().c_str();
+   }
+
    Q_EMIT walletExistsChanged(walletExists());
    Q_EMIT openChanged(isOpen());
    Q_EMIT unlockedChanged(isUnlocked());
@@ -70,7 +73,7 @@ void LightWallet::openWallet()
 {
    IN_THREAD
    try {
-      m_wallet.open(wallet_path);
+      m_wallet.open(m_walletPath);
    } catch (fc::exception e) {
       m_openError = convert(e.to_string());
       Q_EMIT errorOpening(m_openError);
