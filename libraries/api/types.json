@@ -54,6 +54,11 @@
          "cpp_return_type" : "std::vector<bts::blockchain::balance_record>"
       },
       {
+        "type_name" : "snapshot_map",
+        "cpp_return_type" : "std::map<bts::blockchain::address, bts::blockchain::share_type>",
+        "cpp_include_file" : "bts/blockchain/types.hpp"
+      },
+      {
          "type_name" : "price_map",
          "cpp_return_type" : "std::map<std::string,double>"
       },

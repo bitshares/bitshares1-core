@@ -55,8 +55,9 @@ namespace bts { namespace blockchain {
    {
       public:
          virtual ~chain_interface(){};
-         /** return the timestamp from the most recent block */
-         virtual fc::time_point_sec         now()const                                                      = 0;
+
+         virtual fc::time_point_sec now()const = 0;
+         virtual digest_type chain_id()const = 0;
 
          optional<string>                   get_parent_account_name( const string& account_name )const;
          bool                               is_valid_account_name( const string& name )const;

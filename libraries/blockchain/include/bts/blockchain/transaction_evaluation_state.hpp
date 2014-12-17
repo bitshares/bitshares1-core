@@ -23,13 +23,10 @@ namespace bts { namespace blockchain {
    class transaction_evaluation_state
    {
       public:
-         transaction_evaluation_state( chain_interface* blockchain, digest_type chain_id );
-         transaction_evaluation_state(){};
+         transaction_evaluation_state( chain_interface* current_state = nullptr );
 
          virtual ~transaction_evaluation_state();
          virtual share_type get_fees( asset_id_type id = 0)const;
-
-         share_type get_alt_fees()const;
 
          virtual void evaluate( const signed_transaction& trx, bool skip_signature_check = false, bool enforce_canonical = true );
          virtual void evaluate_operation( const operation& op );
@@ -111,7 +108,6 @@ namespace bts { namespace blockchain {
 
          // not serialized
          chain_interface*                               _current_state = nullptr;
-         digest_type                                    _chain_id;
          bool                                           _skip_signature_check = false;
    };
    typedef shared_ptr<transaction_evaluation_state> transaction_evaluation_state_ptr;

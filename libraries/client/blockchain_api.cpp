@@ -293,7 +293,7 @@ map<balance_id_type, balance_record> detail::client_impl::blockchain_list_addres
     }
     return result;
 }
-map<transaction_id_type, transaction_record> detail::client_impl::blockchain_list_address_transactions( const string& raw_addr, 
+map<transaction_id_type, transaction_record> detail::client_impl::blockchain_list_address_transactions( const string& raw_addr,
                                                                                                         const time_point& after )const
 {
    map<transaction_id_type,transaction_record> results;
@@ -381,6 +381,18 @@ variant_object client_impl::blockchain_get_info()const
    info["max_trx_per_second"]                   = BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND;
 
    return info;
+}
+
+map<address, share_type>  client_impl::blockchain_generate_snapshot()const
+{
+    auto snapshot = _chain_db->generate_snapshot();
+    share_type total = 0;
+    for( const auto& pair : snapshot )
+    {
+        total += pair.second;
+    }
+    ulog("Total: ${tot}", ("tot", total));
+    return snapshot;
 }
 
 asset client_impl::blockchain_calculate_supply( const string& asset )const
