@@ -28,9 +28,15 @@ with open("devshares.json", "w") as outfile:
             new_genesis["balances"].append(item)
     with open("bts-dec-14.json") as infile:
         bts = json.load(infile)
+        total = 0
         for item in bts:
+            total += item[1]
+        for item in bts:
+            total += item[1]
             if item[1] == 0:
                 continue
-            new_genesis["balances"].append(item)
+            balance = 100000000000000 * item[1] / total
+            new_genesis["balances"].append([item[0], balance])
+
 
     outfile.write(json.dumps(new_genesis, indent=4))
