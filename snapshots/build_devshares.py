@@ -44,8 +44,8 @@ with open("devshares.json", "w") as outfile:
                 total += item[1]
                 snap_total += item[1]
             for item in vest["bts_sharedrop"]:
-                total += item["balance"]
-                vest_total += item["balance"]
+                total += item["balance"] / 1000
+                vest_total += item["balance"] / 1000
 
             for item in snap:
                 if item[1] == 0:
@@ -60,10 +60,12 @@ with open("devshares.json", "w") as outfile:
                 balance = (100000000000000.0 * (1. * vest_total / total)) * (1. * item["balance"] / vest_total)
                 new_genesis["bts_sharedrop"].append({
                     "raw_address": item["raw_address"],
-                    "balance": int(balance)
+                    "balance": int(balance) / 1000
                 })
 
         print "total normal BTS balance: " + str(snap_total)
+        print "    devshares: " + str(1. * snap_total / total)
         print "total vesting BTS balance: " + str(vest_total)
+        print "    devshares: " + str(1. * vest_total / total)
                 
     outfile.write(json.dumps(new_genesis, indent=4))
