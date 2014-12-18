@@ -120,6 +120,9 @@ namespace bts { namespace rpc {
 
             if( path == "/rpc") {
                 s.add_header("Content-Type",  "application/json");
+                s.add_header("Cache-Control",  "no-cache, no-store, must-revalidate");
+                s.add_header("Pragma", "no-cache");
+                s.add_header("Expires","0");
                 return;
             }
 
