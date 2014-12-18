@@ -49,7 +49,7 @@ void LightWallet::disconnectFromServer()
    END_THREAD
 }
 
-void LightWallet::createWallet(QString password)
+void LightWallet::createWallet(QString accountName, QString password)
 {
    if( walletExists() ) {
       qDebug() << "Ignoring request to create wallet when wallet already exists!";
@@ -65,7 +65,7 @@ void LightWallet::createWallet(QString password)
    qDebug() << "Wallet path:" << m_walletPath.generic_string().c_str();
 
    try {
-      m_wallet.create(m_walletPath, convert(password), convert(normalize(m_brainKey)), salt);
+      m_wallet.create(m_walletPath, convert(accountName), convert(password), convert(normalize(m_brainKey)), salt);
    } catch (fc::exception e) {
       qDebug() << "Exception when creating wallet:" << e.to_detail_string().c_str();
    }
@@ -73,6 +73,7 @@ void LightWallet::createWallet(QString password)
    Q_EMIT walletExistsChanged(walletExists());
    Q_EMIT openChanged(isOpen());
    Q_EMIT unlockedChanged(isUnlocked());
+   Q_EMIT accountNameChanged(accountName);
    QSettings().setValue(QStringLiteral("brainKey"), m_brainKey);
    END_THREAD
 }
@@ -88,6 +89,8 @@ void LightWallet::openWallet()
    }
 
    Q_EMIT openChanged(isOpen());
+   Q_EMIT accountNameChanged(accountName());
+   qDebug() << "Opened wallet belonging to" << accountName();
 
    m_brainKey = QSettings().value(QStringLiteral("brainKey"), QString()).toString();
    if( !m_brainKey.isEmpty() )
@@ -106,15 +109,13 @@ void LightWallet::closeWallet()
 
 void LightWallet::unlockWallet(QString password)
 {
-   IN_THREAD
    if( !isOpen() )
-   {
       openWallet();
-   }
 
+   IN_THREAD
    try {
       m_wallet.unlock(convert(password));
-   } catch (fc::exception) {
+   } catch (fc::exception e) {
       m_unlockError = QStringLiteral("Incorrect password.");
       Q_EMIT errorUnlocking(m_unlockError);
    }
@@ -133,7 +134,13 @@ void LightWallet::lockWallet()
 
 void LightWallet::registerAccount()
 {
-
+   IN_THREAD
+   if( m_wallet.request_register_account() ) {
+      Q_EMIT accountRegistered();
+      Q_EMIT accountNameChanged(accountName());
+   } else
+      Q_EMIT errorRegistering(QStringLiteral("Server did not register account. Try again later."));
+   END_THREAD
 }
 
 void LightWallet::clearBrainKey()

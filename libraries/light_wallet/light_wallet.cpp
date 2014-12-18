@@ -99,6 +99,7 @@ void light_wallet::lock()
 }
 
 void light_wallet::create( const fc::path& wallet_json,
+                           const string& account_name,
                            const string& password,
                            const string& brain_seed,
                            const string& salt )
@@ -127,17 +128,17 @@ void light_wallet::create( const fc::path& wallet_json,
    // set the password
    auto pass_key = fc::sha512::hash( password );
    _data->encrypted_private_key = fc::aes_encrypt( pass_key, fc::raw::pack( *_private_key ) );
+   _data->user_account.name = account_name;
    _data->user_account.public_data = mutable_variant_object( "salt", salt );
    _data->user_account.meta_data = account_meta_info( public_account );
    save();
 }
 
-void light_wallet::request_register_account( const string& account_name )
+bool light_wallet::request_register_account()
 { try {
    FC_ASSERT( is_open() );
-   _data->user_account.name = fc::to_lower(account_name);
-   _rpc.request_register_account( _data->user_account );
-} FC_CAPTURE_AND_RETHROW( (account_name) ) }
+   return _rpc.request_register_account( _data->user_account );
+} FC_CAPTURE_AND_RETHROW( ) }
 
 void light_wallet::transfer( double amount,
                const string& symbol,

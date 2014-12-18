@@ -30,7 +30,7 @@ endif()
 find_package(Qt5Core)
 add_definitions(-DQT_NO_KEYWORDS)
 
-file(GLOB qml_files qml/*.qml)
+file(GLOB qml_files qml/*.qml qml/*.js)
 
 add_executable(LightWallet WIN32 MACOSX_BUNDLE main.cpp LightWallet.cpp ${qml_files})
 qt5_use_modules(LightWallet Quick Gui Qml)

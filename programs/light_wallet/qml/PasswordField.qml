@@ -22,6 +22,7 @@ RowLayout {
       echoMode: button.pressed? TextInput.Normal : TextInput.Password
       inputMethodHints: Qt.ImhSensitiveData | Qt.ImhHiddenText
       readOnly: button.pressed
+      focus: passwordForm.focus
 
       onAccepted: passwordForm.accepted()
 

@@ -9,6 +9,8 @@ ColumnLayout {
    property alias username: nameField.text
 
    signal passwordEntered(string password)
+
+   Component.onCompleted: if( !firstTime ) passwordField.focus = true; else nameField.focus = true
    
    Item {
       Layout.preferredHeight: window.orientation === Qt.PortraitOrientation?
@@ -23,10 +25,11 @@ ColumnLayout {
       wrapMode: Text.WrapAtWordBoundaryOrAnywhere
    }
    Label {
-      anchors.horizontalCenter: parent.horizontalCenter
-      Layout.fillWidth: true
+      id: statusText
       text: qsTr("To get started, create a password below.\n" +
                  "This password can be short and easy to remember -- we'll make a better one later.")
+      anchors.horizontalCenter: parent.horizontalCenter
+      Layout.fillWidth: true
       color: visuals.lightTextColor
       font.pixelSize: visuals.textBaseSize
       wrapMode: Text.WrapAtWordBoundaryOrAnywhere
@@ -41,7 +44,8 @@ ColumnLayout {
          placeholderText: qsTr("Pick a Username")
          font.pixelSize: visuals.textBaseSize * 1.1
          Layout.fillWidth: true
-         text: firstTime? "" : wallet.accountName
+         Layout.preferredHeight: implicitHeight
+         text: wallet.accountName
          readOnly: !firstTime
       }
       PasswordField {
@@ -51,6 +55,11 @@ ColumnLayout {
                              qsTr("Create a Password") : qsTr("Enter Password")
          fontPixelSize: visuals.textBaseSize * 1.1
          onAccepted: openButton.clicked()
+
+         Connections {
+            target: wallet
+            onErrorUnlocking: passwordField.errorGlow()
+         }
       }
       Button {
          id: openButton
@@ -69,4 +78,18 @@ ColumnLayout {
       }
    }
    Item { Layout.fillHeight: true }
+
+   states: [
+      State {
+         name: "REGISTERING"
+         PropertyChanges {
+            target: openButton
+            enabled: false
+         }
+         PropertyChanges {
+            target: statusText
+            text: qsTr("OK! I'm creating your wallet. Just a sec...")
+         }
+      }
+   ]
 }

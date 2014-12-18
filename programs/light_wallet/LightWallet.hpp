@@ -17,7 +17,7 @@ class LightWallet : public QObject
    Q_PROPERTY(bool connected READ isConnected NOTIFY connectedChanged)
    Q_PROPERTY(bool open READ isOpen NOTIFY openChanged)
    Q_PROPERTY(bool unlocked READ isUnlocked NOTIFY unlockedChanged)
-   Q_PROPERTY(QString accountName READ accountName NOTIFY accountRegistered)
+   Q_PROPERTY(QString accountName READ accountName NOTIFY accountNameChanged)
    Q_PROPERTY(QString connectionError READ connectionError NOTIFY errorConnecting)
    Q_PROPERTY(QString openError READ openError NOTIFY errorOpening)
    Q_PROPERTY(QString unlockError READ unlockError NOTIFY errorUnlocking)
@@ -70,7 +70,7 @@ public Q_SLOTS:
                          QString password = QString("none") );
    void disconnectFromServer();
 
-   void createWallet(QString password);
+   void createWallet(QString accountName, QString password);
    void openWallet();
    void closeWallet();
 
@@ -92,6 +92,7 @@ Q_SIGNALS:
    void unlockedChanged(bool unlocked);
    void brainKeyChanged(QString key);
    void accountRegistered();
+   void accountNameChanged(QString name);
 
 private:
    fc::thread m_walletThread;

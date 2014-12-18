@@ -3,6 +3,7 @@ import QtQuick.Controls 1.3
 import QtQuick.Window 2.2
 import QtQuick.Layouts 1.1
 
+import "utils.js" as Utils
 import org.BitShares.Types 1.0
 
 ApplicationWindow {
@@ -25,11 +26,15 @@ ApplicationWindow {
       return d.currentError = d.errorSerial++
    }
    function clearError(errorId) {
-      if( d.currentError == errorId )
+      if( d.currentError === errorId )
          errorText.text = ""
    }
 
-   Component.onCompleted: connectToServer()
+   Component.onCompleted: {
+      if( wallet.walletExists )
+         wallet.openWallet()
+      connectToServer()
+   }
 
    QtObject {
       id: d
@@ -63,15 +68,17 @@ ApplicationWindow {
    }
    LightWallet {
       id: wallet
+
+      function runWhenConnected(fn) {
+         Utils.connectOnce(wallet.onConnectedChanged, fn, function() { return connected })
+      }
+
       onErrorConnecting: {
          var errorId = showError(error)
 
-         var reconnectedHandler = function() {
+         runWhenConnected(function() {
             clearError(errorId)
-            wallet.onConnectedChanged.disconnect(reconnectedHandler)
-         }
-
-         wallet.onConnectedChanged.connect(reconnectedHandler)
+         })
       }
    }
 
