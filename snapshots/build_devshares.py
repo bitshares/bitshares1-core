@@ -26,17 +26,37 @@ with open("devshares.json", "w") as outfile:
         agspts = json.load(infile)
         for item in agspts["balances"]:
             new_genesis["balances"].append(item)
-    with open("bts-dec-14.json") as infile:
-        bts = json.load(infile)
-        total = 0
-        for item in bts:
-            total += item[1]
-        for item in bts:
-            total += item[1]
-            if item[1] == 0:
-                continue
-            balance = 100000000000000 * item[1] / total
-            new_genesis["balances"].append([item[0], balance])
+            agspts_total += item[1]
+        print "total agspts balance: " + str(agspts_total)
 
+    with open("bts-dec-14.json") as bts_snapshot_json:
+        with open("../libraries/blockchain/genesis_bts.json") as bts_genesis_json:
+            snap = json.load(bts_snapshot_json)
+            vest = json.load(bts_genesis_json)
+            total = 0
+            snap_total = 0
+            vest_total = 0
+            for item in snap:
+                total += item[1]
+                snap_total += item[1]
+            for item in vest["bts_sharedrop"]:
+                total += item["balance"]
+                vest_total += item["balance"]
 
+            for item in snap:
+                if item[1] == 0:
+                    continue
+                balance = (100000000000000 * (snap_total / total)) * (item[1] / snap_total)
+                new_genesis["balances"].append([item[0], balance])
+
+            for item in vest["bts_sharedrop"]:
+                balance = (100000000000000 * (vest_total / total)) * (item["balance"] / vest_total)
+                new_genesis["vesting_balances"].append({
+                    "raw_address": item["raw_address"],
+                    "balance": balance
+                })
+
+        print "total normal BTS balance: " + str(snap_total)
+        print "total vesting BTS balance: " + str(vest_total)
+                
     outfile.write(json.dumps(new_genesis, indent=4))
