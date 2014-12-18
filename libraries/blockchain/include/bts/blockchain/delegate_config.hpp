@@ -19,9 +19,9 @@ struct delegate_config
     size_t              block_max_size = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
     fc::microseconds    block_max_production_time = fc::seconds( 3 );
 
-    size_t              transaction_max_size = -1;
+    size_t              transaction_max_size = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
     bool                transaction_canonical_signatures_required = true;
-    share_type          transaction_min_fee = 0;
+    share_type          transaction_min_fee = BTS_BLOCKCHAIN_PRECISION / 10;
 
     set<transaction_id_type>    transaction_blacklist;
     set<operation_type_enum>    operation_blacklist;
@@ -31,7 +31,9 @@ struct delegate_config
         FC_ASSERT( block_max_size <= BTS_BLOCKCHAIN_MAX_BLOCK_SIZE );
         FC_ASSERT( block_max_production_time.count() >= 0 );
         FC_ASSERT( block_max_production_time.to_seconds() <= BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC );
+        FC_ASSERT( transaction_max_size <= block_max_size );
         FC_ASSERT( transaction_min_fee >= 0 );
+        FC_ASSERT( transaction_min_fee <= BTS_BLOCKCHAIN_MAX_SHARES );
     } FC_CAPTURE_AND_RETHROW() }
 };
 
