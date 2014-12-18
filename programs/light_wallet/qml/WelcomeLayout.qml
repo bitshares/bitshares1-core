@@ -25,7 +25,7 @@ ColumnLayout {
       anchors.horizontalCenter: parent.horizontalCenter
       Layout.fillWidth: true
       text: qsTr("To get started, create a password below.\n" +
-                 "This password can be short and easy to remember.")
+                 "This password can be short and easy to remember -- we'll make a better one later.")
       color: visuals.lightTextColor
       font.pixelSize: visuals.textBaseSize
       wrapMode: Text.WrapAtWordBoundaryOrAnywhere

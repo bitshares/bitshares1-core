@@ -1,5 +1,10 @@
 project(LightWallet)
 
+# Suppress stupid warning
+if(POLICY CMP0043)
+   cmake_policy(SET CMP0043 NEW)
+endif()
+
 set(BINARY_NAME "LightWallet")
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 0)
@@ -30,6 +35,6 @@ file(GLOB qml_files qml/*.qml)
 add_executable(LightWallet WIN32 MACOSX_BUNDLE main.cpp LightWallet.cpp ${qml_files})
 qt5_use_modules(LightWallet Quick Gui Qml)
 
-target_link_libraries(LightWallet bts_light_wallet fc
+target_link_libraries(LightWallet fc bts_light_wallet
    ${READLINE_LIBRARIES} ${CMAKE_DL_LIBS} ${PLATFORM_SPECIFIC_LIBS}
    ${crypto_library} ${CrashRpt_LIBRARIES} ${ZLIB_LIBRARY} upnpc-static)

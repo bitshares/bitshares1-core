@@ -111,16 +111,23 @@ void light_wallet::create( const fc::path& wallet_json,
    fc::raw::pack( enc, brain_seed );
    fc::raw::pack( enc, salt );
    _private_key = fc::ecc::private_key::regenerate( enc.result() );
+   _data->user_account.owner_key = _private_key->get_public_key();
+
+   // Don't actually store the owner key; it can be recovered via brain key and salt.
+   // Locally, we'll only keep a deterministically derived child key so if that key is compromised,
+   // the owner key remains safe.
+   enc.reset();
+   fc::raw::pack( enc, _private_key );
+   // First active key has sequence number 0
+   fc::raw::pack( enc, 0 );
+   _private_key = fc::ecc::private_key::regenerate( enc.result() );
+   _data->user_account.active_key_history[fc::time_point::now()] = _private_key->get_public_key();
 
    // set the password
    auto pass_key = fc::sha512::hash( password );
    _data->encrypted_private_key = fc::aes_encrypt( pass_key, fc::raw::pack( *_private_key ) );
-   _data->user_account.owner_key = _private_key->get_public_key();
    _data->user_account.public_data = mutable_variant_object( "salt", salt );
    _data->user_account.meta_data = account_meta_info( public_account );
-   // TODO: set active key to be the first child of the owner key, the light wallet
-   // should never store the owner master key.  It should only be recoverable with
-   // the brain_seed + salt
    save();
 }
 
