@@ -387,7 +387,11 @@ map<string, share_type>  client_impl::blockchain_generate_snapshot()const
     {
         total += pair.second;
     }
-    ulog("Total: ${tot}", ("tot", total));
+    std::ofstream outfile;
+    outfile.open("snapshot.json");
+    outfile << fc::json::to_pretty_string(snapshot);
+    outfile.close();
+    ulog("snapshot written to snapshot.json");
     return snapshot;
 }
 
