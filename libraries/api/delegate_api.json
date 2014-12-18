@@ -115,6 +115,66 @@
           ],
         "prerequisites" : ["no_prerequisites"],
         "aliases" : []
+      },
+      {
+        "method_name": "delegate_blacklist_add_transaction",
+        "description": "Add specified transaction to blacklist",
+        "return_type": "void",
+        "parameters" :
+          [
+            {
+              "name" : "id",
+              "type" : "transaction_id",
+              "description" : "transaction to add to blacklist"
+            }
+          ],
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
+      },
+      {
+        "method_name": "delegate_blacklist_remove_transaction",
+        "description": "Remove specified transaction from blacklist",
+        "return_type": "void",
+        "parameters" :
+          [
+            {
+              "name" : "id",
+              "type" : "transaction_id",
+              "description" : "transaction to remove from blacklist"
+            }
+          ],
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
+      },
+      {
+        "method_name": "delegate_blacklist_add_operation",
+        "description": "Add specified operation to blacklist",
+        "return_type": "void",
+        "parameters" :
+          [
+            {
+              "name" : "id",
+              "type" : "operation_type",
+              "description" : "operation to add to blacklist"
+            }
+          ],
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
+      },
+      {
+        "method_name": "delegate_blacklist_remove_operation",
+        "description": "Remove specified operation from blacklist",
+        "return_type": "void",
+        "parameters" :
+          [
+            {
+              "name" : "id",
+              "type" : "operation_type",
+              "description" : "operation to remove from blacklist"
+            }
+          ],
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
       }
     ]
 }

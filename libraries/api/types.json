@@ -146,6 +146,11 @@
         "default_example" : "TODO"
       },
       {
+        "type_name" : "operation_type",
+        "cpp_return_type" : "bts::blockchain::operation_type_enum",
+        "cpp_include_file" : "bts/blockchain/operations.hpp"
+      },
+      {
         "type_name" : "message_propagation_data",
        "cpp_return_type" : "bts::net::message_propagation_data",
         "cpp_include_file" : "bts/net/node.hpp",

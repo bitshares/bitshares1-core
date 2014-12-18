@@ -47,4 +47,24 @@ void client_impl::delegate_set_transaction_min_fee( uint64_t fee )
     UPDATE_CONFIG( transaction_min_fee, fee );
 } FC_CAPTURE_AND_RETHROW( (fee) ) }
 
+void client_impl::delegate_blacklist_add_transaction( const transaction_id_type& id )
+{ try {
+    _delegate_config.transaction_blacklist.insert( id );
+} FC_CAPTURE_AND_RETHROW( (id) ) }
+
+void client_impl::delegate_blacklist_remove_transaction( const transaction_id_type& id )
+{ try {
+    _delegate_config.transaction_blacklist.erase( id );
+} FC_CAPTURE_AND_RETHROW( (id) ) }
+
+void client_impl::delegate_blacklist_add_operation( const operation_type_enum& op )
+{ try {
+    _delegate_config.operation_blacklist.insert( op );
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
+void client_impl::delegate_blacklist_remove_operation( const operation_type_enum& op )
+{ try {
+    _delegate_config.operation_blacklist.erase( op );
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
 } } } // bts::client::detail

@@ -2147,6 +2147,7 @@ namespace bts { namespace blockchain {
       const pending_chain_state_ptr pending_state = std::make_shared<pending_chain_state>( shared_from_this() );
       my->execute_markets( block_timestamp, pending_state );
 
+      // Initialize block
       full_block new_block;
       size_t block_size = new_block.block_size();
       if( config.block_max_transaction_count > 0 && config.block_max_size > block_size )
@@ -2155,13 +2156,14 @@ namespace bts { namespace blockchain {
           const vector<transaction_evaluation_state_ptr> pending_trx = get_pending_transactions();
           for( const transaction_evaluation_state_ptr& item : pending_trx )
           {
+              // Check block production time limit
               if( time_point::now() - start_time >= config.block_max_production_time )
                   break;
 
               const signed_transaction& new_transaction = item->trx;
               try
               {
-                  // Evaluate transaction size
+                  // Check transaction size limit
                   const size_t transaction_size = new_transaction.data_size();
                   if( transaction_size > config.transaction_max_size )
                   {
@@ -2169,32 +2171,68 @@ namespace bts { namespace blockchain {
                             ("id",new_transaction.id())("size",transaction_size)("limit",config.transaction_max_size) );
                       continue;
                   }
-                  else if( block_size + transaction_size > config.block_max_size )
+
+                  // Check block size limit
+                  if( block_size + transaction_size > config.block_max_size )
                   {
                       wlog( "Excluding transaction ${id} of size ${size} because block would exceed block size limit ${limit}",
                             ("id",new_transaction.id())("size",transaction_size)("limit",config.block_max_size) );
                       continue;
                   }
-                  block_size += transaction_size;
 
-                  auto pending_trx_state = std::make_shared<pending_chain_state>( pending_state );
-                  auto trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_trx_state.get() );
-
-                  // Evaluate transaction in a temporary context
-                  trx_eval_state->evaluate( new_transaction, false, config.transaction_canonical_signatures_required );
-
-                  const share_type transaction_fee = trx_eval_state->get_fees( 0 ) + trx_eval_state->alt_fees_paid.amount;
-                  if( transaction_fee < config.transaction_min_fee )
+                  // Check transaction blacklist
+                  if( !config.transaction_blacklist.empty() )
                   {
-                      wlog( "Excluding transaction ${id} with fee ${fee} because it does not meet transaction fee limit ${limit}",
-                            ("id",new_transaction.id())("fee",transaction_fee)("limit",config.transaction_min_fee) );
-                      continue;
+                      const transaction_id_type id = new_transaction.id();
+                      if( config.transaction_blacklist.count( id ) > 0 )
+                      {
+                          wlog( "Excluding blacklisted transaction ${id}", ("id",id) );
+                          continue;
+                      }
                   }
 
-                  // Apply transaction to pending state
-                  pending_trx_state->apply_changes();
+                  // Check operation blacklist
+                  if( !config.operation_blacklist.empty() )
+                  {
+                      optional<operation_type_enum> blacklisted_op;
+                      for( const operation& op : new_transaction.operations )
+                      {
+                          if( config.operation_blacklist.count( op.type ) > 0 )
+                          {
+                              blacklisted_op = op.type;
+                              break;
+                          }
+                      }
+                      if( blacklisted_op.valid() )
+                      {
+                          wlog( "Excluding transaction ${id} because of blacklisted operation ${op}",
+                                ("id",new_transaction.id())("op",*blacklisted_op) );
+                          continue;
+                      }
+                  }
 
+                  // Validate transaction
+                  auto pending_trx_state = std::make_shared<pending_chain_state>( pending_state );
+                  {
+                      auto trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_trx_state.get() );
+                      trx_eval_state->evaluate( new_transaction, false, config.transaction_canonical_signatures_required );
+
+                      // Check transaction fee limit
+                      const share_type transaction_fee = trx_eval_state->get_fees( 0 ) + trx_eval_state->alt_fees_paid.amount;
+                      if( transaction_fee < config.transaction_min_fee )
+                      {
+                          wlog( "Excluding transaction ${id} with fee ${fee} because it does not meet transaction fee limit ${limit}",
+                                ("id",new_transaction.id())("fee",transaction_fee)("limit",config.transaction_min_fee) );
+                          continue;
+                      }
+                  }
+
+                  // Include transaction
+                  pending_trx_state->apply_changes();
                   new_block.user_transactions.push_back( new_transaction );
+                  block_size += transaction_size;
+
+                  // Check block transaction count limit
                   if( new_block.user_transactions.size() >= config.block_max_transaction_count )
                       break;
               }
@@ -2212,6 +2250,7 @@ namespace bts { namespace blockchain {
 
       const signed_block_header head_block = get_head_block();
 
+      // Populate block header
       new_block.previous            = head_block.block_num > 0 ? head_block.id() : block_id_type();
       new_block.block_num           = head_block.block_num + 1;
       new_block.timestamp           = block_timestamp;

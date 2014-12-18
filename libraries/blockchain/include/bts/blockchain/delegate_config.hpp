@@ -23,6 +23,9 @@ struct delegate_config
     bool                transaction_canonical_signatures_required = true;
     share_type          transaction_min_fee = 0;
 
+    set<transaction_id_type>    transaction_blacklist;
+    set<operation_type_enum>    operation_blacklist;
+
     void validate()const
     { try {
         FC_ASSERT( block_max_size <= BTS_BLOCKCHAIN_MAX_BLOCK_SIZE );
@@ -42,4 +45,6 @@ FC_REFLECT( bts::blockchain::delegate_config,
         (transaction_max_size)
         (transaction_canonical_signatures_required)
         (transaction_min_fee)
+        (transaction_blacklist)
+        (operation_blacklist)
         )
