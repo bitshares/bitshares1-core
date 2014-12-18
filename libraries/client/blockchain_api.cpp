@@ -379,7 +379,7 @@ variant_object client_impl::blockchain_get_info()const
    return info;
 }
 
-map<address, share_type>  client_impl::blockchain_generate_snapshot()const
+map<string, share_type>  client_impl::blockchain_generate_snapshot()const
 {
     auto snapshot = _chain_db->generate_snapshot();
     share_type total = 0;

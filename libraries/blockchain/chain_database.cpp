@@ -3367,17 +3367,23 @@ namespace bts { namespace blockchain {
        return my->_feed_db.fetch_optional( i );
    }
 
-   map<address, share_type> chain_database::generate_snapshot()const
+   map<string, share_type> chain_database::generate_snapshot()const
    {
-       auto snapshot = map<address, share_type>();
-       // normal balances
+       auto snapshot = map<string, share_type>();
+       // normal / unclaimed balances
        for( auto balance_itr = my->_balance_db.begin(); balance_itr.valid(); ++balance_itr )
        {
+           string claimer;
            const balance_record balance = balance_itr.value();
-           if( snapshot.find( balance.id() ) != snapshot.end() )
-               snapshot[balance.id()] += balance.get_spendable_balance( now() ).amount;
+           if( balance.snapshot_info.valid() )
+               claimer = balance.snapshot_info->original_address;
            else
-               snapshot[balance.id()] = balance.get_spendable_balance( now() ).amount;
+               claimer = string( balance.owner() );
+
+           if( snapshot.find( claimer ) != snapshot.end() )
+               snapshot[claimer] += balance.get_spendable_balance( now() ).amount;
+           else
+               snapshot[claimer] = balance.get_spendable_balance( now() ).amount;
        }
 
        // pay balances
@@ -3386,7 +3392,7 @@ namespace bts { namespace blockchain {
            const account_record account = account_itr.value();
            if( account.delegate_info.valid() )
            {
-               auto address = account.active_address();
+               auto address = string( account.active_address() );
                if( snapshot.find( address ) != snapshot.end() )
                    snapshot[address] += account.delegate_info->pay_balance;
                else
@@ -3401,7 +3407,7 @@ namespace bts { namespace blockchain {
            const market_index_key market_index = ask_itr.key();
            if( market_index.order_price.base_asset_id == 0 )
            {
-               auto address = ask_itr.key().owner;
+               auto address = string( ask_itr.key().owner );
                auto balance = ask_itr.value().balance;
                if( snapshot.find( address ) != snapshot.end() )
                    snapshot[address] += balance;
@@ -3414,7 +3420,7 @@ namespace bts { namespace blockchain {
            const market_index_key market_index = ask_itr.key();
            if( market_index.order_price.base_asset_id == 0 )
            {
-               auto address = ask_itr.key().owner;
+               auto address = string( ask_itr.key().owner );
                auto balance = ask_itr.value().balance;
                if( snapshot.find( address ) != snapshot.end() )
                    snapshot[address] += balance;
@@ -3426,7 +3432,7 @@ namespace bts { namespace blockchain {
        // Add short balances
        for( auto short_itr = my->_short_db.begin(); short_itr.valid(); ++short_itr )
        {
-           auto address = short_itr.key().owner;
+           auto address = string( short_itr.key().owner );
            auto balance = short_itr.value().balance;
            if( snapshot.find( address ) != snapshot.end() )
                snapshot[address] += balance;
@@ -3437,7 +3443,7 @@ namespace bts { namespace blockchain {
        // Add collateral balances
        for( auto collateral_itr = my->_collateral_db.begin(); collateral_itr.valid(); ++collateral_itr )
        {
-           auto address = collateral_itr.key().owner;
+           auto address = string( collateral_itr.key().owner );
            auto balance = collateral_itr.value().collateral_balance;
            if( snapshot.find( address ) != snapshot.end() )
                snapshot[address] += balance;
