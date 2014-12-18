@@ -27,7 +27,8 @@ void light_wallet::connect( const string& host, const string& user, const string
    {
       try {
          _rpc.connect_to( item );
-         _rpc.login( user, pass );
+         if( user != "any" && pass != "none" )
+            _rpc.login( user, pass );
          return;
       }
       catch ( const fc::exception& e )

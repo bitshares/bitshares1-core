@@ -5,8 +5,10 @@ import QtGraphicalEffects 1.0
 
 RowLayout {
    id: passwordForm
+
    property alias placeholderText: passwordText.placeholderText
    property alias password: passwordText.text
+   property alias fontPixelSize: passwordText.font.pixelSize
 
    function errorGlow() {
       errorGlow.pulse()
@@ -17,7 +19,6 @@ RowLayout {
    TextField {
       id: passwordText
       Layout.fillWidth: true
-      font.pixelSize: visuals.textBaseSize * 1.1
       echoMode: button.pressed? TextInput.Normal : TextInput.Password
       inputMethodHints: Qt.ImhSensitiveData | Qt.ImhHiddenText
       readOnly: button.pressed

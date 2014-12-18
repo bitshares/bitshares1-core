@@ -6,6 +6,7 @@ ColumnLayout {
    spacing: visuals.spacing
 
    property bool firstTime: true
+   property alias username: nameField.text
 
    signal passwordEntered(string password)
    
@@ -34,11 +35,21 @@ ColumnLayout {
    }
    ColumnLayout {
       Layout.fillWidth: true
+      TextField {
+         id: nameField
+         inputMethodHints: Qt.ImhLowercaseOnly
+         placeholderText: qsTr("Pick a Username")
+         font.pixelSize: visuals.textBaseSize * 1.1
+         Layout.fillWidth: true
+         text: firstTime? "" : wallet.accountName
+         readOnly: !firstTime
+      }
       PasswordField {
          id: passwordField
          Layout.fillWidth: true
          placeholderText: firstTime?
                              qsTr("Create a Password") : qsTr("Enter Password")
+         fontPixelSize: visuals.textBaseSize * 1.1
          onAccepted: openButton.clicked()
       }
       Button {

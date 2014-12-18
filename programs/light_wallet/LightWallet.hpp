@@ -17,6 +17,7 @@ class LightWallet : public QObject
    Q_PROPERTY(bool connected READ isConnected NOTIFY connectedChanged)
    Q_PROPERTY(bool open READ isOpen NOTIFY openChanged)
    Q_PROPERTY(bool unlocked READ isUnlocked NOTIFY unlockedChanged)
+   Q_PROPERTY(QString accountName READ accountName NOTIFY accountRegistered)
    Q_PROPERTY(QString connectionError READ connectionError NOTIFY errorConnecting)
    Q_PROPERTY(QString openError READ openError NOTIFY errorOpening)
    Q_PROPERTY(QString unlockError READ unlockError NOTIFY errorUnlocking)
@@ -33,18 +34,6 @@ public:
    ~LightWallet(){}
 
    bool walletExists() const;
-   QString connectionError() const
-   {
-      return m_connectionError;
-   }
-   QString openError() const
-   {
-      return m_openError;
-   }
-   QString unlockError() const
-   {
-      return m_unlockError;
-   }
    bool isConnected() const
    {
       return m_wallet.is_connected();
@@ -57,14 +46,26 @@ public:
    {
       return m_wallet.is_unlocked();
    }
-
+   QString connectionError() const
+   {
+      return m_connectionError;
+   }
+   QString openError() const
+   {
+      return m_openError;
+   }
+   QString unlockError() const
+   {
+      return m_unlockError;
+   }
    QString brainKey() const
    {
       return m_brainKey;
    }
+   QString accountName() const;
 
 public Q_SLOTS:
-   void connectToServer( QString host, uint16_t port = 0,
+   void connectToServer( QString host, quint16 port,
                          QString user = QString("any"),
                          QString password = QString("none") );
    void disconnectFromServer();
@@ -76,17 +77,21 @@ public Q_SLOTS:
    void unlockWallet(QString password);
    void lockWallet();
 
+   void registerAccount();
+
    void clearBrainKey();
 
 Q_SIGNALS:
    void walletExistsChanged(bool exists);
    void errorConnecting(QString error);
    void errorOpening(QString error);
-   void errorUnlocking(QString arg);
+   void errorUnlocking(QString error);
+   void errorRegistering(QString error);
    void connectedChanged(bool connected);
    void openChanged(bool open);
    void unlockedChanged(bool unlocked);
-   void brainKeyChanged(QString arg);
+   void brainKeyChanged(QString key);
+   void accountRegistered();
 
 private:
    fc::thread m_walletThread;

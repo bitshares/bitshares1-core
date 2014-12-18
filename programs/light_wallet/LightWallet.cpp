@@ -6,7 +6,7 @@
 #include <QDebug>
 #include <QSettings>
 
-#define IN_THREAD m_walletThread.async([&] {
+#define IN_THREAD m_walletThread.async([=] {
 #define END_THREAD }, __FUNCTION__);
 
 inline static QString normalize(const QString& key)
@@ -19,17 +19,25 @@ bool LightWallet::walletExists() const
    return fc::exists(m_walletPath);
 }
 
-void LightWallet::connectToServer(QString host, uint16_t port, QString user, QString password)
+QString LightWallet::accountName() const
+{
+   if( !m_wallet._data )
+      return QString();
+   return convert(m_wallet._data->user_account.name);
+}
+
+void LightWallet::connectToServer(QString host, quint16 port, QString user, QString password)
 {
    IN_THREAD
+   qDebug() << "Connecting to" << host << ':' << port << "as" << user << ':' << password;
    try {
       m_wallet.connect(convert(host), convert(user), convert(password), port);
+      Q_EMIT connectedChanged(isConnected());
    } catch (fc::exception e) {
-      m_connectionError = convert(e.to_string());
+      m_connectionError = convert(e.get_log().begin()->get_message()).replace("\n", " ");
       Q_EMIT errorConnecting(m_connectionError);
    }
 
-   Q_EMIT connectedChanged(isConnected());
    END_THREAD
 }
 
@@ -121,6 +129,11 @@ void LightWallet::lockWallet()
    m_wallet.lock();
    Q_EMIT unlockedChanged(isUnlocked());
    END_THREAD
+}
+
+void LightWallet::registerAccount()
+{
+
 }
 
 void LightWallet::clearBrainKey()
