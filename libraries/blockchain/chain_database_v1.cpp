@@ -9,8 +9,7 @@
 #include <bts/blockchain/market_engine_v7.hpp>
 #include <bts/blockchain/market_engine.hpp>
 
-using namespace bts::blockchain;
-using namespace bts::blockchain::detail;
+namespace bts { namespace blockchain { namespace detail {
 
 void chain_database_impl::pay_delegate_v1( const pending_chain_state_ptr& pending_state, const public_key_type& block_signee,
                                            const block_id_type& block_id )
@@ -161,3 +160,5 @@ void chain_database_impl::execute_markets_v1( const fc::time_point_sec& timestam
 
   pending_state->set_market_transactions( std::move( market_transactions ) );
 } FC_CAPTURE_AND_RETHROW() }
+
+} } } // bts::blockchain::detail

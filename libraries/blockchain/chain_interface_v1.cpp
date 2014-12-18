@@ -1,7 +1,10 @@
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/exceptions.hpp>
 
-using namespace bts::blockchain;
+#define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE    (BTS_BLOCKCHAIN_BLOCKS_PER_DAY / 12)
+#define BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE       (BTS_BLOCKCHAIN_BLOCKS_PER_DAY * 14)
+
+namespace bts { namespace blockchain {
 
 share_type chain_interface::get_delegate_registration_fee_v1( uint8_t pay_rate )const
 {
@@ -20,3 +23,5 @@ share_type chain_interface::get_delegate_pay_rate_v1()const
     FC_ASSERT( base_record.valid() );
     return base_record->collected_fees / (BTS_BLOCKCHAIN_BLOCKS_PER_DAY * 14);
 }
+
+} } // bts::blockchain

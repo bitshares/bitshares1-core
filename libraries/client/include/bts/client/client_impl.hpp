@@ -283,13 +283,7 @@ public:
    // Delegate block production
    fc::future<void>                                        _delegate_loop_complete;
    bool                                                    _delegate_loop_first_run = true;
-   uint32_t                                                _min_delegate_connection_count = BTS_MIN_DELEGATE_CONNECTION_COUNT;
-
-   size_t                                                  _max_block_transaction_count = -1;
-   size_t                                                  _max_block_size = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
-   size_t                                                  _max_transaction_size = -1;
-   share_type                                              _min_transaction_fee = BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE;
-   fc::microseconds                                        _max_block_production_time = fc::seconds( 3 );
+   delegate_config                                         _delegate_config;
 
    //start by assuming not syncing, network won't send us a msg if we start synced and stay synched.
    //at worst this means we might briefly sending some pending transactions while not synched.
