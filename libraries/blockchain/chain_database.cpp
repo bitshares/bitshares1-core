@@ -3410,10 +3410,12 @@ namespace bts { namespace blockchain {
    map<string, share_type> chain_database::generate_snapshot()const
    {
        auto snapshot = map<string, share_type>();
+
        // normal / unclaimed balances
        for( auto balance_itr = my->_balance_db.begin(); balance_itr.valid(); ++balance_itr )
        {
            const balance_record balance = balance_itr.value();
+           if( balance.asset_id() != 0 ) continue;
            if( balance.condition.type != withdraw_signature_type ) continue;
            string claimer;
            if( balance.snapshot_info.valid() )
