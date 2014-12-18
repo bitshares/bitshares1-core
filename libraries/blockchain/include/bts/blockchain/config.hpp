@@ -19,10 +19,10 @@
  *
  *  Changing these parameters will result in a hard fork.
  */
-#define BTS_ADDRESS_PREFIX                                  "BTS"
-#define BTS_BLOCKCHAIN_SYMBOL                               "BTS"
-#define BTS_BLOCKCHAIN_NAME                                 "BitShares"
-#define BTS_BLOCKCHAIN_DESCRIPTION                          "The Future of Banking"
+#define BTS_ADDRESS_PREFIX                                  "DVS"
+#define BTS_BLOCKCHAIN_SYMBOL                               "DVS"
+#define BTS_BLOCKCHAIN_NAME                                 "DevShares"
+#define BTS_BLOCKCHAIN_DESCRIPTION                          "BitShares Development Network"
 #define BTS_BLOCKCHAIN_PRECISION                            100000
 #define BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC       (60*60*24*2)
 #define BTS_BLOCKCHAIN_MIN_YIELD_PERIOD_SEC                 (60*60*24) // 24 hours
