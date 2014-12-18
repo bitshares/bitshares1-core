@@ -3480,13 +3480,6 @@ namespace bts { namespace blockchain {
            snapshot[address] += balance;
        }
 
-       // Erase empty balances
-       for( const auto& pair : snapshot )
-       {
-           if( pair.second == 0 )
-               snapshot.erase( pair.first );
-       }
-
        return snapshot;
    }
 
