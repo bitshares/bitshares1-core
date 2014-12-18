@@ -2140,65 +2140,100 @@ namespace bts { namespace blockchain {
       return trxs;
    }
 
-   full_block chain_database::generate_block( const time_point_sec& block_timestamp,
-                                              size_t max_block_transaction_count, size_t max_block_size,
-                                              size_t max_transaction_size, share_type min_transaction_fee,
-                                              const fc::microseconds& max_block_production_time )
+   full_block chain_database::generate_block( const time_point_sec& block_timestamp, const delegate_config& config )
    { try {
       const time_point start_time = time_point::now();
 
       const pending_chain_state_ptr pending_state = std::make_shared<pending_chain_state>( shared_from_this() );
       my->execute_markets( block_timestamp, pending_state );
 
+      // Initialize block
       full_block new_block;
       size_t block_size = new_block.block_size();
-      if( max_block_transaction_count > 0 && max_block_size > block_size )
+      if( config.block_max_transaction_count > 0 && config.block_max_size > block_size )
       {
           // Evaluate pending transactions
           const vector<transaction_evaluation_state_ptr> pending_trx = get_pending_transactions();
           for( const transaction_evaluation_state_ptr& item : pending_trx )
           {
-              if( time_point::now() - start_time >= max_block_production_time )
+              // Check block production time limit
+              if( time_point::now() - start_time >= config.block_max_production_time )
                   break;
 
               const signed_transaction& new_transaction = item->trx;
               try
               {
-                  // Evaluate transaction size
+                  // Check transaction size limit
                   const size_t transaction_size = new_transaction.data_size();
-                  if( transaction_size > max_transaction_size )
+                  if( transaction_size > config.transaction_max_size )
                   {
                       wlog( "Excluding transaction ${id} of size ${size} because it exceeds transaction size limit ${limit}",
-                            ("id",new_transaction.id())("size",transaction_size)("limit",max_transaction_size) );
+                            ("id",new_transaction.id())("size",transaction_size)("limit",config.transaction_max_size) );
                       continue;
                   }
-                  else if( block_size + transaction_size > max_block_size )
+
+                  // Check block size limit
+                  if( block_size + transaction_size > config.block_max_size )
                   {
                       wlog( "Excluding transaction ${id} of size ${size} because block would exceed block size limit ${limit}",
-                            ("id",new_transaction.id())("size",transaction_size)("limit",max_block_size) );
+                            ("id",new_transaction.id())("size",transaction_size)("limit",config.block_max_size) );
                       continue;
                   }
+
+                  // Check transaction blacklist
+                  if( !config.transaction_blacklist.empty() )
+                  {
+                      const transaction_id_type id = new_transaction.id();
+                      if( config.transaction_blacklist.count( id ) > 0 )
+                      {
+                          wlog( "Excluding blacklisted transaction ${id}", ("id",id) );
+                          continue;
+                      }
+                  }
+
+                  // Check operation blacklist
+                  if( !config.operation_blacklist.empty() )
+                  {
+                      optional<operation_type_enum> blacklisted_op;
+                      for( const operation& op : new_transaction.operations )
+                      {
+                          if( config.operation_blacklist.count( op.type ) > 0 )
+                          {
+                              blacklisted_op = op.type;
+                              break;
+                          }
+                      }
+                      if( blacklisted_op.valid() )
+                      {
+                          wlog( "Excluding transaction ${id} because of blacklisted operation ${op}",
+                                ("id",new_transaction.id())("op",*blacklisted_op) );
+                          continue;
+                      }
+                  }
+
+                  // Validate transaction
+                  auto pending_trx_state = std::make_shared<pending_chain_state>( pending_state );
+                  {
+                      auto trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_trx_state.get() );
+                      trx_eval_state->evaluate( new_transaction, false, config.transaction_canonical_signatures_required );
+
+                      // Check transaction fee limit
+                      const share_type transaction_fee = trx_eval_state->get_fees( 0 ) + trx_eval_state->alt_fees_paid.amount;
+                      if( transaction_fee < config.transaction_min_fee )
+                      {
+                          wlog( "Excluding transaction ${id} with fee ${fee} because it does not meet transaction fee limit ${limit}",
+                                ("id",new_transaction.id())("fee",transaction_fee)("limit",config.transaction_min_fee) );
+                          continue;
+                      }
+                  }
+
+                  // Include transaction
+                  pending_trx_state->apply_changes();
+                  new_block.user_transactions.push_back( new_transaction );
                   block_size += transaction_size;
 
-                  auto pending_trx_state = std::make_shared<pending_chain_state>( pending_state );
-                  auto trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_trx_state.get() );
-
-                  // Evaluate transaction in a temporary context
-                  trx_eval_state->evaluate( new_transaction, false, true );
-
-                  const share_type transaction_fee = trx_eval_state->get_fees( 0 ) + trx_eval_state->alt_fees_paid.amount;
-                  if( transaction_fee < min_transaction_fee )
-                  {
-                      wlog( "Excluding transaction ${id} with fee ${fee} because it does not meet transaction fee limit ${limit}",
-                            ("id",new_transaction.id())("fee",transaction_fee)("limit",min_transaction_fee) );
-                      continue;
-                  }
-
-                  // Apply transaction to pending state
-                  pending_trx_state->apply_changes();
-
-                  new_block.user_transactions.push_back( new_transaction );
-                  if( new_block.user_transactions.size() >= max_block_transaction_count )
+                  // Check block transaction count limit
+                  if( new_block.user_transactions.size() >= config.block_max_transaction_count )
                       break;
               }
               catch( const fc::canceled_exception& )
@@ -2215,14 +2250,14 @@ namespace bts { namespace blockchain {
 
       const signed_block_header head_block = get_head_block();
 
+      // Populate block header
       new_block.previous            = head_block.block_num > 0 ? head_block.id() : block_id_type();
       new_block.block_num           = head_block.block_num + 1;
       new_block.timestamp           = block_timestamp;
       new_block.transaction_digest  = digest_block( new_block ).calculate_transaction_digest();
 
       return new_block;
-   } FC_CAPTURE_AND_RETHROW( (block_timestamp)(max_block_transaction_count)(max_block_size)(max_transaction_size)
-                             (min_transaction_fee)(max_block_production_time) ) }
+   } FC_CAPTURE_AND_RETHROW( (block_timestamp)(config) ) }
 
    void chain_database::add_observer( chain_observer* observer )
    {
@@ -3371,31 +3406,37 @@ namespace bts { namespace blockchain {
        return my->_feed_db.fetch_optional( i );
    }
 
-   map<address, share_type> chain_database::generate_snapshot()const
+   // This ignores all balances that aren't claim by signature
+   map<string, share_type> chain_database::generate_snapshot()const
    {
-       auto snapshot = map<address, share_type>();
-       // normal balances
+       auto snapshot = map<string, share_type>();
+       // normal / unclaimed balances
        for( auto balance_itr = my->_balance_db.begin(); balance_itr.valid(); ++balance_itr )
        {
            const balance_record balance = balance_itr.value();
-           if( snapshot.find( balance.id() ) != snapshot.end() )
-               snapshot[balance.id()] += balance.get_spendable_balance( now() ).amount;
+           if( balance.condition.type != withdraw_signature_type ) continue;
+           string claimer;
+           if( balance.snapshot_info.valid() )
+           {
+               claimer = balance.snapshot_info->original_address;
+           }
            else
-               snapshot[balance.id()] = balance.get_spendable_balance( now() ).amount;
+           {
+               const auto owner = balance.owner();
+               if( !owner.valid() ) continue;
+               claimer = string( *owner );
+           }
+           snapshot[claimer] += balance.get_spendable_balance( now() ).amount;
        }
 
        // pay balances
        for( auto account_itr = my->_account_db.begin(); account_itr.valid(); ++account_itr )
        {
            const account_record account = account_itr.value();
-           if( account.delegate_info.valid() )
+           if( account.delegate_info.valid() && !account.is_retracted() )
            {
-               auto address = account.active_address();
-               if( snapshot.find( address ) != snapshot.end() )
-                   snapshot[address] += account.delegate_info->pay_balance;
-               else
-                   snapshot[address] = account.delegate_info->pay_balance;
-
+               auto address = string( account.active_address() );
+               snapshot[address] += account.delegate_info->pay_balance;
            }
        }
 
@@ -3405,56 +3446,40 @@ namespace bts { namespace blockchain {
            const market_index_key market_index = ask_itr.key();
            if( market_index.order_price.base_asset_id == 0 )
            {
-               auto address = ask_itr.key().owner;
+               auto address = string( ask_itr.key().owner );
                auto balance = ask_itr.value().balance;
-               if( snapshot.find( address ) != snapshot.end() )
-                   snapshot[address] += balance;
-               else
-                   snapshot[address] = balance;
+               snapshot[address] += balance;
            }
        }
+
+       // relative ask balances
        for( auto ask_itr = my->_relative_ask_db.begin(); ask_itr.valid(); ++ask_itr )
        {
            const market_index_key market_index = ask_itr.key();
            if( market_index.order_price.base_asset_id == 0 )
            {
-               auto address = ask_itr.key().owner;
+               auto address = string( ask_itr.key().owner );
                auto balance = ask_itr.value().balance;
-               if( snapshot.find( address ) != snapshot.end() )
-                   snapshot[address] += balance;
-               else
-                   snapshot[address] = balance;
+               snapshot[address] += balance;
            }
        }
 
        // Add short balances
        for( auto short_itr = my->_short_db.begin(); short_itr.valid(); ++short_itr )
        {
-           auto address = short_itr.key().owner;
+           auto address = string( short_itr.key().owner );
            auto balance = short_itr.value().balance;
-           if( snapshot.find( address ) != snapshot.end() )
-               snapshot[address] += balance;
-           else
-               snapshot[address] = balance;
+           snapshot[address] += balance;
        }
 
        // Add collateral balances
        for( auto collateral_itr = my->_collateral_db.begin(); collateral_itr.valid(); ++collateral_itr )
        {
-           auto address = collateral_itr.key().owner;
+           auto address = string( collateral_itr.key().owner );
            auto balance = collateral_itr.value().collateral_balance;
-           if( snapshot.find( address ) != snapshot.end() )
-               snapshot[address] += balance;
-           else
-               snapshot[address] = balance;
+           snapshot[address] += balance;
        }
 
-
-       for( const auto& pair : snapshot )
-       {
-           if( pair.second == 0 )
-               snapshot.erase( pair.first );
-       }
        return snapshot;
    }
 

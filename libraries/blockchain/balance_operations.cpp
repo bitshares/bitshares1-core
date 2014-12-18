@@ -516,8 +516,9 @@ namespace bts { namespace blockchain {
           new_slate = this->new_slate;
       }
 
-      withdraw_condition new_condition(withdraw_with_signature(current_balance_record->owner()),
-                                       0, new_slate);
+      const auto owner = current_balance_record->owner();
+      FC_ASSERT( owner.valid() );
+      withdraw_condition new_condition( withdraw_with_signature( *owner ), 0, new_slate );
       balance_record newer_balance_record( new_condition );
       auto new_balance_record = eval_state._current_state->get_balance_record( newer_balance_record.id() );
       if( !new_balance_record.valid() )

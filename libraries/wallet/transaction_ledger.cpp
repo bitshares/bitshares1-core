@@ -222,7 +222,11 @@ void wallet_impl::scan_balances()
        if( bal_rec.condition.type != withdraw_signature_type )
            return;
 
-       const auto key_rec = _wallet_db.lookup_key( bal_rec.owner() );
+       const auto owner = bal_rec.owner();
+       if( !owner.valid() )
+           return;
+
+       const auto key_rec = _wallet_db.lookup_key( *owner );
        if( !key_rec.valid() || !key_rec->has_private_key() )
            return;
 
@@ -568,8 +572,11 @@ bool wallet_impl::scan_withdraw( const withdraw_operation& op,
    if( amount.asset_id == total_fee.asset_id )
       total_fee += amount;
 
-   // TODO: Only if withdraw by signature or by name
-   const auto key_rec =_wallet_db.lookup_key( bal_rec->owner() );
+   const auto owner = bal_rec->owner();
+   if( !owner.valid() )
+       return false;
+
+   const auto key_rec =_wallet_db.lookup_key( *owner );
    if( key_rec.valid() && key_rec->has_private_key() ) /* If we own this balance */
    {
        auto new_entry = true;
