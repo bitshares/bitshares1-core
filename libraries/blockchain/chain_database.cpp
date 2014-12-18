@@ -2140,10 +2140,7 @@ namespace bts { namespace blockchain {
       return trxs;
    }
 
-   full_block chain_database::generate_block( const time_point_sec& block_timestamp,
-                                              size_t max_block_transaction_count, size_t max_block_size,
-                                              size_t max_transaction_size, share_type min_transaction_fee,
-                                              const fc::microseconds& max_block_production_time )
+   full_block chain_database::generate_block( const time_point_sec& block_timestamp, const delegate_config& config )
    { try {
       const time_point start_time = time_point::now();
 
@@ -2152,13 +2149,13 @@ namespace bts { namespace blockchain {
 
       full_block new_block;
       size_t block_size = new_block.block_size();
-      if( max_block_transaction_count > 0 && max_block_size > block_size )
+      if( config.block_max_transaction_count > 0 && config.block_max_size > block_size )
       {
           // Evaluate pending transactions
           const vector<transaction_evaluation_state_ptr> pending_trx = get_pending_transactions();
           for( const transaction_evaluation_state_ptr& item : pending_trx )
           {
-              if( time_point::now() - start_time >= max_block_production_time )
+              if( time_point::now() - start_time >= config.block_max_production_time )
                   break;
 
               const signed_transaction& new_transaction = item->trx;
@@ -2166,16 +2163,16 @@ namespace bts { namespace blockchain {
               {
                   // Evaluate transaction size
                   const size_t transaction_size = new_transaction.data_size();
-                  if( transaction_size > max_transaction_size )
+                  if( transaction_size > config.transaction_max_size )
                   {
                       wlog( "Excluding transaction ${id} of size ${size} because it exceeds transaction size limit ${limit}",
-                            ("id",new_transaction.id())("size",transaction_size)("limit",max_transaction_size) );
+                            ("id",new_transaction.id())("size",transaction_size)("limit",config.transaction_max_size) );
                       continue;
                   }
-                  else if( block_size + transaction_size > max_block_size )
+                  else if( block_size + transaction_size > config.block_max_size )
                   {
                       wlog( "Excluding transaction ${id} of size ${size} because block would exceed block size limit ${limit}",
-                            ("id",new_transaction.id())("size",transaction_size)("limit",max_block_size) );
+                            ("id",new_transaction.id())("size",transaction_size)("limit",config.block_max_size) );
                       continue;
                   }
                   block_size += transaction_size;
@@ -2184,13 +2181,13 @@ namespace bts { namespace blockchain {
                   auto trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_trx_state.get() );
 
                   // Evaluate transaction in a temporary context
-                  trx_eval_state->evaluate( new_transaction, false, true );
+                  trx_eval_state->evaluate( new_transaction, false, config.transaction_canonical_signatures_required );
 
                   const share_type transaction_fee = trx_eval_state->get_fees( 0 ) + trx_eval_state->alt_fees_paid.amount;
-                  if( transaction_fee < min_transaction_fee )
+                  if( transaction_fee < config.transaction_min_fee )
                   {
                       wlog( "Excluding transaction ${id} with fee ${fee} because it does not meet transaction fee limit ${limit}",
-                            ("id",new_transaction.id())("fee",transaction_fee)("limit",min_transaction_fee) );
+                            ("id",new_transaction.id())("fee",transaction_fee)("limit",config.transaction_min_fee) );
                       continue;
                   }
 
@@ -2198,7 +2195,7 @@ namespace bts { namespace blockchain {
                   pending_trx_state->apply_changes();
 
                   new_block.user_transactions.push_back( new_transaction );
-                  if( new_block.user_transactions.size() >= max_block_transaction_count )
+                  if( new_block.user_transactions.size() >= config.block_max_transaction_count )
                       break;
               }
               catch( const fc::canceled_exception& )
@@ -2221,8 +2218,7 @@ namespace bts { namespace blockchain {
       new_block.transaction_digest  = digest_block( new_block ).calculate_transaction_digest();
 
       return new_block;
-   } FC_CAPTURE_AND_RETHROW( (block_timestamp)(max_block_transaction_count)(max_block_size)(max_transaction_size)
-                             (min_transaction_fee)(max_block_production_time) ) }
+   } FC_CAPTURE_AND_RETHROW( (block_timestamp)(config) ) }
 
    void chain_database::add_observer( chain_observer* observer )
    {
