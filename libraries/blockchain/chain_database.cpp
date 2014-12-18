@@ -172,8 +172,8 @@ namespace bts { namespace blockchain {
          {
             self->sanity_check();
             ilog( "Genesis state already initialized" );
-            if( chain_id == BTS_EXPECTED_CHAIN_ID )
-                chain_id = BTS_DESIRED_CHAIN_ID;
+            //if( chain_id == BTS_EXPECTED_CHAIN_ID )
+                //chain_id = BTS_DESIRED_CHAIN_ID;
             return chain_id;
          }
 
@@ -218,8 +218,8 @@ namespace bts { namespace blockchain {
    #endif
          }
 
-         if( chain_id == BTS_EXPECTED_CHAIN_ID )
-             chain_id = BTS_DESIRED_CHAIN_ID;
+         //if( chain_id == BTS_EXPECTED_CHAIN_ID )
+             //chain_id = BTS_DESIRED_CHAIN_ID;
 
          if( chain_id_only )
            return chain_id;
