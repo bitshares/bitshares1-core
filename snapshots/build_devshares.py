@@ -20,11 +20,15 @@ with open("devshare-delegates.txt", "w") as dels:
         new_genesis["names"].append(acct)
 
 new_genesis["balances"] = []
+new_genesis["bts_sharedrop"] = []
 
 with open("devshares.json", "w") as outfile:
     with open("ags-pts-dec-14.json") as infile:
         agspts = json.load(infile)
+        agspts_total = 0
         for item in agspts["balances"]:
+            if item[1] == 0:
+                continue
             new_genesis["balances"].append(item)
             agspts_total += item[1]
         print "total agspts balance: " + str(agspts_total)
@@ -46,14 +50,17 @@ with open("devshares.json", "w") as outfile:
             for item in snap:
                 if item[1] == 0:
                     continue
-                balance = (100000000000000 * (snap_total / total)) * (item[1] / snap_total)
-                new_genesis["balances"].append([item[0], balance])
+                balance = (100000000000000.0 * (1. * snap_total / total)) * (1. * item[1] / snap_total)
+                new_genesis["balances"].append([item[0], int(balance)])
 
             for item in vest["bts_sharedrop"]:
-                balance = (100000000000000 * (vest_total / total)) * (item["balance"] / vest_total)
-                new_genesis["vesting_balances"].append({
+                if item["balance"] == 0:
+                    continue
+
+                balance = (100000000000000.0 * (1. * vest_total / total)) * (1. * item["balance"] / vest_total)
+                new_genesis["bts_sharedrop"].append({
                     "raw_address": item["raw_address"],
-                    "balance": balance
+                    "balance": int(balance)
                 })
 
         print "total normal BTS balance: " + str(snap_total)
