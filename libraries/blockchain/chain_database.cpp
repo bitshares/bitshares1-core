@@ -957,9 +957,6 @@ namespace bts { namespace blockchain {
          block_summary summary;
          try
          {
-            if( block_data.timestamp > fc::time_point_sec(1418601599) )
-               FC_ASSERT(!" snapshot timestamp" );
-
             public_key_type block_signee;
             if( CHECKPOINT_BLOCKS.size() > 0 && (--CHECKPOINT_BLOCKS.end())->first > block_data.block_num )
                //Skip signature validation
@@ -3417,6 +3414,8 @@ namespace bts { namespace blockchain {
        for( auto balance_itr = my->_balance_db.begin(); balance_itr.valid(); ++balance_itr )
        {
            const balance_record balance = balance_itr.value();
+           if( balance.condition.type != withdraw_signature_type ) continue;
+           string claimer;
            if( balance.snapshot_info.valid() )
            {
                claimer = balance.snapshot_info->original_address;
@@ -3428,11 +3427,6 @@ namespace bts { namespace blockchain {
                claimer = string( *owner );
            }
            snapshot[claimer] += balance.get_spendable_balance( now() ).amount;
-
-           if( snapshot.find( claimer ) != snapshot.end() )
-               snapshot[claimer] += balance.get_spendable_balance( now() ).amount;
-           else
-               snapshot[claimer] = balance.get_spendable_balance( now() ).amount;
        }
 
        // pay balances
