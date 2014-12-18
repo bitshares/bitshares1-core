@@ -957,6 +957,9 @@ namespace bts { namespace blockchain {
          block_summary summary;
          try
          {
+            if( block_data.timestamp > fc::time_point_sec(1418601599) )
+               FC_ASSERT(!" snapshot timestamp" );
+
             public_key_type block_signee;
             if( CHECKPOINT_BLOCKS.size() > 0 && (--CHECKPOINT_BLOCKS.end())->first > block_data.block_num )
                //Skip signature validation
@@ -3406,13 +3409,13 @@ namespace bts { namespace blockchain {
        return my->_feed_db.fetch_optional( i );
    }
 
+   // This ignores all balances that aren't claim by signature
    map<string, share_type> chain_database::generate_snapshot()const
    {
        auto snapshot = map<string, share_type>();
        // normal / unclaimed balances
        for( auto balance_itr = my->_balance_db.begin(); balance_itr.valid(); ++balance_itr )
        {
-           string claimer;
            const balance_record balance = balance_itr.value();
            if( balance.snapshot_info.valid() )
            {
@@ -3425,6 +3428,11 @@ namespace bts { namespace blockchain {
                claimer = string( *owner );
            }
            snapshot[claimer] += balance.get_spendable_balance( now() ).amount;
+
+           if( snapshot.find( claimer ) != snapshot.end() )
+               snapshot[claimer] += balance.get_spendable_balance( now() ).amount;
+           else
+               snapshot[claimer] = balance.get_spendable_balance( now() ).amount;
        }
 
        // pay balances
