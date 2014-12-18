@@ -4,8 +4,13 @@
 #include <bts/blockchain/types.hpp>
 #include <fc/time.hpp>
 
-#define BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE 512 // just a random assumption used to calibrate TRX per SEC
+#ifdef BTS_TEST_NETWORK
+#define NETWORK_MIN_CONNECTION_COUNT_DEFAULT 0
+#else
+#define NETWORK_MIN_CONNECTION_COUNT_DEFAULT 4
+#endif
 
+#define BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE 512 // just a random assumption used to calibrate TRX per SEC
 /** defines the maximum block size allowed, 2 MB per hour */
 #define BTS_BLOCKCHAIN_MAX_BLOCK_SIZE (10 * BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE * BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE )
 
@@ -13,7 +18,7 @@ namespace bts { namespace blockchain {
 
 struct delegate_config
 {
-    uint32_t            network_min_connection_count = 4;
+    uint32_t            network_min_connection_count = NETWORK_MIN_CONNECTION_COUNT_DEFAULT;
 
     size_t              block_max_transaction_count = -1;
     size_t              block_max_size = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;

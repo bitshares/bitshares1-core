@@ -379,20 +379,10 @@ variant_object client_impl::blockchain_get_info()const
    return info;
 }
 
-map<string, share_type>  client_impl::blockchain_generate_snapshot()const
+void client_impl::blockchain_generate_snapshot( const string& filename )const
 {
-    auto snapshot = _chain_db->generate_snapshot();
-    share_type total = 0;
-    for( const auto& pair : snapshot )
-    {
-        total += pair.second;
-    }
-    std::ofstream outfile;
-    outfile.open("snapshot.json");
-    outfile << fc::json::to_pretty_string(snapshot);
-    outfile.close();
-    ulog("snapshot written to snapshot.json");
-    return snapshot;
+    const map<string, share_type> snapshot = _chain_db->generate_snapshot();
+    fc::json::save_to_file( snapshot, fc::path( filename ) );
 }
 
 asset client_impl::blockchain_calculate_supply( const string& asset )const

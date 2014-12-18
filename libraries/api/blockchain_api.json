@@ -13,9 +13,15 @@
       },
       {
         "method_name": "blockchain_generate_snapshot",
-        "description": "",
-        "return_type": "snapshot_map",
-        "parameters" : [],
+        "description": "Save snapshot of current base asset balances to specified file",
+        "return_type": "void",
+        "parameters" : [
+            {
+              "name" : "filename",
+              "type" : "string",
+              "description" : "filename to save snapshot to"
+            }
+        ],
         "is_const"   : true,
         "prerequisites" : ["no_prerequisites"],
         "aliases" : []
