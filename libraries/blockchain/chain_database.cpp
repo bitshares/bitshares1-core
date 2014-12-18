@@ -1481,7 +1481,7 @@ namespace bts { namespace blockchain {
    account_record chain_database::get_block_signee( const block_id_type& block_id )const
    {
       auto block_header = get_block_header( block_id );
-      auto delegate_record = get_account_record( address( block_header.signee() ) );
+      auto delegate_record = get_account_record( address( block_header.signee( false ) ) );
       FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
       return *delegate_record;
    }
