@@ -1,8 +1,7 @@
 #include <bts/blockchain/chain_database_impl.hpp>
 #include <bts/blockchain/fork_blocks.hpp>
 
-using namespace bts::blockchain;
-using namespace bts::blockchain::detail;
+namespace bts { namespace blockchain { namespace detail {
 
 void chain_database_impl::pay_delegate_v2( const pending_chain_state_ptr& pending_state, const public_key_type& block_signee,
                                            const block_id_type& block_id )
@@ -40,3 +39,5 @@ void chain_database_impl::pay_delegate_v2( const pending_chain_state_ptr& pendin
       block_record->signee_fees_destroyed = destroyed_collected_fees;
       _block_id_to_block_record_db.store( block_id, *block_record );
 } FC_CAPTURE_AND_RETHROW( (block_signee)(block_id) ) }
+
+} } } // bts::blockchain::detail
