@@ -350,19 +350,14 @@ variant_object client_impl::blockchain_get_info()const
 
    info["blockchain_id"]                        = _chain_db->chain_id();
 
-   info["symbol"]                               = BTS_BLOCKCHAIN_SYMBOL;
    info["name"]                                 = BTS_BLOCKCHAIN_NAME;
+   info["symbol"]                               = BTS_BLOCKCHAIN_SYMBOL;
+   info["address_prefix"]                       = BTS_ADDRESS_PREFIX;
    info["version"]                              = BTS_BLOCKCHAIN_VERSION;
    info["db_version"]                           = BTS_BLOCKCHAIN_DATABASE_VERSION;
    info["genesis_timestamp"]                    = _chain_db->get_genesis_timestamp();
 
    info["block_interval"]                       = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-   info["max_block_size"]                       = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
-   info["max_blockchain_size"]                  = BTS_BLOCKCHAIN_MAX_SIZE;
-
-   info["address_prefix"]                       = BTS_ADDRESS_PREFIX;
-   info["relay_fee"]                            = _chain_db->get_relay_fee();
-
    info["delegate_num"]                         = BTS_BLOCKCHAIN_NUM_DELEGATES;
    info["max_delegate_pay_issued_per_block"]    = _chain_db->get_max_delegate_pay_issued_per_block();
    info["max_delegate_reg_fee"]                 = _chain_db->get_delegate_registration_fee( 100 );
@@ -377,13 +372,14 @@ variant_object client_impl::blockchain_get_info()const
    info["short_symbol_asset_reg_fee"]           = _chain_db->get_asset_registration_fee( BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE );
    info["long_symbol_asset_reg_fee"]            = _chain_db->get_asset_registration_fee( BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE );
 
+   info["relay_fee"]                            = _chain_db->get_relay_fee();
    info["max_pending_queue_size"]               = BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE;
    info["max_trx_per_second"]                   = BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND;
 
    return info;
 }
 
-map<address, share_type>  client_impl::blockchain_generate_snapshot()const
+map<string, share_type>  client_impl::blockchain_generate_snapshot()const
 {
     auto snapshot = _chain_db->generate_snapshot();
     share_type total = 0;
@@ -391,7 +387,11 @@ map<address, share_type>  client_impl::blockchain_generate_snapshot()const
     {
         total += pair.second;
     }
-    ulog("Total: ${tot}", ("tot", total));
+    std::ofstream outfile;
+    outfile.open("snapshot.json");
+    outfile << fc::json::to_pretty_string(snapshot);
+    outfile.close();
+    ulog("snapshot written to snapshot.json");
     return snapshot;
 }
 

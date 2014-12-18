@@ -1,60 +1,70 @@
 #include <bts/client/client_impl.hpp>
 
-using namespace bts::client;
-using namespace bts::client::detail;
+namespace bts { namespace client { namespace detail {
 
-variant_object client_impl::delegate_get_settings()const
+#define UPDATE_CONFIG(name, value) delegate_config config = _delegate_config; \
+                                   config.name = value; \
+                                   config.validate(); \
+                                   _delegate_config = config
+
+fc::variant client_impl::delegate_get_config()const
 { try {
-    fc::mutable_variant_object settings;
-
-    settings[ "network_min_connection_count" ]  = _min_delegate_connection_count;
-
-    settings[ "block_max_production_time" ]     = _max_block_production_time;
-    settings[ "block_max_transaction_count" ]   = _max_block_transaction_count;
-    settings[ "block_max_size" ]                = _max_block_size;
-
-    settings[ "transaction_max_size" ]          = _max_transaction_size;
-    settings[ "transaction_min_fee" ]           = _min_transaction_fee;
-
-    return settings;
+    return fc::variant( _delegate_config );
 } FC_CAPTURE_AND_RETHROW() }
 
-uint32_t client_impl::delegate_set_network_min_connection_count( uint32_t count )
+void client_impl::delegate_set_network_min_connection_count( uint32_t count )
 { try {
-    _min_delegate_connection_count = count;
-    return _min_delegate_connection_count;
+    UPDATE_CONFIG( network_min_connection_count, count );
 } FC_CAPTURE_AND_RETHROW( (count) ) }
 
-uint32_t client_impl::delegate_set_block_max_production_time( uint32_t time )
+void client_impl::delegate_set_block_max_transaction_count( uint32_t count )
 { try {
-    const fc::microseconds max_block_production_time = fc::milliseconds( time );
-    FC_ASSERT( max_block_production_time.to_seconds() <= BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC );
-    _max_block_production_time = max_block_production_time;
-    return _max_block_production_time.count() / 1000;
+    UPDATE_CONFIG( block_max_transaction_count, count );
+} FC_CAPTURE_AND_RETHROW( (count) ) }
+
+void client_impl::delegate_set_block_max_size( uint32_t size )
+{ try {
+    UPDATE_CONFIG( block_max_size, size );
+} FC_CAPTURE_AND_RETHROW( (size) ) }
+
+void client_impl::delegate_set_block_max_production_time( uint64_t time )
+{ try {
+    UPDATE_CONFIG( block_max_production_time, fc::microseconds( time ) );
 } FC_CAPTURE_AND_RETHROW( (time) ) }
 
-uint32_t client_impl::delegate_set_block_max_transaction_count( uint32_t count )
+void client_impl::delegate_set_transaction_max_size( uint32_t size )
 { try {
-    _max_block_transaction_count = count;
-    return _max_block_transaction_count;
-} FC_CAPTURE_AND_RETHROW( (count) ) }
-
-uint32_t client_impl::delegate_set_block_max_size( uint32_t size )
-{ try {
-    FC_ASSERT( size <= BTS_BLOCKCHAIN_MAX_BLOCK_SIZE );
-    _max_block_size = size;
-    return _max_block_size;
+    UPDATE_CONFIG( transaction_max_size, size );
 } FC_CAPTURE_AND_RETHROW( (size) ) }
 
-uint32_t client_impl::delegate_set_transaction_max_size( uint32_t size )
+void client_impl::delegate_set_transaction_canonical_signatures_required( bool required )
 { try {
-    _max_transaction_size = size;
-    return _max_transaction_size;
-} FC_CAPTURE_AND_RETHROW( (size) ) }
+    UPDATE_CONFIG( transaction_canonical_signatures_required, required );
+} FC_CAPTURE_AND_RETHROW( (required) ) }
 
-share_type client_impl::delegate_set_transaction_min_fee( const share_type& fee )
+void client_impl::delegate_set_transaction_min_fee( uint64_t fee )
 { try {
-    FC_ASSERT( fee >= BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE );
-    _min_transaction_fee = fee;
-    return _min_transaction_fee;
+    UPDATE_CONFIG( transaction_min_fee, fee );
 } FC_CAPTURE_AND_RETHROW( (fee) ) }
+
+void client_impl::delegate_blacklist_add_transaction( const transaction_id_type& id )
+{ try {
+    _delegate_config.transaction_blacklist.insert( id );
+} FC_CAPTURE_AND_RETHROW( (id) ) }
+
+void client_impl::delegate_blacklist_remove_transaction( const transaction_id_type& id )
+{ try {
+    _delegate_config.transaction_blacklist.erase( id );
+} FC_CAPTURE_AND_RETHROW( (id) ) }
+
+void client_impl::delegate_blacklist_add_operation( const operation_type_enum& op )
+{ try {
+    _delegate_config.operation_blacklist.insert( op );
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
+void client_impl::delegate_blacklist_remove_operation( const operation_type_enum& op )
+{ try {
+    _delegate_config.operation_blacklist.erase( op );
+} FC_CAPTURE_AND_RETHROW( (op) ) }
+
+} } } // bts::client::detail

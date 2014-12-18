@@ -77,16 +77,20 @@ namespace detail {
           if( balance.amount <= 0 || balance.asset_id != amount_remaining.asset_id )
               continue;
 
+          const auto owner = record.owner();
+          if( !owner.valid() )
+              continue;
+
           if( amount_remaining.amount > balance.amount )
           {
               trx.withdraw( record.id(), balance.amount );
-              required_signatures.insert( record.owner() );
+              required_signatures.insert( *owner );
               amount_remaining -= balance;
           }
           else
           {
               trx.withdraw( record.id(), amount_remaining.amount );
-              required_signatures.insert( record.owner() );
+              required_signatures.insert( *owner );
               return;
           }
       }
@@ -2089,7 +2093,9 @@ namespace detail {
       {
           const asset balance = record.get_spendable_balance( my->_blockchain->get_pending_state()->now() );
           trx.withdraw( record.id(), balance.amount );
-          required_signatures.insert( record.owner() );
+          const auto owner = record.owner();
+          if( !owner.valid() ) continue;
+          required_signatures.insert( *owner );
           total_balance += balance;
       }
 
@@ -2149,9 +2155,15 @@ namespace detail {
       op.new_restricted_owner = voter_address;
       op.new_slate = slate_id;
       if( balance->restricted_owner == voter_address ) // not an owner update
+      {
           builder->required_signatures.insert( voter_address );
+      }
       else
-          builder->required_signatures.insert( balance->owner() );
+      {
+          const auto owner = balance->owner();
+          FC_ASSERT( owner.valid() );
+          builder->required_signatures.insert( *owner );
+      }
 
       trx.operations.push_back( op );
 //      trx.withdraw( balance_id, required_fees.amount );
@@ -2213,7 +2225,9 @@ namespace detail {
 
            for( const auto& record : records )
            {
-               owallet_key_record key_record = my->_wallet_db.lookup_key( record.owner() );
+               const auto owner = record.owner();
+               if( !owner.valid() ) continue;
+               owallet_key_record key_record = my->_wallet_db.lookup_key( *owner );
                if( key_record.valid() )
                {
                    key_record->account_address = account_record->owner_address();
@@ -4078,7 +4092,10 @@ namespace detail {
           //if( record.snapshot_info.valid() && !((1 << uint8_t( withdraw_null_type )) & withdraw_type_mask) ) return;
           if( !((1 << uint8_t( record.condition.type )) & withdraw_type_mask) ) return;
 
-          const auto key_record = my->_wallet_db.lookup_key( record.owner() );
+          const auto owner = record.owner();
+          if( !owner.valid() ) return;
+
+          const auto key_record = my->_wallet_db.lookup_key( *owner );
           if( !key_record.valid() || !key_record->has_private_key() ) return;
 
           const auto account_address = key_record->account_address;
@@ -4218,7 +4235,10 @@ namespace detail {
           const auto& records = item.second;
           for( const auto& record : records )
           {
-              const auto okey_rec = my->_wallet_db.lookup_key( record.owner() );
+              const auto owner = record.owner();
+              if( !owner.valid() ) continue;
+
+              const auto okey_rec = my->_wallet_db.lookup_key( *owner );
               if( !okey_rec.valid() || !okey_rec->has_private_key() ) continue;
 
               const auto oaccount_rec = my->_wallet_db.lookup_account( okey_rec->account_address );
@@ -4425,7 +4445,11 @@ namespace detail {
            if( record.condition.type != withdraw_vesting_type )
                return;
 
-           const owallet_key_record key_record = my->_wallet_db.lookup_key( record.owner() );
+           const auto owner = record.owner();
+           if( !owner.valid() )
+               return;
+
+           const owallet_key_record key_record = my->_wallet_db.lookup_key( *owner );
            if( !key_record.valid() || !key_record->has_private_key() )
                return;
 

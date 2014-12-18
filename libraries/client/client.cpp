@@ -648,23 +648,21 @@ void client_impl::delegate_loop()
       {
          try
          {
-            FC_ASSERT( network_get_connection_count() >= _min_delegate_connection_count,
+            _delegate_config.validate();
+
+            FC_ASSERT( network_get_connection_count() >= _delegate_config.network_min_connection_count,
                        "Client must have ${count} connections before you may produce blocks!",
-                       ("count",_min_delegate_connection_count) );
+                       ("count",_delegate_config.network_min_connection_count) );
             FC_ASSERT( _wallet->is_unlocked(), "Wallet must be unlocked to produce blocks!" );
             FC_ASSERT( (now - *next_block_time) < fc::seconds( BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC ),
                        "You missed your slot at time: ${t}!", ("t",*next_block_time) );
 
-            full_block next_block = _chain_db->generate_block( *next_block_time,
-                                                               _max_block_transaction_count, _max_block_size,
-                                                               _max_transaction_size, _min_transaction_fee,
-                                                               _max_block_production_time );
-
+            full_block next_block = _chain_db->generate_block( *next_block_time, _delegate_config );
             _wallet->sign_block( next_block );
 
             on_new_block( next_block, next_block.id(), false );
-
             _p2p_node->broadcast( block_message( next_block ) );
+
             ilog( "Produced block #${n}!", ("n",next_block.block_num) );
          }
          catch ( const fc::canceled_exception& )
@@ -1497,7 +1495,7 @@ void client::configure_from_command_line(int argc, char** argv)
    this->open( datadir, genesis_file_path );
 
    if (option_variables.count("min-delegate-connection-count"))
-      my->_min_delegate_connection_count = option_variables["min-delegate-connection-count"].as<uint32_t>();
+      my->_delegate_config.network_min_connection_count = option_variables["min-delegate-connection-count"].as<uint32_t>();
 
    this->configure( datadir );
 
