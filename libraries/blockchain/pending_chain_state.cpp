@@ -1,3 +1,4 @@
+#include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/pending_chain_state.hpp>
 #include <fc/io/raw_variant.hpp>
 
@@ -35,6 +36,13 @@ namespace bts { namespace blockchain {
       const chain_interface_ptr prev_state = _prev_state.lock();
       FC_ASSERT( prev_state );
       return prev_state->now();
+   }
+
+   digest_type pending_chain_state::chain_id()const
+   {
+      const chain_interface_ptr prev_state = _prev_state.lock();
+      FC_ASSERT( prev_state );
+      return prev_state->chain_id();
    }
 
    fc::ripemd160 pending_chain_state::get_current_random_seed()const
@@ -87,8 +95,7 @@ namespace bts { namespace blockchain {
       prev_state->set_dirty_markets( _dirty_markets );
    }
 
-   otransaction_record pending_chain_state::get_transaction( const transaction_id_type& trx_id,
-                                                              bool exact  )const
+   otransaction_record pending_chain_state::get_transaction( const transaction_id_type& trx_id, bool exact )const
    {
       auto itr = transactions.find( trx_id );
       if( itr != transactions.end() ) return itr->second;
@@ -104,15 +111,15 @@ namespace bts { namespace blockchain {
       return prev_state->is_known_transaction( exp, id );
    } FC_CAPTURE_AND_RETHROW( (id) ) }
 
-   void pending_chain_state::store_transaction( const transaction_id_type& id,
-                                                const transaction_record& rec )
+   void pending_chain_state::store_transaction( const transaction_id_type& id, const transaction_record& rec )
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       transactions[id] = rec;
       if( prev_state )
       {
-         auto prop = prev_state->get_property(chain_id);
-         FC_ASSERT( unique_transactions.insert(rec.trx.digest( prop.as<digest_type>() )).second );
+          const auto insert_result = unique_transactions.insert( rec.trx.digest( chain_id() ) );
+          if( !insert_result.second )
+              FC_CAPTURE_AND_THROW( duplicate_transaction, (rec) );
       }
 
       for( const auto& op : rec.trx.operations )
@@ -169,7 +176,7 @@ namespace bts { namespace blockchain {
       {
          auto prev_value = prev_state->get_transaction( item.first );
          if( !!prev_value ) undo_state->store_transaction( item.first, *prev_value );
-         else undo_state->store_transaction( item.first, transaction_record() );
+         else undo_state->store_transaction( item.first, item.second.make_null() );
       }
       for( const auto& item : bids )
       {
@@ -238,7 +245,7 @@ namespace bts { namespace blockchain {
       }
       for( const auto& item : objects )
       {
-         undo_state->store_object_record( object_record( item.second, item.first ) );
+         undo_state->store_object_record( item.second );
       }
 
       const auto dirty_markets = prev_state->get_dirty_markets();
@@ -381,13 +388,12 @@ namespace bts { namespace blockchain {
        chain_interface_ptr prev_state = _prev_state.lock();
        auto itr = objects.find( id );
        if( itr != objects.end() )
-           return oobject_record(itr->second);
+           return itr->second;
        else if( prev_state )
            return prev_state->get_object_record( id );
         return oobject_record();
    }
 
-   //TODO this should not use a switch
    void pending_chain_state::store_object_record(const object_record& obj)
    {
         ilog("@n storing object in pending_chain_state");
@@ -425,6 +431,9 @@ namespace bts { namespace blockchain {
 
     void                       pending_chain_state::store_edge_record( const object_record& edge )
     {
+        ilog("@n existing edge before storing edge in pending state:");
+        ilog("@n      as an object: ${o}", ("o", objects[edge._id]));
+        ilog("@n      as an edge: ${e}", ("e", objects[edge._id].as<edge_record>()));
         auto edge_data = edge.as<edge_record>();
         edge_index[ edge_data.index_key() ] = edge._id;
         reverse_edge_index[ edge_data.reverse_index_key() ] = edge._id;
@@ -436,6 +445,7 @@ namespace bts { namespace blockchain {
 
     void                       pending_chain_state::store_site_record( const site_record& site )
     {
+        FC_ASSERT(!"unimplemented");
         /*
         site_index[site.site_name] = site;
         objects[site._id] = site;

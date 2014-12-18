@@ -30,20 +30,22 @@ namespace bts { namespace blockchain {
         object_record( obj_type type_arg = base_object, uint64_t id = 0)
         {
             this->set_id( type_arg, id );
-            owner_object = 0;
+            owner_object = _id;
         }
-             
+                    
         template<typename ObjectType>
-        object_record(const ObjectType& o, object_id_type id )
+        object_record(const ObjectType& o, obj_type type = base_object, uint64_t short_id = 0 )
         :_data( fc::raw::pack( o ) )
         {
-           set_id( id );
+            this->set_id( type, short_id );
+            owner_object = _id;
         }
-
+ 
         template<typename ObjectType>
         void set_data( const ObjectType& o )
         {
            FC_ASSERT( ObjectType::type == this->type()  );
+           //set_id( this->type(), this->short_id());
            _data = fc::raw::pack(o);
         }
 

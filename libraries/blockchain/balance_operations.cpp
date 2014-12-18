@@ -509,14 +509,17 @@ namespace bts { namespace blockchain {
           if( NOT eval_state.check_signature( *restricted_owner ) )
           {
               for( const auto& owner : current_balance_record->owners() ) //eventually maybe multisig can delegate vote
+              {
                   if( NOT eval_state.check_signature( owner ) )
                       FC_CAPTURE_AND_THROW( missing_signature, (owner) );
+              }
           }
           new_slate = this->new_slate;
       }
 
-      withdraw_condition new_condition(withdraw_with_signature(current_balance_record->owner()),
-                                       0, new_slate);
+      const auto owner = current_balance_record->owner();
+      FC_ASSERT( owner.valid() );
+      withdraw_condition new_condition( withdraw_with_signature( *owner ), 0, new_slate );
       balance_record newer_balance_record( new_condition );
       auto new_balance_record = eval_state._current_state->get_balance_record( newer_balance_record.id() );
       if( !new_balance_record.valid() )

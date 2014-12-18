@@ -3,9 +3,9 @@
   "methods" :
     [
       {
-        "method_name": "delegate_get_settings",
+        "method_name": "delegate_get_config",
         "description": "Returns current settings used during local block production",
-        "return_type": "json_object",
+        "return_type": "variant",
         "parameters" : [],
         "is_const"   : true,
         "prerequisites" : ["no_prerequisites"],
@@ -14,7 +14,7 @@
       {
         "method_name": "delegate_set_network_min_connection_count",
         "description": "Set minimum network connection count required for block production",
-        "return_type": "uint32_t",
+        "return_type": "void",
         "parameters" :
           [
             {
@@ -27,24 +27,9 @@
         "aliases" : []
       },
       {
-        "method_name": "delegate_set_block_max_production_time",
-        "description": "Set maximum time spent producing a block",
-        "return_type": "uint32_t",
-        "parameters" :
-          [
-            {
-              "name" : "time",
-              "type" : "uint32_t",
-              "description" : "maximum production time in milliseconds"
-            }
-          ],
-        "prerequisites" : ["no_prerequisites"],
-        "aliases" : []
-      },
-      {
         "method_name": "delegate_set_block_max_transaction_count",
         "description": "Set maximum number of transactions allowed in a block",
-        "return_type": "uint32_t",
+        "return_type": "void",
         "parameters" :
           [
             {
@@ -59,7 +44,7 @@
       {
         "method_name": "delegate_set_block_max_size",
         "description": "Set maximum block size allowed",
-        "return_type": "uint32_t",
+        "return_type": "void",
         "parameters" :
           [
             {
@@ -72,9 +57,24 @@
         "aliases" : []
       },
       {
+        "method_name": "delegate_set_block_max_production_time",
+        "description": "Set maximum time spent producing a block",
+        "return_type": "void",
+        "parameters" :
+          [
+            {
+              "name" : "time",
+              "type" : "uint64_t",
+              "description" : "maximum production time in microseconds"
+            }
+          ],
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
+      },
+      {
         "method_name": "delegate_set_transaction_max_size",
         "description": "Set maximum transaction size allowed",
-        "return_type": "uint32_t",
+        "return_type": "void",
         "parameters" :
           [
             {
@@ -87,15 +87,90 @@
         "aliases" : []
       },
       {
+        "method_name": "delegate_set_transaction_canonical_signatures_required",
+        "description": "Set whether canonical signatures are required",
+        "return_type": "void",
+        "parameters" :
+          [
+            {
+              "name" : "required",
+              "type" : "bool",
+              "description" : "whether canonical signatures are required"
+            }
+          ],
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
+      },
+      {
         "method_name": "delegate_set_transaction_min_fee",
         "description": "Set minimum transaction fee allowed",
-        "return_type": "share_type",
+        "return_type": "void",
         "parameters" :
           [
             {
               "name" : "fee",
-              "type" : "share_type",
-              "description" : "minimum transaction fee"
+              "type" : "uint64_t",
+              "description" : "minimum transaction fee in shares"
+            }
+          ],
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
+      },
+      {
+        "method_name": "delegate_blacklist_add_transaction",
+        "description": "Add specified transaction to blacklist",
+        "return_type": "void",
+        "parameters" :
+          [
+            {
+              "name" : "id",
+              "type" : "transaction_id",
+              "description" : "transaction to add to blacklist"
+            }
+          ],
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
+      },
+      {
+        "method_name": "delegate_blacklist_remove_transaction",
+        "description": "Remove specified transaction from blacklist",
+        "return_type": "void",
+        "parameters" :
+          [
+            {
+              "name" : "id",
+              "type" : "transaction_id",
+              "description" : "transaction to remove from blacklist"
+            }
+          ],
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
+      },
+      {
+        "method_name": "delegate_blacklist_add_operation",
+        "description": "Add specified operation to blacklist",
+        "return_type": "void",
+        "parameters" :
+          [
+            {
+              "name" : "id",
+              "type" : "operation_type",
+              "description" : "operation to add to blacklist"
+            }
+          ],
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
+      },
+      {
+        "method_name": "delegate_blacklist_remove_operation",
+        "description": "Remove specified operation from blacklist",
+        "return_type": "void",
+        "parameters" :
+          [
+            {
+              "name" : "id",
+              "type" : "operation_type",
+              "description" : "operation to remove from blacklist"
             }
           ],
         "prerequisites" : ["no_prerequisites"],

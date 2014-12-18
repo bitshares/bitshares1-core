@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bts/blockchain/chain_interface.hpp>
+#include <bts/blockchain/delegate_config.hpp>
 #include <bts/blockchain/pending_chain_state.hpp>
 
 namespace bts { namespace blockchain {
@@ -139,22 +140,17 @@ namespace bts { namespace blockchain {
           *  role of the wallet.
           */
          full_block                  generate_block( const time_point_sec& block_timestamp,
-                                                     size_t max_block_transaction_count = -1,
-                                                     size_t max_block_size = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE,
-                                                     size_t max_transaction_size = -1,
-                                                     share_type min_transaction_fee = BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE,
-                                                     const fc::microseconds& max_block_production_time = fc::seconds( 3 ) );
+                                                     const delegate_config& config = delegate_config() );
 
          /**
           *  The chain ID is the hash of the initial_config loaded when the
           *  database was first created.
           */
-         digest_type                 chain_id()const;
+         virtual digest_type         chain_id()const override;
 
-         optional<block_fork_data>   get_block_fork_data( const block_id_type& )const; //is_known_block( const block_id_type& block_id )const;
+         optional<block_fork_data>   get_block_fork_data( const block_id_type& )const;
          bool                        is_known_block( const block_id_type& id )const;
          bool                        is_included_block( const block_id_type& id )const;
-         //optional<block_fork_data> is_included_block( const block_id_type& block_id )const;
 
          fc::ripemd160               get_current_random_seed()const override;
 
@@ -367,6 +363,7 @@ namespace bts { namespace blockchain {
          virtual void                       set_feed( const feed_record& )override;
          virtual ofeed_record               get_feed( const feed_index& )const override;
 
+         map<std::string, share_type>       generate_snapshot()const;
          asset                              calculate_supply( const asset_id_type& asset_id )const;
          asset                              calculate_debt( const asset_id_type& asset_id, bool include_interest = false )const;
          asset                              unclaimed_genesis();

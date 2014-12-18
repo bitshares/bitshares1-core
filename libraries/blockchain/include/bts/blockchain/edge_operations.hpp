@@ -17,7 +17,7 @@ namespace bts { namespace blockchain {
 
       set_edge_operation(){}
       set_edge_operation( const edge_record& edge )
-          :edge(object_record( edge, 0 ))
+          :edge(object_record( edge, edge_object, 0 ))
       {}
 
       object_record edge;

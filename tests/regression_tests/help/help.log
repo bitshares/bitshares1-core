@@ -19,6 +19,7 @@ blockchain_calculate_debt <asset> [include_interest]
 blockchain_calculate_supply <asset>                                                                 
 blockchain_dump_state <path>                                                                        
 blockchain_export_fork_graph [start_block] [end_block] [filename]                                   
+blockchain_generate_snapshot                                                                        
 blockchain_get_account <account>                                                                    
 blockchain_get_account_public_balance <account_name>                                                
 blockchain_get_account_wall [account_name]                                                          
@@ -83,6 +84,18 @@ debug_wait <wait_time>
 debug_wait_block_interval <wait_time_in_block_intervals>                                            
 debug_wait_for_block_by_number <block_number> [type]                                                
 debug_write_errors_to_file [path] [start_time]                                                      
+delegate_blacklist_add_operation <id>                                                               
+delegate_blacklist_add_transaction <id>                                                             
+delegate_blacklist_remove_operation <id>                                                            
+delegate_blacklist_remove_transaction <id>                                                          
+delegate_get_config                                                                                 
+delegate_set_block_max_production_time <time>                                                       
+delegate_set_block_max_size <size>                                                                  
+delegate_set_block_max_transaction_count <count>                                                    
+delegate_set_network_min_connection_count <count>                                                   
+delegate_set_transaction_canonical_signatures_required <required>                                   
+delegate_set_transaction_max_size <size>                                                            
+delegate_set_transaction_min_fee <fee>                                                              
 disk_usage                                                                                          
 execute_command_line <input>                                                                        
 execute_script <script>                                                                             

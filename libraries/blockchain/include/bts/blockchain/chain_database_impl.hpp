@@ -120,14 +120,15 @@ namespace bts { namespace blockchain {
 
             bts::db::level_map<block_id_type,full_block>                                _block_id_to_block_data_db;
 
+            // Only map where we use trx digest instead of id
             map<fc::time_point_sec, unordered_set<digest_type> >                        _unique_transactions;
             bts::db::level_map<transaction_id_type,transaction_record>                  _id_to_transaction_record_db;
 
             signed_block_header                                                         _head_block_header;
             block_id_type                                                               _head_block_id;
 
-            bts::db::level_map<digest_type, signed_transaction>                         _pending_transaction_db;
-            std::map<fee_index, transaction_evaluation_state_ptr>                          _pending_fee_index;
+            bts::db::level_map<transaction_id_type, signed_transaction>                 _pending_transaction_db;
+            std::map<fee_index, transaction_evaluation_state_ptr>                       _pending_fee_index;
 
             bts::db::cached_level_map<asset_id_type, asset_record>                      _asset_db;
             bts::db::cached_level_map<string, asset_id_type>                            _symbol_index_db;

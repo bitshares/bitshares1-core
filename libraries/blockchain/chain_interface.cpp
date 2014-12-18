@@ -164,13 +164,14 @@ namespace bts { namespace blockchain {
    multisig_condition   chain_interface::get_object_condition( const object_id_type& id, int depth )
    { try {
        auto oobj = get_object_record( id );
-       FC_ASSERT( oobj.valid(), "No such object!" );
+       FC_ASSERT( oobj.valid(), "No such object (id: ${id}", ("id", id) );
        return get_object_condition( *oobj, depth );
    } FC_CAPTURE_AND_RETHROW( (id ) ) }
 
 
    multisig_condition   chain_interface::get_object_condition( const object_record& obj, int depth )
    { try {
+       ilog("@n getting object condition for object: ${o}", ("o", obj));
        if( depth >= 100 )//BTS_OWNER_DEPENDENCY_MAX_DEPTH )
            FC_ASSERT(!"Cannot determine object condition.");
        multisig_condition condition;
@@ -279,31 +280,39 @@ namespace bts { namespace blockchain {
 
    asset chain_interface::to_ugly_asset(const std::string& amount, const std::string& symbol) const
    { try {
-      auto record = get_asset_record( symbol );
+      const auto record = get_asset_record( symbol );
       if( !record ) FC_CAPTURE_AND_THROW( unknown_asset_symbol, (symbol) );
+      asset ugly_asset(0, record->id);
 
-      auto decimal = amount.find(".");
-      if( decimal == string::npos )
-         return asset(atoll(amount.c_str()) * record->precision, record->id);
+      const auto decimal = amount.find(".");
+      ugly_asset.amount += atoll(amount.substr(0, decimal).c_str()) * record->precision;
 
-      share_type whole = atoll(amount.substr(0, decimal).c_str()) * record->precision;
-      string fraction_string = amount.substr(decimal+1);
-      share_type fraction = atoll(fraction_string.c_str());
-
-      if( fraction_string.empty() || fraction <= 0 )
-         return asset(whole, record->id);
-
-      while( fraction < record->precision )
-         fraction *= 10;
-      while( fraction > record->precision )
-         fraction /= 10;
-      while( fraction_string.size() && fraction_string[0] == '0')
+      if( decimal != string::npos )
       {
-         fraction /= 10;
-         fraction_string.erase(0, 1);
+          string fraction_string = amount.substr(decimal+1);
+          share_type fraction = atoll(fraction_string.c_str());
+
+          if( !fraction_string.empty() && fraction > 0 )
+          {
+              while( fraction < record->precision )
+                 fraction *= 10;
+              while( fraction >= record->precision )
+                 fraction /= 10;
+              while( fraction_string.size() && fraction_string[0] == '0')
+              {
+                 fraction /= 10;
+                 fraction_string.erase(0, 1);
+              }
+
+              if( ugly_asset.amount >= 0 )
+                  ugly_asset.amount += fraction;
+              else
+                  ugly_asset.amount -= fraction;
+          }
       }
-      return asset(whole >= 0? whole + fraction : whole - fraction, record->id);
-       } FC_CAPTURE_AND_RETHROW( (amount)(symbol) ) }
+
+      return ugly_asset;
+   } FC_CAPTURE_AND_RETHROW( (amount)(symbol) ) }
 
    price chain_interface::to_ugly_price(const std::string& price_string,
                                         const std::string& base_symbol,
