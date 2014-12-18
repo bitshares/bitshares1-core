@@ -3415,28 +3415,26 @@ namespace bts { namespace blockchain {
            string claimer;
            const balance_record balance = balance_itr.value();
            if( balance.snapshot_info.valid() )
+           {
                claimer = balance.snapshot_info->original_address;
+           }
            else
-               claimer = string( balance.owner() );
-
-           if( snapshot.find( claimer ) != snapshot.end() )
-               snapshot[claimer] += balance.get_spendable_balance( now() ).amount;
-           else
-               snapshot[claimer] = balance.get_spendable_balance( now() ).amount;
+           {
+               const auto owner = balance.owner();
+               if( !owner.valid() ) continue;
+               claimer = string( *owner );
+           }
+           snapshot[claimer] += balance.get_spendable_balance( now() ).amount;
        }
 
        // pay balances
        for( auto account_itr = my->_account_db.begin(); account_itr.valid(); ++account_itr )
        {
            const account_record account = account_itr.value();
-           if( account.delegate_info.valid() )
+           if( account.delegate_info.valid() && !account.is_retracted() )
            {
                auto address = string( account.active_address() );
-               if( snapshot.find( address ) != snapshot.end() )
-                   snapshot[address] += account.delegate_info->pay_balance;
-               else
-                   snapshot[address] = account.delegate_info->pay_balance;
-
+               snapshot[address] += account.delegate_info->pay_balance;
            }
        }
 
@@ -3448,12 +3446,11 @@ namespace bts { namespace blockchain {
            {
                auto address = string( ask_itr.key().owner );
                auto balance = ask_itr.value().balance;
-               if( snapshot.find( address ) != snapshot.end() )
-                   snapshot[address] += balance;
-               else
-                   snapshot[address] = balance;
+               snapshot[address] += balance;
            }
        }
+
+       // relative ask balances
        for( auto ask_itr = my->_relative_ask_db.begin(); ask_itr.valid(); ++ask_itr )
        {
            const market_index_key market_index = ask_itr.key();
@@ -3461,10 +3458,7 @@ namespace bts { namespace blockchain {
            {
                auto address = string( ask_itr.key().owner );
                auto balance = ask_itr.value().balance;
-               if( snapshot.find( address ) != snapshot.end() )
-                   snapshot[address] += balance;
-               else
-                   snapshot[address] = balance;
+               snapshot[address] += balance;
            }
        }
 
@@ -3473,10 +3467,7 @@ namespace bts { namespace blockchain {
        {
            auto address = string( short_itr.key().owner );
            auto balance = short_itr.value().balance;
-           if( snapshot.find( address ) != snapshot.end() )
-               snapshot[address] += balance;
-           else
-               snapshot[address] = balance;
+           snapshot[address] += balance;
        }
 
        // Add collateral balances
@@ -3484,18 +3475,16 @@ namespace bts { namespace blockchain {
        {
            auto address = string( collateral_itr.key().owner );
            auto balance = collateral_itr.value().collateral_balance;
-           if( snapshot.find( address ) != snapshot.end() )
-               snapshot[address] += balance;
-           else
-               snapshot[address] = balance;
+           snapshot[address] += balance;
        }
 
-
+       // Erase empty balances
        for( const auto& pair : snapshot )
        {
            if( pair.second == 0 )
                snapshot.erase( pair.first );
        }
+
        return snapshot;
    }
 

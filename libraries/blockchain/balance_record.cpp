@@ -8,12 +8,17 @@ namespace bts { namespace blockchain {
        condition = withdraw_condition( withdraw_with_signature( owner ), balance_arg.asset_id, delegate_id );
    }
 
-   // TODO: deprecate?
-   address balance_record::owner()const
+   optional<address> balance_record::owner()const
    {
-       const auto& addrs = this->owners();
-       FC_ASSERT( !addrs.empty(), "This balance is screwed." );
-       return *addrs.begin();
+       switch( withdraw_condition_types( condition.type ) )
+       {
+           case withdraw_signature_type:
+               return condition.as<withdraw_with_signature>().owner;
+           case withdraw_vesting_type:
+               return condition.as<withdraw_vesting>().owner;
+           default:
+               return optional<address>();
+       }
    }
 
    set<address> balance_record::owners()const
@@ -26,8 +31,13 @@ namespace bts { namespace blockchain {
                return set<address>{ condition.as<withdraw_vesting>().owner };
            case withdraw_multisig_type:
                return condition.as<withdraw_with_multisig>().owners;
+           case withdraw_escrow_type:
+           {
+               const auto escrow = condition.as<withdraw_with_escrow>();
+               return set<address>{ escrow.sender, escrow.receiver, escrow.escrow };
+           }
            default:
-               FC_ASSERT(!"This balance's condition type doesn't have a true owner.");
+               return set<address>();
        }
    }
 
