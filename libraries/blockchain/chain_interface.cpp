@@ -110,7 +110,7 @@ namespace bts { namespace blockchain {
        static const uint32_t blocks_per_two_weeks = 14 * BTS_BLOCKCHAIN_BLOCKS_PER_DAY;
        const share_type max_total_pay_per_two_weeks = blocks_per_two_weeks * get_max_delegate_pay_issued_per_block();
        const share_type max_pay_per_two_weeks = max_total_pay_per_two_weeks / BTS_BLOCKCHAIN_NUM_DELEGATES;
-       const share_type registration_fee = (max_pay_per_two_weeks * pay_rate) / 100;
+       const share_type registration_fee = (max_pay_per_two_weeks * pay_rate) / 10;
        FC_ASSERT( registration_fee > 0 );
        return registration_fee;
    }
@@ -121,7 +121,7 @@ namespace bts { namespace blockchain {
            return get_asset_registration_fee_v1();
 
        // TODO: Add #define's for these fixed prices
-       static const share_type long_symbol_price = 500 * BTS_BLOCKCHAIN_PRECISION; // $10 at $0.02/XTS
+       static const share_type long_symbol_price = 5000 * BTS_BLOCKCHAIN_PRECISION;
        static const share_type short_symbol_price = 1000 * long_symbol_price;
        FC_ASSERT( long_symbol_price > 0 );
        FC_ASSERT( short_symbol_price > long_symbol_price );

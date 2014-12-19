@@ -28,7 +28,7 @@
 #define BTS_BLOCKCHAIN_MIN_YIELD_PERIOD_SEC                 (60*60*24) // 24 hours
 
 #define BTS_BLOCKCHAIN_MIN_BURN_FEE                         BTS_BLOCKCHAIN_PRECISION * 1 // 1 XTS
-#define BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE                    10000 // XTS
+#define BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE                    100000 // XTS
 #define BTS_BLOCKCHAIN_MINIMUM_SHORT_ORDER_SIZE             (BTS_BLOCKCHAIN_PRECISION*100)
 
 #ifdef BTS_TEST_NETWORK
@@ -53,7 +53,7 @@
 
 #define BTS_BLOCKCHAIN_ENABLE_NEGATIVE_VOTES                false
 
-#define BTS_MAX_DELEGATE_PAY_PER_BLOCK                      int64_t( 50 * BTS_BLOCKCHAIN_PRECISION ) // 50 XTS
+#define BTS_MAX_DELEGATE_PAY_PER_BLOCK                      int64_t( 500 * BTS_BLOCKCHAIN_PRECISION ) // 500 DVS
 
 /**
  * To prevent a delegate from producing blocks on split network,
