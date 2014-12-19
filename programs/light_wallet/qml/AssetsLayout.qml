@@ -8,7 +8,9 @@ Item {
    property real minimumWidth: Math.max(assetHeaderRow.Layout.minimumWidth,
                                         assetsLayout.Layout.minimumWidth)
                                + visuals.margins * 2
-   property real minimumHeight: assetsLayout.y + assetsLayout.Layout.minimumHeight + visuals.margins * 2
+   property real minimumHeight: assetsHeader.height + Math.max(noAssetsText.implicitHeight,
+                                                               assetsLayout.Layout.minimumHeight)
+                                + visuals.margins * 2
 
    signal lockRequested
 
@@ -50,7 +52,7 @@ Item {
       anchors.bottomMargin: visuals.margins
       width: parent.width - visuals.margins * 2
       x: visuals.margins
-      
+
       ScrollView {
          id: assetList
          Layout.fillWidth: true
@@ -80,8 +82,9 @@ Item {
       }
    }
    Label {
-      anchors.fill: assetsLayout
-      anchors.margins: visuals.margins
+      id: noAssetsText
+      anchors.centerIn: assetsLayout
+      width: parent.width - visuals.margins * 2
       color: visuals.lightTextColor
       font.pixelSize: visuals.textBaseSize * 2
       text: qsTr("You don't have any assets yet. When you do, they'll be listed here.")
@@ -89,5 +92,6 @@ Item {
       verticalAlignment: Text.AlignVCenter
       visible: wallet.balances.length === 0
       opacity: .5
+      z: -1
    }
 }
