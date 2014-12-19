@@ -266,16 +266,39 @@ namespace bts { namespace blockchain {
             ++account_id;
          }
 
+         const auto convert_raw_address = []( const string& raw_address ) -> address
+         {
+             static const vector<string> bts_prefixes{ "XTS", "BTSX", "KEY", "BTS", "DVS" };
+             try
+             {
+                 return address( pts_address( raw_address ) );
+             }
+             catch( const fc::exception& )
+             {
+                 for( const string& prefix : bts_prefixes )
+                 {
+                     if( raw_address.find( prefix ) == 0 )
+                     {
+                         return address( BTS_ADDRESS_PREFIX + raw_address.substr( prefix.size() ) );
+                     }
+                 }
+             }
+             FC_THROW_EXCEPTION( invalid_pts_address, "Invalid raw address format!", ("raw_address",raw_address) );
+         };
+
          int64_t n = 0;
          for( const auto& item : config.balances )
          {
+            const string& raw_address = item.first;
+            const share_type balance = item.second;
+
             ++n;
 
-            fc::uint128 initial( int64_t(item.second/1000) );
+            fc::uint128 initial( int64_t( balance / 1000 ) );
             initial *= fc::uint128(int64_t(BTS_BLOCKCHAIN_INITIAL_SHARES));
             initial /= total_unscaled;
 
-            const auto addr = pts_address( item.first );
+            const auto addr = convert_raw_address( raw_address );
             balance_record initial_balance( addr,
                                             asset( share_type( initial.low_bits() ), 0 ),
                                             0 /* Not voting for anyone */
@@ -285,7 +308,7 @@ namespace bts { namespace blockchain {
             auto cur = self->get_balance_record( initial_balance.id() );
             if( cur.valid() ) initial_balance.balance += cur->balance;
             const asset bal( initial_balance.balance, initial_balance.condition.asset_id );
-            initial_balance.snapshot_info = snapshot_record( item.first, bal.amount );
+            initial_balance.snapshot_info = snapshot_record( raw_address, bal.amount );
             initial_balance.last_update = config.timestamp;
             self->store_balance_record( initial_balance );
          }
@@ -295,21 +318,7 @@ namespace bts { namespace blockchain {
          for( const auto& item : config.bts_sharedrop )
          {
             withdraw_vesting data;
-            try {
-                string addr = item.raw_address;
-                if( addr.find( "KEY" ) == 0 )
-                    addr = BTS_ADDRESS_PREFIX + addr.substr( 3 );
-                data.owner = address( addr );
-            }
-            catch (...)
-            {
-                try
-                {
-                    data.owner = address( pts_address( item.raw_address ) );
-                }
-                FC_CAPTURE_AND_RETHROW( (item.raw_address) )
-            }
-
+            data.owner = convert_raw_address( item.raw_address );
             data.start_time = sharedrop_timestamp;
             data.duration = sharedrop_vesting_duration;
             data.original_balance = item.balance / 1000;
