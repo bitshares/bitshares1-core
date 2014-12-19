@@ -210,4 +210,65 @@ default (unlocked) >>> blockchain_market_status XMO XTS
   "last_valid_feed_price": 0,
   "last_error": null
 }
+default (unlocked) >>> wallet_account_list_public_keys testaccount1
+[{
+    "hex": "02048ef3922092ca1e0be14b8802f3fdf876684c3d33d3fff2dc77bdc268ac1ee9",
+    "native_pubkey": "XTS4vVntPW61PsnrBRW2BWEZkDYUT24b8WDhatR8EiPajChvj69Ng",
+    "native_address": "XTSLXnxCx9bLdcsjakazRtnkfcQuMcSi5JQ2",
+    "pts_normal_address": "PfNR19fD4QQaLbjLbjnAUpQJfVMtH9XQGH",
+    "pts_compressed_address": "PjxyaZbySCRqManPYjrJT5CZhEYjqYXqcq",
+    "btc_normal_address": "18Sds4y5JJTWYKvVEF8KKoAFREw4SgZRyJ",
+    "btc_compressed_address": "1D3CSUuqg6UmZJyYBFCTJ3xWSz7v393Uhn"
+  },{
+    "hex": "02f99ae9b5eb424360e4f179e3132ca67a2d2df352a6d9aeda39c4a748238f1731",
+    "native_pubkey": "XTS6nRBVJu1hGjujx2Sn9ZUqgYZmCLG3sWmJyB6eBYuzWMtC9xYht",
+    "native_address": "XTSPk9sVfubBjTLW8UwXRMjwFMthS6RHZNA1",
+    "pts_normal_address": "PpZxHot7kcsbpS8GK2xuHNrrHuFh8sJ8P7",
+    "pts_compressed_address": "PktKANN1HhbzrXfg4Ufy2sZv8oe1Ei7aJ7",
+    "btc_normal_address": "1HeB9jByzWvY2AKQwYK48Mco3epsH6gEfZ",
+    "btc_compressed_address": "1DxY2HfsXbew4Frpgz27srKrtZDBNK9RHU"
+  },{
+    "hex": "02d6a154a38bcbdb5d882c04a8c2b462e9e590b62cbec0f9209523a0356171fee7",
+    "native_pubkey": "XTS6X1o1C6RMJgqnKw2gwfFnPmt2ieHqXVc5SMRMfLczSeWqnTh69",
+    "native_address": "XTSH5JUayP3Af8bXYyqLEaogKqiLWorR4QSX",
+    "pts_normal_address": "PiaLDkpBgrAH1jjTWzyiEsSacUfUj8e9am",
+    "pts_compressed_address": "PgZqwVR5Bww3fxojgdHXraVnU83kSPQBwA",
+    "btc_normal_address": "1BeZ5g83vkDDDTvc9WKs5rCXNEEetDvW2y",
+    "btc_compressed_address": "19e4oQiwRqyysgztK8dghZFjDscvdGXTmt"
+  },{
+    "hex": "03165c0fcd4beda57672248370ecf334c13d7e712c06a0c91b2f27260a45204d13",
+    "native_pubkey": "XTS715gBnN92m1VfPmghxE68CQimPXBHY1diDYKhzfg3u5DQdpYN8",
+    "native_address": "XTS4TzLpL6oSKFa2xqmbRUX3BqKSivWE9nkH",
+    "pts_normal_address": "PsKUb8syvSqEZ9WVEbo73sRfPzNERkD4NR",
+    "pts_compressed_address": "PcbEQFTbbnf1B2GWDz7kNbAeWv3AgzXkGK",
+    "btc_normal_address": "1LPhT4BrALtAkshds79FtrBc9jwQXpk43J",
+    "btc_compressed_address": "15fTGAmTqghwNkTerVTuDZvbGfcLynxj2g"
+  },{
+    "hex": "03d3743e8a0ef6f3cc484e9610db99e13335d5618168fea6a06557b0e06aebee37",
+    "native_pubkey": "XTS8SMqiPMTXiM561hfZBumq8FfYiafJ1ePPEAAQTq7ud9emAEopY",
+    "native_address": "XTS9KPiow9Zhucq159AbfjnWixZGxquP7HTd",
+    "pts_normal_address": "PnjZ8DMCe4dRvRaQhrvKvsKNwCD6hJz8wz",
+    "pts_compressed_address": "PgPGCAtS5DHbXnYqrSz7HwwvohTKz8LaFN",
+    "btc_normal_address": "1Fomz8f4sxgN89mZLNGUmr5KgwnGvGPWfb",
+    "btc_compressed_address": "19TV46CJK7LXjWjzUxLG8vhsZT2WFvKFVi"
+  }
+]
+default (unlocked) >>> help blockchain_get_balance
+Usage:
+blockchain_get_balance <owner_address>                                                                Retrieves the balance record for the given address
+Retrieves the balance record for the given address
+
+Parameters:
+  owner_address (address, required): address of the balance owner
+
+Returns:
+  balance_record
+
+aliases: get_balance
+default (unlocked) >>> blockchain_get_balance XTSLXnxCx9bLdcsjakazRtnkfcQuMcSi5JQ2
+default (unlocked) >>> blockchain_get_balance XTSPk9sVfubBjTLW8UwXRMjwFMthS6RHZNA1
+default (unlocked) >>> blockchain_get_balance XTSH5JUayP3Af8bXYyqLEaogKqiLWorR4QSX
+default (unlocked) >>> blockchain_get_balance XTS4TzLpL6oSKFa2xqmbRUX3BqKSivWE9nkH
+default (unlocked) >>> blockchain_get_balance XTS9KPiow9Zhucq159AbfjnWixZGxquP7HTd
+
 default (unlocked) >>> quit

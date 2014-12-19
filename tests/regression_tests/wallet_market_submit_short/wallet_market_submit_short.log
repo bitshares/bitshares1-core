@@ -103,4 +103,19 @@ short_order         100.00000 XTS       1000. XMO / XTS               100.00000 
 short_order         100.00000 XTS       100. XMO / XTS                100.00000 XTS       10,000.00 XMO       N/A                 98941d73869a87027282aec7b00ea896e33b63fe
 short_order         100.00000 XTS       500. XMO / XTS                100.00000 XTS       50,000.00 XMO       N/A                 a29e1864ca0fa935031bfc36995b410df94cd595
 short_order         100.00000 XTS       3000. XMO / XTS               100.00000 XTS       300,000.00 XMO      N/A                 b54dafb1db1065b8c28d1e36df367bd84da2400f
+default (unlocked) >>> help blockchain_calculate_debt
+Usage:
+blockchain_calculate_debt <asset> [include_interest]                                                  Calculate the total amount of a market-issued asset that is owed to the network by open short positions
+Calculate the total amount of a market-issued asset that is owed to the network by open short positions
+
+Parameters:
+  asset (string, required): asset ticker symbol or ID to calculate debt for
+  include_interest (bool, optional, defaults to "false"): true to include current outstanding interest and false otherwise
+
+Returns:
+  asset
+
+aliases: debt, calculate_debt
+default (unlocked) >>> blockchain_calculate_debt XMO true
+0.00 XMO
 default (unlocked) >>> quit

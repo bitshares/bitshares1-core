@@ -19,7 +19,7 @@ blockchain_calculate_debt <asset> [include_interest]
 blockchain_calculate_supply <asset>                                                                 
 blockchain_dump_state <path>                                                                        
 blockchain_export_fork_graph [start_block] [end_block] [filename]                                   
-blockchain_generate_snapshot                                                                        
+blockchain_generate_snapshot <filename>                                                             
 blockchain_get_account <account>                                                                    
 blockchain_get_account_public_balance <account_name>                                                
 blockchain_get_account_wall [account_name]                                                          
