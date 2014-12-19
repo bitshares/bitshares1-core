@@ -1056,7 +1056,14 @@
                 "type": "bool",
                 "description": "",
                 "default_value": true
+            },
+            {
+              "name" : "builder_path",
+              "type" : "string",
+              "description" : "If specified, will write builder here instead of to DATA_DIR/transactions/latest.trx",
+              "default_value" : ""
             }
+
         ],
         "prerequisites": ["json_authenticated"],
         "aliases": ["withdraw_from_legacy_address"],
@@ -1116,13 +1123,19 @@
             {
                 "name": "builder",
                 "type": "transaction_builder",
-                "description": "A transaction builder object created by a wallet."
+                "description": "A transaction builder object created by a wallet. If null, tries to use builder in file."
             },
             {
                 "name": "broadcast",
                 "type": "bool",
                 "description": "Try to broadcast this transaction?",
                 "default_value": false
+            },
+            {
+              "name" : "builder_path",
+              "type" : "string",
+              "description" : "If specified, will write builder here instead of to DATA_DIR/transactions/latest.trx",
+              "default_value" : ""
             }
         ],
         "prerequisites": ["json_authenticated"],
@@ -2442,6 +2455,12 @@
                   "type" : "bool",
                   "description" : "",
                   "default_value" : "true"
+               },
+               {
+                  "name" : "builder_path",
+                  "type" : "string",
+                  "description" : "If specified, will write builder here instead of to DATA_DIR/transactions/latest.trx",
+                  "default_value" : ""
                }
             ],
          "prerequisites" : ["wallet_open"],

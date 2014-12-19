@@ -419,7 +419,8 @@ transaction_builder detail::client_impl::wallet_withdraw_from_legacy_address(
                                                     const pts_address& from_address,
                                                     const string& to,
                                                     const vote_selection_method& vote_method,
-                                                    bool sign )const
+                                                    bool sign,
+                                                    const string& builder_path )const
 {
     address to_address;
     try {
@@ -436,6 +437,7 @@ transaction_builder detail::client_impl::wallet_withdraw_from_legacy_address(
     builder->finalize( false );
     if( sign )
         builder->sign();
+    _wallet->write_latest_builder( *builder, builder_path );
     return *builder;
 }
 
@@ -461,8 +463,10 @@ transaction_builder detail::client_impl::wallet_multisig_withdraw_start(
 
 transaction_builder detail::client_impl::wallet_builder_add_signature(
                                             const transaction_builder& builder,
-                                            bool broadcast )
+                                            bool broadcast,
+                                            const string& builder_path )
 { try {
+    auto path = builder_path;
     auto b2 = _wallet->create_transaction_builder( builder );
     if( b2->transaction_record.trx.signatures.empty() )
         b2->finalize( false );
@@ -476,6 +480,9 @@ transaction_builder detail::client_impl::wallet_builder_add_signature(
             ulog("Transaction was invalid!");
         }
     }
+    if( path == "" )
+        path = (_wallet->get_data_directory() / "trx").string() + "latest.trx";
+    _wallet->write_latest_builder( *b2, path );
     return *b2;
 } FC_CAPTURE_AND_RETHROW( (builder)(broadcast) ) }
 
@@ -1399,7 +1406,8 @@ fc::variant client_impl::wallet_login_finish(const public_key_type &server_key,
 transaction_builder client_impl::wallet_balance_set_vote_info(const balance_id_type& balance_id,
                                                               const string& voter_address,
                                                               const vote_selection_method& selection_method,
-                                                              bool sign_and_broadcast)
+                                                              bool sign_and_broadcast,
+                                                              const string& builder_path )
 {
     address new_voter;
     if( voter_address == "" )
@@ -1421,6 +1429,7 @@ transaction_builder client_impl::wallet_balance_set_vote_info(const balance_id_t
         _wallet->cache_transaction( record );
         network_broadcast_transaction( record.trx );
     }
+    _wallet->write_latest_builder( *builder, builder_path );
     return *builder;
 }
 
