@@ -1,9 +1,9 @@
 import QtQuick 2.4
 import QtQuick.Controls 1.3
-import QtQuick.Controls.Styles 1.3
 import QtQuick.Window 2.2
 import QtQuick.Layouts 1.1
 
+import "utils.js" as Utils
 import org.BitShares.Types 1.0
 
 ApplicationWindow {
@@ -12,9 +12,35 @@ ApplicationWindow {
    width: 540
    height: 960
    color: visuals.backgroundColor
+   minimumWidth: walletGui.minimumWidth
+   minimumHeight: walletGui.minimumHeight
 
    readonly property int orientation: window.width < window.height? Qt.PortraitOrientation : Qt.LandscapeOrientation
 
+   function connectToServer() {
+      if( !wallet.connected )
+         wallet.connectToServer("localhost", 3333)
+   }
+   function showError(error) {
+      errorText.text = qsTr("Error: ") + error
+      return d.currentError = d.errorSerial++
+   }
+   function clearError(errorId) {
+      if( d.currentError === errorId )
+         errorText.text = ""
+   }
+
+   Component.onCompleted: {
+      if( wallet.walletExists )
+         wallet.openWallet()
+      connectToServer()
+   }
+
+   QtObject {
+      id: d
+      property int errorSerial: 0
+      property int currentError: -1
+   }
    QtObject {
       id: visuals
 
@@ -25,6 +51,7 @@ ApplicationWindow {
       property color buttonHoverColor: "#2BB4FF"
       property color buttonPressedColor: "#264D87"
       property color buttonTextColor: "white"
+      property color errorGlowColor: "red"
 
       property real spacing: 40
       property real margins: 20
@@ -32,50 +59,46 @@ ApplicationWindow {
       property real textBaseSize: window.orientation === Qt.PortraitOrientation?
                                      window.height * .02 : window.width * .03
    }
-
+   Timer {
+      id: reconnectPoller
+      running: !wallet.connected
+      interval: 5000
+      repeat: true
+      onTriggered: connectToServer()
+   }
    LightWallet {
       id: wallet
+
+      function runWhenConnected(fn) {
+         Utils.connectOnce(wallet.onConnectedChanged, fn, function() { return connected })
+      }
+
+      onErrorConnecting: {
+         var errorId = showError(error)
+
+         runWhenConnected(function() {
+            clearError(errorId)
+         })
+      }
    }
 
-   ColumnLayout {
+   WalletGui {
+      id: walletGui
       anchors.fill: parent
-      anchors.margins: visuals.margins
-      spacing: visuals.spacing
+   }
 
-      Item {
-         Layout.preferredHeight: window.orientation === Qt.PortraitOrientation?
-                                    window.height / 4 : window.height / 6
-      }
-      Label {
-         anchors.horizontalCenter: parent.horizontalCenter
-         horizontalAlignment: Text.AlignHCenter
-         text: "Welcome to BitShares"
-         color: visuals.textColor
-         font.pixelSize: visuals.textBaseSize * 1.5
-         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
-      }
-      Label {
-         anchors.horizontalCenter: parent.horizontalCenter
-         visible: !wallet.walletExists
-         text: "To get started, create a password below"
-         color: visuals.lightTextColor
-         font.pixelSize: visuals.textBaseSize
-         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
-      }
-      ColumnLayout {
-         Layout.fillWidth: true
-         PasswordField {
-            Layout.fillWidth: true
-            id: passwordField
-            placeholderText: qsTr("Create a Password")
+   statusBar: StatusBar {
+      RowLayout {
+         width: parent.width
+
+         Label {
+            id: statusText
+            text: wallet.connected? qsTr("Connected") : qsTr("Disconnected")
          }
-         Button {
-            style: WalletButtonStyle {}
-            text: "Begin"
-            Layout.fillWidth: true
-            Layout.preferredHeight: passwordField.height
+         Item { Layout.fillWidth: true }
+         Label {
+            id: errorText
          }
       }
-      Item { Layout.fillHeight: true }
    }
 }

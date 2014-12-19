@@ -59,11 +59,11 @@ namespace bts { namespace light_wallet {
          bool is_unlocked()const;
          void change_password( const string& new_password );
 
-         void create( const fc::path& wallet_json, 
-                      const string& password, 
+         void create(const fc::path& wallet_json, const std::string& account_name,
+                      const string& password,
                       const string& brain_seed, const string& salt = string() );
 
-         void request_register_account( const string& account_name );
+         bool request_register_account();
          
          void transfer( double amount, 
                         const string& symbol, 

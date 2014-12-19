@@ -5,7 +5,7 @@ add_library( bts_light_wallet
              ${HEADERS}
            )
 
-target_link_libraries( bts_light_wallet fc bts_utilities bts_blockchain bts_rpc )
+target_link_libraries( bts_light_wallet fc bts_utilities bts_blockchain bts_rpc_stubs )
 target_include_directories( bts_light_wallet
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_BINARY_DIR}/include" )
 
