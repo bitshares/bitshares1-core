@@ -47,7 +47,7 @@ struct chain_fixture
 
       //console.configure( {"",console_appender::stream::std_error,{},true} );
 
-      delegate_private_keys = 
+      delegate_private_keys =
         fc::json::from_string( R"(["3feb0fde257e07abce682c924289d62bdd20b2b4e4c7381a9b1e1c587da26a50",
                                 "b217221a26039680a407fd08281b75e15564edec82210b40aeda459ad5252a19",
                                 "72a41ecabead3111909509cf9297255ef88b649d5a124e7e5d1fc4f97248aac5",
@@ -150,20 +150,21 @@ struct chain_fixture
                                 "ca0517f7475722af9f585f7ff068b39bcb3c018860c25360ba9370dca8cc352d",
                                 "a3331c76c729494f18a479f4c9a5b17d936ec89fca24b6287b8a84ce1aea60a8"])").as<vector< fc::ecc::private_key>>();
 
-      genesis_block_config config;
-      config.timestamp         = bts::blockchain::now();
+      genesis_state config;
+      config.timestamp = bts::blockchain::now();
 
       for( uint32_t i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
       {
-         name_config delegate_account;
+         genesis_delegate delegate_account;
          delegate_account.name = "delegate" + fc::to_string(i);
          auto delegate_public_key = delegate_private_keys[i].get_public_key();
          delegate_account.owner = delegate_public_key;
-         delegate_account.delegate_pay_rate = 100;
-         
-         config.names.push_back(delegate_account);
-         config.balances.push_back( std::make_pair( pts_address(fc::ecc::public_key_data(delegate_account.owner)), 
-                                                    (double)BTS_BLOCKCHAIN_INITIAL_SHARES/BTS_BLOCKCHAIN_NUM_DELEGATES) );
+         config.delegates.push_back( delegate_account );
+
+         genesis_balance balance;
+         balance.raw_address = pts_address( fc::ecc::public_key_data( delegate_account.owner ) );
+         balance.balance = double( BTS_BLOCKCHAIN_INITIAL_SHARES ) / BTS_BLOCKCHAIN_NUM_DELEGATES;
+         config.initial_balances.push_back( balance );
       }
 
       fc::json::save_to_file( config, clienta_dir.path() / "genesis.json" );
@@ -206,7 +207,7 @@ struct chain_fixture
              exec( clientb, "wallet_import_private_key " + key_to_wif( key  ) );
          }
       }
-      
+
       } catch ( const fc::exception& e )
       {
          std::cerr << "exception: " << e.to_detail_string() <<"\n";
