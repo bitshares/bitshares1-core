@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <vector>
 
-#define BTS_EXPECTED_CHAIN_ID       digest_type( "acc8e6cfa1accae4ac907d96fd89207c63b0c80ecd4214261689d33b9acdd6af" )
+#define BTS_EXPECTED_CHAIN_ID       digest_type( "a2102104f63c0b2d0262c71ab3f1f58ccf8293d8cd059f94f28505c4af7d7ffe" )
 #define BTS_DESIRED_CHAIN_ID        digest_type( "75c11a81b7670bbaa721cc603eadb2313756f94a3bcbb9928e9101432701ac5f" )
 
 #define BTS_V0_4_0_FORK_BLOCK_NUM    274000
