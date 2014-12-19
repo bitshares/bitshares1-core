@@ -9,7 +9,7 @@ namespace bts { namespace blockchain {
   {
      std::string        name;
      public_key_type    owner;
-     uint8_t            delegate_pay_rate = -1;
+     uint8_t            delegate_pay_rate = 100;
   };
 
   struct asset_config // these are all market-issued assets
@@ -28,11 +28,11 @@ namespace bts { namespace blockchain {
 
   struct genesis_block_config
   {
-     fc::time_point_sec                             timestamp;
-     std::vector<asset_config>                      market_assets;
-     std::vector<name_config>                       names;
-     std::vector<std::pair<pts_address,share_type>> balances;
-     std::vector<special_balance_config>            bts_sharedrop;
+     fc::time_point_sec                         timestamp;
+     std::vector<asset_config>                  market_assets;
+     std::vector<name_config>                   names;
+     std::vector<std::pair<string,share_type>>  balances;
+     std::vector<special_balance_config>        bts_sharedrop;
   };
 
 } } // bts::blockchain
