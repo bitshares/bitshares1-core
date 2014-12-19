@@ -275,7 +275,7 @@ namespace bts { namespace blockchain {
             initial *= fc::uint128(int64_t(BTS_BLOCKCHAIN_INITIAL_SHARES));
             initial /= total_unscaled;
 
-            const auto addr = item.first;
+            const auto addr = pts_address( item.first );
             balance_record initial_balance( addr,
                                             asset( share_type( initial.low_bits() ), 0 ),
                                             0 /* Not voting for anyone */
@@ -285,7 +285,7 @@ namespace bts { namespace blockchain {
             auto cur = self->get_balance_record( initial_balance.id() );
             if( cur.valid() ) initial_balance.balance += cur->balance;
             const asset bal( initial_balance.balance, initial_balance.condition.asset_id );
-            initial_balance.snapshot_info = snapshot_record( string( addr ), bal.amount );
+            initial_balance.snapshot_info = snapshot_record( item.first, bal.amount );
             initial_balance.last_update = config.timestamp;
             self->store_balance_record( initial_balance );
          }
