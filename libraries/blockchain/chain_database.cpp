@@ -1051,6 +1051,7 @@ namespace bts { namespace blockchain {
 
             // self->sanity_check();
 
+            /*
             if( block_data.block_num == BTS_V0_4_16_FORK_BLOCK_NUM )
             {
                 auto base_asset_record = self->get_asset_record( asset_id_type( 0 ) );
@@ -1110,6 +1111,7 @@ namespace bts { namespace blockchain {
                     self->store_account_record( record );
                 }
             }
+            */
          }
          catch ( const fc::exception& e )
          {
