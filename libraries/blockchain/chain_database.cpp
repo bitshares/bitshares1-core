@@ -268,7 +268,7 @@ namespace bts { namespace blockchain {
 
          const auto convert_raw_address = []( const string& raw_address ) -> address
          {
-             static const vector<string> bts_prefixes{ "XTS", "BTSX", "KEY", "BTS", "DVS" };
+             static const vector<string> bts_prefixes{ "BTS", "KEY", "DVS", "XTS" };
              try
              {
                  return address( pts_address( raw_address ) );
@@ -294,13 +294,13 @@ namespace bts { namespace blockchain {
 
             ++n;
 
-            fc::uint128 initial( int64_t( balance / 1000 ) );
-            initial *= fc::uint128(int64_t(BTS_BLOCKCHAIN_INITIAL_SHARES));
-            initial /= total_unscaled;
+            //fc::uint128 initial( int64_t( balance / 1000 ) );
+            //initial *= fc::uint128(int64_t(BTS_BLOCKCHAIN_INITIAL_SHARES));
+            //initial /= total_unscaled;
 
             const auto addr = convert_raw_address( raw_address );
             balance_record initial_balance( addr,
-                                            asset( share_type( initial.low_bits() ), 0 ),
+                                            asset( balance, 0 ),
                                             0 /* Not voting for anyone */
                                           );
 
@@ -321,7 +321,7 @@ namespace bts { namespace blockchain {
             data.owner = convert_raw_address( item.raw_address );
             data.start_time = sharedrop_timestamp;
             data.duration = sharedrop_vesting_duration;
-            data.original_balance = item.balance / 1000;
+            data.original_balance = item.balance;// / 1000;
 
             withdraw_condition condition( data, 0, 0 );
             balance_record balance_rec( condition );
