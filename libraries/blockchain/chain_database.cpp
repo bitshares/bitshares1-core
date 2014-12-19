@@ -1051,7 +1051,7 @@ namespace bts { namespace blockchain {
 
             // self->sanity_check();
 
-            /*
+#if BTS_V0_4_16_FORK_BLOCK_NUM > 0
             if( block_data.block_num == BTS_V0_4_16_FORK_BLOCK_NUM )
             {
                 auto base_asset_record = self->get_asset_record( asset_id_type( 0 ) );
@@ -1059,9 +1059,19 @@ namespace bts { namespace blockchain {
                 base_asset_record->current_share_supply = self->calculate_supply( asset_id_type( 0 ) ).amount;
                 self->store_asset_record( *base_asset_record );
             }
-            else if( block_data.block_num == BTS_V0_4_17_FORK_BLOCK_NUM
-                     || block_data.block_num == BTS_V0_4_21_FORK_BLOCK_NUM
-                     || block_data.block_num == BTS_V0_4_24_FORK_BLOCK_NUM )
+#endif
+            {
+            bool apply_this_fork = false;
+#if BTS_V0_4_17_FORK_BLOCK_NUM > 0
+            apply_this_fork |= (block_data.block_num == BTS_V0_4_17_FORK_BLOCK_NUM);
+#endif
+#if BTS_V0_4_21_FORK_BLOCK_NUM > 0
+            apply_this_fork |= (block_data.block_num == BTS_V0_4_21_FORK_BLOCK_NUM);
+#endif
+#if BTS_V0_4_24_FORK_BLOCK_NUM > 0
+            apply_this_fork |= (block_data.block_num == BTS_V0_4_24_FORK_BLOCK_NUM);
+#endif
+            if( apply_this_fork )
             {
                 vector<asset_record> records;
                 records.reserve( 42 );
@@ -1091,7 +1101,9 @@ namespace bts { namespace blockchain {
                     self->store_asset_record( record );
                 }
             }
+            }
 
+#if BTS_V0_4_24_FORK_BLOCK_NUM > 0
             if( block_data.block_num == BTS_V0_4_24_FORK_BLOCK_NUM )
             {
                 vector<account_record> records;
@@ -1111,7 +1123,7 @@ namespace bts { namespace blockchain {
                     self->store_account_record( record );
                 }
             }
-            */
+#endif
          }
          catch ( const fc::exception& e )
          {

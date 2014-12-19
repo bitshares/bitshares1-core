@@ -61,7 +61,7 @@ void chain_database_impl::execute_markets_v1( const fc::time_point_sec& timestam
   vector<market_transaction> market_transactions;
 
   const auto pending_block_num = pending_state->get_head_block_num();
-  /*
+#if BTS_V0_4_17_FORK_BLOCK_NUM > 0
   if( pending_block_num == BTS_V0_4_17_FORK_BLOCK_NUM )
   {
      market_engine_v4 engine( pending_state, *this );
@@ -74,7 +74,7 @@ void chain_database_impl::execute_markets_v1( const fc::time_point_sec& timestam
      engine.cancel_all_shorts();
      market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
   }
-  */
+#endif
 
   const auto dirty_markets = self->get_dirty_markets();
   for( const auto& market_pair : dirty_markets )
