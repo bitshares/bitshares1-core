@@ -2488,7 +2488,7 @@ namespace detail {
        required_signatures.insert( delegate_private_key.get_public_key() );
 
        const auto delegate_public_key = delegate_private_key.get_public_key();
-       public_key_type receiver_public_key = get_owner_public_key( withdraw_to_account_name );
+       public_key_type receiver_public_key = get_active_public_key( withdraw_to_account_name );
 
        const auto slate_id = my->select_slate( trx );
        const string memo_message = "withdraw pay";
