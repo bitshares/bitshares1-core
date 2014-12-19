@@ -32,7 +32,7 @@ Item {
          Item { Layout.fillWidth: true }
          Label {
             color: visuals.textColor
-            font.pointSize: visuals.textBaseSize * 1.1
+            font.pixelSize: visuals.textBaseSize * 1.1
             text: wallet.accountName + qsTr("'s Assets")
          }
          Item { Layout.fillWidth: true }
@@ -52,8 +52,42 @@ Item {
       x: visuals.margins
       
       ScrollView {
+         id: assetList
          Layout.fillWidth: true
          Layout.fillHeight: true
+         flickableItem.interactive: true
+         // @disable-check M16 -- For some reason, QtC doesn't recognize this property...
+         verticalScrollBarPolicy: Qt.platform.os in ["android", "ios"]? Qt.ScrollBarAsNeeded : Qt.ScrollBarAlwaysOff
+
+         ListView {
+            spacing: visuals.spacing / 4
+            model: wallet.balances
+            delegate: RowLayout {
+               width: parent.width
+               Label {
+                  color: visuals.textColor
+                  text: symbol
+                  font.pixelSize: visuals.textBaseSize * 2
+               }
+               Item { Layout.fillWidth: true }
+               Label {
+                  color: visuals.textColor
+                  text: amount
+                  font.pixelSize: visuals.textBaseSize * 2
+               }
+            }
+         }
       }
+   }
+   Label {
+      anchors.fill: assetsLayout
+      anchors.margins: visuals.margins
+      color: visuals.lightTextColor
+      font.pixelSize: visuals.textBaseSize * 2
+      text: qsTr("You don't have any assets yet. When you do, they'll be listed here.")
+      wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+      verticalAlignment: Text.AlignVCenter
+      visible: wallet.balances.length === 0
+      opacity: .5
    }
 }

@@ -26,6 +26,11 @@ QString LightWallet::accountName() const
    return convert(m_wallet._data->user_account.name);
 }
 
+QQmlListProperty<Balance> LightWallet::balances()
+{
+   return QQmlListProperty<Balance>(this, m_balanceCache);
+}
+
 void LightWallet::connectToServer(QString host, quint16 port, QString user, QString password)
 {
    IN_THREAD
