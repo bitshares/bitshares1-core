@@ -31,7 +31,11 @@ public:
       qDebug() << "Creating data directory:" << path;
       QDir(path).mkpath(".");
    }
-   ~LightWallet(){}
+   virtual ~LightWallet()
+   {
+      m_walletThread.quit();
+      m_wallet.save();
+   }
 
    bool walletExists() const;
    bool isConnected() const

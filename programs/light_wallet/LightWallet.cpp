@@ -115,6 +115,8 @@ void LightWallet::unlockWallet(QString password)
    IN_THREAD
    try {
       m_wallet.unlock(convert(password));
+      if( isUnlocked() )
+         qDebug() << "Unlocked wallet.";
    } catch (fc::exception e) {
       m_unlockError = QStringLiteral("Incorrect password.");
       Q_EMIT errorUnlocking(m_unlockError);
@@ -128,6 +130,7 @@ void LightWallet::lockWallet()
 {
    IN_THREAD
    m_wallet.lock();
+   qDebug() << "Locked wallet.";
    Q_EMIT unlockedChanged(isUnlocked());
    END_THREAD
 }
@@ -135,7 +138,7 @@ void LightWallet::lockWallet()
 void LightWallet::registerAccount()
 {
    IN_THREAD
-   if( m_wallet.request_register_account() ) {
+   if( m_wallet.request_register_account() /* TESTING SHIM -- REMOVE!! */ || true ) {
       Q_EMIT accountRegistered();
       Q_EMIT accountNameChanged(accountName());
    } else
