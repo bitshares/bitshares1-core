@@ -353,30 +353,6 @@ namespace bts { namespace blockchain {
              self->store_asset_record( rec );
          }
 
-         /*
-         static const time_point_sec sharedrop_timestamp( 1415188800 ); // 2014-11-06 00:00:00 UTC
-         static const uint32_t sharedrop_vesting_duration( fc::days( 2 * 365 ).to_seconds() ); // 2 years
-         for( const auto& item : config.bts_sharedrop )
-         {
-            withdraw_vesting data;
-            data.owner = convert_raw_address( item.raw_address );
-            data.start_time = sharedrop_timestamp;
-            data.duration = sharedrop_vesting_duration;
-            data.original_balance = item.balance;// / 1000;
-
-            withdraw_condition condition( data, 0, 0 );
-            balance_record balance_rec( condition );
-            balance_rec.balance = data.original_balance;
-
-            auto cur = self->get_balance_record( balance_rec.id() );
-            if( cur.valid() ) balance_rec.balance += cur->balance;
-            balance_rec.last_update = sharedrop_timestamp;
-            const asset bal( balance_rec.balance, balance_rec.condition.asset_id );
-            balance_rec.snapshot_info = snapshot_record( item.raw_address, bal.amount );
-            self->store_balance_record( balance_rec );
-         }
-         */
-
          //add fork_data for the genesis block to the fork database
          block_fork_data gen_fork;
          gen_fork.is_valid = true;
