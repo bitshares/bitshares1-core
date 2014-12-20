@@ -26,6 +26,8 @@
 #include <fc/log/file_appender.hpp>
 #include <fc/log/logger_config.hpp>
 
+#define BTS_BLOCKCHAIN_INITIAL_SHARES (BTS_BLOCKCHAIN_MAX_SHARES/5)
+
 using namespace bts::blockchain;
 using namespace bts::wallet;
 using namespace bts::utilities;

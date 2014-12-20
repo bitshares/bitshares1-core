@@ -48,6 +48,8 @@
 #include <bts/net/message.hpp>
 #include <bts/net/config.hpp>
 
+#define BTS_BLOCKCHAIN_INITIAL_SHARES (BTS_BLOCKCHAIN_MAX_SHARES/5)
+
 using namespace bts::utilities;
 using namespace bts::blockchain;
 using namespace bts::wallet;

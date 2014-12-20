@@ -48,11 +48,6 @@
  */
 #define BTS_BLOCKCHAIN_MAX_SHARES                           (1000*1000*int64_t(1000)*1000*int64_t(1000))
 
-/**
- * Initial shares read from the genesis block are scaled to this number.
- */
-#define BTS_BLOCKCHAIN_INITIAL_SHARES                       (BTS_BLOCKCHAIN_MAX_SHARES/5)
-
 #define BTS_BLOCKCHAIN_MIN_NAME_SIZE                        1
 #define BTS_BLOCKCHAIN_MAX_NAME_SIZE                        63
 #define BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE                   (1024*64)
