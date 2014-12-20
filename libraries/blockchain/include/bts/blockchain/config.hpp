@@ -19,10 +19,10 @@
  *
  *  Changing these parameters will result in a hard fork.
  */
-#define BTS_ADDRESS_PREFIX                                  "DVS"
-#define BTS_BLOCKCHAIN_SYMBOL                               "DVS"
-#define BTS_BLOCKCHAIN_NAME                                 "DevShares"
-#define BTS_BLOCKCHAIN_DESCRIPTION                          "BitShares Development Network"
+#define BTS_ADDRESS_PREFIX                                  "BTS"
+#define BTS_BLOCKCHAIN_SYMBOL                               "BTS"
+#define BTS_BLOCKCHAIN_NAME                                 "BitShares"
+#define BTS_BLOCKCHAIN_DESCRIPTION                          "Life, Liberty, and Property for All"
 #define BTS_BLOCKCHAIN_PRECISION                            100000
 
 #define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC                   int64_t(10)
@@ -31,7 +31,7 @@
 #define BTS_BLOCKCHAIN_BLOCKS_PER_YEAR                      (BTS_BLOCKCHAIN_BLOCKS_PER_DAY*int64_t(365))
 
 #define BTS_BLOCKCHAIN_NUM_DELEGATES                        uint32_t(101)
-#define BTS_MAX_DELEGATE_PAY_PER_BLOCK                      int64_t( 500 * BTS_BLOCKCHAIN_PRECISION ) // 500 DVS
+#define BTS_MAX_DELEGATE_PAY_PER_BLOCK                      int64_t( 50 * BTS_BLOCKCHAIN_PRECISION ) // 50 XTS
 #define BTS_BLOCKCHAIN_MAX_UNDO_HISTORY                     BTS_BLOCKCHAIN_BLOCKS_PER_DAY
 
 #define BTS_BLOCKCHAIN_MAX_SLATE_SIZE                       (BTS_BLOCKCHAIN_NUM_DELEGATES + (BTS_BLOCKCHAIN_NUM_DELEGATES/10))
@@ -79,6 +79,6 @@
 #endif
 
 // TODO: This stuff only matters for propagation throttling; should go somewhere else
-#define BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE                    100000 // XTS
+#define BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE                    10000 // XTS
 #define BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND                   1  // (10)
 #define BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE               10 // (BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)
