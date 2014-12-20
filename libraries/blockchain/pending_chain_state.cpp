@@ -134,7 +134,8 @@ namespace bts { namespace blockchain {
       for( const auto& item : properties )
       {
          auto prev_value = prev_state->get_property( (chain_property_enum)item.first );
-         undo_state->set_property( (chain_property_enum)item.first, prev_value );
+         if( !!prev_value ) undo_state->set_property( (chain_property_enum)item.first, *prev_value );
+         else undo_state->set_property( (chain_property_enum)item.first, variant() );
       }
       for( const auto& item : assets )
       {
@@ -481,8 +482,6 @@ namespace bts { namespace blockchain {
         FC_ASSERT(!"unimplemented!");
     }
 
-
-
    osite_record  pending_chain_state::lookup_site( const string& site_name)const
    { try {
        auto prev_state = _prev_state.lock();
@@ -501,21 +500,19 @@ namespace bts { namespace blockchain {
        return osite_record();
    } FC_CAPTURE_AND_RETHROW( (site_name) ) }
 
-
-   fc::variant pending_chain_state::get_property( chain_property_enum property_id )const
-   {
-      auto property_itr = properties.find( property_id );
+   optional<variant> pending_chain_state::get_property( chain_property_enum property_id )const
+   { try {
+      const auto property_itr = properties.find( property_id );
       if( property_itr != properties.end()  ) return property_itr->second;
       chain_interface_ptr prev_state = _prev_state.lock();
       if( prev_state ) return prev_state->get_property( property_id );
-      return fc::variant();
-   }
+      return optional<variant>();
+   } FC_CAPTURE_AND_RETHROW( (property_id) ) }
 
-   void pending_chain_state::set_property( chain_property_enum property_id,
-                                                     const fc::variant& property_value )
-   {
-      properties[property_id] = property_value;
-   }
+   void pending_chain_state::set_property( chain_property_enum property_id, const fc::variant& property_value )
+   { try {
+      properties[ property_id ] = property_value;
+   } FC_CAPTURE_AND_RETHROW( (property_id)(property_value) ) }
 
    oorder_record pending_chain_state::get_bid_record( const market_index_key& key )const
    {

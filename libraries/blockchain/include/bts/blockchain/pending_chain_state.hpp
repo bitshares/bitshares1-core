@@ -91,8 +91,7 @@ namespace bts { namespace blockchain {
          virtual map<object_id_type, map<string, object_record>>
                                         get_edges( const object_id_type& from )const override;
 
-
-         virtual variant                get_property( chain_property_enum property_id )const override;
+         virtual optional<variant>      get_property( chain_property_enum property_id )const override;
          virtual void                   set_property( chain_property_enum property_id, const variant& property_value )override;
 
          virtual void                   store_slot_record( const slot_record& r ) override;
@@ -157,18 +156,18 @@ namespace bts { namespace blockchain {
          map<burn_record_key,burn_record_value>                             burns;
          map< market_index_key, order_record>                               relative_bids;
          map< market_index_key, order_record>                               relative_asks;
-                                                                            
+
          map< object_id_type, object_record >                               objects;
-                                                                            
+
          map< edge_index_key, object_id_type >                              edge_index;
          map< edge_index_key, object_id_type >                              reverse_edge_index;
          map< string, site_record >                                         site_index;
-                                                                            
+
          map< std::pair<asset_id_type,address>, object_id_type >            authorizations;
          map< std::pair<asset_id_type,proposal_id_type>, proposal_record >  asset_proposals;
-                                                                            
+
          std::set<std::pair<asset_id_type, asset_id_type>>                  _dirty_markets;
-                                                                            
+
          chain_interface_weak_ptr                                           _prev_state;
    };
 
