@@ -3,7 +3,7 @@
 #include <bts/blockchain/checkpoints.hpp>
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/exceptions.hpp>
-#include <bts/blockchain/genesis_config.hpp>
+#include <bts/blockchain/genesis_state.hpp>
 #include <bts/blockchain/genesis_json.hpp>
 #include <bts/blockchain/market_engine.hpp>
 #include <bts/blockchain/time.hpp>
@@ -225,7 +225,7 @@ namespace bts { namespace blockchain {
            return chain_id;
 
          _chain_id = chain_id;
-         self->set_property( bts::blockchain::chain_id, fc::variant(_chain_id) );
+         self->set_property( bts::blockchain::chain_id, variant( _chain_id ) );
 
          // Check genesis state
          FC_ASSERT( config.delegates.size() >= BTS_BLOCKCHAIN_NUM_DELEGATES,
@@ -372,8 +372,6 @@ namespace bts { namespace blockchain {
          self->set_property( chain_property_enum::last_asset_id, asset_id );
          self->set_property( chain_property_enum::last_account_id, uint64_t( config.delegates.size() ) );
          self->set_property( chain_property_enum::last_object_id, 0 );
-         self->set_property( chain_property_enum::last_random_seed_id, fc::variant( secret_hash_type() ) );
-         self->set_property( chain_property_enum::confirmation_requirement, BTS_BLOCKCHAIN_NUM_DELEGATES*2 );
 
          self->sanity_check();
          return _chain_id;
@@ -810,10 +808,10 @@ namespace bts { namespace blockchain {
       } FC_CAPTURE_AND_RETHROW( (block_data) ) }
 
       void chain_database_impl::update_head_block( const full_block& block_data )
-      {
+      { try {
          _head_block_header = block_data;
          _head_block_id = block_data.id();
-      }
+      } FC_CAPTURE_AND_RETHROW() }
 
       /**
        *  A block should be produced every BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC. If we do not have a
@@ -830,7 +828,7 @@ namespace bts { namespace blockchain {
       void chain_database_impl::update_delegate_production_info( const full_block& produced_block,
                                                                  const pending_chain_state_ptr& pending_state,
                                                                  const public_key_type& block_signee )
-      {
+      { try {
           /* Update production info for signing delegate */
           account_id_type delegate_id = self->get_delegate_record_for_signee( block_signee ).id;
           oaccount_record delegate_record = pending_state->get_account_record( delegate_id );
@@ -861,7 +859,7 @@ namespace bts { namespace blockchain {
 
           /* Update production info for missing delegates */
 
-          auto required_confirmations = pending_state->get_property( confirmation_requirement ).as_int64();
+          uint64_t required_confirmations = self->get_required_confirmations();
 
           time_point_sec block_timestamp;
           auto head_block = self->get_head_block();
@@ -893,22 +891,21 @@ namespace bts { namespace blockchain {
              required_confirmations = 3*BTS_BLOCKCHAIN_NUM_DELEGATES;
 
           pending_state->set_property( confirmation_requirement, required_confirmations );
-      }
+      } FC_CAPTURE_AND_RETHROW( (block_signee) ) }
 
       void chain_database_impl::update_random_seed( const secret_hash_type& new_secret,
                                                     const pending_chain_state_ptr& pending_state )
-      {
+      { try {
          const auto current_seed = pending_state->get_current_random_seed();
          fc::sha512::encoder enc;
          fc::raw::pack( enc, new_secret );
          fc::raw::pack( enc, current_seed );
-         pending_state->set_property( last_random_seed_id,
-                                      fc::variant(fc::ripemd160::hash( enc.result() )) );
-      }
+         pending_state->set_property( last_random_seed_id, variant( fc::ripemd160::hash( enc.result() ) ) );
+      } FC_CAPTURE_AND_RETHROW( (new_secret) ) }
 
       void chain_database_impl::update_active_delegate_list( const full_block& block_data,
                                                              const pending_chain_state_ptr& pending_state )
-      {
+      { try {
           if( block_data.block_num % BTS_BLOCKCHAIN_NUM_DELEGATES != 0 )
               return;
 
@@ -925,7 +922,7 @@ namespace bts { namespace blockchain {
           }
 
           pending_state->set_active_delegates( active_del );
-      }
+      } FC_CAPTURE_AND_RETHROW() }
 
       void chain_database_impl::execute_markets( const fc::time_point_sec& timestamp, const pending_chain_state_ptr& pending_state )
       { try {
@@ -947,7 +944,7 @@ namespace bts { namespace blockchain {
         }
         if( _track_stats )
            pending_state->set_market_transactions( std::move( market_transactions ) );
-      } FC_CAPTURE_AND_RETHROW() }
+      } FC_CAPTURE_AND_RETHROW( (timestamp) ) }
 
       /**
        *  Performs all of the block validation steps and throws if error.
@@ -1368,7 +1365,10 @@ namespace bts { namespace blockchain {
                        << orig_chain_size / 1024 / 1024 << "MiB to "
                        << final_chain_size / 1024 / 1024 << "MiB.\n" << std::flush;
           }
-          const auto db_chain_id = get_property( bts::blockchain::chain_id ).as<digest_type>();
+
+          const optional<variant> property = get_property( bts::blockchain::chain_id );
+          FC_ASSERT( property.valid() );
+          const auto db_chain_id = property->as<digest_type>();
           const auto genesis_chain_id = my->initialize_genesis( genesis_file, true );
           if( db_chain_id != genesis_chain_id )
               FC_THROW_EXCEPTION( wrong_chain_id, "Wrong chain ID!", ("database_id",db_chain_id)("genesis_id",genesis_chain_id) );
@@ -2601,19 +2601,18 @@ namespace bts { namespace blockchain {
         return slot_records;
     }
 
-   fc::variant chain_database::get_property( chain_property_enum property_id )const
+   optional<variant> chain_database::get_property( chain_property_enum property_id )const
    { try {
-      return my->_property_db.fetch( property_id );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("property_id",property_id) ) }
+      return my->_property_db.fetch_optional( property_id );
+   } FC_CAPTURE_AND_RETHROW( (property_id) ) }
 
-   void chain_database::set_property( chain_property_enum property_id,
-                                                     const fc::variant& property_value )
-   {
+   void chain_database::set_property( chain_property_enum property_id, const fc::variant& property_value )
+   { try {
       if( property_value.is_null() )
          my->_property_db.remove( property_id );
       else
          my->_property_db.store( property_id, property_value );
-   }
+   } FC_CAPTURE_AND_RETHROW( (property_id)(property_value) ) }
 
    digest_type chain_database::chain_id()const
    {
@@ -2664,14 +2663,17 @@ namespace bts { namespace blockchain {
    }
 
    fc::ripemd160 chain_database::get_current_random_seed()const
-   {
-      return get_property( last_random_seed_id ).as<fc::ripemd160>();
-   }
+   { try {
+      const optional<variant> result = get_property( last_random_seed_id );
+      if( result.valid() ) return result->as<fc::ripemd160>();
+      return fc::ripemd160();
+   } FC_CAPTURE_AND_RETHROW() }
 
    oorder_record chain_database::get_bid_record( const market_index_key&  key )const
    {
       return my->_bid_db.fetch_optional(key);
    }
+
    oorder_record chain_database::get_relative_bid_record( const market_index_key&  key )const
    {
       return my->_relative_bid_db.fetch_optional(key);

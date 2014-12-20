@@ -40,7 +40,7 @@
 #include <bts/rpc/rpc_client.hpp>
 #include <bts/blockchain/asset.hpp>
 #include <bts/blockchain/types.hpp>
-#include <bts/blockchain/genesis_config.hpp>
+#include <bts/blockchain/genesis_state.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/net/config.hpp>
 #include <bts/utilities/key_conversion.hpp>

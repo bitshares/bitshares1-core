@@ -1,7 +1,7 @@
 #include <boost/test/unit_test.hpp>
 #include <bts/api/global_api_logger.hpp>
 #include <bts/blockchain/chain_database.hpp>
-#include <bts/blockchain/genesis_config.hpp>
+#include <bts/blockchain/genesis_state.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/client/api_logger.hpp>
 #include <bts/client/client.hpp>

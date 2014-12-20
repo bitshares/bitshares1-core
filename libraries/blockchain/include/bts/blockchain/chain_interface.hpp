@@ -120,10 +120,12 @@ namespace bts { namespace blockchain {
          virtual void                       store_delegate_slate( slate_id_type id,
                                                                   const delegate_slate& slate )             = 0;
 
-         virtual int64_t                    get_required_confirmations()const;
-         virtual fc::variant                get_property( chain_property_enum property_id )const            = 0;
+         virtual optional<variant>          get_property( chain_property_enum property_id )const            = 0;
          virtual void                       set_property( chain_property_enum property_id,
                                                           const fc::variant& property_value )               = 0;
+
+         virtual void                       set_required_confirmations( uint64_t );
+         virtual uint64_t                   get_required_confirmations()const;
 
          virtual omarket_status             get_market_status( const asset_id_type& quote_id,
                                                                const asset_id_type& base_id )               = 0;

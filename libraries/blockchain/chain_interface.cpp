@@ -129,33 +129,39 @@ namespace bts { namespace blockchain {
    }
 
    asset_id_type chain_interface::last_asset_id()const
-   {
-       return get_property( chain_property_enum::last_asset_id ).as<asset_id_type>();
-   }
+   { try {
+       const optional<variant> result = get_property( chain_property_enum::last_asset_id );
+       FC_ASSERT( result.valid() );
+       return result->as<asset_id_type>();
+   } FC_CAPTURE_AND_RETHROW() }
 
    asset_id_type chain_interface::new_asset_id()
    {
-      auto next_id = last_asset_id() + 1;
-      set_property( chain_property_enum::last_asset_id, next_id );
-      return next_id;
+       auto next_id = last_asset_id() + 1;
+       set_property( chain_property_enum::last_asset_id, next_id );
+       return next_id;
    }
 
    account_id_type chain_interface::last_account_id()const
-   {
-       return get_property( chain_property_enum::last_account_id ).as<account_id_type>();
-   }
+   { try {
+       const optional<variant> result = get_property( chain_property_enum::last_account_id );
+       FC_ASSERT( result.valid() );
+       return result->as<account_id_type>();
+   } FC_CAPTURE_AND_RETHROW() }
 
    account_id_type chain_interface::new_account_id()
    {
-      auto next_id = last_account_id() + 1;
-      set_property( chain_property_enum::last_account_id, next_id );
-      return next_id;
+       auto next_id = last_account_id() + 1;
+       set_property( chain_property_enum::last_account_id, next_id );
+       return next_id;
    }
 
    object_id_type chain_interface::last_object_id()const
-   {
-       return get_property( chain_property_enum::last_object_id ).as<object_id_type>();
-   }
+   { try {
+       const optional<variant> result = get_property( chain_property_enum::last_object_id );
+       FC_ASSERT( result.valid() );
+       return result->as<object_id_type>();
+   } FC_CAPTURE_AND_RETHROW() }
 
    object_id_type chain_interface::new_object_id( obj_type type )
    {
@@ -240,19 +246,21 @@ namespace bts { namespace blockchain {
        FC_ASSERT(!"This code path should not happen.");
    } FC_CAPTURE_AND_RETHROW( (obj.short_id())(obj.type())(obj) ) }
 
-    oobject_record               chain_interface::get_edge( const object_id_type& id )
-    {
-        auto object = get_object_record( id );
-        if( NOT object.valid() )
-            return oobject_record();
-        FC_ASSERT( object->type() == edge_object, "This object is not an edge!"); // TODO check form ID as first check
-        return object;
-    }
+   oobject_record chain_interface::get_edge( const object_id_type& id )
+   { try {
+      auto object = get_object_record( id );
+      if( NOT object.valid() )
+          return oobject_record();
+      FC_ASSERT( object->type() == edge_object, "This object is not an edge!"); // TODO check form ID as first check
+      return object;
+   } FC_CAPTURE_AND_RETHROW( (id) ) }
 
    vector<account_id_type> chain_interface::get_active_delegates()const
    { try {
-      return get_property( active_delegate_list_id ).as<std::vector<account_id_type>>();
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+      const optional<variant> result = get_property( active_delegate_list_id );
+      FC_ASSERT( result.valid() );
+      return result->as<std::vector<account_id_type>>();
+   } FC_CAPTURE_AND_RETHROW() }
 
    void chain_interface::set_active_delegates( const std::vector<account_id_type>& delegate_ids )
    {
@@ -344,10 +352,10 @@ namespace bts { namespace blockchain {
          ugly_price.ratio /= base_record->precision;
       }
       return ugly_price;
-   } FC_CAPTURE_AND_RETHROW( (price_string)(base_symbol)(quote_symbol) ) }
+   } FC_CAPTURE_AND_RETHROW( (price_string)(base_symbol)(quote_symbol)(do_precision_dance) ) }
 
    string chain_interface::to_pretty_asset( const asset& a )const
-   {
+   { try {
       const auto oasset = get_asset_record( a.asset_id );
       const share_type amount = ( a.amount >= 0 ) ? a.amount : -a.amount;
       if( oasset.valid() )
@@ -363,28 +371,30 @@ namespace bts { namespace blockchain {
       {
          return fc::to_pretty_string( a.amount ) + " ???";
       }
-   }
+   } FC_CAPTURE_AND_RETHROW( (a) ) }
 
-   int64_t chain_interface::get_required_confirmations()const
-   {
-      return get_property( confirmation_requirement ).as_int64();
-   }
+   void chain_interface::set_required_confirmations( uint64_t c )
+   { try {
+      set_property( confirmation_requirement, fc::variant( c ) );
+   } FC_CAPTURE_AND_RETHROW( (c) ) }
+
+   uint64_t chain_interface::get_required_confirmations()const
+   { try {
+      const optional<variant> result = get_property( confirmation_requirement );
+      if( result.valid() ) return result->as_uint64();
+      return BTS_BLOCKCHAIN_NUM_DELEGATES * 3;
+   } FC_CAPTURE_AND_RETHROW() }
 
    void chain_interface::set_dirty_markets( const std::set<std::pair<asset_id_type, asset_id_type>>& d )
-   {
-       set_property( dirty_markets, fc::variant( d ) );
-   }
+   { try {
+      set_property( dirty_markets, fc::variant( d ) );
+   } FC_CAPTURE_AND_RETHROW( (d) ) }
 
    std::set<std::pair<asset_id_type, asset_id_type>> chain_interface::get_dirty_markets()const
-   {
-       try
-       {
-           return get_property( dirty_markets ).as<std::set<std::pair<asset_id_type, asset_id_type>>>();
-       }
-       catch( ... )
-       {
-       }
-       return std::set<std::pair<asset_id_type, asset_id_type>>();
-   }
+   { try {
+      const optional<variant> result = get_property( dirty_markets );
+      if( result.valid() ) return result->as<std::set<std::pair<asset_id_type, asset_id_type>>>();
+      return std::set<std::pair<asset_id_type, asset_id_type>>();
+   } FC_CAPTURE_AND_RETHROW() }
 
 } } // bts::blockchain
