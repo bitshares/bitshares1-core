@@ -3,7 +3,7 @@
 #include <bts/blockchain/checkpoints.hpp>
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/exceptions.hpp>
-#include <bts/blockchain/genesis_config.hpp>
+#include <bts/blockchain/genesis_state.hpp>
 #include <bts/blockchain/genesis_json.hpp>
 #include <bts/blockchain/market_engine.hpp>
 #include <bts/blockchain/time.hpp>

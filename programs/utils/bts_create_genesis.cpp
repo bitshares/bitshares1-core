@@ -1,5 +1,5 @@
 #include <bts/blockchain/address.hpp>
-#include <bts/blockchain/genesis_config.hpp>
+#include <bts/blockchain/genesis_state.hpp>
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/pts_address.hpp>
 #include <fc/crypto/elliptic.hpp>

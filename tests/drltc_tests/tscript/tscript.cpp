@@ -18,7 +18,7 @@
 #include <fc/io/json.hpp>
 #include <fc/rpc/json_connection.hpp>
 
-#include <bts/blockchain/genesis_config.hpp>
+#include <bts/blockchain/genesis_state.hpp>
 #include <bts/client/client.hpp>
 #include <bts/net/node.hpp>
 #include <bts/rpc/rpc_server.hpp>

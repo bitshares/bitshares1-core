@@ -1,5 +1,5 @@
 #pragma once
-#include <bts/blockchain/genesis_config.hpp>
+#include <bts/blockchain/genesis_state.hpp>
 #include <sstream>
 
 namespace bts { namespace blockchain {
