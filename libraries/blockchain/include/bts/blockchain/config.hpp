@@ -19,16 +19,16 @@
  *
  *  Changing these parameters will result in a hard fork.
  */
-#define BTS_ADDRESS_PREFIX                                  "BTS"
-#define BTS_BLOCKCHAIN_SYMBOL                               "BTS"
-#define BTS_BLOCKCHAIN_NAME                                 "BitShares"
-#define BTS_BLOCKCHAIN_DESCRIPTION                          "The Future of Banking"
+#define BTS_ADDRESS_PREFIX                                  "DVS"
+#define BTS_BLOCKCHAIN_SYMBOL                               "DVS"
+#define BTS_BLOCKCHAIN_NAME                                 "DevShares"
+#define BTS_BLOCKCHAIN_DESCRIPTION                          "BitShares Development Network"
 #define BTS_BLOCKCHAIN_PRECISION                            100000
 #define BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC       (60*60*24*2)
 #define BTS_BLOCKCHAIN_MIN_YIELD_PERIOD_SEC                 (60*60*24) // 24 hours
 
 #define BTS_BLOCKCHAIN_MIN_BURN_FEE                         BTS_BLOCKCHAIN_PRECISION * 1 // 1 XTS
-#define BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE                    10000 // XTS
+#define BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE                    100000 // DVS
 #define BTS_BLOCKCHAIN_MINIMUM_SHORT_ORDER_SIZE             (BTS_BLOCKCHAIN_PRECISION*100)
 
 #ifdef BTS_TEST_NETWORK
@@ -49,11 +49,11 @@
 #define BTS_BLOCKCHAIN_NUM_DELEGATES                        uint32_t(101)
 #define BTS_BLOCKCHAIN_MAX_SLATE_SIZE                       (BTS_BLOCKCHAIN_NUM_DELEGATES + (BTS_BLOCKCHAIN_NUM_DELEGATES/10))
 #define BTS_BLOCKCHAIN_MIN_FEEDS                            ((BTS_BLOCKCHAIN_NUM_DELEGATES/2) + 1)
-#define BTS_BLOCKCHAIN_MAX_UNDO_HISTORY                     (BTS_BLOCKCHAIN_NUM_DELEGATES*16)
+#define BTS_BLOCKCHAIN_MAX_UNDO_HISTORY                     BTS_BLOCKCHAIN_BLOCKS_PER_DAY
 
 #define BTS_BLOCKCHAIN_ENABLE_NEGATIVE_VOTES                false
 
-#define BTS_MAX_DELEGATE_PAY_PER_BLOCK                      int64_t( 50 * BTS_BLOCKCHAIN_PRECISION ) // 50 XTS
+#define BTS_MAX_DELEGATE_PAY_PER_BLOCK                      int64_t( 500 * BTS_BLOCKCHAIN_PRECISION ) // 500 DVS
 
 /**
  * To prevent a delegate from producing blocks on split network,
