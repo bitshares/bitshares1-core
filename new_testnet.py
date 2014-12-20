@@ -24,7 +24,7 @@ with open("libraries/blockchain/genesis.json") as genesis:
     new_genesis = json.load(genesis)
 
 new_genesis["timestamp"] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-new_genesis["names"] = []
+new_genesis["delegates"] = []
 
 #try:
 #    with open("libraries/blockchain/bts-sharedrop.json") as snapshot:
@@ -40,10 +40,9 @@ for i in range(101):
 
     acct = {
         "name": "init" + str(i),
-        "owner": keys["public_key"],
-        "delegate_pay_rate": 1
+        "owner": keys["public_key"]
     }
-    new_genesis["names"].append(acct)
+    new_genesis["delegates"].append(acct)
 
 
 input_log.append(">>> wallet_delegate_set_block_production ALL true")

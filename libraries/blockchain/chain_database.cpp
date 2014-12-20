@@ -3,7 +3,7 @@
 #include <bts/blockchain/checkpoints.hpp>
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/exceptions.hpp>
-#include <bts/blockchain/genesis_config.hpp>
+#include <bts/blockchain/genesis_state.hpp>
 #include <bts/blockchain/genesis_json.hpp>
 #include <bts/blockchain/market_engine.hpp>
 #include <bts/blockchain/time.hpp>
@@ -173,7 +173,7 @@ namespace bts { namespace blockchain {
             return chain_id;
          }
 
-         genesis_block_config config;
+         genesis_state config;
          if (genesis_file)
          {
            // this will only happen during testing
@@ -182,7 +182,7 @@ namespace bts { namespace blockchain {
 
            if( genesis_file->extension() == ".json" )
            {
-              config = fc::json::from_file(*genesis_file).as<genesis_block_config>();
+              config = fc::json::from_file(*genesis_file).as<genesis_state>();
            }
            else if( genesis_file->extension() == ".dat" )
            {
@@ -204,7 +204,7 @@ namespace bts { namespace blockchain {
                std::cout << "Initializing genesis state from built-in genesis file\n";
    #ifdef EMBED_GENESIS_STATE_AS_TEXT
            std::string genesis_file_contents = get_builtin_genesis_json_as_string();
-           config = fc::json::from_string(genesis_file_contents).as<genesis_block_config>();
+           config = fc::json::from_string(genesis_file_contents).as<genesis_state>();
            fc::sha256::encoder enc;
            fc::raw::pack( enc, config );
            chain_id = enc.result();
@@ -216,52 +216,45 @@ namespace bts { namespace blockchain {
 
          if( chain_id_only )
            return chain_id;
+
          _chain_id = chain_id;
-         self->set_property( bts::blockchain::chain_id, fc::variant(_chain_id) );
+         self->set_property( bts::blockchain::chain_id, variant( _chain_id ) );
 
-         fc::uint128 total_unscaled = 0;
-         for( const auto& item : config.balances ) total_unscaled += int64_t(item.second/1000);
-         ilog( "Total unscaled: ${s}", ("s", total_unscaled) );
+         // Check genesis state
+         FC_ASSERT( config.delegates.size() >= BTS_BLOCKCHAIN_NUM_DELEGATES,
+                    "genesis.json does not contain enough initial delegates!",
+                    ("required",BTS_BLOCKCHAIN_NUM_DELEGATES)("provided",config.delegates.size()) );
 
-         std::vector<name_config> delegate_config;
-         for( const auto& item : config.names )
-         {
-            if( item.delegate_pay_rate <= 100 ) delegate_config.push_back( item );
-         }
+         const fc::time_point_sec timestamp = config.timestamp;
 
-         FC_ASSERT( delegate_config.size() >= BTS_BLOCKCHAIN_NUM_DELEGATES,
-                    "genesis.json does not contain enough initial delegates",
-                    ("required",BTS_BLOCKCHAIN_NUM_DELEGATES)("provided",delegate_config.size()) );
-
-         account_record god; god.id = 0; god.name = "god";
+         // Initialize god account
+         int32_t account_id = 0;
+         account_record god;
+         god.id = account_id;
+         god.name = "god";
          self->store_account_record( god );
 
-         fc::time_point_sec timestamp = config.timestamp;
-         std::vector<account_id_type> delegate_ids;
-         int32_t account_id = 1;
-         for( const auto& name : config.names )
+         // Initialize delegates
+         for( const genesis_delegate& delegate : config.delegates )
          {
-            account_record rec;
-            rec.id                = account_id;
-            rec.name              = name.name;
-            rec.owner_key         = name.owner;
-            rec.set_active_key( timestamp, name.owner );
-            rec.registration_date = timestamp;
-            rec.last_update       = timestamp;
-            if( name.delegate_pay_rate <= 100 )
-            {
-               rec.delegate_info = delegate_stats();
-               rec.delegate_info->pay_rate = name.delegate_pay_rate;
-               rec.set_signing_key( 0, name.owner );
-               delegate_ids.push_back( account_id );
-            }
-            self->store_account_record( rec );
-            ++account_id;
+             ++account_id;
+             account_record rec;
+             rec.id = account_id;
+             rec.name = delegate.name;
+             rec.owner_key = delegate.owner;
+             rec.set_active_key( timestamp, delegate.owner );
+             rec.registration_date = timestamp;
+             rec.last_update = timestamp;
+             rec.delegate_info = delegate_stats();
+             rec.delegate_info->pay_rate = 100;
+             rec.set_signing_key( 0, delegate.owner );
+             self->store_account_record( rec );
          }
 
+         // For loading balances originally snapshotted from other chains
          const auto convert_raw_address = []( const string& raw_address ) -> address
          {
-             static const vector<string> bts_prefixes{ "XTS", "BTSX", "KEY", "BTS", "DVS" };
+             static const vector<string> bts_prefixes{ "BTS", "KEY", "DVS", "XTS" };
              try
              {
                  return address( pts_address( raw_address ) );
@@ -279,64 +272,49 @@ namespace bts { namespace blockchain {
              FC_THROW_EXCEPTION( invalid_pts_address, "Invalid raw address format!", ("raw_address",raw_address) );
          };
 
-         int64_t n = 0;
-         for( const auto& item : config.balances )
+         // Initialize signature balances
+         share_type total_base_supply = 0;
+         for( const auto& genesis_balance : config.initial_balances )
          {
-            const string& raw_address = item.first;
-            const share_type balance = item.second;
-
-            ++n;
-
-            fc::uint128 initial( int64_t( balance / 1000 ) );
-            initial *= fc::uint128(int64_t(BTS_BLOCKCHAIN_INITIAL_SHARES));
-            initial /= total_unscaled;
-
-            const auto addr = convert_raw_address( raw_address );
-            balance_record initial_balance( addr,
-                                            asset( share_type( initial.low_bits() ), 0 ),
-                                            0 /* Not voting for anyone */
-                                          );
+            const auto addr = convert_raw_address( genesis_balance.raw_address );
+            balance_record initial_balance( addr, asset( genesis_balance.balance, 0 ), 0 );
 
             /* In case of redundant balances */
-            auto cur = self->get_balance_record( initial_balance.id() );
+            const auto cur = self->get_balance_record( initial_balance.id() );
             if( cur.valid() ) initial_balance.balance += cur->balance;
-            const asset bal( initial_balance.balance, initial_balance.condition.asset_id );
-            initial_balance.snapshot_info = snapshot_record( raw_address, bal.amount );
+
+            initial_balance.snapshot_info = snapshot_record( genesis_balance.raw_address, genesis_balance.balance );
             initial_balance.last_update = config.timestamp;
             self->store_balance_record( initial_balance );
+
+            total_base_supply += genesis_balance.balance;
          }
 
-         static const time_point_sec sharedrop_timestamp( 1415188800 ); // 2014-11-06 00:00:00 UTC
-         static const uint32_t sharedrop_vesting_duration( fc::days( 2 * 365 ).to_seconds() ); // 2 years
-         for( const auto& item : config.bts_sharedrop )
+         // Initialize vesting balances
+         for( const auto& genesis_balance : config.sharedrop_balances.vesting_balances )
          {
-            withdraw_vesting data;
-            data.owner = convert_raw_address( item.raw_address );
-            data.start_time = sharedrop_timestamp;
-            data.duration = sharedrop_vesting_duration;
-            data.original_balance = item.balance / 1000;
+            withdraw_vesting vesting;
+            vesting.owner = convert_raw_address( genesis_balance.raw_address );
+            vesting.start_time = config.sharedrop_balances.start_time;
+            vesting.duration = fc::days( config.sharedrop_balances.duration_days ).to_seconds();
+            vesting.original_balance = genesis_balance.balance;
 
-            withdraw_condition condition( data, 0, 0 );
-            balance_record balance_rec( condition );
-            balance_rec.balance = data.original_balance;
+            withdraw_condition condition( vesting, 0, 0 );
+            balance_record initial_balance( condition );
+            initial_balance.balance = vesting.original_balance;
 
             /* In case of redundant balances */
-            auto cur = self->get_balance_record( balance_rec.id() );
-            if( cur.valid() ) balance_rec.balance += cur->balance;
-            balance_rec.last_update = sharedrop_timestamp;
-            const asset bal( balance_rec.balance, balance_rec.condition.asset_id );
-            balance_rec.snapshot_info = snapshot_record( item.raw_address, bal.amount );
-            self->store_balance_record( balance_rec );
+            const auto cur = self->get_balance_record( initial_balance.id() );
+            if( cur.valid() ) initial_balance.balance += cur->balance;
+
+            initial_balance.snapshot_info = snapshot_record( genesis_balance.raw_address, genesis_balance.balance );
+            initial_balance.last_update = config.timestamp;
+            self->store_balance_record( initial_balance );
+
+            total_base_supply += genesis_balance.balance;
          }
 
-         asset total;
-         for( auto itr = _balance_db.begin(); itr.valid(); ++itr )
-         {
-            const asset ind( itr.value().balance, itr.value().condition.asset_id );
-            FC_ASSERT( ind.amount >= 0, "", ("record",itr.value()) );
-            total += ind;
-         }
-
+         // Initialize base asset
          int32_t asset_id = 0;
          asset_record base_asset;
          base_asset.id = asset_id;
@@ -348,30 +326,31 @@ namespace bts { namespace blockchain {
          base_asset.precision = BTS_BLOCKCHAIN_PRECISION;
          base_asset.registration_date = timestamp;
          base_asset.last_update = timestamp;
-         base_asset.current_share_supply = total.amount;
+         base_asset.current_share_supply = total_base_supply;
          base_asset.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
          base_asset.collected_fees = 0;
          base_asset.flags = asset_permissions::none;
          base_asset.issuer_permissions = asset_permissions::none;
          self->store_asset_record( base_asset );
 
-         for( const auto& asset : config.market_assets )
+         // Initialize initial market assets
+         for( const genesis_asset& asset : config.market_assets )
          {
-            ++asset_id;
-            asset_record rec;
-            rec.id = asset_id;
-            rec.symbol = asset.symbol;
-            rec.name = asset.name;
-            rec.description = asset.description;
-            rec.public_data = variant("");
-            rec.issuer_account_id = asset_record::market_issuer_id;
-            rec.precision = asset.precision;
-            rec.registration_date = timestamp;
-            rec.last_update = timestamp;
-            rec.current_share_supply = 0;
-            rec.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
-            rec.collected_fees = 0;
-            self->store_asset_record( rec );
+             ++asset_id;
+             asset_record rec;
+             rec.id = asset_id;
+             rec.symbol = asset.symbol;
+             rec.name = asset.name;
+             rec.description = asset.description;
+             rec.public_data = variant("");
+             rec.issuer_account_id = asset_record::market_issuer_id;
+             rec.precision = asset.precision;
+             rec.registration_date = timestamp;
+             rec.last_update = timestamp;
+             rec.current_share_supply = 0;
+             rec.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
+             rec.collected_fees = 0;
+             self->store_asset_record( rec );
          }
 
          //add fork_data for the genesis block to the fork database
@@ -384,10 +363,8 @@ namespace bts { namespace blockchain {
 
          self->set_property( chain_property_enum::active_delegate_list_id, fc::variant( self->next_round_active_delegates() ) );
          self->set_property( chain_property_enum::last_asset_id, asset_id );
-         self->set_property( chain_property_enum::last_account_id, uint64_t( config.names.size() ) );
-         self->set_property( chain_property_enum::last_object_id, 1 );
-         self->set_property( chain_property_enum::last_random_seed_id, fc::variant( secret_hash_type() ) );
-         self->set_property( chain_property_enum::confirmation_requirement, BTS_BLOCKCHAIN_NUM_DELEGATES*2 );
+         self->set_property( chain_property_enum::last_account_id, uint64_t( config.delegates.size() ) );
+         self->set_property( chain_property_enum::last_object_id, 0 );
 
          self->sanity_check();
          return _chain_id;
@@ -821,10 +798,10 @@ namespace bts { namespace blockchain {
       } FC_CAPTURE_AND_RETHROW( (block_data) ) }
 
       void chain_database_impl::update_head_block( const full_block& block_data )
-      {
+      { try {
          _head_block_header = block_data;
          _head_block_id = block_data.id();
-      }
+      } FC_CAPTURE_AND_RETHROW() }
 
       /**
        *  A block should be produced every BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC. If we do not have a
@@ -841,7 +818,7 @@ namespace bts { namespace blockchain {
       void chain_database_impl::update_delegate_production_info( const full_block& produced_block,
                                                                  const pending_chain_state_ptr& pending_state,
                                                                  const public_key_type& block_signee )
-      {
+      { try {
           /* Update production info for signing delegate */
           account_id_type delegate_id = self->get_delegate_record_for_signee( block_signee ).id;
           oaccount_record delegate_record = pending_state->get_account_record( delegate_id );
@@ -872,7 +849,7 @@ namespace bts { namespace blockchain {
 
           /* Update production info for missing delegates */
 
-          auto required_confirmations = pending_state->get_property( confirmation_requirement ).as_int64();
+          uint64_t required_confirmations = self->get_required_confirmations();
 
           time_point_sec block_timestamp;
           auto head_block = self->get_head_block();
@@ -904,22 +881,21 @@ namespace bts { namespace blockchain {
              required_confirmations = 3*BTS_BLOCKCHAIN_NUM_DELEGATES;
 
           pending_state->set_property( confirmation_requirement, required_confirmations );
-      }
+      } FC_CAPTURE_AND_RETHROW( (block_signee) ) }
 
       void chain_database_impl::update_random_seed( const secret_hash_type& new_secret,
                                                     const pending_chain_state_ptr& pending_state )
-      {
+      { try {
          const auto current_seed = pending_state->get_current_random_seed();
          fc::sha512::encoder enc;
          fc::raw::pack( enc, new_secret );
          fc::raw::pack( enc, current_seed );
-         pending_state->set_property( last_random_seed_id,
-                                      fc::variant(fc::ripemd160::hash( enc.result() )) );
-      }
+         pending_state->set_property( last_random_seed_id, variant( fc::ripemd160::hash( enc.result() ) ) );
+      } FC_CAPTURE_AND_RETHROW( (new_secret) ) }
 
       void chain_database_impl::update_active_delegate_list( const full_block& block_data,
                                                              const pending_chain_state_ptr& pending_state )
-      {
+      { try {
           if( block_data.block_num % BTS_BLOCKCHAIN_NUM_DELEGATES != 0 )
               return;
 
@@ -936,7 +912,7 @@ namespace bts { namespace blockchain {
           }
 
           pending_state->set_active_delegates( active_del );
-      }
+      } FC_CAPTURE_AND_RETHROW() }
 
       void chain_database_impl::execute_markets( const fc::time_point_sec& timestamp, const pending_chain_state_ptr& pending_state )
       { try {
@@ -955,7 +931,7 @@ namespace bts { namespace blockchain {
         }
         if( _track_stats )
            pending_state->set_market_transactions( std::move( market_transactions ) );
-      } FC_CAPTURE_AND_RETHROW() }
+      } FC_CAPTURE_AND_RETHROW( (timestamp) ) }
 
       /**
        *  Performs all of the block validation steps and throws if error.
@@ -1312,7 +1288,10 @@ namespace bts { namespace blockchain {
                        << orig_chain_size / 1024 / 1024 << "MiB to "
                        << final_chain_size / 1024 / 1024 << "MiB.\n" << std::flush;
           }
-          const auto db_chain_id = get_property( bts::blockchain::chain_id ).as<digest_type>();
+
+          const optional<variant> property = get_property( bts::blockchain::chain_id );
+          FC_ASSERT( property.valid() );
+          const auto db_chain_id = property->as<digest_type>();
           const auto genesis_chain_id = my->initialize_genesis( genesis_file, true );
           if( db_chain_id != genesis_chain_id )
               FC_THROW_EXCEPTION( wrong_chain_id, "Wrong chain ID!", ("database_id",db_chain_id)("genesis_id",genesis_chain_id) );
@@ -2539,19 +2518,18 @@ namespace bts { namespace blockchain {
         return slot_records;
     }
 
-   fc::variant chain_database::get_property( chain_property_enum property_id )const
+   optional<variant> chain_database::get_property( chain_property_enum property_id )const
    { try {
-      return my->_property_db.fetch( property_id );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("property_id",property_id) ) }
+      return my->_property_db.fetch_optional( property_id );
+   } FC_CAPTURE_AND_RETHROW( (property_id) ) }
 
-   void chain_database::set_property( chain_property_enum property_id,
-                                                     const fc::variant& property_value )
-   {
+   void chain_database::set_property( chain_property_enum property_id, const fc::variant& property_value )
+   { try {
       if( property_value.is_null() )
          my->_property_db.remove( property_id );
       else
          my->_property_db.store( property_id, property_value );
-   }
+   } FC_CAPTURE_AND_RETHROW( (property_id)(property_value) ) }
 
    digest_type chain_database::chain_id()const
    {
@@ -2602,14 +2580,17 @@ namespace bts { namespace blockchain {
    }
 
    fc::ripemd160 chain_database::get_current_random_seed()const
-   {
-      return get_property( last_random_seed_id ).as<fc::ripemd160>();
-   }
+   { try {
+      const optional<variant> result = get_property( last_random_seed_id );
+      if( result.valid() ) return result->as<fc::ripemd160>();
+      return fc::ripemd160();
+   } FC_CAPTURE_AND_RETHROW() }
 
    oorder_record chain_database::get_bid_record( const market_index_key&  key )const
    {
       return my->_bid_db.fetch_optional(key);
    }
+
    oorder_record chain_database::get_relative_bid_record( const market_index_key&  key )const
    {
       return my->_relative_bid_db.fetch_optional(key);
