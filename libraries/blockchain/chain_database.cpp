@@ -202,16 +202,8 @@ namespace bts { namespace blockchain {
            // this is the usual case
            if( !chain_id_only )
                std::cout << "Initializing genesis state from built-in genesis file\n";
-   #ifdef EMBED_GENESIS_STATE_AS_TEXT
-           std::string genesis_file_contents = get_builtin_genesis_json_as_string();
-           config = fc::json::from_string(genesis_file_contents).as<genesis_state>();
-           fc::sha256::encoder enc;
-           fc::raw::pack( enc, config );
-           chain_id = enc.result();
-   #else
            config = get_builtin_genesis_block_config();
            chain_id = get_builtin_genesis_block_state_hash();
-   #endif
          }
 
          if( chain_id_only )
