@@ -278,7 +278,7 @@ string  detail::client_impl::wallet_address_create( const string& account_name,
     else if (legacy_network_byte == 0 || legacy_network_byte == 56)
         return string( pts_address( pubkey, true, legacy_network_byte ) );
     else
-        FC_ASSERT(!"Unsupported network byte");
+        FC_ASSERT(false, "Unsupported network byte");
 } FC_CAPTURE_AND_RETHROW( (account_name)(label)(legacy_network_byte) ) }
 
 
@@ -1029,7 +1029,7 @@ wallet_transaction_record client_impl::wallet_scan_transaction( const string& tr
 void client_impl::wallet_scan_transaction_experimental( const string& transaction_id, bool overwrite_existing )
 { try {
 #ifndef BTS_TEST_NETWORK
-   FC_ASSERT( !"This command is for developer testing only!" );
+   FC_ASSERT( false, "This command is for developer testing only!" );
 #endif
    _wallet->scan_transaction_experimental( transaction_id, overwrite_existing );
 } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id)("overwrite_existing",overwrite_existing) ) }
@@ -1037,7 +1037,7 @@ void client_impl::wallet_scan_transaction_experimental( const string& transactio
 void client_impl::wallet_add_transaction_note_experimental( const string& transaction_id, const string& note )
 { try {
 #ifndef BTS_TEST_NETWORK
-   FC_ASSERT( !"This command is for developer testing only!" );
+   FC_ASSERT( false, "This command is for developer testing only!" );
 #endif
    _wallet->add_transaction_note_experimental( transaction_id, note );
 } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id)("note",note) ) }
@@ -1045,7 +1045,7 @@ void client_impl::wallet_add_transaction_note_experimental( const string& transa
 set<pretty_transaction_experimental> client_impl::wallet_transaction_history_experimental( const string& account_name )const
 { try {
 #ifndef BTS_TEST_NETWORK
-   FC_ASSERT( !"This command is for developer testing only!" );
+   FC_ASSERT( false, "This command is for developer testing only!" );
 #endif
    return _wallet->transaction_history_experimental( account_name );
 } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
@@ -1416,7 +1416,7 @@ transaction_builder client_impl::wallet_balance_set_vote_info(const balance_id_t
         if( balance.valid() && balance->restricted_owner.valid() )
             new_voter = *balance->restricted_owner;
         else
-            FC_ASSERT(!"Didn't specify a voter address and none currently exists.");
+            FC_ASSERT(false, "Didn't specify a voter address and none currently exists.");
     }
     else
     {
