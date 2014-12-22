@@ -24,10 +24,10 @@ void wallet_impl::scan_market_transaction(
     {
         const auto bid_account_key = _wallet_db.lookup_key( okey_bid->account_address );
 
-        auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.bid_owner),
-                                                                            mtrx.bid_price.base_asset_id ).get_address() );
+    //    auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.bid_owner),
+    //                                                                        mtrx.bid_price.base_asset_id ).get_address() );
 
-        bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.bid_owner),
+        auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.bid_owner),
                                                                       mtrx.bid_price.quote_asset_id ).get_address() );
 
         /* Construct a unique record id */
@@ -122,10 +122,10 @@ void wallet_impl::scan_market_transaction(
     {
         const auto ask_account_key = _wallet_db.lookup_key( okey_ask->account_address );
 
-        auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.ask_owner),
-                                                                            mtrx.ask_price.base_asset_id ).get_address() );
+        //auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.ask_owner),
+        //                                                                    mtrx.ask_price.base_asset_id ).get_address() );
 
-        bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.ask_owner),
+        auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.ask_owner),
                                                                       mtrx.ask_price.quote_asset_id ).get_address() );
 
         /* Construct a unique record id */
@@ -565,7 +565,8 @@ bool wallet_impl::scan_withdraw( const withdraw_operation& op,
                                  wallet_transaction_record& trx_rec, asset& total_fee,
                                  public_key_type& withdraw_pub_key )
 { try {
-   const auto bal_rec = _blockchain->get_balance_record( op.balance_id );
+   auto bal_rec = _blockchain->get_balance_record( op.balance_id );
+   if( !bal_rec ) bal_rec = _blockchain->get_empty_balance_record( op.balance_id );
    FC_ASSERT( bal_rec.valid() );
    const auto amount = asset( op.amount, bal_rec->condition.asset_id );
 

@@ -134,6 +134,7 @@ namespace bts { namespace blockchain {
             bts::db::level_map<pair<asset_id_type,proposal_id_type>, proposal_record>   _asset_proposal_db;
 
             bts::db::cached_level_map<balance_id_type, balance_record>                  _balance_db;
+            bts::db::level_map<balance_id_type, balance_record>                         _empty_balance_db; // stored separately for performance reasons
 
             bts::db::cached_level_map<account_id_type, account_record>                  _account_db;
             bts::db::cached_level_map<string, account_id_type>                          _account_index_db;
