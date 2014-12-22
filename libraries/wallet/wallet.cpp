@@ -2050,6 +2050,7 @@ namespace detail {
       auto builder = create_transaction_builder();
       const auto required_fees = get_transaction_fee();
       auto balance = my->_blockchain->get_balance_record( balance_id );
+      if( !balance ) balance = my->_blockchain->get_empty_balance_record( balance_id );
       FC_ASSERT( balance.valid(), "No such balance!" );
 
       signed_transaction     trx;
