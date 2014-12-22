@@ -57,7 +57,7 @@ namespace bts { namespace blockchain {
                 break;
             }
             default:
-                FC_ASSERT(!"Unimplemenetd case in check_update_permission");
+                FC_ASSERT(false, "Unimplemenetd case in check_update_permission");
         }
         return false;
    } FC_CAPTURE_AND_RETHROW( (id) ) }

@@ -191,7 +191,7 @@ namespace bts { namespace blockchain {
            }
            else
            {
-              FC_ASSERT( !"Invalid genesis format", " '${format}'", ("format",genesis_file->extension() ) );
+              FC_ASSERT( false, "Invalid genesis format '${format}'", ("format",genesis_file->extension() ) );
            }
            fc::sha256::encoder enc;
            fc::raw::pack( enc, config );
@@ -202,16 +202,8 @@ namespace bts { namespace blockchain {
            // this is the usual case
            if( !chain_id_only )
                std::cout << "Initializing genesis state from built-in genesis file\n";
-   #ifdef EMBED_GENESIS_STATE_AS_TEXT
-           std::string genesis_file_contents = get_builtin_genesis_json_as_string();
-           config = fc::json::from_string(genesis_file_contents).as<genesis_state>();
-           fc::sha256::encoder enc;
-           fc::raw::pack( enc, config );
-           chain_id = enc.result();
-   #else
            config = get_builtin_genesis_block_config();
            chain_id = get_builtin_genesis_block_state_hash();
-   #endif
          }
 
          if( chain_id_only )
@@ -1936,7 +1928,7 @@ namespace bts { namespace blockchain {
             case user_auction_object:
             case site_object:
             default:
-                FC_ASSERT(!"You cannot store these object types via object interface yet!");
+                FC_ASSERT(false, "You cannot store these object types via object interface yet!");
                 break;
         }
     } FC_CAPTURE_AND_RETHROW( (obj) ) }
@@ -1994,14 +1986,14 @@ namespace bts { namespace blockchain {
     map<string, object_record>   chain_database::get_edges( const object_id_type& from,
                                                             const object_id_type& to )const
     {
-        FC_ASSERT(!"unimplemented");
+        FC_ASSERT(false, "unimplemented");
         map<string, object_record> ret;
         return ret;
     }
 
     map<object_id_type, map<string, object_record>> chain_database::get_edges( const object_id_type& from )const
     {
-        FC_ASSERT(!"unimplemented");
+        FC_ASSERT(false, "unimplemented");
         map<object_id_type, map<string, object_record>> ret;
         return ret;
     }
