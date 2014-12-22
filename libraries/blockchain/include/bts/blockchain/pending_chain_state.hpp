@@ -131,53 +131,84 @@ namespace bts { namespace blockchain {
           */
          virtual void                  index_transaction( const address& addr, const transaction_id_type& trx_id ) override;
 
-         // NOTE: this isn't really part of the chain state, but more part of the block state
-         vector<market_transaction>                                         market_transactions;
-
-         unordered_map< asset_id_type, asset_record>                        assets;
-         unordered_map< slate_id_type, delegate_slate>                      slates;
-         unordered_map< account_id_type, account_record>                    accounts;
-         unordered_map< balance_id_type, balance_record>                    balances;
-         unordered_map< string, account_id_type>                            account_id_index;
-         unordered_map< string, asset_id_type>                              symbol_id_index;
          unordered_map< transaction_id_type, transaction_record>            transactions;
          unordered_set< digest_type >                                       unique_transactions;
+
          unordered_map< chain_property_type, variant>                       properties;
+
+         unordered_map< asset_id_type, asset_record>                        assets;
+         unordered_map< string, asset_id_type>                              symbol_id_index;
+         map< std::pair<asset_id_type,proposal_id_type>, proposal_record >  asset_proposals;
+
+         unordered_map< balance_id_type, balance_record>                    balances;
+
+         unordered_map< account_id_type, account_record>                    accounts;
+         unordered_map< string, account_id_type>                            account_id_index;
          unordered_map<address, account_id_type>                            key_to_account;
-         map< market_index_key, order_record>                               bids;
+
+         unordered_map< slate_id_type, delegate_slate>                      slates;
+         map<time_point_sec, slot_record>                                   slots;
+
+         map<burn_record_key,burn_record_value>                             burns;
+
          map< market_index_key, order_record>                               asks;
+         map< market_index_key, order_record>                               bids;
+         map< market_index_key, order_record>                               relative_asks;
+         map< market_index_key, order_record>                               relative_bids;
          map< market_index_key, order_record>                               shorts;
          map< market_index_key, collateral_record>                          collateral;
-         map<time_point_sec, slot_record>                                   slots;
-         map<market_history_key, market_history_record>                     market_history;
-         map< std::pair<asset_id_type,asset_id_type>, market_status>        market_statuses;
-         map<operation_type_enum, std::deque<operation>>                    recent_operations;
          map<feed_index, feed_record>                                       feeds;
-         map<burn_record_key,burn_record_value>                             burns;
-         map< market_index_key, order_record>                               relative_bids;
-         map< market_index_key, order_record>                               relative_asks;
-
-         map< object_id_type, object_record >                               objects;
-
-         map< edge_index_key, object_id_type >                              edge_index;
-         map< edge_index_key, object_id_type >                              reverse_edge_index;
-         map< string, site_record >                                         site_index;
-
-         map< std::pair<asset_id_type,address>, object_id_type >            authorizations;
-         map< std::pair<asset_id_type,proposal_id_type>, proposal_record >  asset_proposals;
 
          std::set<std::pair<asset_id_type, asset_id_type>>                  _dirty_markets;
 
-         chain_interface_weak_ptr                                           _prev_state;
-   };
+         vector<market_transaction>                                         market_transactions;
+         map< std::pair<asset_id_type,asset_id_type>, market_status>        market_statuses;
+         map<market_history_key, market_history_record>                     market_history;
 
+         map< object_id_type, object_record >                               objects;
+         map< edge_index_key, object_id_type >                              edge_index;
+         map< edge_index_key, object_id_type >                              reverse_edge_index;
+
+         map< string, site_record >                                         site_index;
+
+         map< std::pair<asset_id_type,address>, object_id_type >            authorizations;
+
+         // Not serialized
+         std::weak_ptr<chain_interface>                                     _prev_state;
+         map<operation_type_enum, std::deque<operation>>                    recent_operations;
+   };
    typedef std::shared_ptr<pending_chain_state> pending_chain_state_ptr;
 
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::pending_chain_state,
-            (assets)(slates)(accounts)(balances)(account_id_index)(symbol_id_index)(transactions)
-            (properties)(bids)(asks)(shorts)(collateral)(slots)
-            (market_statuses)(feeds)(objects)(burns)(relative_bids)(relative_asks)(_dirty_markets)
-            (authorizations)(asset_proposals)
-           )
+        (transactions)
+        (unique_transactions)
+        (properties)
+        (assets)
+        (symbol_id_index)
+        (asset_proposals)
+        (balances)
+        (accounts)
+        (account_id_index)
+        (key_to_account)
+        (slates)
+        (slots)
+        (burns)
+        (asks)
+        (bids)
+        (relative_asks)
+        (relative_bids)
+        (shorts)
+        (collateral)
+        (feeds)
+        (_dirty_markets)
+        (market_transactions)
+        (market_statuses)
+        (market_history)
+        (objects)
+        (edge_index)
+        (reverse_edge_index)
+        (site_index)
+        (authorizations)
+    )

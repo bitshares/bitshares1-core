@@ -1,5 +1,7 @@
 #pragma once
 
+#include <bts/blockchain/types.hpp>
+
 namespace bts { namespace blockchain {
 
     // The difference between a condition and normal business logic is that

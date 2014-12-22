@@ -1,10 +1,10 @@
-#include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/operation_factory.hpp>
+#include <bts/blockchain/pending_chain_state.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
 
 namespace bts { namespace blockchain {
 
-   transaction_evaluation_state::transaction_evaluation_state( chain_interface* current_state )
+   transaction_evaluation_state::transaction_evaluation_state( pending_chain_state* current_state )
    :_current_state( current_state )
    {
    }

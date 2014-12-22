@@ -1,19 +1,15 @@
 #pragma once
 
+#include <bts/blockchain/account_record.hpp>
 #include <bts/blockchain/delegate_slate.hpp>
+#include <bts/blockchain/edge_record.hpp>
+#include <bts/blockchain/object_record.hpp>
 #include <bts/blockchain/operations.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
-#include <bts/blockchain/account_record.hpp>
-#include <bts/blockchain/object_record.hpp>
-#include <bts/blockchain/edge_record.hpp>
 
 #include <fc/reflect/variant.hpp>
 
 namespace bts { namespace blockchain {
-
-   class chain_interface;
-   typedef std::shared_ptr<chain_interface> chain_interface_ptr;
-   typedef std::weak_ptr<chain_interface> chain_interface_weak_ptr;
 
    struct market_index_key;
 
