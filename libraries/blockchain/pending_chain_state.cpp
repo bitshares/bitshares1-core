@@ -403,7 +403,7 @@ namespace bts { namespace blockchain {
         {
             case account_object:
             case asset_object:
-                FC_ASSERT(!"You cannot store these object types via object interface yet!");
+                FC_ASSERT(false, "You cannot store these object types via object interface yet!");
                 break;
             case edge_object:
             {
@@ -446,7 +446,7 @@ namespace bts { namespace blockchain {
 
     void                       pending_chain_state::store_site_record( const site_record& site )
     {
-        FC_ASSERT(!"unimplemented");
+        FC_ASSERT(false, "unimplemented");
         /*
         site_index[site.site_name] = site;
         objects[site._id] = site;
@@ -475,11 +475,11 @@ namespace bts { namespace blockchain {
     map<string, object_record>   pending_chain_state::get_edges( const object_id_type& from,
                                           const object_id_type& to )const
     {
-        FC_ASSERT(!"unimplemented!");
+        FC_ASSERT(false, "unimplemented!");
     }
     map<object_id_type, map<string, object_record>> pending_chain_state::get_edges( const object_id_type& from )const
     {
-        FC_ASSERT(!"unimplemented!");
+        FC_ASSERT(false, "unimplemented!");
     }
 
    osite_record  pending_chain_state::lookup_site( const string& site_name)const

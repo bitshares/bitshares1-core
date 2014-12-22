@@ -43,7 +43,7 @@ asset market_order::get_balance()const
         asset_id = market_index.order_price.quote_asset_id;
         break;
      case null_order:
-        FC_ASSERT( !"Null Order" );
+        FC_ASSERT( false, "Null Order" );
   }
   return asset( state.balance, asset_id );
 }
@@ -85,9 +85,9 @@ price market_order::get_price( const price& relative )const
       case cover_order:
         return market_index.order_price;
       case null_order:
-        FC_ASSERT( !"Null Order" );
+        FC_ASSERT( false, "Null Order" );
    }
-   FC_ASSERT( !"Should not reach this line" );
+   FC_ASSERT( false, "Should not reach this line" );
 } FC_CAPTURE_AND_RETHROW( (*this)(relative) ) }
 
 price market_order::get_highest_cover_price()const

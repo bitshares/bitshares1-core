@@ -2050,6 +2050,7 @@ namespace detail {
       auto builder = create_transaction_builder();
       const auto required_fees = get_transaction_fee();
       auto balance = my->_blockchain->get_balance_record( balance_id );
+      if( !balance ) balance = my->_blockchain->get_empty_balance_record( balance_id );
       FC_ASSERT( balance.valid(), "No such balance!" );
 
       signed_transaction     trx;
@@ -2635,7 +2636,7 @@ namespace detail {
 
    void wallet::set_address_label( const address& addr, const string& label )
    {
-       FC_ASSERT(!"This doesn't do anything right now.");
+       FC_ASSERT(false, "This doesn't do anything right now.");
        FC_ASSERT( is_open() );
        FC_ASSERT( is_unlocked() );
        auto okey = my->_wallet_db.lookup_key( addr );
@@ -2647,7 +2648,7 @@ namespace detail {
 
    string wallet::get_address_label( const address& addr )
    {
-       FC_ASSERT(!"This doesn't do anything right now.");
+       FC_ASSERT(false, "This doesn't do anything right now.");
        FC_ASSERT( is_open() );
        FC_ASSERT( is_unlocked() );
        auto okey = my->_wallet_db.lookup_key( addr );
@@ -2659,7 +2660,7 @@ namespace detail {
 
    void wallet::set_address_group_label( const address& addr, const string& group_label )
    {
-       FC_ASSERT(!"This doesn't do anything right now.");
+       FC_ASSERT(false, "This doesn't do anything right now.");
        FC_ASSERT( is_open() );
        FC_ASSERT( is_unlocked() );
        auto okey = my->_wallet_db.lookup_key( addr );
@@ -2671,7 +2672,7 @@ namespace detail {
 
    string wallet::get_address_group_label( const address& addr )
    {
-       FC_ASSERT(!"This doesn't do anything right now.");
+       FC_ASSERT(false, "This doesn't do anything right now.");
        FC_ASSERT( is_open() );
        FC_ASSERT( is_unlocked() );
        auto okey = my->_wallet_db.lookup_key( addr );
@@ -2682,7 +2683,7 @@ namespace detail {
 
    vector<address> wallet::get_addresses_for_group_label( const string& group_label )
    {
-       FC_ASSERT(!"This doesn't do anything right now.");
+       FC_ASSERT(false, "This doesn't do anything right now.");
        vector<address> addrs;
        for( auto item : my->_wallet_db.get_keys() )
        {

@@ -166,8 +166,8 @@ wallet_asset_issue <amount> <symbol> <to_account_name> [memo_message]
 wallet_asset_update <symbol> [name] [description] [public_data] [maximum_share_supply] [precision] [issuer_transaction_fee] [flags] [issuer_permissions] [issuer_account_name] [required_sigs] [authority] 
 wallet_backup_create <json_filename>                                                                
 wallet_backup_restore <json_filename> <wallet_name> <imported_wallet_passphrase>                    
-wallet_balance_set_vote_info <balance_id> [voter_address] [vote_method] [sign_and_broadcast]        
-wallet_builder_add_signature <builder> [broadcast]                                                  
+wallet_balance_set_vote_info <balance_id> [voter_address] [vote_method] [sign_and_broadcast] [builder_path] 
+wallet_builder_add_signature <builder> [broadcast] [builder_path]                                   
 wallet_burn <amount_to_burn> <asset_symbol> <from_account_name> <for_or_against> <to_account_name> [public_message] [anonymous] 
 wallet_change_passphrase <passphrase>                                                               
 wallet_check_sharedrop                                                                              
@@ -257,5 +257,5 @@ wallet_transfer_to_public_account <amount_to_transfer> <asset_symbol> <from_acco
 wallet_unlock <timeout> <passphrase>                                                                
 wallet_verify_titan_deposit <transaction_id_prefix>                                                 
 wallet_withdraw_from_address <amount> <symbol> <from_address> <to> [vote_method] [sign_and_broadcast] [builder_path] 
-wallet_withdraw_from_legacy_address <amount> <symbol> <from_address> <to> [vote_method] [sign_and_broadcast]
+wallet_withdraw_from_legacy_address <amount> <symbol> <from_address> <to> [vote_method] [sign_and_broadcast] [builder_path]
 (wallet closed) >>> quit

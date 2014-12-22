@@ -102,7 +102,7 @@ namespace bts { namespace blockchain {
                return asset();
            }
        }
-       FC_ASSERT( !"Should never get here!" );
+       FC_ASSERT( false, "Should never get here!" );
    }
 
 } } // bts::blockchain

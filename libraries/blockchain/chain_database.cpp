@@ -110,6 +110,7 @@ namespace bts { namespace blockchain {
 
           _asset_db.open( data_dir / "index/asset_db" );
           _balance_db.open( data_dir / "index/balance_db" );
+          _empty_balance_db.open( data_dir / "index/empty_balance_db" );
           _address_to_trx_index.open( data_dir / "index/address_to_trx_db" );
           _auth_db.open( data_dir / "index/auth_db" );
           _asset_proposal_db.open( data_dir / "index/asset_proposal_db" );
@@ -191,7 +192,7 @@ namespace bts { namespace blockchain {
            }
            else
            {
-              FC_ASSERT( !"Invalid genesis format", " '${format}'", ("format",genesis_file->extension() ) );
+              FC_ASSERT( false, "Invalid genesis format '${format}'", ("format",genesis_file->extension() ) );
            }
            fc::sha256::encoder enc;
            fc::raw::pack( enc, config );
@@ -202,16 +203,8 @@ namespace bts { namespace blockchain {
            // this is the usual case
            if( !chain_id_only )
                std::cout << "Initializing genesis state from built-in genesis file\n";
-   #ifdef EMBED_GENESIS_STATE_AS_TEXT
-           std::string genesis_file_contents = get_builtin_genesis_json_as_string();
-           config = fc::json::from_string(genesis_file_contents).as<genesis_state>();
-           fc::sha256::encoder enc;
-           fc::raw::pack( enc, config );
-           chain_id = enc.result();
-   #else
            config = get_builtin_genesis_block_config();
            chain_id = get_builtin_genesis_block_state_hash();
-   #endif
          }
 
          if( chain_id_only )
@@ -1349,6 +1342,7 @@ namespace bts { namespace blockchain {
 
       my->_asset_db.close();
       my->_balance_db.close();
+      my->_empty_balance_db.close();
       my->_address_to_trx_index.close();
       my->_burn_db.close();
       my->_account_db.close();
@@ -1689,9 +1683,20 @@ namespace bts { namespace blockchain {
       return oaccount_record();
    } FC_CAPTURE_AND_RETHROW( (account_owner) ) }
 
+   obalance_record chain_database::get_empty_balance_record( const balance_id_type& balance_id )const
+   {
+      auto balance = my->_empty_balance_db.fetch_optional( balance_id );
+      return balance;
+   }
    obalance_record chain_database::get_balance_record( const balance_id_type& balance_id )const
    {
-      return my->_balance_db.fetch_optional( balance_id );
+      auto balance = my->_balance_db.fetch_optional( balance_id );
+
+      // this will slow things down during block processing, empty balance db is only really useful to
+      // the wallet for rescan pruposes.   Have the wallet check the empty DB
+      
+      //if( !balance ) balance = my->_empty_balance_db.fetch_optional( balance_id );
+      return balance;
    }
 
    oaccount_record chain_database::get_account_record( const account_id_type& account_id )const
@@ -1743,19 +1748,17 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_balance_record( const balance_record& r )
    { try {
-#if 0
        ilog( "balance record: ${r}", ("r",r) );
        if( r.is_null() )
        {
+          /* Currently we keep all balance records forever so we know the owner and asset ID on wallet rescan */
+          my->_empty_balance_db.store( r.id(), r );
           my->_balance_db.remove( r.id() );
        }
        else
        {
           my->_balance_db.store( r.id(), r );
        }
-#endif
-       /* Currently we keep all balance records forever so we know the owner and asset ID on wallet rescan */
-       my->_balance_db.store( r.id(), r );
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("record", r) ) }
 
@@ -1936,7 +1939,7 @@ namespace bts { namespace blockchain {
             case user_auction_object:
             case site_object:
             default:
-                FC_ASSERT(!"You cannot store these object types via object interface yet!");
+                FC_ASSERT(false, "You cannot store these object types via object interface yet!");
                 break;
         }
     } FC_CAPTURE_AND_RETHROW( (obj) ) }
@@ -1994,14 +1997,14 @@ namespace bts { namespace blockchain {
     map<string, object_record>   chain_database::get_edges( const object_id_type& from,
                                                             const object_id_type& to )const
     {
-        FC_ASSERT(!"unimplemented");
+        FC_ASSERT(false, "unimplemented");
         map<string, object_record> ret;
         return ret;
     }
 
     map<object_id_type, map<string, object_record>> chain_database::get_edges( const object_id_type& from )const
     {
-        FC_ASSERT(!"unimplemented");
+        FC_ASSERT(false, "unimplemented");
         map<object_id_type, map<string, object_record>> ret;
         return ret;
     }
@@ -3759,6 +3762,10 @@ namespace bts { namespace blockchain {
        my->_balance_db.export_to_json( next_path );
        ulog( "Dumped ${p}", ("p",next_path) );
 
+       next_path = dir / "_empty_balance_db.json";
+       my->_empty_balance_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
        next_path = dir / "_burn_db.json";
        my->_burn_db.export_to_json( next_path );
        ulog( "Dumped ${p}", ("p",next_path) );
@@ -3841,7 +3848,7 @@ namespace bts { namespace blockchain {
      fc::mutable_variant_object stats;
 #define CHAIN_DB_DATABASES (_market_transactions_db)(_slate_db)(_fork_number_db)(_fork_db)(_property_db)(_undo_state_db) \
                            (_block_num_to_id_db)(_block_id_to_block_record_db)(_block_id_to_block_data_db) \
-                           (_id_to_transaction_record_db)(_pending_transaction_db)(_pending_fee_index)(_asset_db)(_balance_db) \
+                           (_id_to_transaction_record_db)(_pending_transaction_db)(_pending_fee_index)(_asset_db)(_empty_balance_db)(_balance_db) \
                            (_burn_db)(_account_db)(_address_to_account_db)(_account_index_db)(_symbol_index_db)(_delegate_vote_index_db) \
                            (_slot_record_db)(_ask_db)(_bid_db)(_short_db)(_collateral_db)(_feed_db)(_object_db)(_edge_index)(_reverse_edge_index)(_market_status_db)(_market_history_db) \
                            (_recent_operations)
