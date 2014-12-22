@@ -47,6 +47,54 @@
 
 namespace bts { namespace cli {
 
+  class buffered_istream_with_eot_hack : public virtual fc::buffered_istream
+  {
+  public:
+    buffered_istream_with_eot_hack(fc::istream_ptr is) : 
+      fc::buffered_istream(is) {}
+    buffered_istream_with_eot_hack(fc::buffered_istream&& o) : 
+      fc::buffered_istream(std::move(o)) {}
+
+    std::size_t readsome(char* buf, std::size_t len) override
+    {
+      std::size_t bytes_read = fc::buffered_istream::readsome(buf, len);
+      assert(bytes_read > 0);
+      if (buf[bytes_read - 1] == 0x04)
+        --bytes_read;
+      if (bytes_read == 0)
+        FC_THROW_EXCEPTION(fc::eof_exception, "");
+      return bytes_read;
+    }
+
+    size_t readsome(const std::shared_ptr<char>& buf, size_t len, size_t offset) override
+    {
+      std::size_t bytes_read = fc::buffered_istream::readsome(buf, len, offset);
+      assert(bytes_read > 0);
+      if (buf.get()[offset + bytes_read - 1] == 0x04)
+        --bytes_read;
+      if (bytes_read == 0)
+        FC_THROW_EXCEPTION(fc::eof_exception, "");
+      return bytes_read;
+    }
+
+    char peek() const override
+    {
+      char c = fc::buffered_istream::peek();
+      if (c == 0x04)
+        FC_THROW_EXCEPTION(fc::eof_exception, "");
+      return c;
+    }
+
+    char get() override
+    {
+      char c = fc::buffered_istream::get();
+      if (c == 0x04)
+        FC_THROW_EXCEPTION(fc::eof_exception, "");
+      return c;
+    }
+  };
+
+
   FC_DECLARE_EXCEPTION( cli_exception, 11000, "CLI Error" )
   FC_DECLARE_DERIVED_EXCEPTION( abort_cli_command, bts::cli::cli_exception, 11001, "command aborted by user" );
   FC_DECLARE_DERIVED_EXCEPTION( exit_cli_command, bts::cli::cli_exception, 11002, "exit CLI client requested by user" );
@@ -198,7 +246,7 @@ namespace bts { namespace cli {
                   return;
               }
 
-              fc::buffered_istream buffered_argument_stream(argument_stream);
+              buffered_istream_with_eot_hack buffered_argument_stream(argument_stream);
 
               bool command_is_valid = false;
               fc::variants arguments;
@@ -372,7 +420,7 @@ namespace bts { namespace cli {
                     {
                       string prompt_answer = get_line(prompt, is_passphrase );
                       auto prompt_argument_stream = std::make_shared<fc::stringstream>(prompt_answer);
-                      fc::buffered_istream buffered_argument_stream(prompt_argument_stream);
+                      buffered_istream_with_eot_hack buffered_argument_stream(prompt_argument_stream);
                       try
                       {
                         arguments.push_back(_self->parse_argument_of_known_type(buffered_argument_stream, method_data, i));
