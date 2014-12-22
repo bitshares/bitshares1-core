@@ -382,6 +382,8 @@ namespace bts { namespace blockchain {
 
       private:
          unique_ptr<detail::chain_database_impl> my;
+
+         virtual void init_account_db_interface()override;
    };
 
    typedef shared_ptr<chain_database> chain_database_ptr;

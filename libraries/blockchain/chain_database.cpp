@@ -115,12 +115,25 @@ namespace bts { namespace blockchain {
           _auth_db.open( data_dir / "index/auth_db" );
           _asset_proposal_db.open( data_dir / "index/asset_proposal_db" );
           _burn_db.open( data_dir / "index/burn_db" );
-          _account_db.open( data_dir / "index/account_db" );
-          _address_to_account_db.open( data_dir / "index/address_to_account_db" );
 
-          _account_index_db.open( data_dir / "index/account_index_db" );
+          _account_db.open( data_dir / "index/account_db" );
+          for( auto iter = _account_db.begin(); iter.valid(); ++iter )
+          {
+              const account_record& record = iter.value();
+              _account_name_to_id[ record.name ] = record.id;
+              _account_address_to_id[ record.owner_address() ] = record.id;
+              if( !record.is_retracted() )
+              {
+                  _account_address_to_id[ record.active_address() ] = record.id;
+                  if( record.is_delegate() )
+                  {
+                      _account_address_to_id[ record.signing_address() ] = record.id;
+                      _delegate_votes.emplace( record.net_votes(), record.id );
+                  }
+              }
+          }
+
           _symbol_index_db.open( data_dir / "index/symbol_index_db" );
-          _delegate_vote_index_db.open( data_dir / "index/delegate_vote_index_db" );
 
           _slot_record_db.open( data_dir / "index/slot_record_db" );
 
@@ -961,9 +974,6 @@ namespace bts { namespace blockchain {
              **/
             update_delegate_production_info( block_data, pending_state, block_signee );
 
-            // apply any deterministic operations such as market operations before we perturb indexes
-            //apply_deterministic_updates(pending_state);
-
             pay_delegate( pending_state, block_signee, block_id );
 
             execute_markets( block_data.timestamp, pending_state );
@@ -1088,6 +1098,8 @@ namespace bts { namespace blockchain {
       my->self = this;
       my->_skip_signature_verification = true;
       my->_relay_fee = BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE;
+
+      init_account_db_interface();
    }
 
    chain_database::~chain_database()
@@ -1113,14 +1125,14 @@ namespace bts { namespace blockchain {
 
    std::vector<account_id_type> chain_database::get_delegates_by_vote( uint32_t first, uint32_t count )const
    { try {
-      auto del_vote_itr = my->_delegate_vote_index_db.begin();
+      auto del_vote_itr = my->_delegate_votes.begin();
       std::vector<account_id_type> sorted_delegates;
       sorted_delegates.reserve( count );
       uint32_t pos = 0;
-      while( sorted_delegates.size() < count && del_vote_itr.valid() )
+      while( sorted_delegates.size() < count && del_vote_itr != my->_delegate_votes.end() )
       {
          if( pos >= first )
-            sorted_delegates.push_back( del_vote_itr.key().delegate_id );
+            sorted_delegates.push_back( del_vote_itr->delegate_id );
          ++pos;
          ++del_vote_itr;
       }
@@ -1178,9 +1190,6 @@ namespace bts { namespace blockchain {
                  my->_slate_db.set_write_through( write_through );
 
                  my->_account_db.set_write_through( write_through );
-                 my->_account_index_db.set_write_through( write_through );
-                 my->_address_to_account_db.set_write_through( write_through );
-                 my->_delegate_vote_index_db.set_write_through( write_through );
 
                  my->_asset_db.set_write_through( write_through );
                  my->_symbol_index_db.set_write_through( write_through );
@@ -1346,11 +1355,8 @@ namespace bts { namespace blockchain {
       my->_address_to_trx_index.close();
       my->_burn_db.close();
       my->_account_db.close();
-      my->_address_to_account_db.close();
 
-      my->_account_index_db.close();
       my->_symbol_index_db.close();
-      my->_delegate_vote_index_db.close();
 
       my->_slot_record_db.close();
 
@@ -1677,10 +1683,7 @@ namespace bts { namespace blockchain {
 
    oaccount_record chain_database::get_account_record( const address& account_owner )const
    { try {
-      auto itr = my->_address_to_account_db.find( account_owner );
-      if( itr.valid() )
-         return get_account_record( itr.value() );
-      return oaccount_record();
+       return lookup<account_record>( account_owner );
    } FC_CAPTURE_AND_RETHROW( (account_owner) ) }
 
    obalance_record chain_database::get_empty_balance_record( const balance_id_type& balance_id )const
@@ -1701,7 +1704,7 @@ namespace bts { namespace blockchain {
 
    oaccount_record chain_database::get_account_record( const account_id_type& account_id )const
    { try {
-      return my->_account_db.fetch_optional( account_id );
+       return lookup<account_record>( account_id );
    } FC_CAPTURE_AND_RETHROW( (account_id) ) }
 
    asset_id_type chain_database::get_asset_id( const string& symbol )const
@@ -1726,10 +1729,7 @@ namespace bts { namespace blockchain {
 
    oaccount_record chain_database::get_account_record( const string& account_name )const
    { try {
-       auto account_id_itr = my->_account_index_db.find( account_name );
-       if( account_id_itr.valid() )
-          return get_account_record( account_id_itr.value() );
-       return oaccount_record();
+       return lookup<account_record>( account_name );
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
    void chain_database::store_asset_record( const asset_record& asset_to_store )
@@ -1764,134 +1764,7 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_account_record( const account_record& record_to_store )
    { try {
-       const auto remove_record = [ this ]( const account_record& record )
-       {
-           my->_account_db.remove( record.id );
-           my->_account_index_db.remove( record.name );
-           my->_address_to_account_db.remove( record.owner_address() );
-           if( !record.is_retracted() )
-               my->_address_to_account_db.remove( record.active_address() );
-           if( record.is_delegate() )
-           {
-               my->_address_to_account_db.remove( record.signing_address() );
-               if( !record.is_retracted() )
-                   my->_delegate_vote_index_db.remove( vote_del( record.net_votes(), record.id ) );
-           }
-       };
-
-       const auto store_record = [ this ]( const account_record& record )
-       {
-           my->_account_db.store( record.id, record );
-           my->_account_index_db.store( record.name, record.id );
-           my->_address_to_account_db.store( record.owner_address(), record.id );
-           if( !record.is_retracted() )
-               my->_address_to_account_db.store( record.active_address(), record.id );
-           if( record.is_delegate() )
-           {
-               my->_address_to_account_db.store( record.signing_address(), record.id );
-               if( !record.is_retracted() )
-                   my->_delegate_vote_index_db.store( vote_del( record.net_votes(), record.id ), 0 /*dummy value*/ );
-           }
-       };
-
-       const auto index_active_keys = [ this ]( const account_record& prev_record, const account_record& new_record )
-       {
-           if( prev_record.is_retracted() && new_record.is_retracted() )
-               return;
-
-           if( !prev_record.is_retracted() && new_record.is_retracted() )
-               return my->_address_to_account_db.remove( prev_record.active_address() );
-
-           if( prev_record.is_retracted() && !new_record.is_retracted() )
-               return my->_address_to_account_db.store( new_record.active_address(), new_record.id );
-
-           const address& prev_active_address = prev_record.active_address();
-           const address& new_active_address = new_record.active_address();
-           if( prev_active_address != new_active_address )
-           {
-               my->_address_to_account_db.remove( prev_active_address );
-               my->_address_to_account_db.store( new_active_address, new_record.id );
-           }
-       };
-
-       const auto index_signing_keys = [ this ]( const account_record& prev_record, const account_record& new_record )
-       {
-           if( !prev_record.is_delegate() && !new_record.is_delegate() )
-               return;
-
-           if( prev_record.is_delegate() && !new_record.is_delegate() )
-               return my->_address_to_account_db.remove( prev_record.signing_address() );
-
-           if( !prev_record.is_delegate() && new_record.is_delegate() )
-               return my->_address_to_account_db.store( new_record.signing_address(), new_record.id );
-
-           const address& prev_signing_address = prev_record.signing_address();
-           const address& new_signing_address = new_record.signing_address();
-           if( prev_signing_address != new_signing_address )
-           {
-               my->_address_to_account_db.remove( prev_signing_address );
-               my->_address_to_account_db.store( new_signing_address, new_record.id );
-           }
-       };
-
-       const auto index_votes = [ this ]( const account_record& prev_record, const account_record& new_record )
-       {
-           if( !prev_record.is_delegate() && !new_record.is_delegate() )
-               return;
-
-           if( prev_record.is_delegate() && !new_record.is_delegate() )
-           {
-               if( !prev_record.is_retracted() )
-                   my->_delegate_vote_index_db.remove( vote_del( prev_record.net_votes(), prev_record.id ) );
-               return;
-           }
-
-           if( !prev_record.is_delegate() && new_record.is_delegate() )
-           {
-               if( !new_record.is_retracted() )
-                   my->_delegate_vote_index_db.store( vote_del( new_record.net_votes(), new_record.id ), 0 /*dummy value*/ );
-               return;
-           }
-
-           const share_type& prev_votes = prev_record.net_votes();
-           const share_type& new_votes = new_record.net_votes();
-           if( prev_votes != new_votes )
-           {
-               if( !prev_record.is_retracted() )
-                   my->_delegate_vote_index_db.remove( vote_del( prev_votes, prev_record.id ) );
-               if( !new_record.is_retracted() )
-                   my->_delegate_vote_index_db.store( vote_del( new_votes, new_record.id ), 0 /*dummy value*/ );
-           }
-       };
-
-       const oaccount_record prev_account_record = get_account_record( record_to_store.id );
-       if( !prev_account_record.valid() && record_to_store.is_null() )
-           return;
-
-       if( prev_account_record.valid() && record_to_store.is_null() )
-           return remove_record( *prev_account_record );
-
-       if( !prev_account_record.valid() && !record_to_store.is_null() )
-           return store_record( record_to_store );
-
-       // Common case: updating an existing record
-       my->_account_db.store( record_to_store.id, record_to_store );
-
-       if( prev_account_record->name != record_to_store.name )
-       {
-           my->_account_index_db.remove( prev_account_record->name );
-           my->_account_index_db.store( record_to_store.name, record_to_store.id );
-       }
-
-       if( prev_account_record->owner_key != record_to_store.owner_key )
-       {
-           my->_address_to_account_db.remove( prev_account_record->owner_address() );
-           my->_address_to_account_db.store( record_to_store.owner_address(), record_to_store.id );
-       }
-
-       index_active_keys( *prev_account_record, record_to_store );
-       index_signing_keys( *prev_account_record, record_to_store );
-       index_votes( *prev_account_record, record_to_store );
+       store( record_to_store );
    } FC_CAPTURE_AND_RETHROW( (record_to_store) ) }
 
    vector<operation> chain_database::get_recent_operations(operation_type_enum t)
@@ -2337,22 +2210,22 @@ namespace bts { namespace blockchain {
     std::vector<account_record> chain_database::get_accounts( const string& first, uint32_t limit )const
     { try {
        std::vector<account_record> names;
-       auto itr = my->_account_index_db.begin();
+       auto itr = my->_account_name_to_id.begin();
 
        if( first.size() > 0 && isdigit(first[0]) )
        {
          int32_t skip = atoi(first.c_str()) - 1;
 
-         while( skip-- > 0 && (++itr).valid() );
+         while( skip-- > 0 && (++itr) != my->_account_name_to_id.end() );
        }
        else
        {
-         itr = my->_account_index_db.lower_bound(first);
+         itr = my->_account_name_to_id.lower_bound(first);
        }
 
-       while( itr.valid() && names.size() < limit )
+       while( itr != my->_account_name_to_id.end() && names.size() < limit )
        {
-          names.push_back( *get_account_record( itr.value() ) );
+          names.push_back( *get_account_record( itr->second ) );
           ++itr;
        }
 
@@ -2560,9 +2433,8 @@ namespace bts { namespace blockchain {
 
       fc::mutable_variant_object discrepancies;
 
-      for (auto vote_itr = my->_delegate_vote_index_db.begin(); vote_itr.valid(); ++vote_itr)
+      for( const auto& vote_record : my->_delegate_votes )
       {
-        vote_del vote_record = vote_itr.key();
         oaccount_record delegate_record = get_account_record(vote_record.delegate_id);
         FC_ASSERT(delegate_record.valid(), "Unknown delegate ID in votes database.");
 
@@ -3774,20 +3646,8 @@ namespace bts { namespace blockchain {
        my->_account_db.export_to_json( next_path );
        ulog( "Dumped ${p}", ("p",next_path) );
 
-       next_path = dir / "_address_to_account_db.json";
-       my->_address_to_account_db.export_to_json( next_path );
-       ulog( "Dumped ${p}", ("p",next_path) );
-
-       next_path = dir / "_account_index_db.json";
-       my->_account_index_db.export_to_json( next_path );
-       ulog( "Dumped ${p}", ("p",next_path) );
-
        next_path = dir / "_symbol_index_db.json";
        my->_symbol_index_db.export_to_json( next_path );
-       ulog( "Dumped ${p}", ("p",next_path) );
-
-       next_path = dir / "_delegate_vote_index_db.json";
-       my->_delegate_vote_index_db.export_to_json( next_path );
        ulog( "Dumped ${p}", ("p",next_path) );
 
        next_path = dir / "_slot_record_db.json";
@@ -3849,7 +3709,7 @@ namespace bts { namespace blockchain {
 #define CHAIN_DB_DATABASES (_market_transactions_db)(_slate_db)(_fork_number_db)(_fork_db)(_property_db)(_undo_state_db) \
                            (_block_num_to_id_db)(_block_id_to_block_record_db)(_block_id_to_block_data_db) \
                            (_id_to_transaction_record_db)(_pending_transaction_db)(_pending_fee_index)(_asset_db)(_empty_balance_db)(_balance_db) \
-                           (_burn_db)(_account_db)(_address_to_account_db)(_account_index_db)(_symbol_index_db)(_delegate_vote_index_db) \
+                           (_burn_db)(_account_db)(_symbol_index_db) \
                            (_slot_record_db)(_ask_db)(_bid_db)(_short_db)(_collateral_db)(_feed_db)(_object_db)(_edge_index)(_reverse_edge_index)(_market_status_db)(_market_history_db) \
                            (_recent_operations)
 #define GET_DATABASE_SIZE(r, data, elem) stats[BOOST_PP_STRINGIZE(elem)] = my->elem.size();
@@ -3881,16 +3741,18 @@ namespace bts { namespace blockchain {
       }
    }
 
-   optional<proposal_record>  chain_database::fetch_asset_proposal( asset_id_type asset_id, proposal_id_type proposal_id )const
+   optional<proposal_record> chain_database::fetch_asset_proposal( asset_id_type asset_id, proposal_id_type proposal_id )const
    {
       return my->_asset_proposal_db.fetch_optional( std::make_pair(asset_id,proposal_id) );
    }
-   void     chain_database::index_transaction( const address& addr, const transaction_id_type& trx_id )
+
+   void chain_database::index_transaction( const address& addr, const transaction_id_type& trx_id )
    {
       if( my->_track_stats )
          my->_address_to_trx_index.store( std::make_pair(addr,trx_id), char(0) );
    }
-   vector<transaction_record>  chain_database::fetch_address_transactions( const address& addr )
+
+   vector<transaction_record> chain_database::fetch_address_transactions( const address& addr )
    {
       FC_ASSERT( my->_track_stats );
       vector<transaction_record> results;
@@ -3908,9 +3770,74 @@ namespace bts { namespace blockchain {
       }
       return results;
    }
+
    void chain_database::track_chain_statistics( bool status )
    {
       my->_track_stats = status;
+   }
+
+   void chain_database::init_account_db_interface()
+   {
+       account_db_interface& interface = _account_db_interface;
+
+       interface.lookup_by_id = [&]( const account_id_type& id ) -> oaccount_record
+       {
+           return my->_account_db.fetch_optional( id );
+       };
+
+       interface.lookup_by_name = [&]( const string& name ) -> oaccount_record
+       {
+           const auto iter = my->_account_name_to_id.find( name );
+           if( iter != my->_account_name_to_id.end() ) return interface.lookup_by_id( iter->second );
+           return oaccount_record();
+       };
+
+       interface.lookup_by_address = [&]( const address& addr ) -> oaccount_record
+       {
+           const auto iter = my->_account_address_to_id.find( addr );
+           if( iter != my->_account_address_to_id.end() ) return interface.lookup_by_id( iter->second );
+           return oaccount_record();
+       };
+
+       interface.insert_into_id_map = [&]( const account_id_type& id, const account_record& record )
+       {
+           my->_account_db.store( id, record );
+       };
+
+       interface.insert_into_name_map = [&]( const string& name, const account_id_type& id )
+       {
+           my->_account_name_to_id[ name ] = id;
+       };
+
+       interface.insert_into_address_map = [&]( const address& addr, const account_id_type& id )
+       {
+           my->_account_address_to_id[ addr ] = id;
+       };
+
+       interface.insert_into_vote_set = [&]( const vote_del& vote )
+       {
+           my->_delegate_votes.insert( vote );
+       };
+
+       interface.erase_from_id_map = [&]( const account_id_type& id )
+       {
+           my->_account_db.remove( id );
+       };
+
+       interface.erase_from_name_map = [&]( const string& name )
+       {
+           my->_account_name_to_id.erase( name );
+       };
+
+       interface.erase_from_address_map = [&]( const address& addr )
+       {
+           my->_account_address_to_id.erase( addr );
+       };
+
+       interface.erase_from_vote_set = [&]( const vote_del& vote )
+       {
+           my->_delegate_votes.erase( vote );
+       };
    }
 
 } } // bts::blockchain

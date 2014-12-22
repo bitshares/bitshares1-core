@@ -106,8 +106,6 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::update_delegate_votes()
    {
-      auto asset_rec = _current_state->get_asset_record( asset_id_type() );
-
       for( const auto& del_vote : net_delegate_votes )
       {
          auto del_rec = _current_state->get_account_record( del_vote.first );

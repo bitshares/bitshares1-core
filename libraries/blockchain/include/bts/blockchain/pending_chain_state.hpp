@@ -101,14 +101,9 @@ namespace bts { namespace blockchain {
                                                                      const market_history_record& record )override;
          virtual omarket_history_record get_market_history_record( const market_history_key& key )const override;
 
-         /**
-          *  Based upon the current state of the database, calculate any updates that
-          *  should be executed in a deterministic manner.
-          */
-         virtual void                   apply_deterministic_updates()override;
-
          /** polymorphically allcoate a new state */
          virtual chain_interface_ptr    create( const chain_interface_ptr& prev_state )const;
+
          /** apply changes from this pending state to the previous state */
          virtual void                   apply_changes()const;
 
@@ -116,6 +111,18 @@ namespace bts { namespace blockchain {
           * pending state to the previous state.
           */
          virtual void                   get_undo_state( const chain_interface_ptr& undo_state )const;
+
+         template<typename T>
+         void populate_undo_state( const chain_interface_ptr& undo_state, const chain_interface_ptr& prev_state,
+                                   const T& record_map )const
+         {
+             for( const auto& item : record_map )
+             {
+                 const auto prev_record = prev_state->lookup<decltype( item.second )>( item.first );
+                 if( prev_record.valid() ) undo_state->store( *prev_record );
+                 else undo_state->remove<decltype( item.second )>( item.first );
+             }
+         }
 
          /** load the state from a variant */
          virtual void                   from_variant( const variant& v );
@@ -142,9 +149,10 @@ namespace bts { namespace blockchain {
 
          unordered_map< balance_id_type, balance_record>                    balances;
 
-         unordered_map< account_id_type, account_record>                    accounts;
-         unordered_map< string, account_id_type>                            account_id_index;
-         unordered_map<address, account_id_type>                            key_to_account;
+         unordered_map<account_id_type, account_record>                     _account_id_to_record;
+         unordered_set<account_id_type>                                     _account_id_remove;
+         unordered_map<string, account_id_type>                             _account_name_to_id;
+         unordered_map<address, account_id_type>                            _account_address_to_id;
 
          unordered_map< slate_id_type, delegate_slate>                      slates;
          map<time_point_sec, slot_record>                                   slots;
@@ -173,9 +181,12 @@ namespace bts { namespace blockchain {
 
          map< std::pair<asset_id_type,address>, object_id_type >            authorizations;
 
+      private:
          // Not serialized
          std::weak_ptr<chain_interface>                                     _prev_state;
          map<operation_type_enum, std::deque<operation>>                    recent_operations;
+
+         virtual void init_account_db_interface()override;
    };
    typedef std::shared_ptr<pending_chain_state> pending_chain_state_ptr;
 
@@ -189,9 +200,10 @@ FC_REFLECT( bts::blockchain::pending_chain_state,
         (symbol_id_index)
         (asset_proposals)
         (balances)
-        (accounts)
-        (account_id_index)
-        (key_to_account)
+        (_account_id_to_record)
+        (_account_id_remove)
+        (_account_name_to_id)
+        (_account_address_to_id)
         (slates)
         (slots)
         (burns)

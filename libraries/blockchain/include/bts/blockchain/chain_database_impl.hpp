@@ -6,23 +6,6 @@
 
 namespace bts { namespace blockchain {
 
-   struct vote_del
-   {
-      vote_del( int64_t v = 0, account_id_type del = 0 )
-      :votes(v),delegate_id(del){}
-      int64_t votes = 0;
-      account_id_type delegate_id;
-      friend bool operator == ( const vote_del& a, const vote_del& b )
-      {
-         return a.votes == b.votes && a.delegate_id == b.delegate_id;
-      }
-      friend bool operator < ( const vote_del& a, const vote_del& b )
-      {
-         if( a.votes != b.votes ) return a.votes > b.votes; /* Reverse so maps sort in descending order */
-         return a.delegate_id < b.delegate_id; /* Lowest id wins in ties */
-      }
-   };
-
    struct fee_index
    {
       fee_index( share_type fees = 0, transaction_id_type trx = transaction_id_type() )
@@ -137,11 +120,11 @@ namespace bts { namespace blockchain {
             bts::db::level_map<balance_id_type, balance_record>                         _empty_balance_db; // stored separately for performance reasons
 
             bts::db::cached_level_map<account_id_type, account_record>                  _account_db;
-            bts::db::cached_level_map<string, account_id_type>                          _account_index_db;
-            bts::db::cached_level_map<address, account_id_type>                         _address_to_account_db;
+            map<string, account_id_type>                                                _account_name_to_id;
+            unordered_map<address, account_id_type>                                     _account_address_to_id;
+            set<vote_del>                                                               _delegate_votes;
 
             bts::db::cached_level_map<slate_id_type, delegate_slate>                    _slate_db;
-            bts::db::cached_level_map<vote_del, int>                                    _delegate_vote_index_db;
             bts::db::level_map<time_point_sec, slot_record>                             _slot_record_db;
 
             bts::db::cached_level_map<burn_record_key, burn_record_value>               _burn_db;

@@ -65,11 +65,27 @@ namespace bts { namespace blockchain {
    };
    typedef fc::optional<delegate_stats> odelegate_stats;
 
+   struct vote_del
+   {
+      vote_del( int64_t v = 0, account_id_type del = 0 )
+      :votes(v),delegate_id(del){}
+      int64_t votes = 0;
+      account_id_type delegate_id;
+      friend bool operator == ( const vote_del& a, const vote_del& b )
+      {
+         return a.votes == b.votes && a.delegate_id == b.delegate_id;
+      }
+      friend bool operator < ( const vote_del& a, const vote_del& b )
+      {
+         if( a.votes != b.votes ) return a.votes > b.votes; /* Reverse so maps sort in descending order */
+         return a.delegate_id < b.delegate_id; /* Lowest id wins in ties */
+      }
+   };
+
+   class chain_interface;
+   struct account_db_interface;
    struct account_record
    {
-      bool              is_null()const;
-      account_record    make_null()const;
-
       address           owner_address()const { return address( owner_key ); }
 
       void              set_active_key( const time_point_sec& now, const public_key_type& new_key );
@@ -89,7 +105,6 @@ namespace bts { namespace blockchain {
 
       bool              is_public_account()const { return meta_data.valid() && meta_data->type == public_account; }
 
-
       account_id_type                        id = 0;
       std::string                            name;
       fc::variant                            public_data;
@@ -99,8 +114,34 @@ namespace bts { namespace blockchain {
       fc::time_point_sec                     last_update;
       optional<delegate_stats>               delegate_info;
       optional<account_meta_info>            meta_data;
+
+      static const account_db_interface& db_interface( const chain_interface* );
    };
    typedef fc::optional<account_record> oaccount_record;
+
+   struct account_db_interface
+   {
+       std::function<oaccount_record( const account_id_type& )>             lookup_by_id;
+       std::function<oaccount_record( const string& )>                      lookup_by_name;
+       std::function<oaccount_record( const address& )>                     lookup_by_address;
+
+       std::function<void( const account_id_type&, const account_record& )> insert_into_id_map;
+       std::function<void( const string&, const account_id_type& )>         insert_into_name_map;
+       std::function<void( const address&, const account_id_type& )>        insert_into_address_map;
+       std::function<void( const vote_del& )>                               insert_into_vote_set;
+
+       std::function<void( const account_id_type& )>                        erase_from_id_map;
+       std::function<void( const string& )>                                 erase_from_name_map;
+       std::function<void( const address& )>                                erase_from_address_map;
+       std::function<void( const vote_del& )>                               erase_from_vote_set;
+
+       oaccount_record lookup( const account_id_type& )const;
+       oaccount_record lookup( const string& )const;
+       oaccount_record lookup( const address& )const;
+
+       void store( const account_record& )const;
+       void remove( const account_id_type& )const;
+   };
 
    struct burn_record_key
    {

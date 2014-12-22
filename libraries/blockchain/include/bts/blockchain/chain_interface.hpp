@@ -197,8 +197,6 @@ namespace bts { namespace blockchain {
 
          virtual osite_record               lookup_site( const string& site_name) const                    = 0;
 
-         virtual void                       apply_deterministic_updates(){}
-
          virtual asset_id_type              last_asset_id()const;
          virtual asset_id_type              new_asset_id();
 
@@ -227,6 +225,29 @@ namespace bts { namespace blockchain {
          virtual void                       set_market_transactions( vector<market_transaction> trxs )      = 0;
 
          virtual void                       index_transaction( const address& addr, const transaction_id_type& trx_id ) = 0;
+
+         template<typename T, typename U>
+         optional<T> lookup( const U& key )const
+         { try {
+             return T::db_interface( this ).lookup( key );
+         } FC_CAPTURE_AND_RETHROW( (key) ) }
+
+         template<typename T>
+         void store( const T& record )
+         { try {
+             T::db_interface( this ).store( record );
+         } FC_CAPTURE_AND_RETHROW( (record) ) }
+
+         template<typename T, typename U>
+         void remove( const U& key )
+         { try {
+             T::db_interface( this ).remove( key );
+         } FC_CAPTURE_AND_RETHROW( (key) ) }
+
+      protected:
+         friend struct account_record;
+         account_db_interface _account_db_interface;
+         virtual void init_account_db_interface() = 0;
    };
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;
 
