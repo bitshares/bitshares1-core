@@ -2036,7 +2036,6 @@ namespace bts { namespace net { namespace detail {
                                                     active_peer->is_firewalled));
         }
       }
-      //for( const potential_peer_record& record : _potential_peer_db )
       originating_peer->send_message(reply);
     }
 
