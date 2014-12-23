@@ -47,7 +47,8 @@ namespace bts { namespace blockchain {
                                                                             const pending_chain_state_ptr& );
             void                                        pay_delegate( const pending_chain_state_ptr& pending_state,
                                                                       const public_key_type& block_signee,
-                                                                      const block_id_type& block_id );
+                                                                      const block_id_type& block_id,
+                                                                      block_record& record );
             void                                        save_undo_state( const block_id_type& id,
                                                                          const pending_chain_state_ptr& );
             void                                        update_head_block( const full_block& blk );
@@ -57,7 +58,8 @@ namespace bts { namespace blockchain {
 
             void                                        execute_markets(const fc::time_point_sec& timestamp, const pending_chain_state_ptr& pending_state );
             void                                        update_random_seed( const secret_hash_type& new_secret,
-                                                                            const pending_chain_state_ptr& pending_state );
+                                                                            const pending_chain_state_ptr& pending_state,
+                                                                            block_record& record );
             void                                        update_active_delegate_list(const full_block& block_data,
                                                                                     const pending_chain_state_ptr& pending_state );
 

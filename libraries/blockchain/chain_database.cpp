@@ -8,8 +8,6 @@
 #include <bts/blockchain/market_engine.hpp>
 #include <bts/blockchain/time.hpp>
 
-#include <bts/blockchain/edge_record.hpp>
-
 #include <fc/io/fstream.hpp>
 #include <fc/io/raw_variant.hpp>
 #include <fc/thread/non_preemptable_scope_check.hpp>
@@ -510,21 +508,16 @@ namespace bts { namespace blockchain {
           }
           #endif
 
-          auto now = blockchain::now();
-          //ilog( "block_number: ${n}   id: ${id}  prev: ${prev}",
-          //      ("n",block_data.block_num)("id",block_id)("prev",block_data.previous) );
-
           // first of all store this block at the given block number
           _block_id_to_block_data_db.store( block_id, block_data );
 
-          if( !self->get_block_record( block_id ).valid() ) /* Only insert with latency if not already present */
+          if( !self->get_block_record( block_id ).valid() )
           {
               block_record record;
-              digest_block& digest = record;
-              digest = block_data;
-              record.random_seed = self->get_current_random_seed();
+              digest_block& temp = record;
+              temp = block_data;
               record.block_size = block_data.block_size();
-              record.latency = now - block_data.timestamp;
+              record.latency = blockchain::now() - block_data.timestamp;
               _block_id_to_block_record_db.store( block_id, record );
           }
 
@@ -714,7 +707,7 @@ namespace bts { namespace blockchain {
       }
 
       void chain_database_impl::pay_delegate( const pending_chain_state_ptr& pending_state, const public_key_type& block_signee,
-                                              const block_id_type& block_id )
+                                              const block_id_type& block_id, block_record& record )
       { try {
           oasset_record base_asset_record = pending_state->get_asset_record( asset_id_type( 0 ) );
           FC_ASSERT( base_asset_record.valid() );
@@ -749,12 +742,12 @@ namespace bts { namespace blockchain {
           pending_state->store_account_record( *delegate_record );
           pending_state->store_asset_record( *base_asset_record );
 
-          oblock_record block_record = self->get_block_record( block_id );
-          FC_ASSERT( block_record.valid() );
-          block_record->signee_shares_issued = accepted_new_shares;
-          block_record->signee_fees_collected = accepted_collected_fees;
-          block_record->signee_fees_destroyed = destroyed_collected_fees;
-          _block_id_to_block_record_db.store( block_id, *block_record );
+#ifndef WIN32
+#warning Fix this in previous hardfork versions
+#endif
+          record.signee_shares_issued = accepted_new_shares;
+          record.signee_fees_collected = accepted_collected_fees;
+          record.signee_fees_destroyed = destroyed_collected_fees;
       } FC_CAPTURE_AND_RETHROW( (block_signee)(block_id) ) }
 
       void chain_database_impl::save_undo_state( const block_id_type& block_id,
@@ -902,13 +895,16 @@ namespace bts { namespace blockchain {
       } FC_CAPTURE_AND_RETHROW( (block_signee) ) }
 
       void chain_database_impl::update_random_seed( const secret_hash_type& new_secret,
-                                                    const pending_chain_state_ptr& pending_state )
+                                                    const pending_chain_state_ptr& pending_state,
+                                                    block_record& record )
       { try {
          const auto current_seed = pending_state->get_current_random_seed();
          fc::sha512::encoder enc;
          fc::raw::pack( enc, new_secret );
          fc::raw::pack( enc, current_seed );
-         pending_state->set_property( last_random_seed_id, variant( fc::ripemd160::hash( enc.result() ) ) );
+         const auto& new_seed = fc::ripemd160::hash( enc.result() );
+         pending_state->set_property( last_random_seed_id, variant( new_seed ) );
+         record.random_seed = new_seed;
       } FC_CAPTURE_AND_RETHROW( (new_secret) ) }
 
       void chain_database_impl::update_active_delegate_list( const full_block& block_data,
@@ -956,7 +952,8 @@ namespace bts { namespace blockchain {
        */
       void chain_database_impl::extend_chain( const full_block& block_data )
       { try {
-         auto block_id = block_data.id();
+         const time_point& start_time = time_point::now();
+         const block_id_type& block_id = block_data.id();
          block_summary summary;
          try
          {
@@ -986,7 +983,10 @@ namespace bts { namespace blockchain {
              **/
             update_delegate_production_info( block_data, pending_state, block_signee );
 
-            pay_delegate( pending_state, block_signee, block_id );
+            oblock_record block_record = self->get_block_record( block_id );
+            FC_ASSERT( block_record.valid() );
+
+            pay_delegate( pending_state, block_signee, block_id, *block_record );
 
             execute_markets( block_data.timestamp, pending_state );
 
@@ -994,7 +994,7 @@ namespace bts { namespace blockchain {
 
             update_active_delegate_list( block_data, pending_state );
 
-            update_random_seed( block_data.previous_secret, pending_state );
+            update_random_seed( block_data.previous_secret, pending_state, *block_record );
 
             save_undo_state( block_id, pending_state );
 
@@ -1009,9 +1009,12 @@ namespace bts { namespace blockchain {
 
             clear_pending( block_data );
 
+            // self->sanity_check();
+
             _block_num_to_id_db.store( block_data.block_num, block_id );
 
-            // self->sanity_check();
+            block_record->processing_time = time_point::now() - start_time;
+            _block_id_to_block_record_db.store( block_id, *block_record );
          }
          catch ( const fc::exception& e )
          {
@@ -1599,10 +1602,7 @@ namespace bts { namespace blockchain {
       // see partially-applied blocks
       ASSERT_TASK_NOT_PREEMPTED();
 
-      auto processing_start_time = time_point::now();
-      auto block_id = block_data.id();
-      //auto current_head_id = my->_head_block_id;
-
+      const block_id_type& block_id = block_data.id();
       std::pair<block_id_type, block_fork_data> longest_fork = my->store_and_index( block_id, block_data );
       assert(get_block_fork_data(block_id) && "can't get fork data for a block we just successfully pushed");
 
@@ -1639,11 +1639,6 @@ namespace bts { namespace blockchain {
                   try
                   {
                     my->switch_to_fork(next_fork_to_try_id); //verify this works if next_fork_to_try is current head block
-                    /* Store processing time */
-                    auto record = get_block_record( block_id );
-                    FC_ASSERT( record.valid() );
-                    record->processing_time = time_point::now() - processing_start_time;
-                    my->_block_id_to_block_record_db.store( block_id, *record );
                     return *get_block_fork_data(block_id);
                   }
                   catch (const time_in_future& e)
