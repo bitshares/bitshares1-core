@@ -138,7 +138,6 @@ namespace bts { namespace blockchain {
        oaccount_record lookup( const account_id_type& )const;
        oaccount_record lookup( const string& )const;
        oaccount_record lookup( const address& )const;
-
        void store( const account_record& )const;
        void remove( const account_id_type& )const;
    };

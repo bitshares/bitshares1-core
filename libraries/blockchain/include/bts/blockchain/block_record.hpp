@@ -1,7 +1,6 @@
 #pragma once
 
 #include <bts/blockchain/block.hpp>
-#include <bts/blockchain/transaction_evaluation_state.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -17,22 +16,6 @@ namespace bts { namespace blockchain {
       fc::microseconds  processing_time; /* Time taken for push_block to run */
    };
    typedef optional<block_record> oblock_record;
-
-   struct transaction_record : public transaction_evaluation_state
-   {
-      transaction_record(){}
-
-      transaction_record( const transaction_location& loc,
-                          const transaction_evaluation_state& s )
-      :transaction_evaluation_state(s),chain_location(loc){}
-
-      bool               is_null()const   { return chain_location.block_num == -1 && chain_location.trx_num == -1; }
-      transaction_record make_null()const { transaction_record cpy( *this ); cpy.chain_location = transaction_location( -1, -1 );
-                                            return cpy; }
-
-      transaction_location chain_location;
-   };
-   typedef optional<transaction_record> otransaction_record;
 
    struct slot_record
    {
@@ -59,10 +42,6 @@ FC_REFLECT_DERIVED( bts::blockchain::block_record,
                     (block_size)
                     (latency)
                     (processing_time) )
-
-FC_REFLECT_DERIVED( bts::blockchain::transaction_record,
-                    (bts::blockchain::transaction_evaluation_state),
-                    (chain_location) )
 
 FC_REFLECT( bts::blockchain::slot_record,
             (start_time)

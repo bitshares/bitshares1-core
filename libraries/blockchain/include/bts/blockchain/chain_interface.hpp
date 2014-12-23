@@ -3,16 +3,17 @@
 #include <bts/blockchain/account_record.hpp>
 #include <bts/blockchain/asset_record.hpp>
 #include <bts/blockchain/balance_record.hpp>
-#include <bts/blockchain/object_record.hpp>
-#include <bts/blockchain/edge_record.hpp>
-#include <bts/blockchain/site_record.hpp>
-#include <bts/blockchain/withdraw_types.hpp>
 #include <bts/blockchain/block_record.hpp>
-#include <bts/blockchain/delegate_slate.hpp>
-#include <bts/blockchain/market_records.hpp>
-#include <bts/blockchain/feed_operations.hpp>
-#include <bts/blockchain/types.hpp>
 #include <bts/blockchain/condition.hpp>
+#include <bts/blockchain/delegate_slate.hpp>
+#include <bts/blockchain/edge_record.hpp>
+#include <bts/blockchain/feed_operations.hpp>
+#include <bts/blockchain/market_records.hpp>
+#include <bts/blockchain/object_record.hpp>
+#include <bts/blockchain/site_record.hpp>
+#include <bts/blockchain/transaction_record.hpp>
+#include <bts/blockchain/types.hpp>
+#include <bts/blockchain/withdraw_types.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -160,8 +161,7 @@ namespace bts { namespace blockchain {
          virtual oaccount_record            get_account_record( const account_id_type& id )const            = 0;
          virtual oaccount_record            get_account_record( const address& owner )const                 = 0;
 
-         virtual bool                       is_known_transaction( const fc::time_point_sec&,
-                                                                  const digest_type& trx_id )const          = 0;
+         virtual bool                       is_known_transaction( const transaction& trx )const             = 0;
 
          virtual otransaction_record        get_transaction( const transaction_id_type& trx_id,
                                                              bool exact = true )const                       = 0;
@@ -248,6 +248,10 @@ namespace bts { namespace blockchain {
          friend struct account_record;
          account_db_interface _account_db_interface;
          virtual void init_account_db_interface() = 0;
+
+         friend struct transaction_record;
+         transaction_db_interface _transaction_db_interface;
+         virtual void init_transaction_db_interface() = 0;
    };
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;
 

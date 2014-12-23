@@ -30,8 +30,8 @@ namespace bts { namespace blockchain {
          public:
             void                                        open_database(const fc::path& data_dir );
             void                                        clear_invalidation_of_future_blocks();
-
             digest_type                                 initialize_genesis( const optional<path>& genesis_file, bool chain_id_only = false );
+            void                                        populate_indexes();
 
             std::pair<block_id_type, block_fork_data>   store_and_index( const block_id_type& id, const full_block& blk );
             void                                        clear_pending(  const full_block& blk );
@@ -104,11 +104,10 @@ namespace bts { namespace blockchain {
             block_id_type                                                               _head_block_id;
 
             bts::db::level_map<transaction_id_type,transaction_record>                  _id_to_transaction_record_db;
-            // Only map where we use trx digest instead of id
-            map<fc::time_point_sec, unordered_set<digest_type> >                        _unique_transactions;
+            set<unique_transaction_key>                                                 _unique_transactions;
 
             bts::db::level_map<transaction_id_type, signed_transaction>                 _pending_transaction_db;
-            std::map<fee_index, transaction_evaluation_state_ptr>                       _pending_fee_index;
+            map<fee_index, transaction_evaluation_state_ptr>                            _pending_fee_index;
 
             bts::db::cached_level_map<uint32_t, fc::variant>                            _property_db;
 
@@ -158,7 +157,7 @@ namespace bts { namespace blockchain {
             bts::db::level_map<pair<asset_id_type,address>, object_id_type>             _auth_db;
 
 
-            std::map<operation_type_enum, std::deque<operation>>                        _recent_operations;
+            map<operation_type_enum, std::deque<operation>>                             _recent_operations;
 
             bool _track_stats = true;
       };

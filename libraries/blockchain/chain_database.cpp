@@ -104,6 +104,7 @@ namespace bts { namespace blockchain {
           _block_id_to_block_record_db.open( data_dir / "index/block_id_to_block_record_db" );
           _block_num_to_id_db.open( data_dir / "raw_chain/block_num_to_id_db" );
           _block_id_to_block_data_db.open( data_dir / "raw_chain/block_id_to_block_data_db" );
+
           _id_to_transaction_record_db.open( data_dir / "index/id_to_transaction_record_db" );
 
           _pending_transaction_db.open( data_dir / "index/pending_transaction_db" );
@@ -117,6 +118,35 @@ namespace bts { namespace blockchain {
           _burn_db.open( data_dir / "index/burn_db" );
 
           _account_db.open( data_dir / "index/account_db" );
+
+          _symbol_index_db.open( data_dir / "index/symbol_index_db" );
+
+          _slot_record_db.open( data_dir / "index/slot_record_db" );
+
+          _ask_db.open( data_dir / "index/ask_db" );
+          _bid_db.open( data_dir / "index/bid_db" );
+          _relative_ask_db.open( data_dir / "index/relative_ask_db" );
+          _relative_bid_db.open( data_dir / "index/relative_bid_db" );
+          _short_db.open( data_dir / "index/short_db" );
+          _collateral_db.open( data_dir / "index/collateral_db" );
+
+          _feed_db.open( data_dir / "index/feed_db" );
+
+          _object_db.open( data_dir / "index/object_db" );
+          _edge_index.open( data_dir / "index/edge_index" );
+          _reverse_edge_index.open( data_dir / "index/reverse_edge_index" );
+
+          _market_status_db.open( data_dir / "index/market_status_db" );
+          _market_history_db.open( data_dir / "index/market_history_db" );
+
+          _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
+
+          _revalidatable_future_blocks_db.open( data_dir / "index/future_blocks_db" );
+          clear_invalidation_of_future_blocks();
+      } FC_CAPTURE_AND_RETHROW( (data_dir) ) }
+
+      void chain_database_impl::populate_indexes()
+      { try {
           for( auto iter = _account_db.begin(); iter.valid(); ++iter )
           {
               const account_record& record = iter.value();
@@ -133,41 +163,22 @@ namespace bts { namespace blockchain {
               }
           }
 
-          _symbol_index_db.open( data_dir / "index/symbol_index_db" );
-
-          _slot_record_db.open( data_dir / "index/slot_record_db" );
-
-          _ask_db.open( data_dir / "index/ask_db" );
-          _bid_db.open( data_dir / "index/bid_db" );
-          _relative_ask_db.open( data_dir / "index/relative_ask_db" );
-          _relative_bid_db.open( data_dir / "index/relative_bid_db" );
-          _short_db.open( data_dir / "index/short_db" );
-          _collateral_db.open( data_dir / "index/collateral_db" );
-
-          for( auto itr = _collateral_db.begin(); itr.valid(); ++itr )
-             _collateral_expiration_index.insert( expiration_index{itr.key().order_price.quote_asset_id, itr.value().expiration, itr.key()} );
-
-          _feed_db.open( data_dir / "index/feed_db" );
-
-          _object_db.open( data_dir / "index/object_db" );
-          _edge_index.open( data_dir / "index/edge_index" );
-          _reverse_edge_index.open( data_dir / "index/reverse_edge_index" );
-
-          _market_status_db.open( data_dir / "index/market_status_db" );
-          _market_history_db.open( data_dir / "index/market_history_db" );
-
-          _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
-
-          _revalidatable_future_blocks_db.open( data_dir / "index/future_blocks_db" );
-          clear_invalidation_of_future_blocks();
-
-          for( auto itr = _id_to_transaction_record_db.begin(); itr.valid(); ++itr )
+          for( auto iter = _id_to_transaction_record_db.begin(); iter.valid(); ++iter )
           {
-             const auto val = itr.value();
-             if( val.trx.expiration > self->now() )
-                _unique_transactions[val.trx.expiration].insert( val.trx.digest(_chain_id) );
+              const transaction& trx = iter.value().trx;
+              if( trx.expiration > self->now() )
+                  _unique_transactions.emplace( trx, _chain_id );
           }
-      } FC_CAPTURE_AND_RETHROW( (data_dir) ) }
+
+          for( auto iter = _collateral_db.begin(); iter.valid(); ++iter )
+          {
+              const market_index_key& key = iter.key();
+              const collateral_record& record = iter.value();
+              const expiration_index index{ key.order_price.quote_asset_id, record.expiration, key };
+              _collateral_expiration_index.insert( index );
+          }
+
+      } FC_CAPTURE_AND_RETHROW() }
 
       void chain_database_impl::clear_invalidation_of_future_blocks()
       {
@@ -1008,12 +1019,10 @@ namespace bts { namespace blockchain {
             throw;
          }
 
-         // purge the expired known transactions database, they cannot no longer fork us
-         auto itr = _unique_transactions.begin();
-         while( itr != _unique_transactions.end() && itr->first < self->now() )
-         {
-            itr = _unique_transactions.erase(itr);
-         }
+         // Purge expired transactions from unique cache
+         auto iter = _unique_transactions.begin();
+         while( iter != _unique_transactions.end() && iter->expiration <= self->now() )
+             iter = _unique_transactions.erase( iter );
 
          //Schedule the observer notifications for later; the chain is in a
          //non-premptable state right now, and observers may yield.
@@ -1100,6 +1109,7 @@ namespace bts { namespace blockchain {
       my->_relay_fee = BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE;
 
       init_account_db_interface();
+      init_transaction_db_interface();
    }
 
    chain_database::~chain_database()
@@ -1146,7 +1156,7 @@ namespace bts { namespace blockchain {
       try
       {
           //This function will yield the first time it is called. Do that now, before calling push_block
-          now(); //NOW, DANG IT!
+          now();
 
           fc::create_directories( data_dir );
 
@@ -1169,7 +1179,8 @@ namespace bts { namespace blockchain {
             must_rebuild_index = true;
           }
 
-          if( must_rebuild_index || last_block_num == uint32_t(-1) )
+          bool replay_blockchain = must_rebuild_index || last_block_num == uint32_t( -1 );
+          if( replay_blockchain )
           {
              close();
              fc::remove_all( data_dir / "index" );
@@ -1298,6 +1309,9 @@ namespace bts { namespace blockchain {
           if( db_chain_id != genesis_chain_id )
               FC_THROW_EXCEPTION( wrong_chain_id, "Wrong chain ID!", ("database_id",db_chain_id)("genesis_id",genesis_chain_id) );
           my->_chain_id = db_chain_id;
+
+          if( !replay_blockchain )
+              my->populate_indexes();
 
           //  process the pending transactions to cache by fees
           for( auto pending_itr = my->_pending_transaction_db.begin(); pending_itr.valid(); ++pending_itr )
@@ -1697,7 +1711,7 @@ namespace bts { namespace blockchain {
 
       // this will slow things down during block processing, empty balance db is only really useful to
       // the wallet for rescan pruposes.   Have the wallet check the empty DB
-      
+
       //if( !balance ) balance = my->_empty_balance_db.fetch_optional( balance_id );
       return balance;
    }
@@ -1911,25 +1925,7 @@ namespace bts { namespace blockchain {
    void chain_database::store_transaction( const transaction_id_type& record_id,
                                            const transaction_record& record_to_store )
    { try {
-      const signed_transaction& trx = record_to_store.trx;
-      FC_ASSERT( record_id == trx.id() );
-      if( record_to_store.is_null() )
-      {
-          my->_unique_transactions[ trx.expiration ].erase( trx.digest( my->_chain_id ) );
-          if( my->_track_stats )
-             my->_id_to_transaction_record_db.remove( record_id );
-      }
-      else
-      {
-          if( record_to_store.trx.expiration > this->now() )
-          {
-             const auto insert_result = my->_unique_transactions[ trx.expiration ].insert( trx.digest( my->_chain_id ) );
-             if( !insert_result.second )
-                FC_CAPTURE_AND_THROW( duplicate_transaction, (record_to_store) );
-          }
-          if( my->_track_stats )
-             my->_id_to_transaction_record_db.store( record_id, record_to_store );
-      }
+       store( record_to_store );
    } FC_CAPTURE_AND_RETHROW( (record_id)(record_to_store) ) }
 
    void chain_database::scan_assets( function<void( const asset_record& )> callback )const
@@ -3130,13 +3126,11 @@ namespace bts { namespace blockchain {
       return history;
    }
 
-   bool chain_database::is_known_transaction( const fc::time_point_sec& exp, const digest_type& id )const
-   {
-      auto itr = my->_unique_transactions.find(exp);
-      if( itr != my->_unique_transactions.end() )
-         return itr->second.find( id ) != itr->second.end();
-      return false;
-   }
+   bool chain_database::is_known_transaction( const transaction& trx )const
+   { try {
+       return my->_unique_transactions.count( unique_transaction_key( trx, chain_id() ) ) > 0;
+   } FC_CAPTURE_AND_RETHROW( (trx) ) }
+
    void chain_database::skip_signature_verification( bool state )
    {
       my->_skip_signature_verification = state;
@@ -3837,6 +3831,37 @@ namespace bts { namespace blockchain {
        interface.erase_from_vote_set = [&]( const vote_del& vote )
        {
            my->_delegate_votes.erase( vote );
+       };
+   }
+
+   void chain_database::init_transaction_db_interface()
+   {
+       transaction_db_interface& interface = _transaction_db_interface;
+
+       interface.lookup_by_id = [&]( const transaction_id_type& id ) -> otransaction_record
+       {
+           return my->_id_to_transaction_record_db.fetch_optional( id );
+       };
+
+       interface.insert_into_id_map = [&]( const transaction_id_type& id, const transaction_record& record )
+       {
+           my->_id_to_transaction_record_db.store( id, record );
+       };
+
+       interface.insert_into_unique_set = [&]( const transaction& trx )
+       {
+           if( trx.expiration > this->now() )
+               my->_unique_transactions.emplace( trx, chain_id() );
+       };
+
+       interface.erase_from_id_map = [&]( const transaction_id_type& id )
+       {
+           my->_id_to_transaction_record_db.remove( id );
+       };
+
+       interface.erase_from_unique_set = [&]( const transaction& trx )
+       {
+           my->_unique_transactions.erase( unique_transaction_key( trx, chain_id() ) );
        };
    }
 

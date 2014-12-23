@@ -197,14 +197,13 @@ namespace bts { namespace blockchain {
         if( (_current_state->now() + BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC) < trx_arg.expiration )
            FC_CAPTURE_AND_THROW( invalid_transaction_expiration, (trx_arg)(_current_state->now()) );
 
-        const auto trx_digest = trx_arg.digest( _current_state->chain_id() );
-        if( _current_state->is_known_transaction( trx_arg.expiration, trx_digest ) )
+        if( _current_state->is_known_transaction( trx_arg ) )
            FC_CAPTURE_AND_THROW( duplicate_transaction, (trx_arg.id()) );
 
-        trx = trx_arg;
         if( !_skip_signature_check )
         {
-           for( const auto& sig : trx.signatures )
+           const auto trx_digest = trx_arg.digest( _current_state->chain_id() );
+           for( const auto& sig : trx_arg.signatures )
            {
               auto key = fc::ecc::public_key( sig, trx_digest, enforce_canonical ).serialize();
               signed_keys.insert( address(key) );
@@ -215,7 +214,7 @@ namespace bts { namespace blockchain {
            }
         }
         current_op_index = 0;
-        for( const auto& op : trx.operations )
+        for( const auto& op : trx_arg.operations )
         {
            evaluate_operation( op );
            ++current_op_index;
@@ -229,7 +228,7 @@ namespace bts { namespace blockchain {
          validation_error = e;
          throw;
       }
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx_arg) ) }
+   } FC_CAPTURE_AND_RETHROW( (trx_arg)(skip_signature_check)(enforce_canonical) ) }
 
    void transaction_evaluation_state::evaluate_operation( const operation& op )
    {

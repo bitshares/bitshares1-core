@@ -110,8 +110,6 @@ namespace bts { namespace blockchain {
         const oaccount_record prev_record = lookup( record.id );
         if( prev_record.valid() )
         {
-            if( prev_record->id != record.id )
-                erase_from_id_map( prev_record->id );
             if( prev_record->name != record.name )
                 erase_from_name_map( prev_record->name );
             if( prev_record->owner_address() != record.owner_address() )
@@ -122,7 +120,6 @@ namespace bts { namespace blockchain {
                     erase_from_address_map( prev_record->active_address() );
                 if( prev_record->is_delegate() )
                 {
-                    // TODO What if signing key is the same as active_address
                     if( !record.is_delegate() || prev_record->signing_address() != record.signing_address() )
                         erase_from_address_map( prev_record->signing_address() );
                     if( !record.is_delegate() || prev_record->net_votes() != record.net_votes() )
@@ -150,7 +147,7 @@ namespace bts { namespace blockchain {
         const oaccount_record prev_record = lookup( id );
         if( prev_record.valid() )
         {
-            erase_from_id_map( prev_record->id );
+            erase_from_id_map( id );
             erase_from_name_map( prev_record->name );
             erase_from_address_map( prev_record->owner_address() );
             if( !prev_record->is_retracted() )
@@ -165,4 +162,4 @@ namespace bts { namespace blockchain {
         }
     } FC_CAPTURE_AND_RETHROW( (id) ) }
 
-}} // bts::blockchain
+} } // bts::blockchain

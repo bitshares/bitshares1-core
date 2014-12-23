@@ -122,19 +122,18 @@ namespace bts { namespace blockchain {
          /**
           * The state of the blockchain after applying all pending transactions.
           */
-         pending_chain_state_ptr                  get_pending_state()const;
+         pending_chain_state_ptr                    get_pending_state()const;
 
          /**
           *  @param override_limits - stores the transaction even if the pending queue is full,
           *                           if false then it will require exponential fee increases
           *                           as the queue fills.
           */
-         transaction_evaluation_state_ptr         store_pending_transaction( const signed_transaction& trx,
+         transaction_evaluation_state_ptr           store_pending_transaction( const signed_transaction& trx,
                                                                              bool override_limits = true );
 
-         vector<transaction_evaluation_state_ptr> get_pending_transactions()const;
-         virtual bool                             is_known_transaction( const fc::time_point_sec& exp,
-                                                                        const digest_type& trx_id )const override;
+         vector<transaction_evaluation_state_ptr>   get_pending_transactions()const;
+         virtual bool                               is_known_transaction( const transaction& trx )const override;
 
          /** Produce a block for the given timeslot, the block is not signed because that is the
           *  role of the wallet.
@@ -384,6 +383,7 @@ namespace bts { namespace blockchain {
          unique_ptr<detail::chain_database_impl> my;
 
          virtual void init_account_db_interface()override;
+         virtual void init_transaction_db_interface()override;
    };
 
    typedef shared_ptr<chain_database> chain_database_ptr;

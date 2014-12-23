@@ -41,7 +41,7 @@ namespace bts { namespace blockchain {
          virtual odelegate_slate        get_delegate_slate( slate_id_type id )const override;
          virtual void                   store_delegate_slate( slate_id_type id, const delegate_slate& slate ) override;
 
-         virtual bool                   is_known_transaction( const fc::time_point_sec& exp, const digest_type& trx_id )const override;
+         virtual bool                   is_known_transaction( const transaction& trx )const override;
          virtual otransaction_record    get_transaction( const transaction_id_type& trx_id, bool exact = true )const override;
 
          virtual void                   store_transaction( const transaction_id_type&, const transaction_record&  ) override;
@@ -138,8 +138,9 @@ namespace bts { namespace blockchain {
           */
          virtual void                  index_transaction( const address& addr, const transaction_id_type& trx_id ) override;
 
-         unordered_map< transaction_id_type, transaction_record>            transactions;
-         unordered_set< digest_type >                                       unique_transactions;
+         unordered_map<transaction_id_type, transaction_record>             _transaction_id_to_record;
+         unordered_set<transaction_id_type>                                 _transaction_id_remove;
+         unordered_set<digest_type>                                         _transaction_digests;
 
          unordered_map< chain_property_type, variant>                       properties;
 
@@ -187,14 +188,16 @@ namespace bts { namespace blockchain {
          map<operation_type_enum, std::deque<operation>>                    recent_operations;
 
          virtual void init_account_db_interface()override;
+         virtual void init_transaction_db_interface()override;
    };
    typedef std::shared_ptr<pending_chain_state> pending_chain_state_ptr;
 
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::pending_chain_state,
-        (transactions)
-        (unique_transactions)
+        (_transaction_id_to_record)
+        (_transaction_id_remove)
+        (_transaction_digests)
         (properties)
         (assets)
         (symbol_id_index)
