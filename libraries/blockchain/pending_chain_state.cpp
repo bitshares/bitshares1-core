@@ -9,21 +9,22 @@ namespace bts { namespace blockchain {
    pending_chain_state::pending_chain_state( chain_interface_ptr prev_state )
    :_prev_state( prev_state )
    {
+      init_account_db_interface();
+      init_transaction_db_interface();
    }
 
    pending_chain_state::~pending_chain_state()
    {
    }
 
-   /** polymorphically allcoate a new state */
-   chain_interface_ptr pending_chain_state::create( const chain_interface_ptr& prev_state )const
-   {
-      return std::make_shared<pending_chain_state>( prev_state );
-   }
-
    void pending_chain_state::set_prev_state( chain_interface_ptr prev_state )
    {
       _prev_state = prev_state;
+   }
+
+   void pending_chain_state::set_chain_id( const digest_type& chain_id )
+   {
+       _chain_id = chain_id;
    }
 
    uint32_t pending_chain_state::get_head_block_num()const
@@ -42,6 +43,7 @@ namespace bts { namespace blockchain {
 
    digest_type pending_chain_state::chain_id()const
    {
+      if( _chain_id.valid() ) return *_chain_id;
       const chain_interface_ptr prev_state = _prev_state.lock();
       FC_ASSERT( prev_state );
       return prev_state->chain_id();
@@ -54,24 +56,20 @@ namespace bts { namespace blockchain {
       return prev_state->get_current_random_seed();
    }
 
-   /**
-    *  Based upon the current state of the database, calculate any updates that
-    *  should be executed in a deterministic manner.
-    */
-   void pending_chain_state::apply_deterministic_updates()
-   {
-      /** nothing to do for now... charge 5% inactivity fee? */
-      /** execute order matching */
-   }
-
    /** Apply changes from this pending state to the previous state */
    void pending_chain_state::apply_changes()const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       if( !prev_state ) return;
+
+      for( const auto& item : _account_id_remove )          prev_state->remove<account_record>( item );
+      for( const auto& item : _account_id_to_record )       prev_state->store( item.second );
+
+      for( const auto& item : _transaction_id_remove )      prev_state->remove<transaction_record>( item );
+      for( const auto& item : _transaction_id_to_record )   prev_state->store( item.second );
+
       for( const auto& item : properties )      prev_state->set_property( (chain_property_enum)item.first, item.second );
       for( const auto& item : assets )          prev_state->store_asset_record( item.second );
-      for( const auto& item : accounts )        prev_state->store_account_record( item.second );
       for( const auto& item : balances )        prev_state->store_balance_record( item.second );
       for( const auto& item : authorizations )  prev_state->authorize( item.first.first, item.first.second, item.second );
       for( const auto& item : bids )            prev_state->store_bid_record( item.first, item.second );
@@ -80,7 +78,6 @@ namespace bts { namespace blockchain {
       for( const auto& item : relative_asks )   prev_state->store_relative_ask_record( item.first, item.second );
       for( const auto& item : shorts )          prev_state->store_short_record( item.first, item.second );
       for( const auto& item : collateral )      prev_state->store_collateral_record( item.first, item.second );
-      for( const auto& item : transactions )    prev_state->store_transaction( item.first, item.second );
       for( const auto& item : slates )          prev_state->store_delegate_slate( item.first, item.second );
       for( const auto& item : slots )           prev_state->store_slot_record( item.second );
       for( const auto& item : market_history )  prev_state->store_market_history_record( item.first, item.second );
@@ -93,42 +90,27 @@ namespace bts { namespace blockchain {
       }
       for( const auto& item : burns ) prev_state->store_burn_record( burn_record(item.first,item.second) );
       for( const auto& item : objects ) prev_state->store_object_record( item.second );
+
       prev_state->set_market_transactions( market_transactions );
       prev_state->set_dirty_markets( _dirty_markets );
    }
 
    otransaction_record pending_chain_state::get_transaction( const transaction_id_type& trx_id, bool exact )const
    {
-      auto itr = transactions.find( trx_id );
-      if( itr != transactions.end() ) return itr->second;
-      chain_interface_ptr prev_state = _prev_state.lock();
-      return prev_state->get_transaction( trx_id, exact );
+       return lookup<transaction_record>( trx_id );
    }
 
-   bool pending_chain_state::is_known_transaction( const fc::time_point_sec& exp, const digest_type& id )const
+   bool pending_chain_state::is_known_transaction( const transaction& trx )const
    { try {
-      auto itr = unique_transactions.find( id );
-      if( itr != unique_transactions.end() ) return true;
-      chain_interface_ptr prev_state = _prev_state.lock();
-      return prev_state->is_known_transaction( exp, id );
-   } FC_CAPTURE_AND_RETHROW( (id) ) }
+       if( _transaction_digests.count( trx.digest( chain_id() ) ) > 0 ) return true;
+       chain_interface_ptr prev_state = _prev_state.lock();
+       if( prev_state ) return prev_state->is_known_transaction( trx );
+       return false;
+   } FC_CAPTURE_AND_RETHROW( (trx) ) }
 
    void pending_chain_state::store_transaction( const transaction_id_type& id, const transaction_record& rec )
    {
-      chain_interface_ptr prev_state = _prev_state.lock();
-      transactions[id] = rec;
-      if( prev_state )
-      {
-          const auto insert_result = unique_transactions.insert( rec.trx.digest( chain_id() ) );
-          if( get_head_block_num() >= BTS_V0_4_26_FORK_BLOCK_NUM )
-          {
-              if( !insert_result.second )
-                  FC_CAPTURE_AND_THROW( duplicate_transaction, (rec) );
-          }
-      }
-
-      for( const auto& op : rec.trx.operations )
-        store_recent_operation(op);
+       store( rec );
    }
 
    void pending_chain_state::get_undo_state( const chain_interface_ptr& undo_state_arg )const
@@ -136,6 +118,10 @@ namespace bts { namespace blockchain {
       auto undo_state = std::dynamic_pointer_cast<pending_chain_state>( undo_state_arg );
       chain_interface_ptr prev_state = _prev_state.lock();
       FC_ASSERT( prev_state );
+
+      populate_undo_state( undo_state, prev_state, _account_id_to_record );
+      populate_undo_state( undo_state, prev_state, _transaction_id_to_record );
+
       for( const auto& item : properties )
       {
          auto prev_value = prev_state->get_property( (chain_property_enum)item.first );
@@ -154,12 +140,6 @@ namespace bts { namespace blockchain {
          if( prev_value ) undo_state->store_delegate_slate( item.first, *prev_value );
          else undo_state->store_delegate_slate( item.first, delegate_slate() );
       }
-      for( const auto& item : accounts )
-      {
-         auto prev_value = prev_state->get_account_record( item.first );
-         if( !!prev_value ) undo_state->store_account_record( *prev_value );
-         else undo_state->store_account_record( item.second.make_null() );
-      }
       for( const auto& item : asset_proposals )
       {
          auto prev_value = prev_state->fetch_asset_proposal( item.first.first, item.first.second );
@@ -177,12 +157,6 @@ namespace bts { namespace blockchain {
          auto prev_value = prev_state->get_authorization( item.first.first, item.first.second );
          if( !!prev_value ) undo_state->authorize( item.first.first, item.first.second, *prev_value );
          else undo_state->deauthorize( item.first.first, item.first.second );
-      }
-      for( const auto& item : transactions )
-      {
-         auto prev_value = prev_state->get_transaction( item.first );
-         if( !!prev_value ) undo_state->store_transaction( item.first, *prev_value );
-         else undo_state->store_transaction( item.first, item.second.make_null() );
       }
       for( const auto& item : bids )
       {
@@ -325,33 +299,22 @@ namespace bts { namespace blockchain {
 
    oaccount_record pending_chain_state::get_account_record( const address& owner )const
    {
-      auto itr = key_to_account.find(owner);
-      if( itr != key_to_account.end() ) return get_account_record( itr->second );
-      chain_interface_ptr prev_state = _prev_state.lock();
-      FC_ASSERT(prev_state);
-      return prev_state->get_account_record( owner );
+       return lookup<account_record>( owner );
    }
 
    oaccount_record pending_chain_state::get_account_record( const account_id_type& account_id )const
    {
-      chain_interface_ptr prev_state = _prev_state.lock();
-      auto itr = accounts.find( account_id );
-      if( itr != accounts.end() )
-        return itr->second;
-      else if( prev_state )
-        return prev_state->get_account_record( account_id );
-      return oaccount_record();
+       return lookup<account_record>( account_id );
    }
 
    oaccount_record pending_chain_state::get_account_record( const std::string& name )const
    {
-      chain_interface_ptr prev_state = _prev_state.lock();
-      auto itr = account_id_index.find( name );
-      if( itr != account_id_index.end() )
-        return get_account_record( itr->second );
-      else if( prev_state )
-        return prev_state->get_account_record( name );
-      return oaccount_record();
+       return lookup<account_record>( name );
+   }
+
+   void pending_chain_state::store_account_record( const account_record& r )
+   {
+       store( r );
    }
 
    void pending_chain_state::store_asset_record( const asset_record& r )
@@ -362,17 +325,6 @@ namespace bts { namespace blockchain {
    void pending_chain_state::store_balance_record( const balance_record& r )
    {
       balances[r.id()] = r;
-   }
-
-   void pending_chain_state::store_account_record( const account_record& r )
-   {
-      accounts[ r.id ] = r;
-      account_id_index[ r.name ] = r.id;
-      key_to_account[ r.owner_address() ] = r.id;
-      if( !r.is_retracted() )
-          key_to_account[ r.active_address() ] = r.id;
-      if( r.is_delegate() )
-          key_to_account[ r.signing_address() ] = r.id;
    }
 
    vector<operation> pending_chain_state::get_recent_operations(operation_type_enum t)
@@ -410,7 +362,7 @@ namespace bts { namespace blockchain {
         {
             case account_object:
             case asset_object:
-                FC_ASSERT(!"You cannot store these object types via object interface yet!");
+                FC_ASSERT(false, "You cannot store these object types via object interface yet!");
                 break;
             case edge_object:
             {
@@ -453,7 +405,7 @@ namespace bts { namespace blockchain {
 
     void                       pending_chain_state::store_site_record( const site_record& site )
     {
-        FC_ASSERT(!"unimplemented");
+        FC_ASSERT(false, "unimplemented");
         /*
         site_index[site.site_name] = site;
         objects[site._id] = site;
@@ -482,11 +434,11 @@ namespace bts { namespace blockchain {
     map<string, object_record>   pending_chain_state::get_edges( const object_id_type& from,
                                           const object_id_type& to )const
     {
-        FC_ASSERT(!"unimplemented!");
+        FC_ASSERT(false, "unimplemented!");
     }
     map<object_id_type, map<string, object_record>> pending_chain_state::get_edges( const object_id_type& from )const
     {
-        FC_ASSERT(!"unimplemented!");
+        FC_ASSERT(false, "unimplemented!");
     }
 
    osite_record  pending_chain_state::lookup_site( const string& site_name)const
@@ -712,13 +664,13 @@ namespace bts { namespace blockchain {
       return burn_record( itr->first, itr->second );
    }
 
-   void  pending_chain_state::authorize( asset_id_type asset_id, const address& owner, object_id_type oid  )
+   void pending_chain_state::authorize( asset_id_type asset_id, const address& owner, object_id_type oid  )
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       authorizations[std::make_pair(asset_id,owner)] = oid;
    }
 
-   optional<object_id_type>  pending_chain_state::get_authorization( asset_id_type asset_id, const address& owner )const
+   optional<object_id_type> pending_chain_state::get_authorization( asset_id_type asset_id, const address& owner )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto index = std::make_pair( asset_id, owner );
@@ -728,12 +680,13 @@ namespace bts { namespace blockchain {
          return itr->second;
       return optional<object_id_type>();
    }
-   void                       pending_chain_state::store_asset_proposal( const proposal_record& r )
+
+   void pending_chain_state::store_asset_proposal( const proposal_record& r )
    {
       asset_proposals[std::make_pair( r.asset_id, r.proposal_id )] = r;
    }
 
-   optional<proposal_record>  pending_chain_state::fetch_asset_proposal( asset_id_type asset_id, proposal_id_type proposal_id )const
+   optional<proposal_record> pending_chain_state::fetch_asset_proposal( asset_id_type asset_id, proposal_id_type proposal_id )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto itr = asset_proposals.find( std::make_pair( asset_id, proposal_id ) );
@@ -741,10 +694,121 @@ namespace bts { namespace blockchain {
       return prev_state->fetch_asset_proposal( asset_id, proposal_id );
    }
 
-   void    pending_chain_state::index_transaction( const address& addr, const transaction_id_type& trx_id )
+   void pending_chain_state::index_transaction( const address& addr, const transaction_id_type& trx_id )
    {
       chain_interface_ptr prev_state = _prev_state.lock();
+      FC_ASSERT( prev_state );
       prev_state->index_transaction( addr, trx_id );
+   }
+
+   void pending_chain_state::init_account_db_interface()
+   {
+       account_db_interface& interface = _account_db_interface;
+
+       interface.lookup_by_id = [&]( const account_id_type& id ) -> oaccount_record
+       {
+           const auto iter = _account_id_to_record.find( id );
+           if( iter != _account_id_to_record.end() ) return iter->second;
+           if( _account_id_remove.count( id ) > 0 ) return oaccount_record();
+           const chain_interface_ptr prev_state = _prev_state.lock();
+           if( prev_state ) return prev_state->lookup<account_record>( id );
+           return oaccount_record();
+       };
+
+       interface.lookup_by_name = [&]( const string& name ) -> oaccount_record
+       {
+           const auto iter = _account_name_to_id.find( name );
+           if( iter != _account_name_to_id.end() ) return interface.lookup_by_id( iter->second );
+           const chain_interface_ptr prev_state = _prev_state.lock();
+           if( prev_state ) return prev_state->lookup<account_record>( name );
+           return oaccount_record();
+       };
+
+       interface.lookup_by_address = [&]( const address& addr ) -> oaccount_record
+       {
+           const auto iter = _account_address_to_id.find( addr );
+           if( iter != _account_address_to_id.end() ) return interface.lookup_by_id( iter->second );
+           const chain_interface_ptr prev_state = _prev_state.lock();
+           if( prev_state ) return prev_state->lookup<account_record>( addr );
+           return oaccount_record();
+       };
+
+       interface.insert_into_id_map = [&]( const account_id_type& id, const account_record& record )
+       {
+           _account_id_remove.erase( id );
+           _account_id_to_record[ id ] = record;
+       };
+
+       interface.insert_into_name_map = [&]( const string& name, const account_id_type& id )
+       {
+           _account_name_to_id[ name ] = id;
+       };
+
+       interface.insert_into_address_map = [&]( const address& addr, const account_id_type& id )
+       {
+           _account_address_to_id[ addr ] = id;
+       };
+
+       interface.insert_into_vote_set = [&]( const vote_del& vote )
+       {
+       };
+
+       interface.erase_from_id_map = [&]( const account_id_type& id )
+       {
+           _account_id_to_record.erase( id );
+           _account_id_remove.insert( id );
+       };
+
+       interface.erase_from_name_map = [&]( const string& name )
+       {
+           _account_name_to_id.erase( name );
+       };
+
+       interface.erase_from_address_map = [&]( const address& addr )
+       {
+           _account_address_to_id.erase( addr );
+       };
+
+       interface.erase_from_vote_set = [&]( const vote_del& vote )
+       {
+       };
+   }
+
+   void pending_chain_state::init_transaction_db_interface()
+   {
+       transaction_db_interface& interface = _transaction_db_interface;
+
+       interface.lookup_by_id = [&]( const transaction_id_type& id ) -> otransaction_record
+       {
+           const auto iter = _transaction_id_to_record.find( id );
+           if( iter != _transaction_id_to_record.end() ) return iter->second;
+           if( _transaction_id_remove.count( id ) > 0 ) return otransaction_record();
+           const chain_interface_ptr prev_state = _prev_state.lock();
+           if( prev_state ) return prev_state->lookup<transaction_record>( id );
+           return otransaction_record();
+       };
+
+       interface.insert_into_id_map = [&]( const transaction_id_type& id, const transaction_record& record )
+       {
+           _transaction_id_remove.erase( id );
+           _transaction_id_to_record[ id ] = record;
+       };
+
+       interface.insert_into_unique_set = [&]( const transaction& trx )
+       {
+           _transaction_digests.insert( trx.digest( chain_id() ) );
+       };
+
+       interface.erase_from_id_map = [&]( const transaction_id_type& id )
+       {
+           _transaction_id_to_record.erase( id );
+           _transaction_id_remove.insert( id );
+       };
+
+       interface.erase_from_unique_set = [&]( const transaction& trx )
+       {
+           _transaction_digests.erase( trx.digest( chain_id() ) );
+       };
    }
 
 } } // bts::blockchain

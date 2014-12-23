@@ -1,12 +1,12 @@
-#include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/operation_factory.hpp>
+#include <bts/blockchain/pending_chain_state.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
 
 #include <bts/blockchain/fork_blocks.hpp>
 
 namespace bts { namespace blockchain {
 
-   transaction_evaluation_state::transaction_evaluation_state( chain_interface* current_state )
+   transaction_evaluation_state::transaction_evaluation_state( pending_chain_state* current_state )
    :_current_state( current_state )
    {
    }
@@ -59,7 +59,7 @@ namespace bts { namespace blockchain {
                 break;
             }
             default:
-                FC_ASSERT(!"Unimplemenetd case in check_update_permission");
+                FC_ASSERT(false, "Unimplemenetd case in check_update_permission");
         }
         return false;
    } FC_CAPTURE_AND_RETHROW( (id) ) }
@@ -108,8 +108,6 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::update_delegate_votes()
    {
-      auto asset_rec = _current_state->get_asset_record( asset_id_type() );
-
       for( const auto& del_vote : net_delegate_votes )
       {
          auto del_rec = _current_state->get_account_record( del_vote.first );
@@ -204,17 +202,16 @@ namespace bts { namespace blockchain {
         if( (_current_state->now() + BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC) < trx_arg.expiration )
            FC_CAPTURE_AND_THROW( invalid_transaction_expiration, (trx_arg)(_current_state->now()) );
 
-        const auto trx_digest = trx_arg.digest( _current_state->chain_id() );
         if( _current_state->get_head_block_num() >= BTS_V0_4_26_FORK_BLOCK_NUM )
         {
-            if( _current_state->is_known_transaction( trx_arg.expiration, trx_digest ) )
+            if( _current_state->is_known_transaction( trx_arg ) )
                FC_CAPTURE_AND_THROW( duplicate_transaction, (trx_arg.id()) );
         }
 
-        trx = trx_arg;
         if( !_skip_signature_check )
         {
-           for( const auto& sig : trx.signatures )
+           const auto trx_digest = trx_arg.digest( _current_state->chain_id() );
+           for( const auto& sig : trx_arg.signatures )
            {
               auto key = fc::ecc::public_key( sig, trx_digest, enforce_canonical ).serialize();
               signed_keys.insert( address(key) );
@@ -225,7 +222,7 @@ namespace bts { namespace blockchain {
            }
         }
         current_op_index = 0;
-        for( const auto& op : trx.operations )
+        for( const auto& op : trx_arg.operations )
         {
            evaluate_operation( op );
            ++current_op_index;
@@ -239,7 +236,7 @@ namespace bts { namespace blockchain {
          validation_error = e;
          throw;
       }
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx_arg) ) }
+   } FC_CAPTURE_AND_RETHROW( (trx_arg)(skip_signature_check)(enforce_canonical) ) }
 
    void transaction_evaluation_state::evaluate_operation( const operation& op )
    {

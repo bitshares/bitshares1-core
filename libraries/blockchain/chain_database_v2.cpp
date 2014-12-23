@@ -4,10 +4,10 @@
 namespace bts { namespace blockchain { namespace detail {
 
 void chain_database_impl::pay_delegate_v2( const pending_chain_state_ptr& pending_state, const public_key_type& block_signee,
-                                           const block_id_type& block_id )
+                                           const block_id_type& block_id, block_record& record )
 { try {
       if( pending_state->get_head_block_num() < BTS_V0_4_24_FORK_BLOCK_NUM )
-          return pay_delegate_v1( pending_state, block_signee, block_id );
+          return pay_delegate_v1( pending_state, block_signee, block_id, record );
 
       oaccount_record delegate_record = self->get_account_record( address( block_signee ) );
       FC_ASSERT( delegate_record.valid() );
@@ -32,12 +32,9 @@ void chain_database_impl::pay_delegate_v2( const pending_chain_state_ptr& pendin
       base_asset_record->collected_fees = 0;
       pending_state->store_asset_record( *base_asset_record );
 
-      oblock_record block_record = self->get_block_record( block_id );
-      FC_ASSERT( block_record.valid() );
-      block_record->signee_shares_issued = accepted_paycheck;
-      block_record->signee_fees_collected = 0;
-      block_record->signee_fees_destroyed = destroyed_collected_fees;
-      _block_id_to_block_record_db.store( block_id, *block_record );
-} FC_CAPTURE_AND_RETHROW( (block_signee)(block_id) ) }
+      record.signee_shares_issued = accepted_paycheck;
+      record.signee_fees_collected = 0;
+      record.signee_fees_destroyed = destroyed_collected_fees;
+} FC_CAPTURE_AND_RETHROW( (block_signee)(block_id)(record) ) }
 
 } } } // bts::blockchain::detail

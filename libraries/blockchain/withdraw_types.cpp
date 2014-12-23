@@ -283,7 +283,7 @@ namespace fc {
             return;
          // No default to force compiler warning
       }
-      FC_ASSERT( !"Invalid withdraw condition!" );
+      FC_ASSERT( false, "Invalid withdraw condition!" );
    }
 
    void to_variant( const bts::blockchain::memo_data& var,  variant& vo )

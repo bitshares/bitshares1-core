@@ -27,6 +27,18 @@ No balances found.
 wallet (unlocked) >>> wallet_list_my_accounts 
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       BLOCK PRODUCTION ENABLED 
 testaccount                        XTS5AQGjeRu5sEBvvERaV8i1tstV1fx2ywGUmvWgsBPEjFoR27oQg           NO                    NO             0              N/A                      
+wallet (unlocked) >>> help wallet_account_list_public_keys
+Usage:
+wallet_account_list_public_keys <account_name>                                                        Lists all public keys in this account
+Lists all public keys in this account
+
+Parameters:
+  account_name (account_name, required): the account for which public keys should be listed
+
+Returns:
+  public_key_summary_array
+
+aliases: public_keys
 wallet (unlocked) >>> wallet_account_list_public_keys testaccount
 [{
     "hex": "0224218aaf2aa51dec20d8cf619e89e6ca9d3e6e70878fed7a32bee8787c371979",

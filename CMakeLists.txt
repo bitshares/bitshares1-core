@@ -152,7 +152,7 @@ else( WIN32 ) # Apple AND Linux
     endif( APPLE )
 
     if( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" )
-        set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-builtin-memcmp -Wstack-usage=6144" )
+        set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-builtin-memcmp" )
     endif()
 
     if( "${CMAKE_GENERATOR}" STREQUAL "Ninja" )

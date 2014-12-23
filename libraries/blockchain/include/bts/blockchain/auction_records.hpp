@@ -1,11 +1,14 @@
 // Auction the rights to an object for the benefit of the current owner or for the DAC
 
 #pragma once
-#include <bts/blockchain/types.hpp>
+#include <bts/blockchain/asset.hpp>
 #include <bts/blockchain/object_record.hpp>
-
+#include <bts/blockchain/types.hpp>
+#include <fc/time.hpp>
 
 namespace bts { namespace blockchain {
+
+    class chain_interface;
 
     struct user_auction_record : object_record
     {

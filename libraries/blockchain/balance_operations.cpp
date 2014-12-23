@@ -1,6 +1,6 @@
 #include <bts/blockchain/balance_operations.hpp>
-#include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/exceptions.hpp>
+#include <bts/blockchain/pending_chain_state.hpp>
 
 #include <bts/blockchain/fork_blocks.hpp>
 
@@ -335,7 +335,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( escrow_balance_record.valid() );
 
       if( !eval_state.check_signature( this->released_by ) )
-         FC_ASSERT( !"transaction not signed by releasor" );
+         FC_ASSERT( false, "transaction not signed by releasor" );
 
       auto escrow_condition = escrow_balance_record->condition.as<withdraw_with_escrow>();
       auto total_released = amount_to_sender + amount_to_receiver;
@@ -463,7 +463,7 @@ namespace bts { namespace blockchain {
       }
       else
       {
-          FC_ASSERT( !"not released by a party to the escrow transaction" );
+          FC_ASSERT( false, "not released by a party to the escrow transaction" );
       }
 
       eval_state._current_state->store_balance_record( *escrow_balance_record );

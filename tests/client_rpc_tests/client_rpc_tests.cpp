@@ -24,6 +24,8 @@
 #include <iostream>
 #include <fstream>
 
+#define BTS_BLOCKCHAIN_INITIAL_SHARES (BTS_BLOCKCHAIN_MAX_SHARES/5)
+
 #define infolog( FORMAT, ... ) \
 do { \
 std::cerr << "Info: " <<FORMAT << "\n"; \
@@ -44,7 +46,6 @@ do { \
 std::cerr << "Command in " << #client << ": " << cmd << "\n"; \
 std::cerr << "Out: \n" << client->execute_command_line( cmd ) << "\n"; \
 } while (0)
-
 
 using namespace bts::blockchain;
 using namespace bts::wallet;
