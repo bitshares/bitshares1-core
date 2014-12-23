@@ -248,7 +248,7 @@ namespace bts { namespace blockchain {
          int32_t account_id = 0;
          account_record god;
          god.id = account_id;
-         god.name = "god";
+         god.name = "GOD";
          self->store_account_record( god );
 
          // Initialize delegates
