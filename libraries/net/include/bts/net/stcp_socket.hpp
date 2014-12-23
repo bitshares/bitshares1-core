@@ -30,6 +30,7 @@ class stcp_socket : public virtual fc::iostream
     virtual void     flush();
     virtual void     close();
 
+    using istream::get;
     void             get( char& c ) { read( &c, 1 ); }
     fc::sha512       get_shared_secret() const { return _shared_secret; }
   private:
