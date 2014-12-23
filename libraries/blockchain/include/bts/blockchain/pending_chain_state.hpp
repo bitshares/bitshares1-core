@@ -11,7 +11,9 @@ namespace bts { namespace blockchain {
                                         pending_chain_state( chain_interface_ptr prev_state = chain_interface_ptr() );
          virtual                        ~pending_chain_state()override;
 
+         // Used when creating an undo state
          void                           set_prev_state( chain_interface_ptr prev_state );
+         void                           set_chain_id( const digest_type& chain_id );
 
          fc::ripemd160                  get_current_random_seed()const override;
 
@@ -41,7 +43,7 @@ namespace bts { namespace blockchain {
          virtual odelegate_slate        get_delegate_slate( slate_id_type id )const override;
          virtual void                   store_delegate_slate( slate_id_type id, const delegate_slate& slate ) override;
 
-         virtual bool                   is_known_transaction( const fc::time_point_sec& exp, const digest_type& trx_id )const override;
+         virtual bool                   is_known_transaction( const transaction& trx )const override;
          virtual otransaction_record    get_transaction( const transaction_id_type& trx_id, bool exact = true )const override;
 
          virtual void                   store_transaction( const transaction_id_type&, const transaction_record&  ) override;
@@ -101,14 +103,6 @@ namespace bts { namespace blockchain {
                                                                      const market_history_record& record )override;
          virtual omarket_history_record get_market_history_record( const market_history_key& key )const override;
 
-         /**
-          *  Based upon the current state of the database, calculate any updates that
-          *  should be executed in a deterministic manner.
-          */
-         virtual void                   apply_deterministic_updates()override;
-
-         /** polymorphically allcoate a new state */
-         virtual chain_interface_ptr    create( const chain_interface_ptr& prev_state )const;
          /** apply changes from this pending state to the previous state */
          virtual void                   apply_changes()const;
 
@@ -116,6 +110,18 @@ namespace bts { namespace blockchain {
           * pending state to the previous state.
           */
          virtual void                   get_undo_state( const chain_interface_ptr& undo_state )const;
+
+         template<typename T>
+         void populate_undo_state( const chain_interface_ptr& undo_state, const chain_interface_ptr& prev_state,
+                                   const T& record_map )const
+         {
+             for( const auto& item : record_map )
+             {
+                 const auto prev_record = prev_state->lookup<decltype( item.second )>( item.first );
+                 if( prev_record.valid() ) undo_state->store( *prev_record );
+                 else undo_state->remove<decltype( item.second )>( item.first );
+             }
+         }
 
          /** load the state from a variant */
          virtual void                   from_variant( const variant& v );
@@ -131,53 +137,95 @@ namespace bts { namespace blockchain {
           */
          virtual void                  index_transaction( const address& addr, const transaction_id_type& trx_id ) override;
 
-         // NOTE: this isn't really part of the chain state, but more part of the block state
-         vector<market_transaction>                                         market_transactions;
+         unordered_map<transaction_id_type, transaction_record>             _transaction_id_to_record;
+         unordered_set<transaction_id_type>                                 _transaction_id_remove;
+         unordered_set<digest_type>                                         _transaction_digests;
+
+         unordered_map< chain_property_type, variant>                       properties;
 
          unordered_map< asset_id_type, asset_record>                        assets;
-         unordered_map< slate_id_type, delegate_slate>                      slates;
-         unordered_map< account_id_type, account_record>                    accounts;
-         unordered_map< balance_id_type, balance_record>                    balances;
-         unordered_map< string, account_id_type>                            account_id_index;
          unordered_map< string, asset_id_type>                              symbol_id_index;
-         unordered_map< transaction_id_type, transaction_record>            transactions;
-         unordered_set< digest_type >                                       unique_transactions;
-         unordered_map< chain_property_type, variant>                       properties;
-         unordered_map<address, account_id_type>                            key_to_account;
-         map< market_index_key, order_record>                               bids;
+         map< std::pair<asset_id_type,proposal_id_type>, proposal_record >  asset_proposals;
+
+         unordered_map< balance_id_type, balance_record>                    balances;
+
+         unordered_map<account_id_type, account_record>                     _account_id_to_record;
+         unordered_set<account_id_type>                                     _account_id_remove;
+         unordered_map<string, account_id_type>                             _account_name_to_id;
+         unordered_map<address, account_id_type>                            _account_address_to_id;
+
+         unordered_map< slate_id_type, delegate_slate>                      slates;
+         map<time_point_sec, slot_record>                                   slots;
+
+         map<burn_record_key,burn_record_value>                             burns;
+
          map< market_index_key, order_record>                               asks;
+         map< market_index_key, order_record>                               bids;
+         map< market_index_key, order_record>                               relative_asks;
+         map< market_index_key, order_record>                               relative_bids;
          map< market_index_key, order_record>                               shorts;
          map< market_index_key, collateral_record>                          collateral;
-         map<time_point_sec, slot_record>                                   slots;
-         map<market_history_key, market_history_record>                     market_history;
-         map< std::pair<asset_id_type,asset_id_type>, market_status>        market_statuses;
-         map<operation_type_enum, std::deque<operation>>                    recent_operations;
          map<feed_index, feed_record>                                       feeds;
-         map<burn_record_key,burn_record_value>                             burns;
-         map< market_index_key, order_record>                               relative_bids;
-         map< market_index_key, order_record>                               relative_asks;
-
-         map< object_id_type, object_record >                               objects;
-
-         map< edge_index_key, object_id_type >                              edge_index;
-         map< edge_index_key, object_id_type >                              reverse_edge_index;
-         map< string, site_record >                                         site_index;
-
-         map< std::pair<asset_id_type,address>, object_id_type >            authorizations;
-         map< std::pair<asset_id_type,proposal_id_type>, proposal_record >  asset_proposals;
 
          std::set<std::pair<asset_id_type, asset_id_type>>                  _dirty_markets;
 
-         chain_interface_weak_ptr                                           _prev_state;
-   };
+         vector<market_transaction>                                         market_transactions;
+         map< std::pair<asset_id_type,asset_id_type>, market_status>        market_statuses;
+         map<market_history_key, market_history_record>                     market_history;
 
+         map< object_id_type, object_record >                               objects;
+         map< edge_index_key, object_id_type >                              edge_index;
+         map< edge_index_key, object_id_type >                              reverse_edge_index;
+
+         map< string, site_record >                                         site_index;
+
+         map< std::pair<asset_id_type,address>, object_id_type >            authorizations;
+
+         optional<digest_type>                                              _chain_id;
+
+      private:
+         // Not serialized
+         std::weak_ptr<chain_interface>                                     _prev_state;
+         map<operation_type_enum, std::deque<operation>>                    recent_operations;
+
+         virtual void init_account_db_interface()override;
+         virtual void init_transaction_db_interface()override;
+   };
    typedef std::shared_ptr<pending_chain_state> pending_chain_state_ptr;
 
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::pending_chain_state,
-            (assets)(slates)(accounts)(balances)(account_id_index)(symbol_id_index)(transactions)
-            (properties)(bids)(asks)(shorts)(collateral)(slots)
-            (market_statuses)(feeds)(objects)(burns)(relative_bids)(relative_asks)(_dirty_markets)
-            (authorizations)(asset_proposals)
-           )
+        (_transaction_id_to_record)
+        (_transaction_id_remove)
+        (_transaction_digests)
+        (properties)
+        (assets)
+        (symbol_id_index)
+        (asset_proposals)
+        (balances)
+        (_account_id_to_record)
+        (_account_id_remove)
+        (_account_name_to_id)
+        (_account_address_to_id)
+        (slates)
+        (slots)
+        (burns)
+        (asks)
+        (bids)
+        (relative_asks)
+        (relative_bids)
+        (shorts)
+        (collateral)
+        (feeds)
+        (_dirty_markets)
+        (market_transactions)
+        (market_statuses)
+        (market_history)
+        (objects)
+        (edge_index)
+        (reverse_edge_index)
+        (site_index)
+        (authorizations)
+        (_chain_id)
+    )

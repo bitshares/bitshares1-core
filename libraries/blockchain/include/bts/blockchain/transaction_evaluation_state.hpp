@@ -1,12 +1,12 @@
 #pragma once
-#include <bts/blockchain/types.hpp>
-#include <bts/blockchain/transaction.hpp>
+
 #include <bts/blockchain/condition.hpp>
+#include <bts/blockchain/transaction.hpp>
+#include <bts/blockchain/types.hpp>
 
 namespace bts { namespace blockchain {
 
-   class chain_interface;
-   typedef shared_ptr<chain_interface> chain_interface_ptr;
+    class pending_chain_state;
 
    /**
     *  While evaluating a transaction there is a lot of intermediate
@@ -23,7 +23,7 @@ namespace bts { namespace blockchain {
    class transaction_evaluation_state
    {
       public:
-         transaction_evaluation_state( chain_interface* current_state = nullptr );
+         transaction_evaluation_state( pending_chain_state* current_state = nullptr );
 
          virtual ~transaction_evaluation_state();
          virtual share_type get_fees( asset_id_type id = 0)const;
@@ -112,7 +112,7 @@ namespace bts { namespace blockchain {
          unordered_map<account_id_type, vote_state> net_delegate_votes;
 
          // not serialized
-         chain_interface*                           _current_state = nullptr;
+         pending_chain_state*                       _current_state = nullptr;
          bool                                       _skip_signature_check = false;
    };
    typedef shared_ptr<transaction_evaluation_state> transaction_evaluation_state_ptr;

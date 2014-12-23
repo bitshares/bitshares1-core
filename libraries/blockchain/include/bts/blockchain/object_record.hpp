@@ -1,10 +1,14 @@
 #pragma once
-#include <stdint.h>
-#include <bts/blockchain/types.hpp>
+
 #include <bts/blockchain/condition.hpp>
+#include <bts/blockchain/types.hpp>
+
+#include <fc/exception/exception.hpp>
 #include <fc/io/enum_type.hpp>
 #include <fc/io/raw_fwd.hpp>
 #include <fc/reflect/reflect.hpp>
+
+#include <stdint.h>
 
 namespace bts { namespace blockchain {
 

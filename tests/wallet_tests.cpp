@@ -26,6 +26,7 @@
 #include <iostream>
 #include <fstream>
 
+#define BTS_BLOCKCHAIN_INITIAL_SHARES (BTS_BLOCKCHAIN_MAX_SHARES/5)
 
 using namespace bts::blockchain;
 using namespace bts::wallet;

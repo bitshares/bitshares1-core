@@ -177,7 +177,7 @@ namespace bts { namespace blockchain {
    // the condition that is also the owner for this given object
    object_id_type       chain_interface::get_owner_object( const object_id_type& obj )
    {
-       FC_ASSERT(!"unimplemented");
+       FC_ASSERT(false, "unimplemented");
    }
 
    multisig_condition   chain_interface::get_object_condition( const object_id_type& id, int depth )
@@ -192,7 +192,7 @@ namespace bts { namespace blockchain {
    { try {
        ilog("@n getting object condition for object: ${o}", ("o", obj));
        if( depth >= 100 )//BTS_OWNER_DEPENDENCY_MAX_DEPTH )
-           FC_ASSERT(!"Cannot determine object condition.");
+           FC_ASSERT(false, "Cannot determine object condition.");
        multisig_condition condition;
        switch( obj.type() )
        {
@@ -228,22 +228,22 @@ namespace bts { namespace blockchain {
                if( oasset->issuer_account_id > 0 )
                {
                    auto oacct = get_account_record( oasset->issuer_account_id );
-                   FC_ASSERT(!"This asset has an issuer but the issuer account doens't exist. Crap!");
+                   FC_ASSERT(false, "This asset has an issuer but the issuer account doens't exist. Crap!");
                    condition.owners.insert( oacct->owner_address() );
                    condition.required = 1;
                    return condition;
                }
                else
                {
-                   FC_ASSERT(!"That asset has no issuer!");
+                   FC_ASSERT(false, "That asset has no issuer!");
                }
            }
            default:
            {
-               FC_ASSERT(!"I don't know how to get the condition for this object type!");
+               FC_ASSERT(false, "I don't know how to get the condition for this object type!");
            }
        }
-       FC_ASSERT(!"This code path should not happen.");
+       FC_ASSERT(false, "This code path should not happen.");
    } FC_CAPTURE_AND_RETHROW( (obj.short_id())(obj.type())(obj) ) }
 
    oobject_record chain_interface::get_edge( const object_id_type& id )
