@@ -172,6 +172,32 @@
           "prerequisites" : ["wallet_unlocked"]
       },
       {
+        "method_name": "wallet_import_keys_from_json",
+        "description": "Imports anything that looks like a private key from the given JSON file.",
+        "return_type": "void",
+        "parameters" :
+          [
+            {
+              "name" : "json_filename",
+              "type" : "filename",
+              "description" : "the full path and filename of JSON wallet to import",
+              "example" : "/path/to/exported_wallet.json"
+            },
+            {
+              "name" : "imported_wallet_passphrase",
+              "type" : "passphrase",
+              "description" : "passphrase for encrypted keys"
+            },
+            {
+              "name" : "account",
+              "type" : "account_name",
+              "description" : "Account into which to import keys."
+            }
+          ],
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["import_keys_from_json"]
+      },
+      {
         "method_name": "wallet_close",
         "description": "Closes the curent wallet if one is open",
         "return_type": "void",
