@@ -7,6 +7,8 @@
 #include <fc/network/resolve.hpp>
 #include <fc/network/url.hpp>
 #include <fc/network/http/connection.hpp>
+#include <fc/crypto/aes.hpp>
+#include <fc/reflect/variant.hpp>
 
 #include <fc/thread/non_preemptable_scope_check.hpp>
 
@@ -69,6 +71,72 @@ void detail::client_impl::wallet_backup_restore( const fc::path& json_filename,
 {
     _wallet->create_from_json( json_filename, wallet_name, imported_wallet_passphrase );
     reschedule_delegate_loop();
+}
+
+// This should be able to get an encrypted private key or WIF key out of any reasonable JSON object.
+void read_keys( const fc::variant& vo, vector<private_key_type>& keys, const string& password )
+{
+    ilog("@n read_keys");
+    ilog("@n ${o}", ("o", vo));
+    try {
+      auto wif_key = vo.as_string();
+      auto key = bts::utilities::wif_to_key( wif_key );
+      if( key.valid() )
+          keys.push_back(*key);
+    }
+    catch (...) {
+        ilog("@n I couldn't parse that as a wif key: ${vo}", ("vo", vo));
+    }
+    try {
+        auto bytes = vo.as<vector<char>>();
+        fc::sha512 password_bytes = fc::sha512::hash( password.c_str(), password.size() );
+        const auto plain_text = fc::aes_decrypt( password_bytes, bytes );
+        keys.push_back( fc::raw::unpack<private_key_type>( plain_text ) );
+    }
+    catch (const fc::exception& e) {
+        ilog("@n I couldn't parse that as a byte array: ${vo}", ("vo", vo));
+        ilog("@n ${e}", ("e", e));
+    }
+    try {
+        auto obj = vo.get_object();
+        ilog("@n it's an object ${o}", ("o", obj));
+        for( auto kv : obj )
+        {
+            read_keys( kv.value(), keys, password );
+        }
+    } catch (...) {
+        ilog("@n I couldn't parse that as an object: ${o}", ("o", vo));
+    }
+    try {
+        auto arr = vo.as<vector<variant>>();
+        for( auto obj : arr )
+        {
+            read_keys( obj, keys, password );
+        }
+        ilog("@n it's an object ${o}", ("o", vo));
+    } catch (...) {
+        ilog("@n I couldn't parse that as an array: ${o}", ("o", vo));
+    }
+    ilog("@n I couldn't parse that as anything!: ${o}", ("o", vo));
+}
+
+void detail::client_impl::wallet_import_keys_from_json( const fc::path& json_filename,
+                                                        const string& imported_wallet_passphrase,
+                                                        const string& account )
+{
+    FC_ASSERT( fc::exists( json_filename ) );
+    FC_ASSERT( _wallet->is_open() );
+
+    vector<private_key_type> keys;
+    auto object = fc::json::from_file<fc::variant>( json_filename );
+
+    read_keys( object, keys, imported_wallet_passphrase );
+    ilog("@n Read keys: ${keys}", ("keys", keys));
+    for( auto key : keys )
+    {
+        _wallet->import_private_key( key, account, false );
+        ilog("@n imported key: ${key}", ("key", key));
+    }
 }
 
 bool detail::client_impl::wallet_set_automatic_backups( bool enabled )
