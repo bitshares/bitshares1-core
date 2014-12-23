@@ -752,13 +752,10 @@ namespace bts { namespace blockchain {
           pending_state->store_account_record( *delegate_record );
           pending_state->store_asset_record( *base_asset_record );
 
-#ifndef WIN32
-#warning Fix this in previous hardfork versions
-#endif
           record.signee_shares_issued = accepted_new_shares;
           record.signee_fees_collected = accepted_collected_fees;
           record.signee_fees_destroyed = destroyed_collected_fees;
-      } FC_CAPTURE_AND_RETHROW( (block_signee)(block_id) ) }
+      } FC_CAPTURE_AND_RETHROW( (block_signee)(block_id)(record) ) }
 
       void chain_database_impl::save_undo_state( const block_id_type& block_id,
                                                  const pending_chain_state_ptr& pending_state )
