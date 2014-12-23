@@ -767,6 +767,7 @@ namespace bts { namespace blockchain {
                  return;  // don't bother saving it...
 
            pending_chain_state_ptr undo_state = std::make_shared<pending_chain_state>( nullptr );
+           undo_state->set_chain_id( _chain_id );
            pending_state->get_undo_state( undo_state );
            _undo_state_db.store( block_id, *undo_state );
            auto block_num = self->get_head_block_num();

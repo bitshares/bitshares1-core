@@ -11,7 +11,9 @@ namespace bts { namespace blockchain {
                                         pending_chain_state( chain_interface_ptr prev_state = chain_interface_ptr() );
          virtual                        ~pending_chain_state()override;
 
+         // Used when creating an undo state
          void                           set_prev_state( chain_interface_ptr prev_state );
+         void                           set_chain_id( const digest_type& chain_id );
 
          fc::ripemd160                  get_current_random_seed()const override;
 
@@ -101,9 +103,6 @@ namespace bts { namespace blockchain {
                                                                      const market_history_record& record )override;
          virtual omarket_history_record get_market_history_record( const market_history_key& key )const override;
 
-         /** polymorphically allcoate a new state */
-         virtual chain_interface_ptr    create( const chain_interface_ptr& prev_state )const;
-
          /** apply changes from this pending state to the previous state */
          virtual void                   apply_changes()const;
 
@@ -182,6 +181,8 @@ namespace bts { namespace blockchain {
 
          map< std::pair<asset_id_type,address>, object_id_type >            authorizations;
 
+         optional<digest_type>                                              _chain_id;
+
       private:
          // Not serialized
          std::weak_ptr<chain_interface>                                     _prev_state;
@@ -226,4 +227,5 @@ FC_REFLECT( bts::blockchain::pending_chain_state,
         (reverse_edge_index)
         (site_index)
         (authorizations)
+        (_chain_id)
     )

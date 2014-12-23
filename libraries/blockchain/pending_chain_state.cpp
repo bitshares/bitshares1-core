@@ -15,15 +15,14 @@ namespace bts { namespace blockchain {
    {
    }
 
-   /** polymorphically allcoate a new state */
-   chain_interface_ptr pending_chain_state::create( const chain_interface_ptr& prev_state )const
-   {
-      return std::make_shared<pending_chain_state>( prev_state );
-   }
-
    void pending_chain_state::set_prev_state( chain_interface_ptr prev_state )
    {
       _prev_state = prev_state;
+   }
+
+   void pending_chain_state::set_chain_id( const digest_type& chain_id )
+   {
+       _chain_id = chain_id;
    }
 
    uint32_t pending_chain_state::get_head_block_num()const
@@ -42,6 +41,7 @@ namespace bts { namespace blockchain {
 
    digest_type pending_chain_state::chain_id()const
    {
+      if( _chain_id.valid() ) return *_chain_id;
       const chain_interface_ptr prev_state = _prev_state.lock();
       FC_ASSERT( prev_state );
       return prev_state->chain_id();
