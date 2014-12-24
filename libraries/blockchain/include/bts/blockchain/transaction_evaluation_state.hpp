@@ -65,7 +65,6 @@ namespace bts { namespace blockchain {
          void validate_asset( const asset& a )const;
 
          signed_transaction                         trx;
-         uint32_t                                   current_op_index = 0;
 
          unordered_set<address>                     signed_keys;
 
@@ -111,9 +110,10 @@ namespace bts { namespace blockchain {
           */
          unordered_map<account_id_type, vote_state> net_delegate_votes;
 
-         // not serialized
+         // Not serialized
          pending_chain_state*                       _current_state = nullptr;
          bool                                       _skip_signature_check = false;
+         uint32_t                                   current_op_index = 0;
    };
    typedef shared_ptr<transaction_evaluation_state> transaction_evaluation_state_ptr;
 
@@ -122,7 +122,6 @@ namespace bts { namespace blockchain {
 FC_REFLECT( bts::blockchain::transaction_evaluation_state::vote_state, (votes_for) )
 FC_REFLECT( bts::blockchain::transaction_evaluation_state,
            (trx)
-           (current_op_index)
            (signed_keys)
            (validation_error)
            (provided_deposits)
