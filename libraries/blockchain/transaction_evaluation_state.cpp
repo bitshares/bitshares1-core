@@ -187,6 +187,7 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::evaluate( const signed_transaction& trx_arg, bool skip_signature_check, bool enforce_canonical )
    { try {
+      trx = trx_arg;
       _skip_signature_check = skip_signature_check;
       try {
         if( _current_state->now() >= trx_arg.expiration )
