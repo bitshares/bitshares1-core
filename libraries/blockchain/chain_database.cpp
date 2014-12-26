@@ -109,7 +109,6 @@ namespace bts { namespace blockchain {
 
           _asset_db.open( data_dir / "index/asset_db" );
           _balance_db.open( data_dir / "index/balance_db" );
-          _empty_balance_db.open( data_dir / "index/empty_balance_db" );
           _address_to_trx_index.open( data_dir / "index/address_to_trx_db" );
           _auth_db.open( data_dir / "index/auth_db" );
           _asset_proposal_db.open( data_dir / "index/asset_proposal_db" );
@@ -1356,7 +1355,6 @@ namespace bts { namespace blockchain {
 
       my->_asset_db.close();
       my->_balance_db.close();
-      my->_empty_balance_db.close();
       my->_address_to_trx_index.close();
       my->_burn_db.close();
       my->_account_db.close();
@@ -1683,20 +1681,9 @@ namespace bts { namespace blockchain {
        return lookup<account_record>( account_owner );
    } FC_CAPTURE_AND_RETHROW( (account_owner) ) }
 
-   obalance_record chain_database::get_empty_balance_record( const balance_id_type& balance_id )const
-   {
-      auto balance = my->_empty_balance_db.fetch_optional( balance_id );
-      return balance;
-   }
    obalance_record chain_database::get_balance_record( const balance_id_type& balance_id )const
    {
-      auto balance = my->_balance_db.fetch_optional( balance_id );
-
-      // this will slow things down during block processing, empty balance db is only really useful to
-      // the wallet for rescan pruposes.   Have the wallet check the empty DB
-
-      //if( !balance ) balance = my->_empty_balance_db.fetch_optional( balance_id );
-      return balance;
+      return my->_balance_db.fetch_optional( balance_id );
    }
 
    oaccount_record chain_database::get_account_record( const account_id_type& account_id )const
@@ -1745,17 +1732,19 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_balance_record( const balance_record& r )
    { try {
+#if 0
        ilog( "balance record: ${r}", ("r",r) );
        if( r.is_null() )
        {
-          /* Currently we keep all balance records forever so we know the owner and asset ID on wallet rescan */
-          my->_empty_balance_db.store( r.id(), r );
           my->_balance_db.remove( r.id() );
        }
        else
        {
           my->_balance_db.store( r.id(), r );
        }
+#endif
+       /* Currently we keep all balance records forever so we know the owner and asset ID on wallet rescan */
+       my->_balance_db.store( r.id(), r );
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("record", r) ) }
 
@@ -3611,10 +3600,6 @@ namespace bts { namespace blockchain {
        my->_balance_db.export_to_json( next_path );
        ulog( "Dumped ${p}", ("p",next_path) );
 
-       next_path = dir / "_empty_balance_db.json";
-       my->_empty_balance_db.export_to_json( next_path );
-       ulog( "Dumped ${p}", ("p",next_path) );
-
        next_path = dir / "_burn_db.json";
        my->_burn_db.export_to_json( next_path );
        ulog( "Dumped ${p}", ("p",next_path) );
@@ -3685,7 +3670,7 @@ namespace bts { namespace blockchain {
      fc::mutable_variant_object stats;
 #define CHAIN_DB_DATABASES (_market_transactions_db)(_slate_db)(_fork_number_db)(_fork_db)(_property_db)(_undo_state_db) \
                            (_block_num_to_id_db)(_block_id_to_block_record_db)(_block_id_to_block_data_db) \
-                           (_id_to_transaction_record_db)(_pending_transaction_db)(_pending_fee_index)(_asset_db)(_empty_balance_db)(_balance_db) \
+                           (_id_to_transaction_record_db)(_pending_transaction_db)(_pending_fee_index)(_asset_db)(_balance_db) \
                            (_burn_db)(_account_db)(_symbol_index_db) \
                            (_slot_record_db)(_ask_db)(_bid_db)(_short_db)(_collateral_db)(_feed_db)(_object_db)(_edge_index)(_reverse_edge_index)(_market_status_db)(_market_history_db) \
                            (_recent_operations)
