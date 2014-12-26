@@ -30,7 +30,7 @@ namespace bts { namespace blockchain {
          public:
             void                                        open_database(const fc::path& data_dir );
             void                                        clear_invalidation_of_future_blocks();
-            digest_type                                 initialize_genesis( const optional<path>& genesis_file, bool chain_id_only = false );
+            digest_type                                 initialize_genesis( const optional<path>& genesis_file );
             void                                        populate_indexes();
 
             std::pair<block_id_type, block_fork_data>   store_and_index( const block_id_type& id, const full_block& blk );

@@ -186,10 +186,10 @@ namespace bts { namespace blockchain {
         }
       }
 
-      digest_type chain_database_impl::initialize_genesis( const optional<path>& genesis_file, bool chain_id_only )
+      digest_type chain_database_impl::initialize_genesis( const optional<path>& genesis_file )
       { try {
          digest_type chain_id = self->chain_id();
-         if( chain_id != digest_type() && !chain_id_only )
+         if( chain_id != digest_type() )
          {
             self->sanity_check();
             ilog( "Genesis state already initialized" );
@@ -197,9 +197,14 @@ namespace bts { namespace blockchain {
          }
 
          genesis_state config;
-         if (genesis_file)
+         if( !genesis_file.valid() )
          {
-           // this will only happen during testing
+           std::cout << "Initializing genesis state from built-in genesis file\n";
+           config = get_builtin_genesis_block_config();
+           chain_id = get_builtin_genesis_block_state_hash();
+         }
+         else
+         {
            std::cout << "Initializing genesis state from "<< genesis_file->generic_string() << "\n";
            FC_ASSERT( fc::exists( *genesis_file ), "Genesis file '${file}' was not found.", ("file", *genesis_file) );
 
@@ -220,17 +225,6 @@ namespace bts { namespace blockchain {
            fc::raw::pack( enc, config );
            chain_id = enc.result();
          }
-         else
-         {
-           // this is the usual case
-           if( !chain_id_only )
-               std::cout << "Initializing genesis state from built-in genesis file\n";
-           config = get_builtin_genesis_block_config();
-           chain_id = get_builtin_genesis_block_state_hash();
-         }
-
-         if( chain_id_only )
-           return chain_id;
 
          _chain_id = chain_id;
          self->set_property( bts::blockchain::chain_id, variant( _chain_id ) );
@@ -1302,17 +1296,14 @@ namespace bts { namespace blockchain {
                        << orig_chain_size / 1024 / 1024 << "MiB to "
                        << final_chain_size / 1024 / 1024 << "MiB.\n" << std::flush;
           }
+          else
+          {
+              const optional<variant> property = get_property( bts::blockchain::chain_id );
+              FC_ASSERT( property.valid() );
+              my->_chain_id = property->as<digest_type>();
 
-          const optional<variant> property = get_property( bts::blockchain::chain_id );
-          FC_ASSERT( property.valid() );
-          const auto db_chain_id = property->as<digest_type>();
-          const auto genesis_chain_id = my->initialize_genesis( genesis_file, true );
-          if( db_chain_id != genesis_chain_id )
-              FC_THROW_EXCEPTION( wrong_chain_id, "Wrong chain ID!", ("database_id",db_chain_id)("genesis_id",genesis_chain_id) );
-          my->_chain_id = db_chain_id;
-
-          if( !replay_blockchain )
               my->populate_indexes();
+          }
 
           //  process the pending transactions to cache by fees
           for( auto pending_itr = my->_pending_transaction_db.begin(); pending_itr.valid(); ++pending_itr )
@@ -1345,8 +1336,7 @@ namespace bts { namespace blockchain {
         fc::remove_all( data_dir / "index" );
         std::rethrow_exception(error_opening_database);
       }
-
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
+   } FC_CAPTURE_AND_RETHROW( (data_dir) ) }
 
    void chain_database::close()
    { try {

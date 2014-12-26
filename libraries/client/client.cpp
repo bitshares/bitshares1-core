@@ -1301,7 +1301,10 @@ void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_pat
           fc::remove_all( data_dir / "exceptions" );
           my->_exception_db.open( data_dir / "exceptions", true );
        }
-       //FIXME: is it really correct to continue here without rethrowing?
+       else
+       {
+           throw;
+       }
     }
 
     load_checkpoints( data_dir );
@@ -1320,12 +1323,10 @@ void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_pat
           elog("Chain database corrupted. Deleting it and attempting to recover.");
           attempt_to_recover_database = true;
        }
-       //FIXME: is it really correct to continue here without rethrowing?
-    }
-    catch ( const wrong_chain_id& )
-    {
-       elog("Wrong chain ID. Deleting database and attempting to recover.");
-       attempt_to_recover_database = true;
+       else
+       {
+           throw;
+       }
     }
 
     if (attempt_to_recover_database)
