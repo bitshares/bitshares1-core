@@ -128,6 +128,14 @@
         "prerequisites" : ["no_prerequisites"]
       },
       {
+        "method_name": "blockchain_list_recently_updated_accounts",
+        "description": "Returns a list of recently updated accounts",
+        "return_type": "account_record_array",
+        "parameters" : [],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"]
+      },
+      {
         "method_name": "blockchain_list_recently_registered_accounts",
         "description": "Returns a list of recently registered accounts",
         "return_type": "account_record_array",
