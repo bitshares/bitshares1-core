@@ -1221,7 +1221,6 @@ bool wallet_impl::scan_deposit( const deposit_operation& op, const vector<privat
                 }
                 catch ( const fc::exception& e )
                 {
-                   elog( "unexpected exception ${e}", ("e",e.to_detail_string()) );
                 }
              }
              break;

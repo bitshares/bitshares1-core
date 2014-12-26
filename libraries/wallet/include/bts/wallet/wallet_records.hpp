@@ -192,38 +192,35 @@ namespace bts { namespace wallet {
    // don't use -- work in progress
    struct transaction_ledger_entry
    {
-       transaction_id_type                          id;
-       uint32_t                                     block_num = -1;
-       time_point_sec                               timestamp = time_point_sec( -1 );
+       transaction_id_type              id;
+       uint32_t                         block_num = -1;
+       time_point_sec                   timestamp = time_point_sec( -1 );
 
        // e.g. { name, INCOME-name, ISSUER-name, `snapshot address`, {ASK,BID,SHORT,MARGIN}-id, FEE }
-       map<string, map<asset_id_type, share_type>>  delta_amounts;
+       map<string, vector<asset>>       delta_amounts;
 
-       optional<transaction_id_type>                transaction_id;
+       optional<transaction_id_type>    transaction_id;
 
        // only really useful for titan transfers
-       map<uint16_t, string>                        delta_labels;
+       map<uint16_t, string>            delta_labels;
 
-       map<uint16_t, string>                        operation_notes;
+       map<uint16_t, string>            operation_notes;
 
        bool is_confirmed()const { return block_num != -1; }
        bool is_virtual()const   { return !transaction_id.valid(); }
 
        friend bool operator < ( const transaction_ledger_entry& a, const transaction_ledger_entry& b )
        {
-           if( a.is_confirmed() == b.is_confirmed() )
-               return std::tie( a.block_num, a.timestamp, a.id ) < std::tie( b.block_num, b.timestamp, b.id );
-           else
-               return std::tie( a.timestamp, a.id ) < std::tie( b.timestamp, b.id );
+           return std::tie( a.block_num, a.timestamp, a.id ) < std::tie( b.block_num, b.timestamp, b.id );
        }
    };
 
    struct pretty_transaction_experimental : transaction_ledger_entry
    {
-       vector<std::pair<string, asset>> inputs;
-       vector<std::pair<string, asset>> outputs;
+       vector<std::pair<string, asset>>         inputs;
+       vector<std::pair<string, asset>>         outputs;
        mutable vector<std::pair<string, asset>> balances;
-       vector<string>                   notes;
+       vector<string>                           notes;
    };
 
 #if 0

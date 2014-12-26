@@ -673,9 +673,9 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
    return *this;
 } FC_CAPTURE_AND_RETHROW( (from_account.name)(cover_amount)(order_id) ) }
 
-transaction_builder& transaction_builder::update_block_signing_key( const string& authorizing_account_name,
-                                                                    const string& delegate_name,
-                                                                    const public_key_type& block_signing_key )
+transaction_builder& transaction_builder::update_signing_key( const string& authorizing_account_name,
+                                                              const string& delegate_name,
+                                                              const public_key_type& signing_key )
 { try {
     const owallet_account_record authorizing_account_record = _wimpl->_wallet_db.lookup_account( authorizing_account_name );
     if( !authorizing_account_record.valid() )
@@ -685,7 +685,7 @@ transaction_builder& transaction_builder::update_block_signing_key( const string
     if( !delegate_record.valid() )
         FC_THROW_EXCEPTION( unknown_account, "Unknown delegate account name!" );
 
-    trx.update_signing_key( delegate_record->id, block_signing_key );
+    trx.update_signing_key( delegate_record->id, signing_key );
     deduct_balance( authorizing_account_record->owner_address(), asset() );
 
     ledger_entry entry;
@@ -697,7 +697,7 @@ transaction_builder& transaction_builder::update_block_signing_key( const string
 
     required_signatures.insert( authorizing_account_record->active_key() );
     return *this;
-} FC_CAPTURE_AND_RETHROW( (authorizing_account_name)(delegate_name)(block_signing_key) ) }
+} FC_CAPTURE_AND_RETHROW( (authorizing_account_name)(delegate_name)(signing_key) ) }
 
 transaction_builder& transaction_builder::update_asset( const string& symbol,
                                                         const optional<string>& name,
