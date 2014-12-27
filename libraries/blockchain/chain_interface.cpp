@@ -189,8 +189,8 @@ namespace bts { namespace blockchain {
    multisig_condition   chain_interface::get_object_condition( const object_record& obj, int depth )
    { try {
        ilog("@n getting object condition for object: ${o}", ("o", obj));
-       if( depth >= 100 )//BTS_OWNER_DEPENDENCY_MAX_DEPTH )
-           FC_ASSERT(false, "Cannot determine object condition.");
+       if( depth >= 1 )//BTS_OWNER_DEPENDENCY_MAX_DEPTH )
+           FC_ASSERT(false, "Cannot determine object condition - recursion depth exceeded (are you trying to make an edge from an edge?)");
        multisig_condition condition;
        switch( obj.type() )
        {
