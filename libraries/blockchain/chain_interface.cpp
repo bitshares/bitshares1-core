@@ -57,14 +57,12 @@ namespace bts { namespace blockchain {
        for( const char& c : symbol )
        {
            sub_symbol_size++;
-           ulog("char is: ${c}, count is: ${s}", ("c", std::string(1, c))("s", sub_symbol_size));
            if( c == '.' )
            {
               if( sub_symbol_size < BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE
                  || sub_symbol_size > BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE )
                  return false;
               sub_symbol_size = 0;
-              ulog("it's a dot, resetting subsize to 0");
 
               if( ++dots > 1 )
                  return false;
@@ -73,9 +71,12 @@ namespace bts { namespace blockchain {
            {
                if( !std::isalnum( c, std::locale::classic() ) || !std::isupper( c, std::locale::classic() ) )
                    return false;
-              ulog("it's not a dot and passes basic test");
            }
        }
+       if( sub_symbol_size < BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE
+          || sub_symbol_size > BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE )
+          return false;
+
        if( symbol.back() == '.' ) return false;
        if( symbol.front() == '.' ) return false;
 
