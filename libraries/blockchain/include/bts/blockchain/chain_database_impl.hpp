@@ -2,6 +2,7 @@
 
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/db/cached_level_map.hpp>
+#include <bts/db/fast_level_map.hpp>
 #include <fc/thread/mutex.hpp>
 
 namespace bts { namespace blockchain {
@@ -156,7 +157,6 @@ namespace bts { namespace blockchain {
             bts::db::level_map< pair<address,transaction_id_type>, int>                 _address_to_trx_index;
 
             bts::db::level_map<pair<asset_id_type,address>, object_id_type>             _auth_db;
-
 
             map<operation_type_enum, std::deque<operation>>                             _recent_operations;
 

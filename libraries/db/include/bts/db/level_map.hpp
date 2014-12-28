@@ -28,6 +28,8 @@ namespace bts { namespace db {
      public:
         void open( const fc::path& dir, bool create = true, size_t cache_size = 0 )
         { try {
+           FC_ASSERT( !is_open(), "Database is already open!" );
+
            ldb::Options opts;
            opts.comparator = &_comparer;
            opts.create_if_missing = create;
@@ -76,6 +78,7 @@ namespace bts { namespace db {
 
         void close()
         {
+          FC_ASSERT( is_open(), "Database is not open!" );
           _db.reset();
           _cache.reset();
         }
@@ -340,6 +343,7 @@ namespace bts { namespace db {
 
         write_batch create_batch( bool sync = false )
         {
+           FC_ASSERT( is_open(), "Database is not open!" );
            return write_batch( this, sync );
         }
 
@@ -379,6 +383,7 @@ namespace bts { namespace db {
 
         void export_to_json( const fc::path& path )const
         { try {
+            FC_ASSERT( is_open(), "Database is not open!" );
             FC_ASSERT( !fc::exists( path ) );
 
             std::ofstream fs( path.string() );
@@ -399,6 +404,8 @@ namespace bts { namespace db {
         // note: this loops through all the items in the database, so it's not exactly fast.  it's intended for debugging, nothing else.
         size_t size() const
         {
+          FC_ASSERT( is_open(), "Database is not open!" );
+
           iterator it = begin();
           size_t count = 0;
           while (it.valid())
