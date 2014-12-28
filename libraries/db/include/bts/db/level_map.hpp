@@ -78,7 +78,6 @@ namespace bts { namespace db {
 
         void close()
         {
-          FC_ASSERT( is_open(), "Database is not open!" );
           _db.reset();
           _cache.reset();
         }
