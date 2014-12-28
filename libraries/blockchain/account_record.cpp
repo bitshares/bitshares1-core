@@ -90,7 +90,7 @@ namespace bts { namespace blockchain {
         return db->_account_db_interface;
     } FC_CAPTURE_AND_RETHROW() }
 
-    oaccount_record account_db_interface::lookup( const account_id_type& id )const
+    oaccount_record account_db_interface::lookup( const account_id_type id )const
     { try {
         return lookup_by_id( id );
     } FC_CAPTURE_AND_RETHROW( (id) ) }
@@ -142,7 +142,7 @@ namespace bts { namespace blockchain {
         }
     } FC_CAPTURE_AND_RETHROW( (record) ) }
 
-    void account_db_interface::remove( const account_id_type& id )const
+    void account_db_interface::remove( const account_id_type id )const
     { try {
         const oaccount_record prev_record = lookup( id );
         if( prev_record.valid() )

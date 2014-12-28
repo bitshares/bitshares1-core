@@ -43,7 +43,7 @@ namespace bts { namespace blockchain {
       void withdraw( const balance_id_type& account,
                      share_type amount );
 
-      void withdraw_pay( const account_id_type& account,
+      void withdraw_pay( const account_id_type account,
                          share_type amount );
 
       void deposit( const address& addr,
@@ -161,7 +161,7 @@ namespace bts { namespace blockchain {
                          account_id_type delegate_id,
                          fc::variant value );
 
-      void update_signing_key( const account_id_type& account_id, const public_key_type& signing_key );
+      void update_signing_key( const account_id_type account_id, const public_key_type& signing_key );
 
       bool is_cancel()const;
    }; // transaction

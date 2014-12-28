@@ -60,11 +60,8 @@ namespace bts { namespace blockchain {
       chain_interface_ptr prev_state = _prev_state.lock();
       if( !prev_state ) return;
 
-      for( const auto& item : _account_id_remove )          prev_state->remove<account_record>( item );
-      for( const auto& item : _account_id_to_record )       prev_state->store( item.second );
-
-      for( const auto& item : _transaction_id_remove )      prev_state->remove<transaction_record>( item );
-      for( const auto& item : _transaction_id_to_record )   prev_state->store( item.second );
+      apply_records( prev_state, _account_id_to_record, _account_id_remove );
+      apply_records( prev_state, _transaction_id_to_record, _transaction_id_remove );
 
       for( const auto& item : properties )      prev_state->set_property( (chain_property_enum)item.first, item.second );
       for( const auto& item : assets )          prev_state->store_asset_record( item.second );
@@ -298,7 +295,7 @@ namespace bts { namespace blockchain {
        return lookup<account_record>( owner );
    }
 
-   oaccount_record pending_chain_state::get_account_record( const account_id_type& account_id )const
+   oaccount_record pending_chain_state::get_account_record( const account_id_type account_id )const
    {
        return lookup<account_record>( account_id );
    }
@@ -701,7 +698,7 @@ namespace bts { namespace blockchain {
    {
        account_db_interface& interface = _account_db_interface;
 
-       interface.lookup_by_id = [&]( const account_id_type& id ) -> oaccount_record
+       interface.lookup_by_id = [&]( const account_id_type id ) -> oaccount_record
        {
            const auto iter = _account_id_to_record.find( id );
            if( iter != _account_id_to_record.end() ) return iter->second;
@@ -729,18 +726,18 @@ namespace bts { namespace blockchain {
            return oaccount_record();
        };
 
-       interface.insert_into_id_map = [&]( const account_id_type& id, const account_record& record )
+       interface.insert_into_id_map = [&]( const account_id_type id, const account_record& record )
        {
            _account_id_remove.erase( id );
            _account_id_to_record[ id ] = record;
        };
 
-       interface.insert_into_name_map = [&]( const string& name, const account_id_type& id )
+       interface.insert_into_name_map = [&]( const string& name, const account_id_type id )
        {
            _account_name_to_id[ name ] = id;
        };
 
-       interface.insert_into_address_map = [&]( const address& addr, const account_id_type& id )
+       interface.insert_into_address_map = [&]( const address& addr, const account_id_type id )
        {
            _account_address_to_id[ addr ] = id;
        };
@@ -749,7 +746,7 @@ namespace bts { namespace blockchain {
        {
        };
 
-       interface.erase_from_id_map = [&]( const account_id_type& id )
+       interface.erase_from_id_map = [&]( const account_id_type id )
        {
            _account_id_to_record.erase( id );
            _account_id_remove.insert( id );

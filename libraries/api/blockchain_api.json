@@ -119,9 +119,9 @@
             },
             {
               "name" : "limit",
-              "type" : "int32_t",
+              "type" : "uint32_t",
               "description" : "the maximum number of items to list",
-              "default_value" : -1
+              "default_value" : 20
             }
         ],
         "is_const" : true,

@@ -134,7 +134,7 @@ namespace bts { namespace blockchain {
       operations.push_back( withdraw_operation( account, amount ) );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account",account)("amount",amount) ) }
 
-   void transaction::withdraw_pay( const account_id_type& account,
+   void transaction::withdraw_pay( const account_id_type account,
                                    share_type             amount )
    {
       FC_ASSERT( amount > 0, "amount: ${amount}", ("amount",amount) );
@@ -335,7 +335,7 @@ namespace bts { namespace blockchain {
       operations.push_back( update_feed_operation{ feed_index{feed_id,delegate_id}, value } );
    }
 
-   void transaction::update_signing_key( const account_id_type& account_id, const public_key_type& signing_key )
+   void transaction::update_signing_key( const account_id_type account_id, const public_key_type& signing_key )
    {
        operations.push_back( update_signing_key_operation{ account_id, signing_key } );
    }

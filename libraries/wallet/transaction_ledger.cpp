@@ -259,7 +259,7 @@ void wallet_impl::scan_balances()
 
 void wallet_impl::scan_registered_accounts()
 {
-   _blockchain->scan_accounts( [&]( const blockchain::account_record& scanned_account_record )
+   _blockchain->scan_unordered_accounts( [&]( const blockchain::account_record& scanned_account_record )
    {
         const auto account_record = _wallet_db.lookup_account( scanned_account_record.name );
         if( account_record.valid() )

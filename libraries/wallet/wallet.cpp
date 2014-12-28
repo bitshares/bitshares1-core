@@ -2361,7 +2361,7 @@ namespace detail {
 
            try
            {
-               my->_blockchain->scan_accounts( check_account );
+               my->_blockchain->scan_unordered_accounts( check_account );
            }
            catch( ... )
            {

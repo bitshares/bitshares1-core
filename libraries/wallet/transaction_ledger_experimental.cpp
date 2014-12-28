@@ -486,7 +486,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
         const asset& delta_amount = op.amount;
         raw_delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
 
-        const account_id_type& account_id = op.account_id;
+        const account_id_type account_id = op.account_id;
         const oaccount_record account_record = _blockchain->get_account_record( abs( account_id ) );
 
         if( account_record.valid() )

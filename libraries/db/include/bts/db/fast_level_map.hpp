@@ -15,13 +15,12 @@ class fast_level_map
 
 public:
 
-    void open( const fc::path& path, size_t count )
+    void open( const fc::path& path )
     { try {
         _ldb.open( path );
-        _cache.reserve( count );
         for( auto iter = _ldb.begin(); iter.valid(); ++iter )
             _cache.emplace( iter.key(), iter.value() );
-    } FC_CAPTURE_AND_RETHROW( (path)(count) ) }
+    } FC_CAPTURE_AND_RETHROW( (path) ) }
 
     void close()
     { try {

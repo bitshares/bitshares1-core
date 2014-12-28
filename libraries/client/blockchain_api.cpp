@@ -305,10 +305,11 @@ map<balance_id_type, balance_record> detail::client_impl::blockchain_list_key_ba
     return _chain_db->get_balances_for_key( key );
 }
 
-vector<account_record> detail::client_impl::blockchain_list_accounts( const string& first, int32_t limit )const
-{
+vector<account_record> detail::client_impl::blockchain_list_accounts( const string& first, uint32_t limit )const
+{ try {
+   FC_ASSERT( limit > 0 );
    return _chain_db->get_accounts( first, limit );
-}
+} FC_CAPTURE_AND_RETHROW( (first)(limit) ) }
 
 vector<account_record> detail::client_impl::blockchain_list_recently_registered_accounts()const
 {

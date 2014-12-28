@@ -94,7 +94,7 @@ namespace bts { namespace blockchain {
        return any_parent_has_signed( record.name );
    } FC_CAPTURE_AND_RETHROW( (record) ) }
 
-   void transaction_evaluation_state::verify_delegate_id( const account_id_type& id )const
+   void transaction_evaluation_state::verify_delegate_id( const account_id_type id )const
    { try {
       auto current_account = _current_state->get_account_record( id );
       if( !current_account ) FC_CAPTURE_AND_THROW( unknown_account_id, (id) );

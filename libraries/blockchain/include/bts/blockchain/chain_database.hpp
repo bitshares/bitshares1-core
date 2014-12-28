@@ -186,7 +186,7 @@ namespace bts { namespace blockchain {
          virtual oprice              get_median_delegate_price( const asset_id_type& quote_id,
                                                                 const asset_id_type& base_id )const override;
          vector<feed_record>         get_feeds_for_asset( const asset_id_type& quote_id, const asset_id_type& base_id )const;
-         vector<feed_record>         get_feeds_from_delegate( const account_id_type& delegate_id )const;
+         vector<feed_record>         get_feeds_from_delegate( const account_id_type delegate_id )const;
 
          virtual odelegate_slate     get_delegate_slate( slate_id_type id )const override;
          virtual void                store_delegate_slate( slate_id_type id,
@@ -217,7 +217,7 @@ namespace bts { namespace blockchain {
          vector<asset_record>                     get_assets( const string& first_symbol,
                                                               uint32_t limit )const;
 
-         std::vector<slot_record> get_delegate_slot_records( const account_id_type& delegate_id,
+         std::vector<slot_record> get_delegate_slot_records( const account_id_type delegate_id,
                                                              int64_t start_block_num, uint32_t count )const;
 
          std::map<uint32_t, std::vector<fork_record> > get_forks_list()const;
@@ -275,7 +275,8 @@ namespace bts { namespace blockchain {
 
          void                               scan_assets( function<void( const asset_record& )> callback )const;
          void                               scan_balances( function<void( const balance_record& )> callback )const;
-         void                               scan_accounts( function<void( const account_record& )> callback )const;
+         void                               scan_unordered_accounts( function<void( const account_record& )> )const;
+         void                               scan_ordered_accounts( function<void( const account_record& )> )const;
          void                               scan_objects( function<void( const object_record& )> callback )const;
 
          virtual optional<variant>          get_property( chain_property_enum property_id )const override;
@@ -287,7 +288,7 @@ namespace bts { namespace blockchain {
          asset_id_type                      get_asset_id( const string& asset_symbol )const;
          virtual oasset_record              get_asset_record( const asset_id_type& id )const override;
          virtual obalance_record            get_balance_record( const balance_id_type& id )const override;
-         virtual oaccount_record            get_account_record( const account_id_type& id )const override;
+         virtual oaccount_record            get_account_record( const account_id_type id )const override;
          virtual oaccount_record            get_account_record( const address& owner )const override;
 
          virtual oasset_record              get_asset_record( const string& symbol )const override;

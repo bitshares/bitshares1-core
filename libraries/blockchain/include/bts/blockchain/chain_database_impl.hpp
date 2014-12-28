@@ -120,9 +120,10 @@ namespace bts { namespace blockchain {
 
             bts::db::cached_level_map<balance_id_type, balance_record>                  _balance_db;
 
-            bts::db::cached_level_map<account_id_type, account_record>                  _account_db;
-            map<string, account_id_type>                                                _account_name_to_id;
-            unordered_map<address, account_id_type>                                     _account_address_to_id;
+            bts::db::fast_level_map<account_id_type, account_record>                    _account_id_to_record;
+            bts::db::fast_level_map<string, account_id_type>                            _account_name_to_id;
+            bts::db::fast_level_map<address, account_id_type>                           _account_address_to_id;
+
             set<vote_del>                                                               _delegate_votes;
 
             bts::db::cached_level_map<slate_id_type, delegate_slate>                    _slate_db;

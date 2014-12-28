@@ -80,7 +80,7 @@ namespace bts { namespace blockchain {
 
          std::vector<account_id_type>       get_active_delegates()const;
          void                               set_active_delegates( const std::vector<account_id_type>& id );
-         bool                               is_active_delegate( const account_id_type& id )const;
+         bool                               is_active_delegate( const account_id_type id )const;
 
          virtual void                       authorize( asset_id_type asset_id, const address& owner, object_id_type oid = 0 ) = 0;
          void                               deauthorize( asset_id_type asset_id, const address& owner ) { authorize( asset_id, owner, -1 ); }
@@ -158,7 +158,7 @@ namespace bts { namespace blockchain {
 
          virtual oasset_record              get_asset_record( const asset_id_type& id )const                = 0;
          virtual obalance_record            get_balance_record( const balance_id_type& id )const            = 0;
-         virtual oaccount_record            get_account_record( const account_id_type& id )const            = 0;
+         virtual oaccount_record            get_account_record( const account_id_type id )const            = 0;
          virtual oaccount_record            get_account_record( const address& owner )const                 = 0;
 
          virtual bool                       is_known_transaction( const transaction& trx )const             = 0;

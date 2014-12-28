@@ -46,7 +46,7 @@ namespace bts { namespace blockchain {
           * apply collected vote changes
           */
          virtual void update_delegate_votes();
-         virtual void verify_delegate_id( const account_id_type& id )const;
+         virtual void verify_delegate_id( const account_id_type id )const;
 
          bool check_signature( const address& a )const;
          bool check_multisig( const multisig_condition& a )const;

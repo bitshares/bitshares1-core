@@ -37,7 +37,7 @@ namespace bts { namespace blockchain {
 
          virtual oasset_record          get_asset_record( const asset_id_type& id )const override;
          virtual obalance_record        get_balance_record( const balance_id_type& id )const override;
-         virtual oaccount_record        get_account_record( const account_id_type& id )const override;
+         virtual oaccount_record        get_account_record( const account_id_type id )const override;
          virtual oaccount_record        get_account_record( const address& owner )const override;
 
          virtual odelegate_slate        get_delegate_slate( slate_id_type id )const override;
@@ -121,6 +121,13 @@ namespace bts { namespace blockchain {
                  if( prev_record.valid() ) undo_state->store( *prev_record );
                  else undo_state->remove<decltype( item.second )>( item.first );
              }
+         }
+
+         template<typename T, typename U>
+         void apply_records( const chain_interface_ptr& prev_state, const T& store_map, const U& remove_set )const
+         {
+             for( const auto& item : remove_set ) prev_state->remove<typename T::mapped_type>( item );
+             for( const auto& item : store_map ) prev_state->store( item.second );
          }
 
          /** load the state from a variant */

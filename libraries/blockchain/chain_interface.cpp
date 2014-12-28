@@ -254,7 +254,7 @@ namespace bts { namespace blockchain {
       set_property( active_delegate_list_id, fc::variant( delegate_ids ) );
    }
 
-   bool chain_interface::is_active_delegate( const account_id_type& id )const
+   bool chain_interface::is_active_delegate( const account_id_type id )const
    { try {
       const auto active = get_active_delegates();
       return active.end() != std::find( active.begin(), active.end(), id );
