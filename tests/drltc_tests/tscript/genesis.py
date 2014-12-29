@@ -39,14 +39,15 @@ init_balance  = 300000000000
 angel_balance = 2000000000000
 name_balance  = 10000000000
 
-balances = [[k["pts_address"],  init_balance] for k in  init_keys
-         ]+[[k["pts_address"], angel_balance] for k in angel_keys
-         ]+[[k["pts_address"],  name_balance] for k in  name_keys]
+balances = [{"raw_address" : k["pts_address"], "balance" : init_balance } for k in  init_keys
+         ]+[{"raw_address" : k["pts_address"], "balance" : angel_balance} for k in angel_keys
+         ]+[{"raw_address" : k["pts_address"], "balance" : name_balance } for k in  name_keys
+         ]
 
 BTS_BLOCKCHAIN_MAX_SHARES = (1000*1000*1000*1000*1000)
 BTS_BLOCKCHAIN_INITIAL_SHARES = (BTS_BLOCKCHAIN_MAX_SHARES // 5)
 
-total_balance = sum(b[1] for b in balances)
+total_balance = sum(b["balance"] for b in balances)
 
 ballast_keys = create_keys("ballast", 1)
 ballast_balance = BTS_BLOCKCHAIN_INITIAL_SHARES - total_balance
