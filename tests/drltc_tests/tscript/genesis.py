@@ -51,7 +51,7 @@ total_balance = sum(b[1] for b in balances)
 ballast_keys = create_keys("ballast", 1)
 ballast_balance = BTS_BLOCKCHAIN_INITIAL_SHARES - total_balance
 
-balances += [[k["pts_address"], ballast_balance] for k in ballast_keys]
+balances += [{"raw_address" : k["pts_address"], "balance" : ballast_balance} for k in ballast_keys]
 
 genesis_json = {
   "timestamp" : "2014-02-02T18:00:00",
@@ -60,7 +60,7 @@ genesis_json = {
     {
         "symbol" : "USD",
         "name" : "United States Dollar",
-        "descrption" : "Federally Reserved, Inflation Guaranteed",
+        "description" : "Federally Reserved, Inflation Guaranteed",
         "precision" : 10000
     },
     {
@@ -77,21 +77,20 @@ genesis_json = {
     }
   ],
   
-  "names" :
+  "delegates" :
   [
     {
       "name" : "init"+str(i),
       "owner" : init_keys[i]["public_key"],
-      "delegate_pay_rate" : 1,
     }
     for i in range(101)
   ],
 
-  "balances" : balances,
+  "initial_balances" : balances,
 }
 
 bts_sharedrop = []
 
 mkdir_p(os.path.dirname(genesis_filename))
 with open(genesis_filename, "w") as f:
-    json.dump(genesis_json, f, indent=4)
+    json.dump(genesis_json, f, indent=4, sort_keys=True)
