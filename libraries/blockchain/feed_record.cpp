@@ -3,10 +3,9 @@
 
 namespace bts { namespace blockchain {
 
-    const feed_db_interface& feed_record::db_interface( const chain_interface* db )
+    const feed_db_interface& feed_record::db_interface( const chain_interface& db )
     { try {
-        FC_ASSERT( db != nullptr );
-        return db->_feed_db_interface;
+        return db._feed_db_interface;
     } FC_CAPTURE_AND_RETHROW() }
 
     ofeed_record feed_db_interface::lookup( const feed_index index )const

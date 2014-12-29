@@ -47,7 +47,7 @@ namespace bts { namespace blockchain {
       fc::time_point_sec         deposit_date;
       fc::time_point_sec         last_update;
 
-      static const balance_db_interface& db_interface( const chain_interface* );
+      static const balance_db_interface& db_interface( const chain_interface& );
    };
    typedef fc::optional<balance_record> obalance_record;
 

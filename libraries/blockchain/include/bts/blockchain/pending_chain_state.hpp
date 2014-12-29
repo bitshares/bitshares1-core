@@ -111,15 +111,21 @@ namespace bts { namespace blockchain {
           */
          virtual void                   get_undo_state( const chain_interface_ptr& undo_state )const;
 
-         template<typename T>
+         template<typename T, typename U>
          void populate_undo_state( const chain_interface_ptr& undo_state, const chain_interface_ptr& prev_state,
-                                   const T& record_map )const
+                                   const T& store_map, const U& remove_set )const
          {
-             for( const auto& item : record_map )
+             using R = typename T::mapped_type;
+             for( const auto& item : store_map )
              {
-                 const auto prev_record = prev_state->lookup<decltype( item.second )>( item.first );
+                 const auto prev_record = prev_state->lookup<R>( item.first );
                  if( prev_record.valid() ) undo_state->store( *prev_record );
-                 else undo_state->remove<decltype( item.second )>( item.first );
+                 else undo_state->remove<R>( item.first );
+             }
+             for( const auto& item : remove_set )
+             {
+                 const auto prev_record = prev_state->lookup<R>( item );
+                 if( prev_record.valid() ) undo_state->store( *prev_record );
              }
          }
 

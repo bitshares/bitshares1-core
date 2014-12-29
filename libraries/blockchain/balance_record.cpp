@@ -106,10 +106,9 @@ namespace bts { namespace blockchain {
        FC_ASSERT( false, "Should never get here!" );
    }
 
-    const balance_db_interface& balance_record::db_interface( const chain_interface* db )
+    const balance_db_interface& balance_record::db_interface( const chain_interface& db )
     { try {
-        FC_ASSERT( db != nullptr );
-        return db->_balance_db_interface;
+        return db._balance_db_interface;
     } FC_CAPTURE_AND_RETHROW() }
 
     obalance_record balance_db_interface::lookup( const balance_id_type& id )const

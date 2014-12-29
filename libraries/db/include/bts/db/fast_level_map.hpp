@@ -45,25 +45,19 @@ public:
         if( _cache_dirty_store.empty() && _cache_dirty_remove.empty() )
             return;
 
-        typename level_map<K, V>::write_batch batch = _ldb.create_batch();
+        auto batch = _ldb.create_batch();
 
-        if( !_cache_dirty_store.empty() )
+        for( const auto& key : _cache_dirty_store )
         {
-            for( const auto& key : _cache_dirty_store )
-            {
-                batch.store( key, _cache.at( key ) );
-            }
-            _cache_dirty_store.clear();
+            batch.store( key, _cache.at( key ) );
         }
+        _cache_dirty_store.clear();
 
-        if( !_cache_dirty_remove.empty() )
+        for( const auto& key : _cache_dirty_remove )
         {
-            for( const auto& key : _cache_dirty_remove )
-            {
-                batch.remove( key );
-            }
-            _cache_dirty_remove.clear();
+            batch.remove( key );
         }
+        _cache_dirty_remove.clear();
 
         batch.commit();
     } FC_CAPTURE_AND_RETHROW() }

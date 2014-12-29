@@ -12,13 +12,12 @@ namespace bts { namespace blockchain {
  
         friend bool operator < ( const feed_index& a, const feed_index& b )
         {
-            if( a.quote_id != b.quote_id ) return a.quote_id < b.quote_id;
-            return a.delegate_id < b.delegate_id;
+            return std::tie( a.quote_id, a.delegate_id ) < std::tie( b.quote_id, b.delegate_id );
         }
 
         friend bool operator == ( const feed_index& a, const feed_index& b )
         {
-            return a.quote_id == b.quote_id && a.delegate_id == b.delegate_id;
+            return std::tie( a.quote_id, a.delegate_id ) == std::tie( b.quote_id, b.delegate_id );
         }
     };
 
@@ -30,7 +29,7 @@ namespace bts { namespace blockchain {
         price           value;
         time_point_sec  last_update;
 
-        static const feed_db_interface& db_interface( const chain_interface* );
+        static const feed_db_interface& db_interface( const chain_interface& );
     };
     typedef fc::optional<feed_record> ofeed_record;
 

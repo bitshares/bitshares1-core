@@ -83,10 +83,9 @@ namespace bts { namespace blockchain {
        return fc::ecc::public_key( *signer, digest );
     }
 
-    const account_db_interface& account_record::db_interface( const chain_interface* db )
+    const account_db_interface& account_record::db_interface( const chain_interface& db )
     { try {
-        FC_ASSERT( db != nullptr );
-        return db->_account_db_interface;
+        return db._account_db_interface;
     } FC_CAPTURE_AND_RETHROW() }
 
     oaccount_record account_db_interface::lookup( const account_id_type id )const

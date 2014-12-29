@@ -229,19 +229,19 @@ namespace bts { namespace blockchain {
          template<typename T, typename U>
          optional<T> lookup( const U& key )const
          { try {
-             return T::db_interface( this ).lookup( key );
+             return T::db_interface( *this ).lookup( key );
          } FC_CAPTURE_AND_RETHROW( (key) ) }
 
          template<typename T>
          void store( const T& record )
          { try {
-             T::db_interface( this ).store( record );
+             T::db_interface( *this ).store( record );
          } FC_CAPTURE_AND_RETHROW( (record) ) }
 
          template<typename T, typename U>
          void remove( const U& key )
          { try {
-             T::db_interface( this ).remove( key );
+             T::db_interface( *this ).remove( key );
          } FC_CAPTURE_AND_RETHROW( (key) ) }
 
       protected:

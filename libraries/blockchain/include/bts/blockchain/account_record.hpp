@@ -113,7 +113,7 @@ namespace bts { namespace blockchain {
       optional<delegate_stats>               delegate_info;
       optional<account_meta_info>            meta_data;
 
-      static const account_db_interface& db_interface( const chain_interface* );
+      static const account_db_interface& db_interface( const chain_interface& );
    };
    typedef fc::optional<account_record> oaccount_record;
 

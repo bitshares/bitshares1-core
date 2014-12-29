@@ -116,10 +116,10 @@ namespace bts { namespace blockchain {
       chain_interface_ptr prev_state = _prev_state.lock();
       FC_ASSERT( prev_state );
 
-      populate_undo_state( undo_state, prev_state, _account_id_to_record );
-      populate_undo_state( undo_state, prev_state, _balance_id_to_record );
-      populate_undo_state( undo_state, prev_state, _transaction_id_to_record );
-      populate_undo_state( undo_state, prev_state, _feed_index_to_record );
+      populate_undo_state( undo_state, prev_state, _account_id_to_record, _account_id_remove );
+      populate_undo_state( undo_state, prev_state, _balance_id_to_record, _balance_id_remove );
+      populate_undo_state( undo_state, prev_state, _transaction_id_to_record, _transaction_id_remove );
+      populate_undo_state( undo_state, prev_state, _feed_index_to_record, _feed_index_remove );
 
       for( const auto& item : properties )
       {
