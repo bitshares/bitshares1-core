@@ -107,7 +107,7 @@ namespace bts { namespace blockchain {
          virtual oprice                     get_median_delegate_price( const asset_id_type quote_id,
                                                                        const asset_id_type base_id )const  = 0;
          virtual void                       set_feed( const feed_record&  )                                 = 0;
-         virtual ofeed_record               get_feed( const feed_index& )const                              = 0;
+         virtual ofeed_record               get_feed( const feed_index )const                              = 0;
          virtual void                       set_market_dirty( const asset_id_type quote_id,
                                                               const asset_id_type base_id )                = 0;
 
@@ -256,6 +256,10 @@ namespace bts { namespace blockchain {
          friend struct transaction_record;
          transaction_db_interface _transaction_db_interface;
          virtual void init_transaction_db_interface() = 0;
+
+         friend struct feed_record;
+         feed_db_interface _feed_db_interface;
+         virtual void init_feed_db_interface() = 0;
    };
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;
 

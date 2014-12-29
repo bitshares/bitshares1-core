@@ -10,6 +10,7 @@ namespace bts { namespace blockchain {
       init_account_db_interface();
       init_balance_db_interface();
       init_transaction_db_interface();
+      init_feed_db_interface();
    }
 
    pending_chain_state::~pending_chain_state()
@@ -64,6 +65,7 @@ namespace bts { namespace blockchain {
       apply_records( prev_state, _account_id_to_record, _account_id_remove );
       apply_records( prev_state, _balance_id_to_record, _balance_id_remove );
       apply_records( prev_state, _transaction_id_to_record, _transaction_id_remove );
+      apply_records( prev_state, _feed_index_to_record, _feed_index_remove );
 
       for( const auto& item : properties )      prev_state->set_property( (chain_property_enum)item.first, item.second );
       for( const auto& item : assets )          prev_state->store_asset_record( item.second );
@@ -79,7 +81,6 @@ namespace bts { namespace blockchain {
       for( const auto& item : market_history )  prev_state->store_market_history_record( item.first, item.second );
       for( const auto& item : market_statuses ) prev_state->store_market_status( item.second );
       for( const auto& item : asset_proposals ) prev_state->store_asset_proposal( item.second );
-      for( const auto& item : feeds )           prev_state->set_feed( item.second );
       for( const auto& items : recent_operations )
       {
          for( const auto& item : items.second )    prev_state->store_recent_operation( item );
@@ -118,6 +119,7 @@ namespace bts { namespace blockchain {
       populate_undo_state( undo_state, prev_state, _account_id_to_record );
       populate_undo_state( undo_state, prev_state, _balance_id_to_record );
       populate_undo_state( undo_state, prev_state, _transaction_id_to_record );
+      populate_undo_state( undo_state, prev_state, _feed_index_to_record );
 
       for( const auto& item : properties )
       {
@@ -203,12 +205,6 @@ namespace bts { namespace blockchain {
          {
             undo_state->store_market_status( market_status() );
          }
-      }
-      for( const auto& item : feeds )
-      {
-         auto prev_value = prev_state->get_feed( item.first );
-         if( prev_value ) undo_state->set_feed( *prev_value );
-         else undo_state->set_feed( feed_record{item.first} );
       }
       for( const auto& item : burns )
       {
@@ -613,16 +609,12 @@ namespace bts { namespace blockchain {
 
    void pending_chain_state::set_feed( const feed_record& r )
    {
-      feeds[r.feed] = r;
+       store( r );
    }
 
-   ofeed_record pending_chain_state::get_feed( const feed_index& i )const
+   ofeed_record pending_chain_state::get_feed( const feed_index i )const
    {
-      auto itr = feeds.find(i);
-      if( itr != feeds.end() ) return itr->second;
-
-      chain_interface_ptr prev_state = _prev_state.lock();
-      return prev_state->get_feed(i);
+       return lookup<feed_record>( i );
    }
 
    oprice pending_chain_state::get_median_delegate_price( const asset_id_type quote_id, const asset_id_type base_id )const
@@ -818,6 +810,33 @@ namespace bts { namespace blockchain {
        interface.erase_from_unique_set = [&]( const transaction& trx )
        {
            _transaction_digests.erase( trx.digest( chain_id() ) );
+       };
+   }
+
+   void pending_chain_state::init_feed_db_interface()
+   {
+       feed_db_interface& interface = _feed_db_interface;
+
+       interface.lookup_by_index = [&]( const feed_index index ) -> ofeed_record
+       {
+           const auto iter = _feed_index_to_record.find( index );
+           if( iter != _feed_index_to_record.end() ) return iter->second;
+           if( _feed_index_remove.count( index ) > 0 ) return ofeed_record();
+           const chain_interface_ptr prev_state = _prev_state.lock();
+           if( prev_state ) return prev_state->lookup<feed_record>( index );
+           return ofeed_record();
+       };
+
+       interface.insert_into_index_map = [&]( const feed_index index, const feed_record& record )
+       {
+           _feed_index_remove.erase( index );
+           _feed_index_to_record[ index ] = record;
+       };
+
+       interface.erase_from_index_map = [&]( const feed_index index )
+       {
+           _feed_index_to_record.erase( index );
+           _feed_index_remove.insert( index );
        };
    }
 

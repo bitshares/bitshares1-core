@@ -21,7 +21,7 @@ namespace bts { namespace blockchain {
          optional<object_id_type>       get_authorization( asset_id_type asset_id, const address& owner )const override;
 
          virtual void                   set_feed( const feed_record&  ) override;
-         virtual ofeed_record           get_feed( const feed_index& )const override;
+         virtual ofeed_record           get_feed( const feed_index )const override;
          virtual oprice                 get_median_delegate_price( const asset_id_type quote_id,
                                                                    const asset_id_type base_id )const override;
          virtual void                   set_market_dirty( const asset_id_type quote_id, const asset_id_type base_id )override;
@@ -167,13 +167,15 @@ namespace bts { namespace blockchain {
 
          map<burn_record_key,burn_record_value>                             burns;
 
+         map<feed_index, feed_record>                                       _feed_index_to_record;
+         set<feed_index>                                                    _feed_index_remove;
+
          map< market_index_key, order_record>                               asks;
          map< market_index_key, order_record>                               bids;
          map< market_index_key, order_record>                               relative_asks;
          map< market_index_key, order_record>                               relative_bids;
          map< market_index_key, order_record>                               shorts;
          map< market_index_key, collateral_record>                          collateral;
-         map<feed_index, feed_record>                                       feeds;
 
          std::set<std::pair<asset_id_type, asset_id_type>>                  _dirty_markets;
 
@@ -199,6 +201,7 @@ namespace bts { namespace blockchain {
          virtual void init_account_db_interface()override;
          virtual void init_balance_db_interface()override;
          virtual void init_transaction_db_interface()override;
+         virtual void init_feed_db_interface()override;
    };
    typedef std::shared_ptr<pending_chain_state> pending_chain_state_ptr;
 
@@ -221,13 +224,14 @@ FC_REFLECT( bts::blockchain::pending_chain_state,
         (slates)
         (slots)
         (burns)
+        (_feed_index_to_record)
+        (_feed_index_remove)
         (asks)
         (bids)
         (relative_asks)
         (relative_bids)
         (shorts)
         (collateral)
-        (feeds)
         (_dirty_markets)
         (market_transactions)
         (market_statuses)

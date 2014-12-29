@@ -362,7 +362,7 @@ namespace bts { namespace blockchain {
                                                                   const address& owner );
 
          virtual void                       set_feed( const feed_record& )override;
-         virtual ofeed_record               get_feed( const feed_index& )const override;
+         virtual ofeed_record               get_feed( const feed_index )const override;
 
          map<std::string, share_type>       generate_snapshot()const;
          asset                              calculate_supply( const asset_id_type asset_id )const;
@@ -386,6 +386,7 @@ namespace bts { namespace blockchain {
          virtual void init_account_db_interface()override;
          virtual void init_balance_db_interface()override;
          virtual void init_transaction_db_interface()override;
+         virtual void init_feed_db_interface()override;
    };
 
    typedef shared_ptr<chain_database> chain_database_ptr;
