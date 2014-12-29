@@ -330,22 +330,6 @@ vector<account_record> detail::client_impl::blockchain_list_recently_updated_acc
   return accounts;
 }
 
-vector<account_record> detail::client_impl::blockchain_list_recently_updated_accounts()const
-{
-   vector<operation> account_updates = _chain_db->get_recent_operations(update_account_op_type);
-   vector<account_record> accounts;
-   accounts.reserve(account_updates.size());
-
-   for( const operation& op : account_updates )
-   {
-      auto oaccount = _chain_db->get_account_record(op.as<update_account_operation>().account_id);
-      if(oaccount)
-         accounts.push_back(*oaccount);
-   }
-
-  return accounts;
-}
-
 vector<account_record> detail::client_impl::blockchain_list_recently_registered_accounts()const
 {
    vector<operation> account_registrations = _chain_db->get_recent_operations(register_account_op_type);
