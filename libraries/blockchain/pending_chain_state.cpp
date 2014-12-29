@@ -239,7 +239,7 @@ namespace bts { namespace blockchain {
       return v;
    }
 
-   oasset_record pending_chain_state::get_asset_record( const asset_id_type& asset_id )const
+   oasset_record pending_chain_state::get_asset_record( const asset_id_type asset_id )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto itr = assets.find( asset_id );
@@ -473,7 +473,7 @@ namespace bts { namespace blockchain {
       return oorder_record();
    }
 
-   omarket_order pending_chain_state::get_lowest_ask_record( const asset_id_type& quote_id, const asset_id_type& base_id )
+   omarket_order pending_chain_state::get_lowest_ask_record( const asset_id_type quote_id, const asset_id_type base_id )
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       omarket_order result;
@@ -555,7 +555,7 @@ namespace bts { namespace blockchain {
       _dirty_markets.insert( key.order_price.asset_pair() );
    }
 
-   void pending_chain_state::set_market_dirty( const asset_id_type& quote_id, const asset_id_type& base_id )
+   void pending_chain_state::set_market_dirty( const asset_id_type quote_id, const asset_id_type base_id )
    {
       _dirty_markets.insert( std::make_pair( quote_id, base_id ) );
    }
@@ -597,7 +597,7 @@ namespace bts { namespace blockchain {
       market_transactions = std::move(trxs);
    }
 
-   omarket_status pending_chain_state::get_market_status( const asset_id_type& quote_id, const asset_id_type& base_id )
+   omarket_status pending_chain_state::get_market_status( const asset_id_type quote_id, const asset_id_type base_id )
    {
       auto itr = market_statuses.find( std::make_pair(quote_id,base_id) );
       if( itr != market_statuses.end() )
@@ -625,7 +625,7 @@ namespace bts { namespace blockchain {
       return prev_state->get_feed(i);
    }
 
-   oprice pending_chain_state::get_median_delegate_price( const asset_id_type& quote_id, const asset_id_type& base_id )const
+   oprice pending_chain_state::get_median_delegate_price( const asset_id_type quote_id, const asset_id_type base_id )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       return prev_state->get_median_delegate_price( quote_id, base_id );

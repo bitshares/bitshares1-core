@@ -1,12 +1,12 @@
 #pragma once
 
-#include <bts/blockchain/types.hpp>
+#include <bts/blockchain/asset.hpp>
 
 namespace bts { namespace blockchain {
 
   struct feed_index
   {
-      feed_id_type      feed_id;
+      asset_id_type      feed_id;
       account_id_type   delegate_id;
 
       friend bool operator < ( const feed_index& a, const feed_index& b )
@@ -23,11 +23,11 @@ namespace bts { namespace blockchain {
 
   struct feed_record
   {
-      bool        is_null()const{ return value.is_null(); }
-      feed_record make_null()const { return feed_record{feed,variant()}; }
+      bool        is_null()const{ return value.base_asset_id == 0 && value.quote_asset_id == 0; }
+      feed_record make_null()const { return feed_record{feed,price(0.0,0,0)}; }
 
       feed_index       feed;
-      variant          value;
+      price          value;
       time_point_sec   last_update;
   };
   typedef fc::optional<feed_record> ofeed_record;

@@ -104,12 +104,12 @@ namespace bts { namespace blockchain {
          virtual void                       store_burn_record( const burn_record& br ) = 0;
          virtual oburn_record               fetch_burn_record( const burn_record_key& key )const = 0;
 
-         virtual oprice                     get_median_delegate_price( const asset_id_type& quote_id,
-                                                                       const asset_id_type& base_id )const  = 0;
+         virtual oprice                     get_median_delegate_price( const asset_id_type quote_id,
+                                                                       const asset_id_type base_id )const  = 0;
          virtual void                       set_feed( const feed_record&  )                                 = 0;
          virtual ofeed_record               get_feed( const feed_index& )const                              = 0;
-         virtual void                       set_market_dirty( const asset_id_type& quote_id,
-                                                              const asset_id_type& base_id )                = 0;
+         virtual void                       set_market_dirty( const asset_id_type quote_id,
+                                                              const asset_id_type base_id )                = 0;
 
          virtual fc::ripemd160              get_current_random_seed()const                                  = 0;
 
@@ -124,12 +124,12 @@ namespace bts { namespace blockchain {
          virtual void                       set_required_confirmations( uint64_t );
          virtual uint64_t                   get_required_confirmations()const;
 
-         virtual omarket_status             get_market_status( const asset_id_type& quote_id,
-                                                               const asset_id_type& base_id )               = 0;
+         virtual omarket_status             get_market_status( const asset_id_type quote_id,
+                                                               const asset_id_type base_id )               = 0;
          virtual void                       store_market_status( const market_status& s )                   = 0;
 
-         virtual omarket_order              get_lowest_ask_record( const asset_id_type& quote_id,
-                                                                   const asset_id_type& base_id )           = 0;
+         virtual omarket_order              get_lowest_ask_record( const asset_id_type quote_id,
+                                                                   const asset_id_type base_id )           = 0;
          virtual oorder_record              get_bid_record( const market_index_key& )const                  = 0;
          virtual oorder_record              get_ask_record( const market_index_key& )const                  = 0;
          virtual oorder_record              get_relative_bid_record( const market_index_key& )const         = 0;
@@ -156,7 +156,7 @@ namespace bts { namespace blockchain {
                                                                      const collateral_record& )             = 0;
 
 
-         virtual oasset_record              get_asset_record( const asset_id_type& id )const                = 0;
+         virtual oasset_record              get_asset_record( const asset_id_type id )const                = 0;
          virtual obalance_record            get_balance_record( const balance_id_type& id )const            = 0;
          virtual oaccount_record            get_account_record( const account_id_type id )const            = 0;
          virtual oaccount_record            get_account_record( const address& owner )const                 = 0;

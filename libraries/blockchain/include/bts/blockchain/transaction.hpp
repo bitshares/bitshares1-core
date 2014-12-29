@@ -102,14 +102,14 @@ namespace bts { namespace blockchain {
                          share_type max_share_supply,
                          uint64_t precision );
 
-      void update_asset( const asset_id_type& asset_id,
+      void update_asset( const asset_id_type asset_id,
                          const optional<string>& name,
                          const optional<string>& description,
                          const optional<variant>& public_data,
                          const optional<double>& maximum_share_supply,
                          const optional<uint64_t>& precision );
 
-      void update_asset_ext( const asset_id_type& asset_id,
+      void update_asset_ext( const asset_id_type asset_id,
                          const optional<string>& name,
                          const optional<string>& description,
                          const optional<variant>& public_data,
@@ -157,7 +157,7 @@ namespace bts { namespace blockchain {
       void add_collateral( share_type collateral_amount,
                            const market_index_key& order_idx );
 
-      void publish_feed( feed_id_type feed_id,
+      void publish_feed( asset_id_type feed_id,
                          account_id_type delegate_id,
                          fc::variant value );
 

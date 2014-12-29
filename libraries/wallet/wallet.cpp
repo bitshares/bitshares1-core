@@ -516,7 +516,7 @@ namespace detail {
        return addr;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
-   slate_id_type wallet_impl::select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id,
+   slate_id_type wallet_impl::select_slate( signed_transaction& transaction, const asset_id_type deposit_asset_id,
                                             vote_selection_method selection_method )
    {
       auto slate_id = slate_id_type( 0 );
@@ -3540,7 +3540,7 @@ namespace detail {
       my->_wallet_db.set_property( default_transaction_priority_fee, variant( fee ) );
    } FC_CAPTURE_AND_RETHROW( (fee) ) }
 
-   asset wallet::get_transaction_fee( const asset_id_type& desired_fee_asset_id )const
+   asset wallet::get_transaction_fee( const asset_id_type desired_fee_asset_id )const
    { try {
       FC_ASSERT( is_open() );
       // TODO: support price conversion using price from blockchain
@@ -3574,7 +3574,7 @@ namespace detail {
       return xts_fee;
    } FC_CAPTURE_AND_RETHROW( (desired_fee_asset_id) ) }
 
-   bool wallet::asset_can_pay_fee(const asset_id_type& desired_fee_asset_id) const
+   bool wallet::asset_can_pay_fee(const asset_id_type desired_fee_asset_id) const
    {
       return get_transaction_fee(desired_fee_asset_id).asset_id == desired_fee_asset_id;
    }

@@ -332,7 +332,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
             string note;
             if( op.amount >= 0 )
             {
-                const asset_id_type& base_asset_id = op.bid_index.order_price.base_asset_id;
+                const asset_id_type base_asset_id = op.bid_index.order_price.base_asset_id;
                 const oasset_record& asset_record = _blockchain->get_asset_record( base_asset_id );
                 const string& asset_symbol = asset_record.valid() ? asset_record->symbol : std::to_string( base_asset_id );
                 note = "buy " + asset_symbol + " @ " + _blockchain->to_pretty_price( op.bid_index.order_price );
@@ -366,7 +366,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
             string note;
             if( op.amount >= 0 )
             {
-                const asset_id_type& base_asset_id = op.ask_index.order_price.base_asset_id;
+                const asset_id_type base_asset_id = op.ask_index.order_price.base_asset_id;
                 const oasset_record& asset_record = _blockchain->get_asset_record( base_asset_id );
                 const string& asset_symbol = asset_record.valid() ? asset_record->symbol : std::to_string( base_asset_id );
                 note = "sell " + asset_symbol + " @ " + _blockchain->to_pretty_price( op.ask_index.order_price );
@@ -401,7 +401,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
             if( op.amount >= 0 )
             {
                 const price& interest_rate = op.short_index.order_price;
-                const asset_id_type& quote_asset_id = interest_rate.quote_asset_id;
+                const asset_id_type quote_asset_id = interest_rate.quote_asset_id;
                 const oasset_record& asset_record = _blockchain->get_asset_record( quote_asset_id );
                 const string& asset_symbol = asset_record.valid() ? asset_record->symbol : std::to_string( quote_asset_id );
                 note = "short " + asset_symbol + " @ " + std::to_string( 100 * atof( interest_rate.ratio_string().c_str() ) ) + " %";

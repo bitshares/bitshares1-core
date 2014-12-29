@@ -276,7 +276,7 @@ namespace bts { namespace blockchain {
       operations.push_back( op );
    }
 
-   void transaction::update_asset( const asset_id_type& asset_id,
+   void transaction::update_asset( const asset_id_type asset_id,
                                    const optional<string>& name,
                                    const optional<string>& description,
                                    const optional<variant>& public_data,
@@ -285,7 +285,7 @@ namespace bts { namespace blockchain {
    {
        operations.push_back( update_asset_operation{ asset_id, name, description, public_data, maximum_share_supply, precision } );
    }
-   void transaction::update_asset_ext( const asset_id_type& asset_id,
+   void transaction::update_asset_ext( const asset_id_type asset_id,
                                    const optional<string>& name,
                                    const optional<string>& description,
                                    const optional<variant>& public_data,
@@ -328,7 +328,7 @@ namespace bts { namespace blockchain {
       operations.push_back( add_collateral_operation(collateral_amount, order_idx) );
    }
 
-   void transaction::publish_feed( feed_id_type feed_id,
+   void transaction::publish_feed( asset_id_type feed_id,
                                    account_id_type delegate_id,
                                    fc::variant value )
    {

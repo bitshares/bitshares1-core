@@ -23,7 +23,7 @@ namespace bts { namespace blockchain {
           FC_CAPTURE_AND_THROW( missing_signature, (*this) );
       }
 
-      eval_state._current_state->set_feed( feed_record{ feed, value, eval_state._current_state->now() } );
+      eval_state._current_state->set_feed( feed_record{ feed, value.as<price>(), eval_state._current_state->now() } );
       eval_state._current_state->set_market_dirty( feed.feed_id, 0 );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 

@@ -1664,7 +1664,7 @@ namespace bts { namespace blockchain {
       return my->_head_block_header.timestamp;
    }
 
-   oasset_record chain_database::get_asset_record( const asset_id_type& id )const
+   oasset_record chain_database::get_asset_record( const asset_id_type id )const
    {
       auto itr = my->_asset_db.find( id );
       if( itr.valid() )
@@ -2426,7 +2426,7 @@ namespace bts { namespace blockchain {
       return my->_relative_bid_db.fetch_optional(key);
    }
 
-   omarket_order chain_database::get_lowest_ask_record( const asset_id_type& quote_id, const asset_id_type& base_id )
+   omarket_order chain_database::get_lowest_ask_record( const asset_id_type quote_id, const asset_id_type base_id )
    {
       omarket_order result;
       auto itr = my->_ask_db.lower_bound( market_index_key( price(0,quote_id,base_id) ) );
@@ -2522,7 +2522,7 @@ namespace bts { namespace blockchain {
       }
    }
 
-   string chain_database::get_asset_symbol( const asset_id_type& asset_id )const
+   string chain_database::get_asset_symbol( const asset_id_type asset_id )const
    { try {
       auto asset_rec = get_asset_record( asset_id );
       FC_ASSERT( asset_rec.valid(), "Unknown Asset ID: ${id}", ("asset_id",asset_id) );
@@ -3036,7 +3036,7 @@ namespace bts { namespace blockchain {
        return pairs;
    }
 
-   omarket_status chain_database::get_market_status( const asset_id_type& quote_id, const asset_id_type& base_id )
+   omarket_status chain_database::get_market_status( const asset_id_type quote_id, const asset_id_type base_id )
    {
       return my->_market_status_db.fetch_optional( std::make_pair(quote_id,base_id) );
    }
@@ -3053,8 +3053,8 @@ namespace bts { namespace blockchain {
       }
    }
 
-   market_history_points chain_database::get_market_price_history( const asset_id_type& quote_id,
-                                                                   const asset_id_type& base_id,
+   market_history_points chain_database::get_market_price_history( const asset_id_type quote_id,
+                                                                   const asset_id_type base_id,
                                                                    const fc::time_point& start_time,
                                                                    const fc::microseconds& duration,
                                                                    market_history_key::time_granularity_enum granularity)
@@ -3307,7 +3307,7 @@ namespace bts { namespace blockchain {
        return snapshot;
    }
 
-   asset chain_database::calculate_supply( const asset_id_type& asset_id )const
+   asset chain_database::calculate_supply( const asset_id_type asset_id )const
    {
        const auto record = get_asset_record( asset_id );
        FC_ASSERT( record.valid() );
@@ -3396,7 +3396,7 @@ namespace bts { namespace blockchain {
        return total;
    }
 
-   asset chain_database::calculate_debt( const asset_id_type& asset_id, bool include_interest )const
+   asset chain_database::calculate_debt( const asset_id_type asset_id, bool include_interest )const
    {
        const auto record = get_asset_record( asset_id );
        FC_ASSERT( record.valid() && record->is_market_issued() );
@@ -3441,7 +3441,7 @@ namespace bts { namespace blockchain {
    /**
     *  Given the list of active delegates and price feeds for asset_id return the median value.
     */
-   oprice chain_database::get_median_delegate_price( const asset_id_type& quote_id, const asset_id_type& base_id )const
+   oprice chain_database::get_median_delegate_price( const asset_id_type quote_id, const asset_id_type base_id )const
    { try {
       auto feed_itr = my->_feed_db.lower_bound( feed_index{quote_id} );
       vector<account_id_type> active_delegates = get_active_delegates();
@@ -3453,11 +3453,11 @@ namespace bts { namespace blockchain {
          if( std::binary_search( active_delegates.begin(), active_delegates.end(), key.delegate_id ) )
          {
             try {
-               feed_record val = feed_itr.value();
+               const feed_record& val = feed_itr.value();
                // only consider feeds updated in the past day
                if( (fc::time_point(val.last_update) + fc::days(1)) > fc::time_point(this->now()) )
                {
-                   const price& feed_price = val.value.as<price>();
+                   const price& feed_price = val.value;
                    if( feed_price.quote_asset_id == quote_id && feed_price.base_asset_id == base_id )
                        prices.push_back( feed_price );
                }
@@ -3479,19 +3479,19 @@ namespace bts { namespace blockchain {
       return oprice();
    } FC_CAPTURE_AND_RETHROW( (quote_id)(base_id) ) }
 
-   vector<feed_record> chain_database::get_feeds_for_asset( const asset_id_type& asset_id, const asset_id_type& base_id )const
+   vector<feed_record> chain_database::get_feeds_for_asset( const asset_id_type quote_id, const asset_id_type base_id )const
    {  try {
       vector<feed_record> feeds;
-      auto feed_itr = my->_feed_db.lower_bound(feed_index{asset_id});
-      while( feed_itr.valid() && feed_itr.key().feed_id == asset_id )
+      auto feed_itr = my->_feed_db.lower_bound(feed_index{quote_id});
+      while( feed_itr.valid() && feed_itr.key().feed_id == quote_id )
       {
-        auto val = feed_itr.value();
-        if( val.value.as<price>().base_asset_id == base_id )
+        const auto& val = feed_itr.value();
+        if( val.value.base_asset_id == base_id )
            feeds.push_back(val);
         ++feed_itr;
       }
       return feeds;
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW( (quote_id)(base_id) ) }
 
    vector<feed_record> chain_database::get_feeds_from_delegate( const account_id_type delegate_id )const
    {  try {

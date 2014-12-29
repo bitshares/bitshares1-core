@@ -22,9 +22,9 @@ namespace bts { namespace blockchain {
 
          virtual void                   set_feed( const feed_record&  ) override;
          virtual ofeed_record           get_feed( const feed_index& )const override;
-         virtual oprice                 get_median_delegate_price( const asset_id_type& quote_id,
-                                                                   const asset_id_type& base_id )const override;
-         virtual void                   set_market_dirty( const asset_id_type& quote_id, const asset_id_type& base_id )override;
+         virtual oprice                 get_median_delegate_price( const asset_id_type quote_id,
+                                                                   const asset_id_type base_id )const override;
+         virtual void                   set_market_dirty( const asset_id_type quote_id, const asset_id_type base_id )override;
 
          virtual fc::time_point_sec     now()const override;
          virtual digest_type            chain_id()const override;
@@ -35,7 +35,7 @@ namespace bts { namespace blockchain {
          virtual void                   store_burn_record( const burn_record& br ) override;
          virtual oburn_record           fetch_burn_record( const burn_record_key& key )const override;
 
-         virtual oasset_record          get_asset_record( const asset_id_type& id )const override;
+         virtual oasset_record          get_asset_record( const asset_id_type id )const override;
          virtual obalance_record        get_balance_record( const balance_id_type& id )const override;
          virtual oaccount_record        get_account_record( const account_id_type id )const override;
          virtual oaccount_record        get_account_record( const address& owner )const override;
@@ -51,11 +51,11 @@ namespace bts { namespace blockchain {
          virtual oasset_record          get_asset_record( const string& symbol )const override;
          virtual oaccount_record        get_account_record( const string& name )const override;
 
-         virtual omarket_status         get_market_status( const asset_id_type& quote_id, const asset_id_type& base_id )override;
+         virtual omarket_status         get_market_status( const asset_id_type quote_id, const asset_id_type base_id )override;
          virtual void                   store_market_status( const market_status& s ) override;
 
-         virtual omarket_order          get_lowest_ask_record( const asset_id_type& quote_id,
-                                                               const asset_id_type& base_id )override;
+         virtual omarket_order          get_lowest_ask_record( const asset_id_type quote_id,
+                                                               const asset_id_type base_id )override;
          virtual oorder_record          get_bid_record( const market_index_key& )const override;
          virtual oorder_record          get_ask_record( const market_index_key& )const override;
          virtual oorder_record          get_relative_bid_record( const market_index_key& )const override;
