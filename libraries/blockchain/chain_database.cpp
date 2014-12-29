@@ -96,7 +96,7 @@ namespace bts { namespace blockchain {
           _fork_number_db.open( data_dir / "index/fork_number_db" );
           _fork_db.open( data_dir / "index/fork_db" );
 
-          _undo_state_db.open( data_dir / "index/undo_state_db" );
+          _block_id_to_undo_state.open( data_dir / "index/block_id_to_undo_state" );
 
           _block_id_to_block_record_db.open( data_dir / "index/block_id_to_block_record_db" );
           _block_num_to_id_db.open( data_dir / "raw_chain/block_num_to_id_db" );
@@ -741,59 +741,60 @@ namespace bts { namespace blockchain {
       void chain_database_impl::save_undo_state( const block_id_type& block_id,
                                                  const pending_chain_state_ptr& pending_state )
       { try {
-           uint32_t last_checkpoint_block_num = 0;
-           if( !CHECKPOINT_BLOCKS.empty() )
-                  last_checkpoint_block_num = (--(CHECKPOINT_BLOCKS.end()))->first;
-           if( _head_block_header.block_num < last_checkpoint_block_num )
-                 return;  // don't bother saving it...
+          uint32_t last_checkpoint_block_num = 0;
+          if( !CHECKPOINT_BLOCKS.empty() )
+              last_checkpoint_block_num = (--(CHECKPOINT_BLOCKS.end()))->first;
+          if( _head_block_header.block_num < last_checkpoint_block_num )
+                return;  // don't bother saving it...
 
-           pending_chain_state_ptr undo_state = std::make_shared<pending_chain_state>( nullptr );
-           undo_state->set_chain_id( _chain_id );
-           pending_state->get_undo_state( undo_state );
-           _undo_state_db.store( block_id, *undo_state );
-           auto block_num = self->get_head_block_num();
-           if( int32_t(block_num - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY) > 0 )
-           {
-              auto old_id = self->get_block_id( block_num - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY );
-              _undo_state_db.remove( old_id );
-           }
-      } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
+          pending_chain_state_ptr undo_state = std::make_shared<pending_chain_state>( nullptr );
+          undo_state->set_chain_id( _chain_id );
+          pending_state->get_undo_state( undo_state );
 
+          const int32_t old_block_num = self->get_head_block_num() - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY;
+          if( old_block_num > 0 )
+          {
+             const auto old_block_id = self->get_block_id( old_block_num );
+             _block_id_to_undo_state.remove( old_block_id );
+          }
+
+          _block_id_to_undo_state.store( block_id, *undo_state );
+      } FC_CAPTURE_AND_RETHROW( (block_id) ) }
 
       void chain_database_impl::verify_header( const full_block& block_data, const public_key_type& block_signee )
       { try {
-            // validate preliminaries:
-            if( block_data.block_num > 1 && block_data.block_num != _head_block_header.block_num + 1 )
-               FC_CAPTURE_AND_THROW( block_numbers_not_sequential, (block_data)(_head_block_header) );
-            if( block_data.previous  != _head_block_id )
-               FC_CAPTURE_AND_THROW( invalid_previous_block_id, (block_data)(_head_block_id) );
-            if( block_data.timestamp.sec_since_epoch() % BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC != 0 )
-               FC_CAPTURE_AND_THROW( invalid_block_time );
-            if( block_data.block_num > 1 && block_data.timestamp <= _head_block_header.timestamp )
-               FC_CAPTURE_AND_THROW( time_in_past, (block_data.timestamp)(_head_block_header.timestamp) );
+          // validate preliminaries:
+          if( block_data.block_num > 1 && block_data.block_num != _head_block_header.block_num + 1 )
+             FC_CAPTURE_AND_THROW( block_numbers_not_sequential, (block_data)(_head_block_header) );
+          if( block_data.previous  != _head_block_id )
+             FC_CAPTURE_AND_THROW( invalid_previous_block_id, (block_data)(_head_block_id) );
+          if( block_data.timestamp.sec_since_epoch() % BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC != 0 )
+             FC_CAPTURE_AND_THROW( invalid_block_time );
+          if( block_data.block_num > 1 && block_data.timestamp <= _head_block_header.timestamp )
+             FC_CAPTURE_AND_THROW( time_in_past, (block_data.timestamp)(_head_block_header.timestamp) );
 
-            fc::time_point_sec now = bts::blockchain::now();
-            auto delta_seconds = (block_data.timestamp - now).to_seconds();
-            if( block_data.timestamp >  (now + BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*2) )
-                FC_CAPTURE_AND_THROW( time_in_future, (block_data.timestamp)(now)(delta_seconds) );
+          fc::time_point_sec now = bts::blockchain::now();
+          auto delta_seconds = (block_data.timestamp - now).to_seconds();
+          if( block_data.timestamp >  (now + BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*2) )
+              FC_CAPTURE_AND_THROW( time_in_future, (block_data.timestamp)(now)(delta_seconds) );
 
-            digest_block digest_data(block_data);
-            if( NOT digest_data.validate_digest() )
-              FC_CAPTURE_AND_THROW( invalid_block_digest );
+          digest_block digest_data(block_data);
+          if( NOT digest_data.validate_digest() )
+            FC_CAPTURE_AND_THROW( invalid_block_digest );
 
-            FC_ASSERT( digest_data.validate_unique() );
+          FC_ASSERT( digest_data.validate_unique() );
 
-            // signing delegate:
-            auto expected_delegate = self->get_slot_signee( block_data.timestamp, self->get_active_delegates() );
+          // signing delegate:
+          auto expected_delegate = self->get_slot_signee( block_data.timestamp, self->get_active_delegates() );
 
-            if( block_signee != expected_delegate.signing_key() )
-               FC_CAPTURE_AND_THROW( invalid_delegate_signee, (expected_delegate.id) );
+          if( block_signee != expected_delegate.signing_key() )
+             FC_CAPTURE_AND_THROW( invalid_delegate_signee, (expected_delegate.id) );
       } FC_CAPTURE_AND_RETHROW( (block_data) ) }
 
       void chain_database_impl::update_head_block( const full_block& block_data )
       { try {
-         _head_block_header = block_data;
-         _head_block_id = block_data.id();
+          _head_block_header = block_data;
+          _head_block_id = block_data.id();
       } FC_CAPTURE_AND_RETHROW() }
 
       /**
@@ -1013,7 +1014,7 @@ namespace bts { namespace blockchain {
          if( (now() - block_data.timestamp).to_seconds() < BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC )
            for( chain_observer* o : _observers )
               fc::async([o,summary]{o->block_applied( summary );}, "call_block_applied_observer");
-      } FC_RETHROW_EXCEPTIONS( warn, "", ("block",block_data) ) }
+      } FC_CAPTURE_AND_RETHROW( (block_data) ) }
 
       /**
        * Traverse the previous links of all blocks in fork until we find one that is_included
@@ -1051,7 +1052,7 @@ namespace bts { namespace blockchain {
          }
          ilog( "${h}", ("h",history) );
          return history;
-      } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",id) ) }
+      } FC_CAPTURE_AND_RETHROW( (id) ) }
 
       void chain_database_impl::pop_block()
       { try {
@@ -1062,7 +1063,7 @@ namespace bts { namespace blockchain {
             return;
          }
 
-           // update the is_included flag on the fork data
+         // update the is_included flag on the fork data
          mark_included( _head_block_id, false );
 
          // update the block_num_to_block_id index
@@ -1070,9 +1071,13 @@ namespace bts { namespace blockchain {
 
          auto previous_block_id = _head_block_header.previous;
 
-         bts::blockchain::pending_chain_state_ptr undo_state = std::make_shared<bts::blockchain::pending_chain_state>(_undo_state_db.fetch( _head_block_id ));
-         undo_state->set_prev_state( self->shared_from_this() );
-         undo_state->apply_changes();
+         const auto undo_iter = _block_id_to_undo_state.unordered_find( _head_block_id );
+         FC_ASSERT( undo_iter != _block_id_to_undo_state.unordered_end() );
+         const auto& undo_state = undo_iter->second;
+
+         bts::blockchain::pending_chain_state_ptr undo_state_ptr = std::make_shared<bts::blockchain::pending_chain_state>( undo_state );
+         undo_state_ptr->set_prev_state( self->shared_from_this() );
+         undo_state_ptr->apply_changes();
 
          _head_block_id = previous_block_id;
          _head_block_header = self->get_block_header( _head_block_id );
@@ -1080,8 +1085,8 @@ namespace bts { namespace blockchain {
          //Schedule the observer notifications for later; the chain is in a
          //non-premptable state right now, and observers may yield.
          for( chain_observer* o : _observers )
-            fc::async([o,undo_state]{ o->state_changed( undo_state ); }, "call_state_changed_observer");
-      } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+            fc::async([o,undo_state_ptr]{ o->state_changed( undo_state_ptr ); }, "call_state_changed_observer");
+      } FC_CAPTURE_AND_RETHROW() }
 
    } // namespace detail
 
@@ -1337,14 +1342,14 @@ namespace bts { namespace blockchain {
 
    void chain_database::close()
    { try {
-      my->_fork_number_db.close();
-      my->_fork_db.close();
-      my->_undo_state_db.close();
-
       my->_block_num_to_id_db.close();
       my->_block_id_to_block_record_db.close();
       my->_block_id_to_block_data_db.close();
       my->_revalidatable_future_blocks_db.close();
+
+      my->_fork_number_db.close();
+      my->_fork_db.close();
+      my->_block_id_to_undo_state.close();
 
       my->_property_db.close();
 
@@ -3658,13 +3663,14 @@ namespace bts { namespace blockchain {
    fc::variant_object chain_database::get_stats() const
    {
      fc::mutable_variant_object stats;
-#define CHAIN_DB_DATABASES (_slate_db)(_fork_number_db)(_fork_db)(_property_db)(_undo_state_db) \
-                           (_block_num_to_id_db)(_block_id_to_block_record_db)(_block_id_to_block_data_db) \
+#define CHAIN_DB_DATABASES (_block_num_to_id_db)(_block_id_to_block_record_db)(_block_id_to_block_data_db) \
+                           (_fork_number_db)(_fork_db)(_block_id_to_undo_state) \
+                           (_property_db) \
                            (_account_id_to_record)(_account_name_to_id)(_account_address_to_id) \
                            (_asset_id_to_record)(_asset_symbol_to_id) \
                            (_balance_id_to_record)(_empty_balance_id_to_record) \
                            (_id_to_transaction_record_db)(_pending_transaction_db)(_pending_fee_index) \
-                           (_burn_db)(_slot_record_db) \
+                           (_slate_db)(_burn_db)(_slot_record_db) \
                            (_feed_index_to_record) \
                            (_ask_db)(_bid_db)(_short_db)(_collateral_db) \
                            (_market_transactions_db)(_market_status_db)(_market_history_db) \
