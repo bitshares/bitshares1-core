@@ -144,22 +144,23 @@ namespace bts { namespace blockchain {
           */
          virtual void                  index_transaction( const address& addr, const transaction_id_type& trx_id ) override;
 
-         unordered_map<transaction_id_type, transaction_record>             _transaction_id_to_record;
-         unordered_set<transaction_id_type>                                 _transaction_id_remove;
-         unordered_set<digest_type>                                         _transaction_digests;
-
          unordered_map< chain_property_type, variant>                       properties;
-
-         unordered_map< asset_id_type, asset_record>                        assets;
-         unordered_map< string, asset_id_type>                              symbol_id_index;
-         map< std::pair<asset_id_type,proposal_id_type>, proposal_record >  asset_proposals;
-
-         unordered_map< balance_id_type, balance_record>                    balances;
 
          unordered_map<account_id_type, account_record>                     _account_id_to_record;
          unordered_set<account_id_type>                                     _account_id_remove;
          unordered_map<string, account_id_type>                             _account_name_to_id;
          unordered_map<address, account_id_type>                            _account_address_to_id;
+
+         unordered_map< asset_id_type, asset_record>                        assets;
+         unordered_map< string, asset_id_type>                              symbol_id_index;
+         map< std::pair<asset_id_type,proposal_id_type>, proposal_record >  asset_proposals;
+
+         unordered_map<balance_id_type, balance_record>                     _balance_id_to_record;
+         unordered_set<balance_id_type>                                     _balance_id_remove;
+
+         unordered_map<transaction_id_type, transaction_record>             _transaction_id_to_record;
+         unordered_set<transaction_id_type>                                 _transaction_id_remove;
+         unordered_set<digest_type>                                         _transaction_digests;
 
          unordered_map< slate_id_type, delegate_slate>                      slates;
          map<time_point_sec, slot_record>                                   slots;
@@ -196,6 +197,7 @@ namespace bts { namespace blockchain {
          map<operation_type_enum, std::deque<operation>>                    recent_operations;
 
          virtual void init_account_db_interface()override;
+         virtual void init_balance_db_interface()override;
          virtual void init_transaction_db_interface()override;
    };
    typedef std::shared_ptr<pending_chain_state> pending_chain_state_ptr;
@@ -203,18 +205,19 @@ namespace bts { namespace blockchain {
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::pending_chain_state,
-        (_transaction_id_to_record)
-        (_transaction_id_remove)
-        (_transaction_digests)
         (properties)
-        (assets)
-        (symbol_id_index)
-        (asset_proposals)
-        (balances)
         (_account_id_to_record)
         (_account_id_remove)
         (_account_name_to_id)
         (_account_address_to_id)
+        (assets)
+        (symbol_id_index)
+        (asset_proposals)
+        (_balance_id_to_record)
+        (_balance_id_remove)
+        (_transaction_id_to_record)
+        (_transaction_id_remove)
+        (_transaction_digests)
         (slates)
         (slots)
         (burns)

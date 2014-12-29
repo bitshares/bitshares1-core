@@ -1,10 +1,10 @@
 #pragma once
 
-#include <bts/blockchain/types.hpp>
 #include <bts/blockchain/asset.hpp>
+#include <bts/blockchain/types.hpp>
 
-#include <fc/time.hpp>
 #include <fc/io/enum_type.hpp>
+#include <fc/time.hpp>
 
 namespace bts { namespace blockchain {
 

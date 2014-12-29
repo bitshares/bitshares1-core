@@ -1,6 +1,5 @@
 #include <bts/blockchain/account_record.hpp>
 #include <bts/blockchain/chain_interface.hpp>
-#include <fc/exception/exception.hpp>
 
 namespace bts { namespace blockchain {
 

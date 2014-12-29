@@ -3986,7 +3986,7 @@ namespace detail {
           }
       };
 
-      my->_blockchain->scan_balances( scan_balance );
+      my->_blockchain->scan_balances( scan_balance, false );
 
       return result;
    }
@@ -4036,7 +4036,7 @@ namespace detail {
           balance_records[ name ].push_back( *pending_record );
       };
 
-      my->_blockchain->scan_balances( scan_balance );
+      my->_blockchain->scan_balances( scan_balance, include_empty );
 
       return balance_records;
    } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_type_mask) ) }
@@ -4383,7 +4383,7 @@ namespace detail {
            snapshot_records.push_back( *record.snapshot_info );
        };
 
-       my->_blockchain->scan_balances( scan_balance );
+       my->_blockchain->scan_balances( scan_balance, false );
 
        return snapshot_records;
    } FC_CAPTURE_AND_RETHROW() }

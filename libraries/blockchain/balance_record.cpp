@@ -1,4 +1,5 @@
 #include <bts/blockchain/balance_record.hpp>
+#include <bts/blockchain/chain_interface.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -104,5 +105,30 @@ namespace bts { namespace blockchain {
        }
        FC_ASSERT( false, "Should never get here!" );
    }
+
+    const balance_db_interface& balance_record::db_interface( const chain_interface* db )
+    { try {
+        FC_ASSERT( db != nullptr );
+        return db->_balance_db_interface;
+    } FC_CAPTURE_AND_RETHROW() }
+
+    obalance_record balance_db_interface::lookup( const balance_id_type& id )const
+    { try {
+        return lookup_by_id( id );
+    } FC_CAPTURE_AND_RETHROW( (id) ) }
+
+    void balance_db_interface::store( const balance_record& record )const
+    { try {
+        insert_into_id_map( record.id(), record );
+    } FC_CAPTURE_AND_RETHROW( (record) ) }
+
+    void balance_db_interface::remove( const balance_id_type& id )const
+    { try {
+        const obalance_record prev_record = lookup( id );
+        if( prev_record.valid() )
+        {
+            erase_from_id_map( id );
+        }
+    } FC_CAPTURE_AND_RETHROW( (id) ) }
 
 } } // bts::blockchain

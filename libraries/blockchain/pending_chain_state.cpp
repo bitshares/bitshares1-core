@@ -8,6 +8,7 @@ namespace bts { namespace blockchain {
    :_prev_state( prev_state )
    {
       init_account_db_interface();
+      init_balance_db_interface();
       init_transaction_db_interface();
    }
 
@@ -61,11 +62,11 @@ namespace bts { namespace blockchain {
       if( !prev_state ) return;
 
       apply_records( prev_state, _account_id_to_record, _account_id_remove );
+      apply_records( prev_state, _balance_id_to_record, _balance_id_remove );
       apply_records( prev_state, _transaction_id_to_record, _transaction_id_remove );
 
       for( const auto& item : properties )      prev_state->set_property( (chain_property_enum)item.first, item.second );
       for( const auto& item : assets )          prev_state->store_asset_record( item.second );
-      for( const auto& item : balances )        prev_state->store_balance_record( item.second );
       for( const auto& item : authorizations )  prev_state->authorize( item.first.first, item.first.second, item.second );
       for( const auto& item : bids )            prev_state->store_bid_record( item.first, item.second );
       for( const auto& item : relative_bids )   prev_state->store_relative_bid_record( item.first, item.second );
@@ -115,6 +116,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( prev_state );
 
       populate_undo_state( undo_state, prev_state, _account_id_to_record );
+      populate_undo_state( undo_state, prev_state, _balance_id_to_record );
       populate_undo_state( undo_state, prev_state, _transaction_id_to_record );
 
       for( const auto& item : properties )
@@ -140,12 +142,6 @@ namespace bts { namespace blockchain {
          auto prev_value = prev_state->fetch_asset_proposal( item.first.first, item.first.second );
          if( !!prev_value ) undo_state->store_asset_proposal( *prev_value );
          else undo_state->store_asset_proposal( item.second.make_null() );
-      }
-      for( const auto& item : balances )
-      {
-         auto prev_value = prev_state->get_balance_record( item.first );
-         if( !!prev_value ) undo_state->store_balance_record( *prev_value );
-         else undo_state->store_balance_record( item.second.make_null() );
       }
       for( const auto& item : authorizations )
       {
@@ -267,13 +263,7 @@ namespace bts { namespace blockchain {
 
    obalance_record pending_chain_state::get_balance_record( const balance_id_type& balance_id )const
    {
-      chain_interface_ptr prev_state = _prev_state.lock();
-      auto itr = balances.find( balance_id );
-      if( itr != balances.end() )
-        return itr->second;
-      else if( prev_state )
-        return prev_state->get_balance_record( balance_id );
-      return obalance_record();
+       return lookup<balance_record>( balance_id );
    }
 
    odelegate_slate pending_chain_state::get_delegate_slate( slate_id_type id )const
@@ -317,7 +307,7 @@ namespace bts { namespace blockchain {
 
    void pending_chain_state::store_balance_record( const balance_record& r )
    {
-      balances[r.id()] = r;
+       store( r );
    }
 
    vector<operation> pending_chain_state::get_recent_operations(operation_type_enum t)
@@ -764,6 +754,33 @@ namespace bts { namespace blockchain {
 
        interface.erase_from_vote_set = [&]( const vote_del& vote )
        {
+       };
+   }
+
+   void pending_chain_state::init_balance_db_interface()
+   {
+       balance_db_interface& interface = _balance_db_interface;
+
+       interface.lookup_by_id = [&]( const balance_id_type& id ) -> obalance_record
+       {
+           const auto iter = _balance_id_to_record.find( id );
+           if( iter != _balance_id_to_record.end() ) return iter->second;
+           if( _balance_id_remove.count( id ) > 0 ) return obalance_record();
+           const chain_interface_ptr prev_state = _prev_state.lock();
+           if( prev_state ) return prev_state->lookup<balance_record>( id );
+           return obalance_record();
+       };
+
+       interface.insert_into_id_map = [&]( const balance_id_type& id, const balance_record& record )
+       {
+           _balance_id_remove.erase( id );
+           _balance_id_to_record[ id ] = record;
+       };
+
+       interface.erase_from_id_map = [&]( const balance_id_type& id )
+       {
+           _balance_id_to_record.erase( id );
+           _balance_id_remove.insert( id );
        };
    }
 

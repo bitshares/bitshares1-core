@@ -106,25 +106,26 @@ namespace bts { namespace blockchain {
             signed_block_header                                                         _head_block_header;
             block_id_type                                                               _head_block_id;
 
-            bts::db::level_map<transaction_id_type,transaction_record>                  _id_to_transaction_record_db;
-            set<unique_transaction_key>                                                 _unique_transactions;
-
-            bts::db::level_map<transaction_id_type, signed_transaction>                 _pending_transaction_db;
-            map<fee_index, transaction_evaluation_state_ptr>                            _pending_fee_index;
-
             bts::db::cached_level_map<uint32_t, fc::variant>                            _property_db;
-
-            bts::db::cached_level_map<asset_id_type, asset_record>                      _asset_db;
-            bts::db::cached_level_map<string, asset_id_type>                            _symbol_index_db;
-            bts::db::level_map<pair<asset_id_type,proposal_id_type>, proposal_record>   _asset_proposal_db;
-
-            bts::db::cached_level_map<balance_id_type, balance_record>                  _balance_db;
 
             bts::db::fast_level_map<account_id_type, account_record>                    _account_id_to_record;
             bts::db::fast_level_map<string, account_id_type>                            _account_name_to_id;
             bts::db::fast_level_map<address, account_id_type>                           _account_address_to_id;
 
             set<vote_del>                                                               _delegate_votes;
+
+            bts::db::cached_level_map<asset_id_type, asset_record>                      _asset_db;
+            bts::db::cached_level_map<string, asset_id_type>                            _symbol_index_db;
+            bts::db::level_map<pair<asset_id_type,proposal_id_type>, proposal_record>   _asset_proposal_db;
+
+            bts::db::fast_level_map<balance_id_type, balance_record>                    _balance_id_to_record;
+            bts::db::fast_level_map<balance_id_type, balance_record>                    _empty_balance_id_to_record;
+
+            bts::db::level_map<transaction_id_type,transaction_record>                  _id_to_transaction_record_db;
+            set<unique_transaction_key>                                                 _unique_transactions;
+
+            bts::db::level_map<transaction_id_type, signed_transaction>                 _pending_transaction_db;
+            map<fee_index, transaction_evaluation_state_ptr>                            _pending_fee_index;
 
             bts::db::cached_level_map<slate_id_type, delegate_slate>                    _slate_db;
             bts::db::level_map<time_point_sec, slot_record>                             _slot_record_db;

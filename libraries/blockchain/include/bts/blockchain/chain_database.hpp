@@ -206,7 +206,7 @@ namespace bts { namespace blockchain {
          virtual void                       store_asset_proposal( const proposal_record& r ) override;
          virtual optional<proposal_record>  fetch_asset_proposal( asset_id_type asset_id, proposal_id_type proposal_id )const override;
 
-         map<balance_id_type, balance_record>  get_balances( const string& first,
+         map<balance_id_type, balance_record>  get_balances( const balance_id_type& first,
                                                              uint32_t limit )const;
 
          map<balance_id_type, balance_record>     get_balances_for_address( const address& addr )const;
@@ -274,7 +274,8 @@ namespace bts { namespace blockchain {
                                                                 uint32_t limit = -1, order_type_enum type = null_order )const;
 
          void                               scan_assets( function<void( const asset_record& )> callback )const;
-         void                               scan_balances( function<void( const balance_record& )> callback )const;
+         void                               scan_balances( function<void( const balance_record& )> callback,
+                                                           bool include_empty )const;
          void                               scan_unordered_accounts( function<void( const account_record& )> )const;
          void                               scan_ordered_accounts( function<void( const account_record& )> )const;
          void                               scan_objects( function<void( const object_record& )> callback )const;
@@ -383,6 +384,7 @@ namespace bts { namespace blockchain {
          unique_ptr<detail::chain_database_impl> my;
 
          virtual void init_account_db_interface()override;
+         virtual void init_balance_db_interface()override;
          virtual void init_transaction_db_interface()override;
    };
 

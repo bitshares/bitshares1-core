@@ -254,7 +254,7 @@ void wallet_impl::scan_balances()
        transaction_record->ledger_entries.push_back( entry );
        _wallet_db.store_transaction( *transaction_record );
    };
-   _blockchain->scan_balances( scan_balance );
+   _blockchain->scan_balances( scan_balance, true );
 }
 
 void wallet_impl::scan_registered_accounts()
