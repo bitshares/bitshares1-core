@@ -18,6 +18,7 @@ struct public_key_summary
     string    pts_compressed_address;
     string    btc_normal_address;
     string    btc_compressed_address;
+
 };
 
 struct vote_summary

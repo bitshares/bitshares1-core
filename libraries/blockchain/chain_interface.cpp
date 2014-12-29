@@ -51,20 +51,32 @@ namespace bts { namespace blockchain {
     */
    bool chain_interface::is_valid_symbol_name( const string& symbol )const
    { try {
-       if( symbol.size() < BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE || symbol.size() > BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE )
-           return false;
 
        int dots = 0;
+       int sub_symbol_size = 0;
        for( const char& c : symbol )
        {
+           sub_symbol_size++;
            if( c == '.' )
            {
+              if( sub_symbol_size < BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE
+                 || sub_symbol_size > BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE )
+                 return false;
+              sub_symbol_size = 0;
+
               if( ++dots > 1 )
-               return false;
+                 return false;
            }
-           else if( !std::isalnum( c, std::locale::classic() ) || !std::isupper( c, std::locale::classic() ) )
-               return false;
+           else
+           {
+               if( !std::isalnum( c, std::locale::classic() ) || !std::isupper( c, std::locale::classic() ) )
+                   return false;
+           }
        }
+       if( sub_symbol_size < BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE
+          || sub_symbol_size > BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE )
+          return false;
+
        if( symbol.back() == '.' ) return false;
        if( symbol.front() == '.' ) return false;
 
@@ -208,8 +220,8 @@ namespace bts { namespace blockchain {
    multisig_condition   chain_interface::get_object_condition( const object_record& obj, int depth )
    { try {
        ilog("@n getting object condition for object: ${o}", ("o", obj));
-       if( depth >= 100 )//BTS_OWNER_DEPENDENCY_MAX_DEPTH )
-           FC_ASSERT(false, "Cannot determine object condition.");
+       if( depth >= 1 )//BTS_OWNER_DEPENDENCY_MAX_DEPTH )
+           FC_ASSERT(false, "Cannot determine object condition - recursion depth exceeded (are you trying to make an edge from an edge?)");
        multisig_condition condition;
        switch( obj.type() )
        {

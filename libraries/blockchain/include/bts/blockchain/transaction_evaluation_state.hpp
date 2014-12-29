@@ -69,7 +69,7 @@ namespace bts { namespace blockchain {
 
          signed_transaction                             trx;
 
-         unordered_set<address>                         signed_keys;
+         set<address>                                   signed_keys;
 
          // increases with funds are withdrawn, decreases when funds are deposited or fees paid
          optional<fc::exception>                        validation_error;
