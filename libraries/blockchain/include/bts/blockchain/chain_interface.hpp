@@ -7,7 +7,7 @@
 #include <bts/blockchain/condition.hpp>
 #include <bts/blockchain/delegate_slate.hpp>
 #include <bts/blockchain/edge_record.hpp>
-#include <bts/blockchain/feed_operations.hpp>
+#include <bts/blockchain/feed_record.hpp>
 #include <bts/blockchain/market_records.hpp>
 #include <bts/blockchain/object_record.hpp>
 #include <bts/blockchain/site_record.hpp>

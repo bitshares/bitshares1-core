@@ -307,8 +307,6 @@ namespace bts { namespace db {
                     FC_ASSERT(_map->is_open(), "Database is not open!");
 
                     ldb::Status status = _map->_db->Write( _write_options, &_batch );
-                    if (status.IsNotFound())
-                      FC_THROW_EXCEPTION(fc::key_not_found_exception, "unable to find key while applying batch");
                     if (!status.ok())
                       FC_THROW_EXCEPTION(db_exception, "database error while applying batch: ${msg}", ("msg", status.ToString()));
                     _batch.Clear();
@@ -370,10 +368,6 @@ namespace bts { namespace db {
            std::vector<char> kslice = fc::raw::pack( k );
            ldb::Slice ks( kslice.data(), kslice.size() );
            auto status = _db->Delete( sync ? _sync_options : _write_options, ks );
-           if( status.IsNotFound() )
-           {
-             FC_THROW_EXCEPTION( fc::key_not_found_exception, "unable to find key ${key}", ("key",k) );
-           }
            if( !status.ok() )
            {
                FC_THROW_EXCEPTION( db_exception, "database error: ${msg}", ("msg", status.ToString() ) );

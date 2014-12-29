@@ -188,8 +188,7 @@ namespace bts { namespace blockchain {
          digest_type chain_id = self->chain_id();
          if( chain_id != digest_type() )
          {
-            self->sanity_check();
-            ilog( "Genesis state already initialized" );
+            wlog( "Genesis state already initialized" );
             return chain_id;
          }
 
@@ -755,13 +754,7 @@ namespace bts { namespace blockchain {
            if( int32_t(block_num - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY) > 0 )
            {
               auto old_id = self->get_block_id( block_num - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY );
-              try {
-                 _undo_state_db.remove( old_id );
-              }
-              catch( const fc::key_not_found_exception& )
-              {
-                 // ignore this...
-              }
+              _undo_state_db.remove( old_id );
            }
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
 
@@ -996,8 +989,6 @@ namespace bts { namespace blockchain {
             update_head_block( block_data );
 
             clear_pending( block_data );
-
-            // self->sanity_check();
 
             _block_num_to_id_db.store( block_data.block_num, block_id );
 
@@ -2581,7 +2572,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( ar->current_share_supply <= ar->maximum_share_supply );
       //std::cerr << "Total Balances: " << to_pretty_asset( total ) << "\n";
 #endif
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW() }
 
    /**
     *   Calculates the percentage of blocks produced in the last 10 rounds as an average

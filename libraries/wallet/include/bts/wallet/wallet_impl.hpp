@@ -5,6 +5,7 @@
 #include <bts/blockchain/account_operations.hpp>
 #include <bts/blockchain/asset_operations.hpp>
 #include <bts/blockchain/balance_operations.hpp>
+#include <bts/blockchain/feed_operations.hpp>
 #include <bts/blockchain/market_operations.hpp>
 
 namespace bts { namespace wallet { namespace detail {
