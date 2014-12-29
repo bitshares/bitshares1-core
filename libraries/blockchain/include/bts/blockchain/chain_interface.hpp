@@ -249,6 +249,10 @@ namespace bts { namespace blockchain {
          account_db_interface _account_db_interface;
          virtual void init_account_db_interface() = 0;
 
+         friend struct asset_record;
+         asset_db_interface _asset_db_interface;
+         virtual void init_asset_db_interface() = 0;
+
          friend struct balance_record;
          balance_db_interface _balance_db_interface;
          virtual void init_balance_db_interface() = 0;

@@ -273,11 +273,12 @@ namespace bts { namespace blockchain {
          vector<market_order>               scan_market_orders( std::function<bool( const market_order& )> filter,
                                                                 uint32_t limit = -1, order_type_enum type = null_order )const;
 
-         void                               scan_assets( function<void( const asset_record& )> callback )const;
-         void                               scan_balances( function<void( const balance_record& )> callback,
-                                                           bool include_empty )const;
          void                               scan_unordered_accounts( function<void( const account_record& )> )const;
          void                               scan_ordered_accounts( function<void( const account_record& )> )const;
+         void                               scan_unordered_assets( function<void( const asset_record& )> )const;
+         void                               scan_ordered_assets( function<void( const asset_record& )> )const;
+         void                               scan_balances( function<void( const balance_record& )> callback,
+                                                           bool include_empty )const;
          void                               scan_objects( function<void( const object_record& )> callback )const;
 
          virtual optional<variant>          get_property( chain_property_enum property_id )const override;
@@ -384,6 +385,7 @@ namespace bts { namespace blockchain {
          unique_ptr<detail::chain_database_impl> my;
 
          virtual void init_account_db_interface()override;
+         virtual void init_asset_db_interface()override;
          virtual void init_balance_db_interface()override;
          virtual void init_transaction_db_interface()override;
          virtual void init_feed_db_interface()override;

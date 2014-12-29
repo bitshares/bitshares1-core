@@ -114,9 +114,8 @@ namespace bts { namespace blockchain {
 
             set<vote_del>                                                               _delegate_votes;
 
-            bts::db::cached_level_map<asset_id_type, asset_record>                      _asset_db;
-            bts::db::cached_level_map<string, asset_id_type>                            _symbol_index_db;
-            bts::db::level_map<pair<asset_id_type,proposal_id_type>, proposal_record>   _asset_proposal_db;
+            bts::db::fast_level_map<asset_id_type, asset_record>                        _asset_id_to_record;
+            bts::db::fast_level_map<string, asset_id_type>                              _asset_symbol_to_id;
 
             bts::db::fast_level_map<balance_id_type, balance_record>                    _balance_id_to_record;
             bts::db::fast_level_map<balance_id_type, balance_record>                    _empty_balance_id_to_record;
@@ -160,6 +159,7 @@ namespace bts { namespace blockchain {
             bts::db::level_map< pair<address,transaction_id_type>, int>                 _address_to_trx_index;
 
             bts::db::level_map<pair<asset_id_type,address>, object_id_type>             _auth_db;
+            bts::db::level_map<pair<asset_id_type,proposal_id_type>, proposal_record>   _asset_proposal_db;
 
             map<operation_type_enum, std::deque<operation>>                             _recent_operations;
 

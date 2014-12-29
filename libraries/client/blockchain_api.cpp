@@ -348,6 +348,7 @@ vector<account_record> detail::client_impl::blockchain_list_recently_registered_
 
 vector<asset_record> detail::client_impl::blockchain_list_assets( const string& first, int32_t limit )const
 {
+   FC_ASSERT( limit > 0 );
    return _chain_db->get_assets( first, limit );
 }
 
@@ -360,7 +361,7 @@ map<string, double> detail::client_impl::blockchain_list_feed_prices()const
         if( !median_price.valid() ) return;
         feed_prices.emplace( record.symbol, _chain_db->to_pretty_price_double( *median_price ) );
     };
-    _chain_db->scan_assets( scan_asset );
+    _chain_db->scan_ordered_assets( scan_asset );
     return feed_prices;
 }
 

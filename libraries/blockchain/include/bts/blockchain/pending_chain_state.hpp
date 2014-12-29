@@ -157,9 +157,9 @@ namespace bts { namespace blockchain {
          unordered_map<string, account_id_type>                             _account_name_to_id;
          unordered_map<address, account_id_type>                            _account_address_to_id;
 
-         unordered_map< asset_id_type, asset_record>                        assets;
-         unordered_map< string, asset_id_type>                              symbol_id_index;
-         map< std::pair<asset_id_type,proposal_id_type>, proposal_record >  asset_proposals;
+         unordered_map<asset_id_type, asset_record>                         _asset_id_to_record;
+         unordered_set<asset_id_type>                                       _asset_id_remove;
+         unordered_map<string, asset_id_type>                               _asset_symbol_to_id;
 
          unordered_map<balance_id_type, balance_record>                     _balance_id_to_record;
          unordered_set<balance_id_type>                                     _balance_id_remove;
@@ -196,6 +196,7 @@ namespace bts { namespace blockchain {
          map< string, site_record >                                         site_index;
 
          map< std::pair<asset_id_type,address>, object_id_type >            authorizations;
+         map< std::pair<asset_id_type,proposal_id_type>, proposal_record >  asset_proposals;
 
          optional<digest_type>                                              _chain_id;
 
@@ -205,6 +206,7 @@ namespace bts { namespace blockchain {
          map<operation_type_enum, std::deque<operation>>                    recent_operations;
 
          virtual void init_account_db_interface()override;
+         virtual void init_asset_db_interface()override;
          virtual void init_balance_db_interface()override;
          virtual void init_transaction_db_interface()override;
          virtual void init_feed_db_interface()override;
@@ -219,9 +221,9 @@ FC_REFLECT( bts::blockchain::pending_chain_state,
         (_account_id_remove)
         (_account_name_to_id)
         (_account_address_to_id)
-        (assets)
-        (symbol_id_index)
-        (asset_proposals)
+        (_asset_id_to_record)
+        (_asset_id_remove)
+        (_asset_symbol_to_id)
         (_balance_id_to_record)
         (_balance_id_remove)
         (_transaction_id_to_record)
@@ -247,5 +249,6 @@ FC_REFLECT( bts::blockchain::pending_chain_state,
         (reverse_edge_index)
         (site_index)
         (authorizations)
+        (asset_proposals)
         (_chain_id)
     )
