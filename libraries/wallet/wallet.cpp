@@ -2755,7 +2755,10 @@ namespace detail {
       auto entry = ledger_entry();
       entry.from_account = sender_public_key;
       entry.amount = asset_to_transfer;
-      entry.memo = memo_message;
+      if( memo_message != "" )
+          entry.memo = memo_message;
+      else
+          entry.memo = "To: " + string(to_address).substr(0, 8) + "...";
 
       auto record = wallet_transaction_record();
       record.ledger_entries.push_back( entry );
@@ -2826,7 +2829,10 @@ namespace detail {
          auto entry = ledger_entry();
          entry.from_account = sender_public_key;
          entry.amount = total_asset_to_transfer;
-         entry.memo = memo_message;
+         if( memo_message != "" )
+             entry.memo = memo_message;
+         else
+             entry.memo = "Transfer to many addresses";
 
          auto record = wallet_transaction_record();
          record.ledger_entries.push_back( entry );
