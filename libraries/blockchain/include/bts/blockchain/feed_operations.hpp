@@ -9,7 +9,7 @@ namespace bts { namespace blockchain {
   struct update_feed_operation
   {
       static const operation_type_enum type;
-      feed_index   feed;
+      feed_index   index;
       fc::variant  value;
 
       void evaluate( transaction_evaluation_state& eval_state );
@@ -17,4 +17,4 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
-FC_REFLECT( bts::blockchain::update_feed_operation, (feed)(value) )
+FC_REFLECT( bts::blockchain::update_feed_operation, (index)(value) )

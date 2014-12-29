@@ -465,11 +465,11 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
 
     const auto scan_update_feed = [&]( const update_feed_operation& op ) -> bool
     {
-        const oasset_record asset_record = _blockchain->get_asset_record( op.feed.feed_id );
-        const string& asset_symbol = asset_record.valid() ? asset_record->symbol : std::to_string( op.feed.feed_id );
+        const oasset_record asset_record = _blockchain->get_asset_record( op.index.quote_id );
+        const string& asset_symbol = asset_record.valid() ? asset_record->symbol : std::to_string( op.index.quote_id );
 
-        const oaccount_record account_record = _blockchain->get_account_record( op.feed.delegate_id );
-        const string& account_name = account_record.valid() ? account_record->name : std::to_string( op.feed.delegate_id );
+        const oaccount_record account_record = _blockchain->get_account_record( op.index.delegate_id );
+        const string& account_name = account_record.valid() ? account_record->name : std::to_string( op.index.delegate_id );
 
         if( record.operation_notes.count( op_index ) == 0 )
         {

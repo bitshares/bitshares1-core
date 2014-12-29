@@ -7,18 +7,18 @@ namespace bts { namespace blockchain {
 
     struct feed_index
     {
-        asset_id_type   feed_id;
+        asset_id_type   quote_id;
         account_id_type delegate_id;
  
         friend bool operator < ( const feed_index& a, const feed_index& b )
         {
-            if( a.feed_id == b.feed_id ) return a.delegate_id < b.delegate_id;
-            return a.feed_id < b.feed_id;
+            if( a.quote_id != b.quote_id ) return a.quote_id < b.quote_id;
+            return a.delegate_id < b.delegate_id;
         }
 
         friend bool operator == ( const feed_index& a, const feed_index& b )
         {
-            return a.feed_id == b.feed_id && a.delegate_id == b.delegate_id;
+            return a.quote_id == b.quote_id && a.delegate_id == b.delegate_id;
         }
     };
 
@@ -56,6 +56,6 @@ namespace bts { namespace blockchain {
  
 } } // bts::blockchain
 
-FC_REFLECT( bts::blockchain::feed_index, (feed_id)(delegate_id) )
+FC_REFLECT( bts::blockchain::feed_index, (quote_id)(delegate_id) )
 FC_REFLECT( bts::blockchain::feed_record, (index)(value)(last_update) )
 FC_REFLECT( bts::blockchain::feed_entry, (delegate_name)(price)(last_update)(asset_symbol)(median_price) );

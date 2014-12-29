@@ -3447,7 +3447,7 @@ namespace bts { namespace blockchain {
       vector<account_id_type> active_delegates = get_active_delegates();
       std::sort( active_delegates.begin(), active_delegates.end() );
       vector<price> prices;
-      while( feed_itr.valid() && feed_itr.key().feed_id == quote_id )
+      while( feed_itr.valid() && feed_itr.key().quote_id == quote_id )
       {
          const feed_index key = feed_itr.key();
          if( std::binary_search( active_delegates.begin(), active_delegates.end(), key.delegate_id ) )
@@ -3483,7 +3483,7 @@ namespace bts { namespace blockchain {
    {  try {
       vector<feed_record> feeds;
       auto feed_itr = my->_feed_index_to_record.lower_bound(feed_index{quote_id});
-      while( feed_itr.valid() && feed_itr.key().feed_id == quote_id )
+      while( feed_itr.valid() && feed_itr.key().quote_id == quote_id )
       {
         const auto& val = feed_itr.value();
         if( val.value.base_asset_id == base_id )

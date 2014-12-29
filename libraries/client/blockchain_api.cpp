@@ -223,8 +223,8 @@ vector<feed_entry> detail::client_impl::blockchain_get_feeds_from_delegate( cons
       for( const auto& raw_feed : raw_feeds )
       {
          const double price = _chain_db->to_pretty_price_double( raw_feed.value );
-         const string asset_symbol = _chain_db->get_asset_symbol( raw_feed.index.feed_id );
-         const auto omedian_price = _chain_db->get_median_delegate_price( raw_feed.index.feed_id, asset_id_type( 0 ) );
+         const string asset_symbol = _chain_db->get_asset_symbol( raw_feed.index.quote_id );
+         const auto omedian_price = _chain_db->get_median_delegate_price( raw_feed.index.quote_id, asset_id_type( 0 ) );
          fc::optional<double> median_price;
          if( omedian_price )
             median_price = _chain_db->to_pretty_price_double( *omedian_price );
