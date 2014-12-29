@@ -2831,6 +2831,6 @@
          ],
          "is_const" : true,
          "prerequisites" : []
-      },
+      }
     ]
 }
