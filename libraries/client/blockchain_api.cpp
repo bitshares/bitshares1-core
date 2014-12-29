@@ -386,11 +386,11 @@ variant_object client_impl::blockchain_get_info()const
    info["memo_size_max"]                        = BTS_BLOCKCHAIN_MAX_MEMO_SIZE;
    info["data_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
 
-   info["symbol_size_max"]                      = BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE;
+   info["symbol_size_max"]                      = BTS_BLOCKCHAIN_MAX_SUB_SYMBOL_SIZE;
    info["symbol_size_min"]                      = BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE;
    info["asset_shares_max"]                     = BTS_BLOCKCHAIN_MAX_SHARES;
    info["short_symbol_asset_reg_fee"]           = _chain_db->get_asset_registration_fee( BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE );
-   info["long_symbol_asset_reg_fee"]            = _chain_db->get_asset_registration_fee( BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE );
+   info["long_symbol_asset_reg_fee"]            = _chain_db->get_asset_registration_fee( BTS_BLOCKCHAIN_MAX_SUB_SYMBOL_SIZE );
 
    info["relay_fee"]                            = _chain_db->get_relay_fee();
    info["max_pending_queue_size"]               = BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE;
