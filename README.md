@@ -25,6 +25,13 @@ Different platforms have different build instructions:
 * [Ubuntu](https://github.com/BitShares/bitshares/blob/master/BUILD_UBUNTU.md)
 * [Windows](https://github.com/BitShares/bitshares/blob/master/BUILD_WIN32.md)
 
+
+Starting RPC server
+---------------------
+    ./programs/client/bitshares_client --server --rpcuser USERNAME --rpcpassword PASSWORD --rpcport 1775
+
+Note that the server will be listening at `localhost:1775/rpc`.
+
 Contributing
 ------------
 The source code can always be found at the [BitShares GitHub Repository](https://github.com/BitShares/bitshares). There are four main branches:
