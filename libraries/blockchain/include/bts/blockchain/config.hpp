@@ -52,8 +52,9 @@
 #define BTS_BLOCKCHAIN_MAX_NAME_SIZE                        63
 #define BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE                   (1024*64)
 
-#define BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE                      8 // characters
+#define BTS_BLOCKCHAIN_MAX_SUB_SYMBOL_SIZE                  8 // characters
 #define BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE                      3 // characters
+#define BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE                      12 // characters
 
 #define BTS_BLOCKCHAIN_MIN_BURN_FEE                         BTS_BLOCKCHAIN_PRECISION * 1 // 1 XTS
 
