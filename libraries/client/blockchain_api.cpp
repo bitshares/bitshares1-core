@@ -190,7 +190,7 @@ vector<feed_entry> detail::client_impl::blockchain_get_feeds_for_asset(const std
          result_feeds.push_back({delegate->name, price, feed.last_update});
       }
 
-      auto omedian_price = _chain_db->get_median_delegate_price(asset_id, asset_id_type( 0 ));
+      const auto omedian_price = _chain_db->get_active_feed_price( asset_id );
       if( omedian_price )
          result_feeds.push_back({"MARKET", 0, _chain_db->now(), _chain_db->get_asset_symbol(asset_id), _chain_db->to_pretty_price_double(*omedian_price)});
 
@@ -204,7 +204,7 @@ double detail::client_impl::blockchain_median_feed_price( const string& asset )c
       asset_id = _chain_db->get_asset_id(asset);
    else
       asset_id = std::stoi( asset );
-   auto omedian_price = _chain_db->get_median_delegate_price(asset_id, asset_id_type( 0 ));
+   const auto omedian_price = _chain_db->get_active_feed_price( asset_id );
    if( omedian_price )
       return _chain_db->to_pretty_price_double( *omedian_price );
    return 0;
@@ -224,7 +224,7 @@ vector<feed_entry> detail::client_impl::blockchain_get_feeds_from_delegate( cons
       {
          const double price = _chain_db->to_pretty_price_double( raw_feed.value );
          const string asset_symbol = _chain_db->get_asset_symbol( raw_feed.index.quote_id );
-         const auto omedian_price = _chain_db->get_median_delegate_price( raw_feed.index.quote_id, asset_id_type( 0 ) );
+         const auto omedian_price = _chain_db->get_active_feed_price( raw_feed.index.quote_id );
          fc::optional<double> median_price;
          if( omedian_price )
             median_price = _chain_db->to_pretty_price_double( *omedian_price );
@@ -357,7 +357,7 @@ map<string, double> detail::client_impl::blockchain_list_feed_prices()const
     map<string, double> feed_prices;
     const auto scan_asset = [&]( const asset_record& record )
     {
-        const oprice median_price = _chain_db->get_median_delegate_price( record.id, asset_id_type( 0 ) );
+        const auto median_price = _chain_db->get_active_feed_price( record.id );
         if( !median_price.valid() ) return;
         feed_prices.emplace( record.symbol, _chain_db->to_pretty_price_double( *median_price ) );
     };

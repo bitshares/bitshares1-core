@@ -22,8 +22,6 @@ namespace bts { namespace blockchain {
 
          virtual void                   set_feed( const feed_record&  ) override;
          virtual ofeed_record           get_feed( const feed_index )const override;
-         virtual oprice                 get_median_delegate_price( const asset_id_type quote_id,
-                                                                   const asset_id_type base_id )const override;
          virtual void                   set_market_dirty( const asset_id_type quote_id, const asset_id_type base_id )override;
 
          virtual fc::time_point_sec     now()const override;
@@ -34,6 +32,9 @@ namespace bts { namespace blockchain {
 
          virtual void                   store_burn_record( const burn_record& br ) override;
          virtual oburn_record           fetch_burn_record( const burn_record_key& key )const override;
+
+         virtual oprice                 get_active_feed_price( const asset_id_type quote_id,
+                                                               const asset_id_type base_id = 0 )const override;
 
          virtual oasset_record          get_asset_record( const asset_id_type id )const override;
          virtual obalance_record        get_balance_record( const balance_id_type& id )const override;

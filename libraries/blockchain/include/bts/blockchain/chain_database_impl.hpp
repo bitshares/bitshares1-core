@@ -132,6 +132,7 @@ namespace bts { namespace blockchain {
             bts::db::cached_level_map<burn_record_key, burn_record_value>               _burn_db;
 
             bts::db::cached_level_map<feed_index, feed_record>                          _feed_index_to_record;
+            unordered_map<asset_id_type, unordered_map<account_id_type, feed_record>>   _nested_feed_map;
 
             bts::db::cached_level_map<market_index_key, order_record>                   _ask_db;
             bts::db::cached_level_map<market_index_key, order_record>                   _bid_db;

@@ -159,8 +159,8 @@ namespace bts { namespace blockchain {
          // lowest ask is someone with XTS offered at a price of USD / XTS, fee.first
          // is an amount of USD which can be converted to price*USD XTS provided we
          // send lowest_ask.index.owner the USD
-         oprice median_price = _current_state->get_median_delegate_price( fee.first, asset_id_type( 0 ) );
-         if( median_price )
+         const oprice median_price = _current_state->get_active_feed_price( fee.first );
+         if( median_price.valid() )
          {
             // fees paid in something other than XTS are discounted 50%
             alt_fees_paid += asset( (fee.second*2)/3, fee.first ) * *median_price;

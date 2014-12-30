@@ -40,8 +40,7 @@ namespace bts { namespace blockchain {
       confirmation_requirement = 5,
       database_version         = 6, // database version, to know when we need to upgrade
       dirty_markets            = 7,
-      last_feed_id             = 8, // used for allocating new data feeds
-      last_object_id           = 9  // all object types that aren't legacy
+      last_object_id           = 8  // all object types that aren't legacy
    };
    typedef uint32_t chain_property_type;
 
@@ -78,7 +77,7 @@ namespace bts { namespace blockchain {
              return balance.id();
          }
 
-         std::vector<account_id_type>       get_active_delegates()const;
+         vector<account_id_type>            get_active_delegates()const;
          void                               set_active_delegates( const std::vector<account_id_type>& id );
          bool                               is_active_delegate( const account_id_type id )const;
 
@@ -104,8 +103,9 @@ namespace bts { namespace blockchain {
          virtual void                       store_burn_record( const burn_record& br ) = 0;
          virtual oburn_record               fetch_burn_record( const burn_record_key& key )const = 0;
 
-         virtual oprice                     get_median_delegate_price( const asset_id_type quote_id,
-                                                                       const asset_id_type base_id )const  = 0;
+         virtual oprice                     get_active_feed_price( const asset_id_type quote_id,
+                                                                   const asset_id_type base_id = 0 )const = 0;
+
          virtual void                       set_feed( const feed_record&  )                                 = 0;
          virtual ofeed_record               get_feed( const feed_index )const                              = 0;
          virtual void                       set_market_dirty( const asset_id_type quote_id,
@@ -279,5 +279,4 @@ FC_REFLECT_ENUM( bts::blockchain::chain_property_enum,
                  (confirmation_requirement)
                  (database_version)
                  (dirty_markets)
-                 (last_feed_id)
                  )
