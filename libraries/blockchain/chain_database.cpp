@@ -1024,10 +1024,13 @@ namespace bts { namespace blockchain {
                      || block_data.block_num == BTS_V0_4_24_FORK_BLOCK_NUM )
             {
                 vector<asset_record> records;
-                records.reserve( 42 );
+                records.reserve( _asset_id_to_record.size() );
 
-                for( auto itr = _asset_db.begin(); itr.valid(); ++itr )
-                    records.push_back( itr.value() );
+                const auto scan_asset = [ &records ]( const asset_record& record )
+                {
+                    records.push_back( record );
+                };
+                self->scan_unordered_assets( scan_asset );
 
                 wlog( "Recalculating supply for ${x} assets", ("x",records.size()) );
                 for( auto& record : records )
@@ -1057,12 +1060,12 @@ namespace bts { namespace blockchain {
                 vector<account_record> records;
                 records.reserve( 5343 );
 
-                for( auto iter = _account_db.begin(); iter.valid(); ++iter )
+                const auto scan_account = [ &records ]( const account_record& record )
                 {
-                    const account_record& record = iter.value();
-                    if( !record.is_delegate() || !record.delegate_info.valid() ) continue;
-                    records.push_back( record );
-                }
+                    if( record.is_delegate() )
+                        records.push_back( record );
+                };
+                self->scan_unordered_accounts( scan_account );
 
                 wlog( "Resetting pay rates for ${x} delegates", ("x",records.size()) );
                 for( auto& record : records )
