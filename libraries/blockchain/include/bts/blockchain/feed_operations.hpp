@@ -13,6 +13,7 @@ namespace bts { namespace blockchain {
       fc::variant  value;
 
       void evaluate( transaction_evaluation_state& eval_state );
+      void evaluate_v1( transaction_evaluation_state& eval_state );
   };
 
 } } // bts::blockchain
