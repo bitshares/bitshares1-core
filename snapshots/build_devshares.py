@@ -39,9 +39,9 @@ with open("devshares.json", "w") as outfile:
         with open("../libraries/blockchain/genesis_bts.json") as bts_genesis_json:
             snap = json.load(bts_snapshot_json)
             vest = json.load(bts_genesis_json)
-            total = 0
-            snap_total = 0
-            vest_total = 0
+            total = 0.0
+            snap_total = 0.0
+            vest_total = 0.0
             for item in snap:
                 total += item[1]
                 snap_total += item[1]
@@ -52,12 +52,17 @@ with open("devshares.json", "w") as outfile:
             for item in snap:
                 if item[1] == 0:
                     continue
-                balance = (100000000000000 * (snap_total / total)) * (item[1] / snap_total)
-                new_genesis["balances"].append([item[0], balance])
+                balance = (100000000000000 * (snap_total / total)) * (1.0 * item[1] / snap_total)
+                new_genesis["balances"].append([item[0], int(balance)])
 
             for item in vest["sharedrop_balances"]["vesting_balances"]:
-                balance = (100000000000000 * (vest_total / total)) * (item["balance"] / vest_total)
-                new_genesis["sharedrop_balances"]["vesting_balances"].append([item["raw_address"], balance])
+                if item["balance"] == 0:
+                    continue
+                balance = (100000000000000 * (vest_total / total)) * (1.0 * item["balance"] / vest_total)
+                new_genesis["sharedrop_balances"]["vesting_balances"].append({
+                    "raw_address": item["raw_address"],
+                    "balance": int(balance)
+                })
 
         print "total normal BTS balance: " + str(snap_total)
         print "total vesting BTS balance: " + str(vest_total)
