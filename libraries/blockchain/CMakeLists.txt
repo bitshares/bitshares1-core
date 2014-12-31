@@ -24,44 +24,48 @@ source_group("Genesis JSON Files" FILES ${genesis_json} ${genesis_prologue} ${ge
 file(GLOB HEADERS "include/bts/blockchain/*.hpp")
 
 add_library( bts_blockchain
+             types.cpp
+             asset.cpp
              address.cpp
              pts_address.cpp
              extended_address.cpp
-             types.cpp
-             withdraw_types.cpp
-             operations.cpp
-             balance_operations.cpp
-             account_operations.cpp
-             delegate_slate.cpp
-             asset_operations.cpp
-             market_operations.cpp
-             feed_operations.cpp
-#fire_operation.cpp
-             object_operations.cpp
-             edge_operations.cpp
-             sale_operations.cpp
-             auction_operations.cpp
-             site_operations.cpp
-             asset.cpp
-             transaction.cpp
-             time.cpp
-             block.cpp
-             transaction_evaluation_state.cpp
+
              account_record.cpp
              asset_record.cpp
              balance_record.cpp
+             delegate_slate.cpp
              transaction_record.cpp
              feed_record.cpp
              market_records.cpp
              object_record.cpp
              edge_record.cpp
              site_record.cpp
-             sale_record.cpp
              auction_records.cpp
+             sale_record.cpp
+
+             transaction.cpp
+             transaction_evaluation_state.cpp
+             block.cpp
+
+             operations.cpp
+             account_operations.cpp
+             withdraw_types.cpp
+             balance_operations.cpp
+             asset_operations.cpp
+             feed_operations.cpp
+             market_operations.cpp
+             object_operations.cpp
+             edge_operations.cpp
+             site_operations.cpp
+             auction_operations.cpp
+             sale_operations.cpp
+
+             time.cpp
              chain_interface.cpp
+             chain_database.cpp
              pending_chain_state.cpp
              market_engine.cpp
-             chain_database.cpp
+
              ${generated_genesis_file}
              ${genesis_json}
              ${HEADERS}

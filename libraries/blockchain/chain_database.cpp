@@ -684,7 +684,7 @@ namespace bts { namespace blockchain {
             for( const auto& trx : block.user_transactions )
             {
                transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_state.get() );
-               trx_eval_state->evaluate( trx, _skip_signature_verification, true );
+               trx_eval_state->evaluate( trx, _skip_signature_verification );
 
                // TODO:  capture the evaluation state with a callback for wallets...
                // summary.transaction_states.emplace_back( std::move(trx_eval_state) );
@@ -946,7 +946,7 @@ namespace bts { namespace blockchain {
                block_signee = self->get_slot_signee( block_data.timestamp, self->get_active_delegates() ).signing_key();
             else
                /* We need the block_signee's key in several places and computing it is expensive, so compute it here and pass it down */
-               block_signee = block_data.signee( true );
+               block_signee = block_data.signee();
 
             auto checkpoint_itr = CHECKPOINT_BLOCKS.find(block_data.block_num);
             if( checkpoint_itr != CHECKPOINT_BLOCKS.end() && checkpoint_itr->second != block_id )
@@ -1455,7 +1455,7 @@ namespace bts { namespace blockchain {
       pending_chain_state_ptr          pend_state = std::make_shared<pending_chain_state>(my->_pending_trx_state);
       transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>( pend_state.get() );
 
-      trx_eval_state->evaluate( trx, false, true );
+      trx_eval_state->evaluate( trx, false );
       auto fees = trx_eval_state->get_fees() + trx_eval_state->alt_fees_paid.amount;
       if( fees < required_fees )
       {
@@ -1475,7 +1475,7 @@ namespace bts { namespace blockchain {
           auto pending_state = std::make_shared<pending_chain_state>( shared_from_this() );
           transaction_evaluation_state_ptr eval_state = std::make_shared<transaction_evaluation_state>( pending_state.get() );
 
-          eval_state->evaluate( transaction, false, true );
+          eval_state->evaluate( transaction, false );
           auto fees = eval_state->get_fees();
           if( fees < min_fee )
              FC_CAPTURE_AND_THROW( insufficient_relay_fee, (fees)(min_fee) );
@@ -1554,7 +1554,7 @@ namespace bts { namespace blockchain {
    { try {
       auto block_id = my->_block_num_to_id_db.fetch( block_num );
       return get_block( block_id );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("block_num",block_num) ) }
+   } FC_CAPTURE_AND_RETHROW( (block_num) ) }
 
    signed_block_header chain_database::get_head_block()const
    {

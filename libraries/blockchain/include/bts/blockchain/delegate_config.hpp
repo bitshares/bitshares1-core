@@ -25,7 +25,7 @@ struct delegate_config
     fc::microseconds    block_max_production_time = fc::seconds( 3 );
 
     size_t              transaction_max_size = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
-    bool                transaction_canonical_signatures_required = true;
+    bool                transaction_canonical_signatures_required = false;
     share_type          transaction_min_fee = BTS_BLOCKCHAIN_PRECISION / 10;
 
     set<transaction_id_type>    transaction_blacklist;
