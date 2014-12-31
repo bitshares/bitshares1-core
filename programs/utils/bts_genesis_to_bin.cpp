@@ -1,5 +1,5 @@
 #include <bts/blockchain/address.hpp>
-#include <bts/blockchain/genesis_config.hpp>
+#include <bts/blockchain/genesis_state.hpp>
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/pts_address.hpp>
 #include <fc/crypto/elliptic.hpp>
@@ -53,7 +53,7 @@ int main( int argc, char** argv )
     return 2;
   }
 
-  genesis_block_config genesis_config = fc::json::from_file(option_variables["json"].as<std::string>()).as<genesis_block_config>();
+  genesis_state genesis_config = fc::json::from_file(option_variables["json"].as<std::string>()).as<genesis_state>();
 
   if (option_variables.count("binary-out"))
   {
@@ -120,7 +120,7 @@ int main( int argc, char** argv )
       source_out << "};\n\n";
     }
 
-    source_out << "genesis_block_config get_builtin_genesis_block_config()\n";
+    source_out << "genesis_state get_builtin_genesis_block_config()\n";
     source_out << "{\n";
     source_out << "  unsigned total_size = ";
     for (unsigned i = 0; i < array_count; ++i)
@@ -137,7 +137,7 @@ int main( int argc, char** argv )
       source_out << "  memcpy(ptr, (const char*)raw_genesis_config" << i << ", sizeof(" << "raw_genesis_config" << i << "));\n";
       source_out << "  ptr += sizeof(" << "raw_genesis_config" << i << ");\n";
     }
-    source_out << "  return fc::raw::unpack<genesis_block_config>(buffer.get(), total_size);\n";
+    source_out << "  return fc::raw::unpack<genesis_state>(buffer.get(), total_size);\n";
     source_out << "}\n\n";
 
     source_out << "fc::sha256 get_builtin_genesis_block_state_hash()\n";

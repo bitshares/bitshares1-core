@@ -1,5 +1,5 @@
 #include <bts/blockchain/address.hpp>
-#include <bts/blockchain/genesis_config.hpp>
+#include <bts/blockchain/genesis_state.hpp>
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/pts_address.hpp>
 #include <fc/crypto/elliptic.hpp>
@@ -36,19 +36,17 @@ void transform_name( std::string& name )
 
 int main( int argc, char** argv )
 {
-   genesis_block_config config;
-   config.balances.resize( BTS_BLOCKCHAIN_NUM_DELEGATES );
+   genesis_state config;
+   config.delegates.reserve( BTS_BLOCKCHAIN_NUM_DELEGATES );
 
    std::vector<fc::ecc::private_key> keys;
    keys.reserve( BTS_BLOCKCHAIN_NUM_DELEGATES );
 
-   config.names.resize( BTS_BLOCKCHAIN_NUM_DELEGATES );
    for( unsigned i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
    {
       keys.push_back( fc::ecc::private_key::generate() );
-      config.names[i].name = "init"+fc::to_string(i);
-      config.names[i].delegate_pay_rate = 100;
-      config.names[i].owner = keys[i].get_public_key().serialize();
+      config.delegates[i].name = "init" + fc::to_string( i );
+      config.delegates[i].owner = keys[i].get_public_key().serialize();
       /*
       config.balances[i].first = pts_address( keys[i].get_public_key() );
       config.balances[i].second = 1000;
