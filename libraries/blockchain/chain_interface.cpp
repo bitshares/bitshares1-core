@@ -55,6 +55,48 @@ namespace bts { namespace blockchain {
    { try {
        FC_ASSERT( symbol != "BTSX" );
 
+       int dots = 0;
+       int sub_symbol_size = 0;
+       for( const char& c : symbol )
+       {
+           sub_symbol_size++;
+           if( c == '.' )
+           {
+              if( sub_symbol_size < BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE
+                 || sub_symbol_size > BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE )
+                 return false;
+              sub_symbol_size = 0;
+
+              if( ++dots > 1 )
+                 return false;
+           }
+           else
+           {
+               if( !std::isalnum( c, std::locale::classic() ) || !std::isupper( c, std::locale::classic() ) )
+                   return false;
+           }
+       }
+       if( sub_symbol_size < BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE
+          || sub_symbol_size > BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE )
+          return false;
+
+       if( symbol.back() == '.' ) return false;
+       if( symbol.front() == '.' ) return false;
+
+       if( symbol.size() >= 3 && symbol.find( "BIT" ) == 0 )
+           return false;
+
+       return true;
+   } FC_CAPTURE_AND_RETHROW( (symbol) ) }
+
+#ifndef WIN32
+#warning [HARDFORK] Vikram merge properly
+#endif
+#if 0
+   bool chain_interface::is_valid_symbol_name( const string& symbol )const
+   { try {
+       FC_ASSERT( symbol != "BTSX" );
+
        if( symbol.size() < BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE || symbol.size() > BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE )
            return false;
 
@@ -80,6 +122,7 @@ namespace bts { namespace blockchain {
 
        return true;
    } FC_CAPTURE_AND_RETHROW( (symbol) ) }
+#endif
 
    // Starting 2014-11-06, delegates are issued max 50 shares per block produced, and this value is halved every 4 years
    // just like in Bitcoin
@@ -191,8 +234,8 @@ namespace bts { namespace blockchain {
    multisig_condition   chain_interface::get_object_condition( const object_record& obj, int depth )
    { try {
        ilog("@n getting object condition for object: ${o}", ("o", obj));
-       if( depth >= 100 )//BTS_OWNER_DEPENDENCY_MAX_DEPTH )
-           FC_ASSERT(false, "Cannot determine object condition.");
+       if( depth >= 1 )//BTS_OWNER_DEPENDENCY_MAX_DEPTH )
+           FC_ASSERT(false, "Cannot determine object condition - recursion depth exceeded (are you trying to make an edge from an edge?)");
        multisig_condition condition;
        switch( obj.type() )
        {
@@ -267,7 +310,7 @@ namespace bts { namespace blockchain {
       set_property( active_delegate_list_id, fc::variant( delegate_ids ) );
    }
 
-   bool chain_interface::is_active_delegate( const account_id_type& id )const
+   bool chain_interface::is_active_delegate( const account_id_type id )const
    { try {
       const auto active = get_active_delegates();
       return active.end() != std::find( active.begin(), active.end(), id );

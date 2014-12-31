@@ -17,6 +17,8 @@ namespace bts { namespace blockchain {
    };
    typedef fc::optional<snapshot_record> osnapshot_record;
 
+   class chain_interface;
+   struct balance_db_interface;
    struct balance_record
    {
       balance_record(){}
@@ -25,9 +27,6 @@ namespace bts { namespace blockchain {
       :condition(c){}
 
       balance_record( const address& owner, const asset& balance, slate_id_type delegate_id );
-
-      bool                       is_null()const    { return balance == 0; }
-      balance_record             make_null()const  { balance_record cpy(*this); cpy.balance = 0; return cpy; }
 
       balance_id_type            id()const { return condition.get_address(); }
       slate_id_type              slate_id()const { return condition.slate_id; }
@@ -48,8 +47,21 @@ namespace bts { namespace blockchain {
       osnapshot_record           snapshot_info;
       fc::time_point_sec         deposit_date;
       fc::time_point_sec         last_update;
+
+      static const balance_db_interface& db_interface( const chain_interface& );
    };
    typedef fc::optional<balance_record> obalance_record;
+
+   struct balance_db_interface
+   {
+       std::function<obalance_record( const balance_id_type& )>             lookup_by_id;
+       std::function<void( const balance_id_type&, const balance_record& )> insert_into_id_map;
+       std::function<void( const balance_id_type& )>                        erase_from_id_map;
+
+       obalance_record lookup( const balance_id_type& )const;
+       void store( const balance_record& )const;
+       void remove( const balance_id_type& )const;
+   };
 
 } } // bts::blockchain
 

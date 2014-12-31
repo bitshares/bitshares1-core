@@ -1,10 +1,8 @@
 #pragma once
 
-#include <bts/blockchain/types.hpp>
 #include <bts/blockchain/asset.hpp>
-
-#include <fc/time.hpp>
 #include <fc/io/enum_type.hpp>
+#include <fc/time.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -115,31 +113,31 @@ namespace bts { namespace blockchain {
       optional<delegate_stats>               delegate_info;
       optional<account_meta_info>            meta_data;
 
-      static const account_db_interface& db_interface( const chain_interface* );
+      static const account_db_interface& db_interface( const chain_interface& );
    };
    typedef fc::optional<account_record> oaccount_record;
 
    struct account_db_interface
    {
-       std::function<oaccount_record( const account_id_type& )>             lookup_by_id;
+       std::function<oaccount_record( const account_id_type )>              lookup_by_id;
        std::function<oaccount_record( const string& )>                      lookup_by_name;
        std::function<oaccount_record( const address& )>                     lookup_by_address;
 
-       std::function<void( const account_id_type&, const account_record& )> insert_into_id_map;
-       std::function<void( const string&, const account_id_type& )>         insert_into_name_map;
-       std::function<void( const address&, const account_id_type& )>        insert_into_address_map;
+       std::function<void( const account_id_type, const account_record& )>  insert_into_id_map;
+       std::function<void( const string&, const account_id_type )>          insert_into_name_map;
+       std::function<void( const address&, const account_id_type )>         insert_into_address_map;
        std::function<void( const vote_del& )>                               insert_into_vote_set;
 
-       std::function<void( const account_id_type& )>                        erase_from_id_map;
+       std::function<void( const account_id_type )>                         erase_from_id_map;
        std::function<void( const string& )>                                 erase_from_name_map;
        std::function<void( const address& )>                                erase_from_address_map;
        std::function<void( const vote_del& )>                               erase_from_vote_set;
 
-       oaccount_record lookup( const account_id_type& )const;
+       oaccount_record lookup( const account_id_type )const;
        oaccount_record lookup( const string& )const;
        oaccount_record lookup( const address& )const;
        void store( const account_record& )const;
-       void remove( const account_id_type& )const;
+       void remove( const account_id_type )const;
    };
 
    struct burn_record_key

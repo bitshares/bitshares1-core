@@ -43,7 +43,7 @@ namespace bts { namespace blockchain {
       void withdraw( const balance_id_type& account,
                      share_type amount );
 
-      void withdraw_pay( const account_id_type& account,
+      void withdraw_pay( const account_id_type account,
                          share_type amount );
 
       void deposit( const address& addr,
@@ -102,14 +102,14 @@ namespace bts { namespace blockchain {
                          share_type max_share_supply,
                          uint64_t precision );
 
-      void update_asset( const asset_id_type& asset_id,
+      void update_asset( const asset_id_type asset_id,
                          const optional<string>& name,
                          const optional<string>& description,
                          const optional<variant>& public_data,
                          const optional<double>& maximum_share_supply,
                          const optional<uint64_t>& precision );
 
-      void update_asset_ext( const asset_id_type& asset_id,
+      void update_asset_ext( const asset_id_type asset_id,
                          const optional<string>& name,
                          const optional<string>& description,
                          const optional<variant>& public_data,
@@ -157,11 +157,11 @@ namespace bts { namespace blockchain {
       void add_collateral( share_type collateral_amount,
                            const market_index_key& order_idx );
 
-      void publish_feed( feed_id_type feed_id,
+      void publish_feed( asset_id_type feed_id,
                          account_id_type delegate_id,
                          fc::variant value );
 
-      void update_signing_key( const account_id_type& account_id, const public_key_type& block_signing_key );
+      void update_signing_key( const account_id_type account_id, const public_key_type& signing_key );
 
       bool is_cancel()const;
    }; // transaction

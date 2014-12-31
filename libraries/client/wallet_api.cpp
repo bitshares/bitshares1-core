@@ -249,19 +249,33 @@ wallet_transaction_record detail::client_impl::wallet_publish_version( const str
    return record;
 }
 
-wallet_transaction_record detail::client_impl::wallet_collect_vested_balances( const string& account_name )
+wallet_transaction_record detail::client_impl::wallet_collect_genesis_balances( const string& account_name )
 {
-   auto record = _wallet->collect_vested( account_name, true );
-   _wallet->cache_transaction( record );
-   network_broadcast_transaction( record.trx );
-   return record;
+    uint32_t withdraw_type_mask = 0;
+    withdraw_type_mask |= 1 << withdraw_null_type;
+    withdraw_type_mask |= 1 << withdraw_signature_type;
+    auto record = _wallet->collect_withdraw_types( account_name, withdraw_type_mask, true, true );
+    _wallet->cache_transaction( record );
+    network_broadcast_transaction( record.trx );
+    return record;
 }
 
-wallet_transaction_record detail::client_impl::wallet_delegate_update_block_signing_key( const string& authorizing_account_name,
-                                                                                         const string& delegate_name,
-                                                                                         const public_key_type& block_signing_key )
+wallet_transaction_record detail::client_impl::wallet_collect_vested_balances( const string& account_name )
 {
-   auto record = _wallet->update_block_signing_key( authorizing_account_name, delegate_name, block_signing_key, true );
+    uint32_t withdraw_type_mask = 0;
+    withdraw_type_mask |= 1 << withdraw_null_type;
+    withdraw_type_mask |= 1 << withdraw_vesting_type;
+    auto record = _wallet->collect_withdraw_types( account_name, withdraw_type_mask, false, true );
+    _wallet->cache_transaction( record );
+    network_broadcast_transaction( record.trx );
+    return record;
+}
+
+wallet_transaction_record detail::client_impl::wallet_delegate_update_signing_key( const string& authorizing_account_name,
+                                                                                   const string& delegate_name,
+                                                                                   const public_key_type& signing_key )
+{
+   auto record = _wallet->update_signing_key( authorizing_account_name, delegate_name, signing_key, true );
    _wallet->cache_transaction( record );
    network_broadcast_transaction( record.trx );
    return record;
@@ -1216,8 +1230,26 @@ account_extended_balance_type client_impl::wallet_account_balance_extended( cons
         const string& account_name = item.first;
         for( const auto& balance_record : item.second )
         {
+            string type_label;
+            if( balance_record.snapshot_info.valid() )
+            {
+                switch( withdraw_condition_types( balance_record.condition.type ) )
+                {
+                    case withdraw_signature_type:
+                        type_label = "GENESIS";
+                        break;
+                    case withdraw_vesting_type:
+                        type_label = "SHAREDROP";
+                        break;
+                    default:
+                        break;
+                }
+            }
+            if( type_label.empty() )
+                type_label = balance_record.condition.type_label();
+
             const asset& balance = balance_record.get_spendable_balance( _chain_db->get_pending_state()->now() );
-            raw_balances[ account_name ][ balance_record.condition.type_label() ][ balance.asset_id ] += balance.amount;
+            raw_balances[ account_name ][ type_label ][ balance.asset_id ] += balance.amount;
         }
     }
 

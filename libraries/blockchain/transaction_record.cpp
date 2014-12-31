@@ -4,10 +4,9 @@
 
 namespace bts { namespace blockchain {
 
-    const transaction_db_interface& transaction_record::db_interface( const chain_interface* db )
+    const transaction_db_interface& transaction_record::db_interface( const chain_interface& db )
     { try {
-        FC_ASSERT( db != nullptr );
-        return db->_transaction_db_interface;
+        return db._transaction_db_interface;
     } FC_CAPTURE_AND_RETHROW() }
 
     otransaction_record transaction_db_interface::lookup( const transaction_id_type& id )const

@@ -28,6 +28,8 @@ namespace bts { namespace db {
      public:
         void open( const fc::path& dir, bool create = true, size_t cache_size = 0 )
         { try {
+           FC_ASSERT( !is_open(), "Database is already open!" );
+
            ldb::Options opts;
            opts.comparator = &_comparer;
            opts.create_if_missing = create;
@@ -305,8 +307,6 @@ namespace bts { namespace db {
                     FC_ASSERT(_map->is_open(), "Database is not open!");
 
                     ldb::Status status = _map->_db->Write( _write_options, &_batch );
-                    if (status.IsNotFound())
-                      FC_THROW_EXCEPTION(fc::key_not_found_exception, "unable to find key while applying batch");
                     if (!status.ok())
                       FC_THROW_EXCEPTION(db_exception, "database error while applying batch: ${msg}", ("msg", status.ToString()));
                     _batch.Clear();
@@ -340,6 +340,7 @@ namespace bts { namespace db {
 
         write_batch create_batch( bool sync = false )
         {
+           FC_ASSERT( is_open(), "Database is not open!" );
            return write_batch( this, sync );
         }
 
@@ -367,10 +368,6 @@ namespace bts { namespace db {
            std::vector<char> kslice = fc::raw::pack( k );
            ldb::Slice ks( kslice.data(), kslice.size() );
            auto status = _db->Delete( sync ? _sync_options : _write_options, ks );
-           if( status.IsNotFound() )
-           {
-             FC_THROW_EXCEPTION( fc::key_not_found_exception, "unable to find key ${key}", ("key",k) );
-           }
            if( !status.ok() )
            {
                FC_THROW_EXCEPTION( db_exception, "database error: ${msg}", ("msg", status.ToString() ) );
@@ -379,6 +376,7 @@ namespace bts { namespace db {
 
         void export_to_json( const fc::path& path )const
         { try {
+            FC_ASSERT( is_open(), "Database is not open!" );
             FC_ASSERT( !fc::exists( path ) );
 
             std::ofstream fs( path.string() );
@@ -399,6 +397,8 @@ namespace bts { namespace db {
         // note: this loops through all the items in the database, so it's not exactly fast.  it's intended for debugging, nothing else.
         size_t size() const
         {
+          FC_ASSERT( is_open(), "Database is not open!" );
+
           iterator it = begin();
           size_t count = 0;
           while (it.valid())

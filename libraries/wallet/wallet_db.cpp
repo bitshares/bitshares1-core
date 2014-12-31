@@ -434,7 +434,7 @@ namespace bts { namespace wallet {
        return owallet_account_record();
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
-   owallet_account_record wallet_db::lookup_account( const account_id_type& account_id )const
+   owallet_account_record wallet_db::lookup_account( const account_id_type account_id )const
    { try {
        FC_ASSERT( is_open() );
        const auto id_map_iter = account_id_to_wallet_record_index.find( account_id );

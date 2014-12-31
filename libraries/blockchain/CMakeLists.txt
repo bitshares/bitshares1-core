@@ -54,10 +54,11 @@ add_library( bts_blockchain
              time.cpp
              block.cpp
              transaction_evaluation_state.cpp
+             account_record.cpp
              asset_record.cpp
              balance_record.cpp
-             account_record.cpp
              transaction_record.cpp
+             feed_record.cpp
              market_records.cpp
              object_record.cpp
              edge_record.cpp

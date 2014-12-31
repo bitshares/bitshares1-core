@@ -7,7 +7,7 @@
 #include <bts/blockchain/condition.hpp>
 #include <bts/blockchain/delegate_slate.hpp>
 #include <bts/blockchain/edge_record.hpp>
-#include <bts/blockchain/feed_operations.hpp>
+#include <bts/blockchain/feed_record.hpp>
 #include <bts/blockchain/market_records.hpp>
 #include <bts/blockchain/object_record.hpp>
 #include <bts/blockchain/site_record.hpp>
@@ -84,7 +84,7 @@ namespace bts { namespace blockchain {
 
          std::vector<account_id_type>       get_active_delegates()const;
          void                               set_active_delegates( const std::vector<account_id_type>& id );
-         bool                               is_active_delegate( const account_id_type& id )const;
+         bool                               is_active_delegate( const account_id_type id )const;
 
          virtual void                       authorize( asset_id_type asset_id, const address& owner, object_id_type oid = 0 ) = 0;
          void                               deauthorize( asset_id_type asset_id, const address& owner ) { authorize( asset_id, owner, -1 ); }
@@ -108,12 +108,12 @@ namespace bts { namespace blockchain {
          virtual void                       store_burn_record( const burn_record& br ) = 0;
          virtual oburn_record               fetch_burn_record( const burn_record_key& key )const = 0;
 
-         virtual oprice                     get_median_delegate_price( const asset_id_type& quote_id,
-                                                                       const asset_id_type& base_id )const  = 0;
+         virtual oprice                     get_median_delegate_price( const asset_id_type quote_id,
+                                                                       const asset_id_type base_id )const  = 0;
          virtual void                       set_feed( const feed_record&  )                                 = 0;
-         virtual ofeed_record               get_feed( const feed_index& )const                              = 0;
-         virtual void                       set_market_dirty( const asset_id_type& quote_id,
-                                                              const asset_id_type& base_id )                = 0;
+         virtual ofeed_record               get_feed( const feed_index )const                              = 0;
+         virtual void                       set_market_dirty( const asset_id_type quote_id,
+                                                              const asset_id_type base_id )                = 0;
 
          virtual fc::ripemd160              get_current_random_seed()const                                  = 0;
 
@@ -128,12 +128,12 @@ namespace bts { namespace blockchain {
          virtual void                       set_required_confirmations( uint64_t );
          virtual uint64_t                   get_required_confirmations()const;
 
-         virtual omarket_status             get_market_status( const asset_id_type& quote_id,
-                                                               const asset_id_type& base_id )               = 0;
+         virtual omarket_status             get_market_status( const asset_id_type quote_id,
+                                                               const asset_id_type base_id )               = 0;
          virtual void                       store_market_status( const market_status& s )                   = 0;
 
-         virtual omarket_order              get_lowest_ask_record( const asset_id_type& quote_id,
-                                                                   const asset_id_type& base_id )           = 0;
+         virtual omarket_order              get_lowest_ask_record( const asset_id_type quote_id,
+                                                                   const asset_id_type base_id )           = 0;
          virtual oorder_record              get_bid_record( const market_index_key& )const                  = 0;
          virtual oorder_record              get_ask_record( const market_index_key& )const                  = 0;
          virtual oorder_record              get_relative_bid_record( const market_index_key& )const         = 0;
@@ -160,9 +160,9 @@ namespace bts { namespace blockchain {
                                                                      const collateral_record& )             = 0;
 
 
-         virtual oasset_record              get_asset_record( const asset_id_type& id )const                = 0;
+         virtual oasset_record              get_asset_record( const asset_id_type id )const                = 0;
          virtual obalance_record            get_balance_record( const balance_id_type& id )const            = 0;
-         virtual oaccount_record            get_account_record( const account_id_type& id )const            = 0;
+         virtual oaccount_record            get_account_record( const account_id_type id )const            = 0;
          virtual oaccount_record            get_account_record( const address& owner )const                 = 0;
 
          virtual bool                       is_known_transaction( const transaction& trx )const             = 0;
@@ -233,19 +233,19 @@ namespace bts { namespace blockchain {
          template<typename T, typename U>
          optional<T> lookup( const U& key )const
          { try {
-             return T::db_interface( this ).lookup( key );
+             return T::db_interface( *this ).lookup( key );
          } FC_CAPTURE_AND_RETHROW( (key) ) }
 
          template<typename T>
          void store( const T& record )
          { try {
-             T::db_interface( this ).store( record );
+             T::db_interface( *this ).store( record );
          } FC_CAPTURE_AND_RETHROW( (record) ) }
 
          template<typename T, typename U>
          void remove( const U& key )
          { try {
-             T::db_interface( this ).remove( key );
+             T::db_interface( *this ).remove( key );
          } FC_CAPTURE_AND_RETHROW( (key) ) }
 
       protected:
@@ -253,9 +253,21 @@ namespace bts { namespace blockchain {
          account_db_interface _account_db_interface;
          virtual void init_account_db_interface() = 0;
 
+         friend struct asset_record;
+         asset_db_interface _asset_db_interface;
+         virtual void init_asset_db_interface() = 0;
+
+         friend struct balance_record;
+         balance_db_interface _balance_db_interface;
+         virtual void init_balance_db_interface() = 0;
+
          friend struct transaction_record;
          transaction_db_interface _transaction_db_interface;
          virtual void init_transaction_db_interface() = 0;
+
+         friend struct feed_record;
+         feed_db_interface _feed_db_interface;
+         virtual void init_feed_db_interface() = 0;
    };
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;
 

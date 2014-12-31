@@ -16,6 +16,8 @@ namespace bts { namespace blockchain {
       supply_unlimit        = 1 << 4  ///<! The issuer can change the supply at will
    };
 
+   class chain_interface;
+   struct asset_db_interface;
    struct asset_record
    {
       enum
@@ -24,9 +26,6 @@ namespace bts { namespace blockchain {
           null_issuer_id    = -1,
           market_issuer_id  = -2
       };
-
-      asset_record make_null()const;
-      bool is_null()const               { return issuer_account_id == null_issuer_id; };
 
       bool is_market_issued()const      { return issuer_account_id == market_issuer_id; };
       bool is_user_issued()const        { return issuer_account_id > god_issuer_id; };
@@ -46,15 +45,15 @@ namespace bts { namespace blockchain {
       std::string         name;
       std::string         description;
       fc::variant         public_data;
-      account_id_type     issuer_account_id;
+      account_id_type     issuer_account_id = null_issuer_id;
       uint64_t            precision = 0;
       fc::time_point_sec  registration_date;
       fc::time_point_sec  last_update;
       share_type          current_share_supply = 0;
       share_type          maximum_share_supply = 0;
       share_type          collected_fees = 0;
-      uint32_t            flags;
-      uint32_t            issuer_permissions;
+      uint32_t            flags = 0;
+      uint32_t            issuer_permissions = -1;
       /**
        *  The issuer can specify a transaction fee (of the asset type)
        *  that will be paid to the issuer with every transaction that
@@ -67,8 +66,27 @@ namespace bts { namespace blockchain {
 
       /** reserved for future extensions */
       vector<char>        reserved;
+
+      static const asset_db_interface& db_interface( const chain_interface& );
    };
    typedef fc::optional<asset_record> oasset_record;
+
+   struct asset_db_interface
+   {
+       std::function<oasset_record( const asset_id_type )>              lookup_by_id;
+       std::function<oasset_record( const string& )>                    lookup_by_symbol;
+
+       std::function<void( const asset_id_type, const asset_record& )>  insert_into_id_map;
+       std::function<void( const string&, const asset_id_type )>        insert_into_symbol_map;
+
+       std::function<void( const asset_id_type )>                       erase_from_id_map;
+       std::function<void( const string& )>                             erase_from_symbol_map;
+
+       oasset_record lookup( const asset_id_type )const;
+       oasset_record lookup( const string& )const;
+       void store( const asset_record& )const;
+       void remove( const asset_id_type )const;
+   };
 
    struct proposal_record
    {

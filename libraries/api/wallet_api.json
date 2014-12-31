@@ -2531,6 +2531,19 @@
          "prerequisites" : ["wallet_unlocked"]
       },
       {
+         "method_name" : "wallet_collect_genesis_balances",
+         "description" : "Collect specified account's genesis balances",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+                "name" : "account_name",
+                "type" : "account_name",
+                "description" : "account to collect genesis balances for"
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
          "method_name" : "wallet_collect_vested_balances",
          "description" : "Collect specified account's vested balances",
          "return_type" : "transaction_record",
@@ -2544,7 +2557,7 @@
          "prerequisites" : ["wallet_unlocked"]
       },
       {
-         "method_name" : "wallet_delegate_update_block_signing_key",
+         "method_name" : "wallet_delegate_update_signing_key",
          "description" : "Update a delegate's block signing and feed publishing key",
          "return_type" : "transaction_record",
          "parameters"  : [
@@ -2559,7 +2572,7 @@
                 "description" : "The delegate account which will have its block signing key changed"
             },
             {
-                "name" : "block_signing_key",
+                "name" : "signing_key",
                 "type" : "public_key",
                 "description" : "The new key that will be used for block signing"
             }
@@ -2818,6 +2831,6 @@
          ],
          "is_const" : true,
          "prerequisites" : []
-      },
+      }
     ]
 }

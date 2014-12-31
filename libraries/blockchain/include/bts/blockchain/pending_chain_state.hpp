@@ -21,10 +21,10 @@ namespace bts { namespace blockchain {
          optional<object_id_type>       get_authorization( asset_id_type asset_id, const address& owner )const override;
 
          virtual void                   set_feed( const feed_record&  ) override;
-         virtual ofeed_record           get_feed( const feed_index& )const override;
-         virtual oprice                 get_median_delegate_price( const asset_id_type& quote_id,
-                                                                   const asset_id_type& base_id )const override;
-         virtual void                   set_market_dirty( const asset_id_type& quote_id, const asset_id_type& base_id )override;
+         virtual ofeed_record           get_feed( const feed_index )const override;
+         virtual oprice                 get_median_delegate_price( const asset_id_type quote_id,
+                                                                   const asset_id_type base_id )const override;
+         virtual void                   set_market_dirty( const asset_id_type quote_id, const asset_id_type base_id )override;
 
          virtual fc::time_point_sec     now()const override;
          virtual digest_type            chain_id()const override;
@@ -35,9 +35,9 @@ namespace bts { namespace blockchain {
          virtual void                   store_burn_record( const burn_record& br ) override;
          virtual oburn_record           fetch_burn_record( const burn_record_key& key )const override;
 
-         virtual oasset_record          get_asset_record( const asset_id_type& id )const override;
+         virtual oasset_record          get_asset_record( const asset_id_type id )const override;
          virtual obalance_record        get_balance_record( const balance_id_type& id )const override;
-         virtual oaccount_record        get_account_record( const account_id_type& id )const override;
+         virtual oaccount_record        get_account_record( const account_id_type id )const override;
          virtual oaccount_record        get_account_record( const address& owner )const override;
 
          virtual odelegate_slate        get_delegate_slate( slate_id_type id )const override;
@@ -51,11 +51,11 @@ namespace bts { namespace blockchain {
          virtual oasset_record          get_asset_record( const string& symbol )const override;
          virtual oaccount_record        get_account_record( const string& name )const override;
 
-         virtual omarket_status         get_market_status( const asset_id_type& quote_id, const asset_id_type& base_id )override;
+         virtual omarket_status         get_market_status( const asset_id_type quote_id, const asset_id_type base_id )override;
          virtual void                   store_market_status( const market_status& s ) override;
 
-         virtual omarket_order          get_lowest_ask_record( const asset_id_type& quote_id,
-                                                               const asset_id_type& base_id )override;
+         virtual omarket_order          get_lowest_ask_record( const asset_id_type quote_id,
+                                                               const asset_id_type base_id )override;
          virtual oorder_record          get_bid_record( const market_index_key& )const override;
          virtual oorder_record          get_ask_record( const market_index_key& )const override;
          virtual oorder_record          get_relative_bid_record( const market_index_key& )const override;
@@ -111,16 +111,29 @@ namespace bts { namespace blockchain {
           */
          virtual void                   get_undo_state( const chain_interface_ptr& undo_state )const;
 
-         template<typename T>
+         template<typename T, typename U>
          void populate_undo_state( const chain_interface_ptr& undo_state, const chain_interface_ptr& prev_state,
-                                   const T& record_map )const
+                                   const T& store_map, const U& remove_set )const
          {
-             for( const auto& item : record_map )
+             using R = typename T::mapped_type;
+             for( const auto& item : store_map )
              {
-                 const auto prev_record = prev_state->lookup<decltype( item.second )>( item.first );
+                 const auto prev_record = prev_state->lookup<R>( item.first );
                  if( prev_record.valid() ) undo_state->store( *prev_record );
-                 else undo_state->remove<decltype( item.second )>( item.first );
+                 else undo_state->remove<R>( item.first );
              }
+             for( const auto& item : remove_set )
+             {
+                 const auto prev_record = prev_state->lookup<R>( item );
+                 if( prev_record.valid() ) undo_state->store( *prev_record );
+             }
+         }
+
+         template<typename T, typename U>
+         void apply_records( const chain_interface_ptr& prev_state, const T& store_map, const U& remove_set )const
+         {
+             for( const auto& item : remove_set ) prev_state->remove<typename T::mapped_type>( item );
+             for( const auto& item : store_map ) prev_state->store( item.second );
          }
 
          /** load the state from a variant */
@@ -137,27 +150,31 @@ namespace bts { namespace blockchain {
           */
          virtual void                  index_transaction( const address& addr, const transaction_id_type& trx_id ) override;
 
-         unordered_map<transaction_id_type, transaction_record>             _transaction_id_to_record;
-         unordered_set<transaction_id_type>                                 _transaction_id_remove;
-         unordered_set<digest_type>                                         _transaction_digests;
-
          unordered_map< chain_property_type, variant>                       properties;
-
-         unordered_map< asset_id_type, asset_record>                        assets;
-         unordered_map< string, asset_id_type>                              symbol_id_index;
-         map< std::pair<asset_id_type,proposal_id_type>, proposal_record >  asset_proposals;
-
-         unordered_map< balance_id_type, balance_record>                    balances;
 
          unordered_map<account_id_type, account_record>                     _account_id_to_record;
          unordered_set<account_id_type>                                     _account_id_remove;
          unordered_map<string, account_id_type>                             _account_name_to_id;
          unordered_map<address, account_id_type>                            _account_address_to_id;
 
+         unordered_map<asset_id_type, asset_record>                         _asset_id_to_record;
+         unordered_set<asset_id_type>                                       _asset_id_remove;
+         unordered_map<string, asset_id_type>                               _asset_symbol_to_id;
+
+         unordered_map<balance_id_type, balance_record>                     _balance_id_to_record;
+         unordered_set<balance_id_type>                                     _balance_id_remove;
+
+         unordered_map<transaction_id_type, transaction_record>             _transaction_id_to_record;
+         unordered_set<transaction_id_type>                                 _transaction_id_remove;
+         unordered_set<digest_type>                                         _transaction_digests;
+
          unordered_map< slate_id_type, delegate_slate>                      slates;
          map<time_point_sec, slot_record>                                   slots;
 
          map<burn_record_key,burn_record_value>                             burns;
+
+         map<feed_index, feed_record>                                       _feed_index_to_record;
+         set<feed_index>                                                    _feed_index_remove;
 
          map< market_index_key, order_record>                               asks;
          map< market_index_key, order_record>                               bids;
@@ -165,7 +182,6 @@ namespace bts { namespace blockchain {
          map< market_index_key, order_record>                               relative_bids;
          map< market_index_key, order_record>                               shorts;
          map< market_index_key, collateral_record>                          collateral;
-         map<feed_index, feed_record>                                       feeds;
 
          std::set<std::pair<asset_id_type, asset_id_type>>                  _dirty_markets;
 
@@ -180,6 +196,7 @@ namespace bts { namespace blockchain {
          map< string, site_record >                                         site_index;
 
          map< std::pair<asset_id_type,address>, object_id_type >            authorizations;
+         map< std::pair<asset_id_type,proposal_id_type>, proposal_record >  asset_proposals;
 
          optional<digest_type>                                              _chain_id;
 
@@ -189,35 +206,40 @@ namespace bts { namespace blockchain {
          map<operation_type_enum, std::deque<operation>>                    recent_operations;
 
          virtual void init_account_db_interface()override;
+         virtual void init_asset_db_interface()override;
+         virtual void init_balance_db_interface()override;
          virtual void init_transaction_db_interface()override;
+         virtual void init_feed_db_interface()override;
    };
    typedef std::shared_ptr<pending_chain_state> pending_chain_state_ptr;
 
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::pending_chain_state,
-        (_transaction_id_to_record)
-        (_transaction_id_remove)
-        (_transaction_digests)
         (properties)
-        (assets)
-        (symbol_id_index)
-        (asset_proposals)
-        (balances)
         (_account_id_to_record)
         (_account_id_remove)
         (_account_name_to_id)
         (_account_address_to_id)
+        (_asset_id_to_record)
+        (_asset_id_remove)
+        (_asset_symbol_to_id)
+        (_balance_id_to_record)
+        (_balance_id_remove)
+        (_transaction_id_to_record)
+        (_transaction_id_remove)
+        (_transaction_digests)
         (slates)
         (slots)
         (burns)
+        (_feed_index_to_record)
+        (_feed_index_remove)
         (asks)
         (bids)
         (relative_asks)
         (relative_bids)
         (shorts)
         (collateral)
-        (feeds)
         (_dirty_markets)
         (market_transactions)
         (market_statuses)
@@ -227,5 +249,6 @@ FC_REFLECT( bts::blockchain::pending_chain_state,
         (reverse_edge_index)
         (site_index)
         (authorizations)
+        (asset_proposals)
         (_chain_id)
     )

@@ -24,10 +24,10 @@ void wallet_impl::scan_market_transaction(
     {
         const auto bid_account_key = _wallet_db.lookup_key( okey_bid->account_address );
 
-    //    auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.bid_owner),
-    //                                                                        mtrx.bid_price.base_asset_id ).get_address() );
-
         auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.bid_owner),
+                                                                            mtrx.bid_price.base_asset_id ).get_address() );
+
+        bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.bid_owner),
                                                                       mtrx.bid_price.quote_asset_id ).get_address() );
 
         /* Construct a unique record id */
@@ -122,10 +122,10 @@ void wallet_impl::scan_market_transaction(
     {
         const auto ask_account_key = _wallet_db.lookup_key( okey_ask->account_address );
 
-        //auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.ask_owner),
-        //                                                                    mtrx.ask_price.base_asset_id ).get_address() );
-
         auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.ask_owner),
+                                                                            mtrx.ask_price.base_asset_id ).get_address() );
+
+        bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.ask_owner),
                                                                       mtrx.ask_price.quote_asset_id ).get_address() );
 
         /* Construct a unique record id */
@@ -254,12 +254,12 @@ void wallet_impl::scan_balances()
        transaction_record->ledger_entries.push_back( entry );
        _wallet_db.store_transaction( *transaction_record );
    };
-   _blockchain->scan_balances( scan_balance );
+   _blockchain->scan_balances( scan_balance, true );
 }
 
 void wallet_impl::scan_registered_accounts()
 {
-   _blockchain->scan_accounts( [&]( const blockchain::account_record& scanned_account_record )
+   _blockchain->scan_unordered_accounts( [&]( const blockchain::account_record& scanned_account_record )
    {
         const auto account_record = _wallet_db.lookup_account( scanned_account_record.name );
         if( account_record.valid() )
@@ -579,8 +579,7 @@ bool wallet_impl::scan_withdraw( const withdraw_operation& op,
                                  wallet_transaction_record& trx_rec, asset& total_fee,
                                  public_key_type& withdraw_pub_key )
 { try {
-   auto bal_rec = _blockchain->get_balance_record( op.balance_id );
-   if( !bal_rec ) bal_rec = _blockchain->get_empty_balance_record( op.balance_id );
+   const auto bal_rec = _blockchain->get_balance_record( op.balance_id );
    FC_ASSERT( bal_rec.valid() );
    const auto amount = asset( op.amount, bal_rec->condition.asset_id );
 
@@ -1290,7 +1289,6 @@ bool wallet_impl::scan_deposit( const deposit_operation& op, const vector<privat
                 }
                 catch ( const fc::exception& e )
                 {
-                   elog( "unexpected exception ${e}", ("e",e.to_detail_string()) );
                 }
              }
              break;

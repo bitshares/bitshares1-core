@@ -5,6 +5,7 @@
 #include <bts/blockchain/account_operations.hpp>
 #include <bts/blockchain/asset_operations.hpp>
 #include <bts/blockchain/balance_operations.hpp>
+#include <bts/blockchain/feed_operations.hpp>
 #include <bts/blockchain/market_operations.hpp>
 
 namespace bts { namespace wallet { namespace detail {
@@ -150,7 +151,7 @@ class wallet_impl : public chain_observer
       void upgrade_version_unlocked();
 
       delegate_slate select_delegate_vote( vote_selection_method selection = vote_random );
-      slate_id_type select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id = asset_id_type( 0 ), vote_selection_method = vote_random );
+      slate_id_type select_slate( signed_transaction& transaction, const asset_id_type deposit_asset_id = asset_id_type( 0 ), vote_selection_method = vote_random );
 
       bool is_receive_account( const string& account_name )const;
       bool is_valid_account( const string& account_name )const;

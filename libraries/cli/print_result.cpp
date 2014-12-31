@@ -299,7 +299,7 @@ namespace bts { namespace cli {
     const string& quote_symbol = arguments[ 0 ].as_string();
     const oasset_record quote_asset_record = client->get_chain()->get_asset_record( quote_symbol );
     FC_ASSERT( quote_asset_record.valid() );
-    const asset_id_type& quote_id = quote_asset_record->id;
+    const asset_id_type quote_id = quote_asset_record->id;
 
     const omarket_status status = client->get_chain()->get_market_status( quote_id, asset_id_type( 0 ) );
 
@@ -701,8 +701,8 @@ namespace bts { namespace cli {
     const oasset_record base_asset_record = client->get_chain()->get_asset_record( base_symbol );
     FC_ASSERT( base_asset_record.valid() );
 
-    const asset_id_type& quote_id = quote_asset_record->id;
-    const asset_id_type& base_id = base_asset_record->id;
+    const asset_id_type quote_id = quote_asset_record->id;
+    const asset_id_type base_id = base_asset_record->id;
 
     vector<market_order>::iterator bid_itr = bids_asks.first.begin();
     auto ask_itr = bids_asks.second.begin();
@@ -844,7 +844,7 @@ namespace bts { namespace cli {
              else
                out << "+";
           }
-          else 
+          else
             out << " ";
           out << std::left << std::setw(30) << (fc::to_string(client->get_chain()->to_pretty_price_double(abs_price)) + " " + quote_asset_record->symbol)
             << std::right << std::setw(23) << client->get_chain()->to_pretty_asset(ask_itr->get_quantity( feed_price ))

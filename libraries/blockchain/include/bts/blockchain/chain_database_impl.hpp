@@ -2,6 +2,7 @@
 
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/db/cached_level_map.hpp>
+#include <bts/db/fast_level_map.hpp>
 #include <fc/thread/mutex.hpp>
 
 namespace bts { namespace blockchain {
@@ -30,7 +31,7 @@ namespace bts { namespace blockchain {
          public:
             void                                        open_database(const fc::path& data_dir );
             void                                        clear_invalidation_of_future_blocks();
-            digest_type                                 initialize_genesis( const optional<path>& genesis_file, bool chain_id_only = false );
+            digest_type                                 initialize_genesis( const optional<path>& genesis_file );
             void                                        populate_indexes();
 
             std::pair<block_id_type, block_fork_data>   store_and_index( const block_id_type& id, const full_block& blk );
@@ -101,8 +102,8 @@ namespace bts { namespace blockchain {
             bts::db::level_map<block_id_type,block_fork_data>                           _fork_db;
 
             bts::db::level_map<block_id_type,int32_t>                                   _revalidatable_future_blocks_db; //int32_t is unused, this is a set
-            /** the data required to 'undo' the changes a block made to the database */
-            bts::db::level_map<block_id_type,pending_chain_state>                       _undo_state_db;
+
+            bts::db::fast_level_map<block_id_type, pending_chain_state>                 _block_id_to_undo_state;
 
             // blocks in the current 'official' chain.
             bts::db::level_map<uint32_t,block_id_type>                                  _block_num_to_id_db;
@@ -114,30 +115,32 @@ namespace bts { namespace blockchain {
             signed_block_header                                                         _head_block_header;
             block_id_type                                                               _head_block_id;
 
+            bts::db::cached_level_map<uint32_t, fc::variant>                            _property_db;
+
+            bts::db::fast_level_map<account_id_type, account_record>                    _account_id_to_record;
+            bts::db::fast_level_map<string, account_id_type>                            _account_name_to_id;
+            bts::db::fast_level_map<address, account_id_type>                           _account_address_to_id;
+
+            set<vote_del>                                                               _delegate_votes;
+
+            bts::db::fast_level_map<asset_id_type, asset_record>                        _asset_id_to_record;
+            bts::db::fast_level_map<string, asset_id_type>                              _asset_symbol_to_id;
+
+            bts::db::fast_level_map<balance_id_type, balance_record>                    _balance_id_to_record;
+            bts::db::fast_level_map<balance_id_type, balance_record>                    _empty_balance_id_to_record;
+
             bts::db::level_map<transaction_id_type,transaction_record>                  _id_to_transaction_record_db;
             set<unique_transaction_key>                                                 _unique_transactions;
 
             bts::db::level_map<transaction_id_type, signed_transaction>                 _pending_transaction_db;
             map<fee_index, transaction_evaluation_state_ptr>                            _pending_fee_index;
 
-            bts::db::cached_level_map<uint32_t, fc::variant>                            _property_db;
-
-            bts::db::cached_level_map<asset_id_type, asset_record>                      _asset_db;
-            bts::db::cached_level_map<string, asset_id_type>                            _symbol_index_db;
-            bts::db::level_map<pair<asset_id_type,proposal_id_type>, proposal_record>   _asset_proposal_db;
-
-            bts::db::cached_level_map<balance_id_type, balance_record>                  _balance_db;
-            bts::db::level_map<balance_id_type, balance_record>                         _empty_balance_db; // stored separately for performance reasons
-
-            bts::db::cached_level_map<account_id_type, account_record>                  _account_db;
-            map<string, account_id_type>                                                _account_name_to_id;
-            unordered_map<address, account_id_type>                                     _account_address_to_id;
-            set<vote_del>                                                               _delegate_votes;
-
             bts::db::cached_level_map<slate_id_type, delegate_slate>                    _slate_db;
             bts::db::level_map<time_point_sec, slot_record>                             _slot_record_db;
 
             bts::db::cached_level_map<burn_record_key, burn_record_value>               _burn_db;
+
+            bts::db::cached_level_map<feed_index, feed_record>                          _feed_index_to_record;
 
             bts::db::cached_level_map<market_index_key, order_record>                   _ask_db;
             bts::db::cached_level_map<market_index_key, order_record>                   _bid_db;
@@ -146,7 +149,6 @@ namespace bts { namespace blockchain {
             bts::db::cached_level_map<market_index_key, order_record>                   _short_db;
             bts::db::cached_level_map<market_index_key, collateral_record>              _collateral_db;
             set< expiration_index >                                                     _collateral_expiration_index;
-            bts::db::cached_level_map<feed_index, feed_record>                          _feed_db;
 
             bts::db::cached_level_map<uint32_t, std::vector<market_transaction>>        _market_transactions_db;
             bts::db::cached_level_map<std::pair<asset_id_type,asset_id_type>, market_status> _market_status_db;
@@ -166,7 +168,7 @@ namespace bts { namespace blockchain {
             bts::db::level_map< pair<address,transaction_id_type>, int>                 _address_to_trx_index;
 
             bts::db::level_map<pair<asset_id_type,address>, object_id_type>             _auth_db;
-
+            bts::db::level_map<pair<asset_id_type,proposal_id_type>, proposal_record>   _asset_proposal_db;
 
             map<operation_type_enum, std::deque<operation>>                             _recent_operations;
 

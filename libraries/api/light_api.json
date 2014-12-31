@@ -12,7 +12,7 @@
                "description" : "the account to be registered"
             }
          ],
-         "prerequisites" : ["no_prerequisites"],
+         "prerequisites" : ["no_prerequisites"]
       },
       {
          "method_name" : "get_registration_requests",

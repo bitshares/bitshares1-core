@@ -182,10 +182,10 @@ vector<feed_entry> detail::client_impl::blockchain_get_feeds_for_asset(const std
       vector<feed_entry> result_feeds;
       for( auto feed : raw_feeds )
       {
-         auto delegate = _chain_db->get_account_record(feed.feed.delegate_id);
+         auto delegate = _chain_db->get_account_record(feed.index.delegate_id);
          if( !delegate )
-            FC_THROW_EXCEPTION(unknown_account_id , "Unknown delegate", ("delegate_id", feed.feed.delegate_id) );
-         double price = _chain_db->to_pretty_price_double(feed.value.as<blockchain::price>());
+            FC_THROW_EXCEPTION(unknown_account_id , "Unknown delegate", ("delegate_id", feed.index.delegate_id) );
+         double price = _chain_db->to_pretty_price_double(feed.value);
 
          result_feeds.push_back({delegate->name, price, feed.last_update});
       }
@@ -222,9 +222,9 @@ vector<feed_entry> detail::client_impl::blockchain_get_feeds_from_delegate( cons
 
       for( const auto& raw_feed : raw_feeds )
       {
-         const double price = _chain_db->to_pretty_price_double( raw_feed.value.as<blockchain::price>() );
-         const string asset_symbol = _chain_db->get_asset_symbol( raw_feed.feed.feed_id );
-         const auto omedian_price = _chain_db->get_median_delegate_price( raw_feed.feed.feed_id, asset_id_type( 0 ) );
+         const double price = _chain_db->to_pretty_price_double( raw_feed.value );
+         const string asset_symbol = _chain_db->get_asset_symbol( raw_feed.index.quote_id );
+         const auto omedian_price = _chain_db->get_median_delegate_price( raw_feed.index.quote_id, asset_id_type( 0 ) );
          fc::optional<double> median_price;
          if( omedian_price )
             median_price = _chain_db->to_pretty_price_double( *omedian_price );
@@ -261,9 +261,12 @@ oblock_record detail::client_impl::blockchain_get_block( const string& block )co
 }
 
 map<balance_id_type, balance_record> detail::client_impl::blockchain_list_balances( const string& first, uint32_t limit )const
-{
-   return _chain_db->get_balances( first, limit );
-}
+{ try {
+    FC_ASSERT( limit > 0 );
+    const auto id_prefix = variant( first ).as<balance_id_type>();
+    return _chain_db->get_balances( id_prefix, limit );
+} FC_CAPTURE_AND_RETHROW( (first)(limit) ) }
+
 account_balance_summary_type detail::client_impl::blockchain_get_account_public_balance( const string& account_name ) const
 { try {
   const auto& acct = _wallet->get_account( account_name );
@@ -305,9 +308,26 @@ map<balance_id_type, balance_record> detail::client_impl::blockchain_list_key_ba
     return _chain_db->get_balances_for_key( key );
 }
 
-vector<account_record> detail::client_impl::blockchain_list_accounts( const string& first, int32_t limit )const
-{
+vector<account_record> detail::client_impl::blockchain_list_accounts( const string& first, uint32_t limit )const
+{ try {
+   FC_ASSERT( limit > 0 );
    return _chain_db->get_accounts( first, limit );
+} FC_CAPTURE_AND_RETHROW( (first)(limit) ) }
+
+vector<account_record> detail::client_impl::blockchain_list_recently_updated_accounts()const
+{
+   vector<operation> account_updates = _chain_db->get_recent_operations(update_account_op_type);
+   vector<account_record> accounts;
+   accounts.reserve(account_updates.size());
+
+   for( const operation& op : account_updates )
+   {
+      auto oaccount = _chain_db->get_account_record(op.as<update_account_operation>().account_id);
+      if(oaccount)
+         accounts.push_back(*oaccount);
+   }
+
+  return accounts;
 }
 
 vector<account_record> detail::client_impl::blockchain_list_recently_registered_accounts()const
@@ -328,6 +348,7 @@ vector<account_record> detail::client_impl::blockchain_list_recently_registered_
 
 vector<asset_record> detail::client_impl::blockchain_list_assets( const string& first, int32_t limit )const
 {
+   FC_ASSERT( limit > 0 );
    return _chain_db->get_assets( first, limit );
 }
 
@@ -340,7 +361,7 @@ map<string, double> detail::client_impl::blockchain_list_feed_prices()const
         if( !median_price.valid() ) return;
         feed_prices.emplace( record.symbol, _chain_db->to_pretty_price_double( *median_price ) );
     };
-    _chain_db->scan_assets( scan_asset );
+    _chain_db->scan_ordered_assets( scan_asset );
     return feed_prices;
 }
 
