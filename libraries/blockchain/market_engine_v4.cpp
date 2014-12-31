@@ -398,7 +398,7 @@ namespace bts { namespace blockchain { namespace detail {
           _market_transactions.push_back(mtrx);
       } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
 
-      void market_engine_v4::cancel_current_short( market_transaction& mtrx, const asset_id_type& quote_asset_id )
+      void market_engine_v4::cancel_current_short( market_transaction& mtrx, const asset_id_type quote_asset_id )
       {
          FC_ASSERT( _current_bid->type == short_order );
          FC_ASSERT( mtrx.bid_type == short_order );
