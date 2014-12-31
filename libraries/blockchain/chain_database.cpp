@@ -198,13 +198,13 @@ namespace bts { namespace blockchain {
          genesis_state config;
          if( !genesis_file.valid() )
          {
-           std::cout << "Initializing genesis state from built-in genesis file\n";
+           std::cout << "Initializing state from built-in genesis file\n";
            config = get_builtin_genesis_block_config();
            chain_id = get_builtin_genesis_block_state_hash();
          }
          else
          {
-           std::cout << "Initializing genesis state from "<< genesis_file->generic_string() << "\n";
+           std::cout << "Initializing state from genesis file: "<< genesis_file->generic_string() << "\n";
            FC_ASSERT( fc::exists( *genesis_file ), "Genesis file '${file}' was not found.", ("file", *genesis_file) );
 
            if( genesis_file->extension() == ".json" )
@@ -1219,7 +1219,7 @@ namespace bts { namespace blockchain {
       return sorted_delegates;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void chain_database::open( const fc::path& data_dir, fc::optional<fc::path> genesis_file, std::function<void(float)> reindex_status_callback )
+   void chain_database::open( const fc::path& data_dir, fc::optional<fc::path> genesis_file, std::function<void(float)> replay_status_callback )
    { try {
       bool must_rebuild_index = !fc::exists( data_dir / "index" );
       std::exception_ptr error_opening_database;
@@ -1258,7 +1258,7 @@ namespace bts { namespace blockchain {
              if( !fc::is_directory(data_dir / "raw_chain/id_to_data_orig") )
                 fc::rename( data_dir / "raw_chain/block_id_to_block_data_db", data_dir / "raw_chain/id_to_data_orig" );
 
-             //During reindexing we implement stop-and-copy garbage collection on the raw chain
+             //During replaying we implement stop-and-copy garbage collection on the raw chain
              decltype(my->_block_id_to_block_data_db) id_to_data_orig;
              id_to_data_orig.open( data_dir / "raw_chain/id_to_data_orig" );
              auto orig_chain_size = fc::directory_size( data_dir / "raw_chain/id_to_data_orig" );
@@ -1296,12 +1296,12 @@ namespace bts { namespace blockchain {
                  my->_market_history_db.set_write_through( write_through );
              };
 
-             // For the duration of reindexing, we allow certain databases to postpone flushing until we finish
+             // For the duration of replaying, we allow certain databases to postpone flushing until we finish
              set_db_cache_write_through( false );
 
              my->initialize_genesis( genesis_file );
 
-             // Load block num -> id db into memory and clear from disk for re-indexing
+             // Load block num -> id db into memory and clear from disk for replaying
              map<uint32_t, block_id_type> num_to_id;
              {
                  for( auto itr = my->_block_num_to_id_db.begin(); itr.valid(); ++itr )
@@ -1312,10 +1312,10 @@ namespace bts { namespace blockchain {
                  my->_block_num_to_id_db.open( data_dir / "raw_chain/block_num_to_id_db" );
              }
 
-             if( !reindex_status_callback )
-                 std::cout << "Please be patient, this will take a few minutes...\r\nRe-indexing database..." << std::flush << std::fixed;
+             if( !replay_status_callback )
+                 std::cout << "Please be patient, this will take several minutes...\r\nReplaying blockchain..." << std::flush << std::fixed;
              else
-                 reindex_status_callback(0);
+                 replay_status_callback(0);
 
              uint32_t blocks_indexed = 0;
              const float total_blocks = num_to_id.size();
@@ -1331,11 +1331,11 @@ namespace bts { namespace blockchain {
                          progress = float(blocks_indexed*BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) / (start_time - genesis_time).to_seconds();
                      progress *= 100;
 
-                     if( !reindex_status_callback )
-                         std::cout << "\rRe-indexing database... "
+                     if( !replay_status_callback )
+                         std::cout << "\rReplaying blockchain... "
                                       "Approximately " << std::setprecision(2) << progress << "% complete." << std::flush;
                      else
-                         reindex_status_callback(progress);
+                         replay_status_callback(progress);
                  }
 
                  push_block(block);
@@ -1370,7 +1370,7 @@ namespace bts { namespace blockchain {
              fc::remove_all( data_dir / "raw_chain/id_to_data_orig" );
              auto final_chain_size = fc::directory_size( data_dir / "raw_chain/block_id_to_block_data_db" );
 
-             std::cout << "\rSuccessfully re-indexed " << blocks_indexed << " blocks in "
+             std::cout << "\rSuccessfully replayed " << blocks_indexed << " blocks in "
                        << (blockchain::now() - start_time).to_seconds() << " seconds.                          "
                                                                            "\nBlockchain size changed from "
                        << orig_chain_size / 1024 / 1024 << "MiB to "
@@ -3518,46 +3518,45 @@ namespace bts { namespace blockchain {
         return unclaimed_total;
    } FC_CAPTURE_AND_RETHROW() }
 
-   /**
-    *  Given the list of active delegates and price feeds for asset_id return the median value.
-    */
-   oprice chain_database::get_median_delegate_price( const asset_id_type quote_id, const asset_id_type base_id )const
+   oprice chain_database::get_active_feed_price( const asset_id_type quote_id, const asset_id_type base_id )const
    { try {
-      auto feed_itr = my->_feed_index_to_record.lower_bound( feed_index{quote_id} );
-      vector<account_id_type> active_delegates = get_active_delegates();
-      std::sort( active_delegates.begin(), active_delegates.end() );
-      vector<price> prices;
-      while( feed_itr.valid() && feed_itr.key().quote_id == quote_id )
-      {
-         const feed_index key = feed_itr.key();
-         if( std::binary_search( active_delegates.begin(), active_delegates.end(), key.delegate_id ) )
-         {
-            try {
-               const feed_record& val = feed_itr.value();
-               // only consider feeds updated in the past day
-               if( (fc::time_point(val.last_update) + fc::days(1)) > fc::time_point(this->now()) )
-               {
-                   const price& feed_price = val.value;
-                   if( feed_price.quote_asset_id == quote_id && feed_price.base_asset_id == base_id )
-                       prices.push_back( feed_price );
-               }
-            }
-            catch ( ... )
-            { // we want to catch any exceptions caused attempted to interpret value as a price and simply ignore
-              // the data feed...
-            }
-         }
-         ++feed_itr;
-      }
+       const auto outer_iter = my->_nested_feed_map.find( quote_id );
+       if( outer_iter == my->_nested_feed_map.end() )
+           return oprice();
 
-      if( prices.size() >= BTS_BLOCKCHAIN_MIN_FEEDS )
-      {
-         std::nth_element( prices.begin(), prices.begin() + prices.size()/2, prices.end() );
-         return prices[prices.size()/2];
-      }
+       // TODO: Caller passes in delegate list
+       const vector<account_id_type>& delegate_ids = get_active_delegates();
 
-      return oprice();
-   } FC_CAPTURE_AND_RETHROW( (quote_id)(base_id) ) }
+       vector<price> prices;
+       prices.reserve( delegate_ids.size() );
+
+       const time_point_sec now = this->now();
+       static const auto limit = fc::days( 1 );
+
+       const unordered_map<account_id_type, feed_record>& delegate_feeds = outer_iter->second;
+       for( const account_id_type delegate_id : delegate_ids )
+       {
+           const auto iter = delegate_feeds.find( delegate_id );
+           if( iter == delegate_feeds.end() ) continue;
+
+           const feed_record& record = iter->second;
+           if( time_point( now ) - time_point( record.last_update ) >= limit ) continue;
+
+           if( record.value.quote_asset_id != quote_id ) continue;
+           if( record.value.base_asset_id != base_id ) continue;
+
+           prices.push_back( record.value );
+       }
+
+       if( prices.size() >= BTS_BLOCKCHAIN_MIN_FEEDS )
+       {
+           const auto midpoint = prices.size() / 2;
+           std::nth_element( prices.begin(), prices.begin() + midpoint, prices.end() );
+           return prices.at( midpoint );
+       }
+       
+       return oprice();
+   } FC_CAPTURE_AND_RETHROW( (quote_id) ) }
 
    vector<feed_record> chain_database::get_feeds_for_asset( const asset_id_type quote_id, const asset_id_type base_id )const
    {  try {
@@ -3995,17 +3994,33 @@ namespace bts { namespace blockchain {
 
        interface.lookup_by_index = [&]( const feed_index index ) -> ofeed_record
        {
-           return my->_feed_index_to_record.fetch_optional( index );
+           const auto outer_iter = my->_nested_feed_map.find( index.quote_id );
+           if( outer_iter != my->_nested_feed_map.end() )
+           {
+               const auto inner_iter = outer_iter->second.find( index.delegate_id );
+               if( inner_iter != outer_iter->second.end() )
+                   return inner_iter->second;
+
+           }
+           return ofeed_record();
        };
 
        interface.insert_into_index_map = [&]( const feed_index index, const feed_record& record )
        {
            my->_feed_index_to_record.store( index, record );
+           my->_nested_feed_map[ index.quote_id ][ index.delegate_id ] = record;
        };
 
        interface.erase_from_index_map = [&]( const feed_index index )
        {
            my->_feed_index_to_record.remove( index );
+           const auto outer_iter = my->_nested_feed_map.find( index.quote_id );
+           if( outer_iter != my->_nested_feed_map.end() )
+           {
+               const auto inner_iter = outer_iter->second.find( index.delegate_id );
+               if( inner_iter != outer_iter->second.end() )
+                   outer_iter->second.erase( index.delegate_id );
+           }
        };
    }
 

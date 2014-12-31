@@ -59,6 +59,13 @@ namespace bts { namespace blockchain {
       return prev_state->get_current_random_seed();
    }
 
+   oprice pending_chain_state::get_active_feed_price( const asset_id_type quote_id, const asset_id_type base_id )const
+   {
+      const chain_interface_ptr prev_state = _prev_state.lock();
+      FC_ASSERT( prev_state );
+      return prev_state->get_active_feed_price( quote_id, base_id );
+   }
+
    /** Apply changes from this pending state to the previous state */
    void pending_chain_state::apply_changes()const
    {
@@ -601,12 +608,6 @@ namespace bts { namespace blockchain {
    ofeed_record pending_chain_state::get_feed( const feed_index i )const
    {
        return lookup<feed_record>( i );
-   }
-
-   oprice pending_chain_state::get_median_delegate_price( const asset_id_type quote_id, const asset_id_type base_id )const
-   {
-      chain_interface_ptr prev_state = _prev_state.lock();
-      return prev_state->get_median_delegate_price( quote_id, base_id );
    }
 
    void pending_chain_state::store_burn_record( const burn_record& br )

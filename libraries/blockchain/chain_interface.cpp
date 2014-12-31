@@ -49,7 +49,7 @@ namespace bts { namespace blockchain {
 
    /**
     * Symbol names can be hierarchical: for example a primary symbol name, a '.', and a sub-symbol name.
-    * A primary symbol name must be a minimum of 3 and a maximum of 8 characters in length. 
+    * A primary symbol name must be a minimum of 3 and a maximum of 8 characters in length.
     * Primary names can only contain uppercase letters (digits are not allowed to avoid 0 and 1 spoofing).
     * A hierarchical symbol name (consisting of a primary symbol name, a dot, and a sub-symbol name) can be up to 12 chars
     * in total length (including the dot).
@@ -57,11 +57,11 @@ namespace bts { namespace blockchain {
     * overseen by the owner of the primary symbol and is therefore not subject to spoofing).
     *
     * To fit under the 12 character limit, it is likely that users planning to register hierarchical names will
-    * choose shorter (more expensive) symbol names for their primary symbol, so that they can mirror more primary symbol names. 
-    * The max of 12 for hierarchical symbol names will allow hierarchical mirroring of long primary symbol characters 
-    * as long as the primary symbol buyer purchases a symbol of 3 in size. For example, if CRY was chosen as the primary symbol, 
-    * CRY.ABCDEFGH could be registered. But if a longer name was chosen as a primary symbol, such as CRYPTO, 
-    * then only symbols up to 5 in length can be mirrored (i.e CRYPTO.ABCDEFGH would be too long).    
+    * choose shorter (more expensive) symbol names for their primary symbol, so that they can mirror more primary symbol names.
+    * The max of 12 for hierarchical symbol names will allow hierarchical mirroring of long primary symbol characters
+    * as long as the primary symbol buyer purchases a symbol of 3 in size. For example, if CRY was chosen as the primary symbol,
+    * CRY.ABCDEFGH could be registered. But if a longer name was chosen as a primary symbol, such as CRYPTO,
+    * then only symbols up to 5 in length can be mirrored (i.e CRYPTO.ABCDEFGH would be too long).
     */
    bool chain_interface::is_valid_symbol_name( const string& symbol )const
    { try {
@@ -76,7 +76,7 @@ namespace bts { namespace blockchain {
        int dots = 0;
        int dot_position = 0;
        int position = 0;
-       for( const char& c : symbol )
+       for( const char c : symbol )
        {
           if( c == '.' ) //if we have hierarchical name
           {
@@ -86,7 +86,7 @@ namespace bts { namespace blockchain {
           }
           else if (dots == 0 && !std::isupper( c, std::locale::classic() ) )
               FC_ASSERT(false, "Primary symbol names can only contain uppercase letters");
-          else if (!std::isupper( c, std::locale::classic() ) && 
+          else if (!std::isupper( c, std::locale::classic() ) &&
                   !std::isdigit( c, std::locale::classic() )     )
             FC_ASSERT(false, "Sub-symbol names can only contain uppercase letters or digits");
           ++position;
@@ -110,6 +110,7 @@ namespace bts { namespace blockchain {
 
        if( symbol.find( "BIT" ) == 0 )
          FC_ASSERT(false, "Symbol names cannot be prefixed with BIT");
+
        return true;
    } FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
