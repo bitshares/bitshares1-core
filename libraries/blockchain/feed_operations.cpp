@@ -48,30 +48,3 @@ namespace bts { namespace blockchain {
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 } }  // bts::blockchain
-
-#ifndef WIN32
-#warning [HARDFORK] Vikram merge properly
-#endif
-#if 0
-   void update_feed_operation::evaluate( transaction_evaluation_state& eval_state )
-   { try {
-      const oaccount_record account_record = eval_state._current_state->get_account_record( feed.delegate_id );
-      if( !account_record.valid() )
-          FC_CAPTURE_AND_THROW( unknown_account_id, (feed.delegate_id) );
-
-      if( account_record->is_retracted() )
-          FC_CAPTURE_AND_THROW( account_retracted, (*account_record) );
-
-      if( !account_record->is_delegate() )
-          FC_CAPTURE_AND_THROW( not_a_delegate, (*account_record) );
-
-      if( !eval_state.check_signature( account_record->signing_address() )
-          && !eval_state.account_or_any_parent_has_signed( *account_record ) )
-      {
-          FC_CAPTURE_AND_THROW( missing_signature, (*this) );
-      }
-
-      eval_state._current_state->set_feed( feed_record{ feed, value.as<price>(), eval_state._current_state->now() } );
-      eval_state._current_state->set_market_dirty( feed.asset_id, 0 );
-   } FC_CAPTURE_AND_RETHROW( (*this) ) }
-#endif
