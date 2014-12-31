@@ -71,7 +71,7 @@ namespace bts { namespace blockchain { namespace detail {
 
           price opening_price, closing_price;
 
-          const oprice median_feed_price = _db_impl.self->get_median_delegate_price( quote_id, base_id );
+          const oprice median_feed_price = _db_impl.self->get_active_feed_price( quote_id, base_id );
           // If bootstrapping market for the very first time
           if( quote_asset->is_market_issued() &&
               _market_stat.center_price.ratio == fc::uint128_t() &&

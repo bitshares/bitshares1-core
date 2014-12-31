@@ -3,7 +3,7 @@
 #include <bts/blockchain/fork_blocks.hpp>
 #include <bts/blockchain/pending_chain_state.hpp>
 
-using namespace bts::blockchain;
+namespace bts { namespace blockchain {
 
 void withdraw_operation::evaluate_v2( transaction_evaluation_state& eval_state )
 { try {
@@ -74,3 +74,5 @@ void withdraw_operation::evaluate_v2( transaction_evaluation_state& eval_state )
    eval_state._current_state->store_balance_record( *current_balance_record );
    eval_state.add_balance( asset(this->amount, current_balance_record->condition.asset_id) );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
+
+} }  // bts::blockchain

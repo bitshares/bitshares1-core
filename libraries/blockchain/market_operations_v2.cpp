@@ -4,7 +4,7 @@
 #include <bts/blockchain/market_engine.hpp>
 #include <bts/blockchain/market_operations.hpp>
 
-using namespace bts::blockchain;
+namespace bts { namespace blockchain {
 
 void cover_operation::evaluate_v2( transaction_evaluation_state& eval_state )
 {
@@ -60,3 +60,5 @@ void cover_operation::evaluate_v2( transaction_evaluation_state& eval_state )
       eval_state._current_state->store_market_status( *market_stat );
    }
 }
+
+} }  // bts::blockchain

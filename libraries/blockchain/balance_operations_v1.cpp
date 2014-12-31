@@ -3,7 +3,7 @@
 #include <bts/blockchain/fork_blocks.hpp>
 #include <bts/blockchain/pending_chain_state.hpp>
 
-using namespace bts::blockchain;
+namespace bts { namespace blockchain {
 
 asset balance_record::calculate_yield_v1( fc::time_point_sec now, share_type amount, share_type yield_pool, share_type share_supply )const
 {
@@ -143,3 +143,5 @@ void withdraw_operation::evaluate_v1( transaction_evaluation_state& eval_state )
       eval_state.add_balance( asset(this->amount, 0) );
    }
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
+
+} }  // bts::blockchain
