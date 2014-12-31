@@ -37,7 +37,7 @@ namespace bts { namespace blockchain {
       bool is_supply_unlimited()const   { return is_user_issued() && (flags & supply_unlimit); }
 
       bool can_issue( const asset& amount )const;
-      bool can_issue( const share_type& amount )const;
+      bool can_issue( const share_type amount )const;
       share_type available_shares()const;
 
       asset_id_type       id;

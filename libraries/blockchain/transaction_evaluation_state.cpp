@@ -42,7 +42,7 @@ namespace bts { namespace blockchain {
       return valid >= condition.required;
    } FC_CAPTURE_AND_RETHROW( (condition) ) }
 
-   bool transaction_evaluation_state::check_update_permission( const object_id_type& id )const
+   bool transaction_evaluation_state::check_update_permission( const object_id_type id )const
    { try {
         if( _skip_signature_check )
             return true;

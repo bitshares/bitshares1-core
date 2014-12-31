@@ -208,12 +208,12 @@ namespace bts { namespace blockchain {
 
    // Get an object for whom get_object_condition(o) will not throw and will represent
    // the condition that is also the owner for this given object
-   object_id_type       chain_interface::get_owner_object( const object_id_type& obj )
+   object_id_type       chain_interface::get_owner_object( const object_id_type obj )
    {
        FC_ASSERT(false, "unimplemented");
    }
 
-   multisig_condition   chain_interface::get_object_condition( const object_id_type& id, int depth )
+   multisig_condition   chain_interface::get_object_condition( const object_id_type id, int depth )
    { try {
        auto oobj = get_object_record( id );
        FC_ASSERT( oobj.valid(), "No such object (id: ${id}", ("id", id) );
@@ -279,7 +279,7 @@ namespace bts { namespace blockchain {
        FC_ASSERT(false, "This code path should not happen.");
    } FC_CAPTURE_AND_RETHROW( (obj.short_id())(obj.type())(obj) ) }
 
-   oobject_record chain_interface::get_edge( const object_id_type& id )
+   oobject_record chain_interface::get_edge( const object_id_type id )
    { try {
       auto object = get_object_record( id );
       if( NOT object.valid() )
