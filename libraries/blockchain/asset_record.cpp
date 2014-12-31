@@ -14,7 +14,7 @@ namespace bts { namespace blockchain {
         return can_issue( amount.amount );
     }
 
-    bool asset_record::can_issue( const share_type& amount )const
+    bool asset_record::can_issue( const share_type amount )const
     {
         if( amount <= 0 ) return false;
         auto new_share_supply = current_share_supply + amount;

@@ -1447,7 +1447,7 @@ namespace bts { namespace blockchain {
    } FC_CAPTURE_AND_RETHROW( (delegate_ids) ) }
 
    transaction_evaluation_state_ptr chain_database::evaluate_transaction( const signed_transaction& trx,
-                                                                          const share_type& required_fees )
+                                                                          const share_type required_fees )
    { try {
       if( !my->_pending_trx_state )
          my->_pending_trx_state = std::make_shared<pending_chain_state>( shared_from_this() );
@@ -1468,7 +1468,7 @@ namespace bts { namespace blockchain {
       return trx_eval_state;
    } FC_CAPTURE_AND_RETHROW( (trx) ) }
 
-   optional<fc::exception> chain_database::get_transaction_error( const signed_transaction& transaction, const share_type& min_fee )
+   optional<fc::exception> chain_database::get_transaction_error( const signed_transaction& transaction, const share_type min_fee )
    { try {
        try
        {
@@ -1748,7 +1748,7 @@ namespace bts { namespace blockchain {
    }
 
 
-    oobject_record             chain_database::get_object_record( const object_id_type& id )const
+    oobject_record             chain_database::get_object_record( const object_id_type id )const
     {
        return my->_object_db.fetch_optional( id );
     }
@@ -1820,8 +1820,8 @@ namespace bts { namespace blockchain {
         my->_object_db.store( edge._id, edge );
     } FC_CAPTURE_AND_RETHROW( (edge) ) }
 
-    oobject_record  chain_database::get_edge( const object_id_type& from,
-                                             const object_id_type& to,
+    oobject_record  chain_database::get_edge( const object_id_type from,
+                                             const object_id_type to,
                                              const string& name )const
     {
         ilog("@n getting edge with key: (${f}, ${t}, ${n})", ("f",from)("t",to)("n",name));
@@ -1831,15 +1831,15 @@ namespace bts { namespace blockchain {
            return get_object_record( *object_id );
         return oobject_record();
     }
-    map<string, object_record>   chain_database::get_edges( const object_id_type& from,
-                                                            const object_id_type& to )const
+    map<string, object_record>   chain_database::get_edges( const object_id_type from,
+                                                            const object_id_type to )const
     {
         FC_ASSERT(false, "unimplemented");
         map<string, object_record> ret;
         return ret;
     }
 
-    map<object_id_type, map<string, object_record>> chain_database::get_edges( const object_id_type& from )const
+    map<object_id_type, map<string, object_record>> chain_database::get_edges( const object_id_type from )const
     {
         FC_ASSERT(false, "unimplemented");
         map<object_id_type, map<string, object_record>> ret;

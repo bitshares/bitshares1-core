@@ -180,20 +180,20 @@ namespace bts { namespace blockchain {
          virtual vector<operation>          get_recent_operations( operation_type_enum t )                  = 0;
 
          virtual void                       store_object_record( const object_record& obj )                 = 0;
-         virtual oobject_record             get_object_record( const object_id_type& id )const              = 0;
+         virtual oobject_record             get_object_record( const object_id_type id )const              = 0;
 
          virtual void                       store_edge_record( const object_record& edge )                  = 0;
 
          virtual void                       store_site_record( const site_record& edge )                    = 0;
 
-         oobject_record                       get_edge( const object_id_type& id );
-         virtual oobject_record               get_edge( const object_id_type& from,
-                                                      const object_id_type& to,
+         oobject_record                       get_edge( const object_id_type id );
+         virtual oobject_record               get_edge( const object_id_type from,
+                                                      const object_id_type to,
                                                       const string& name )const                             = 0;
-         virtual map<string, object_record>   get_edges( const object_id_type& from,
-                                                       const object_id_type& to )const                      = 0;
+         virtual map<string, object_record>   get_edges( const object_id_type from,
+                                                       const object_id_type to )const                      = 0;
          virtual map<object_id_type, map<string, object_record>>
-                                            get_edges( const object_id_type& from )const                    = 0;
+                                            get_edges( const object_id_type from )const                    = 0;
 
          virtual osite_record               lookup_site( const string& site_name) const                    = 0;
 
@@ -206,9 +206,9 @@ namespace bts { namespace blockchain {
          virtual object_id_type             last_object_id()const;
          virtual object_id_type             new_object_id( obj_type type );
 
-         virtual multisig_condition         get_object_condition( const object_id_type& id, int depth = 0 );
+         virtual multisig_condition         get_object_condition( const object_id_type id, int depth = 0 );
          virtual multisig_condition         get_object_condition( const object_record& obj, int depth = 0 );
-         virtual object_id_type             get_owner_object( const object_id_type& obj );
+         virtual object_id_type             get_owner_object( const object_id_type obj );
 
          virtual uint32_t                   get_head_block_num()const                                       = 0;
 

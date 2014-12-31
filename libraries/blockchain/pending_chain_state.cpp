@@ -313,7 +313,7 @@ namespace bts { namespace blockchain {
         recent_op_queue.pop_front();
    }
 
-   oobject_record pending_chain_state::get_object_record(const object_id_type& id)const
+   oobject_record pending_chain_state::get_object_record(const object_id_type id)const
    {
        chain_interface_ptr prev_state = _prev_state.lock();
        auto itr = objects.find( id );
@@ -385,8 +385,8 @@ namespace bts { namespace blockchain {
         */
     }
 
-    oobject_record               pending_chain_state::get_edge( const object_id_type& from,
-                                         const object_id_type& to,
+    oobject_record               pending_chain_state::get_edge( const object_id_type from,
+                                         const object_id_type to,
                                          const string& name )const
     {
         edge_index_key key(from, to, name);
@@ -401,12 +401,12 @@ namespace bts { namespace blockchain {
         return obj->as<edge_record>();
         */
     }
-    map<string, object_record>   pending_chain_state::get_edges( const object_id_type& from,
-                                          const object_id_type& to )const
+    map<string, object_record>   pending_chain_state::get_edges( const object_id_type from,
+                                          const object_id_type to )const
     {
         FC_ASSERT(false, "unimplemented!");
     }
-    map<object_id_type, map<string, object_record>> pending_chain_state::get_edges( const object_id_type& from )const
+    map<object_id_type, map<string, object_record>> pending_chain_state::get_edges( const object_id_type from )const
     {
         FC_ASSERT(false, "unimplemented!");
     }

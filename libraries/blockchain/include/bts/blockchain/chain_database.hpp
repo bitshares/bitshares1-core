@@ -237,8 +237,8 @@ namespace bts { namespace blockchain {
          /**
           *  Evaluate the transaction and return the results.
           */
-         virtual transaction_evaluation_state_ptr   evaluate_transaction( const signed_transaction& trx, const share_type& required_fees = 0 );
-         optional<fc::exception>                    get_transaction_error( const signed_transaction& transaction, const share_type& min_fee );
+         virtual transaction_evaluation_state_ptr   evaluate_transaction( const signed_transaction& trx, const share_type required_fees = 0 );
+         optional<fc::exception>                    get_transaction_error( const signed_transaction& transaction, const share_type min_fee );
 
          /** return the timestamp from the head block */
          virtual time_point_sec             now()const override;
@@ -305,7 +305,7 @@ namespace bts { namespace blockchain {
          virtual void                       store_recent_operation( const operation& o )override;
 
          virtual void                       store_object_record( const object_record& obj )override;
-         virtual oobject_record             get_object_record( const object_id_type& id )const override;
+         virtual oobject_record             get_object_record( const object_id_type id )const override;
 
 
         virtual void                       store_site_record( const site_record& site )override;
@@ -314,15 +314,15 @@ namespace bts { namespace blockchain {
         virtual void                       store_edge_record( const object_record& edge )override;
 
 
-        virtual oobject_record             get_edge( const object_id_type& from,
-                                                  const object_id_type& to,
+        virtual oobject_record             get_edge( const object_id_type from,
+                                                  const object_id_type to,
                                                   const string& name )const          override;
 
-        virtual map<string, object_record> get_edges( const object_id_type& from,
-                                                   const object_id_type& to )const   override;
+        virtual map<string, object_record> get_edges( const object_id_type from,
+                                                   const object_id_type to )const   override;
 
         virtual map<object_id_type, map<string, object_record>>
-                                            get_edges( const object_id_type& from )const override;
+                                            get_edges( const object_id_type from )const override;
 
 
          virtual oorder_record              get_bid_record( const market_index_key& )const override;

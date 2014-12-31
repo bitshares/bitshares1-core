@@ -22,7 +22,7 @@ namespace bts { namespace blockchain {
 
 
         // This can act as its own index
-        static sale_offer_record lower_bound_for_item(const object_id_type& sale_id )
+        static sale_offer_record lower_bound_for_item(const object_id_type sale_id )
         {
             auto key = sale_offer_record();
             key.sale_id = sale_id;
