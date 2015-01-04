@@ -1482,7 +1482,18 @@ void client::configure_from_command_line(int argc, char** argv)
    auto option_variables = parse_option_variables(argc,argv);
 
    fc::path datadir = bts::client::get_data_dir(option_variables);
-   fc::create_directories(datadir);
+   if( !fc::exists( datadir ) )
+   {
+     std::cout << "creating new data directory " << datadir.preferred_string() << "\n";
+     fc::create_directories(datadir);
+#ifndef WIN32
+     int perm = 0700;
+     std::cout << "setting UNIX permissions on new data directory to " << std::oct << perm << std::dec << "\n";
+     fc::chmod( datadir, perm );
+#else
+     std::cout << "note, new data directory is readable by all user accounts on non-UNIX OS\n";
+#endif
+   }
 
    // this just clears the database if the command line says
    // TODO: rename it to smething better
