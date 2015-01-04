@@ -166,6 +166,12 @@ namespace bts { namespace blockchain {
                   _unique_transactions.emplace( trx, _chain_id );
           }
 
+          for( auto iter = _feed_index_to_record.begin(); iter.valid(); ++iter )
+          {
+              const feed_index& index = iter.key();
+              _nested_feed_map[ index.quote_id ][ index.delegate_id ] = iter.value();
+          }
+
           for( auto iter = _collateral_db.begin(); iter.valid(); ++iter )
           {
               const market_index_key& key = iter.key();
