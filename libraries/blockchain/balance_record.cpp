@@ -9,6 +9,7 @@ namespace bts { namespace blockchain {
        condition = withdraw_condition( withdraw_with_signature( owner ), balance_arg.asset_id, delegate_id );
    }
 
+   // TODO: Rename to owner_address
    optional<address> balance_record::owner()const
    {
        switch( withdraw_condition_types( condition.type ) )
@@ -22,6 +23,7 @@ namespace bts { namespace blockchain {
        }
    }
 
+   // TODO: Rename to owner_addresses
    set<address> balance_record::owners()const
    {
        switch( withdraw_condition_types( condition.type ) )

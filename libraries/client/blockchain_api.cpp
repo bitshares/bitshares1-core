@@ -401,10 +401,9 @@ variant_object client_impl::blockchain_get_info()const
 }
 
 void client_impl::blockchain_generate_snapshot( const string& filename )const
-{
-    const map<string, share_type> snapshot = _chain_db->generate_snapshot();
-    fc::json::save_to_file( snapshot, fc::path( filename ) );
-}
+{ try {
+    _chain_db->generate_snapshot( fc::path( filename ) );
+} FC_CAPTURE_AND_RETHROW( (filename) ) }
 
 asset client_impl::blockchain_calculate_supply( const string& asset )const
 {
