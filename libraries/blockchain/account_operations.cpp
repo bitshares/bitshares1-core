@@ -63,7 +63,7 @@ namespace bts { namespace blockchain {
 
    bool update_account_operation::is_retracted()const
    {
-       return this->active_key.valid() && this->active_key == public_key_type();
+       return this->active_key.valid() && *this->active_key == public_key_type();
    }
 
    bool update_account_operation::is_delegate()const
