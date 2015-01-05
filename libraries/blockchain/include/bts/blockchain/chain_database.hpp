@@ -366,7 +366,7 @@ namespace bts { namespace blockchain {
          virtual void                       set_feed( const feed_record& )override;
          virtual ofeed_record               get_feed( const feed_index )const override;
 
-         map<std::string, share_type>       generate_snapshot()const;
+         void                               generate_snapshot( const fc::path& filename )const;
          asset                              calculate_supply( const asset_id_type asset_id )const;
          asset                              calculate_debt( const asset_id_type asset_id, bool include_interest = false )const;
          asset                              unclaimed_genesis();

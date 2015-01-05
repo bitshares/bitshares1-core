@@ -3312,86 +3312,114 @@ namespace bts { namespace blockchain {
        return lookup<feed_record>( i );
    }
 
-   // This ignores all balances that aren't claim by signature
-   map<string, share_type> chain_database::generate_snapshot()const
-   {
-       auto snapshot = map<string, share_type>();
+   // NOTE: Only base asset 0 is snapshotted and addresses can have multiple entries
+   void chain_database::generate_snapshot( const fc::path& filename )const
+   { try {
+       genesis_state snapshot = get_builtin_genesis_block_config();
+       snapshot.timestamp = now();
+       snapshot.initial_balances.clear();
+       snapshot.sharedrop_balances.vesting_balances.clear();
 
-       // normal / unclaimed balances
+       // Add standard withdraw_signature balances and unclaimed withdraw_vesting balances
+       // NOTE: Unclaimed but mature vesting balances are not currently claimed
        for( auto iter = my->_balance_id_to_record.unordered_begin();
             iter != my->_balance_id_to_record.unordered_end(); ++iter )
        {
-           const balance_record& balance = iter->second;
-           if( balance.asset_id() != 0 ) continue;
-           if( balance.condition.type != withdraw_signature_type ) continue;
-           string claimer;
-           if( balance.snapshot_info.valid() )
+           const balance_record& record = iter->second;
+           if( record.asset_id() != 0 ) continue;
+
+           genesis_balance balance;
+           if( record.snapshot_info.valid() )
            {
-               claimer = balance.snapshot_info->original_address;
+               balance.raw_address = record.snapshot_info->original_address;
            }
            else
            {
-               const auto owner = balance.owner();
+               const auto owner = record.owner();
                if( !owner.valid() ) continue;
-               claimer = string( *owner );
+               balance.raw_address = string( *owner );
            }
-           snapshot[claimer] += balance.get_spendable_balance( now() ).amount;
+           balance.balance = record.balance;
+
+           if( record.condition.type == withdraw_signature_type )
+               snapshot.initial_balances.push_back( balance );
+           else if( record.condition.type == withdraw_vesting_type )
+               snapshot.sharedrop_balances.vesting_balances.push_back( balance );
        }
 
-       // pay balances
-       for( auto account_itr = my->_account_id_to_record.unordered_begin();
-            account_itr != my->_account_id_to_record.unordered_end(); ++account_itr )
+       // Add outstanding delegate pay balances
+       for( auto iter = my->_account_id_to_record.unordered_begin();
+            iter != my->_account_id_to_record.unordered_end(); ++iter )
        {
-           const account_record& account = account_itr->second;
-           if( account.delegate_info.valid() && !account.is_retracted() )
-           {
-               auto address = string( account.active_address() );
-               snapshot[address] += account.delegate_info->pay_balance;
-           }
+           const account_record& record = iter->second;
+           if( !record.is_delegate() ) continue;
+           if( record.is_retracted() ) continue;
+
+           genesis_balance balance;
+           balance.raw_address = string( record.active_address() );
+           balance.balance = record.delegate_info->pay_balance;
+
+           snapshot.initial_balances.push_back( balance );
        }
 
-       // ask balances
-       for( auto ask_itr = my->_ask_db.begin(); ask_itr.valid(); ++ask_itr )
+       // Add outstanding ask order balances
+       for( auto iter = my->_ask_db.begin(); iter.valid(); ++iter )
        {
-           const market_index_key market_index = ask_itr.key();
-           if( market_index.order_price.base_asset_id == 0 )
-           {
-               auto address = string( ask_itr.key().owner );
-               auto balance = ask_itr.value().balance;
-               snapshot[address] += balance;
-           }
+           const market_index_key& market_index = iter.key();
+           if( market_index.order_price.base_asset_id != 0 ) continue;
+
+           const order_record& record = iter.value();
+
+           genesis_balance balance;
+           balance.raw_address = string( market_index.owner );
+           balance.balance = record.balance;
+
+           snapshot.initial_balances.push_back( balance );
        }
 
-       // relative ask balances
-       for( auto ask_itr = my->_relative_ask_db.begin(); ask_itr.valid(); ++ask_itr )
+       // Add outstanding relative ask order balances
+       for( auto iter = my->_relative_ask_db.begin(); iter.valid(); ++iter )
        {
-           const market_index_key market_index = ask_itr.key();
-           if( market_index.order_price.base_asset_id == 0 )
-           {
-               auto address = string( ask_itr.key().owner );
-               auto balance = ask_itr.value().balance;
-               snapshot[address] += balance;
-           }
+           const market_index_key& market_index = iter.key();
+           if( market_index.order_price.base_asset_id != 0 ) continue;
+
+           const order_record& record = iter.value();
+
+           genesis_balance balance;
+           balance.raw_address = string( market_index.owner );
+           balance.balance = record.balance;
+
+           snapshot.initial_balances.push_back( balance );
        }
 
-       // Add short balances
-       for( auto short_itr = my->_short_db.begin(); short_itr.valid(); ++short_itr )
+       // Add outstanding short order balances
+       for( auto iter = my->_short_db.begin(); iter.valid(); ++iter )
        {
-           auto address = string( short_itr.key().owner );
-           auto balance = short_itr.value().balance;
-           snapshot[address] += balance;
+           const market_index_key& market_index = iter.key();
+           const order_record& record = iter.value();
+
+           genesis_balance balance;
+           balance.raw_address = string( market_index.owner );
+           balance.balance = record.balance;
+
+           snapshot.initial_balances.push_back( balance );
        }
 
-       // Add collateral balances
-       for( auto collateral_itr = my->_collateral_db.begin(); collateral_itr.valid(); ++collateral_itr )
+       // Add outstanding collateral balances
+       for( auto iter = my->_collateral_db.begin(); iter.valid(); ++iter )
        {
-           auto address = string( collateral_itr.key().owner );
-           auto balance = collateral_itr.value().collateral_balance;
-           snapshot[address] += balance;
+           const market_index_key& market_index = iter.key();
+           const collateral_record& record = iter.value();
+
+           genesis_balance balance;
+           balance.raw_address = string( market_index.owner );
+           balance.balance = record.collateral_balance;
+
+           snapshot.initial_balances.push_back( balance );
        }
 
-       return snapshot;
-   }
+       fc::json::save_to_file( snapshot, filename );
+   } FC_CAPTURE_AND_RETHROW( (filename) ) }
 
    asset chain_database::calculate_supply( const asset_id_type asset_id )const
    {
@@ -3560,7 +3588,7 @@ namespace bts { namespace blockchain {
            std::nth_element( prices.begin(), prices.begin() + midpoint, prices.end() );
            return prices.at( midpoint );
        }
-       
+
        return oprice();
    } FC_CAPTURE_AND_RETHROW( (quote_id) ) }
 
