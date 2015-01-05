@@ -51,7 +51,9 @@ namespace bts { namespace blockchain {
       // the prior value.
       uint8_t                           delegate_pay_rate = -1;
 
+      bool is_retracted()const;
       bool is_delegate()const;
+
       void evaluate( transaction_evaluation_state& eval_state );
    };
 
