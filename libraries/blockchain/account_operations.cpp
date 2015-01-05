@@ -61,6 +61,11 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_account_record( new_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
+   bool update_account_operation::is_retracted()const
+   {
+       return this->active_key.valid() && this->active_key == public_key_type();
+   }
+
    bool update_account_operation::is_delegate()const
    {
        return delegate_pay_rate <= 100;
@@ -78,32 +83,28 @@ namespace bts { namespace blockchain {
       // If updating active key
       if( this->active_key.valid() && *this->active_key != current_record->active_key() )
       {
-          const oaccount_record account_with_same_key = eval_state._current_state->get_account_record( *this->active_key );
-          if( account_with_same_key.valid() )
-              FC_CAPTURE_AND_THROW( account_key_in_use, (*this->active_key)(account_with_same_key) );
+          if( !this->is_retracted() )
+          {
+              const oaccount_record account_with_same_key = eval_state._current_state->get_account_record( *this->active_key );
+              if( account_with_same_key.valid() )
+                  FC_CAPTURE_AND_THROW( account_key_in_use, (*this->active_key)(account_with_same_key) );
+          }
+          else
+          {
+#ifndef WIN32
+#warning [SOFTFORK] Remove this check after BTS_V0_4_28_FORK_BLOCK_NUM has passed
+#endif
+              if( current_record->is_delegate() )
+                  FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_28_FORK_BLOCK_NUM );
+
+              if( current_record->is_delegate() && current_record->delegate_pay_balance() > 0 )
+                  FC_CAPTURE_AND_THROW( pay_balance_remaining, (*current_record) );
+          }
 
           if( !eval_state.check_signature( current_record->owner_key ) && !eval_state.any_parent_has_signed( current_record->name ) )
               FC_CAPTURE_AND_THROW( missing_signature, (*this) );
 
           current_record->set_active_key( eval_state._current_state->now(), *this->active_key );
-
-          if( current_record->is_retracted() && current_record->is_delegate() )
-          {
-#ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_4_28_FORK_BLOCK_NUM has passed
-#endif
-              FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_28_FORK_BLOCK_NUM );
-
-              if( current_record->delegate_info->pay_balance > 0 )
-                  FC_CAPTURE_AND_THROW( pay_balance_remaining, (*current_record) );
-          }
-
-          const uint32_t block_num = eval_state._current_state->get_head_block_num();
-          if( block_num < BTS_V0_4_28_FORK_BLOCK_NUM )
-          {
-              if( current_record->is_delegate() )
-                  current_record->set_signing_key( block_num, current_record->active_key() );
-          }
       }
       else
       {

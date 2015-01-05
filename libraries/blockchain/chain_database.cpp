@@ -3357,7 +3357,7 @@ namespace bts { namespace blockchain {
 
            genesis_balance balance;
            balance.raw_address = string( record.active_address() );
-           balance.balance = record.delegate_info->pay_balance;
+           balance.balance = record.delegate_pay_balance();
 
            snapshot.initial_balances.push_back( balance );
        }
