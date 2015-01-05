@@ -13,7 +13,7 @@ aliases: alert_state, security_state
 default (unlocked) >>> blockchain_get_security_state
 {
   "alert_level": "grey",
-  "estimated_confirmation_seconds": 2020,
+  "estimated_confirmation_seconds": 3030,
   "participation_rate": 0
 }
 default (unlocked) >>> wallet_delegate_set_block_production ALL true
@@ -23,7 +23,7 @@ true
 default (unlocked) >>> blockchain_get_security_state
 {
   "alert_level": "red",
-  "estimated_confirmation_seconds": 2010,
+  "estimated_confirmation_seconds": 3020,
   "participation_rate": 100
 }
 default (unlocked) >>> quit

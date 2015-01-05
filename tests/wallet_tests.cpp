@@ -1,7 +1,7 @@
 #include <boost/test/unit_test.hpp>
 #include <bts/api/global_api_logger.hpp>
 #include <bts/blockchain/chain_database.hpp>
-#include <bts/blockchain/genesis_config.hpp>
+#include <bts/blockchain/genesis_state.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/client/api_logger.hpp>
 #include <bts/client/client.hpp>
@@ -26,6 +26,7 @@
 #include <iostream>
 #include <fstream>
 
+#define BTS_BLOCKCHAIN_INITIAL_SHARES (BTS_BLOCKCHAIN_MAX_SHARES/5)
 
 using namespace bts::blockchain;
 using namespace bts::wallet;
@@ -86,20 +87,21 @@ BOOST_AUTO_TEST_CASE( master_test )
 
    vector<fc::ecc::private_key> delegate_private_keys;
 
-   genesis_block_config config;
-   config.timestamp         = bts::blockchain::now();
+   genesis_state config;
+   config.timestamp = bts::blockchain::now();
 
    for( uint32_t i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
    {
-      name_config delegate_account;
+      genesis_delegate delegate_account;
       delegate_account.name = "delegate" + fc::to_string(i);
-      delegate_private_keys.push_back( fc::ecc::private_key::generate() );
-      auto delegate_public_key = delegate_private_keys.back().get_public_key();
+      auto delegate_public_key = delegate_private_keys[i].get_public_key();
       delegate_account.owner = delegate_public_key;
-      delegate_account.delegate_pay_rate = 100;
+      config.delegates.push_back( delegate_account );
 
-      config.names.push_back(delegate_account);
-      config.balances.push_back( std::make_pair( pts_address(fc::ecc::public_key_data(delegate_account.owner)), BTS_BLOCKCHAIN_INITIAL_SHARES/BTS_BLOCKCHAIN_NUM_DELEGATES) );
+      genesis_balance balance;
+      balance.raw_address = pts_address( fc::ecc::public_key_data( delegate_account.owner ) );
+      balance.balance = double( BTS_BLOCKCHAIN_INITIAL_SHARES ) / BTS_BLOCKCHAIN_NUM_DELEGATES;
+      config.initial_balances.push_back( balance );
    }
 
    fc::temp_directory clienta_dir;
@@ -449,8 +451,8 @@ void create_genesis_block(fc::path genesis_json_file)
 {
    vector<fc::ecc::private_key> delegate_private_keys;
 
-   genesis_block_config config;
-   config.timestamp         = bts::blockchain::now();
+   genesis_state config;
+   config.timestamp = bts::blockchain::now();
 
    // set our fake random number generator to generate deterministic keys
    bts::utilities::set_random_seed_for_testing( fc::sha512::hash( string( "genesis" ) ) );
@@ -461,17 +463,17 @@ void create_genesis_block(fc::path genesis_json_file)
    std::cout << "*** creating delegate public/private key pairs ***" << std::endl;
    for( uint32_t i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
    {
-      name_config delegate_account;
+      genesis_delegate delegate_account;
       delegate_account.name = "delegate" + fc::to_string(i);
       fc::ecc::private_key delegate_private_key = fc::ecc::private_key::generate();
-      delegate_private_keys.push_back( delegate_private_key );
-
-      auto delegate_public_key =delegate_private_key.get_public_key();
+      auto delegate_public_key = delegate_private_key.get_public_key();
       delegate_account.owner = delegate_public_key;
-      delegate_account.delegate_pay_rate = 100;
+      config.delegates.push_back( delegate_account );
 
-      config.names.push_back(delegate_account);
-      config.balances.push_back( std::make_pair( pts_address(fc::ecc::public_key_data(delegate_account.owner)), BTS_BLOCKCHAIN_INITIAL_SHARES/BTS_BLOCKCHAIN_NUM_DELEGATES) );
+      genesis_balance balance;
+      balance.raw_address = pts_address( fc::ecc::public_key_data( delegate_account.owner ) );
+      balance.balance = double( BTS_BLOCKCHAIN_INITIAL_SHARES ) / BTS_BLOCKCHAIN_NUM_DELEGATES;
+      config.initial_balances.push_back( balance );
 
       //output public/private key pair for each delegate to a file
       string wif_key = bts::utilities::key_to_wif( delegate_private_key );

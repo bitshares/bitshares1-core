@@ -1,12 +1,20 @@
+default (unlocked) >>> debug_enable_output false
+>>> debug_start_simulated_time "20140620T144030.000000"
+>>> debug_filter_output_for_tests true
+>>> debug_enable_output true
+OK
+default (unlocked) >>> debug_enable_output false
+>>> wallet_create default password
+>>> wallet_set_automatic_backups false
+>>> debug_enable_output true
+OK
 default (unlocked) >>> debug_advance_time 1 second
 OK
 default (unlocked) >>> debug_advance_time 1 block
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
 OK
-default (unlocked) >>> wallet_account_create alice
-"XTS65xdkstQJ9gvr638uXdr5Ytw4eUZagx2zyNnFREMLQBb6iRWtw"
-default (unlocked) >>> debug_deterministic_private_keys 0 1 alice true alice
+default (unlocked) >>> debug_deterministic_private_keys 0 1 alice true alice true
 [
   "5HpUwrtzSztqQpJxVHLsrZkVzVjVv9nUXeauYeeSxguzcmpgRcK"
 ]
@@ -20,11 +28,19 @@ Assets can only be created by registered accounts
 default (unlocked) >>> wallet_account_register alice alice
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:40:41</d-ign>PENDING   alice               alice               0.00000 XTS             register alice                              0.50000 XTS         <d-ign> 6b6040eb</d-ign>
+<d-ign>2014-06-20T14:40:41</d-ign>PENDING   alice               alice               0.00000 XTS             register alice                              0.50000 XTS         <d-ign> 620766a7</d-ign>
 default (unlocked) >>> debug_advance_time 1 block
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
 OK
+default (unlocked) >>> blockchain_get_account alice
+Name: alice
+Registered: <d-ign>2014-06-20T14:40:30</d-ign>
+Last Updated: <d-ign>27 weeks ago</d-ign>
+Owner Key: XTS6MztcCwGPciDNLrodkGdXf33S6raovWDfVieYdNTg92eC45PDf
+Active Key History:
+- XTS6MztcCwGPciDNLrodkGdXf33S6raovWDfVieYdNTg92eC45PDf, last used <d-ign>27 weeks ago</d-ign>
+Not a delegate.
 default (unlocked) >>> wallet_asset_create TEST TestName alice "Gringotts goblins' gold" 1000000.0 100 null false
 Command failed with exception: insufficient funds (20010)
 
@@ -40,7 +56,7 @@ default (unlocked) >>> debug_deterministic_private_keys 0 1 angel true alice
 default (unlocked) >>> wallet_asset_create TEST TestName alice "Gringotts goblins' gold" 1000000.0 100 null false
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:40:51</d-ign>PENDING   alice               alice               0.00000 XTS             create TEST (TestName)                      500,000.50000 XTS   <d-ign> 4727d693</d-ign>
+<d-ign>2014-06-20T14:40:51</d-ign>PENDING   alice               alice               0.00000 XTS             create TEST (TestName)                      500,000.50000 XTS   <d-ign> 501a9d16</d-ign>
 default (unlocked) >>> debug_advance_time 1 block
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
@@ -48,8 +64,8 @@ OK
 default (unlocked) >>> history
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
 ==============================================================================================================================================================================================
-<d-ign>2014-06-20T14:40:41</d-ign>2         alice               alice               0.00000 XTS             register alice                              -0.50000 XTS            0.50000 XTS         <d-ign> 6b6040eb</d-ign>
-<d-ign>2014-06-20T14:40:51</d-ign>3         alice               alice               0.00000 XTS             create TEST (TestName)                      -500,001.00000 XTS      500,000.50000 XTS   <d-ign> 4727d693</d-ign>
+<d-ign>2014-06-20T14:40:41</d-ign>2         alice               alice               0.00000 XTS             register alice                              -0.50000 XTS            0.50000 XTS         <d-ign> 620766a7</d-ign>
+<d-ign>2014-06-20T14:40:51</d-ign>3         alice               alice               0.00000 XTS             create TEST (TestName)                      -500,001.00000 XTS      500,000.50000 XTS   <d-ign> 501a9d16</d-ign>
 default (unlocked) >>> blockchain_get_asset TEST
 {
   "id": 4,
@@ -70,7 +86,7 @@ default (unlocked) >>> blockchain_get_asset TEST
   "authority": {
     "required": 1,
     "owners": [
-      "XTS2Kphpj6vc7FFLjFsxNahyTwabywsxAAdP"
+      "XTSBcMjERMjXoESq9zjCGBHsX3RbGhNFABUX"
     ]
   },
   "last_proposal_id": 0
@@ -78,14 +94,14 @@ default (unlocked) >>> blockchain_get_asset TEST
 default (unlocked) >>> wallet_asset_update TEST null null null null null 0 ["restricted"] ["restricted", "retractable", "market_halt"]
 {
   "index": 0,
-  "record_id": "94c50ff72c830a0a8626d5eddc4fe57d9aad722f",
+  "record_id": "f450539a537a156b4444ffed55648119aa977c56",
   "block_num": 0,
   "is_virtual": false,
   "is_confirmed": false,
   "is_market": false,
   "trx": {
     "expiration": "2014-06-20T15:41:01",
-    "delegate_slate_id": null,
+    "slate_id": null,
     "operations": [{
         "type": "update_asset_ext_op_type",
         "data": {
@@ -114,13 +130,13 @@ default (unlocked) >>> wallet_asset_update TEST null null null null null 0 ["res
       }
     ],
     "signatures": [
-      "1f39b353ca907cdc39e0947d8d0c4de080e5e72ab69341e17b8a52e14f9b26bd516b1b065c61178607baaf1c9857fdd4c669bafc362c86f2e1a257efe71037fae4",
-      "20b59e7566a382732aa36d4357eb604d9667cc49b9d996c6517584453aba272ee73af2e55a6c53abbce8ff8e02a43c8b928a658983eaf181ad82be798dcc5d36ca"
+      "1f7f8eca8fdf9a300115a984e07b0e5ef80f33d704e58009cde1386bd6b8cef0fc74c31deff6efd8df2f09dae14e8a888ceaf3753fe839e5da92761f366b9842b8",
+      "2045f0ac995618c48784ccf3ba3db3f4fd3c91c646cdd2f9c8213eb528f7f101a908b4b33c98e543557dcf9d33cedc0954e06fa8c0d5f7798ca5f94bb659aa6c35"
     ]
   },
   "ledger_entries": [{
-      "from_account": "XTS89xSBj2Cgyhpa775RqcwuTLsXXiWHJWZsdczGtHD3amXo6yA7p",
-      "to_account": "XTS89xSBj2Cgyhpa775RqcwuTLsXXiWHJWZsdczGtHD3amXo6yA7p",
+      "from_account": "XTS6MztcCwGPciDNLrodkGdXf33S6raovWDfVieYdNTg92eC45PDf",
+      "to_account": "XTS6MztcCwGPciDNLrodkGdXf33S6raovWDfVieYdNTg92eC45PDf",
       "amount": {
         "amount": 0,
         "asset_id": 0

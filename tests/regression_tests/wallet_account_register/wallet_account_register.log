@@ -51,4 +51,28 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 102   test                            0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 
 Block Signing Key: XTS5AQGjeRu5sEBvvERaV8i1tstV1fx2ywGUmvWgsBPEjFoR27oQg
+default (unlocked) >>> help blockchain_get_account_public_balance
+Usage:
+blockchain_get_account_public_balance <account_name>                                                  Get the account record for a given name
+Get the account record for a given name
+
+Parameters:
+  account_name (account_name, required): the name of the account whose public address you want
+
+Returns:
+  account_balance_summary_type
+default (unlocked) >>> blockchain_get_account_public_balance test
+[[
+    "test",[]
+  ]
+]
+default (unlocked) >>> blockchain_get_account_public_balance delegate0
+[[
+    "delegate0",[[
+        0,
+        1970197969801
+      ]
+    ]
+  ]
+]
 default (unlocked) >>> quit
