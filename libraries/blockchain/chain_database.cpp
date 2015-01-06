@@ -348,9 +348,13 @@ namespace bts { namespace blockchain {
          gen_fork.is_known = true;
          _fork_db.store( block_id_type(), gen_fork );
 
-         self->set_property( chain_property_enum::active_delegate_list_id, fc::variant( self->next_round_active_delegates() ) );
          self->set_property( chain_property_enum::last_asset_id, asset_id );
          self->set_property( chain_property_enum::last_account_id, uint64_t( config.delegates.size() ) );
+         self->set_property( chain_property_enum::last_random_seed_id, variant( fc::ripemd160() ) );
+         self->set_property( chain_property_enum::active_delegate_list_id, fc::variant( self->next_round_active_delegates() ) );
+         self->set_property( chain_property_enum::confirmation_requirement, variant( uint32_t( 303 ) ) );
+         self->set_property( chain_property_enum::dirty_markets, variant( std::set<std::pair<asset_id_type, asset_id_type>>() ) );
+         self->set_property( chain_property_enum::last_feed_id, variant( uint32_t( 0 ) ) );
          self->set_property( chain_property_enum::last_object_id, 0 );
 
          self->sanity_check();
