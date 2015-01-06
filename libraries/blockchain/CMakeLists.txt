@@ -49,6 +49,7 @@ add_library( bts_blockchain
              block.cpp
 
              operations.cpp
+             account_operations_v1.cpp
              account_operations.cpp
              withdraw_types.cpp
              balance_operations_v1.cpp

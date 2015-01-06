@@ -73,6 +73,9 @@ namespace bts { namespace blockchain {
 
    void update_account_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
+      if( eval_state._current_state->get_head_block_num() < BTS_V0_4_28_FORK_BLOCK_NUM )
+          return evaluate_v1( eval_state );
+
       oaccount_record current_record = eval_state._current_state->get_account_record( this->account_id );
       if( !current_record.valid() )
           FC_CAPTURE_AND_THROW( unknown_account_id, (account_id) );
@@ -91,12 +94,6 @@ namespace bts { namespace blockchain {
           }
           else
           {
-#ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_4_28_FORK_BLOCK_NUM has passed
-#endif
-              if( current_record->is_delegate() )
-                  FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_28_FORK_BLOCK_NUM );
-
               if( current_record->is_delegate() && current_record->delegate_pay_balance() > 0 )
                   FC_CAPTURE_AND_THROW( pay_balance_remaining, (*current_record) );
           }
