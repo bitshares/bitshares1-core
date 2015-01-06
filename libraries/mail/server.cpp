@@ -72,7 +72,7 @@ namespace bts { namespace mail {
             } FC_CAPTURE_AND_RETHROW( (msg) ) }
 
             inventory_type fetch_inventory( const bts::blockchain::address& owner, 
-                                            const fc::time_point& start, 
+                                            const fc::time_point start, 
                                             uint32_t limit = BTS_MAIL_INVENTORY_FETCH_LIMIT )
             { try {
                if( limit > BTS_MAIL_INVENTORY_FETCH_LIMIT ) 
@@ -147,7 +147,7 @@ namespace bts { namespace mail {
    }
 
    inventory_type server::fetch_inventory( const bts::blockchain::address& owner, 
-                                           const fc::time_point& start,
+                                           const fc::time_point start,
                                            uint32_t limit )const
    {
       return my->fetch_inventory( owner, start, limit );

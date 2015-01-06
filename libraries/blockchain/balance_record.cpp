@@ -63,7 +63,7 @@ namespace bts { namespace blockchain {
        return false;
    }
 
-   asset balance_record::get_spendable_balance( const time_point_sec& at_time )const
+   asset balance_record::get_spendable_balance( const time_point_sec at_time )const
    {
        switch( withdraw_condition_types( condition.type ) )
        {
