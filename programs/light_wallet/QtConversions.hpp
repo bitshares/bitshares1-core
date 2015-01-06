@@ -12,7 +12,7 @@ inline static fc::time_point_sec convert(const QDateTime& t)
 {
    return fc::time_point_sec(t.toTime_t());
 }
-inline static QDateTime convert(const fc::time_point_sec& t)
+inline static QDateTime convert(const fc::time_point_sec t)
 {
    return QDateTime::fromTime_t(t.sec_since_epoch());
 }

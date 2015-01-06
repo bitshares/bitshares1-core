@@ -34,7 +34,7 @@ namespace bts { namespace mail {
           void store(const message& msg );
 
           inventory_type fetch_inventory( const bts::blockchain::address& owner, 
-                                          const fc::time_point& start, 
+                                          const fc::time_point start, 
                                           uint32_t limit = BTS_MAIL_INVENTORY_FETCH_LIMIT )const;
           message fetch_message( const message_id_type& inventory_id )const;
 

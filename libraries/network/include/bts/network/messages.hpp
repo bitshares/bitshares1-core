@@ -110,7 +110,7 @@ namespace bts { namespace network {
    {
       enum type_enum { type = keep_alive };
       keep_alive_message(){}
-      keep_alive_message( const fc::time_point& n ):time(n){}
+      keep_alive_message( const fc::time_point n ):time(n){}
 
       fc::time_point  time;
    };

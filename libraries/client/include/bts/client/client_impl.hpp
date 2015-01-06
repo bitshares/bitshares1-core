@@ -47,7 +47,7 @@ public:
       elog("storing error in database: ${e}", ("e", e));
       _db.store(fc::time_point::now(), e);
    }
-   exception_leveldb_type::iterator lower_bound(const fc::time_point& time) const
+   exception_leveldb_type::iterator lower_bound(const fc::time_point time) const
    {
       return _db.lower_bound(time);
    }
@@ -55,7 +55,7 @@ public:
    {
       return _db.begin();
    }
-   void remove(const fc::time_point& key)
+   void remove(const fc::time_point key)
    {
       _db.remove(key);
    }

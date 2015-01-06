@@ -83,7 +83,7 @@ fc::microseconds ntp_error()
   return *current_ntp_time - fc::time_point::now();
 }
 
-void start_simulated_time( const fc::time_point& sim_time )
+void start_simulated_time( const fc::time_point sim_time )
 {
    simulated_time = sim_time.sec_since_epoch();
    adjusted_time_sec = 0;
@@ -95,7 +95,7 @@ void advance_time( int32_t delta_seconds )
    time_discontinuity_signal();
 }
 
-uint32_t get_slot_number( const fc::time_point_sec& timestamp )
+uint32_t get_slot_number( const fc::time_point_sec timestamp )
 {
    return timestamp.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
 }
@@ -105,7 +105,7 @@ fc::time_point_sec get_slot_start_time( uint32_t slot_number )
    return fc::time_point_sec( slot_number * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC );
 }
 
-fc::time_point_sec get_slot_start_time( const fc::time_point_sec& timestamp )
+fc::time_point_sec get_slot_start_time( const fc::time_point_sec timestamp )
 {
    return get_slot_start_time( get_slot_number( timestamp ) );
 }

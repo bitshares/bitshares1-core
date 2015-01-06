@@ -442,7 +442,7 @@ balance_id_type detail::client_impl::wallet_multisig_get_balance_id(
                                         uint32_t m,
                                         const vector<address>& addresses )const
 {
-    return _chain_db->get_multisig_balance_id( m, addresses );
+    return balance_record::get_multisig_balance_id( m, addresses );
 }
 
 wallet_transaction_record detail::client_impl::wallet_multisig_deposit(

@@ -558,7 +558,7 @@ namespace bts { namespace blockchain {
       slots[ r.start_time ] = r;
    }
 
-   oslot_record pending_chain_state::get_slot_record( const time_point_sec& start_time )const
+   oslot_record pending_chain_state::get_slot_record( const time_point_sec start_time )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto itr = slots.find( start_time );
