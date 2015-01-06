@@ -356,6 +356,7 @@ namespace bts { namespace blockchain {
          self->set_property( chain_property_enum::dirty_markets, variant( std::set<std::pair<asset_id_type, asset_id_type>>() ) );
          self->set_property( chain_property_enum::last_feed_id, variant( uint32_t( 0 ) ) );
          self->set_property( chain_property_enum::last_object_id, 0 );
+         self->set_property( chain_property_enum::last_random_seed_id, variant( fc::ripemd160() ) );
 
          self->sanity_check();
          return _chain_id;
