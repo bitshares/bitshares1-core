@@ -7,6 +7,7 @@ These instructions worked on a fresh Ubuntu 14.04 LTS image.
     git submodule init
     git submodule update
     cmake .
+    export LC_ALL="en_US.UTF-8"
     make
 
 For the Qt Wallet, some extra steps are required:

@@ -1,6 +1,6 @@
 #include <bts/blockchain/balance_operations.hpp>
-#include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/exceptions.hpp>
+#include <bts/blockchain/pending_chain_state.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -82,7 +82,6 @@ namespace bts { namespace blockchain {
       if( this->slate.supported_delegates.size() > BTS_BLOCKCHAIN_MAX_SLATE_SIZE )
          FC_CAPTURE_AND_THROW( too_may_delegates_in_slate, (slate.supported_delegates.size()) );
 
-
       const slate_id_type slate_id = this->slate.id();
       const odelegate_slate current_slate = eval_state._current_state->get_delegate_slate( slate_id );
       if( NOT current_slate.valid() )
@@ -148,9 +147,9 @@ namespace bts { namespace blockchain {
        FC_ASSERT( asset_rec.valid() );
        if( asset_rec->is_restricted() )
        {
-         for(auto owner : cur_record->owners())
+         for( const auto& owner : cur_record->owners() )
          {
-           FC_ASSERT(eval_state._current_state->get_authorization(asset_rec->id, owner));
+           FC_ASSERT( eval_state._current_state->get_authorization(asset_rec->id, owner) );
          }
        }
 
@@ -313,7 +312,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( escrow_balance_record.valid() );
 
       if( !eval_state.check_signature( this->released_by ) )
-         FC_ASSERT( !"transaction not signed by releasor" );
+         FC_ASSERT( false, "transaction not signed by releasor" );
 
       auto escrow_condition = escrow_balance_record->condition.as<withdraw_with_escrow>();
       auto total_released = amount_to_sender + amount_to_receiver;
@@ -441,7 +440,7 @@ namespace bts { namespace blockchain {
       }
       else
       {
-          FC_ASSERT( !"not released by a party to the escrow transaction" );
+          FC_ASSERT( false, "not released by a party to the escrow transaction" );
       }
 
       eval_state._current_state->store_balance_record( *escrow_balance_record );

@@ -2,6 +2,7 @@
 
 DEL /Q failed_tests.log debug_tests.log
 
+RMDIR /S /Q %~dp0\regression_tests\blockchain_dump_state\dump
 DEL /Q %~dp0\regression_tests\blockchain_export_fork_graph\*.gv
 DEL /Q %~dp0\regression_tests\wallet_backup\wallet_backup.json
 

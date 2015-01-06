@@ -40,13 +40,15 @@
 #include <bts/rpc/rpc_client.hpp>
 #include <bts/blockchain/asset.hpp>
 #include <bts/blockchain/types.hpp>
-#include <bts/blockchain/genesis_config.hpp>
+#include <bts/blockchain/genesis_state.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/net/config.hpp>
 #include <bts/utilities/key_conversion.hpp>
 
 #include <bts/net/message.hpp>
 #include <bts/net/config.hpp>
+
+#define BTS_BLOCKCHAIN_INITIAL_SHARES (BTS_BLOCKCHAIN_MAX_SHARES/5)
 
 using namespace bts::utilities;
 using namespace bts::blockchain;

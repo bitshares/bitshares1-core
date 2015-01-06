@@ -7,6 +7,8 @@
 #include <fc/network/resolve.hpp>
 #include <fc/network/url.hpp>
 #include <fc/network/http/connection.hpp>
+#include <fc/crypto/aes.hpp>
+#include <fc/reflect/variant.hpp>
 
 #include <fc/thread/non_preemptable_scope_check.hpp>
 
@@ -69,6 +71,72 @@ void detail::client_impl::wallet_backup_restore( const fc::path& json_filename,
 {
     _wallet->create_from_json( json_filename, wallet_name, imported_wallet_passphrase );
     reschedule_delegate_loop();
+}
+
+// This should be able to get an encrypted private key or WIF key out of any reasonable JSON object.
+void read_keys( const fc::variant& vo, vector<private_key_type>& keys, const string& password )
+{
+    ilog("@n read_keys");
+    ilog("@n ${o}", ("o", vo));
+    try {
+      auto wif_key = vo.as_string();
+      auto key = bts::utilities::wif_to_key( wif_key );
+      if( key.valid() )
+          keys.push_back(*key);
+    }
+    catch (...) {
+        ilog("@n I couldn't parse that as a wif key: ${vo}", ("vo", vo));
+    }
+    try {
+        auto bytes = vo.as<vector<char>>();
+        fc::sha512 password_bytes = fc::sha512::hash( password.c_str(), password.size() );
+        const auto plain_text = fc::aes_decrypt( password_bytes, bytes );
+        keys.push_back( fc::raw::unpack<private_key_type>( plain_text ) );
+    }
+    catch (const fc::exception& e) {
+        ilog("@n I couldn't parse that as a byte array: ${vo}", ("vo", vo));
+        ilog("@n ${e}", ("e", e));
+    }
+    try {
+        auto obj = vo.get_object();
+        ilog("@n it's an object ${o}", ("o", obj));
+        for( auto kv : obj )
+        {
+            read_keys( kv.value(), keys, password );
+        }
+    } catch (...) {
+        ilog("@n I couldn't parse that as an object: ${o}", ("o", vo));
+    }
+    try {
+        auto arr = vo.as<vector<variant>>();
+        for( auto obj : arr )
+        {
+            read_keys( obj, keys, password );
+        }
+        ilog("@n it's an object ${o}", ("o", vo));
+    } catch (...) {
+        ilog("@n I couldn't parse that as an array: ${o}", ("o", vo));
+    }
+    ilog("@n I couldn't parse that as anything!: ${o}", ("o", vo));
+}
+
+void detail::client_impl::wallet_import_keys_from_json( const fc::path& json_filename,
+                                                        const string& imported_wallet_passphrase,
+                                                        const string& account )
+{
+    FC_ASSERT( fc::exists( json_filename ) );
+    FC_ASSERT( _wallet->is_open() );
+
+    vector<private_key_type> keys;
+    auto object = fc::json::from_file<fc::variant>( json_filename );
+
+    read_keys( object, keys, imported_wallet_passphrase );
+    ilog("@n Read keys: ${keys}", ("keys", keys));
+    for( auto key : keys )
+    {
+        _wallet->import_private_key( key, account, false );
+        ilog("@n imported key: ${key}", ("key", key));
+    }
 }
 
 bool detail::client_impl::wallet_set_automatic_backups( bool enabled )
@@ -181,19 +249,33 @@ wallet_transaction_record detail::client_impl::wallet_publish_version( const str
    return record;
 }
 
-wallet_transaction_record detail::client_impl::wallet_collect_vested_balances( const string& account_name )
+wallet_transaction_record detail::client_impl::wallet_collect_genesis_balances( const string& account_name )
 {
-   auto record = _wallet->collect_vested( account_name, true );
-   _wallet->cache_transaction( record );
-   network_broadcast_transaction( record.trx );
-   return record;
+    uint32_t withdraw_type_mask = 0;
+    withdraw_type_mask |= 1 << withdraw_null_type;
+    withdraw_type_mask |= 1 << withdraw_signature_type;
+    auto record = _wallet->collect_withdraw_types( account_name, withdraw_type_mask, true, true );
+    _wallet->cache_transaction( record );
+    network_broadcast_transaction( record.trx );
+    return record;
 }
 
-wallet_transaction_record detail::client_impl::wallet_delegate_update_block_signing_key( const string& authorizing_account_name,
-                                                                                         const string& delegate_name,
-                                                                                         const public_key_type& block_signing_key )
+wallet_transaction_record detail::client_impl::wallet_collect_vested_balances( const string& account_name )
 {
-   auto record = _wallet->update_block_signing_key( authorizing_account_name, delegate_name, block_signing_key, true );
+    uint32_t withdraw_type_mask = 0;
+    withdraw_type_mask |= 1 << withdraw_null_type;
+    withdraw_type_mask |= 1 << withdraw_vesting_type;
+    auto record = _wallet->collect_withdraw_types( account_name, withdraw_type_mask, false, true );
+    _wallet->cache_transaction( record );
+    network_broadcast_transaction( record.trx );
+    return record;
+}
+
+wallet_transaction_record detail::client_impl::wallet_delegate_update_signing_key( const string& authorizing_account_name,
+                                                                                   const string& delegate_name,
+                                                                                   const public_key_type& signing_key )
+{
+   auto record = _wallet->update_signing_key( authorizing_account_name, delegate_name, signing_key, true );
    _wallet->cache_transaction( record );
    network_broadcast_transaction( record.trx );
    return record;
@@ -278,7 +360,7 @@ string  detail::client_impl::wallet_address_create( const string& account_name,
     else if (legacy_network_byte == 0 || legacy_network_byte == 56)
         return string( pts_address( pubkey, true, legacy_network_byte ) );
     else
-        FC_ASSERT(!"Unsupported network byte");
+        FC_ASSERT(false, "Unsupported network byte");
 } FC_CAPTURE_AND_RETHROW( (account_name)(label)(legacy_network_byte) ) }
 
 
@@ -419,7 +501,8 @@ transaction_builder detail::client_impl::wallet_withdraw_from_legacy_address(
                                                     const pts_address& from_address,
                                                     const string& to,
                                                     const vote_selection_method& vote_method,
-                                                    bool sign )const
+                                                    bool sign,
+                                                    const string& builder_path )const
 {
     address to_address;
     try {
@@ -436,6 +519,7 @@ transaction_builder detail::client_impl::wallet_withdraw_from_legacy_address(
     builder->finalize( false );
     if( sign )
         builder->sign();
+    _wallet->write_latest_builder( *builder, builder_path );
     return *builder;
 }
 
@@ -461,8 +545,10 @@ transaction_builder detail::client_impl::wallet_multisig_withdraw_start(
 
 transaction_builder detail::client_impl::wallet_builder_add_signature(
                                             const transaction_builder& builder,
-                                            bool broadcast )
+                                            bool broadcast,
+                                            const string& builder_path )
 { try {
+    auto path = builder_path;
     auto b2 = _wallet->create_transaction_builder( builder );
     if( b2->transaction_record.trx.signatures.empty() )
         b2->finalize( false );
@@ -476,6 +562,9 @@ transaction_builder detail::client_impl::wallet_builder_add_signature(
             ulog("Transaction was invalid!");
         }
     }
+    if( path == "" )
+        path = (_wallet->get_data_directory() / "trx").string() + "latest.trx";
+    _wallet->write_latest_builder( *b2, path );
     return *b2;
 } FC_CAPTURE_AND_RETHROW( (builder)(broadcast) ) }
 
@@ -1022,7 +1111,7 @@ wallet_transaction_record client_impl::wallet_scan_transaction( const string& tr
 void client_impl::wallet_scan_transaction_experimental( const string& transaction_id, bool overwrite_existing )
 { try {
 #ifndef BTS_TEST_NETWORK
-   FC_ASSERT( !"This command is for developer testing only!" );
+   FC_ASSERT( false, "This command is for developer testing only!" );
 #endif
    _wallet->scan_transaction_experimental( transaction_id, overwrite_existing );
 } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id)("overwrite_existing",overwrite_existing) ) }
@@ -1030,7 +1119,7 @@ void client_impl::wallet_scan_transaction_experimental( const string& transactio
 void client_impl::wallet_add_transaction_note_experimental( const string& transaction_id, const string& note )
 { try {
 #ifndef BTS_TEST_NETWORK
-   FC_ASSERT( !"This command is for developer testing only!" );
+   FC_ASSERT( false, "This command is for developer testing only!" );
 #endif
    _wallet->add_transaction_note_experimental( transaction_id, note );
 } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id)("note",note) ) }
@@ -1038,7 +1127,7 @@ void client_impl::wallet_add_transaction_note_experimental( const string& transa
 set<pretty_transaction_experimental> client_impl::wallet_transaction_history_experimental( const string& account_name )const
 { try {
 #ifndef BTS_TEST_NETWORK
-   FC_ASSERT( !"This command is for developer testing only!" );
+   FC_ASSERT( false, "This command is for developer testing only!" );
 #endif
    return _wallet->transaction_history_experimental( account_name );
 } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
@@ -1141,8 +1230,26 @@ account_extended_balance_type client_impl::wallet_account_balance_extended( cons
         const string& account_name = item.first;
         for( const auto& balance_record : item.second )
         {
+            string type_label;
+            if( balance_record.snapshot_info.valid() )
+            {
+                switch( withdraw_condition_types( balance_record.condition.type ) )
+                {
+                    case withdraw_signature_type:
+                        type_label = "GENESIS";
+                        break;
+                    case withdraw_vesting_type:
+                        type_label = "SHAREDROP";
+                        break;
+                    default:
+                        break;
+                }
+            }
+            if( type_label.empty() )
+                type_label = balance_record.condition.type_label();
+
             const asset& balance = balance_record.get_spendable_balance( _chain_db->get_pending_state()->now() );
-            raw_balances[ account_name ][ balance_record.condition.type_label() ][ balance.asset_id ] += balance.amount;
+            raw_balances[ account_name ][ type_label ][ balance.asset_id ] += balance.amount;
         }
     }
 
@@ -1399,7 +1506,8 @@ fc::variant client_impl::wallet_login_finish(const public_key_type &server_key,
 transaction_builder client_impl::wallet_balance_set_vote_info(const balance_id_type& balance_id,
                                                               const string& voter_address,
                                                               const vote_selection_method& selection_method,
-                                                              bool sign_and_broadcast)
+                                                              bool sign_and_broadcast,
+                                                              const string& builder_path )
 {
     address new_voter;
     if( voter_address == "" )
@@ -1408,7 +1516,7 @@ transaction_builder client_impl::wallet_balance_set_vote_info(const balance_id_t
         if( balance.valid() && balance->restricted_owner.valid() )
             new_voter = *balance->restricted_owner;
         else
-            FC_ASSERT(!"Didn't specify a voter address and none currently exists.");
+            FC_ASSERT(false, "Didn't specify a voter address and none currently exists.");
     }
     else
     {
@@ -1421,6 +1529,7 @@ transaction_builder client_impl::wallet_balance_set_vote_info(const balance_id_t
         _wallet->cache_transaction( record );
         network_broadcast_transaction( record.trx );
     }
+    _wallet->write_latest_builder( *builder, builder_path );
     return *builder;
 }
 

@@ -699,9 +699,9 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
    return *this;
 } FC_CAPTURE_AND_RETHROW( (from_account.name)(cover_amount)(order_id) ) }
 
-transaction_builder& transaction_builder::update_block_signing_key( const string& authorizing_account_name,
-                                                                    const string& delegate_name,
-                                                                    const public_key_type& block_signing_key )
+transaction_builder& transaction_builder::update_signing_key( const string& authorizing_account_name,
+                                                              const string& delegate_name,
+                                                              const public_key_type& signing_key )
 { try {
     const owallet_account_record authorizing_account_record = _wimpl->_wallet_db.lookup_account( authorizing_account_name );
     if( !authorizing_account_record.valid() )
@@ -711,7 +711,7 @@ transaction_builder& transaction_builder::update_block_signing_key( const string
     if( !delegate_record.valid() )
         FC_THROW_EXCEPTION( unknown_account, "Unknown delegate account name!" );
 
-    trx.update_signing_key( delegate_record->id, block_signing_key );
+    trx.update_signing_key( delegate_record->id, signing_key );
     deduct_balance( authorizing_account_record->owner_address(), asset() );
 
     ledger_entry entry;
@@ -723,7 +723,7 @@ transaction_builder& transaction_builder::update_block_signing_key( const string
 
     required_signatures.insert( authorizing_account_record->active_key() );
     return *this;
-} FC_CAPTURE_AND_RETHROW( (authorizing_account_name)(delegate_name)(block_signing_key) ) }
+} FC_CAPTURE_AND_RETHROW( (authorizing_account_name)(delegate_name)(signing_key) ) }
 
 transaction_builder& transaction_builder::update_asset( const string& symbol,
                                                         const optional<string>& name,
@@ -731,7 +731,7 @@ transaction_builder& transaction_builder::update_asset( const string& symbol,
                                                         const optional<variant>& public_data,
                                                         const optional<double>& maximum_share_supply,
                                                         const optional<uint64_t>& precision,
-                                                        const share_type& issuer_fee,
+                                                        const share_type issuer_fee,
                                                         uint32_t flags,
                                                         uint32_t issuer_perms,
                                                         const optional<account_id_type> issuer_account_id,
@@ -882,7 +882,7 @@ void transaction_builder::pay_fee()
 } FC_RETHROW_EXCEPTIONS( warn, "All balances: ${bals}", ("bals", outstanding_balances) ) }
 
 
-transaction_builder& transaction_builder::withdraw_from_balance(const balance_id_type& from, const share_type& amount)
+transaction_builder& transaction_builder::withdraw_from_balance(const balance_id_type& from, const share_type amount)
 { try {
     // TODO ledger entries
     auto obalance = _wimpl->_blockchain->get_balance_record( from );

@@ -254,12 +254,12 @@ void wallet_impl::scan_balances()
        transaction_record->ledger_entries.push_back( entry );
        _wallet_db.store_transaction( *transaction_record );
    };
-   _blockchain->scan_balances( scan_balance );
+   _blockchain->scan_balances( scan_balance, true );
 }
 
 void wallet_impl::scan_registered_accounts()
 {
-   _blockchain->scan_accounts( [&]( const blockchain::account_record& scanned_account_record )
+   _blockchain->scan_unordered_accounts( [&]( const blockchain::account_record& scanned_account_record )
    {
         const auto account_record = _wallet_db.lookup_account( scanned_account_record.name );
         if( account_record.valid() )
@@ -1221,7 +1221,6 @@ bool wallet_impl::scan_deposit( const deposit_operation& op, const vector<privat
                 }
                 catch ( const fc::exception& e )
                 {
-                   elog( "unexpected exception ${e}", ("e",e.to_detail_string()) );
                 }
              }
              break;

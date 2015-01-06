@@ -1,8 +1,8 @@
-#include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/auction_operations.hpp>
 #include <bts/blockchain/auction_records.hpp>
-#include <bts/blockchain/object_record.hpp>
 #include <bts/blockchain/exceptions.hpp>
+#include <bts/blockchain/object_record.hpp>
+#include <bts/blockchain/pending_chain_state.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -54,7 +54,7 @@ namespace bts { namespace blockchain {
         else if( object->type() == obj_type::throttled_auction_object )
             evaluate_throttled_auction_bid( eval_state, *this );
         else
-            FC_ASSERT( !"That is not an auction type!" );
+            FC_ASSERT( false, "That is not an auction type!" );
     }
 
     void user_auction_claim_operation::evaluate( transaction_evaluation_state& eval_state )

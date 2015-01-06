@@ -392,7 +392,7 @@ void load_and_configure_chain_database( const fc::path& datadir,
       }
       else if (option_variables.count("rebuild-index"))
       {
-         std::cout << "Clearing database index\n";
+         std::cout << "Erasing all state\n";
          try
          {
             fc::remove_all(datadir / "chain/index");
@@ -1301,7 +1301,10 @@ void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_pat
           fc::remove_all( data_dir / "exceptions" );
           my->_exception_db.open( data_dir / "exceptions", true );
        }
-       //FIXME: is it really correct to continue here without rethrowing?
+       else
+       {
+           throw;
+       }
     }
 
     load_checkpoints( data_dir );
@@ -1320,12 +1323,10 @@ void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_pat
           elog("Chain database corrupted. Deleting it and attempting to recover.");
           attempt_to_recover_database = true;
        }
-       //FIXME: is it really correct to continue here without rethrowing?
-    }
-    catch ( const wrong_chain_id& )
-    {
-       elog("Wrong chain ID. Deleting database and attempting to recover.");
-       attempt_to_recover_database = true;
+       else
+       {
+           throw;
+       }
     }
 
     if (attempt_to_recover_database)
@@ -1472,7 +1473,18 @@ void client::configure_from_command_line(int argc, char** argv)
    auto option_variables = parse_option_variables(argc,argv);
 
    fc::path datadir = bts::client::get_data_dir(option_variables);
-   fc::create_directories(datadir);
+   if( !fc::exists( datadir ) )
+   {
+     std::cout << "creating new data directory " << datadir.preferred_string() << "\n";
+     fc::create_directories(datadir);
+#ifndef WIN32
+     int perm = 0700;
+     std::cout << "setting UNIX permissions on new data directory to " << std::oct << perm << std::dec << "\n";
+     fc::chmod( datadir, perm );
+#else
+     std::cout << "note, new data directory is readable by all user accounts on non-UNIX OS\n";
+#endif
+   }
 
    // this just clears the database if the command line says
    // TODO: rename it to smething better

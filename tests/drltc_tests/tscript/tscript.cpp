@@ -18,7 +18,7 @@
 #include <fc/io/json.hpp>
 #include <fc/rpc/json_connection.hpp>
 
-#include <bts/blockchain/genesis_config.hpp>
+#include <bts/blockchain/genesis_state.hpp>
 #include <bts/client/client.hpp>
 #include <bts/net/node.hpp>
 #include <bts/rpc/rpc_server.hpp>
@@ -61,7 +61,7 @@ public:
     std::map<std::string, std::vector<std::string>> m_name_client_group;
     std::map<std::string, std::string> template_context;
     fc::path genesis_json_filename;
-    bts::blockchain::genesis_block_config genesis_config;
+    bts::blockchain::genesis_state genesis_config;
     bts::net::simulated_network_ptr sim_network;
 };
 
@@ -156,7 +156,7 @@ context::~context()
 void context::set_genesis(const fc::path& genesis_json_filename)
 {
     this->genesis_json_filename = genesis_json_filename;
-    this->genesis_config = fc::json::from_file(genesis_json_filename).as<bts::blockchain::genesis_block_config>();
+    this->genesis_config = fc::json::from_file(genesis_json_filename).as<bts::blockchain::genesis_state>();
     this->template_context["genesis.timestamp"] = this->genesis_config.timestamp.to_iso_string();
     return;
 }

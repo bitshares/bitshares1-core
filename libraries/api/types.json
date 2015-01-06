@@ -731,6 +731,11 @@
         "cpp_include_file" : "bts/wallet/transaction_builder.hpp"
       },
       {
+        "type_name" : "optional_transaction_builder",
+        "cpp_return_type" : "fc::optional<bts::wallet::transaction_builder>",
+        "cpp_include_file" : "bts/blockchain/types.hpp"
+      },
+      {
         "type_name" : "object_record",
         "cpp_return_type" : "bts::blockchain::object_record",
         "cpp_include_file" : "bts/blockchain/object_record.hpp"

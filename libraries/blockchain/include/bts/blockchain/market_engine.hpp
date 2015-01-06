@@ -52,7 +52,7 @@ namespace bts { namespace blockchain { namespace detail {
                                 const price& closing_price,
                                 const fc::time_point_sec& timestamp );
 
-    void cancel_current_short( market_transaction& mtrx, const asset_id_type& quote_asset_id );
+    void cancel_current_short( market_transaction& mtrx, const asset_id_type quote_asset_id );
 
     pending_chain_state_ptr       _pending_state;
     pending_chain_state_ptr       _prior_state;

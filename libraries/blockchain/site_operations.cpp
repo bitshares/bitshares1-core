@@ -1,7 +1,7 @@
-#include <bts/blockchain/site_operations.hpp>
-#include <bts/blockchain/chain_interface.hpp>
-#include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/auction_records.hpp>
+#include <bts/blockchain/exceptions.hpp>
+#include <bts/blockchain/pending_chain_state.hpp>
+#include <bts/blockchain/site_operations.hpp>
 #include <bts/blockchain/site_record.hpp>
 
 namespace bts { namespace blockchain {

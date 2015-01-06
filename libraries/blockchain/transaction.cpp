@@ -134,7 +134,7 @@ namespace bts { namespace blockchain {
       operations.push_back( withdraw_operation( account, amount ) );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account",account)("amount",amount) ) }
 
-   void transaction::withdraw_pay( const account_id_type& account,
+   void transaction::withdraw_pay( const account_id_type account,
                                    share_type             amount )
    {
       FC_ASSERT( amount > 0, "amount: ${amount}", ("amount",amount) );
@@ -276,7 +276,7 @@ namespace bts { namespace blockchain {
       operations.push_back( op );
    }
 
-   void transaction::update_asset( const asset_id_type& asset_id,
+   void transaction::update_asset( const asset_id_type asset_id,
                                    const optional<string>& name,
                                    const optional<string>& description,
                                    const optional<variant>& public_data,
@@ -285,13 +285,13 @@ namespace bts { namespace blockchain {
    {
        operations.push_back( update_asset_operation{ asset_id, name, description, public_data, maximum_share_supply, precision } );
    }
-   void transaction::update_asset_ext( const asset_id_type& asset_id,
+   void transaction::update_asset_ext( const asset_id_type asset_id,
                                    const optional<string>& name,
                                    const optional<string>& description,
                                    const optional<variant>& public_data,
                                    const optional<double>& maximum_share_supply,
                                    const optional<uint64_t>& precision,
-                                   const share_type& issuer_fee,
+                                   const share_type issuer_fee,
                                    uint32_t  flags,
                                    uint32_t issuer_permissions,
                                    account_id_type issuer_account_id,
@@ -328,16 +328,16 @@ namespace bts { namespace blockchain {
       operations.push_back( add_collateral_operation(collateral_amount, order_idx) );
    }
 
-   void transaction::publish_feed( feed_id_type feed_id,
+   void transaction::publish_feed( asset_id_type feed_id,
                                    account_id_type delegate_id,
                                    fc::variant value )
    {
       operations.push_back( update_feed_operation{ feed_index{feed_id,delegate_id}, value } );
    }
 
-   void transaction::update_signing_key( const account_id_type& account_id, const public_key_type& block_signing_key )
+   void transaction::update_signing_key( const account_id_type account_id, const public_key_type& signing_key )
    {
-       operations.push_back( update_block_signing_key{ account_id, block_signing_key } );
+       operations.push_back( update_signing_key_operation{ account_id, signing_key } );
    }
 
    bool transaction::is_cancel()const

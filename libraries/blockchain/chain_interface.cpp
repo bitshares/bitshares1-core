@@ -46,30 +46,63 @@ namespace bts { namespace blockchain {
    } FC_CAPTURE_AND_RETHROW( (name) ) }
 
    /**
-    *  Symbol names must be Alpha Numeric and may have a single '.' in the name that cannot be
-    *  the first or last.
+    * Symbol names can be hierarchical: for example a primary symbol name, a '.', and a sub-symbol name.
+    * A primary symbol name must be a minimum of 3 and a maximum of 8 characters in length.
+    * Primary names can only contain uppercase letters (digits are not allowed to avoid 0 and 1 spoofing).
+    * A hierarchical symbol name (consisting of a primary symbol name, a dot, and a sub-symbol name) can be up to 12 chars
+    * in total length (including the dot).
+    * Sub-symbol names can contain uppercase letters or digits (digits are allowed in sub-symbols because the namespace is
+    * overseen by the owner of the primary symbol and is therefore not subject to spoofing).
+    *
+    * To fit under the 12 character limit, it is likely that users planning to register hierarchical names will
+    * choose shorter (more expensive) symbol names for their primary symbol, so that they can mirror more primary symbol names.
+    * The max of 12 for hierarchical symbol names will allow hierarchical mirroring of long primary symbol characters
+    * as long as the primary symbol buyer purchases a symbol of 3 in size. For example, if CRY was chosen as the primary symbol,
+    * CRY.ABCDEFGH could be registered. But if a longer name was chosen as a primary symbol, such as CRYPTO,
+    * then only symbols up to 5 in length can be mirrored (i.e CRYPTO.ABCDEFGH would be too long).
     */
    bool chain_interface::is_valid_symbol_name( const string& symbol )const
    { try {
-       if( symbol.size() < BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE || symbol.size() > BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE )
-           return false;
+       if( symbol.size() < BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE)
+         FC_ASSERT(false, "Symbol name too small");
 
        int dots = 0;
-       for( const char& c : symbol )
+       int dot_position = 0;
+       int position = 0;
+       for( const char c : symbol )
        {
-           if( c == '.' )
-           {
-              if( ++dots > 1 )
-               return false;
-           }
-           else if( !std::isalnum( c, std::locale::classic() ) || !std::isupper( c, std::locale::classic() ) )
-               return false;
+          if( c == '.' ) //if we have hierarchical name
+          {
+            dot_position =  position;
+            if ( ++dots > 1 )
+              FC_ASSERT(false, "Symbol names can have at most one dot");
+          }
+          else if (dots == 0 && !std::isupper( c, std::locale::classic() ) )
+              FC_ASSERT(false, "Primary symbol names can only contain uppercase letters");
+          else if (!std::isupper( c, std::locale::classic() ) &&
+                  !std::isdigit( c, std::locale::classic() )     )
+            FC_ASSERT(false, "Sub-symbol names can only contain uppercase letters or digits");
+          ++position;
        }
+
        if( symbol.back() == '.' ) return false;
        if( symbol.front() == '.' ) return false;
 
-       if( symbol.size() >= 3 && symbol.find( "BIT" ) == 0 )
-           return false;
+       if (dots == 0)
+       {
+         if (position > BTS_BLOCKCHAIN_MAX_SUB_SYMBOL_SIZE)
+           FC_ASSERT(false, "Symbol name too large");
+       }
+       else //dots == 1 means hierarchial asset name
+       {
+         if (position - dot_position - 1> BTS_BLOCKCHAIN_MAX_SUB_SYMBOL_SIZE)
+           FC_ASSERT(false, "Sub-symbol name too large");
+         if( symbol.size() > BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE)
+           FC_ASSERT(false, "Symbol name too large");
+       }
+
+       if( symbol.find( "BIT" ) == 0 )
+         FC_ASSERT(false, "Symbol names cannot be prefixed with BIT");
 
        return true;
    } FC_CAPTURE_AND_RETHROW( (symbol) ) }
@@ -116,33 +149,39 @@ namespace bts { namespace blockchain {
    }
 
    asset_id_type chain_interface::last_asset_id()const
-   {
-       return get_property( chain_property_enum::last_asset_id ).as<asset_id_type>();
-   }
+   { try {
+       const optional<variant> result = get_property( chain_property_enum::last_asset_id );
+       FC_ASSERT( result.valid() );
+       return result->as<asset_id_type>();
+   } FC_CAPTURE_AND_RETHROW() }
 
    asset_id_type chain_interface::new_asset_id()
    {
-      auto next_id = last_asset_id() + 1;
-      set_property( chain_property_enum::last_asset_id, next_id );
-      return next_id;
+       auto next_id = last_asset_id() + 1;
+       set_property( chain_property_enum::last_asset_id, next_id );
+       return next_id;
    }
 
    account_id_type chain_interface::last_account_id()const
-   {
-       return get_property( chain_property_enum::last_account_id ).as<account_id_type>();
-   }
+   { try {
+       const optional<variant> result = get_property( chain_property_enum::last_account_id );
+       FC_ASSERT( result.valid() );
+       return result->as<account_id_type>();
+   } FC_CAPTURE_AND_RETHROW() }
 
    account_id_type chain_interface::new_account_id()
    {
-      auto next_id = last_account_id() + 1;
-      set_property( chain_property_enum::last_account_id, next_id );
-      return next_id;
+       auto next_id = last_account_id() + 1;
+       set_property( chain_property_enum::last_account_id, next_id );
+       return next_id;
    }
 
    object_id_type chain_interface::last_object_id()const
-   {
-       return get_property( chain_property_enum::last_object_id ).as<object_id_type>();
-   }
+   { try {
+       const optional<variant> result = get_property( chain_property_enum::last_object_id );
+       FC_ASSERT( result.valid() );
+       return result->as<object_id_type>();
+   } FC_CAPTURE_AND_RETHROW() }
 
    object_id_type chain_interface::new_object_id( obj_type type )
    {
@@ -156,12 +195,12 @@ namespace bts { namespace blockchain {
 
    // Get an object for whom get_object_condition(o) will not throw and will represent
    // the condition that is also the owner for this given object
-   object_id_type       chain_interface::get_owner_object( const object_id_type& obj )
+   object_id_type       chain_interface::get_owner_object( const object_id_type obj )
    {
-       FC_ASSERT(!"unimplemented");
+       FC_ASSERT(false, "unimplemented");
    }
 
-   multisig_condition   chain_interface::get_object_condition( const object_id_type& id, int depth )
+   multisig_condition   chain_interface::get_object_condition( const object_id_type id, int depth )
    { try {
        auto oobj = get_object_record( id );
        FC_ASSERT( oobj.valid(), "No such object (id: ${id}", ("id", id) );
@@ -172,8 +211,8 @@ namespace bts { namespace blockchain {
    multisig_condition   chain_interface::get_object_condition( const object_record& obj, int depth )
    { try {
        ilog("@n getting object condition for object: ${o}", ("o", obj));
-       if( depth >= 100 )//BTS_OWNER_DEPENDENCY_MAX_DEPTH )
-           FC_ASSERT(!"Cannot determine object condition.");
+       if( depth >= 1 )//BTS_OWNER_DEPENDENCY_MAX_DEPTH )
+           FC_ASSERT(false, "Cannot determine object condition - recursion depth exceeded (are you trying to make an edge from an edge?)");
        multisig_condition condition;
        switch( obj.type() )
        {
@@ -209,44 +248,46 @@ namespace bts { namespace blockchain {
                if( oasset->issuer_account_id > 0 )
                {
                    auto oacct = get_account_record( oasset->issuer_account_id );
-                   FC_ASSERT(!"This asset has an issuer but the issuer account doens't exist. Crap!");
+                   FC_ASSERT(false, "This asset has an issuer but the issuer account doens't exist. Crap!");
                    condition.owners.insert( oacct->owner_address() );
                    condition.required = 1;
                    return condition;
                }
                else
                {
-                   FC_ASSERT(!"That asset has no issuer!");
+                   FC_ASSERT(false, "That asset has no issuer!");
                }
            }
            default:
            {
-               FC_ASSERT(!"I don't know how to get the condition for this object type!");
+               FC_ASSERT(false, "I don't know how to get the condition for this object type!");
            }
        }
-       FC_ASSERT(!"This code path should not happen.");
+       FC_ASSERT(false, "This code path should not happen.");
    } FC_CAPTURE_AND_RETHROW( (obj.short_id())(obj.type())(obj) ) }
 
-    oobject_record               chain_interface::get_edge( const object_id_type& id )
-    {
-        auto object = get_object_record( id );
-        if( NOT object.valid() )
-            return oobject_record();
-        FC_ASSERT( object->type() == edge_object, "This object is not an edge!"); // TODO check form ID as first check
-        return object;
-    }
+   oobject_record chain_interface::get_edge( const object_id_type id )
+   { try {
+      auto object = get_object_record( id );
+      if( NOT object.valid() )
+          return oobject_record();
+      FC_ASSERT( object->type() == edge_object, "This object is not an edge!"); // TODO check form ID as first check
+      return object;
+   } FC_CAPTURE_AND_RETHROW( (id) ) }
 
    vector<account_id_type> chain_interface::get_active_delegates()const
    { try {
-      return get_property( active_delegate_list_id ).as<std::vector<account_id_type>>();
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+      const optional<variant> result = get_property( active_delegate_list_id );
+      FC_ASSERT( result.valid() );
+      return result->as<std::vector<account_id_type>>();
+   } FC_CAPTURE_AND_RETHROW() }
 
    void chain_interface::set_active_delegates( const std::vector<account_id_type>& delegate_ids )
    {
       set_property( active_delegate_list_id, fc::variant( delegate_ids ) );
    }
 
-   bool chain_interface::is_active_delegate( const account_id_type& id )const
+   bool chain_interface::is_active_delegate( const account_id_type id )const
    { try {
       const auto active = get_active_delegates();
       return active.end() != std::find( active.begin(), active.end(), id );
@@ -331,10 +372,10 @@ namespace bts { namespace blockchain {
          ugly_price.ratio /= base_record->precision;
       }
       return ugly_price;
-   } FC_CAPTURE_AND_RETHROW( (price_string)(base_symbol)(quote_symbol) ) }
+   } FC_CAPTURE_AND_RETHROW( (price_string)(base_symbol)(quote_symbol)(do_precision_dance) ) }
 
    string chain_interface::to_pretty_asset( const asset& a )const
-   {
+   { try {
       const auto oasset = get_asset_record( a.asset_id );
       const share_type amount = ( a.amount >= 0 ) ? a.amount : -a.amount;
       if( oasset.valid() )
@@ -350,28 +391,30 @@ namespace bts { namespace blockchain {
       {
          return fc::to_pretty_string( a.amount ) + " ???";
       }
-   }
+   } FC_CAPTURE_AND_RETHROW( (a) ) }
 
-   int64_t chain_interface::get_required_confirmations()const
-   {
-      return get_property( confirmation_requirement ).as_int64();
-   }
+   void chain_interface::set_required_confirmations( uint64_t c )
+   { try {
+      set_property( confirmation_requirement, fc::variant( c ) );
+   } FC_CAPTURE_AND_RETHROW( (c) ) }
+
+   uint64_t chain_interface::get_required_confirmations()const
+   { try {
+      const optional<variant> result = get_property( confirmation_requirement );
+      if( result.valid() ) return result->as_uint64();
+      return BTS_BLOCKCHAIN_NUM_DELEGATES * 3;
+   } FC_CAPTURE_AND_RETHROW() }
 
    void chain_interface::set_dirty_markets( const std::set<std::pair<asset_id_type, asset_id_type>>& d )
-   {
-       set_property( dirty_markets, fc::variant( d ) );
-   }
+   { try {
+      set_property( dirty_markets, fc::variant( d ) );
+   } FC_CAPTURE_AND_RETHROW( (d) ) }
 
    std::set<std::pair<asset_id_type, asset_id_type>> chain_interface::get_dirty_markets()const
-   {
-       try
-       {
-           return get_property( dirty_markets ).as<std::set<std::pair<asset_id_type, asset_id_type>>>();
-       }
-       catch( ... )
-       {
-       }
-       return std::set<std::pair<asset_id_type, asset_id_type>>();
-   }
+   { try {
+      const optional<variant> result = get_property( dirty_markets );
+      if( result.valid() ) return result->as<std::set<std::pair<asset_id_type, asset_id_type>>>();
+      return std::set<std::pair<asset_id_type, asset_id_type>>();
+   } FC_CAPTURE_AND_RETHROW() }
 
 } } // bts::blockchain

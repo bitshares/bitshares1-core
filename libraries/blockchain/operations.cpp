@@ -38,7 +38,7 @@ namespace bts { namespace blockchain {
 
    const operation_type_enum release_escrow_operation::type         = release_escrow_op_type;
 
-   const operation_type_enum update_block_signing_key::type         = update_block_signing_key_type;
+   const operation_type_enum update_signing_key_operation::type     = update_signing_key_op_type;
 
    const operation_type_enum relative_bid_operation::type           = relative_bid_op_type;
    const operation_type_enum relative_ask_operation::type           = relative_ask_op_type;
@@ -78,7 +78,7 @@ namespace bts { namespace blockchain {
 
       bts::blockchain::operation_factory::instance().register_operation<release_escrow_operation>();
 
-      bts::blockchain::operation_factory::instance().register_operation<update_block_signing_key>();
+      bts::blockchain::operation_factory::instance().register_operation<update_signing_key_operation>();
 
       bts::blockchain::operation_factory::instance().register_operation<relative_bid_operation>();
       bts::blockchain::operation_factory::instance().register_operation<relative_ask_operation>();

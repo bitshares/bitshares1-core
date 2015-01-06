@@ -87,8 +87,8 @@ namespace bts { namespace wallet {
          uint32_t               get_last_scanned_block_number()const;
 
          void                   set_transaction_fee( const asset& fee );
-         asset                  get_transaction_fee( const asset_id_type& desired_fee_asset_id = 0 )const;
-         bool                   asset_can_pay_fee( const asset_id_type& desired_fee_asset_id = 0 )const;
+         asset                  get_transaction_fee( const asset_id_type desired_fee_asset_id = 0 )const;
+         bool                   asset_can_pay_fee( const asset_id_type desired_fee_asset_id = 0 )const;
 
          void                   set_transaction_expiration( uint32_t secs );
          uint32_t               get_transaction_expiration()const;
@@ -393,20 +393,22 @@ namespace bts { namespace wallet {
                  const string& account_to_pay_with,
                  bool sign
                  );
-         wallet_transaction_record collect_vested(
+         wallet_transaction_record collect_withdraw_types(
                  const string& account_name,
+                 uint32_t withdraw_type_mask,
+                 bool snapshots_only,
                  bool sign
                  );
          wallet_transaction_record asset_authorize_key( const string& paying_account_name,
                                                         const string& symbol,
                                                         const address& key,
-                                                        const object_id_type& meta,
+                                                        const object_id_type meta,
                                                         bool sign = true );
 
-         wallet_transaction_record update_block_signing_key(
+         wallet_transaction_record update_signing_key(
                  const string& authorizing_account_name,
                  const string& delegate_name,
-                 const public_key_type& block_signing_key,
+                 const public_key_type& signing_key,
                  bool sign
                  );
          wallet_transaction_record create_asset(
@@ -427,7 +429,7 @@ namespace bts { namespace wallet {
                  const optional<variant>& public_data,
                  const optional<double>& maximum_share_supply,
                  const optional<uint64_t>& precision,
-                 const share_type& issuer_fee,
+                 const share_type issuer_fee,
                  uint32_t flags,
                  uint32_t issuer_perms,
                  const string& issuer_account_name,
@@ -547,11 +549,11 @@ namespace bts { namespace wallet {
          vector<escrow_summary>             get_escrow_balances( const string& account_name );
 
          account_balance_record_summary_type get_account_balance_records( const string& account_name = "", bool include_empty = true,
-                 uint32_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ) )const;
+                 uint32_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ), bool snapshots_only = false )const;
          account_balance_id_summary_type    get_account_balance_ids( const string& account_name = "", bool include_empty = true,
-                 uint32_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ) )const;
+                 uint32_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ), bool snapshots_only = false )const;
          account_balance_summary_type       get_account_balances( const string& account_name = "", bool include_empty = true,
-                 uint32_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ) )const;
+                 uint32_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ), bool snapshots_only = false )const;
 
          account_balance_summary_type       get_account_yield( const string& account_name = "" )const;
          asset                              asset_worth( const asset& base, const string& price_in_symbol )const;

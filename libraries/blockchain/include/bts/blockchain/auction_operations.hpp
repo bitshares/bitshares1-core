@@ -1,4 +1,6 @@
 #pragma once
+
+#include <bts/blockchain/asset.hpp>
 #include <bts/blockchain/operations.hpp>
 #include <bts/blockchain/object_record.hpp>
 

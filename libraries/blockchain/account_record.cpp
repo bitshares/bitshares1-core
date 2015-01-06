@@ -1,22 +1,7 @@
 #include <bts/blockchain/account_record.hpp>
-
-#include <fc/exception/exception.hpp>
+#include <bts/blockchain/chain_interface.hpp>
 
 namespace bts { namespace blockchain {
-
-    //account_type multisig_meta_info::type = multisig_account;
-
-    bool account_record::is_null()const
-    {
-        return owner_key == public_key_type();
-    }
-
-    account_record account_record::make_null()const
-    {
-        account_record cpy(*this);
-        cpy.owner_key = public_key_type();
-        return cpy;
-    }
 
     share_type account_record::delegate_pay_balance()const
     {
@@ -98,4 +83,81 @@ namespace bts { namespace blockchain {
        return fc::ecc::public_key( *signer, digest );
     }
 
-}} // bts::blockchain
+    const account_db_interface& account_record::db_interface( const chain_interface& db )
+    { try {
+        return db._account_db_interface;
+    } FC_CAPTURE_AND_RETHROW() }
+
+    oaccount_record account_db_interface::lookup( const account_id_type id )const
+    { try {
+        return lookup_by_id( id );
+    } FC_CAPTURE_AND_RETHROW( (id) ) }
+
+    oaccount_record account_db_interface::lookup( const string& name )const
+    { try {
+        return lookup_by_name( name );
+    } FC_CAPTURE_AND_RETHROW( (name) ) }
+
+    oaccount_record account_db_interface::lookup( const address& addr )const
+    { try {
+        return lookup_by_address( addr );
+    } FC_CAPTURE_AND_RETHROW( (addr) ) }
+
+    void account_db_interface::store( const account_record& record )const
+    { try {
+        const oaccount_record prev_record = lookup( record.id );
+        if( prev_record.valid() )
+        {
+            if( prev_record->name != record.name )
+                erase_from_name_map( prev_record->name );
+            if( prev_record->owner_address() != record.owner_address() )
+                erase_from_address_map( prev_record->owner_address() );
+            if( !prev_record->is_retracted() )
+            {
+                if( record.is_retracted() || prev_record->active_address() != record.active_address() )
+                    erase_from_address_map( prev_record->active_address() );
+                if( prev_record->is_delegate() )
+                {
+                    if( !record.is_delegate() || prev_record->signing_address() != record.signing_address() )
+                        erase_from_address_map( prev_record->signing_address() );
+                    if( !record.is_delegate() || prev_record->net_votes() != record.net_votes() )
+                        erase_from_vote_set( vote_del( prev_record->net_votes(), prev_record->id ) );
+                }
+            }
+        }
+
+        insert_into_id_map( record.id, record );
+        insert_into_name_map( record.name, record.id );
+        insert_into_address_map( record.owner_address(), record.id );
+        if( !record.is_retracted() )
+        {
+            insert_into_address_map( record.active_address(), record.id );
+            if( record.is_delegate() )
+            {
+                insert_into_address_map( record.signing_address(), record.id );
+                insert_into_vote_set( vote_del( record.net_votes(), record.id ) );
+            }
+        }
+    } FC_CAPTURE_AND_RETHROW( (record) ) }
+
+    void account_db_interface::remove( const account_id_type id )const
+    { try {
+        const oaccount_record prev_record = lookup( id );
+        if( prev_record.valid() )
+        {
+            erase_from_id_map( id );
+            erase_from_name_map( prev_record->name );
+            erase_from_address_map( prev_record->owner_address() );
+            if( !prev_record->is_retracted() )
+            {
+                erase_from_address_map( prev_record->active_address() );
+                if( prev_record->is_delegate() )
+                {
+                    erase_from_address_map( prev_record->signing_address() );
+                    erase_from_vote_set( vote_del( prev_record->net_votes(), prev_record->id ) );
+                }
+            }
+        }
+    } FC_CAPTURE_AND_RETHROW( (id) ) }
+
+} } // bts::blockchain

@@ -42,7 +42,7 @@ namespace bts { namespace wallet {
          // Account getters and setters
          owallet_account_record lookup_account( const address& account_address )const;
          owallet_account_record lookup_account( const string& account_name )const;
-         owallet_account_record lookup_account( const account_id_type& account_id )const;
+         owallet_account_record lookup_account( const account_id_type account_id )const;
          void                   store_account( const account_data& account );
          void                   store_account( const blockchain::account_record& blockchain_account_record );
 
@@ -104,7 +104,7 @@ namespace bts { namespace wallet {
          {
             return accounts;
          }
-         const unordered_map< address, wallet_key_record >& get_keys()const
+         const map< address, wallet_key_record >& get_keys()const
          {
             return keys;
          }
@@ -113,9 +113,9 @@ namespace bts { namespace wallet {
 
       private:
          optional<wallet_master_key_record>                             wallet_master_key;
-         /** maps wallet_record_index to accounts */
+
          unordered_map<int32_t, wallet_account_record>                  accounts;
-         unordered_map<address, wallet_key_record>                      keys;
+         map<address, wallet_key_record>                                keys;
          unordered_map<transaction_id_type, wallet_transaction_record>  transactions;
          map<property_enum, wallet_property_record>                     properties;
          map<string, wallet_setting_record>                             settings;

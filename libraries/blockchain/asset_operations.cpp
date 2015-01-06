@@ -1,6 +1,6 @@
 #include <bts/blockchain/asset_operations.hpp>
-#include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/exceptions.hpp>
+#include <bts/blockchain/pending_chain_state.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -94,7 +94,7 @@ namespace bts { namespace blockchain {
       //   hardforks which may want to add new permissions for future
       //   assets without applying them to existing assets.
       new_record.flags                  = 0;
-      new_record.issuer_permissions     = retractable | market_halt | balance_halt | supply_unlimit;
+      new_record.issuer_permissions     = restricted | retractable | market_halt | balance_halt | supply_unlimit;
 
       if( issuer_account_record )
       {

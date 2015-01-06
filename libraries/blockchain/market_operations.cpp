@@ -1,7 +1,7 @@
-#include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/market_engine.hpp>
 #include <bts/blockchain/market_operations.hpp>
+#include <bts/blockchain/pending_chain_state.hpp>
 
 namespace bts { namespace blockchain {
 
