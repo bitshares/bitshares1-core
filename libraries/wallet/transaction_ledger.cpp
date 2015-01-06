@@ -15,8 +15,8 @@ using namespace bts::wallet::detail;
 void wallet_impl::scan_market_transaction(
         const market_transaction& mtrx,
         uint32_t block_num,
-        const time_point_sec& block_time,
-        const time_point_sec& received_time
+        const time_point_sec block_time,
+        const time_point_sec received_time
         )
 { try {
     auto okey_bid = _wallet_db.lookup_key( mtrx.bid_owner );
@@ -284,7 +284,7 @@ void wallet_impl::scan_registered_accounts()
    } );
 }
 
-void wallet_impl::scan_block( uint32_t block_num, const vector<private_key_type>& keys, const time_point_sec& received_time )
+void wallet_impl::scan_block( uint32_t block_num, const vector<private_key_type>& keys, const time_point_sec received_time )
 { try {
     const full_block& block = _blockchain->get_block( block_num );
     for( const signed_transaction& transaction : block.user_transactions )
@@ -314,9 +314,9 @@ void wallet_impl::scan_block( uint32_t block_num, const vector<private_key_type>
 wallet_transaction_record wallet_impl::scan_transaction(
         const signed_transaction& transaction,
         uint32_t block_num,
-        const time_point_sec& block_timestamp,
+        const time_point_sec block_timestamp,
         const vector<private_key_type>& keys,
-        const time_point_sec& received_time,
+        const time_point_sec received_time,
         bool overwrite_existing )
 { try {
     const transaction_id_type transaction_id = transaction.id();

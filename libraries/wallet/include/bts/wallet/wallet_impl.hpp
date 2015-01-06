@@ -66,8 +66,8 @@ class wallet_impl : public chain_observer
       void scan_market_transaction(
               const market_transaction& mtrx,
               uint32_t block_num,
-              const time_point_sec& block_time,
-              const time_point_sec& received_time
+              const time_point_sec block_time,
+              const time_point_sec received_time
               );
 
       secret_hash_type get_secret( uint32_t block_num,
@@ -75,14 +75,14 @@ class wallet_impl : public chain_observer
 
       void scan_state();
 
-      void scan_block( uint32_t block_num, const vector<private_key_type>& keys, const time_point_sec& received_time );
+      void scan_block( uint32_t block_num, const vector<private_key_type>& keys, const time_point_sec received_time );
 
       wallet_transaction_record scan_transaction(
               const signed_transaction& transaction,
               uint32_t block_num,
-              const time_point_sec& block_timestamp,
+              const time_point_sec block_timestamp,
               const vector<private_key_type>& keys,
-              const time_point_sec& received_time,
+              const time_point_sec received_time,
               bool overwrite_existing = false
               );
 
@@ -93,12 +93,12 @@ class wallet_impl : public chain_observer
 
       transaction_ledger_entry scan_transaction_experimental( const transaction_evaluation_state& eval_state,
                                                               uint32_t block_num,
-                                                              const time_point_sec& timestamp,
+                                                              const time_point_sec timestamp,
                                                               bool overwrite_existing );
 
       transaction_ledger_entry scan_transaction_experimental( const transaction_evaluation_state& eval_state,
                                                               uint32_t block_num,
-                                                              const time_point_sec& timestamp,
+                                                              const time_point_sec timestamp,
                                                               const map<private_key_type, string>& account_keys,
                                                               const map<address, string>& account_balances,
                                                               const set<string>& account_names,

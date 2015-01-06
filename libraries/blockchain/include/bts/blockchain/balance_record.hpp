@@ -37,7 +37,7 @@ namespace bts { namespace blockchain {
       bool                       is_owner( const public_key_type& key )const;
 
       asset_id_type              asset_id()const { return condition.asset_id; }
-      asset                      get_spendable_balance( const time_point_sec& at_time )const;
+      asset                      get_spendable_balance( const time_point_sec at_time )const;
       asset                      calculate_yield( fc::time_point_sec now, share_type amount, share_type yield_pool, share_type share_supply )const;
       asset                      calculate_yield_v1( fc::time_point_sec now, share_type amount, share_type yield_pool, share_type share_supply )const;
 
@@ -47,6 +47,8 @@ namespace bts { namespace blockchain {
       osnapshot_record           snapshot_info;
       fc::time_point_sec         deposit_date;
       fc::time_point_sec         last_update;
+
+      static balance_id_type get_multisig_balance_id( uint32_t m, const vector<address>& addrs );
 
       static const balance_db_interface& db_interface( const chain_interface& );
    };

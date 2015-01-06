@@ -123,7 +123,7 @@ namespace bts { namespace client {
     my->_notifier.send_notification("client_exiting_unexpectedly", "Client Exiting Unexpectedly", message.str(), my->_bitshares_icon);
   }
 
-  void bts_gntp_notifier::notify_head_block_too_old(const fc::time_point_sec& head_block_age)
+  void bts_gntp_notifier::notify_head_block_too_old(const fc::time_point_sec head_block_age)
   {
     fc::time_point block_age_cutoff = fc::time_point::now() - fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC * my->_missed_block_count_threshold);
     if (head_block_age < block_age_cutoff)

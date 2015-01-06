@@ -23,7 +23,7 @@ string pretty_shorten( const string& str, size_t max_size )
     return str;
 }
 
-string pretty_timestamp( const time_point_sec& timestamp )
+string pretty_timestamp( const time_point_sec timestamp )
 {
     if( FILTER_OUTPUT_FOR_TESTS )
         return "<d-ign>" + timestamp.to_iso_string() + "</d-ign>";
@@ -37,7 +37,7 @@ string pretty_path( const path& file_path )
     return file_path.generic_string();
 }
 
-string pretty_age( const time_point_sec& timestamp, bool from_now, const string& suffix )
+string pretty_age( const time_point_sec timestamp, bool from_now, const string& suffix )
 {
     string str;
 

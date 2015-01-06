@@ -175,7 +175,7 @@ namespace bts { namespace net
       {
         item_id            item;
         fc::time_point_sec timestamp;
-        timestamped_item_id(const item_id& item, const fc::time_point_sec& timestamp) :
+        timestamped_item_id(const item_id& item, const fc::time_point_sec timestamp) :
           item(item),
           timestamp(timestamp)
         {}
