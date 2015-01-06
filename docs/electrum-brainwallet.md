@@ -1,5 +1,7 @@
 1) Download electrum. Follow the instructions.
+
 2) Make sure you know how to restore this wallet from the brain wallet seed.
+
 3) Go to "receive" and copy one of the BTC addresses.  1jF4...
 
 4) To send to this brain wallet:
