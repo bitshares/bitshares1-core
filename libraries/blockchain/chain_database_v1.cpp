@@ -52,7 +52,7 @@ void chain_database_impl::pay_delegate_v1( const pending_chain_state_ptr& pendin
       record.signee_fees_destroyed = burned_paycheck;
 } FC_CAPTURE_AND_RETHROW( (block_signee)(block_id)(record) ) }
 
-void chain_database_impl::execute_markets_v1( const fc::time_point_sec& timestamp, const pending_chain_state_ptr& pending_state )
+void chain_database_impl::execute_markets_v1( const fc::time_point_sec timestamp, const pending_chain_state_ptr& pending_state )
 { try {
   vector<market_transaction> market_transactions;
 

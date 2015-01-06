@@ -66,7 +66,7 @@ namespace bts { namespace blockchain {
             void                                        recursive_mark_as_invalid( const std::unordered_set<block_id_type>& ids, const fc::exception& reason );
 
             void                                        execute_markets(const fc::time_point_sec timestamp, const pending_chain_state_ptr& pending_state );
-            void                                        execute_markets_v1(const fc::time_point_sec& timestamp, const pending_chain_state_ptr& pending_state );
+            void                                        execute_markets_v1(const fc::time_point_sec timestamp, const pending_chain_state_ptr& pending_state );
             void                                        update_random_seed( const secret_hash_type& new_secret,
                                                                             const pending_chain_state_ptr& pending_state,
                                                                             block_record& record );

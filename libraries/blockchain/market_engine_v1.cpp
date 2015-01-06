@@ -12,7 +12,7 @@ namespace bts { namespace blockchain { namespace detail {
           _prior_state = ps;
       }
 
-      bool market_engine_v1::execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp )
+      bool market_engine_v1::execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec timestamp )
       {
          try {
              _quote_id = quote_id;

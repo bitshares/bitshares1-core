@@ -6,7 +6,7 @@ namespace bts { namespace blockchain { namespace detail {
   {
   public:
     market_engine_v2( pending_chain_state_ptr ps, chain_database_impl& cdi );
-    bool execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp );
+    bool execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec timestamp );
 
   private:
     void push_market_transaction( const market_transaction& mtrx );
@@ -26,7 +26,7 @@ namespace bts { namespace blockchain { namespace detail {
     void update_market_history( const asset& trading_volume,
                                 const price& opening_price,
                                 const price& closing_price,
-                                const fc::time_point_sec& timestamp );
+                                const fc::time_point_sec timestamp );
 
     void reset_current_ask();
 

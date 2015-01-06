@@ -31,7 +31,7 @@ namespace bts { namespace blockchain { namespace detail {
       _pending_state->apply_changes();
   }
 
-  bool market_engine_v6::execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp )
+  bool market_engine_v6::execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec timestamp )
   {
       try {
           _quote_id = quote_id;
@@ -622,7 +622,7 @@ namespace bts { namespace blockchain { namespace detail {
   void market_engine_v6::update_market_history( const asset& trading_volume,
                               const price& opening_price,
                               const price& closing_price,
-                              const fc::time_point_sec& timestamp )
+                              const fc::time_point_sec timestamp )
   {
           if( trading_volume.amount > 0 && get_next_bid() && get_next_ask() )
           {

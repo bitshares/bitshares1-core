@@ -12,7 +12,7 @@ namespace bts { namespace blockchain { namespace detail {
          _prior_state = ps;
       }
 
-      void market_engine_v4::cancel_all_shorts( const time_point_sec& limit_timestamp )
+      void market_engine_v4::cancel_all_shorts( const time_point_sec limit_timestamp )
       {
          for( auto short_itr = _db_impl._short_db.begin(); short_itr.valid(); ++short_itr )
          {
@@ -36,7 +36,7 @@ namespace bts { namespace blockchain { namespace detail {
          _pending_state->apply_changes();
       }
 
-      bool market_engine_v4::execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp )
+      bool market_engine_v4::execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec timestamp )
       {
          try
          {
@@ -714,7 +714,7 @@ namespace bts { namespace blockchain { namespace detail {
       void market_engine_v4::update_market_history( const asset& trading_volume,
                                   const price& opening_price,
                                   const price& closing_price,
-                                  const fc::time_point_sec& timestamp )
+                                  const fc::time_point_sec timestamp )
       {
              if( trading_volume.amount > 0 && get_next_bid() && get_next_ask() )
              {
