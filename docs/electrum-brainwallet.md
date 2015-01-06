@@ -5,7 +5,7 @@
 3) Go to "receive" and copy one of the BTC addresses.  1jF4...
 
 4) To send to this brain wallet:
->>>  wallet_transfer_to_legacy_address 100 BTS my-account 1jF4...
+    >>>  wallet_transfer_to_legacy_address 100 BTS my-account 1jF4...
 
 5) To recover funds from this brain wallet:
 In electrum console:
@@ -13,8 +13,9 @@ In electrum console:
 5afb...
 
 In bitshares:
->>> wallet_import_private_key 5afb... my-account
->>> rescan
+    >>> wallet_import_private_key 5afb... my-account
+
+    >>> rescan
 
 Now you should see your funds and can do a normal transfer.
 
