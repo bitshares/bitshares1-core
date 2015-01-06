@@ -352,6 +352,7 @@ namespace bts { namespace blockchain {
          self->set_property( chain_property_enum::last_asset_id, asset_id );
          self->set_property( chain_property_enum::last_account_id, uint64_t( config.delegates.size() ) );
          self->set_property( chain_property_enum::last_object_id, 0 );
+         self->set_property( chain_property_enum::last_random_seed_id, variant( fc::ripemd160() ) );
 
          self->sanity_check();
          return _chain_id;
