@@ -25,6 +25,7 @@ public_key_type transaction_builder::order_key_for_account(const address& accoun
    }
    return order_key;
 }
+
 transaction_builder& transaction_builder::release_escrow( const account_record& payer,
                                                           const address& escrow_account,
                                                           const address& released_by_address,
@@ -61,6 +62,31 @@ transaction_builder& transaction_builder::release_escrow( const account_record& 
    transaction_record.received_time = transaction_record.created_time;
    return *this;
 } FC_CAPTURE_AND_RETHROW( (payer)(escrow_account)(released_by_address)(amount_to_sender)(amount_to_receiver) ) }
+
+transaction_builder&transaction_builder::register_account(const string& name,
+                                                          optional<variant> public_data,
+                                                          public_key_type owner_key,
+                                                          optional<public_key_type> active_key,
+                                                          optional<uint8_t> delegate_pay,
+                                                          optional<account_meta_info> meta_info,
+                                                          optional<wallet_account_record> paying_account)
+{ try {
+   if( !public_data ) public_data = variant(fc::variant_object());
+   if( !active_key ) active_key = owner_key;
+   if( !delegate_pay ) delegate_pay = -1;
+
+   if( paying_account ) deduct_balance(paying_account->owner_address(), asset());
+
+   trx.register_account(name, *public_data, owner_key, *active_key, *delegate_pay, meta_info);
+
+   ledger_entry entry;
+   entry.from_account = paying_account->owner_key;
+   entry.to_account = owner_key;
+   entry.memo = "Register account: " + name;
+   transaction_record.ledger_entries.push_back(entry);
+
+   return *this;
+} FC_CAPTURE_AND_RETHROW( (name)(public_data)(owner_key)(active_key)(delegate_pay)(paying_account) ) }
 
 transaction_builder& transaction_builder::update_account_registration(const wallet_account_record& account,
                                                                       optional<variant> public_data,
