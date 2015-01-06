@@ -4,8 +4,6 @@
 #include <bts/blockchain/transaction_evaluation_state.hpp>
 #include <fc/time.hpp>
 
-#include <bts/blockchain/fork_blocks.hpp>
-
 namespace bts { namespace blockchain {
 
 void update_account_operation::evaluate_v1( transaction_evaluation_state& eval_state )
@@ -31,12 +29,8 @@ void update_account_operation::evaluate_v1( transaction_evaluation_state& eval_s
 
        FC_ASSERT( !current_record->is_retracted() || !current_record->is_delegate() );
 
-       const uint32_t block_num = eval_state._current_state->get_head_block_num();
-       if( block_num < BTS_V0_4_28_FORK_BLOCK_NUM )
-       {
-           if( current_record->is_delegate() )
-               current_record->set_signing_key( block_num, current_record->active_key() );
-       }
+       if( current_record->is_delegate() )
+           current_record->set_signing_key( eval_state._current_state->get_head_block_num(), current_record->active_key() );
    }
    else
    {
