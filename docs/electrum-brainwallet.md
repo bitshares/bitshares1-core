@@ -9,8 +9,8 @@
 
 5) To recover funds from this brain wallet:
 In electrum console:
-> dumpprivkey("1jF4...")
-5afb...
+    > dumpprivkey("1jF4...")
+    5afb...
 
 In bitshares:
     >>> wallet_import_private_key 5afb... my-account
