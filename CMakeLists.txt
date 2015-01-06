@@ -2,6 +2,24 @@
 project( BitShares )
 cmake_minimum_required( VERSION 2.8.12 )
 
+set( BLOCKCHAIN_NAME "BitShares" CACHE STRING "Name of the blockchain, used to name the binaries (BitShares, DevShares, BitSharesTestNet)" )
+
+if( BLOCKCHAIN_NAME STREQUAL BitShares )
+  set( CLI_CLIENT_EXECUTABLE_NAME bitshares_client )
+  set( GUI_CLIENT_EXECUTABLE_NAME BitShares )
+  set( CUSTOM_URL_SCHEME "bts" )
+elseif( BLOCKCHAIN_NAME STREQUAL DevShares )
+  set( CLI_CLIENT_EXECUTABLE_NAME devshares_client )
+  set( GUI_CLIENT_EXECUTABLE_NAME DevShares )
+  set( CUSTOM_URL_SCHEME "dvs" )
+elseif(BLOCKCHAIN_NAME STREQUAL BitSharesTestNet )
+  set( CLI_CLIENT_EXECUTABLE_NAME bitsharestestnet_client )
+  set( GUI_CLIENT_EXECUTABLE_NAME BitSharesTestNet )
+  set( CUSTOM_URL_SCHEME "xts" )
+else()
+  message( FATAL_ERROR "Expected BLOCKCHAIN_NAME to be set to BitShares, DevShares, or BitSharesTestNet" )
+endif()
+
 # http://stackoverflow.com/a/18369825
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.8)
@@ -172,8 +190,6 @@ target_include_directories( leveldb PRIVATE ${LEVELDB_BUILD_PRIVATE_INCLUDES}
 set_target_properties(leveldb PROPERTIES COMPILE_DEFINITIONS "${LEVELDB_BUILD_DEFINES}")
 
 find_package( BerkeleyDB )
-
-set( CUSTOM_URL_SCHEME "bts" )
 
 add_subdirectory( libraries )
 add_subdirectory( vendor/miniupnp/miniupnpc )
