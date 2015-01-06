@@ -239,14 +239,8 @@ namespace bts { namespace blockchain {
 
          const fc::time_point_sec timestamp = config.timestamp;
 
-         // Initialize god account
-         int32_t account_id = 0;
-         account_record god;
-         god.id = account_id;
-         god.name = "GOD";
-         self->store_account_record( god );
-
          // Initialize delegates
+         int32_t account_id = 0;
          for( const genesis_delegate& delegate : config.delegates )
          {
              ++account_id;
@@ -334,7 +328,7 @@ namespace bts { namespace blockchain {
          base_asset.name = BTS_BLOCKCHAIN_NAME;
          base_asset.description = BTS_BLOCKCHAIN_DESCRIPTION;
          base_asset.public_data = variant("");
-         base_asset.issuer_account_id = god.id;
+         base_asset.issuer_account_id = 0;
          base_asset.precision = BTS_BLOCKCHAIN_PRECISION;
          base_asset.registration_date = timestamp;
          base_asset.last_update = timestamp;

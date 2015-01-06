@@ -785,8 +785,10 @@ string pretty_asset_list( const vector<asset_record>& asset_records, cptr client
         else
         {
             const auto account_record = client->get_chain()->get_account_record( issuer_id );
-            FC_ASSERT( account_record.valid() );
-            out << std::setw( 32 ) << pretty_shorten( account_record->name, 31 );
+            if( account_record.valid() )
+                out << std::setw( 32 ) << pretty_shorten( account_record->name, 31 );
+            else
+                out << std::setw( 32 ) << "";
 
             const auto max_supply = asset( asset_record.maximum_share_supply, asset_id );
             out << std::setw( 10 ) << pretty_percent( supply.amount, max_supply.amount);

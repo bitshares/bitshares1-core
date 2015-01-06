@@ -46,9 +46,6 @@ namespace bts { namespace blockchain {
       account_id_type                   account_id;
       fc::optional<fc::variant>         public_data;
       fc::optional<public_key_type>     active_key;
-
-      // this value can only be reduced, never increased from
-      // the prior value.
       uint8_t                           delegate_pay_rate = -1;
 
       bool is_retracted()const;
