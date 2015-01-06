@@ -13,6 +13,7 @@ In electrum console:
     5afb...
 
 In bitshares:
+
     >>> wallet_import_private_key 5afb... my-account
 
     >>> rescan
