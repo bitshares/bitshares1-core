@@ -7,28 +7,31 @@ import "utils.js" as Utils
 StackView {
    id: walletGui
 
-   property real minimumWidth: welcomeBox.Layout.minimumWidth + visuals.margins * 2
-   property real minimumHeight: welcomeBox.Layout.minimumHeight + visuals.margins * 2
+   property real minimumWidth: (!!currentItem)? currentItem.minimumWidth : 1
+   property real minimumHeight: (!!currentItem)? currentItem.minimumHeight : 1
 
    initialItem: WelcomeLayout {
       id: welcomeBox
-      anchors.fill: parent
-      anchors.margins: visuals.margins
       firstTime: !wallet.walletExists
 
       function proceed() {
          console.log("Finished welcome screen.")
+         clearPassword()
+         push(assetsUi)
       }
       
       onPasswordEntered: {
          if( wallet.unlocked )
-            return
+            return proceed()
 
          if( firstTime ) {
             Utils.connectOnce(wallet.walletExistsChanged, function(walletWasCreated) {
                if( walletWasCreated ) {
-                  console.log("Wallet created!")
                   Utils.connectOnce(wallet.onAccountRegistered, proceed)
+                  Utils.connectOnce(wallet.onErrorRegistering, function(reason) {
+                     //FIXME: Do something much, much better here...
+                     console.log("Can't register: " + reason)
+                  })
 
                   if( wallet.connected ) {
                      wallet.registerAccount()
@@ -47,11 +50,19 @@ StackView {
             welcomeBox.state = "REGISTERING"
             wallet.createWallet(username, password)
          } else {
-            console.log("Unlocking wallet...")
+            Utils.connectOnce(wallet.onUnlockedChanged, proceed, function() { return wallet.unlocked })
             wallet.unlockWallet(password)
          }
       }
+   }
 
-      Component.onCompleted: Utils.connectOnce(wallet.onUnlockedChanged, proceed, function() { return wallet.unlocked })
+   Component {
+      id: assetsUi
+      AssetsLayout {
+         onLockRequested: {
+            wallet.lockWallet()
+            walletGui.pop()
+         }
+      }
    }
 }
