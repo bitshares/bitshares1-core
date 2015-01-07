@@ -64,7 +64,8 @@ namespace bts { namespace light_wallet {
                       const string& brain_seed, const string& salt = string() );
 
          bool request_register_account();
-         bool account_is_registered();
+         account_record& account();
+         account_record& fetch_account();
          
          void transfer( double amount, 
                         const string& symbol, 
