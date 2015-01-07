@@ -5,7 +5,9 @@
 #include <fc/crypto/sha256.hpp>
 
 #ifndef WIN32
+#ifndef __APPLE__
 #include <time.h>
+#endif
 #endif
 
 // get some entropy by running sha256 as a counter
@@ -116,14 +118,17 @@ int main(int argc, char** argv, char** envp)
 
                 fc::uint128 a1b1 = a1;
 #ifndef WIN32
+#ifndef __APPLE__
                 // report time
                 timespec t_before;
                 timespec t_after;
                 
                 clock_gettime( CLOCK_MONOTONIC, &t_before );
 #endif
+#endif
                 a1b1 *= b1;
 #ifndef WIN32
+#ifndef __APPLE__
                 clock_gettime( CLOCK_MONOTONIC, &t_after );
                 fc::uint128 ns_before;
                 fc::uint128 ns_after;
@@ -138,6 +143,7 @@ int main(int argc, char** argv, char** envp)
                 
                 total_time += (ns_after - ns_before);
                 calls++;
+#endif
 #endif
 
                 char data[5][33];
