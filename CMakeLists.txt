@@ -2,7 +2,11 @@
 project( BitShares )
 cmake_minimum_required( VERSION 2.8.12 )
 
-set( BLOCKCHAIN_NAME "BitShares" CACHE STRING "Name of the blockchain, used to name the binaries (BitShares, DevShares, BitSharesTestNet)" )
+# this variable is set to different values in each git branch:
+# develop branch                => BitSharesTestNet
+# devshares branch              => DevShares
+# bitshares and master branches => BitShares
+set( BLOCKCHAIN_NAME "BitSharesTestNet" )
 
 if( BLOCKCHAIN_NAME STREQUAL BitShares )
   set( CLI_CLIENT_EXECUTABLE_NAME bitshares_client )
