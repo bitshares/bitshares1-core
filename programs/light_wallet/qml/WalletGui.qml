@@ -28,6 +28,10 @@ StackView {
             Utils.connectOnce(wallet.walletExistsChanged, function(walletWasCreated) {
                if( walletWasCreated ) {
                   Utils.connectOnce(wallet.onAccountRegistered, proceed)
+                  Utils.connectOnce(wallet.onErrorRegistering, function(reason) {
+                     //FIXME: Do something much, much better here...
+                     console.log("Can't register: " + reason)
+                  })
 
                   if( wallet.connected ) {
                      wallet.registerAccount()
@@ -46,13 +50,9 @@ StackView {
             welcomeBox.state = "REGISTERING"
             wallet.createWallet(username, password)
          } else {
+            Utils.connectOnce(wallet.onUnlockedChanged, proceed, function() { return wallet.unlocked })
             wallet.unlockWallet(password)
          }
-      }
-
-      Stack.onStatusChanged: {
-         if( Stack.status === Stack.Active )
-            Utils.connectOnce(wallet.onUnlockedChanged, proceed, function() { return wallet.unlocked })
       }
    }
 
