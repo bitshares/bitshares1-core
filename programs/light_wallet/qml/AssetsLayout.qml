@@ -35,7 +35,7 @@ Item {
          Label {
             color: visuals.textColor
             font.pixelSize: visuals.textBaseSize * 1.1
-            text: wallet.accountName + qsTr("'s Assets")
+            text: wallet.account.name + qsTr("'s Assets")
          }
          Item { Layout.fillWidth: true }
          Button {
