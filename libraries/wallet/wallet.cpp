@@ -1649,6 +1649,18 @@ namespace detail {
        return builder;
    } FC_CAPTURE_AND_RETHROW() }
 
+   std::shared_ptr<transaction_builder> wallet::create_transaction_builder_from_file(const string& old_builder_path)
+   { try {
+       auto path = old_builder_path;
+       if( path == "" )
+       {
+            path = (get_data_directory() / "trx").string() + "/latest.trx";
+       }
+       auto old_builder = fc::json::from_file(path).as<transaction_builder>();
+       auto builder = std::make_shared<transaction_builder>( old_builder, my.get() );
+       return builder;
+   } FC_CAPTURE_AND_RETHROW() }
+
 
    vector<std::pair<string, wallet_transaction_record>> wallet::publish_feeds_multi_experimental(
            map<string,double> amount_per_xts, // map symbol to amount per xts
@@ -3083,12 +3095,21 @@ namespace detail {
            const string& memo_message,
            bool sign )
    { try {
-      if( !my->_blockchain->is_valid_account_name( to_account_name ) )
-          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("to_account_name",to_account_name) );
-
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
       FC_ASSERT( my->_blockchain->is_valid_symbol( symbol ) );
+
+      public_key_type receiver_public_key;
+      try
+      {
+        receiver_public_key = public_key_type(to_account_name);
+      }
+      catch (const fc::exception&)
+      {
+        if( !my->_blockchain->is_valid_account_name( to_account_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "${to_account_name} is not a valid account name or public key!", ("to_account_name",to_account_name) );
+        receiver_public_key = get_owner_public_key( to_account_name );
+      }
 
       signed_transaction         trx;
       unordered_set<address>     required_signatures;
@@ -3114,7 +3135,6 @@ namespace detail {
           required_signatures.insert( owner );
 //      required_signatures.insert( issuer_account->active_key() );
 
-      public_key_type receiver_public_key = get_owner_public_key( to_account_name );
       owallet_account_record issuer = my->_wallet_db.lookup_account( asset_record->issuer_account_id );
       FC_ASSERT( issuer.valid() );
       owallet_key_record  issuer_key = my->_wallet_db.lookup_key( issuer->owner_address() );
@@ -4351,10 +4371,10 @@ namespace detail {
         if( alternate_path == "" )
         {
             auto dir = (get_data_directory() / "trx").string();
-            auto default_path = dir + "latest.trx";
+            auto default_path = dir + "/latest.trx";
             if( !fc::exists( default_path ) )
                 fc::create_directories( dir );
-            fs.open(dir + "latest.trx");
+            fs.open(default_path);
         }
         else
         {
