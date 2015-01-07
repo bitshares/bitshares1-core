@@ -24,7 +24,6 @@ namespace bts { namespace blockchain { namespace detail {
     void pay_current_cover( market_transaction& mtrx, asset_record& quote_asset );
     void pay_current_ask( const market_transaction& mtrx, asset_record& base_asset );
 
-    bool get_next_short();
     bool get_next_bid();
     bool get_next_ask();
     asset get_current_cover_debt()const;

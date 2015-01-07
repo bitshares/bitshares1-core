@@ -89,4 +89,8 @@ namespace bts { namespace blockchain {
    FC_DECLARE_DERIVED_EXCEPTION( insufficient_feeds,                bts::blockchain::evaluation_error, 37006, "insufficient feeds" );
    FC_DECLARE_DERIVED_EXCEPTION( invalid_feed_price,                bts::blockchain::evaluation_error, 37007, "invalid feed price" );
 
+   FC_DECLARE_DERIVED_EXCEPTION( price_multiplication_overflow,     bts::blockchain::evaluation_error, 38001, "price multiplication overflow" );
+   FC_DECLARE_DERIVED_EXCEPTION( price_multiplication_underflow,    bts::blockchain::evaluation_error, 38002, "price multiplication underflow" );
+   FC_DECLARE_DERIVED_EXCEPTION( price_multiplication_undefined,    bts::blockchain::evaluation_error, 38003, "price multiplication undefined product 0*inf" );
+
 } } // bts::blockchain

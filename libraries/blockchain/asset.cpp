@@ -10,12 +10,53 @@
 #define BTS_PRICE_PRECISION uint64_t(BTS_BLOCKCHAIN_MAX_SHARES*1000)
 
 namespace bts { namespace blockchain {
-  price operator +  ( const price& l, const price& r )
+
+  price operator *( const price& l, const price& r )
   { try {
      FC_ASSERT( l.quote_asset_id == r.quote_asset_id );
      FC_ASSERT( l.base_asset_id  == r.base_asset_id );
-     price result = l;
-     result.ratio += r.ratio;
+
+     // infinity times zero is undefined / exception
+     // infinity times anything else is infinity
+     if( l.is_infinite() )
+     {
+         if( r.ratio == 0 )
+             FC_THROW_EXCEPTION( price_multiplication_undefined, "price multiplication undefined (0 * inf)" );
+         return l;
+     }
+     if( r.is_infinite() )
+     {
+         if( l.ratio == 0 )
+             FC_THROW_EXCEPTION( price_multiplication_undefined, "price multiplication undefined (inf * 0)" );
+         return r;
+     }
+     
+     // zero times anything is zero (infinity is already handled above)
+     if( l.ratio == 0 )
+         return l;
+     if( r.ratio == 0 )
+         return r;
+
+     fc::bigint product = l.ratio;
+     product *= r.ratio;
+     product /= BTS_PRICE_PRECISION;
+
+     // if the quotient is zero, it means there was an underflow
+     //    (i.e. the result is nonzero but too small to represent)
+     if( product == 0 )
+         FC_THROW_EXCEPTION( price_multiplication_underflow, "price multiplication underflow" );
+
+     static fc::bigint bi_infinity = price::infinite();
+
+     // if the quotient is infinity or bigger, then we have a finite
+     //    result that is too big to represent (overflow)
+     if( product >= bi_infinity )
+         FC_THROW_EXCEPTION( price_multiplication_overflow, "price multiplication overflow" );
+
+     // NB we throw away the low bits, thus this function always rounds down
+
+     price result( fc::uint128( product ),
+                   l.base_asset_id, l.quote_asset_id );
      return result;
   } FC_CAPTURE_AND_RETHROW( (l)(r) ) }
 
@@ -64,6 +105,12 @@ namespace bts { namespace blockchain {
   {
       static fc::uint128 i(-1);
       return i;
+  }
+  
+  bool price::is_infinite() const
+  {
+      static fc::uint128 infinity = infinite();
+      return (this->ratio == infinity);
   }
 
   price::price( const std::string& s )

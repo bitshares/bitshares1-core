@@ -53,8 +53,9 @@ namespace bts { namespace blockchain {
       std::string ratio_string()const;
       operator std::string()const;
       explicit operator double()const;
+      bool is_infinite() const;
 
-      fc::uint128_t ratio; // 64.64
+      fc::uint128_t ratio; // This is a DECIMAL FRACTION with denominator equal to BTS_PRICE_PRECISION
 
       std::pair<asset_id_type,asset_id_type> asset_pair()const { return std::make_pair( quote_asset_id, base_asset_id ); }
 
@@ -82,7 +83,8 @@ namespace bts { namespace blockchain {
   inline bool operator != ( const price& l, const price& r ) { return l.ratio != r.ratio ||
                                                                       l.base_asset_id != r.base_asset_id ||
                                                                       l.quote_asset_id != r.quote_asset_id; }
-  price operator +  ( const price& l, const price& r );
+
+  price operator *  ( const price& l, const price& r );
 
   inline bool operator <  ( const price& l, const price& r )
   {

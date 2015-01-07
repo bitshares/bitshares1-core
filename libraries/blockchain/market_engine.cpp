@@ -578,26 +578,6 @@ namespace bts { namespace blockchain { namespace detail {
 
   } FC_CAPTURE_AND_RETHROW( (mtrx) )  } // pay_current_ask
 
-  bool market_engine::get_next_short()
-  {
-      if( _short_itr.valid() )
-      {
-        auto bid = market_order( short_order,
-                                 _short_itr.key(),
-                                 _short_itr.value(),
-                                 _short_itr.value().balance,
-                                 _short_itr.key().order_price );
-        if( bid.get_price().quote_asset_id == _quote_id &&
-            bid.get_price().base_asset_id == _base_id )
-        {
-            --_short_itr;
-            _current_bid = bid;
-            return _current_bid.valid();
-        }
-      }
-      return false;
-  }
-
   bool market_engine::get_next_bid()
   { try {
       if( _current_bid && _current_bid->get_quantity().amount > 0 )
@@ -612,6 +592,7 @@ namespace bts { namespace blockchain { namespace detail {
          if( _feed_price )
          {
             bid = market_order( relative_bid_order, _relative_bid_itr.key(), _relative_bid_itr.value() );
+            // in case of overflow, underflow, or undefined, the result will be price(), which will fail the following check.
             if( (bid->get_price(*_feed_price).quote_asset_id != _quote_id || bid->get_price(*_feed_price).base_asset_id != _base_id) )
                bid.reset();
          }
@@ -635,23 +616,56 @@ namespace bts { namespace blockchain { namespace detail {
          }
       }
 
+      // We no longer have get_next_short() which was previously
+      //   called here.  Because get_next_short() will (1) get the
+      //   next short and (2) advance the short iterator.  But our
+      //   merge check must happen between steps (1) and (2), and
+      //   step (2) must not happen if the short loses the merge check.
+      //
+      // NB shorts can execute below the feed if the short wall has
+      //   been exhausted, so in the general case shorts may be
+      //   interleaved with bids, even without considering relative
+      //   orders!
 
+      // if we have no feed, no shorts will execute.
+      if( _feed_price && _short_itr.valid() )
+      {
+        market_order short_bid = market_order( short_order,
+                                 _short_itr.key(),
+                                 _short_itr.value(),
+                                 _short_itr.value().balance,
+                                 _short_itr.key().order_price );
+
+        price short_price = short_bid.get_price( *_feed_price );
+
+        if( short_price.quote_asset_id == _quote_id &&
+            short_price.base_asset_id == _base_id )
+        {
+            if( (!bid) || (short_price > bid->get_price( *_feed_price )) )
+               bid = short_bid;
+        }
+      }
+      
       if( bid )
       {
-         if( bid->type == relative_bid_order ) // all relative bids take priority over shorts
-         {
-            --_relative_bid_itr;
-         }
-         else
-         {
-            if( _feed_price.valid() && bid->get_price() < *_feed_price && get_next_short() )
-                return _current_bid.valid();
-            --_bid_itr;
-         }
-         _current_bid = bid;
-         return _current_bid.valid();
+          _current_bid = bid;
+          switch( uint8_t(bid->type) )
+          {
+              case bid_order:
+                  --_bid_itr;
+                  break;
+              case relative_bid_order:
+                  --_relative_bid_itr;
+                  break;
+              case short_order:
+                  --_short_itr;
+                  break;
+              default:
+                  // TODO:  Warning or something goes here?
+                  ;
+          }
       }
-      get_next_short();
+      
       return _current_bid.valid();
   } FC_CAPTURE_AND_RETHROW() }
 
@@ -695,6 +709,7 @@ namespace bts { namespace blockchain { namespace detail {
 
       /**
        *  Process expired collateral positions.
+       *  Expired margin positions take second priority based upon age
        */
       while( _collateral_expiration_itr != _db_impl._collateral_expiration_index.end() )
       {
@@ -722,21 +737,45 @@ namespace bts { namespace blockchain { namespace detail {
          } // else continue to next item
       }
 
-
       /**
-       *  Expired margin positions take second priority based upon age
+       *  Process normal and relative asks.
        */
+
+      optional<market_order> ask;
+
+      if( _feed_price && _relative_ask_itr.valid() )
+      {
+         ask = market_order( relative_ask_order, _relative_ask_itr.key(), _relative_ask_itr.value() );
+         // in case of overflow, underflow, or undefined, the result will be price(), which will fail the following check.
+         if( (ask->get_price(*_feed_price).quote_asset_id != _quote_id || ask->get_price(*_feed_price).base_asset_id != _base_id) )
+            ask.reset();
+      }
 
       if( _ask_itr.valid() )
       {
-        const auto ask = market_order( ask_order, _ask_itr.key(), _ask_itr.value() );
-        if( ask.get_price().quote_asset_id == _quote_id &&
-            ask.get_price().base_asset_id == _base_id )
-        {
-            _current_ask = ask;
-        }
-        ++_ask_itr;
+        market_order abs_ask = market_order( ask_order, _ask_itr.key(), _ask_itr.value() );
+        if( (abs_ask.get_price().quote_asset_id == _quote_id && abs_ask.get_price().base_asset_id == _base_id)
+            && ((!ask.valid()) || (abs_ask.get_price() < ask->get_price( *_feed_price))) )
+            ask = abs_ask;
       }
+
+      if( ask )
+      {
+          _current_ask = ask;
+          switch( uint8_t(ask->type) )
+          {
+              case ask_order:
+                  ++_ask_itr;
+                  break;
+              case relative_ask_order:
+                  ++_relative_ask_itr;
+                  break;
+              default:
+                  // TODO:  Warning or something goes here?
+                  ;
+          }
+      }
+
       return _current_ask.valid();
   } FC_CAPTURE_AND_RETHROW() }
 
