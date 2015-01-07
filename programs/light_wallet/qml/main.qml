@@ -19,7 +19,7 @@ ApplicationWindow {
 
    function connectToServer() {
       if( !wallet.connected )
-         wallet.connectToServer("localhost", 3333)
+         wallet.connectToServer("localhost", 6691)
    }
    function showError(error) {
       errorText.text = qsTr("Error: ") + error

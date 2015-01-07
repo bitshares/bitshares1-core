@@ -63,7 +63,7 @@ namespace bts { namespace blockchain {
        return false;
    }
 
-   asset balance_record::get_spendable_balance( const time_point_sec& at_time )const
+   asset balance_record::get_spendable_balance( const time_point_sec at_time )const
    {
        switch( withdraw_condition_types( condition.type ) )
        {
@@ -107,6 +107,15 @@ namespace bts { namespace blockchain {
        }
        FC_ASSERT( false, "Should never get here!" );
    }
+
+    balance_id_type balance_record::get_multisig_balance_id( uint32_t m, const vector<address>& addrs )
+    { try {
+        withdraw_with_multisig condition;
+        condition.required = m;
+        condition.owners = set<address>(addrs.begin(), addrs.end());
+        auto balance = balance_record(condition);
+        return balance.id();
+    } FC_CAPTURE_AND_RETHROW( (m)(addrs) ) }
 
     const balance_db_interface& balance_record::db_interface( const chain_interface& db )
     { try {

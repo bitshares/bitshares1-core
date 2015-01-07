@@ -64,6 +64,7 @@ namespace bts { namespace light_wallet {
                       const string& brain_seed, const string& salt = string() );
 
          bool request_register_account();
+         bool account_is_registered();
          
          void transfer( double amount, 
                         const string& symbol, 
@@ -76,7 +77,7 @@ namespace bts { namespace light_wallet {
          oprice get_median_feed_price( const string& symbol );
          asset  get_fee( const string& symbol );
 
-         set<string,double> balance()const;
+         map<string,double> balance()const;
 
          optional<asset_record> get_asset_record( const string& symbol );
 

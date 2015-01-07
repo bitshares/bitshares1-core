@@ -911,7 +911,7 @@ namespace bts { namespace blockchain {
           pending_state->set_active_delegates( active_del );
       } FC_CAPTURE_AND_RETHROW() }
 
-      void chain_database_impl::execute_markets( const fc::time_point_sec& timestamp, const pending_chain_state_ptr& pending_state )
+      void chain_database_impl::execute_markets( const fc::time_point_sec timestamp, const pending_chain_state_ptr& pending_state )
       { try {
         vector<market_transaction> market_transactions;
 
@@ -935,7 +935,7 @@ namespace bts { namespace blockchain {
        */
       void chain_database_impl::extend_chain( const full_block& block_data )
       { try {
-         const time_point& start_time = time_point::now();
+         const time_point start_time = time_point::now();
          const block_id_type& block_id = block_data.id();
          block_summary summary;
          try
@@ -1413,7 +1413,7 @@ namespace bts { namespace blockchain {
       return get_block_signee( get_block_id( block_num ) );
    }
 
-   account_record chain_database::get_slot_signee( const time_point_sec& timestamp,
+   account_record chain_database::get_slot_signee( const time_point_sec timestamp,
                                                    const std::vector<account_id_type>& ordered_delegates )const
    { try {
       auto slot_number = blockchain::get_slot_number( timestamp );
@@ -1982,7 +1982,7 @@ namespace bts { namespace blockchain {
       return trxs;
    }
 
-   full_block chain_database::generate_block( const time_point_sec& block_timestamp, const delegate_config& config )
+   full_block chain_database::generate_block( const time_point_sec block_timestamp, const delegate_config& config )
    { try {
       const time_point start_time = time_point::now();
 
@@ -2333,7 +2333,7 @@ namespace bts { namespace blockchain {
         FC_ASSERT( start_block_num >= 1 );
 
         const signed_block_header block_header = get_block_header( start_block_num );
-        const time_point_sec& min_timestamp = block_header.timestamp;
+        const time_point_sec min_timestamp = block_header.timestamp;
 
         vector<slot_record> slot_records;
         slot_records.reserve( count );
@@ -3011,7 +3011,7 @@ namespace bts { namespace blockchain {
          my->_slot_record_db.store( r.start_time, r );
    }
 
-   oslot_record chain_database::get_slot_record( const time_point_sec& start_time )const
+   oslot_record chain_database::get_slot_record( const time_point_sec start_time )const
    {
      FC_ASSERT( my->_track_stats );
      return my->_slot_record_db.fetch_optional( start_time );
@@ -3059,8 +3059,8 @@ namespace bts { namespace blockchain {
 
    market_history_points chain_database::get_market_price_history( const asset_id_type quote_id,
                                                                    const asset_id_type base_id,
-                                                                   const fc::time_point& start_time,
-                                                                   const fc::microseconds& duration,
+                                                                   const fc::time_point start_time,
+                                                                   const fc::microseconds duration,
                                                                    market_history_key::time_granularity_enum granularity)
    {
       time_point_sec end_time = start_time + duration;

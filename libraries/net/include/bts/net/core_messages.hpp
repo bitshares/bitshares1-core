@@ -230,8 +230,8 @@ namespace bts { namespace net {
 
     address_info() {}
     address_info(const fc::ip::endpoint& remote_endpoint,
-                 const fc::time_point_sec& last_seen_time,
-                 const fc::microseconds& latency,
+                 const fc::time_point_sec last_seen_time,
+                 const fc::microseconds latency,
                  const node_id_t& node_id,
                  peer_connection_direction direction,
                  firewalled_state firewalled) :
@@ -275,7 +275,7 @@ namespace bts { namespace net {
     fc::time_point request_sent_time;
 
     current_time_request_message(){}
-    current_time_request_message(const fc::time_point& request_sent_time) :
+    current_time_request_message(const fc::time_point request_sent_time) :
       request_sent_time(request_sent_time)
     {}
   };
@@ -288,9 +288,9 @@ namespace bts { namespace net {
     fc::time_point reply_transmitted_time;
 
     current_time_reply_message(){}
-    current_time_reply_message(const fc::time_point& request_sent_time,
-                               const fc::time_point& request_received_time,
-                               const fc::time_point& reply_transmitted_time = fc::time_point()) :
+    current_time_reply_message(const fc::time_point request_sent_time,
+                               const fc::time_point request_received_time,
+                               const fc::time_point reply_transmitted_time = fc::time_point()) :
       request_sent_time(request_sent_time),
       request_received_time(request_received_time),
       reply_transmitted_time(reply_transmitted_time)

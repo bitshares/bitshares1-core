@@ -114,6 +114,23 @@ namespace bts { namespace wallet {
        */
       /// @{
       /**
+       * @brief Register a new account on the blockchain
+       * @param name Name of the newly registered account
+       * @param public_data Public data for the new account
+       * @param owner_key Owner key for the new account
+       * @param active_key Active key for the new account. If unset, the owner key will be used
+       * @param delegate_pay Delegate pay for the new account. If unset, account will not be a delegate
+       * @param meta_info Extra information on registered account
+       * @param paying_account Account to pay fees with
+       */
+      transaction_builder& register_account(const string& name,
+                                            optional<variant> public_data,
+                                            public_key_type owner_key,
+                                            optional<public_key_type> active_key,
+                                            optional<uint8_t> delegate_pay,
+                                            optional<account_meta_info> meta_info,
+                                            optional<wallet_account_record> paying_account);
+      /**
        * @brief Update a specified account on the blockchain
        * @param account The account to update
        * @param public_data The public data to set on the account

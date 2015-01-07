@@ -67,16 +67,6 @@ namespace bts { namespace blockchain {
          share_type                         get_delegate_registration_fee( uint8_t pay_rate )const;
          share_type                         get_asset_registration_fee( uint8_t symbol_length )const;
 
-         balance_id_type                    get_multisig_balance_id( uint32_t m,
-                                                                     const vector<address>& addrs )const
-         {
-             withdraw_with_multisig condition;
-             condition.required = m;
-             condition.owners = set<address>(addrs.begin(), addrs.end());
-             auto balance = balance_record(condition);
-             return balance.id();
-         }
-
          vector<account_id_type>            get_active_delegates()const;
          void                               set_active_delegates( const std::vector<account_id_type>& id );
          bool                               is_active_delegate( const account_id_type id )const;
@@ -213,7 +203,7 @@ namespace bts { namespace blockchain {
          virtual uint32_t                   get_head_block_num()const                                       = 0;
 
          virtual void                       store_slot_record( const slot_record& r )                       = 0;
-         virtual oslot_record               get_slot_record( const time_point_sec& start_time )const        = 0;
+         virtual oslot_record               get_slot_record( const time_point_sec start_time )const        = 0;
 
          virtual void                       store_market_history_record( const market_history_key& key,
                                                                          const market_history_record& record ) = 0;

@@ -138,7 +138,7 @@ namespace bts { namespace blockchain {
          /** Produce a block for the given timeslot, the block is not signed because that is the
           *  role of the wallet.
           */
-         full_block                  generate_block( const time_point_sec& block_timestamp,
+         full_block                  generate_block( const time_point_sec block_timestamp,
                                                      const delegate_config& config = delegate_config() );
 
          /**
@@ -157,7 +157,7 @@ namespace bts { namespace blockchain {
          account_record              get_block_signee( const block_id_type& block_id )const;
          account_record              get_block_signee( uint32_t block_num )const;
 
-         account_record              get_slot_signee( const time_point_sec& timestamp,
+         account_record              get_slot_signee( const time_point_sec timestamp,
                                                       const std::vector<account_id_type>& ordered_delegates )const;
 
          void                        authorize( asset_id_type asset_id, const address& owner, object_id_type oid = 0 ) override;
@@ -340,7 +340,7 @@ namespace bts { namespace blockchain {
          virtual void                       store_collateral_record( const market_index_key& key, const collateral_record& ) override;
 
          virtual void                       store_slot_record( const slot_record& r )override;
-         virtual oslot_record               get_slot_record( const time_point_sec& start_time )const override;
+         virtual oslot_record               get_slot_record( const time_point_sec start_time )const override;
 
          virtual omarket_status             get_market_status( const asset_id_type quote_id, const asset_id_type base_id )override;
          virtual void                       store_market_status( const market_status& s ) override;
@@ -348,8 +348,8 @@ namespace bts { namespace blockchain {
          virtual omarket_history_record     get_market_history_record( const market_history_key &key ) const override;
          market_history_points              get_market_price_history( const asset_id_type quote_id,
                                                                       const asset_id_type base_id,
-                                                                      const fc::time_point& start_time,
-                                                                      const fc::microseconds& duration,
+                                                                      const fc::time_point start_time,
+                                                                      const fc::microseconds duration,
                                                                       market_history_key::time_granularity_enum granularity );
 
          virtual void                       set_market_transactions( vector<market_transaction> trxs )override;

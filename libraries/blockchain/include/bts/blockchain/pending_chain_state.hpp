@@ -98,7 +98,7 @@ namespace bts { namespace blockchain {
          virtual void                   set_property( chain_property_enum property_id, const variant& property_value )override;
 
          virtual void                   store_slot_record( const slot_record& r ) override;
-         virtual oslot_record           get_slot_record( const time_point_sec& start_time )const override;
+         virtual oslot_record           get_slot_record( const time_point_sec start_time )const override;
 
          virtual void                   store_market_history_record( const market_history_key& key,
                                                                      const market_history_record& record )override;
