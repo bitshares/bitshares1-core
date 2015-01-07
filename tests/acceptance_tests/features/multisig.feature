@@ -49,6 +49,8 @@ Feature: Deposit to and withdraw from multi-signature account
     Scenario: 2-of-3 multisig using "latest builder" feature
 
         When I switch to wallet default
+        And I received 1000 XTS from angel
+        And I wait for one block
 
         And I make multisig deposit 100 XTS from me to 2 of [address2, address3, address4]
         And I save multisig ID for 2 of [address2, address3, address4] as multi2
@@ -57,7 +59,7 @@ Feature: Deposit to and withdraw from multi-signature account
 
         When I switch to wallet wallet2
         And I make an address normal_address for account2
-        And I start multisig withdrawal of 99 XTS from multi1 to normal_address
+        And I start multisig withdrawal of 99 XTS from multi2 to normal_address
         And I add signature and broadcast
         And I wait for one block
         Then Balance with ID multi2 should have 100 XTS
