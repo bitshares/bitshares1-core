@@ -3,6 +3,9 @@
 
 #include <bts/utilities/words.hpp>
 
+#include <fc/crypto/aes.hpp>
+#include <fc/crypto/digest.hpp>
+
 #include <QDebug>
 #include <QSettings>
 
@@ -24,6 +27,11 @@ QString LightWallet::accountName() const
    if( !m_wallet._data )
       return QString();
    return convert(m_wallet._data->user_account.name);
+}
+
+QQmlListProperty<Balance> LightWallet::balances()
+{
+   return QQmlListProperty<Balance>(this, m_balanceCache);
 }
 
 void LightWallet::connectToServer(QString host, quint16 port, QString user, QString password)
@@ -74,7 +82,11 @@ void LightWallet::createWallet(QString accountName, QString password)
    Q_EMIT openChanged(isOpen());
    Q_EMIT unlockedChanged(isUnlocked());
    Q_EMIT accountNameChanged(accountName);
-   QSettings().setValue(QStringLiteral("brainKey"), m_brainKey);
+   fc::sha512 key = fc::sha512::hash(convert(password));
+   auto plaintext = std::vector<char>(m_brainKey.toStdString().begin(), m_brainKey.toStdString().end());
+   auto ciphertext = fc::aes_encrypt(key, plaintext);
+   QSettings().setValue(QStringLiteral("brainKey"), QByteArray::fromRawData(ciphertext.data(), ciphertext.size()));
+
    END_THREAD
 }
 
@@ -115,6 +127,17 @@ void LightWallet::unlockWallet(QString password)
    IN_THREAD
    try {
       m_wallet.unlock(convert(password));
+      if( isUnlocked() )
+      {
+         qDebug() << "Unlocked wallet.";
+         auto ciphertext = QSettings().value(QStringLiteral("brainKey"), QString()).toByteArray();
+         fc::sha512 key = fc::sha512::hash(convert(password));
+         auto plaintext = fc::aes_decrypt(key, std::vector<char>(ciphertext.data(),
+                                                                 ciphertext.data() + ciphertext.size()));
+         m_brainKey = convert(std::string(plaintext.begin(), plaintext.end()));
+         if( !m_brainKey.isEmpty() )
+            Q_EMIT brainKeyChanged(m_brainKey);
+      }
    } catch (fc::exception e) {
       m_unlockError = QStringLiteral("Incorrect password.");
       Q_EMIT errorUnlocking(m_unlockError);
@@ -128,6 +151,7 @@ void LightWallet::lockWallet()
 {
    IN_THREAD
    m_wallet.lock();
+   qDebug() << "Locked wallet.";
    Q_EMIT unlockedChanged(isUnlocked());
    END_THREAD
 }
@@ -135,11 +159,20 @@ void LightWallet::lockWallet()
 void LightWallet::registerAccount()
 {
    IN_THREAD
-   if( m_wallet.request_register_account() ) {
-      Q_EMIT accountRegistered();
-      Q_EMIT accountNameChanged(accountName());
-   } else
-      Q_EMIT errorRegistering(QStringLiteral("Server did not register account. Try again later."));
+   try {
+      if( m_wallet.request_register_account() ) {
+         Q_EMIT accountRegistered();
+         Q_EMIT accountNameChanged(accountName());
+      } else
+         Q_EMIT errorRegistering(QStringLiteral("Server did not register account. Try again later."));
+   } catch (const fc::exception& e) {
+      const static QString message = QStringLiteral("Failed to register account: %1");
+      if( e.get_log().empty() )
+         Q_EMIT errorRegistering(message.arg(e.what()));
+      else
+         Q_EMIT errorRegistering(message.arg(convert(e.get_log()[0].get_format())));
+   }
+
    END_THREAD
 }
 

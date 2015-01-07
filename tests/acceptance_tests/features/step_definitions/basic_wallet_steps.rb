@@ -107,6 +107,21 @@ Given(/^I expect HTTP transaction callbacks$/) do
   @webserver.start
 end
 
+Given(/^I am a Light Wallet Server named (\w+)$/) do |name|
+  config = @current_actor.node.get_config
+  config['rpc']['enable'] = true
+  config['rpc']['rpc_user'] = 'test'
+  config['rpc']['rpc_password'] = 'test'
+  config['rpc']['rpc_endpoint'] = '127.0.0.1:3333'
+  config['rpc']['httpd_endpoint'] = '127.0.0.1:3334'
+  config['faucet_account_name'] = name
+  @current_actor.node.stop
+  @current_actor.node.save_config(config)
+  @current_actor.node.start
+  @current_actor.node.exec 'open', 'default'
+  @current_actor.node.exec 'unlock', '9999999', 'password'
+end
+
 Then(/^transaction callback should match last transfer$/) do
   expect(@webserver.requests.length).to be > 0
   request = JSON.parse(@webserver.requests.last)

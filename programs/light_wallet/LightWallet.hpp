@@ -5,10 +5,13 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QDebug>
+#include <QQmlListProperty>
 
 #include <bts/light_wallet/light_wallet.hpp>
 
 #include <fc/thread/thread.hpp>
+
+#include "QtWrappers.hpp"
 
 class LightWallet : public QObject
 {
@@ -22,6 +25,7 @@ class LightWallet : public QObject
    Q_PROPERTY(QString openError READ openError NOTIFY errorOpening)
    Q_PROPERTY(QString unlockError READ unlockError NOTIFY errorUnlocking)
    Q_PROPERTY(QString brainKey READ brainKey NOTIFY brainKeyChanged)
+   Q_PROPERTY(QQmlListProperty<Balance> balances READ balances NOTIFY balancesChanged)
 
 public:
    LightWallet()
@@ -31,7 +35,11 @@ public:
       qDebug() << "Creating data directory:" << path;
       QDir(path).mkpath(".");
    }
-   ~LightWallet(){}
+   virtual ~LightWallet()
+   {
+      m_walletThread.quit();
+      m_wallet.save();
+   }
 
    bool walletExists() const;
    bool isConnected() const
@@ -63,6 +71,7 @@ public:
       return m_brainKey;
    }
    QString accountName() const;
+   QQmlListProperty<Balance> balances();
 
 public Q_SLOTS:
    void connectToServer( QString host, quint16 port,
@@ -93,6 +102,7 @@ Q_SIGNALS:
    void brainKeyChanged(QString key);
    void accountRegistered();
    void accountNameChanged(QString name);
+   void balancesChanged(QQmlListProperty<Balance> balances);
 
 private:
    fc::thread m_walletThread;
@@ -104,6 +114,7 @@ private:
    QString m_openError;
    QString m_unlockError;
    QString m_brainKey;
+   QList<Balance*> m_balanceCache;
 
    void generateBrainKey();
 };

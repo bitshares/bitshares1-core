@@ -1168,6 +1168,29 @@
         "aliases": ["add_signature"]
       },
     {
+        "method_name": "wallet_builder_file_add_signature",
+        "description": "Review a transaction in a builder file and add a signature.",
+        "return_type": "transaction_builder",
+        "parameters":
+        [
+            {
+                "name": "broadcast",
+                "type": "bool",
+                "description": "Try to broadcast this transaction?",
+                "default_value": false
+            },
+            {
+              "name" : "builder_path",
+              "type" : "string",
+              "description" : "If specified, will write builder here instead of to DATA_DIR/transactions/latest.trx",
+              "default_value" : ""
+            }
+        ],
+        "prerequisites": ["json_authenticated"],
+        "aliases": ["add_signature_to_file"]
+      },
+
+    {
         "method_name": "wallet_release_escrow",
         "description": "Releases escrow balance to third parties",
         "return_type": "transaction_record",

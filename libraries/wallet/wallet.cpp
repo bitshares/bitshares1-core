@@ -1737,6 +1737,18 @@ namespace detail {
        return builder;
    } FC_CAPTURE_AND_RETHROW() }
 
+   std::shared_ptr<transaction_builder> wallet::create_transaction_builder_from_file(const string& old_builder_path)
+   { try {
+       auto path = old_builder_path;
+       if( path == "" )
+       {
+            path = (get_data_directory() / "trx").string() + "/latest.trx";
+       }
+       auto old_builder = fc::json::from_file(path).as<transaction_builder>();
+       auto builder = std::make_shared<transaction_builder>( old_builder, my.get() );
+       return builder;
+   } FC_CAPTURE_AND_RETHROW() }
+
 
    vector<std::pair<string, wallet_transaction_record>> wallet::publish_feeds_multi_experimental(
            map<string,double> amount_per_xts, // map symbol to amount per xts
@@ -4439,10 +4451,10 @@ namespace detail {
         if( alternate_path == "" )
         {
             auto dir = (get_data_directory() / "trx").string();
-            auto default_path = dir + "latest.trx";
+            auto default_path = dir + "/latest.trx";
             if( !fc::exists( default_path ) )
                 fc::create_directories( dir );
-            fs.open(dir + "latest.trx");
+            fs.open(default_path);
         }
         else
         {

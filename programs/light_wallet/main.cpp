@@ -17,6 +17,7 @@ int main(int argc, char *argv[])
    QQmlDebuggingEnabler enabler;
 
    qmlRegisterType<LightWallet>("org.BitShares.Types", 1, 0, "LightWallet");
+   qmlRegisterType<Balance>("org.BitShares.Types", 1, 0, "Balance");
 
    QQmlApplicationEngine engine;
    engine.load(QUrl(QStringLiteral("qml/main.qml")));

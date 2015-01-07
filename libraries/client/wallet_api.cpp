@@ -562,11 +562,32 @@ transaction_builder detail::client_impl::wallet_builder_add_signature(
             ulog("Transaction was invalid!");
         }
     }
-    if( path == "" )
-        path = (_wallet->get_data_directory() / "trx").string() + "latest.trx";
     _wallet->write_latest_builder( *b2, path );
     return *b2;
 } FC_CAPTURE_AND_RETHROW( (builder)(broadcast) ) }
+
+
+transaction_builder detail::client_impl::wallet_builder_file_add_signature(
+                                            bool broadcast,
+                                            const string& builder_path )
+{ try {
+    auto b2 = _wallet->create_transaction_builder_from_file( builder_path );
+    if( b2->transaction_record.trx.signatures.empty() )
+        b2->finalize( false );
+    b2->sign();
+    if( broadcast )
+    {
+        try {
+            network_broadcast_transaction( b2->transaction_record.trx );
+        }
+        catch(...) {
+            ulog("Transaction was invalid!");
+        }
+    }
+    _wallet->write_latest_builder( *b2, builder_path );
+    return *b2;
+} FC_CAPTURE_AND_RETHROW( (broadcast)(builder_path) ) }
+
 
 wallet_transaction_record detail::client_impl::wallet_object_create(
                                             const string& account,
