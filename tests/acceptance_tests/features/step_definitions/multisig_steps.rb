@@ -23,6 +23,7 @@ When(/^I start multisig withdrawal of (\d+) (\w+) from (\w+) to (\w+) as (\w+)$/
     @addresses[builder_id] = builder
 end
 
+
 When(/^I add signature and broadcast (\w+)$/) do |builder_id|
     builder = @addresses[builder_id]
     @addresses[builder_id] = @current_actor.node.exec 'wallet_builder_add_signature', builder, true
@@ -45,6 +46,16 @@ Then(/^Balance with public accountname: (\w+) should have (\d+) (\w+)$/) do |id,
     puts bals
     bal = bals[0][1][0][1] # maps as lists
     expect(bal == to_f(amount) * 10000)
+end
+
+
+When(/^I start multisig withdrawal of (\d+) (\w+) from (\w+) to (\w+)$/) do |amount, symbol, multi_id, addr|
+    @current_actor.node.exec 'wallet_multisig_withdraw_start', to_f(amount) - 0.5, symbol, @addresses[multi_id], @addresses[addr]
+end
+
+
+When(/^I add signature and broadcast$/) do
+    @current_actor.node.exec 'wallet_builder_file_add_signature', true
 end
 
 
