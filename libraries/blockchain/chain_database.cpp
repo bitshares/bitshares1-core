@@ -2533,11 +2533,6 @@ namespace bts { namespace blockchain {
       return asset_rec->symbol;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("asset_id",asset_id) ) }
 
-   time_point_sec chain_database::get_genesis_timestamp()const
-   {
-       return get_asset_record( asset_id_type() )->registration_date;
-   }
-
    void chain_database::sanity_check()const
    { try {
 #if 0
