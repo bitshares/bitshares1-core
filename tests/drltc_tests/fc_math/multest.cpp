@@ -4,6 +4,10 @@
 #include <fc/uint128.hpp>
 #include <fc/crypto/sha256.hpp>
 
+#ifndef WIN32
+#include <time.h>
+#endif
+
 // get some entropy by running sha256 as a counter
 class simple_rng
 {
@@ -75,8 +79,10 @@ int main(int argc, char** argv, char** envp)
     simple_rng rng;
     bool first = true;
     fc::uint128 b1_last = 0xFFFF;
+    fc::uint128 total_time = 0;
+    uint64_t calls = 0;
     
-    while(true)
+    for(int i=0;i<128;i++)
     {
         fc::uint128 a, b;
         rng.next( a, b );
@@ -107,11 +113,37 @@ int main(int argc, char** argv, char** envp)
                 
                 if( first )
                     first = false;
+
+                fc::uint128 a1b1 = a1;
+#ifndef WIN32
+                // report time
+                timespec t_before;
+                timespec t_after;
                 
+                clock_gettime( CLOCK_MONOTONIC, &t_before );
+#endif
+                a1b1 *= b1;
+#ifndef WIN32
+                clock_gettime( CLOCK_MONOTONIC, &t_after );
+                fc::uint128 ns_before;
+                fc::uint128 ns_after;
+
+                ns_before = t_before.tv_sec;
+                ns_before *= 1000000000;
+                ns_before += t_before.tv_nsec;
+
+                ns_after = t_after.tv_sec;
+                ns_after *= 1000000000;
+                ns_after += t_after.tv_nsec;
+                
+                total_time += (ns_after - ns_before);
+                calls++;
+#endif
+
                 char data[5][33];
                 hex(a1, data[0]);
                 hex(b1, data[1]);
-                hex(a1*b1, data[2]);
+                hex(a1b1, data[2]);
                 hex(rh, data[3]);
                 hex(rl, data[4]);
 
@@ -125,5 +157,10 @@ int main(int argc, char** argv, char** envp)
             }
         }
     }
+    char h_tt[33];
+    hex(total_time, h_tt);
+    std::cerr << "total_time: 0x" << h_tt << " (ns)\n";
+    std::cerr << "calls:" << calls << "\n";
+    std::cerr << "\n";
     return 0;
 }
