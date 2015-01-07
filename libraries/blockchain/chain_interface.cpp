@@ -114,13 +114,18 @@ namespace bts { namespace blockchain {
        return true;
    } FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
-   // Starting 2014-11-06, delegates are issued max 50 shares per block produced, and this value is halved every 4 years
+   time_point_sec chain_interface::get_genesis_timestamp()const
+   {
+       return get_asset_record( asset_id_type() )->registration_date;
+   }
+
+   // Starting at genesis, delegates are issued max 50 shares per block produced, and this value is halved every 4 years
    // just like in Bitcoin
    share_type chain_interface::get_max_delegate_pay_issued_per_block()const
    {
        share_type pay_per_block = BTS_MAX_DELEGATE_PAY_PER_BLOCK;
 
-       static const time_point_sec start_timestamp = time_point_sec( 1415188800 ); // 2014-11-06 00:00:00 UTC
+       static const time_point_sec start_timestamp = get_genesis_timestamp();
        static const uint32_t seconds_per_period = fc::days( 4 * 365 ).to_seconds(); // Ignore leap years, leap seconds, etc.
 
        const time_point_sec now = this->now();
