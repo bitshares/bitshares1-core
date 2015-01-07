@@ -346,7 +346,7 @@ vector<account_record> detail::client_impl::blockchain_list_recently_registered_
    return accounts;
 }
 
-vector<asset_record> detail::client_impl::blockchain_list_assets( const string& first, int32_t limit )const
+vector<asset_record> detail::client_impl::blockchain_list_assets( const string& first, uint32_t limit )const
 {
    FC_ASSERT( limit > 0 );
    return _chain_db->get_assets( first, limit );
