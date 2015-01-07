@@ -154,7 +154,7 @@ namespace bts { namespace blockchain {
            return get_asset_registration_fee_v1();
 
        // TODO: Add #define's for these fixed prices
-       static const share_type long_symbol_price = 5000 * BTS_BLOCKCHAIN_PRECISION;
+       static const share_type long_symbol_price = 500 * BTS_BLOCKCHAIN_PRECISION; // $10 at $0.02/XTS
        static const share_type short_symbol_price = 1000 * long_symbol_price;
        FC_ASSERT( long_symbol_price > 0 );
        FC_ASSERT( short_symbol_price > long_symbol_price );
