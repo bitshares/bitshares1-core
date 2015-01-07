@@ -21,7 +21,7 @@ namespace bts { namespace blockchain {
    struct slot_record
    {
       slot_record(){} // Null case
-      slot_record( const time_point_sec& t, const account_id_type d, const optional<block_id_type>& b = optional<block_id_type>() )
+      slot_record( const time_point_sec t, const account_id_type d, const optional<block_id_type>& b = optional<block_id_type>() )
       :start_time(t),block_producer_id(d),block_id(b){}
 
       bool is_null()const { return start_time == time_point_sec(); }

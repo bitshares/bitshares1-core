@@ -86,7 +86,7 @@ namespace bts { namespace blockchain {
    {
       address           owner_address()const { return address( owner_key ); }
 
-      void              set_active_key( const time_point_sec& now, const public_key_type& new_key );
+      void              set_active_key( const time_point_sec now, const public_key_type& new_key );
       public_key_type   active_key()const;
       address           active_address()const;
       bool              is_retracted()const;

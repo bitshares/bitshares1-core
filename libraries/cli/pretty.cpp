@@ -23,7 +23,7 @@ string pretty_shorten( const string& str, size_t max_size )
     return str;
 }
 
-string pretty_timestamp( const time_point_sec& timestamp )
+string pretty_timestamp( const time_point_sec timestamp )
 {
     if( FILTER_OUTPUT_FOR_TESTS )
         return "<d-ign>" + timestamp.to_iso_string() + "</d-ign>";
@@ -37,7 +37,7 @@ string pretty_path( const path& file_path )
     return file_path.generic_string();
 }
 
-string pretty_age( const time_point_sec& timestamp, bool from_now, const string& suffix )
+string pretty_age( const time_point_sec timestamp, bool from_now, const string& suffix )
 {
     string str;
 
@@ -785,8 +785,10 @@ string pretty_asset_list( const vector<asset_record>& asset_records, cptr client
         else
         {
             const auto account_record = client->get_chain()->get_account_record( issuer_id );
-            FC_ASSERT( account_record.valid() );
-            out << std::setw( 32 ) << pretty_shorten( account_record->name, 31 );
+            if( account_record.valid() )
+                out << std::setw( 32 ) << pretty_shorten( account_record->name, 31 );
+            else
+                out << std::setw( 32 ) << "";
 
             const auto max_supply = asset( asset_record.maximum_share_supply, asset_id );
             out << std::setw( 10 ) << pretty_percent( supply.amount, max_supply.amount);

@@ -33,27 +33,29 @@ namespace bts { namespace blockchain {
 
     address account_record::active_address()const
     {
-        return address(active_key());
+        return address( active_key() );
     }
 
-    void account_record::set_active_key( const time_point_sec& now, const public_key_type& new_key )
+    void account_record::set_active_key( const time_point_sec now, const public_key_type& new_key )
     { try {
         FC_ASSERT( now != fc::time_point_sec() );
-        active_key_history[now] = new_key;
+        active_key_history[ now ] = new_key;
     } FC_CAPTURE_AND_RETHROW( (now)(new_key) ) }
 
     public_key_type account_record::active_key()const
     {
-        if( active_key_history.size() )
-            return active_key_history.rbegin()->second;
+        if( active_key_history.empty() )
+            return public_key_type();
 
-        return public_key_type();
+        return active_key_history.rbegin()->second;
     }
 
     uint8_t account_record::delegate_pay_rate()const
     {
-        if( is_delegate() ) return delegate_info->pay_rate;
-        return -1;
+        if( !is_delegate() )
+            return -1;
+
+        return delegate_info->pay_rate;
     }
 
     void account_record::set_signing_key( uint32_t block_num, const public_key_type& signing_key )

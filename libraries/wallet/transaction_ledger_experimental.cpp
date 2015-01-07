@@ -30,7 +30,7 @@ void wallet_impl::scan_block_experimental( uint32_t block_num,
 // For initiating manual transaction scanning
 transaction_ledger_entry wallet_impl::scan_transaction_experimental( const transaction_evaluation_state& eval_state,
                                                                      uint32_t block_num,
-                                                                     const time_point_sec& timestamp,
+                                                                     const time_point_sec timestamp,
                                                                      bool overwrite_existing )
 { try {
     const map<private_key_type, string> account_keys = _wallet_db.get_account_private_keys( _wallet_password );
@@ -77,7 +77,7 @@ transaction_ledger_entry wallet_impl::scan_transaction_experimental( const trans
 
 transaction_ledger_entry wallet_impl::scan_transaction_experimental( const transaction_evaluation_state& eval_state,
                                                                      uint32_t block_num,
-                                                                     const time_point_sec& timestamp,
+                                                                     const time_point_sec timestamp,
                                                                      const map<private_key_type, string>& account_keys,
                                                                      const map<address, string>& account_balances,
                                                                      const set<string>& account_names,
