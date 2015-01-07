@@ -6,7 +6,7 @@ cmake_minimum_required( VERSION 2.8.12 )
 # develop branch                => BitSharesTestNet
 # devshares branch              => DevShares
 # bitshares and master branches => BitShares
-set( BLOCKCHAIN_NAME "DevShares" )
+set( BLOCKCHAIN_NAME "BitShares" )
 
 if( BLOCKCHAIN_NAME STREQUAL BitShares )
   set( CLI_CLIENT_EXECUTABLE_NAME bitshares_client )
