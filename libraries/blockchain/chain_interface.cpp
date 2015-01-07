@@ -65,7 +65,7 @@ namespace bts { namespace blockchain {
     */
    bool chain_interface::is_valid_symbol_name( const string& symbol )const
    { try {
-       if( get_head_block_num() < BTS_V0_4_28_FORK_BLOCK_NUM )
+       if( get_head_block_num() < DVS_V0_5_0_FORK_BLOCK_NUM )
            return is_valid_symbol_name_v1( symbol );
 
        FC_ASSERT( symbol != "BTSX" );

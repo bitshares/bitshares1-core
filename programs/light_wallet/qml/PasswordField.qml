@@ -10,6 +10,8 @@ RowLayout {
    property alias password: passwordText.text
    property alias fontPixelSize: passwordText.font.pixelSize
 
+   onFocusChanged: if( focus ) passwordText.focus = true
+
    function errorGlow() {
       errorGlow.pulse()
    }
@@ -22,7 +24,6 @@ RowLayout {
       echoMode: button.pressed? TextInput.Normal : TextInput.Password
       inputMethodHints: Qt.ImhSensitiveData | Qt.ImhHiddenText
       readOnly: button.pressed
-      focus: passwordForm.focus
 
       onAccepted: passwordForm.accepted()
 

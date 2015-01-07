@@ -9,7 +9,7 @@ namespace bts { namespace blockchain {
 
    void update_feed_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-      if( eval_state._current_state->get_head_block_num() < BTS_V0_4_28_FORK_BLOCK_NUM )
+      if( eval_state._current_state->get_head_block_num() < DVS_V0_5_0_FORK_BLOCK_NUM )
           return evaluate_v1( eval_state );
 
       const oaccount_record account_record = eval_state._current_state->get_account_record( index.delegate_id );
