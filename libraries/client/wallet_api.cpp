@@ -439,10 +439,12 @@ wallet_transaction_record detail::client_impl::wallet_transfer_from(
 }
 
 balance_id_type detail::client_impl::wallet_multisig_get_balance_id(
+                                        const string& asset_symbol,
                                         uint32_t m,
                                         const vector<address>& addresses )const
 {
-    return balance_record::get_multisig_balance_id( m, addresses );
+    auto id = _chain_db->get_asset_id( asset_symbol );
+    return balance_record::get_multisig_balance_id( id, m, addresses );
 }
 
 wallet_transaction_record detail::client_impl::wallet_multisig_deposit(

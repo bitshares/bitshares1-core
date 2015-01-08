@@ -262,6 +262,21 @@
         "aliases" : ["get_account"]
       },
       {
+        "method_name": "blockchain_get_slate",
+        "description": "Retrieves a map of delegate IDs and names defined by the given slate ID or recommending account",
+        "return_type": "map<account_id_type, string>",
+        "parameters" : [
+            {
+              "name" : "slate",
+              "type" : "string",
+              "description" : "slate ID or recommending account name for which to retrieve the slate of delegates"
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["get_slate"]
+      },
+      {
         "method_name": "blockchain_get_balance",
         "description": "Retrieves the balance record for the given address",
         "return_type": "balance_record",
