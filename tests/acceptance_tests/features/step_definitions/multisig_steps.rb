@@ -7,13 +7,13 @@ When(/^I make multisig deposit (\d+) (\w+) from (\w+) to (\d+) of (\[.*\])$/) do
     @current_actor.node.exec 'wallet_multisig_deposit', to_f(amount), symbol, get_actor(from).account, req, addr_list
 end
 
-When(/^I save multisig ID for (\d+) of (\[.*\]) as (\w+)$/) do |req, addrs, id_name|
+When(/^I save multisig ID for (\w+) with (\d+) of (\[.*\]) as (\w+)$/) do |symbol, req, addrs, id_name|
     addr_name_list = JSON.parse(addrs.gsub(/(\w+)/, '"\1"'))
     addr_list = []
     for name in addr_name_list
         addr_list << @addresses[name]
     end
-    id = @current_actor.node.exec 'wallet_multisig_get_balance_id', req, addr_list
+    id = @current_actor.node.exec 'wallet_multisig_get_balance_id', symbol, req, addr_list
     @addresses ||= {}
     @addresses[id_name] = id
 end

@@ -25,7 +25,7 @@ Feature: Deposit to and withdraw from multi-signature account
         And I wait for one block
 
         When I make multisig deposit 100 XTS from me to 2 of [address1, address2, address3]
-        And I save multisig ID for 2 of [address1, address2, address3] as multi1
+        And I save multisig ID for XTS with 2 of [address1, address2, address3] as multi1
         And I wait for one block
         Then Balance with ID multi1 should have 100 XTS
         
@@ -53,7 +53,7 @@ Feature: Deposit to and withdraw from multi-signature account
         And I wait for one block
 
         And I make multisig deposit 100 XTS from me to 2 of [address2, address3, address4]
-        And I save multisig ID for 2 of [address2, address3, address4] as multi2
+        And I save multisig ID for XTS with 2 of [address2, address3, address4] as multi2
         And I wait for one block
         Then Balance with ID multi2 should have 100 XTS
 
