@@ -137,7 +137,15 @@ void light_wallet::create( const fc::path& wallet_json,
 bool light_wallet::request_register_account()
 { try {
    FC_ASSERT( is_open() );
-   return _rpc.request_register_account( _data->user_account );
+   try {
+      return _rpc.request_register_account( _data->user_account );
+   } catch (const fc::exception& e) {
+      //If server gave back an account_already_registered, check if it's actually my account.
+      if( e.code() == account_already_registered().code() &&
+          _rpc.blockchain_get_account(_data->user_account.name)->active_key() != _data->user_account.active_key() )
+         throw;
+      return true;
+   }
 } FC_CAPTURE_AND_RETHROW( ) }
 
 account_record& light_wallet::account()
@@ -157,7 +165,9 @@ account_record& light_wallet::fetch_account()
                              "Attempted to fetch my account, but got one with an unknown active key.",
                              ("my_account", _data->user_account)("blockchain_account", account) );
       _data->user_account = *account;
+      save();
    }
+
    return _data->user_account;
 } FC_CAPTURE_AND_RETHROW( ) }
 

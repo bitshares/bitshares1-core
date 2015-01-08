@@ -112,8 +112,6 @@ Given(/^I am a Light Wallet Server named (\w+)$/) do |name|
   config['rpc']['enable'] = true
   config['rpc']['rpc_user'] = 'test'
   config['rpc']['rpc_password'] = 'test'
-  config['rpc']['rpc_endpoint'] = '127.0.0.1:3333'
-  config['rpc']['httpd_endpoint'] = '127.0.0.1:3334'
   config['faucet_account_name'] = name
   @current_actor.node.stop
   @current_actor.node.save_config(config)

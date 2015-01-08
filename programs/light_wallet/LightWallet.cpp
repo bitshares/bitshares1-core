@@ -85,7 +85,7 @@ void LightWallet::createWallet(QString accountName, QString password)
 
 void LightWallet::openWallet()
 {
-   IN_THREAD
+   //Opening the wallet should be fast, it's just a local file and we're not doing much crypto. Let it be blocking.
    try {
       m_wallet.open(m_walletPath);
    } catch (fc::exception e) {
@@ -99,11 +99,6 @@ void LightWallet::openWallet()
 
    updateAccount(m_wallet.account());
    qDebug() << "Opened wallet belonging to" << m_account->name();
-
-   m_brainKey = QSettings().value(QStringLiteral("brainKey"), QString()).toString();
-   if( !m_brainKey.isEmpty() )
-      Q_EMIT brainKeyChanged(m_brainKey);
-   END_THREAD
 }
 
 void LightWallet::closeWallet()
@@ -135,6 +130,7 @@ void LightWallet::unlockWallet(QString password)
             Q_EMIT brainKeyChanged(m_brainKey);
       }
    } catch (fc::exception e) {
+      qDebug() << "Error during unlock:" << e.to_detail_string().c_str();
       m_unlockError = QStringLiteral("Incorrect password.");
       Q_EMIT errorUnlocking(m_unlockError);
    }
@@ -168,6 +164,7 @@ void LightWallet::registerAccount()
       } else
          Q_EMIT errorRegistering(QStringLiteral("Server did not register account. Please try again later."));
    } catch( const bts::light_wallet::account_already_registered& e ) {
+      //If light_wallet throws account_already_registered, it's because someone snagged the name already.
       qDebug() << "Account registered out from under us: " << e.to_detail_string().c_str();
       Q_EMIT errorRegistering(QStringLiteral("Oops! Someone just registered that name. Please pick another one."));
    } catch (const fc::exception& e) {

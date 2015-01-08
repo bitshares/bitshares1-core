@@ -31,8 +31,10 @@ ApplicationWindow {
    }
 
    Component.onCompleted: {
-      if( wallet.walletExists ) {
+      if( wallet.walletExists )
          wallet.openWallet()
+
+      if( wallet.account && wallet.account.isRegistered ) {
          guiLoader.sourceComponent = normalUi
       } else {
          guiLoader.sourceComponent = onboardingUi
