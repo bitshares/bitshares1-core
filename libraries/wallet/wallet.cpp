@@ -1422,7 +1422,7 @@ namespace detail {
 
        if( !get_transaction_scanning() )
        {
-           my->_scan_progress = -1;
+           my->_scan_progress = 1;
            ulog( "Wallet transaction scanning is disabled!" );
            return;
        }
@@ -3095,12 +3095,21 @@ namespace detail {
            const string& memo_message,
            bool sign )
    { try {
-      if( !my->_blockchain->is_valid_account_name( to_account_name ) )
-          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("to_account_name",to_account_name) );
-
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
       FC_ASSERT( my->_blockchain->is_valid_symbol( symbol ) );
+
+      public_key_type receiver_public_key;
+      try
+      {
+        receiver_public_key = public_key_type(to_account_name);
+      }
+      catch (const fc::exception&)
+      {
+        if( !my->_blockchain->is_valid_account_name( to_account_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "${to_account_name} is not a valid account name or public key!", ("to_account_name",to_account_name) );
+        receiver_public_key = get_owner_public_key( to_account_name );
+      }
 
       signed_transaction         trx;
       unordered_set<address>     required_signatures;
@@ -3126,7 +3135,6 @@ namespace detail {
           required_signatures.insert( owner );
 //      required_signatures.insert( issuer_account->active_key() );
 
-      public_key_type receiver_public_key = get_owner_public_key( to_account_name );
       owallet_account_record issuer = my->_wallet_db.lookup_account( asset_record->issuer_account_id );
       FC_ASSERT( issuer.valid() );
       owallet_key_record  issuer_key = my->_wallet_db.lookup_key( issuer->owner_address() );

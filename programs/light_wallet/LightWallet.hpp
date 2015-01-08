@@ -20,7 +20,7 @@ class LightWallet : public QObject
    Q_PROPERTY(bool connected READ isConnected NOTIFY connectedChanged)
    Q_PROPERTY(bool open READ isOpen NOTIFY openChanged)
    Q_PROPERTY(bool unlocked READ isUnlocked NOTIFY unlockedChanged)
-   Q_PROPERTY(QString accountName READ accountName NOTIFY accountNameChanged)
+   Q_PROPERTY(Account* account READ account NOTIFY accountChanged)
    Q_PROPERTY(QString connectionError READ connectionError NOTIFY errorConnecting)
    Q_PROPERTY(QString openError READ openError NOTIFY errorOpening)
    Q_PROPERTY(QString unlockError READ unlockError NOTIFY errorUnlocking)
@@ -70,8 +70,11 @@ public:
    {
       return m_brainKey;
    }
-   QString accountName() const;
    QQmlListProperty<Balance> balances();
+   Account* account() const
+   {
+      return m_account;
+   }
 
 public Q_SLOTS:
    void connectToServer( QString host, quint16 port,
@@ -100,9 +103,8 @@ Q_SIGNALS:
    void openChanged(bool open);
    void unlockedChanged(bool unlocked);
    void brainKeyChanged(QString key);
-   void accountRegistered();
-   void accountNameChanged(QString name);
    void balancesChanged(QQmlListProperty<Balance> balances);
+   void accountChanged(Account* arg);
 
 private:
    fc::thread m_walletThread;
@@ -115,6 +117,8 @@ private:
    QString m_unlockError;
    QString m_brainKey;
    QList<Balance*> m_balanceCache;
+   Account* m_account = nullptr;
 
    void generateBrainKey();
+   void updateAccount(const bts::light_wallet::account_record& account);
 };
