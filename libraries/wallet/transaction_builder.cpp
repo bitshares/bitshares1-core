@@ -834,7 +834,8 @@ std::vector<bts::mail::message> transaction_builder::encrypted_notifications()
    }
    return messages;
 }
-
+// First handles a margin position close and the collateral is returned.  Calls withdraw_fee() to
+// to handle the more common cases.
 void transaction_builder::pay_fee()
 { try {
    auto available_balances = all_positive_balances();
@@ -918,6 +919,7 @@ transaction_builder& transaction_builder::asset_authorize_key( const string& sym
 } FC_CAPTURE_AND_RETHROW( (symbol)(owner)(meta) ) }
 
 //Time to get desperate
+//Most common case where the fee gets paid
 bool transaction_builder::withdraw_fee()
 {
    const auto balances = _wimpl->self->get_account_balances( "", false );

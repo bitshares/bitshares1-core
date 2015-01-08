@@ -565,6 +565,10 @@
          "cpp_return_type" : "fc::time_point"
       },
       {
+         "type_name" : "slate_id_type",
+         "cpp_return_type" : "bts::blockchain::slate_id_type"
+      },
+      {
          "type_name" : "method_data",
          "cpp_return_type" : "bts::api::method_data",
          "cpp_include_file" : "bts/api/api_metadata.hpp"

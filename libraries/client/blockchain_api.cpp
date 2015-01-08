@@ -146,6 +146,22 @@ oaccount_record detail::client_impl::blockchain_get_account( const string& accou
    return oaccount_record();
 }
 
+map<account_id_type, string> detail::client_impl::blockchain_get_slate( const slate_id_type& slate_id )const
+{
+    const odelegate_slate slate_record = _chain_db->get_delegate_slate( slate_id );
+    FC_ASSERT( slate_record.valid() );
+
+    map<account_id_type, string> delegates;
+    for( const account_id_type delegate_id : slate_record->supported_delegates )
+    {
+        const oaccount_record delegate_record = _chain_db->get_account_record( delegate_id );
+        FC_ASSERT( delegate_record.valid() );
+        delegates[ delegate_id ] = delegate_record->name;
+    }
+
+    return delegates;
+}
+
 balance_record detail::client_impl::blockchain_get_balance( const balance_id_type& balance_id )const
 {
    const auto balance_record = _chain_db->get_balance_record( balance_id );
