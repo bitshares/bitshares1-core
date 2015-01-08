@@ -12,8 +12,8 @@ ApplicationWindow {
    width: 540
    height: 960
    color: visuals.backgroundColor
-   minimumWidth: walletGui.minimumWidth
-   minimumHeight: walletGui.minimumHeight
+   minimumWidth: guiLoader.item.minimumWidth
+   minimumHeight: guiLoader.item.minimumHeight
 
    readonly property int orientation: window.width < window.height? Qt.PortraitOrientation : Qt.LandscapeOrientation
 
@@ -31,8 +31,13 @@ ApplicationWindow {
    }
 
    Component.onCompleted: {
-      if( wallet.walletExists )
+      if( wallet.walletExists ) {
          wallet.openWallet()
+         guiLoader.sourceComponent = normalUi
+      } else {
+         guiLoader.sourceComponent = onboardingUi
+      }
+
       connectToServer()
    }
 
@@ -82,8 +87,25 @@ ApplicationWindow {
       }
    }
 
-   WalletGui {
-      id: walletGui
+   Component {
+      id: normalUi
+
+      WalletGui {
+         id: walletGui
+      }
+   }
+   Component {
+      id: onboardingUi
+
+      OnboardingLayout {
+         id: onboardingGui
+
+         onFinished: guiLoader.sourceComponent = normalUi
+      }
+   }
+
+   Loader {
+      id: guiLoader
       anchors.fill: parent
    }
 

@@ -10,57 +10,26 @@ StackView {
    property real minimumWidth: (!!currentItem)? currentItem.minimumWidth : 1
    property real minimumHeight: (!!currentItem)? currentItem.minimumHeight : 1
 
-   initialItem: WelcomeLayout {
-      id: welcomeBox
-      needsRegistration: !(wallet.account && wallet.account.isRegistered)
+   initialItem: wallet.unlocked? [welcomeUi, assetsUi] : welcomeUi
 
-      function proceed() {
-         if( Stack.status !== Stack.Active )
-            return;
+   Component {
+      id: welcomeUi
+      WelcomeLayout {
+         id: welcomeBox
 
-         console.log("Finished welcome screen.")
-         clearPassword()
-         push(assetsUi)
-      }
-      function registerAccount() {
-         welcomeBox.state = "REGISTERING"
-         Utils.connectOnce(wallet.account.isRegisteredChanged, proceed,
-                           function() { return wallet.account.isRegistered })
-         Utils.connectOnce(wallet.onErrorRegistering, function(reason) {
-            //FIXME: Do something much, much better here...
-            console.log("Can't register: " + reason)
-         })
+         function proceed() {
+            if( Stack.status !== Stack.Active )
+               return;
 
-         if( wallet.connected ) {
-            wallet.registerAccount()
-         } else {
-            // Not connected. Schedule for when we reconnect.
-            wallet.runWhenConnected(function() {
-               wallet.registerAccount()
-            })
+            console.log("Finished welcome screen.")
+            clearPassword()
+            push(assetsUi)
          }
-      }
-      
-      onPasswordEntered: {
-         if( wallet.unlocked && wallet.account && wallet.account.isRegistered )
-            return proceed()
 
-         // First time through; there's no wallet, no account, not registered. First, create the wallet.
-         if( !wallet.walletExists ) {
-            Utils.connectOnce(wallet.walletExistsChanged, function(walletWasCreated) {
-               if( walletWasCreated ) {
-                  registerAccount()
-               } else {
-                  //TODO: failed to create wallet. What now?
-                  window.showError("Unable to create wallet. Cannot continue.")
-                  welcomeBox.state = ""
-               }
-            })
-            wallet.createWallet(username, password)
-         } else if ( !wallet.account.isRegistered ) {
-            //Wallet is created, so the account exists, but it's not registered yet. Take care of that now.
-            registerAccount()
-         } else {
+         onPasswordEntered: {
+            if( wallet.unlocked )
+               return proceed()
+
             Utils.connectOnce(wallet.onUnlockedChanged, proceed, function() { return wallet.unlocked })
             wallet.unlockWallet(password)
          }
