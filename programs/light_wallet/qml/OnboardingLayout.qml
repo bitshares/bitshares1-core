@@ -54,6 +54,8 @@ Item {
       passwordField.password = ""
    }
 
+   Component.onCompleted: nameField.forceActiveFocus()
+
    ColumnLayout {
       id: layout
       anchors.fill: parent

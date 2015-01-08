@@ -236,7 +236,19 @@ asset light_wallet::get_fee( const string& symbol )
          return asset( 2*BTS_LIGHT_WALLET_DEFAULT_FEE, 0 ) * *median_feed;
    }
    return asset( BTS_LIGHT_WALLET_DEFAULT_FEE, 0 );
-} FC_CAPTURE_AND_RETHROW( (symbol) ) }
+   } FC_CAPTURE_AND_RETHROW( (symbol) ) }
+
+map<string, double> light_wallet::balance() const
+{
+   FC_ASSERT(is_open());
+
+   map<string, double> balances;
+   for( auto balance : _data->balance_record_cache ) {
+      asset_record record = _data->asset_record_cache.at(balance.second.asset_id());
+      balances[record.symbol] = balance.second.balance / double(record.precision);
+   }
+   return balances;
+}
 
 
 void light_wallet::sync_balance( bool resync_all )
@@ -252,14 +264,27 @@ void light_wallet::sync_balance( bool resync_all )
    if( _data->last_balance_sync_time + fc::seconds(10) > fc::time_point::now() )
       return; // too fast
 
-   auto sync_time = bts::blockchain::now();
+   fc::time_point sync_time = fc::time_point();
 
    auto new_balances = _rpc.blockchain_list_address_balances( string(address(_data->user_account.active_key())),
                                                               _data->last_balance_sync_time );
+   std::vector<fc::variants> dirty_assets;
+
    for( auto item : new_balances )
+   {
       _data->balance_record_cache[item.first] = item.second;
+      dirty_assets.push_back(fc::variants(1, fc::variant(item.second.asset_id())));
+
+      if( item.second.last_update > sync_time )
+         sync_time = item.second.last_update;
+   }
+
+   auto asset_records = _rpc.batch("blockchain_get_asset", dirty_assets);
+   for( int i = 0; i < asset_records.size(); ++i )
+      _data->asset_record_cache[dirty_assets[i][0].as<asset_id_type>()] = asset_records[i].as<asset_record>();
 
    _data->last_balance_sync_time = sync_time;
+   save();
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -290,6 +315,20 @@ optional<asset_record> light_wallet::get_asset_record( const string& symbol )
       _data->asset_record_cache[result->id] = *result;
    return result;
 } FC_CAPTURE_AND_RETHROW( (symbol) ) }
+
+optional<asset_record> light_wallet::get_asset_record(const asset_id_type& id)
+{ try {
+   if( is_open() )
+   {
+      for( auto item : _data->asset_record_cache )
+         if( item.second.id == id )
+            return item.second;
+   }
+   auto result = _rpc.blockchain_get_asset( fc::variant(id).as_string() );
+   if( result )
+      _data->asset_record_cache[result->id] = *result;
+   return result;
+} FC_CAPTURE_AND_RETHROW( (id) ) }
 
 
 

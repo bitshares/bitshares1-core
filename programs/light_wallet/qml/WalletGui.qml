@@ -1,42 +1,51 @@
 import QtQuick 2.4
 import QtQuick.Controls 1.3
 import QtQuick.Layouts 1.1
+import QtQuick.Window 2.2
 
 import "utils.js" as Utils
 
 Item {
    id: guiContainer
 
-   property real minimumWidth: uiStack.minimumWidth
-   property real minimumHeight: assetsHeader.height + uiStack.minimumHeight
+   property real minimumWidth: Math.max(uiStack.minimumWidth, header.minimumWidth)
+   property real minimumHeight: header.height + uiStack.minimumHeight
 
    Rectangle {
-      id: assetsHeader
+      id: header
       width: parent.width
       height: assetHeaderRow.height + visuals.margins * 2
       color: "#22000000"
 
-      RowLayout {
+      property real minimumWidth: drawerButton.width + accountNameLabel.width*2 + visuals.margins * 2
+
+      Item {
          id: assetHeaderRow
          width: parent.width - visuals.margins * 2
+         height: drawerButton.height
          y: visuals.margins
          anchors.horizontalCenter: parent.horizontalCenter
 
          Button {
+            id: drawerButton
+            anchors.left: parent.left
             style: WalletButtonStyle{}
-            text: qsTr("Lock")
+            width: Screen.pixelDensity * 10
+            height: Screen.pixelDensity * 8
+            text: "···"
+            visible: wallet.unlocked
             onClicked: {
                wallet.lockWallet()
                uiStack.pop(welcomeUi)
             }
          }
-         Item { Layout.fillWidth: true }
          Label {
+            id: accountNameLabel
+            anchors.centerIn: parent
             color: visuals.textColor
             font.pixelSize: visuals.textBaseSize * 1.1
             text: wallet.account.name
          }
-         Item { Layout.fillWidth: true }
       }
       Rectangle { height: 1; width: parent.width; color: visuals.lightTextColor; anchors.bottom: parent.bottom }
    }
@@ -44,7 +53,7 @@ Item {
    StackView {
       id: uiStack
       anchors {
-         top: assetsHeader.bottom
+         top: header.bottom
          bottom: parent.bottom
       }
       width: parent.width

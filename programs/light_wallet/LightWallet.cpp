@@ -24,7 +24,21 @@ bool LightWallet::walletExists() const
 
 QQmlListProperty<Balance> LightWallet::balances()
 {
-   return QQmlListProperty<Balance>(this, m_balanceCache);
+   auto count = [](QQmlListProperty<Balance>* list) -> int {
+      return static_cast<LightWallet*>(list->data)->m_wallet.balance().size();
+   };
+   auto at = [](QQmlListProperty<Balance>* list, int index) -> Balance* {
+      auto balances = static_cast<LightWallet*>(list->data)->m_wallet.balance();
+      auto itr = balances.begin();
+      for( int i = 0; i < index; ++i )
+         ++itr;
+      auto balance = new Balance(convert(itr->first), itr->second);
+      balance->moveToThread(static_cast<LightWallet*>(list->data)->thread());
+      balance->setParent(static_cast<LightWallet*>(list->data));
+      return balance;
+   };
+
+   return QQmlListProperty<Balance>(this, this, count, at);
 }
 
 void LightWallet::connectToServer(QString host, quint16 port, QString user, QString password)
@@ -120,7 +134,7 @@ void LightWallet::unlockWallet(QString password)
       m_wallet.unlock(convert(password));
       if( isUnlocked() )
       {
-         qDebug() << "Unlocked wallet.";
+         qDebug() << "Unlocked wallet; active address is" << std::string(m_wallet.account().active_address()).c_str();
          auto ciphertext = QSettings().value(QStringLiteral("brainKey"), QString()).toByteArray();
          fc::sha512 key = fc::sha512::hash(convert(password));
          auto plaintext = fc::aes_decrypt(key, std::vector<char>(ciphertext.data(),
@@ -183,6 +197,17 @@ void LightWallet::clearBrainKey()
    QSettings().remove(QStringLiteral("brainKey"));
    m_brainKey.clear();
    Q_EMIT brainKeyChanged(m_brainKey);
+}
+
+void LightWallet::sync()
+{
+   IN_THREAD
+   if( !isConnected() ) return;
+
+   m_wallet.sync_balance();
+   Q_EMIT balancesChanged(balances());
+   m_wallet.sync_transactions();
+   END_THREAD
 }
 
 void LightWallet::generateBrainKey()

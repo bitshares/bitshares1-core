@@ -6,7 +6,7 @@ import "utils.js" as Utils
 
 Item {
    property real minimumWidth: assetsLayout.Layout.minimumWidth + visuals.margins * 2
-   property real minimumHeight: assetsHeader.height + Math.max(noAssetsText.implicitHeight,
+   property real minimumHeight: header.height + Math.max(noAssetsText.implicitHeight,
                                                                assetsLayout.Layout.minimumHeight)
                                 + visuals.margins * 2
 

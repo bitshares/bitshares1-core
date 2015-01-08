@@ -12,14 +12,14 @@ ApplicationWindow {
    width: 540
    height: 960
    color: visuals.backgroundColor
-   minimumWidth: guiLoader.item.minimumWidth
-   minimumHeight: guiLoader.item.minimumHeight
+   minimumWidth: guiLoader.item? guiLoader.item.minimumWidth : 1
+   minimumHeight: guiLoader.item? guiLoader.item.minimumHeight : 1
 
    readonly property int orientation: window.width < window.height? Qt.PortraitOrientation : Qt.LandscapeOrientation
 
    function connectToServer() {
       if( !wallet.connected )
-         wallet.connectToServer("localhost", 6691)
+         wallet.connectToServer("localhost", 6691, "user", "pass")
    }
    function showError(error) {
       errorText.text = qsTr("Error: ") + error
@@ -41,6 +41,7 @@ ApplicationWindow {
       }
 
       connectToServer()
+      wallet.runWhenConnected(wallet.sync)
    }
 
    QtObject {
@@ -67,11 +68,16 @@ ApplicationWindow {
                                      window.height * .02 : window.width * .03
    }
    Timer {
-      id: reconnectPoller
-      running: !wallet.connected
-      interval: 5000
+      id: refreshPoller
+      running: true
+      interval: 10000
       repeat: true
-      onTriggered: connectToServer()
+      onTriggered: {
+         if( !wallet.connected )
+            connectToServer()
+         else if( wallet.open )
+            wallet.sync()
+      }
    }
    LightWallet {
       id: wallet
