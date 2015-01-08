@@ -263,13 +263,13 @@
       },
       {
         "method_name": "blockchain_get_slate",
-        "description": "Retrieves a map of delegate IDs and names defined by the given slate ID",
+        "description": "Retrieves a map of delegate IDs and names defined by the given slate ID or recommending account",
         "return_type": "map<account_id_type, string>",
         "parameters" : [
             {
-              "name" : "slate_id",
-              "type" : "slate_id_type",
-              "description" : "slate id for which to retrieve the slate's delegates"
+              "name" : "slate",
+              "type" : "string",
+              "description" : "slate ID or recommending account name for which to retrieve the slate of delegates"
             }
         ],
         "is_const" : true,

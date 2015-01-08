@@ -146,12 +146,36 @@ oaccount_record detail::client_impl::blockchain_get_account( const string& accou
    return oaccount_record();
 }
 
-map<account_id_type, string> detail::client_impl::blockchain_get_slate( const slate_id_type& slate_id )const
+map<account_id_type, string> detail::client_impl::blockchain_get_slate( const string& slate )const
 {
+    map<account_id_type, string> delegates;
+
+    slate_id_type slate_id = 0;
+    if( !std::all_of( slate.begin(), slate.end(), ::isdigit ) )
+    {
+        const oaccount_record account_record = _chain_db->get_account_record( slate );
+        FC_ASSERT( account_record.valid() );
+        try
+        {
+            FC_ASSERT( account_record->public_data.is_object() );
+            const auto public_data = account_record->public_data.get_object();
+            FC_ASSERT( public_data.contains( "slate_id" ) );
+            FC_ASSERT( public_data[ "slate_id" ].is_uint64() );
+            slate_id = public_data[ "slate_id" ].as<slate_id_type>();
+        }
+        catch( const fc::exception& )
+        {
+            return delegates;
+        }
+    }
+    else
+    {
+        slate_id = std::stoi( slate );
+    }
+
     const odelegate_slate slate_record = _chain_db->get_delegate_slate( slate_id );
     FC_ASSERT( slate_record.valid() );
 
-    map<account_id_type, string> delegates;
     for( const account_id_type delegate_id : slate_record->supported_delegates )
     {
         const oaccount_record delegate_record = _chain_db->get_account_record( delegate_id );
