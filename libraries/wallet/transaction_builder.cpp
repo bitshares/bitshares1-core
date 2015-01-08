@@ -381,9 +381,7 @@ transaction_builder& transaction_builder::deposit_asset_with_escrow(const bts::w
    return *this;
 } FC_CAPTURE_AND_RETHROW( (recipient)(amount)(memo) ) }
 
-
-
-transaction_builder& transaction_builder::cancel_market_order(const order_id_type& order_id)
+transaction_builder& transaction_builder::cancel_market_order( const order_id_type& order_id )
 { try {
    const auto order = _wimpl->_blockchain->get_market_order( order_id );
    if( !order.valid() )
@@ -394,10 +392,7 @@ transaction_builder& transaction_builder::cancel_market_order(const order_id_typ
    if( !owner_key_record.valid() || !owner_key_record->has_private_key() )
        FC_THROW_EXCEPTION( private_key_not_found, "Cannot find the private key for that market order!" );
 
-   const auto account_key_record = _wimpl->_wallet_db.lookup_key( owner_key_record->account_address );
-   FC_ASSERT( account_key_record.valid() && account_key_record->has_private_key() );
-
-   const auto account_record = _wimpl->_wallet_db.lookup_account( account_key_record->public_key );
+   const auto account_record = _wimpl->_wallet_db.lookup_account( owner_key_record->account_address );
    FC_ASSERT( account_record.valid() );
 
    asset balance = order->get_balance();
@@ -433,7 +428,7 @@ transaction_builder& transaction_builder::cancel_market_order(const order_id_typ
 
    auto entry = ledger_entry();
    entry.from_account = owner_key_record->public_key;
-   entry.to_account = account_key_record->public_key;
+   entry.to_account = account_record->owner_key;
    entry.amount = balance;
    entry.memo = "cancel " + order->get_small_id();
 
@@ -736,7 +731,7 @@ transaction_builder& transaction_builder::update_asset( const string& symbol,
                                                         uint32_t issuer_perms,
                                                         const optional<account_id_type> issuer_account_id,
                                                         uint32_t required_sigs,
-                                                        const vector<address>& authority 
+                                                        const vector<address>& authority
                                                         )
 { try {
     const oasset_record asset_record = _wimpl->_blockchain->get_asset_record( symbol );
@@ -745,7 +740,7 @@ transaction_builder& transaction_builder::update_asset( const string& symbol,
     const oaccount_record issuer_account_record = _wimpl->_blockchain->get_account_record( asset_record->issuer_account_id );
     if( !issuer_account_record.valid() )
         FC_THROW_EXCEPTION( unknown_account, "Unknown issuer account id!" );
-    
+
     account_id_type new_issuer_account_id;
     if( issuer_account_id.valid() )
         new_issuer_account_id = *issuer_account_id;
@@ -912,13 +907,13 @@ transaction_builder& transaction_builder::deposit_to_balance(const balance_id_ty
     return *this;
 }
 
-transaction_builder& transaction_builder::asset_authorize_key( const string& symbol, 
-                                                               const address& owner,  
+transaction_builder& transaction_builder::asset_authorize_key( const string& symbol,
+                                                               const address& owner,
                                                                object_id_type meta )
 { try {
    const oasset_record asset_record = _wimpl->_blockchain->get_asset_record( symbol );
    FC_ASSERT( asset_record.valid() );
-   trx.authorize_key( asset_record->id, owner, meta ); 
+   trx.authorize_key( asset_record->id, owner, meta );
    return *this;
 } FC_CAPTURE_AND_RETHROW( (symbol)(owner)(meta) ) }
 
