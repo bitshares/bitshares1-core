@@ -343,6 +343,8 @@ namespace bts { namespace blockchain {
       if( !record ) FC_CAPTURE_AND_THROW( unknown_asset_symbol, (symbol) );
       asset ugly_asset(0, record->id);
 
+      // Multiply by the precision and truncate if there are extra digits.
+      // example: 100.500019 becomes 10050001
       const auto decimal = amount.find(".");
       ugly_asset.amount += atoll(amount.substr(0, decimal).c_str()) * record->precision;
 
