@@ -3,6 +3,7 @@
 #include <QDateTime>
 #include <QLatin1String>
 #include <QObject>
+#include <QDebug>
 
 #include <bts/light_wallet/light_wallet.hpp>
 

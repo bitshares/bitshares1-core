@@ -32,13 +32,19 @@ QQmlListProperty<Balance> LightWallet::balances()
       auto itr = balances.begin();
       for( int i = 0; i < index; ++i )
          ++itr;
-      auto balance = new Balance(convert(itr->first), itr->second);
-      balance->moveToThread(static_cast<LightWallet*>(list->data)->thread());
-      balance->setParent(static_cast<LightWallet*>(list->data));
+      Balance* balance = static_cast<LightWallet*>(list->data)->balanceMaster->findChild<Balance*>(convert(itr->first));
+      if( balance == nullptr )
+      {
+         balance = new Balance(convert(itr->first), itr->second, static_cast<LightWallet*>(list->data)->balanceMaster);
+         balance->setObjectName(convert(itr->first));
+      } else
+         balance->setProperty("amount", itr->second);
+//      balance->moveToThread(static_cast<LightWallet*>(list->data)->thread());
+//      balance->setParent(static_cast<LightWallet*>(list->data));
       return balance;
    };
 
-   return QQmlListProperty<Balance>(this, this, count, at);
+   return QQmlListProperty<Balance>(balanceMaster, this, count, at);
 }
 
 void LightWallet::connectToServer(QString host, quint16 port, QString user, QString password)

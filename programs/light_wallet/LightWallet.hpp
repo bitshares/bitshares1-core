@@ -119,6 +119,7 @@ private:
    QString m_unlockError;
    QString m_brainKey;
    Account* m_account = nullptr;
+   QObject* balanceMaster = new QObject(this);
 
    void generateBrainKey();
    void updateAccount(const bts::light_wallet::account_record& account);
