@@ -939,6 +939,11 @@
         "parameters":
         [
             {
+              "name": "symbol",
+              "type": "string",
+              "description": "which asset"
+            },
+            {
               "name": "m",
               "type": "uint32_t",
               "description": "Required number of signatures"
