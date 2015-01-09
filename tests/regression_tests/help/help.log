@@ -37,6 +37,7 @@ blockchain_get_feeds_from_delegate <delegate_name>
 blockchain_get_info                                                                                 
 blockchain_get_object <id>                                                                          
 blockchain_get_security_state                                                                       
+blockchain_get_slate <slate>                                                                        
 blockchain_get_transaction <transaction_id_prefix> [exact]                                          
 blockchain_is_synced                                                                                
 blockchain_list_accounts [first_account_name] [limit]                                               
@@ -220,7 +221,7 @@ wallet_market_submit_relative_ask <from_account_name> <sell_quantity> <sell_quan
 wallet_market_submit_relative_bid <from_account_name> <quantity> <quantity_symbol> <relative_price> <base_symbol> [limit_price] 
 wallet_market_submit_short <from_account_name> <short_collateral> <collateral_symbol> <interest_rate> <quote_symbol> [short_price_limit] 
 wallet_multisig_deposit <amount> <symbol> <from_name> <m> <addresses> [vote_method]                 
-wallet_multisig_get_balance_id <m> <addresses>                                                      
+wallet_multisig_get_balance_id <symbol> <m> <addresses>                                             
 wallet_multisig_withdraw_start <amount> <symbol> <from> <to_address> [vote_method] [builder_path]   
 wallet_object_create <account> [user_data] [m] [owners]                                             
 wallet_object_list <account>                                                                        

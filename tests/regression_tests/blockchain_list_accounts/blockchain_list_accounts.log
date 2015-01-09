@@ -33,7 +33,6 @@ delegate23 *                       XTS8FA6Cvd19PeG8cuvLsF8qPGcfccUypXCv2arXYqpUc
 delegate24 *                       XTS8W4L9GNvTR31kaQD1iaWoH75mWpwisPP4CazhxoHp977uvWrvS           <d-ign>2014-06-20T14:40:27</d-ign>0              0              
 delegate25 *                       XTS5VWxNgabK1nv47GoYJjv8JSUTP2s6nurBT6rwdcHJY8QE3ez5s           <d-ign>2014-06-20T14:40:27</d-ign>0              0              
 delegate26 *                       XTS5W2YJZsZtp4CitW6L1AtWmX7ogu7SdJSMmJJSnHdoAEB8kN1LP           <d-ign>2014-06-20T14:40:27</d-ign>0              0              
-... Use "blockchain_list_accounts <start_name> <count>" to see more.
 (wallet closed) >>> blockchain_list_accounts delegate0 5
 NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVAL       
 -------------------------------------------------------------------------------------------------------------------------------------------------------
