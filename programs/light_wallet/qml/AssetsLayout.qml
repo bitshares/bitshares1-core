@@ -6,9 +6,7 @@ import "utils.js" as Utils
 
 Item {
    property real minimumWidth: assetsLayout.Layout.minimumWidth + visuals.margins * 2
-   property real minimumHeight: header.height + Math.max(noAssetsText.implicitHeight,
-                                                               assetsLayout.Layout.minimumHeight)
-                                + visuals.margins * 2
+   property real minimumHeight: header.height + assetsLayout.Layout.minimumHeight + visuals.margins * 2
 
    signal lockRequested
 
@@ -35,30 +33,17 @@ Item {
                width: parent.width
                Label {
                   color: visuals.textColor
-                  text: symbol
+                  text: amount
                   font.pixelSize: visuals.textBaseSize * 2
                }
                Item { Layout.fillWidth: true }
                Label {
                   color: visuals.textColor
-                  text: amount
+                  text: symbol
                   font.pixelSize: visuals.textBaseSize * 2
                }
             }
          }
       }
-   }
-   Label {
-      id: noAssetsText
-      anchors.centerIn: assetsLayout
-      width: parent.width - visuals.margins * 2
-      color: visuals.lightTextColor
-      font.pixelSize: visuals.textBaseSize * 2
-      text: qsTr("You don't have any assets yet. When you do, they'll be listed here.")
-      wrapMode: Text.WrapAtWordBoundaryOrAnywhere
-      verticalAlignment: Text.AlignVCenter
-      visible: wallet.balances.length === 0
-      opacity: .5
-      z: -1
    }
 }

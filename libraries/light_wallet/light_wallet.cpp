@@ -242,7 +242,7 @@ map<string, double> light_wallet::balance() const
 {
    FC_ASSERT(is_open());
 
-   map<string, double> balances;
+   map<string, double> balances = {{BTS_BLOCKCHAIN_SYMBOL, 0}};
    for( auto balance : _data->balance_record_cache ) {
       asset_record record = _data->asset_record_cache.at(balance.second.asset_id());
       balances[record.symbol] = balance.second.balance / double(record.precision);

@@ -41,7 +41,6 @@ ApplicationWindow {
       }
 
       connectToServer()
-      wallet.runWhenConnected(wallet.sync)
    }
 
    QtObject {
@@ -69,13 +68,14 @@ ApplicationWindow {
    }
    Timer {
       id: refreshPoller
-      running: true
+      running: wallet.unlocked
+      triggeredOnStart: true
       interval: 10000
       repeat: true
       onTriggered: {
          if( !wallet.connected )
             connectToServer()
-         else if( wallet.open )
+         else
             wallet.sync()
       }
    }
