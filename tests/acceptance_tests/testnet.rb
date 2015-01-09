@@ -24,7 +24,7 @@ module BitShares
       @running = false
 
       ENV['BTS_BUILD'] = '../..' unless ENV['BTS_BUILD']
-      @client_binary = ENV['BTS_BUILD'] + '/programs/client/bitshares_client'
+      @client_binary = ENV['BTS_BUILD'] + '/programs/client/bitsharestestnet_client'
       raise @client_binary + ' not found, please set BTS_BUILD env variable if you are using out of source builds' unless File.exist?(@client_binary)
     end
 
