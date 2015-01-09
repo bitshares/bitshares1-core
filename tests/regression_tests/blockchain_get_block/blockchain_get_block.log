@@ -24,12 +24,12 @@ default (unlocked) >>> blockchain_get_block 1
   "previous_secret": "0000000000000000000000000000000000000000",
   "delegate_signature": "<d-ign></d-ign>",
   "user_transaction_ids": [],
+  "block_size": 166,
+  "latency": 0,
   "signee_shares_issued": 5000000,
   "signee_fees_collected": 0,
   "signee_fees_destroyed": 0,
-  "random_seed": "0000000000000000000000000000000000000000",
-  "block_size": 166,
-  "latency": 0,
+  "random_seed": "<d-ign></d-ign>",
   "processing_time": "<d-ign></d-ign>"
 }
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -46,12 +46,12 @@ default (unlocked) >>> blockchain_get_block 2
   "previous_secret": "0000000000000000000000000000000000000000",
   "delegate_signature": "<d-ign></d-ign>",
   "user_transaction_ids": [],
+  "block_size": 166,
+  "latency": 0,
   "signee_shares_issued": 5000000,
   "signee_fees_collected": 0,
   "signee_fees_destroyed": 0,
-  "random_seed": "2322c73ae804adc5c3e9ec4d188eee59871e4604",
-  "block_size": 166,
-  "latency": 0,
+  "random_seed": "<d-ign></d-ign>",
   "processing_time": "<d-ign></d-ign>"
 }
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -68,12 +68,12 @@ default (unlocked) >>> blockchain_get_block 3
   "previous_secret": "0000000000000000000000000000000000000000",
   "delegate_signature": "<d-ign></d-ign>",
   "user_transaction_ids": [],
+  "block_size": 166,
+  "latency": 0,
   "signee_shares_issued": 5000000,
   "signee_fees_collected": 0,
   "signee_fees_destroyed": 0,
-  "random_seed": "651f4a46471d05b65eb769e890392640878b3f97",
-  "block_size": 166,
-  "latency": 0,
+  "random_seed": "<d-ign></d-ign>",
   "processing_time": "<d-ign></d-ign>"
 }
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -90,12 +90,12 @@ default (unlocked) >>> blockchain_get_block 4
   "previous_secret": "0000000000000000000000000000000000000000",
   "delegate_signature": "<d-ign></d-ign>",
   "user_transaction_ids": [],
+  "block_size": 166,
+  "latency": 0,
   "signee_shares_issued": 5000000,
   "signee_fees_collected": 0,
   "signee_fees_destroyed": 0,
-  "random_seed": "f00e7ffa074d41538766c540b0ba58b2532fdcbb",
-  "block_size": 166,
-  "latency": 0,
+  "random_seed": "<d-ign></d-ign>",
   "processing_time": "<d-ign></d-ign>"
 }
 default (unlocked) >>> quit

@@ -37,6 +37,7 @@ blockchain_get_feeds_from_delegate <delegate_name>
 blockchain_get_info                                                                                 
 blockchain_get_object <id>                                                                          
 blockchain_get_security_state                                                                       
+blockchain_get_slate <slate>                                                                        
 blockchain_get_transaction <transaction_id_prefix> [exact]                                          
 blockchain_is_synced                                                                                
 blockchain_list_accounts [first_account_name] [limit]                                               
@@ -55,6 +56,7 @@ blockchain_list_markets
 blockchain_list_missing_block_delegates <block_number>                                              
 blockchain_list_pending_transactions                                                                
 blockchain_list_recently_registered_accounts                                                        
+blockchain_list_recently_updated_accounts                                                           
 blockchain_market_get_asset_collateral <symbol>                                                     
 blockchain_market_list_asks <quote_symbol> <base_symbol> [limit]                                    
 blockchain_market_list_bids <quote_symbol> <base_symbol> [limit]                                    
@@ -168,15 +170,17 @@ wallet_backup_create <json_filename>
 wallet_backup_restore <json_filename> <wallet_name> <imported_wallet_passphrase>                    
 wallet_balance_set_vote_info <balance_id> [voter_address] [vote_method] [sign_and_broadcast] [builder_path] 
 wallet_builder_add_signature <builder> [broadcast] [builder_path]                                   
+wallet_builder_file_add_signature [broadcast] [builder_path]                                        
 wallet_burn <amount_to_burn> <asset_symbol> <from_account_name> <for_or_against> <to_account_name> [public_message] [anonymous] 
 wallet_change_passphrase <passphrase>                                                               
 wallet_check_sharedrop                                                                              
 wallet_check_vote_proportion <account>                                                              
 wallet_close                                                                                        
+wallet_collect_genesis_balances <account_name>                                                      
 wallet_collect_vested_balances <account_name>                                                       
 wallet_create <wallet_name> <new_passphrase> [brain_key]                                            
 wallet_delegate_set_block_production <delegate_name> <enabled>                                      
-wallet_delegate_update_block_signing_key <authorizing_account_name> <delegate_name> <block_signing_key> 
+wallet_delegate_update_signing_key <authorizing_account_name> <delegate_name> <signing_key>         
 wallet_delegate_withdraw_pay <delegate_name> <to_account_name> <amount_to_withdraw>                 
 wallet_dump_private_key <input>                                                                     
 wallet_escrow_summary [account_name]                                                                
@@ -192,6 +196,7 @@ wallet_get_transaction_fee [symbol]
 wallet_import_bitcoin <wallet_filename> <passphrase> <account_name>                                 
 wallet_import_electrum <wallet_filename> <passphrase> <account_name>                                
 wallet_import_keyhotee <firstname> <middlename> <lastname> <brainkey> <keyhoteeid>                  
+wallet_import_keys_from_json <json_filename> <imported_wallet_passphrase> <account>                 
 wallet_import_private_key <wif_key> [account_name] [create_new_account] [rescan]                    
 wallet_list                                                                                         
 wallet_list_accounts                                                                                
@@ -216,7 +221,7 @@ wallet_market_submit_relative_ask <from_account_name> <sell_quantity> <sell_quan
 wallet_market_submit_relative_bid <from_account_name> <quantity> <quantity_symbol> <relative_price> <base_symbol> [limit_price] 
 wallet_market_submit_short <from_account_name> <short_collateral> <collateral_symbol> <interest_rate> <quote_symbol> [short_price_limit] 
 wallet_multisig_deposit <amount> <symbol> <from_name> <m> <addresses> [vote_method]                 
-wallet_multisig_get_balance_id <m> <addresses>                                                      
+wallet_multisig_get_balance_id <symbol> <m> <addresses>                                             
 wallet_multisig_withdraw_start <amount> <symbol> <from> <to_address> [vote_method] [builder_path]   
 wallet_object_create <account> [user_data] [m] [owners]                                             
 wallet_object_list <account>                                                                        

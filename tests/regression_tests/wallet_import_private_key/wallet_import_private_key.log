@@ -41,13 +41,13 @@ testwallet1 (unlocked) >>> wallet_dump_private_key testaccount
 "5KS7xDP2FKvEjpHTqUHhvUHz6GCJYC2e39bzWzDJW3cxPtPTwG6"
 testwallet1 (unlocked) >>> wallet_account_list_public_keys testaccount
 [{
-    "hex": "0224218aaf2aa51dec20d8cf619e89e6ca9d3e6e70878fed7a32bee8787c371979",
-    "native_pubkey": "XTS5AQGjeRu5sEBvvERaV8i1tstV1fx2ywGUmvWgsBPEjFoR27oQg",
-    "native_address": "XTSMNAMFHWLkAb77ECrscyRQNQKES2GfY5ve",
-    "pts_normal_address": "PuLxL4UXnLsFBvHVnSZpmN9hAP1eWqCXLZ",
-    "pts_compressed_address": "PrV8DcHjZpvJep9CCjwxPZiGY6bbS7Q5C4",
-    "btc_normal_address": "1NRBBynQ2EvBPeUeQwuycLudv8apo1wedb",
-    "btc_compressed_address": "1KZM5XbboiyErYLLqFJ7EYUDHrAmWqkSNJ"
+    "hex": "03210c243d6e3d35a2cd4a0e33914d58366e9c23a18f2301331864af2f8148e394",
+    "native_pubkey": "XTS75ngXKr5VCgxFU6iQTkwQzXXYwQz5em6AwEtH6hAzo4sW5j81v",
+    "native_address": "XTS5FcErC7VBAMPTDikvkfCXdAbasCACw3ii",
+    "pts_normal_address": "PtM7ZQEvjtb9Pw1YAETmQStKwNkkgDEiwe",
+    "pts_compressed_address": "PZphaAzgpSAZ9HbwYECPJ42bpeXwsEdk4m",
+    "btc_normal_address": "1MRLRKYnyne5bfCgnjovFReGh8KvwfSus1",
+    "btc_compressed_address": "12tvS6JZ4LDVM1o6AjYY92nYaQ787WUtuC"
   },{
     "hex": "02f969a87ca684e235b95bff54981ab2125aa331969e290ea9278645b2988892ff",
     "native_pubkey": "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt",
@@ -57,13 +57,13 @@ testwallet1 (unlocked) >>> wallet_account_list_public_keys testaccount
     "btc_normal_address": "12uXdFN4RUqiDWMKyR59R833SmbCrHzjjQ",
     "btc_compressed_address": "1GG7vrGuFzzwfnC59AptTfR5AbWfVskurs"
   },{
-    "hex": "03210c243d6e3d35a2cd4a0e33914d58366e9c23a18f2301331864af2f8148e394",
-    "native_pubkey": "XTS75ngXKr5VCgxFU6iQTkwQzXXYwQz5em6AwEtH6hAzo4sW5j81v",
-    "native_address": "XTS5FcErC7VBAMPTDikvkfCXdAbasCACw3ii",
-    "pts_normal_address": "PtM7ZQEvjtb9Pw1YAETmQStKwNkkgDEiwe",
-    "pts_compressed_address": "PZphaAzgpSAZ9HbwYECPJ42bpeXwsEdk4m",
-    "btc_normal_address": "1MRLRKYnyne5bfCgnjovFReGh8KvwfSus1",
-    "btc_compressed_address": "12tvS6JZ4LDVM1o6AjYY92nYaQ787WUtuC"
+    "hex": "0224218aaf2aa51dec20d8cf619e89e6ca9d3e6e70878fed7a32bee8787c371979",
+    "native_pubkey": "XTS5AQGjeRu5sEBvvERaV8i1tstV1fx2ywGUmvWgsBPEjFoR27oQg",
+    "native_address": "XTSMNAMFHWLkAb77ECrscyRQNQKES2GfY5ve",
+    "pts_normal_address": "PuLxL4UXnLsFBvHVnSZpmN9hAP1eWqCXLZ",
+    "pts_compressed_address": "PrV8DcHjZpvJep9CCjwxPZiGY6bbS7Q5C4",
+    "btc_normal_address": "1NRBBynQ2EvBPeUeQwuycLudv8apo1wedb",
+    "btc_compressed_address": "1KZM5XbboiyErYLLqFJ7EYUDHrAmWqkSNJ"
   }
 ]
 testwallet1 (unlocked) >>> wallet_dump_private_key XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt
