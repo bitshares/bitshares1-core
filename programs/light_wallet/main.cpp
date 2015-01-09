@@ -4,6 +4,8 @@
 #include <QQmlDebuggingEnabler>
 #include <QtQml>
 
+#include <bts/blockchain/time.hpp>
+
 #include "QtWrappers.hpp"
 #include "LightWallet.hpp"
 
@@ -14,11 +16,15 @@ int main(int argc, char *argv[])
    app.setOrganizationName("BitShares");
    app.setOrganizationDomain("bitshares.org");
 
+   //Fire up the NTP system
+   bts::blockchain::now();
+
    QQmlDebuggingEnabler enabler;
 
    qmlRegisterType<LightWallet>("org.BitShares.Types", 1, 0, "LightWallet");
    qmlRegisterType<Account>("org.BitShares.Types", 1, 0, "Account");
-   qmlRegisterType<Balance>("org.BitShares.Types", 1, 0, "Balance");
+   qmlRegisterUncreatableType<Balance>("org.BitShares.Types", 1, 0, "Balance",
+                                       QStringLiteral("Balances must be created in backend."));
 
    QQmlApplicationEngine engine;
    engine.load(QUrl(QStringLiteral("qml/main.qml")));

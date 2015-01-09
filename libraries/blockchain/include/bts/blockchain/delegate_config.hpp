@@ -20,11 +20,11 @@ struct delegate_config
 {
     uint32_t            network_min_connection_count = NETWORK_MIN_CONNECTION_COUNT_DEFAULT;
 
-    size_t              block_max_transaction_count = -1;
-    size_t              block_max_size = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
+    uint32_t            block_max_transaction_count = -1;
+    uint32_t            block_max_size = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
     fc::microseconds    block_max_production_time = fc::seconds( 3 );
 
-    size_t              transaction_max_size = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
+    uint32_t            transaction_max_size = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
     bool                transaction_canonical_signatures_required = false;
     share_type          transaction_min_fee = BTS_BLOCKCHAIN_PRECISION / 10;
 

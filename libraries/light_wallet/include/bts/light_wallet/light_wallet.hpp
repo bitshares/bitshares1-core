@@ -81,6 +81,7 @@ namespace bts { namespace light_wallet {
          map<string,double> balance()const;
 
          optional<asset_record> get_asset_record( const string& symbol );
+         optional<asset_record> get_asset_record( const asset_id_type& id );
 
          bts::rpc::rpc_client             _rpc;
          fc::path                         _wallet_file;
@@ -92,6 +93,8 @@ namespace bts { namespace light_wallet {
 FC_REFLECT( bts::light_wallet::light_wallet_data,
             (encrypted_private_key)
             (user_account)
+            (last_balance_sync_time)
+            (last_transaction_sync_time)
             (balance_record_cache)
             (transaction_record_cache)
             (asset_record_cache)

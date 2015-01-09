@@ -5,8 +5,6 @@ import QtQuick.Layouts 1.1
 Item {
    property real minimumWidth: layout.Layout.minimumWidth + visuals.margins * 2
    property real minimumHeight: layout.Layout.minimumHeight + visuals.margins * 2
-   property bool needsRegistration: true
-   property alias username: nameField.text
 
    signal passwordEntered(string password)
 
@@ -14,15 +12,7 @@ Item {
       passwordField.password = ""
    }
 
-   Stack.onStatusChanged: if( Stack.status === Stack.Active ) {
-                             state = ""
-
-                             console.log(wallet.account)
-                             if( wallet.walletExists )
-                                passwordField.focus = true
-                             else
-                                nameField.focus = true
-                          }
+   Stack.onStatusChanged: if( Stack.status === Stack.Active ) { passwordField.forceActiveFocus() }
 
    ColumnLayout {
       id: layout
@@ -37,41 +27,18 @@ Item {
       Label {
          anchors.horizontalCenter: parent.horizontalCenter
          horizontalAlignment: Text.AlignHCenter
-         text: qsTr("Welcome to BitShares")
+         text: qsTr("Welcome back, ") + wallet.account.name
          color: visuals.textColor
          font.pixelSize: visuals.textBaseSize * 1.5
          wrapMode: Text.WrapAtWordBoundaryOrAnywhere
       }
-      Label {
-         id: statusText
-         text: qsTr("To get started, create a password below.\n" +
-                    "This password can be short and easy to remember — we'll make a better one later.")
-         anchors.horizontalCenter: parent.horizontalCenter
-         Layout.fillWidth: true
-         color: visuals.lightTextColor
-         font.pixelSize: visuals.textBaseSize
-         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
-
-         Component.onCompleted: visible = needsRegistration
-      }
       ColumnLayout {
          Layout.fillWidth: true
 
-         TextField {
-            id: nameField
-            inputMethodHints: Qt.ImhLowercaseOnly
-            placeholderText: qsTr("Pick a Username")
-            font.pixelSize: visuals.textBaseSize * 1.1
-            Layout.fillWidth: true
-            Layout.preferredHeight: implicitHeight
-            text: wallet.account? wallet.account.name : ""
-            readOnly: !needsRegistration
-         }
          PasswordField {
             id: passwordField
             Layout.fillWidth: true
-            placeholderText: needsRegistration?
-                                qsTr("Create a Password") : qsTr("Enter Password")
+            placeholderText: qsTr("Enter Password")
             fontPixelSize: visuals.textBaseSize * 1.1
             onAccepted: openButton.clicked()
 
@@ -83,14 +50,11 @@ Item {
          Button {
             id: openButton
             style: WalletButtonStyle {}
-            text: needsRegistration? qsTr("Begin") : qsTr("Open")
+            text: qsTr("Open")
             Layout.fillWidth: true
             Layout.preferredHeight: passwordField.height
 
             onClicked: {
-               if( wallet.account && !wallet.account.isRegistered )
-                  wallet.account.name = nameField.text
-
                if( passwordField.password.length < 1 ) {
                   passwordField.errorGlow()
                } else {
@@ -101,22 +65,4 @@ Item {
       }
       Item { Layout.fillHeight: true }
    }
-
-   states: [
-      State {
-         name: "REGISTERING"
-         PropertyChanges {
-            target: openButton
-            enabled: false
-         }
-         PropertyChanges {
-            target: statusText
-            text: qsTr("OK! Now registering your BitShares Account. Just a moment...")
-         }
-         PropertyChanges {
-            target: wallet
-            onErrorRegistering: statusText.text = error
-         }
-      }
-   ]
 }

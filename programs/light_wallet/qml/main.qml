@@ -12,14 +12,14 @@ ApplicationWindow {
    width: 540
    height: 960
    color: visuals.backgroundColor
-   minimumWidth: walletGui.minimumWidth
-   minimumHeight: walletGui.minimumHeight
+   minimumWidth: guiLoader.item? guiLoader.item.minimumWidth : 1
+   minimumHeight: guiLoader.item? guiLoader.item.minimumHeight : 1
 
    readonly property int orientation: window.width < window.height? Qt.PortraitOrientation : Qt.LandscapeOrientation
 
    function connectToServer() {
       if( !wallet.connected )
-         wallet.connectToServer("localhost", 6691)
+         wallet.connectToServer("localhost", 6691, "user", "pass")
    }
    function showError(error) {
       errorText.text = qsTr("Error: ") + error
@@ -33,7 +33,15 @@ ApplicationWindow {
    Component.onCompleted: {
       if( wallet.walletExists )
          wallet.openWallet()
+
+      if( wallet.account && wallet.account.isRegistered ) {
+         guiLoader.sourceComponent = normalUi
+      } else {
+         guiLoader.sourceComponent = onboardingUi
+      }
+
       connectToServer()
+      wallet.runWhenConnected(wallet.sync)
    }
 
    QtObject {
@@ -60,11 +68,16 @@ ApplicationWindow {
                                      window.height * .02 : window.width * .03
    }
    Timer {
-      id: reconnectPoller
-      running: !wallet.connected
-      interval: 5000
+      id: refreshPoller
+      running: true
+      interval: 10000
       repeat: true
-      onTriggered: connectToServer()
+      onTriggered: {
+         if( !wallet.connected )
+            connectToServer()
+         else if( wallet.open )
+            wallet.sync()
+      }
    }
    LightWallet {
       id: wallet
@@ -82,8 +95,25 @@ ApplicationWindow {
       }
    }
 
-   WalletGui {
-      id: walletGui
+   Component {
+      id: normalUi
+
+      WalletGui {
+         id: walletGui
+      }
+   }
+   Component {
+      id: onboardingUi
+
+      OnboardingLayout {
+         id: onboardingGui
+
+         onFinished: guiLoader.sourceComponent = normalUi
+      }
+   }
+
+   Loader {
+      id: guiLoader
       anchors.fill: parent
    }
 

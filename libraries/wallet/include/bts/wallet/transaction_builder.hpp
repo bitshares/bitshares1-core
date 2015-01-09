@@ -206,7 +206,7 @@ namespace bts { namespace wallet {
                                            const address& released_by_address,
                                            share_type     amount_to_sender,
                                            share_type     amount_to_receiver );
-                                           
+
 
       transaction_builder& deposit_asset_to_multisig(const asset& amount,
                                                      const string& from_name,
@@ -301,8 +301,8 @@ namespace bts { namespace wallet {
                                         asset cover_amount,
                                         const order_id_type& order_id);
 
-      transaction_builder& asset_authorize_key( const string& symbol, 
-                                                const address& owner,  
+      transaction_builder& asset_authorize_key( const string& symbol,
+                                                const address& owner,
                                                 object_id_type meta );
 
       transaction_builder& update_signing_key( const string& authorizing_account_name,
@@ -320,7 +320,7 @@ namespace bts { namespace wallet {
                                          uint32_t issuer_perms,
                                          const optional<account_id_type> issuer_account_id,
                                          uint32_t required_sigs,
-                                         const vector<address>& authority 
+                                         const vector<address>& authority
                                        );
 
       /**

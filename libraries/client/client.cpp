@@ -586,29 +586,60 @@ void client_impl::configure_chain_server(config& cfg, const program_options::var
 // Call this whenever a change occurs that may enable block production by the client
 void client_impl::reschedule_delegate_loop()
 {
-   if( !_delegate_loop_complete.valid() || _delegate_loop_complete.ready() )
-      start_delegate_loop();
+    if( !_delegate_loop_complete.valid() || _delegate_loop_complete.ready() )
+        start_delegate_loop();
 }
 
 void client_impl::start_delegate_loop()
 {
-   if (!_time_discontinuity_connection.connected())
-      _time_discontinuity_connection = bts::blockchain::time_discontinuity_signal.connect([=](){ reschedule_delegate_loop(); });
-   _delegate_loop_complete = fc::async( [=](){ delegate_loop(); }, "delegate_loop" );
+    const fc::path config_file = _data_dir / "delegate_config.json";
+
+    fc::oexception file_exception;
+    if( fc::exists( config_file ) )
+    {
+        try
+        {
+            _delegate_config = fc::json::from_file( config_file ).as<decltype( _delegate_config )>();
+        }
+        catch( const fc::exception& e )
+        {
+            file_exception = e;
+        }
+    }
+
+    if( file_exception.valid() )
+        ulog( "Error loading delegate config from file: ${x}", ("x",config_file.preferred_string()) );
+
+    if (!_time_discontinuity_connection.connected())
+        _time_discontinuity_connection = bts::blockchain::time_discontinuity_signal.connect([=](){ reschedule_delegate_loop(); });
+    _delegate_loop_complete = fc::async( [=](){ delegate_loop(); }, "delegate_loop" );
 }
 
 void client_impl::cancel_delegate_loop()
 {
-   try
-   {
-      ilog( "Canceling delegate loop..." );
-      _delegate_loop_complete.cancel_and_wait(__FUNCTION__);
-      ilog( "Delegate loop canceled" );
-   }
-   catch( const fc::exception& e )
-   {
-      wlog( "Unexpected exception thrown from delegate_loop(): ${e}", ("e",e.to_detail_string() ) );
-   }
+    try
+    {
+        ilog( "Canceling delegate loop..." );
+        _delegate_loop_complete.cancel_and_wait(__FUNCTION__);
+        ilog( "Delegate loop canceled" );
+    }
+    catch( const fc::exception& e )
+    {
+        wlog( "Unexpected exception thrown from delegate_loop(): ${e}", ("e",e.to_detail_string() ) );
+    }
+
+    try
+    {
+        const fc::path config_file = _data_dir / "delegate_config.json";
+        if( fc::exists( config_file ) )
+        {
+            fc::remove_all( config_file );
+            fc::json::save_to_file( _delegate_config, config_file );
+        }
+    }
+    catch( ... )
+    {
+    }
 }
 
 void client_impl::delegate_loop()
@@ -1380,8 +1411,8 @@ fc::variant_object version_info()
 {
    string client_version(bts::utilities::git_revision_description);
    // starting around version 0.4.28, our release tags change from
-   // looking like "v0.4.27" to "bts/0.4.28".  This converts the tag 
-   // back into something that looks like the old format for displaying 
+   // looking like "v0.4.27" to "bts/0.4.28".  This converts the tag
+   // back into something that looks like the old format for displaying
    // to the user
    if (boost::starts_with(client_version, "bts/") ||
        boost::starts_with(client_version, "dvs/") ||

@@ -108,11 +108,12 @@ namespace bts { namespace blockchain {
        FC_ASSERT( false, "Should never get here!" );
    }
 
-    balance_id_type balance_record::get_multisig_balance_id( uint32_t m, const vector<address>& addrs )
+    balance_id_type balance_record::get_multisig_balance_id( asset_id_type asset_id, uint32_t m, const vector<address>& addrs )
     { try {
-        withdraw_with_multisig condition;
-        condition.required = m;
-        condition.owners = set<address>(addrs.begin(), addrs.end());
+        withdraw_with_multisig multisig_condition;
+        multisig_condition.required = m;
+        multisig_condition.owners = set<address>(addrs.begin(), addrs.end());
+        withdraw_condition condition( multisig_condition, asset_id, 0 );
         auto balance = balance_record(condition);
         return balance.id();
     } FC_CAPTURE_AND_RETHROW( (m)(addrs) ) }

@@ -93,6 +93,8 @@ public Q_SLOTS:
 
    void clearBrainKey();
 
+   void sync();
+
 Q_SIGNALS:
    void walletExistsChanged(bool exists);
    void errorConnecting(QString error);
@@ -116,8 +118,8 @@ private:
    QString m_openError;
    QString m_unlockError;
    QString m_brainKey;
-   QList<Balance*> m_balanceCache;
    Account* m_account = nullptr;
+   QObject* balanceMaster = new QObject(this);
 
    void generateBrainKey();
    void updateAccount(const bts::light_wallet::account_record& account);

@@ -3,6 +3,7 @@
 #include <QDateTime>
 #include <QLatin1String>
 #include <QObject>
+#include <QDebug>
 
 #include <bts/light_wallet/light_wallet.hpp>
 
@@ -143,7 +144,11 @@ class Balance : public QObject
    qreal m_amount;
 
 public:
-   Balance(QObject* parent = nullptr): QObject(parent){}
+   Balance(QString symbol, qreal amount, QObject* parent = nullptr)
+      : QObject(parent),
+        m_symbol(symbol),
+        m_amount(amount)
+   {}
    virtual ~Balance(){}
 Q_SIGNALS:
    void symbolChanged(qreal arg);
