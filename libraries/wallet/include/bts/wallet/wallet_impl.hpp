@@ -28,6 +28,9 @@ class wallet_impl : public chain_observer
        vector<std::unique_ptr<fc::thread>>        _scanner_threads;
        float                                      _scan_progress = 0;
 
+       unordered_map<balance_id_type, balance_record> _balance_records;
+       bool                                           _dirty_balances = true;
+
        struct login_record
        {
            private_key_type key;
@@ -62,6 +65,8 @@ class wallet_impl : public chain_observer
        *  This method is called anytime a block is applied to the chain.
        */
       virtual void block_applied( const block_summary& summary )override;
+
+      void scan_balances_experimental();
 
       void scan_market_transaction(
               const market_transaction& mtrx,
@@ -176,7 +181,7 @@ class wallet_impl : public chain_observer
 
 
       template<typename ConditionType>
-      bool scan_condition( const ConditionType& deposit, const asset& amount, 
+      bool scan_condition( const ConditionType& deposit, const asset& amount,
                            wallet_transaction_record& trx_rec, asset& total_fee, const vector<private_key_type>& keys )
       {
           bool cache_deposit = false;
