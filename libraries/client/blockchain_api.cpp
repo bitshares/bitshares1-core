@@ -336,10 +336,30 @@ map<balance_id_type, balance_record> detail::client_impl::blockchain_list_addres
     }
     return result;
 }
-map<transaction_id_type, transaction_record> detail::client_impl::blockchain_list_address_transactions( const string& raw_addr,
-                                                                                                        const time_point& after )const
+map<transaction_id_type, pair<fc::time_point_sec, transaction_record>> detail::client_impl::blockchain_list_address_transactions( const string& raw_addr,
+                                                                                                                                  uint32_t after_block )const
 {
-   map<transaction_id_type,transaction_record> results;
+   map<transaction_id_type,pair<fc::time_point_sec, transaction_record>> results;
+
+   address addr;
+   try {
+      addr = address( raw_addr );
+   } catch (...) {
+      addr = address( pts_address( raw_addr ) );
+   }
+   auto transactions = _chain_db->fetch_address_transactions( addr );
+   ilog("Found ${num} transactions for ${addr}", ("num", transactions.size())("addr", raw_addr));
+
+   if( after_block > 0 )
+      transactions.erase(std::remove_if(transactions.begin(), transactions.end(),
+                                        [after_block](const blockchain::transaction_record& t) -> bool {
+         return t.chain_location.block_num <= after_block;
+      }), transactions.end());
+   ilog("Found ${num} transactions after block ${after_block}", ("num", transactions.size())("after_block", after_block));
+
+   for( const auto& trx : transactions )
+      results[trx.trx.id()] = std::make_pair(_chain_db->get_block(trx.chain_location.block_num).timestamp, trx);
+
    return results;
 }
 

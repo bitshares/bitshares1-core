@@ -291,15 +291,19 @@ void light_wallet::sync_balance( bool resync_all )
 void light_wallet::sync_transactions()
 {
    FC_ASSERT( is_open() );
-   if( _data->last_transaction_sync_time + fc::seconds(10) > fc::time_point::now() )
-      return; // too fast
 
-   auto sync_time = bts::blockchain::now();
+   uint32_t sync_block = _data->last_transaction_sync_block;
    auto new_trxs = _rpc.blockchain_list_address_transactions( string(address(_data->user_account.active_key())),
-                                                              _data->last_transaction_sync_time );
+                                                              _data->last_transaction_sync_block );
    for( auto item : new_trxs )
-      _data->transaction_record_cache[item.first] = item.second;
-   _data->last_transaction_sync_time = sync_time;
+   {
+      fc::mutable_variant_object record("timestamp", item.second.first);
+      record["trx"] = item.second.second;
+      _data->transaction_record_cache[item.first] = record;
+      if( item.second.second.chain_location.block_num > sync_block )
+         sync_block = item.second.second.chain_location.block_num;
+   }
+   _data->last_transaction_sync_block = sync_block;
 }
 
 optional<asset_record> light_wallet::get_asset_record( const string& symbol )

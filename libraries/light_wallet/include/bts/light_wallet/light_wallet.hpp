@@ -18,9 +18,9 @@ namespace bts { namespace light_wallet {
        vector<char>                                 encrypted_private_key;
        account_record                               user_account;
        fc::time_point                               last_balance_sync_time;
-       fc::time_point                               last_transaction_sync_time;
+       uint32_t                                     last_transaction_sync_block;
        map<balance_id_type,balance_record>          balance_record_cache;
-       map<transaction_id_type,transaction_record>  transaction_record_cache;
+       map<transaction_id_type, fc::variant_object> transaction_record_cache;
        map<asset_id_type,asset_record>              asset_record_cache;
        map<string,pair<price,fc::time_point> >      price_cache;
        map<balance_id_type,memo_status>             memos;
@@ -94,7 +94,7 @@ FC_REFLECT( bts::light_wallet::light_wallet_data,
             (encrypted_private_key)
             (user_account)
             (last_balance_sync_time)
-            (last_transaction_sync_time)
+            (last_transaction_sync_block)
             (balance_record_cache)
             (transaction_record_cache)
             (asset_record_cache)
