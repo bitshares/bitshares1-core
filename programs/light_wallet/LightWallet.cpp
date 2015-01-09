@@ -22,31 +22,6 @@ bool LightWallet::walletExists() const
    return fc::exists(m_walletPath);
 }
 
-QQmlListProperty<Balance> LightWallet::balances()
-{
-   auto count = [](QQmlListProperty<Balance>* list) -> int {
-      return static_cast<LightWallet*>(list->data)->m_wallet.balance().size();
-   };
-   auto at = [](QQmlListProperty<Balance>* list, int index) -> Balance* {
-      auto balances = static_cast<LightWallet*>(list->data)->m_wallet.balance();
-      auto itr = balances.begin();
-      for( int i = 0; i < index; ++i )
-         ++itr;
-      Balance* balance = static_cast<LightWallet*>(list->data)->balanceMaster->findChild<Balance*>(convert(itr->first));
-      if( balance == nullptr )
-      {
-         balance = new Balance(convert(itr->first), itr->second, static_cast<LightWallet*>(list->data)->balanceMaster);
-         balance->setObjectName(convert(itr->first));
-      } else
-         balance->setProperty("amount", itr->second);
-//      balance->moveToThread(static_cast<LightWallet*>(list->data)->thread());
-//      balance->setParent(static_cast<LightWallet*>(list->data));
-      return balance;
-   };
-
-   return QQmlListProperty<Balance>(balanceMaster, this, count, at);
-}
-
 void LightWallet::connectToServer(QString host, quint16 port, QString user, QString password)
 {
    IN_THREAD
@@ -211,8 +186,9 @@ void LightWallet::sync()
    if( !isConnected() ) return;
 
    m_wallet.sync_balance();
-   Q_EMIT balancesChanged(balances());
    m_wallet.sync_transactions();
+
+   Q_EMIT synced();
    END_THREAD
 }
 
@@ -238,11 +214,12 @@ void LightWallet::updateAccount(const bts::blockchain::account_record& account)
    if( !m_account )
    {
       //Tricky threading. We're probably running in the bitshares thread, but we want Account to belong to the UI thread
-      //so it can be a child of LightWallet (this). Create it in this thread, then move it to the UI thread, then set
-      //its parent.
-      m_account = new Account(account);
+      //so it can be a child of LightWallet (this).
+      //Create it in this thread, then move it to the UI thread, then set its parent.
+      m_account = new Account(&m_wallet, account);
       m_account->moveToThread(thread());
       m_account->setParent(this);
+      connect(this, &LightWallet::synced, m_account, &Account::balancesChanged);
       Q_EMIT accountChanged(m_account);
 
       connect(m_account, &Account::nameChanged, [this](QString name) {

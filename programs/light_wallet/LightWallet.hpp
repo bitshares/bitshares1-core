@@ -5,13 +5,13 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QDebug>
-#include <QQmlListProperty>
 
 #include <bts/light_wallet/light_wallet.hpp>
 
 #include <fc/thread/thread.hpp>
 
 #include "QtWrappers.hpp"
+#include "Account.hpp"
 
 class LightWallet : public QObject
 {
@@ -25,7 +25,6 @@ class LightWallet : public QObject
    Q_PROPERTY(QString openError READ openError NOTIFY errorOpening)
    Q_PROPERTY(QString unlockError READ unlockError NOTIFY errorUnlocking)
    Q_PROPERTY(QString brainKey READ brainKey NOTIFY brainKeyChanged)
-   Q_PROPERTY(QQmlListProperty<Balance> balances READ balances NOTIFY balancesChanged)
 
 public:
    LightWallet()
@@ -70,7 +69,6 @@ public:
    {
       return m_brainKey;
    }
-   QQmlListProperty<Balance> balances();
    Account* account() const
    {
       return m_account;
@@ -105,8 +103,9 @@ Q_SIGNALS:
    void openChanged(bool open);
    void unlockedChanged(bool unlocked);
    void brainKeyChanged(QString key);
-   void balancesChanged(QQmlListProperty<Balance> balances);
    void accountChanged(Account* arg);
+
+   void synced();
 
 private:
    fc::thread m_walletThread;
@@ -119,7 +118,6 @@ private:
    QString m_unlockError;
    QString m_brainKey;
    Account* m_account = nullptr;
-   QObject* balanceMaster = new QObject(this);
 
    void generateBrainKey();
    void updateAccount(const bts::light_wallet::account_record& account);

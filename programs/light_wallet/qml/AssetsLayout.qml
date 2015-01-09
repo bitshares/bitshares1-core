@@ -28,7 +28,7 @@ Item {
 
          ListView {
             spacing: visuals.spacing / 4
-            model: wallet.balances
+            model: wallet.account.balances
             delegate: RowLayout {
                width: parent.width
                Label {
