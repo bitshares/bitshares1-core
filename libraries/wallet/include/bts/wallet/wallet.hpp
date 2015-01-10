@@ -16,10 +16,11 @@ namespace bts { namespace wallet {
    typedef map<string, vector<balance_record>> account_balance_record_summary_type;
    typedef map<string, vector<balance_id_type>> account_balance_id_summary_type;
    typedef map<string, map<asset_id_type, share_type>> account_balance_summary_type;
-   typedef map<string, int64_t> account_vote_summary_type;
-   typedef std::pair<order_type_enum, vector<string>> order_description;
-
    typedef map<string, map<string, vector<asset>>> account_extended_balance_type;
+
+   typedef map<string, int64_t> account_vote_summary_type;
+
+   typedef std::pair<order_type_enum, vector<string>> order_description;
 
    enum delegate_status_flags
    {
@@ -394,18 +395,19 @@ namespace bts { namespace wallet {
                  const string& account_to_pay_with,
                  bool sign
                  );
-         wallet_transaction_record collect_withdraw_types(
+         wallet_transaction_record collect_account_balances(
                  const string& account_name,
-                 uint32_t withdraw_type_mask,
-                 bool snapshots_only,
+                 const function<bool( const balance_record& )> filter,
+                 const string& memo_message,
                  bool sign
                  );
-         wallet_transaction_record asset_authorize_key( const string& paying_account_name,
-                                                        const string& symbol,
-                                                        const address& key,
-                                                        const object_id_type meta,
-                                                        bool sign = true );
-
+         wallet_transaction_record asset_authorize_key(
+                 const string& paying_account_name,
+                 const string& symbol,
+                 const address& key,
+                 const object_id_type meta,
+                 bool sign
+                 );
          wallet_transaction_record update_signing_key(
                  const string& authorizing_account_name,
                  const string& delegate_name,
@@ -436,7 +438,7 @@ namespace bts { namespace wallet {
                  const string& issuer_account_name,
                  uint32_t required_sigs,
                  const vector<address>& authority,
-                 bool sign = true
+                 bool sign
                  );
          wallet_transaction_record issue_asset(
                  double amount,
@@ -547,19 +549,16 @@ namespace bts { namespace wallet {
          bool                               is_sending_address( const address& addr )const;
          bool                               is_receive_address( const address& addr )const;
 
-         vector<escrow_summary>             get_escrow_balances( const string& account_name );
+         void                               scan_balances( const function<void( const balance_id_type&,
+                                                                                const balance_record& )> callback )const;
 
-         account_balance_record_summary_type get_account_balance_records( const string& account_name = "", bool include_empty = true,
-                 uint32_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ), bool snapshots_only = false )const;
-         account_balance_id_summary_type    get_account_balance_ids( const string& account_name = "", bool include_empty = true,
-                 uint32_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ), bool snapshots_only = false )const;
-         account_balance_summary_type       get_account_balances( const string& account_name = "", bool include_empty = true,
-                 uint32_t withdraw_type_mask = 1 << uint8_t( withdraw_signature_type ), bool snapshots_only = false )const;
+         account_balance_record_summary_type get_spendable_account_balance_records( const string& account_name = "" )const;
+         account_balance_summary_type       get_spendable_account_balances( const string& account_name = "" )const;
 
          account_balance_summary_type       get_account_yield( const string& account_name = "" )const;
-         asset                              asset_worth( const asset& base, const string& price_in_symbol )const;
-         asset                              get_account_net_worth( const string& account_name, const string& symbol )const;
          account_vote_summary_type          get_account_vote_summary( const string& account_name = "" )const;
+
+         vector<escrow_summary>             get_escrow_balances( const string& account_name );
 
          map<order_id_type, market_order>   get_market_orders( const string& account_name, const string& quote_symbol,
                                                                const string& base_symbol, uint32_t limit )const;

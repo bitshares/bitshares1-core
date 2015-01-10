@@ -648,7 +648,7 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
            ::get_interest_owed(order_balance, *order->interest_rate, age_at_transaction_expiration.to_seconds());
 
    //What's the account's actual balance? We can't pay more than that.
-   auto account_balances = _wimpl->self->get_account_balances(from_account.name);
+   auto account_balances = _wimpl->self->get_spendable_account_balances( from_account.name );
    FC_ASSERT( !account_balances.empty(), "Account has no balances! Cannot cover." );
    const auto& balances = account_balances.begin()->second;
    FC_ASSERT( balances.find(order_balance.asset_id) != balances.end(),
@@ -922,7 +922,7 @@ transaction_builder& transaction_builder::asset_authorize_key( const string& sym
 //Most common case where the fee gets paid
 bool transaction_builder::withdraw_fee()
 {
-   const auto balances = _wimpl->self->get_account_balances( "", false );
+   const auto balances = _wimpl->self->get_spendable_account_balances();
 
    //Shake 'em down
    for( const auto& item : outstanding_balances )
