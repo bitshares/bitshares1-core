@@ -250,6 +250,19 @@ map<string, double> light_wallet::balance() const
    return balances;
 }
 
+vector<fc::variant_object> light_wallet::transactions(const string& symbol)
+{
+   FC_ASSERT( is_open() );
+
+   vector<fc::variant_object> results;
+   auto ids = _data->transaction_index[std::make_pair(_data->user_account.id, get_asset_record(symbol)->id)];
+   std::for_each(ids.begin(), ids.end(), [this, &results](const transaction_id_type& id) {
+      results.emplace_back(_data->transaction_record_cache[id]);
+   });
+
+   return results;
+}
+
 
 void light_wallet::sync_balance( bool resync_all )
 { try {
@@ -302,6 +315,10 @@ void light_wallet::sync_transactions()
       _data->transaction_record_cache[item.first] = record;
       if( item.second.second.chain_location.block_num > sync_block )
          sync_block = item.second.second.chain_location.block_num;
+      for( const auto& delta : item.second.second.deltas )
+         for( const auto& balance : delta.second )
+            _data->transaction_index[std::make_pair(_data->user_account.id, balance.first)]
+                  .insert(item.second.second.trx.id());
    }
    _data->last_transaction_sync_block = sync_block;
 }

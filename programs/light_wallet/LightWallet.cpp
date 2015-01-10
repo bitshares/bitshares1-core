@@ -188,6 +188,8 @@ void LightWallet::sync()
    m_wallet.sync_balance();
    m_wallet.sync_transactions();
 
+   wdump((m_wallet.transactions("XTS")));
+
    Q_EMIT synced();
    END_THREAD
 }

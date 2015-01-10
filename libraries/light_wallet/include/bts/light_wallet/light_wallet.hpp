@@ -24,6 +24,8 @@ namespace bts { namespace light_wallet {
        map<asset_id_type,asset_record>              asset_record_cache;
        map<string,pair<price,fc::time_point> >      price_cache;
        map<balance_id_type,memo_status>             memos;
+
+       std::map<pair<account_id_type,asset_id_type>,std::set<transaction_id_type>> transaction_index;
    };
 
    struct light_transaction_summary
@@ -79,6 +81,7 @@ namespace bts { namespace light_wallet {
          asset  get_fee( const string& symbol );
 
          map<string,double> balance()const;
+         vector<fc::variant_object> transactions( const string& symbol );
 
          optional<asset_record> get_asset_record( const string& symbol );
          optional<asset_record> get_asset_record( const asset_id_type& id );
@@ -99,6 +102,7 @@ FC_REFLECT( bts::light_wallet::light_wallet_data,
             (transaction_record_cache)
             (asset_record_cache)
             (price_cache)
-            (memos) );
+            (memos)
+            (transaction_index) );
 
 FC_REFLECT( bts::light_wallet::light_transaction_summary, (when)(from)(to)(amount)(symbol)(fee)(fee_symbol)(memo)(status) );
