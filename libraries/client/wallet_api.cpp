@@ -4,12 +4,12 @@
 #include <bts/utilities/words.hpp>
 #include <bts/wallet/config.hpp>
 #include <bts/wallet/exceptions.hpp>
+
+#include <fc/crypto/aes.hpp>
+#include <fc/network/http/connection.hpp>
 #include <fc/network/resolve.hpp>
 #include <fc/network/url.hpp>
-#include <fc/network/http/connection.hpp>
-#include <fc/crypto/aes.hpp>
 #include <fc/reflect/variant.hpp>
-
 #include <fc/thread/non_preemptable_scope_check.hpp>
 
 namespace bts { namespace client { namespace detail {
@@ -283,10 +283,11 @@ wallet_transaction_record detail::client_impl::wallet_publish_version( const str
 
 wallet_transaction_record detail::client_impl::wallet_collect_genesis_balances( const string& account_name )
 {
-    uint32_t withdraw_type_mask = 0;
-    withdraw_type_mask |= 1 << withdraw_null_type;
-    withdraw_type_mask |= 1 << withdraw_signature_type;
-    auto record = _wallet->collect_withdraw_types( account_name, withdraw_type_mask, true, true );
+    const auto filter = []( const balance_record& record ) -> bool
+    {
+        return record.condition.type == withdraw_signature_type && record.snapshot_info.valid();
+    };
+    auto record = _wallet->collect_account_balances( account_name, filter, "collect genesis", true );
     _wallet->cache_transaction( record );
     network_broadcast_transaction( record.trx );
     return record;
@@ -294,10 +295,11 @@ wallet_transaction_record detail::client_impl::wallet_collect_genesis_balances( 
 
 wallet_transaction_record detail::client_impl::wallet_collect_vested_balances( const string& account_name )
 {
-    uint32_t withdraw_type_mask = 0;
-    withdraw_type_mask |= 1 << withdraw_null_type;
-    withdraw_type_mask |= 1 << withdraw_vesting_type;
-    auto record = _wallet->collect_withdraw_types( account_name, withdraw_type_mask, false, true );
+    const auto filter = []( const balance_record& record ) -> bool
+    {
+        return record.condition.type == withdraw_vesting_type;
+    };
+    auto record = _wallet->collect_account_balances( account_name, filter, "collect vested", true );
     _wallet->cache_transaction( record );
     network_broadcast_transaction( record.trx );
     return record;
@@ -847,7 +849,7 @@ wallet_transaction_record detail::client_impl::wallet_asset_update(
    for( auto item : issuer_permissions ) issuer_perms_int |= item;
    auto record = _wallet->update_asset( symbol, name, description, public_data, maximum_share_supply,
                                         precision, issuer_fee, flags_int, issuer_perms_int, issuer_account_name,
-                                        required_sigs, authority);
+                                        required_sigs, authority, true );
 
    _wallet->cache_transaction( record );
    network_broadcast_transaction( record.trx );
@@ -1272,11 +1274,12 @@ vector<bts::wallet::escrow_summary> client_impl::wallet_escrow_summary( const st
 
 account_balance_summary_type client_impl::wallet_account_balance( const string& account_name )const
 {
-  return _wallet->get_account_balances( account_name, false );
+    return _wallet->get_spendable_account_balances( account_name );
 }
 
 account_extended_balance_type client_impl::wallet_account_balance_extended( const string& account_name )const
 {
+#if 0
     const map<string, vector<balance_record>>& balance_records = _wallet->get_account_balance_records( account_name, false, -1 );
 
     map<string, map<string, map<asset_id_type, share_type>>> raw_balances;
@@ -1323,11 +1326,8 @@ account_extended_balance_type client_impl::wallet_account_balance_extended( cons
     }
 
     return extended_balances;
-}
-
-account_balance_id_summary_type client_impl::wallet_account_balance_ids( const string& account_name )const
-{
-  return _wallet->get_account_balance_ids( account_name, false );
+#endif
+    return account_extended_balance_type();
 }
 
 account_balance_summary_type client_impl::wallet_account_yield( const string& account_name )const

@@ -22,9 +22,10 @@ int main(int argc, char *argv[])
    QQmlDebuggingEnabler enabler;
 
    qmlRegisterType<LightWallet>("org.BitShares.Types", 1, 0, "LightWallet");
-   qmlRegisterType<Account>("org.BitShares.Types", 1, 0, "Account");
+   qmlRegisterUncreatableType<Account>("org.BitShares.Types", 1, 0, "Account",
+                                       QStringLiteral("Accounts can only be created in backend."));
    qmlRegisterUncreatableType<Balance>("org.BitShares.Types", 1, 0, "Balance",
-                                       QStringLiteral("Balances must be created in backend."));
+                                       QStringLiteral("Balances can only be created in backend."));
 
    QQmlApplicationEngine engine;
    engine.load(QUrl(QStringLiteral("qml/main.qml")));

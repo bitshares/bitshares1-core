@@ -337,7 +337,7 @@
       {
         "method_name": "blockchain_list_address_transactions",
         "description": "Lists all transactions that involve the provided address after the specified time",
-        "return_type": "transaction_record_map",
+        "return_type": "timestamped_transaction_record_map",
         "parameters" : [
             {
               "name" : "addr",
@@ -346,9 +346,9 @@
             },
             {
                "name" : "filter_before",
-               "type" : "timestamp",
-               "description" : "Filter all transactions that occured prior to the specified timestamp",
-               "default_value" : ""
+               "type" : "uint32_t",
+               "description" : "Filter all transactions that occured prior to the specified block number",
+               "default_value" : "0"
             }
         ],
         "is_const" : true,
