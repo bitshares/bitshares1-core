@@ -48,7 +48,6 @@ namespace detail {
        if( _scan_in_progress.valid() && !_scan_in_progress.ready() ) return;
 
        self->scan_chain( self->get_last_scanned_block_number(), summary.block_data.block_num );
-       if( _dirty_balances ) scan_balances_experimental();
    }
 
    vector<wallet_transaction_record> wallet_impl::get_pending_transactions()const
@@ -259,6 +258,9 @@ namespace detail {
           ulog( "Scan failure." );
           throw *scan_exception;
       }
+
+      if( _dirty_balances )
+          scan_balances_experimental();
    } FC_CAPTURE_AND_RETHROW( (start)(end)(fast_scan) ) }
 
    void wallet_impl::upgrade_version()

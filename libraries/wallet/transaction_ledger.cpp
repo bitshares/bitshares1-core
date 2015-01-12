@@ -1290,8 +1290,9 @@ wallet_transaction_record wallet::scan_transaction( const string& transaction_id
    for( const auto& item : keys )
        private_keys.push_back( item.first );
    const auto now = blockchain::now();
-   return my->scan_transaction( transaction_record->trx, block_num, block.timestamp, private_keys, now, overwrite_existing );
+   const auto record = my->scan_transaction( transaction_record->trx, block_num, block.timestamp, private_keys, now, overwrite_existing );
    if( my->_dirty_balances ) my->scan_balances_experimental();
+   return record;
 } FC_CAPTURE_AND_RETHROW() }
 
 vector<wallet_transaction_record> wallet::get_transactions( const string& transaction_id_prefix )
