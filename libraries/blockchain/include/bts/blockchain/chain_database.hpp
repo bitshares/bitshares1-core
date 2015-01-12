@@ -216,8 +216,7 @@ namespace bts { namespace blockchain {
          vector<asset_record>                     get_assets( const string& first_symbol,
                                                               uint32_t limit )const;
 
-         std::vector<slot_record> get_delegate_slot_records( const account_id_type delegate_id,
-                                                             int64_t start_block_num, uint32_t count )const;
+         std::vector<slot_record> get_delegate_slot_records( const account_id_type delegate_id, uint32_t count )const;
 
          std::map<uint32_t, std::vector<fork_record> > get_forks_list()const;
          std::string export_fork_graph( uint32_t start_block = 1, uint32_t end_block = -1, const fc::path& filename = "" )const;
@@ -337,8 +336,9 @@ namespace bts { namespace blockchain {
          virtual void                       store_short_record( const market_index_key& key, const order_record& ) override;
          virtual void                       store_collateral_record( const market_index_key& key, const collateral_record& ) override;
 
-         virtual void                       store_slot_record( const slot_record& r )override;
-         virtual oslot_record               get_slot_record( const time_point_sec start_time )const override;
+         virtual void                       store_slot_record( const slot_record& )override;
+         virtual oslot_record               get_slot_record( const slot_index )const override;
+         virtual oslot_record               get_slot_record( const time_point_sec )const override;
 
          virtual omarket_status             get_market_status( const asset_id_type quote_id, const asset_id_type base_id )override;
          virtual void                       store_market_status( const market_status& s ) override;
@@ -388,6 +388,7 @@ namespace bts { namespace blockchain {
          virtual void init_balance_db_interface()override;
          virtual void init_transaction_db_interface()override;
          virtual void init_feed_db_interface()override;
+         virtual void init_slot_db_interface()override;
    };
 
    typedef shared_ptr<chain_database> chain_database_ptr;

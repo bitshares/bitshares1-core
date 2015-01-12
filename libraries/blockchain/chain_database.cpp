@@ -122,8 +122,6 @@ namespace bts { namespace blockchain {
           _address_to_trx_index.open( data_dir / "index/address_to_trx_db" );
           _burn_db.open( data_dir / "index/burn_db" );
 
-          _slot_record_db.open( data_dir / "index/slot_record_db" );
-
           _feed_index_to_record.open( data_dir / "index/feed_index_to_record" );
 
           _ask_db.open( data_dir / "index/ask_db" );
@@ -132,6 +130,9 @@ namespace bts { namespace blockchain {
           _relative_bid_db.open( data_dir / "index/relative_bid_db" );
           _short_db.open( data_dir / "index/short_db" );
           _collateral_db.open( data_dir / "index/collateral_db" );
+
+          _slot_index_to_record.open( data_dir / "index/slot_index_to_record" );
+          _slot_timestamp_to_delegate.open( data_dir / "index/slot_timestamp_to_delegate" );
 
           _object_db.open( data_dir / "index/object_db" );
           _edge_index.open( data_dir / "index/edge_index" );
@@ -1102,6 +1103,7 @@ namespace bts { namespace blockchain {
       init_balance_db_interface();
       init_transaction_db_interface();
       init_feed_db_interface();
+      init_slot_db_interface();
    }
 
    chain_database::~chain_database()
@@ -1370,8 +1372,6 @@ namespace bts { namespace blockchain {
       my->_slate_db.close();
       my->_burn_db.close();
 
-      my->_slot_record_db.close();
-
       my->_feed_index_to_record.close();
 
       my->_ask_db.close();
@@ -1384,6 +1384,9 @@ namespace bts { namespace blockchain {
       my->_market_history_db.close();
       my->_market_status_db.close();
       my->_market_transactions_db.close();
+
+      my->_slot_index_to_record.close();
+      my->_slot_timestamp_to_delegate.close();
 
       my->_object_db.close();
       my->_edge_index.close();
@@ -2181,6 +2184,7 @@ namespace bts { namespace blockchain {
     vector<account_record> chain_database::get_accounts( const string& first, uint32_t limit )const
     { try {
         vector<account_record> records;
+        records.reserve( std::min( size_t( limit ), my->_account_name_to_id.size() ) );
         for( auto iter = my->_account_name_to_id.ordered_lower_bound( first );
              iter.valid() && records.size() <= limit; ++iter )
         {
@@ -2193,6 +2197,7 @@ namespace bts { namespace blockchain {
     vector<asset_record> chain_database::get_assets( const string& first, uint32_t limit )const
     { try {
         vector<asset_record> records;
+        records.reserve( std::min( size_t( limit ), my->_asset_symbol_to_id.size() ) );
         for( auto iter = my->_asset_symbol_to_id.ordered_lower_bound( first );
              iter.valid() && records.size() <= limit; ++iter )
         {
@@ -2323,34 +2328,19 @@ namespace bts { namespace blockchain {
         return fork_blocks;
     }
 
-    vector<slot_record> chain_database::get_delegate_slot_records( const account_id_type delegate_id,
-                                                                   int64_t start_block_num, uint32_t count )const
-    {
-        FC_ASSERT( my->_track_stats, "index of slot records is disabled" );
+    vector<slot_record> chain_database::get_delegate_slot_records( const account_id_type delegate_id, uint32_t count )const
+    { try {
         FC_ASSERT( count > 0 );
-        if( start_block_num < 0 )
-            start_block_num = int64_t( get_head_block_num() ) + start_block_num;
-        FC_ASSERT( start_block_num >= 1 );
-
-        const signed_block_header block_header = get_block_header( start_block_num );
-        const time_point_sec min_timestamp = block_header.timestamp;
 
         vector<slot_record> slot_records;
-        slot_records.reserve( count );
+        slot_records.reserve( std::min( count, get_head_block_num() ) );
 
-        for( auto iter = my->_slot_record_db.begin(); iter.valid(); ++iter )
-        {
-            const auto slot_record = iter.value();
-            if( slot_record.start_time < min_timestamp || slot_record.block_producer_id != delegate_id )
-                continue;
-
-            slot_records.push_back( slot_record );
-            if( slot_records.size() >= count )
-                break;
-        }
+        const slot_index key = slot_index( delegate_id, my->_head_block_header.timestamp );
+        for( auto iter = my->_slot_index_to_record.lower_bound( key ); iter.valid() && slot_records.size() <= count; ++iter )
+            slot_records.push_back( iter.value() );
 
         return slot_records;
-    }
+    } FC_CAPTURE_AND_RETHROW( (delegate_id)(count) ) }
 
    optional<variant> chain_database::get_property( chain_property_enum property_id )const
    { try {
@@ -2963,7 +2953,7 @@ namespace bts { namespace blockchain {
        }
 
        return orders;
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW() }
 
    optional<market_order> chain_database::get_market_order( const order_id_type& order_id, order_type_enum type )const
    { try {
@@ -2977,7 +2967,7 @@ namespace bts { namespace blockchain {
            return orders.front();
 
        return optional<market_order>();
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW() }
 
    pending_chain_state_ptr chain_database::get_pending_state()const
    {
@@ -2998,19 +2988,19 @@ namespace bts { namespace blockchain {
    }
 
    void chain_database::store_slot_record( const slot_record& r )
-   {
-     if( !my->_track_stats ) return;
-     if( r.is_null() )
-         my->_slot_record_db.remove( r.start_time );
-     else
-         my->_slot_record_db.store( r.start_time, r );
-   }
+   { try {
+       store( r );
+   } FC_CAPTURE_AND_RETHROW( (r) ) }
 
-   oslot_record chain_database::get_slot_record( const time_point_sec start_time )const
-   {
-     FC_ASSERT( my->_track_stats );
-     return my->_slot_record_db.fetch_optional( start_time );
-   }
+   oslot_record chain_database::get_slot_record( const slot_index index )const
+   { try {
+       return lookup<slot_record>( index );
+   } FC_CAPTURE_AND_RETHROW( (index) ) }
+
+   oslot_record chain_database::get_slot_record( const time_point_sec timestamp )const
+   { try {
+       return lookup<slot_record>( timestamp );
+   } FC_CAPTURE_AND_RETHROW( (timestamp) ) }
 
    void chain_database::store_market_history_record(const market_history_key& key, const market_history_record& record)
    {
@@ -3629,9 +3619,9 @@ namespace bts { namespace blockchain {
        //my->_symbol_index_db.export_to_json( next_path );
        //ulog( "Dumped ${p}", ("p",next_path) );
 
-       next_path = dir / "_slot_record_db.json";
-       my->_slot_record_db.export_to_json( next_path );
-       ulog( "Dumped ${p}", ("p",next_path) );
+       //next_path = dir / "_slot_record_db.json";
+       //my->_slot_record_db.export_to_json( next_path );
+       //ulog( "Dumped ${p}", ("p",next_path) );
 
        next_path = dir / "_ask_db.json";
        my->_ask_db.export_to_json( next_path );
@@ -3692,10 +3682,11 @@ namespace bts { namespace blockchain {
                            (_asset_id_to_record)(_asset_symbol_to_id) \
                            (_balance_id_to_record)(_empty_balance_id_to_record) \
                            (_id_to_transaction_record_db)(_pending_transaction_db)(_pending_fee_index) \
-                           (_slate_db)(_burn_db)(_slot_record_db) \
+                           (_slate_db)(_burn_db) \
                            (_feed_index_to_record) \
                            (_ask_db)(_bid_db)(_short_db)(_collateral_db) \
                            (_market_transactions_db)(_market_status_db)(_market_history_db) \
+                           (_slot_index_to_record)(_slot_timestamp_to_delegate) \
                            (_object_db)(_edge_index)(_reverse_edge_index) \
                            (_recent_operations)
 #define GET_DATABASE_SIZE(r, data, elem) stats[BOOST_PP_STRINGIZE(elem)] = my->elem.size();
@@ -3965,6 +3956,47 @@ namespace bts { namespace blockchain {
                if( inner_iter != outer_iter->second.end() )
                    outer_iter->second.erase( index.delegate_id );
            }
+       };
+   }
+
+   void chain_database::init_slot_db_interface()
+   {
+       slot_db_interface& interface = _slot_db_interface;
+
+       interface.lookup_by_index = [&]( const slot_index index ) -> oslot_record
+       {
+           return my->_slot_index_to_record.fetch_optional( index );
+       };
+
+       interface.lookup_by_timestamp = [&]( const time_point_sec timestamp ) -> oslot_record
+       {
+           const optional<account_id_type> delegate_id = my->_slot_timestamp_to_delegate.fetch_optional( timestamp );
+           if( !delegate_id.valid() ) return oslot_record();
+           return my->_slot_index_to_record.fetch_optional( slot_index( *delegate_id, timestamp ) );
+       };
+
+       interface.insert_into_index_map = [&]( const slot_index index, const slot_record& record )
+       {
+           if( !my->_track_stats ) return;
+           my->_slot_index_to_record.store( index, record );
+       };
+
+       interface.insert_into_timestamp_map = [&]( const time_point_sec timestamp, const account_id_type delegate_id )
+       {
+           if( !my->_track_stats ) return;
+           my->_slot_timestamp_to_delegate.store( timestamp, delegate_id );
+       };
+
+       interface.erase_from_index_map = [&]( const slot_index index )
+       {
+           if( !my->_track_stats ) return;
+           my->_slot_index_to_record.remove( index );
+       };
+
+       interface.erase_from_timestamp_map = [&]( const time_point_sec timestamp )
+       {
+           if( !my->_track_stats ) return;
+           my->_slot_timestamp_to_delegate.remove( timestamp );
        };
    }
 

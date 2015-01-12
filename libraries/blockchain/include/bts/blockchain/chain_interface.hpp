@@ -11,6 +11,7 @@
 #include <bts/blockchain/market_records.hpp>
 #include <bts/blockchain/object_record.hpp>
 #include <bts/blockchain/site_record.hpp>
+#include <bts/blockchain/slot_record.hpp>
 #include <bts/blockchain/transaction_record.hpp>
 #include <bts/blockchain/types.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
@@ -204,8 +205,9 @@ namespace bts { namespace blockchain {
 
          virtual uint32_t                   get_head_block_num()const                                       = 0;
 
-         virtual void                       store_slot_record( const slot_record& r )                       = 0;
-         virtual oslot_record               get_slot_record( const time_point_sec start_time )const        = 0;
+         virtual void                       store_slot_record( const slot_record& ) = 0;
+         virtual oslot_record               get_slot_record( const slot_index )const = 0;
+         virtual oslot_record               get_slot_record( const time_point_sec )const = 0;
 
          virtual void                       store_market_history_record( const market_history_key& key,
                                                                          const market_history_record& record ) = 0;
@@ -256,6 +258,10 @@ namespace bts { namespace blockchain {
          friend struct feed_record;
          feed_db_interface _feed_db_interface;
          virtual void init_feed_db_interface() = 0;
+
+         friend struct slot_record;
+         slot_db_interface _slot_db_interface;
+         virtual void init_slot_db_interface() = 0;
    };
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;
 

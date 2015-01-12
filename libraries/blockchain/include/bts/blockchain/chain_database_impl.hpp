@@ -127,7 +127,6 @@ namespace bts { namespace blockchain {
             map<fee_index, transaction_evaluation_state_ptr>                            _pending_fee_index;
 
             bts::db::cached_level_map<slate_id_type, delegate_slate>                    _slate_db;
-            bts::db::level_map<time_point_sec, slot_record>                             _slot_record_db;
 
             bts::db::cached_level_map<burn_record_key, burn_record_value>               _burn_db;
 
@@ -146,6 +145,8 @@ namespace bts { namespace blockchain {
             bts::db::cached_level_map<std::pair<asset_id_type,asset_id_type>, market_status> _market_status_db;
             bts::db::cached_level_map<market_history_key, market_history_record>        _market_history_db;
 
+            bts::db::level_map<slot_index, slot_record>                                 _slot_index_to_record;
+            bts::db::level_map<time_point_sec, account_id_type>                         _slot_timestamp_to_delegate;
 
             bts::db::level_map<object_id_type, object_record>                           _object_db;
             bts::db::level_map<edge_index_key, object_id_type/*edge id*/>               _edge_index;

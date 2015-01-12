@@ -102,6 +102,11 @@ public:
         return _cache.size();
     }
 
+    auto count( const K& key )const -> decltype( _cache.count( key ) )
+    {
+        return _cache.count( key );
+    }
+
     auto unordered_begin()const -> decltype( _cache.cbegin() )
     {
         return _cache.cbegin();

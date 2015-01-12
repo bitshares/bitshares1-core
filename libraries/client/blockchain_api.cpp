@@ -34,7 +34,7 @@ vector<account_record> client_impl::blockchain_list_delegates( uint32_t first, u
    vector<account_id_type> delegate_ids = _chain_db->get_delegates_by_vote( first, count );
 
    vector<account_record> delegate_records;
-   delegate_records.reserve( count );
+   delegate_records.reserve( delegate_ids.size() );
    for( const auto& delegate_id : delegate_ids )
    {
       auto delegate_record = _chain_db->get_account_record( delegate_id );
@@ -58,7 +58,7 @@ vector<string> client_impl::blockchain_list_missing_block_delegates( uint32_t bl
    {
       auto slot_record = _chain_db->get_slot_record( timestamp );
       FC_ASSERT( slot_record.valid() );
-      auto delegate_record = _chain_db->get_account_record( slot_record->block_producer_id );
+      auto delegate_record = _chain_db->get_account_record( slot_record->index.delegate_id );
       FC_ASSERT( delegate_record.valid() );
       delegates.push_back( delegate_record->name );
       timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
@@ -70,8 +70,7 @@ vector<block_record> client_impl::blockchain_list_blocks( uint32_t first, int32_
 {
    FC_ASSERT( count <= 1000 );
    FC_ASSERT( count >= -1000 );
-   vector<block_record> result;
-   if (count == 0) return result;
+   if (count == 0) return vector<block_record>();
 
    uint32_t total_blocks = _chain_db->get_head_block_num();
    FC_ASSERT( first <= total_blocks );
@@ -94,6 +93,8 @@ vector<block_record> client_impl::blockchain_list_blocks( uint32_t first, int32_
       if( first + count - 1 > total_blocks )
          count = total_blocks - first + 1;
    }
+
+   vector<block_record> result;
    result.reserve( count );
 
    for( int32_t block_num = first; count; --count, block_num += increment )
@@ -111,7 +112,7 @@ signed_transactions client_impl::blockchain_list_pending_transactions() const
    signed_transactions trxs;
    vector<transaction_evaluation_state_ptr> pending = _chain_db->get_pending_transactions();
    trxs.reserve(pending.size());
-   for (auto trx_eval_ptr : pending)
+   for (const auto& trx_eval_ptr : pending)
    {
       trxs.push_back(trx_eval_ptr->trx);
    }
@@ -617,12 +618,12 @@ std::map<uint32_t, vector<fork_record>> client_impl::blockchain_list_forks()cons
    return _chain_db->get_forks_list();
 }
 
-vector<slot_record> client_impl::blockchain_get_delegate_slot_records( const string& delegate_name,
-                                                                       int64_t start_block_num, uint32_t count )const
+vector<slot_record> client_impl::blockchain_get_delegate_slot_records( const string& delegate_name, uint32_t count )const
 {
-   const auto delegate_record = _chain_db->get_account_record( delegate_name );
-   FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate(), "${n} is not a delegate!", ("n",delegate_name) );
-   return _chain_db->get_delegate_slot_records( delegate_record->id, start_block_num, count );
+    FC_ASSERT( count > 0 );
+    const oaccount_record delegate_record = _chain_db->get_account_record( delegate_name );
+    FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate(), "${n} is not a delegate!", ("n",delegate_name) );
+    return _chain_db->get_delegate_slot_records( delegate_record->id, count );
 }
 
 string client_impl::blockchain_get_block_signee( const string& block )const
@@ -671,7 +672,7 @@ vector<bts::blockchain::api_market_status> client_impl::blockchain_list_markets(
    vector<bts::blockchain::api_market_status> statuses;
    statuses.reserve( pairs.size() );
 
-   for( const auto& pair : pairs )
+   for( const auto pair : pairs )
    {
       const auto quote_record = _chain_db->get_asset_record( pair.first );
       const auto base_record = _chain_db->get_asset_record( pair.second );

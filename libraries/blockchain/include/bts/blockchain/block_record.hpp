@@ -1,5 +1,4 @@
 #pragma once
-
 #include <bts/blockchain/block.hpp>
 
 namespace bts { namespace blockchain {
@@ -18,20 +17,6 @@ namespace bts { namespace blockchain {
    };
    typedef optional<block_record> oblock_record;
 
-   struct slot_record
-   {
-      slot_record(){} // Null case
-      slot_record( const time_point_sec t, const account_id_type d, const optional<block_id_type>& b = optional<block_id_type>() )
-      :start_time(t),block_producer_id(d),block_id(b){}
-
-      bool is_null()const { return start_time == time_point_sec(); }
-
-      time_point_sec            start_time;
-      account_id_type           block_producer_id;
-      optional<block_id_type>   block_id;
-   };
-   typedef fc::optional<slot_record> oslot_record;
-
 } } // bts::blockchain
 
 FC_REFLECT_DERIVED( bts::blockchain::block_record,
@@ -44,8 +29,3 @@ FC_REFLECT_DERIVED( bts::blockchain::block_record,
                     (random_seed)
                     (processing_time)
                     )
-FC_REFLECT( bts::blockchain::slot_record,
-            (start_time)
-            (block_producer_id)
-            (block_id)
-            )
