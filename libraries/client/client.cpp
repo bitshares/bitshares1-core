@@ -1303,11 +1303,12 @@ void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_pat
     {
        my->_exception_db.open( data_dir / "exceptions", true );
     }
-    catch( const db::db_in_use_exception& e )
+    catch( const db::level_map_open_failure& e )
     {
        if( e.to_string().find("Corruption") != string::npos )
        {
           elog("Exception database corrupted. Deleting it and attempting to recover.");
+          ulog("Exception database corrupted. Deleting it and attempting to recover.");
           fc::remove_all( data_dir / "exceptions" );
           my->_exception_db.open( data_dir / "exceptions", true );
        }
@@ -1326,11 +1327,12 @@ void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_pat
        my->_chain_db->track_chain_statistics( my->_config.track_statistics );
        my->_chain_db->open( data_dir / "chain", genesis_file_path, reindex_status_callback );
     }
-    catch( const db::db_in_use_exception& e )
+    catch( const db::level_map_open_failure& e )
     {
        if (e.to_string().find("Corruption") != string::npos)
        {
           elog("Chain database corrupted. Deleting it and attempting to recover.");
+          ulog("Chain database corrupted. Deleting it and attempting to recover.");
           attempt_to_recover_database = true;
        }
        else
