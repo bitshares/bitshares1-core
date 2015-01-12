@@ -119,20 +119,23 @@ namespace bts { namespace blockchain {
    {
        store( rec );
 
-       auto index_balance = [this, id](const balance_id_type& balance_id) {
-          auto balance = get_balance_record(balance_id);
-          if( balance )
-             for( auto addr : balance->owners() )
-                index_transaction(addr, id);
-       };
-       for( const operation& op : rec.trx.operations )
-       {
-          if( op.type == deposit_op_type )
-             index_balance(op.as<deposit_operation>().balance_id());
-          else if( op.type == withdraw_op_type )
-             index_balance(op.as<withdraw_operation>().balance_id);
-          // TODO: index transaction for relevant addresses in all different operation types.
-       }
+       //if( get_statistics_enabled() )
+       //{
+           auto index_balance = [this, id](const balance_id_type& balance_id) {
+              auto balance = get_balance_record(balance_id);
+              if( balance )
+                 for( auto addr : balance->owners() )
+                    index_transaction(addr, id);
+           };
+           for( const operation& op : rec.trx.operations )
+           {
+              if( op.type == deposit_op_type )
+                 index_balance(op.as<deposit_operation>().balance_id());
+              else if( op.type == withdraw_op_type )
+                 index_balance(op.as<withdraw_operation>().balance_id);
+              // TODO: index transaction for relevant addresses in all different operation types.
+           }
+       //}
    }
 
    void pending_chain_state::get_undo_state( const chain_interface_ptr& undo_state_arg )const

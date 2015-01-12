@@ -92,12 +92,8 @@ namespace bts { namespace blockchain {
          chain_database();
          virtual ~chain_database()override;
 
-         /**
-          * @brief open Open the databases, reindexing as necessary
-          * @param reindex_status_callback Called for each reindexed block, with the count of blocks reindexed so far
-          */
-         void open(const fc::path& data_dir, fc::optional<fc::path> genesis_file,
-                   std::function<void(float)> reindex_status_callback = std::function<void(float)>());
+         void open( const fc::path& data_dir, const fc::optional<fc::path>& genesis_file, const bool statistics_enabled,
+                    const std::function<void(float)> replay_status_callback = std::function<void(float)>() );
          void close();
 
          void add_observer( chain_observer* observer );
@@ -372,13 +368,11 @@ namespace bts { namespace blockchain {
          void                               dump_state( const fc::path& path )const;
          fc::variant_object                 get_stats() const;
 
-         // TODO: Only call on pending chain state
+         // XXX: Only call on pending chain state
          virtual void                       set_market_dirty( const asset_id_type quote_id, const asset_id_type base_id )override
          {
              FC_ASSERT( false, "this shouldn't be called directly" );
          }
-
-         void track_chain_statistics( bool status = true );
 
       private:
          unique_ptr<detail::chain_database_impl> my;

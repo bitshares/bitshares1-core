@@ -110,12 +110,12 @@ namespace bts { namespace client {
           string              relay_account_name;
           /** if this client provides faucet services, specify the account to pay from here */
           string              faucet_account_name;
-          bool                track_statistics = true;
 
           fc::optional<std::string> growl_notify_endpoint;
           fc::optional<std::string> growl_password;
           fc::optional<std::string> growl_bitshares_client_identifier;
 
+          bool                statistics_enabled = false;
     };
 
 
@@ -219,6 +219,5 @@ FC_REFLECT( bts::client::config,
             (light_relay_fee)
             (relay_account_name)
             (faucet_account_name)
-            (track_statistics)
-           )
-
+            (statistics_enabled)
+            )

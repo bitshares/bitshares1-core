@@ -1312,7 +1312,7 @@ void client::simulate_disconnect( bool state )
    my->_simulate_disconnect = state;
 }
 
-void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_path, std::function<void(float)> reindex_status_callback )
+void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_path, std::function<void(float)> replay_status_callback )
 { try {
     my->_config = load_config( data_dir, my->_enable_ulog );
 
@@ -1344,9 +1344,9 @@ void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_pat
     bool attempt_to_recover_database = false;
     try
     {
-       ulog( "Tracking Statistics: ${s}", ("s",my->_config.track_statistics ) );
-       my->_chain_db->track_chain_statistics( my->_config.track_statistics );
-       my->_chain_db->open( data_dir / "chain", genesis_file_path, reindex_status_callback );
+       if( my->_config.statistics_enabled )
+           ulog( "Additional blockchain statistics enabled" );
+       my->_chain_db->open( data_dir / "chain", genesis_file_path, my->_config.statistics_enabled, replay_status_callback );
     }
     catch( const db::db_in_use_exception& e )
     {
@@ -1364,7 +1364,7 @@ void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_pat
     if (attempt_to_recover_database)
     {
        fc::remove_all(data_dir / "chain");
-       my->_chain_db->open(data_dir / "chain", genesis_file_path, reindex_status_callback);
+       my->_chain_db->open( data_dir / "chain", genesis_file_path, my->_config.statistics_enabled, replay_status_callback );
     }
 
     my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db, my->_config.wallet_enabled );

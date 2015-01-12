@@ -31,7 +31,8 @@ namespace bts { namespace blockchain {
          public:
             void                                        open_database(const fc::path& data_dir );
             void                                        clear_invalidation_of_future_blocks();
-            digest_type                                 initialize_genesis( const optional<path>& genesis_file );
+            digest_type                                 initialize_genesis( const optional<path>& genesis_file,
+                                                                            const bool statistics_enabled );
             void                                        populate_indexes();
 
             std::pair<block_id_type, block_fork_data>   store_and_index( const block_id_type& id, const full_block& blk );
@@ -86,8 +87,10 @@ namespace bts { namespace blockchain {
             chain_database*                                                             self = nullptr;
             unordered_set<chain_observer*>                                              _observers;
             digest_type                                                                 _chain_id;
-            bool                                                                        _skip_signature_verification;
+            bool                                                                        _skip_signature_verification = false;
             share_type                                                                  _relay_fee;
+
+            bool                                                                        _statistics_enabled = false;
 
             bts::db::level_map<uint32_t, std::vector<block_id_type>>                    _fork_number_db;
             bts::db::level_map<block_id_type,block_fork_data>                           _fork_db;
@@ -164,8 +167,6 @@ namespace bts { namespace blockchain {
             bts::db::level_map<pair<asset_id_type,proposal_id_type>, proposal_record>   _asset_proposal_db;
 
             map<operation_type_enum, std::deque<operation>>                             _recent_operations;
-
-            bool _track_stats = true;
       };
   } // end namespace bts::blockchain::detail
 } } // end namespace bts::blockchain
