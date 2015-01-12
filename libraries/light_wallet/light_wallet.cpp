@@ -1,5 +1,6 @@
 #include <bts/light_wallet/light_wallet.hpp>
 #include <bts/blockchain/time.hpp>
+#include <bts/blockchain/balance_operations.hpp>
 
 #include <fc/network/resolve.hpp>
 #include <fc/crypto/aes.hpp>
@@ -312,6 +313,7 @@ void light_wallet::sync_transactions()
    {
       fc::mutable_variant_object record("timestamp", item.second.first);
       record["trx"] = item.second.second;
+      summarize(record);
       _data->transaction_record_cache[item.first] = record;
       if( item.second.second.chain_location.block_num > sync_block )
          sync_block = item.second.second.chain_location.block_num;
@@ -351,6 +353,89 @@ optional<asset_record> light_wallet::get_asset_record(const asset_id_type& id)
    return result;
 } FC_CAPTURE_AND_RETHROW( (id) ) }
 
+bts::wallet::transaction_ledger_entry light_wallet::summarize(const fc::variant_object& transaction_bundle)
+{ try {
+   FC_ASSERT( is_open() );
+   FC_ASSERT( is_unlocked() && _private_key );
 
+   //Heuristic attempt to identify the withdrawals corresponding to the titan memos. Assumes deposits occurred
+   //immediately before withdrawals
+   string titan_sender;
 
-} } // bts::wallet
+   map<string, map<asset_id_type, share_type>> raw_delta_amounts;
+   bts::wallet::transaction_ledger_entry summary;
+   transaction_record record = transaction_bundle["trx"].as<transaction_record>();
+   summary.timestamp = transaction_bundle["timestamp"].as<fc::time_point_sec>();
+   summary.block_num = record.chain_location.block_num;
+   summary.id = record.trx.id();
+
+   for( int i = 0; i < record.trx.operations.size(); ++i )
+   {
+      auto op = record.trx.operations[i];
+      switch( operation_type_enum(op.type) )
+      {
+      case deposit_op_type: {
+         deposit_operation deposit = op.as<deposit_operation>();
+         auto asset_id = deposit.condition.asset_id;
+         if( deposit.condition.type == withdraw_signature_type )
+         {
+            withdraw_with_signature condition = deposit.condition.as<withdraw_with_signature>();
+            if( condition.owner == _data->user_account.active_address() )
+            {
+               if( condition.memo )
+               {
+                  omemo_status status = condition.decrypt_memo_data(*_private_key);
+                  if( status )
+                  {
+                     summary.operation_notes[i] = status->get_message();
+                     auto sender = _rpc.blockchain_get_account(string(status->from));
+                     if( sender ) titan_sender = sender->name;
+                  }
+               }
+               summary.delta_labels[i] = _data->user_account.name;
+            } else {
+               summary.delta_labels[i] = string(condition.owner);
+               auto account = _rpc.blockchain_get_account(string(condition.owner));
+               if( account ) summary.delta_labels[i] = account->name;
+            }
+
+            raw_delta_amounts[summary.delta_labels[i]][asset_id] += record.deltas[i][asset_id];
+         }
+         break;
+      }
+      case withdraw_op_type: {
+         withdraw_operation withdrawal = op.as<withdraw_operation>();
+         if( _data->balance_record_cache.count(withdrawal.balance_id) )
+         {
+            balance_record balance = _data->balance_record_cache[withdrawal.balance_id];
+            if( balance.owners().count(_data->user_account.active_key()) )
+               summary.delta_labels[i] = _data->user_account.name;
+         } else {
+            summary.delta_labels[i] = "Anonymous";
+            auto balance = _rpc.blockchain_get_balance(withdrawal.balance_id);
+            if( balance.owner() )
+            {
+               auto owner = _rpc.blockchain_get_account(string(*balance.owner()));
+               if( owner )
+                  summary.delta_labels[i] = owner->name;
+            }
+            if( summary.delta_labels[i] == "Anonymous" && !titan_sender.empty() )
+               summary.delta_labels[i] = titan_sender;
+         }
+         break;
+      }
+      default: break;
+      }
+   }
+
+   for( auto delta : raw_delta_amounts )
+      for( auto asset : delta.second )
+         summary.delta_amounts[delta.first].emplace_back(asset.second, asset.first);
+   for( auto fee : record.balance )
+      summary.delta_amounts["FEE"].emplace_back(fee.second, fee.first);
+
+   wdump((summary));
+   return summary;
+} FC_CAPTURE_AND_RETHROW( (transaction_bundle) ) }
+
+} } // bts::light_wallet
