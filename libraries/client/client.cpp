@@ -1310,6 +1310,7 @@ client::client(const std::string& user_agent,
 {
    network_to_connect_to->add_node_delegate(my.get());
    my->_p2p_node = network_to_connect_to;
+   my->_simulated_network = true;
 }
 
 void client::simulate_disconnect( bool state )
@@ -1757,7 +1758,9 @@ void client::accept_incoming_p2p_connections(bool accept)
 const config& client::configure( const fc::path& configuration_directory )
 {
    my->_data_dir = configuration_directory;
-   my->_p2p_node->load_configuration( my->_data_dir );
+
+   if( !my->_simulated_network )
+       my->_p2p_node->load_configuration( my->_data_dir );
 
    return my->_config;
 }
