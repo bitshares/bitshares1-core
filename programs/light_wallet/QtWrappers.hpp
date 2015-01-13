@@ -9,14 +9,6 @@
 
 #include "QtConversions.hpp"
 
-#define SETTER_(TYPE, INTERNAL_NAME, EXTERNAL_NAME) \
-   void set ## EXTERNAL_NAME(TYPE arg) { \
-      auto conv = convert(arg); \
-      if( m.INTERNAL_NAME == conv ) return; \
-      m.INTERNAL_NAME = conv; \
-      Q_EMIT EXTERNAL_NAME ## Changed(arg); \
-   }
-#define SETTER(TYPE, NAME) SETTER_(TYPE, NAME, NAME)
 #define GETTER_(TYPE, INTERNAL_NAME, EXTERNAL_NAME) \
    TYPE EXTERNAL_NAME() { \
       return convert(m.INTERNAL_NAME); \
@@ -26,65 +18,66 @@
 class LightTransactionSummary : public QObject
 {
    Q_OBJECT
-   Q_PROPERTY(QDateTime when READ when WRITE setwhen NOTIFY whenChanged)
-   Q_PROPERTY(QString from READ from WRITE setfrom NOTIFY fromChanged)
-   Q_PROPERTY(QString to READ to WRITE setto NOTIFY toChanged)
-   Q_PROPERTY(qreal amount READ amount WRITE setamount NOTIFY amountChanged)
-   Q_PROPERTY(QString symbol READ symbol WRITE setsymbol NOTIFY symbolChanged)
-   Q_PROPERTY(qreal fee READ fee WRITE setfee NOTIFY feeChanged)
-   Q_PROPERTY(QString feeSymbol READ feeSymbol WRITE setfeeSymbol NOTIFY feeSymbolChanged)
-   Q_PROPERTY(QString memo READ memo WRITE setmemo NOTIFY memoChanged)
-   Q_PROPERTY(QString status READ status WRITE setstatus NOTIFY statusChanged)
+   Q_PROPERTY(QDateTime when READ when CONSTANT)
+   Q_PROPERTY(QString from READ from CONSTANT)
+   Q_PROPERTY(QString to READ to CONSTANT)
+   Q_PROPERTY(qreal amount READ amount CONSTANT)
+   Q_PROPERTY(QString symbol READ symbol CONSTANT)
+   Q_PROPERTY(qreal fee READ fee CONSTANT)
+   Q_PROPERTY(QString feeSymbol READ feeSymbol CONSTANT)
+   Q_PROPERTY(QString memo READ memo CONSTANT)
+   Q_PROPERTY(QString status READ status CONSTANT)
 
 public:
-   LightTransactionSummary(bts::light_wallet::light_transaction_summary&& summary)
-      : m(summary){}
+   LightTransactionSummary(QObject* parent = nullptr) :QObject(parent),m_amount(0),m_fee(0){}
 
-   GETTER(QDateTime, when)
-   GETTER(QString, from)
-   GETTER(QString, to)
-   qreal amount() { return m.amount; }
-   GETTER(QString, symbol)
-   qreal fee() { return m.fee; }
-   GETTER_(QString, fee_symbol, feeSymbol)
-   GETTER(QString, memo)
-   GETTER(QString, status)
-
-public Q_SLOTS:
-   SETTER(QDateTime, when)
-   SETTER(QString, from)
-   SETTER(QString, to)
-   void setamount(qreal newAmount)
+   QDateTime when() const
    {
-      if( newAmount == m.amount ) return;
-      m.amount = newAmount;
-      Q_EMIT amountChanged(m.amount);
+      return m_when;
    }
-   SETTER(QString, symbol)
-   void setfee(qreal newFee)
+   QString from() const
    {
-      if( newFee == m.fee ) return;
-      m.fee = newFee;
-      Q_EMIT feeChanged(m.fee);
+      return m_from;
    }
-   SETTER_(QString, fee_symbol, feeSymbol)
-   SETTER(QString, memo)
-   SETTER(QString, status)
-
-Q_SIGNALS:
-   void whenChanged(QDateTime arg);
-   void fromChanged(QString arg);
-   void toChanged(QString arg);
-   void amountChanged(qreal arg);
-   void symbolChanged(QString arg);
-   void feeChanged(qreal arg);
-   void feeSymbolChanged(QString arg);
-   void memoChanged(QString arg);
-   void statusChanged(QString arg);
+   QString to() const
+   {
+      return m_to;
+   }
+   qreal amount() const
+   {
+      return m_amount;
+   }
+   QString symbol() const
+   {
+      return m_symbol;
+   }
+   qreal fee() const
+   {
+      return m_fee;
+   }
+   QString feeSymbol() const
+   {
+      return m_feeSymbol;
+   }
+   QString memo() const
+   {
+      return m_memo;
+   }
+   QString status() const
+   {
+      return m_status;
+   }
 
 private:
-
-   bts::light_wallet::light_transaction_summary m;
+   const QDateTime m_when;
+   const QString m_from;
+   const QString m_to;
+   const qreal m_amount;
+   const QString m_symbol;
+   const qreal m_fee;
+   const QString m_feeSymbol;
+   const QString m_memo;
+   const QString m_status;
 };
 
 class Balance : public QObject
