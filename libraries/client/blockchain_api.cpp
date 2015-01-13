@@ -46,6 +46,7 @@ vector<account_record> client_impl::blockchain_list_delegates( uint32_t first, u
 
 vector<string> client_impl::blockchain_list_missing_block_delegates( uint32_t block_num )
 {
+   FC_ASSERT( _chain_db->get_statistics_enabled() );
    if (block_num == 0 || block_num == 1)
       return vector<string>();
    vector<string> delegates;

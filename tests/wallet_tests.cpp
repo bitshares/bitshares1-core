@@ -555,11 +555,13 @@ void run_regression_test(fc::path test_dir, bool with_network)
           genesis_json_file = line.substr( 8 );
           continue;
       }
+
+      line += " --statistics-enabled ";
+      line += " --upnp=false ";
+      line += " --min-delegate-connection-count=0 ";
       line += " --disable-default-peers ";
       line += " --log-commands ";
       line += " --ulog=0 ";
-      line += " --min-delegate-connection-count=0 ";
-      line += " --upnp=false ";
 
       //append genesis_file to load to command-line for now (later should be pre-created in test dir I think)
       line += " --genesis-config " + genesis_json_file.string();
