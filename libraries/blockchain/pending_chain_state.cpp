@@ -90,10 +90,6 @@ namespace bts { namespace blockchain {
       for( const auto& item : market_history )  prev_state->store_market_history_record( item.first, item.second );
       for( const auto& item : market_statuses ) prev_state->store_market_status( item.second );
       for( const auto& item : asset_proposals ) prev_state->store_asset_proposal( item.second );
-      for( const auto& items : recent_operations )
-      {
-         for( const auto& item : items.second )    prev_state->store_recent_operation( item );
-      }
       for( const auto& item : burns ) prev_state->store_burn_record( burn_record(item.first,item.second) );
       for( const auto& item : objects ) prev_state->store_object_record( item.second );
 
@@ -212,8 +208,6 @@ namespace bts { namespace blockchain {
 
       const auto dirty_markets = prev_state->get_dirty_markets();
       undo_state->set_dirty_markets( dirty_markets );
-
-      /* NOTE: Recent operations are currently not rewound on undo */
    }
 
    /** load the state from a variant */
@@ -287,22 +281,6 @@ namespace bts { namespace blockchain {
    void pending_chain_state::store_balance_record( const balance_record& r )
    {
        store( r );
-   }
-
-   vector<operation> pending_chain_state::get_recent_operations(operation_type_enum t)
-   {
-      const auto& recent_op_queue = recent_operations[t];
-      vector<operation> recent_ops(recent_op_queue.size());
-      std::copy(recent_op_queue.begin(), recent_op_queue.end(), recent_ops.begin());
-      return recent_ops;
-   }
-
-   void pending_chain_state::store_recent_operation(const operation& o)
-   {
-      auto& recent_op_queue = recent_operations[o.type];
-      recent_op_queue.push_back(o);
-      if( recent_op_queue.size() > MAX_RECENT_OPERATIONS )
-        recent_op_queue.pop_front();
    }
 
    oobject_record pending_chain_state::get_object_record(const object_id_type id)const

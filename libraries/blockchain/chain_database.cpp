@@ -18,6 +18,8 @@
 
 namespace bts { namespace blockchain {
 
+   const static short MAX_RECENT_OPERATIONS = 20;
+
    namespace detail
    {
       void chain_database_impl::revalidate_pending()
@@ -1753,7 +1755,7 @@ namespace bts { namespace blockchain {
        store( record_to_store );
    } FC_CAPTURE_AND_RETHROW( (record_to_store) ) }
 
-   vector<operation> chain_database::get_recent_operations(operation_type_enum t)
+   vector<operation> chain_database::get_recent_operations(operation_type_enum t)const
    {
       const auto& recent_op_queue = my->_recent_operations[t];
       vector<operation> recent_ops(recent_op_queue.size());
@@ -1769,13 +1771,12 @@ namespace bts { namespace blockchain {
         recent_op_queue.pop_front();
    }
 
-
-    oobject_record             chain_database::get_object_record( const object_id_type id )const
+    oobject_record chain_database::get_object_record( const object_id_type id )const
     {
        return my->_object_db.fetch_optional( id );
     }
 
-    void                       chain_database::store_object_record( const object_record& obj )
+    void chain_database::store_object_record( const object_record& obj )
     { try {
         switch( obj.type() )
         {
@@ -3690,8 +3691,7 @@ namespace bts { namespace blockchain {
                            (_ask_db)(_bid_db)(_short_db)(_collateral_db) \
                            (_market_transactions_db)(_market_status_db)(_market_history_db) \
                            (_slot_index_to_record)(_slot_timestamp_to_delegate) \
-                           (_object_db)(_edge_index)(_reverse_edge_index) \
-                           (_recent_operations)
+                           (_object_db)(_edge_index)(_reverse_edge_index)
 #define GET_DATABASE_SIZE(r, data, elem) stats[BOOST_PP_STRINGIZE(elem)] = my->elem.size();
      BOOST_PP_SEQ_FOR_EACH(GET_DATABASE_SIZE, _, CHAIN_DB_DATABASES)
      return stats;
@@ -3903,6 +3903,9 @@ namespace bts { namespace blockchain {
                    my->_address_to_trx_index.store( std::make_pair( addr, id ), char( 0 ) );
                };
                record.scan_addresses( *this, scan_address );
+
+               for( const operation& op : record.trx.operations )
+                   store_recent_operation( op );
            }
        };
 

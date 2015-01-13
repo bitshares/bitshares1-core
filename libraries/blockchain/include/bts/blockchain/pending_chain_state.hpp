@@ -75,9 +75,6 @@ namespace bts { namespace blockchain {
          virtual void                   store_balance_record( const balance_record& r )override;
          virtual void                   store_account_record( const account_record& r )override;
 
-         virtual vector<operation>      get_recent_operations( operation_type_enum t )override;
-         virtual void                   store_recent_operation( const operation& o )override;
-
          virtual void                   store_object_record( const object_record& obj )override;
          virtual oobject_record         get_object_record( const object_id_type id )const override;
 
@@ -203,7 +200,6 @@ namespace bts { namespace blockchain {
       private:
          // Not serialized
          std::weak_ptr<chain_interface>                                     _prev_state;
-         map<operation_type_enum, std::deque<operation>>                    recent_operations;
 
          virtual void init_account_db_interface()override;
          virtual void init_asset_db_interface()override;

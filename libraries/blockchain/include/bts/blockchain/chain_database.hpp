@@ -293,8 +293,8 @@ namespace bts { namespace blockchain {
          virtual void                       store_balance_record( const balance_record& r )override;
          virtual void                       store_account_record( const account_record& r )override;
 
-         virtual vector<operation>          get_recent_operations( operation_type_enum t )override;
-         virtual void                       store_recent_operation( const operation& o )override;
+         virtual vector<operation>          get_recent_operations( operation_type_enum t )const;
+         virtual void                       store_recent_operation( const operation& o );
 
          virtual void                       store_object_record( const object_record& obj )override;
          virtual oobject_record             get_object_record( const object_id_type id )const override;
