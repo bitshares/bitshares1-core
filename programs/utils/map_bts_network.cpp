@@ -186,7 +186,7 @@ int main(int argc, char** argv)
 
   fc::ecc::private_key my_node_id = fc::ecc::private_key::generate();
   bts::blockchain::chain_database_ptr chain_db = std::make_shared<bts::blockchain::chain_database>();
-  chain_db->open(data_dir / "chain", fc::optional<fc::path>("C:/Users/Administrator/AppData/Local/Temp/map_bts_network/genesis.json"));
+  chain_db->open(data_dir / "chain", fc::optional<fc::path>("C:/Users/Administrator/AppData/Local/Temp/map_bts_network/genesis.json"), true);
 
   std::map<bts::net::node_id_t, bts::net::address_info> address_info_by_node_id;
   std::map<bts::net::node_id_t, std::vector<bts::net::address_info> > connections_by_node_id;
