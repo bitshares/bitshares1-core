@@ -115,6 +115,7 @@ void wallet_impl::scan_market_transaction(
         }
 
         _wallet_db.store_transaction( record );
+        _dirty_balances = true;
     }
 
     auto okey_ask = _wallet_db.lookup_key( mtrx.ask_owner );
@@ -194,6 +195,7 @@ void wallet_impl::scan_market_transaction(
         }
 
         _wallet_db.store_transaction( record );
+        _dirty_balances = true;
     }
 } FC_CAPTURE_AND_RETHROW() }
 
