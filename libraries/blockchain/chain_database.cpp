@@ -2166,10 +2166,10 @@ namespace bts { namespace blockchain {
     map<balance_id_type, balance_record> chain_database::get_balances( const balance_id_type& first, uint32_t limit )const
     { try {
         map<balance_id_type, balance_record> records;
-        for( auto iter = my->_balance_id_to_record.ordered_lower_bound( first );
-             iter.valid() && records.size() <= limit; ++iter )
+        for( auto iter = my->_balance_id_to_record.ordered_lower_bound( first ); iter.valid(); ++iter )
         {
             records[ iter.key() ] = iter.value();
+            if( records.size() >= limit ) break;
         }
         return records;
     } FC_CAPTURE_AND_RETHROW( (first)(limit) ) }
@@ -2202,11 +2202,11 @@ namespace bts { namespace blockchain {
     { try {
         vector<account_record> records;
         records.reserve( std::min( size_t( limit ), my->_account_name_to_id.size() ) );
-        for( auto iter = my->_account_name_to_id.ordered_lower_bound( first );
-             iter.valid() && records.size() <= limit; ++iter )
+        for( auto iter = my->_account_name_to_id.ordered_lower_bound( first ); iter.valid(); ++iter )
         {
             const oaccount_record& record = lookup<account_record>( iter.value() );
             if( record.valid() ) records.push_back( *record );
+            if( records.size() >= limit ) break;
         }
         return records;
     } FC_CAPTURE_AND_RETHROW( (first)(limit) ) }
@@ -2215,11 +2215,11 @@ namespace bts { namespace blockchain {
     { try {
         vector<asset_record> records;
         records.reserve( std::min( size_t( limit ), my->_asset_symbol_to_id.size() ) );
-        for( auto iter = my->_asset_symbol_to_id.ordered_lower_bound( first );
-             iter.valid() && records.size() <= limit; ++iter )
+        for( auto iter = my->_asset_symbol_to_id.ordered_lower_bound( first ); iter.valid(); ++iter )
         {
             const oasset_record& record = lookup<asset_record>( iter.value() );
             if( record.valid() ) records.push_back( *record );
+            if( records.size() >= limit ) break;
         }
         return records;
     } FC_CAPTURE_AND_RETHROW( (first)(limit) ) }
@@ -2627,9 +2627,7 @@ namespace bts { namespace blockchain {
        return optional<market_order>();
    } FC_CAPTURE_AND_RETHROW( (key) ) }
 
-   vector<market_order> chain_database::get_market_bids( const string& quote_symbol,
-                                                          const string& base_symbol,
-                                                          uint32_t limit  )
+   vector<market_order> chain_database::get_market_bids( const string& quote_symbol, const string& base_symbol, uint32_t limit  )
    { try {
        auto quote_id = get_asset_id( quote_symbol );
        auto base_id  = get_asset_id( base_symbol );
@@ -2656,7 +2654,7 @@ namespace bts { namespace blockchain {
              else break;
 
 
-             if( results.size() == limit )
+             if( results.size() >= limit )
                 return results;
 
              --market_itr;
@@ -2679,7 +2677,7 @@ namespace bts { namespace blockchain {
              else break;
 
 
-             if( results.size() == limit )
+             if( results.size() >= limit )
                 return results;
 
              --market_itr;
@@ -2699,8 +2697,7 @@ namespace bts { namespace blockchain {
        return optional<market_order>();
    } FC_CAPTURE_AND_RETHROW( (key) ) }
 
-   vector<market_order> chain_database::get_market_shorts( const string& quote_symbol,
-                                                          uint32_t limit  )
+   vector<market_order> chain_database::get_market_shorts( const string& quote_symbol, uint32_t limit )
    { try {
        asset_id_type quote_id = get_asset_id( quote_symbol );
        asset_id_type base_id  = 0;
@@ -2728,7 +2725,7 @@ namespace bts { namespace blockchain {
              break;
           }
 
-          if( results.size() == limit )
+          if( results.size() >= limit )
              return results;
 
           --market_itr;
@@ -2765,7 +2762,7 @@ namespace bts { namespace blockchain {
              break;
           }
 
-          if( results.size() == limit )
+          if( results.size() >= limit )
              return results;
 
           ++market_itr;
@@ -2816,9 +2813,7 @@ namespace bts { namespace blockchain {
 
    } FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
-   vector<market_order> chain_database::get_market_asks( const string& quote_symbol,
-                                                          const string& base_symbol,
-                                                          uint32_t limit  )
+   vector<market_order> chain_database::get_market_asks( const string& quote_symbol, const string& base_symbol, uint32_t limit )
    { try {
        auto quote_asset_id = get_asset_id( quote_symbol );
        auto base_asset_id  = get_asset_id( base_symbol );
@@ -2841,7 +2836,7 @@ namespace bts { namespace blockchain {
                 break;
              }
 
-             if( results.size() == limit )
+             if( results.size() >= limit )
                 return results;
 
              ++market_itr;
@@ -2862,7 +2857,7 @@ namespace bts { namespace blockchain {
                 break;
              }
 
-             if( results.size() == limit )
+             if( results.size() >= limit )
                 return results;
 
              ++market_itr;
