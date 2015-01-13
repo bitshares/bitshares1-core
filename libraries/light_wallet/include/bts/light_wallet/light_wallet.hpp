@@ -69,7 +69,7 @@ namespace bts { namespace light_wallet {
          asset  get_fee( const string& symbol );
 
          map<string,double> balance()const;
-         vector<fc::variant_object> transactions( const string& symbol );
+         vector<wallet::transaction_ledger_entry> transactions( const string& symbol );
 
          optional<asset_record> get_asset_record( const string& symbol );
          optional<asset_record> get_asset_record( const asset_id_type& id );

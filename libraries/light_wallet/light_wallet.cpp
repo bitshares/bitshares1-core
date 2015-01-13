@@ -251,14 +251,14 @@ map<string, double> light_wallet::balance() const
    return balances;
 }
 
-vector<fc::variant_object> light_wallet::transactions(const string& symbol)
+vector<bts::wallet::transaction_ledger_entry> light_wallet::transactions(const string& symbol)
 {
    FC_ASSERT( is_open() );
 
-   vector<fc::variant_object> results;
+   vector<bts::wallet::transaction_ledger_entry> results;
    auto ids = _data->transaction_index[std::make_pair(_data->user_account.id, get_asset_record(symbol)->id)];
    std::for_each(ids.begin(), ids.end(), [this, &results](const transaction_id_type& id) {
-      results.emplace_back(_data->transaction_record_cache[id]);
+      results.emplace_back(summarize(_data->transaction_record_cache[id]));
    });
 
    return results;
@@ -421,7 +421,7 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const fc::variant_
       for( auto asset : delta.second )
          summary.delta_amounts[delta.first].emplace_back(asset.second, asset.first);
    for( auto fee : record.balance )
-      summary.delta_amounts["FEE"].emplace_back(fee.second, fee.first);
+      summary.delta_amounts["Fee"].emplace_back(fee.second, fee.first);
 
    wdump((summary));
    return summary;
