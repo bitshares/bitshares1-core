@@ -80,7 +80,7 @@ namespace bts { namespace blockchain {
                                          const fc::ecc::public_key& memo_public_key,
                                          fc::ecc::private_key one_time_private_key,
                                          memo_flags_enum memo_type = from_memo,
-                                         bool use_steath_address = true);
+                                         bool use_stealth_address = true);
 
 
       void register_account( const string& name,

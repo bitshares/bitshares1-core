@@ -168,7 +168,7 @@ namespace bts { namespace blockchain {
                                                     const fc::ecc::public_key& memo_pub_key,
                                                     fc::ecc::private_key one_time_private_key,
                                                     memo_flags_enum memo_type,
-                                                    bool use_steath_address )
+                                                    bool use_stealth_address )
    {
       withdraw_with_signature by_account;
       auto receiver_address_key = by_account.encrypt_memo_data( one_time_private_key,
@@ -177,7 +177,7 @@ namespace bts { namespace blockchain {
                                                                 memo_message,
                                                                 memo_pub_key,
                                                                 memo_type,
-                                                                use_steath_address );
+                                                                use_stealth_address );
 
       deposit_operation op;
       op.amount = amount.amount;
