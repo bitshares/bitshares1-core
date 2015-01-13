@@ -7,6 +7,7 @@
 #include <bts/blockchain/genesis_json.hpp>
 #include <bts/blockchain/market_engine.hpp>
 #include <bts/blockchain/time.hpp>
+#include <bts/blockchain/balance_operations.hpp>
 
 #include <fc/io/fstream.hpp>
 #include <fc/io/raw_variant.hpp>
@@ -1875,6 +1876,21 @@ namespace bts { namespace blockchain {
                                            const transaction_record& record_to_store )
    { try {
        store( record_to_store );
+
+       auto index_balance = [this, record_id](const balance_id_type& balance_id) {
+          auto balance = get_balance_record(balance_id);
+          if( balance )
+             for( auto addr : balance->owners() )
+                index_transaction(addr, record_id);
+       };
+       for( const operation& op : record_to_store.trx.operations )
+       {
+          if( op.type == deposit_op_type )
+             index_balance(op.as<deposit_operation>().balance_id());
+          else if( op.type == withdraw_op_type )
+             index_balance(op.as<withdraw_operation>().balance_id);
+          // TODO: index transaction for relevant addresses in all different operation types.
+       }
    } FC_CAPTURE_AND_RETHROW( (record_id)(record_to_store) ) }
 
    void chain_database::scan_balances( function<void( const balance_record& )> callback, bool include_empty )const
