@@ -147,11 +147,6 @@ namespace bts { namespace blockchain {
 
          virtual void                   set_market_transactions( vector<market_transaction> trxs )override;
 
-         /**
-          *  This is a pass through method that goes stright to chain database whether or not transaction ID is valid
-          */
-         virtual void                  index_transaction( const address& addr, const transaction_id_type& trx_id ) override;
-
          unordered_map< chain_property_type, variant>                       properties;
 
          unordered_map<account_id_type, account_record>                     _account_id_to_record;

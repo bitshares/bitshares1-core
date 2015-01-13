@@ -222,8 +222,6 @@ namespace bts { namespace blockchain {
 
          virtual void                       set_market_transactions( vector<market_transaction> trxs )      = 0;
 
-         virtual void                       index_transaction( const address& addr, const transaction_id_type& trx_id ) = 0;
-
          template<typename T, typename U>
          optional<T> lookup( const U& key )const
          { try {

@@ -7,7 +7,6 @@
 #include <bts/blockchain/genesis_json.hpp>
 #include <bts/blockchain/market_engine.hpp>
 #include <bts/blockchain/time.hpp>
-#include <bts/blockchain/balance_operations.hpp>
 
 #include <fc/io/fstream.hpp>
 #include <fc/io/raw_variant.hpp>
@@ -1874,7 +1873,6 @@ namespace bts { namespace blockchain {
       auto trx_rec = my->_id_to_transaction_record_db.fetch_optional( trx_id );
       if( trx_rec || exact )
       {
-         //ilog( "trx_rec: ${id} => ${t}", ("id",trx_id)("t",trx_rec) );
          if( trx_rec )
             FC_ASSERT( trx_rec->trx.id() == trx_id,"", ("trx_rec->id",trx_rec->trx.id()) );
          return trx_rec;
@@ -1897,21 +1895,6 @@ namespace bts { namespace blockchain {
                                            const transaction_record& record_to_store )
    { try {
        store( record_to_store );
-
-       auto index_balance = [this, record_id](const balance_id_type& balance_id) {
-          auto balance = get_balance_record(balance_id);
-          if( balance )
-             for( auto addr : balance->owners() )
-                index_transaction(addr, record_id);
-       };
-       for( const operation& op : record_to_store.trx.operations )
-       {
-          if( op.type == deposit_op_type )
-             index_balance(op.as<deposit_operation>().balance_id());
-          else if( op.type == withdraw_op_type )
-             index_balance(op.as<withdraw_operation>().balance_id);
-          // TODO: index transaction for relevant addresses in all different operation types.
-       }
    } FC_CAPTURE_AND_RETHROW( (record_id)(record_to_store) ) }
 
    void chain_database::scan_balances( function<void( const balance_record& )> callback, bool include_empty )const
@@ -3748,11 +3731,6 @@ namespace bts { namespace blockchain {
       return my->_asset_proposal_db.fetch_optional( std::make_pair(asset_id,proposal_id) );
    }
 
-   void chain_database::index_transaction( const address& addr, const transaction_id_type& trx_id )
-   {
-      my->_address_to_trx_index.store( std::make_pair(addr,trx_id), char(0) );
-   }
-
    vector<transaction_record> chain_database::fetch_address_transactions( const address& addr )
    {
       vector<transaction_record> results;
@@ -3922,6 +3900,15 @@ namespace bts { namespace blockchain {
        interface.insert_into_id_map = [&]( const transaction_id_type& id, const transaction_record& record )
        {
            my->_id_to_transaction_record_db.store( id, record );
+
+           if( my->_statistics_enabled )
+           {
+               const auto scan_address = [&]( const address& addr )
+               {
+                   my->_address_to_trx_index.store( std::make_pair( addr, id ), char( 0 ) );
+               };
+               record.scan_addresses( *this, scan_address );
+           }
        };
 
        interface.insert_into_unique_set = [&]( const transaction& trx )
@@ -3932,6 +3919,19 @@ namespace bts { namespace blockchain {
 
        interface.erase_from_id_map = [&]( const transaction_id_type& id )
        {
+           if( my->_statistics_enabled )
+           {
+               const otransaction_record record = interface.lookup_by_id( id );
+               if( record.valid() )
+               {
+                   const auto scan_address = [&]( const address& addr )
+                   {
+                       my->_address_to_trx_index.remove( std::make_pair( addr, id ) );
+                   };
+                   record->scan_addresses( *this, scan_address );
+               }
+           }
+
            my->_id_to_transaction_record_db.remove( id );
        };
 

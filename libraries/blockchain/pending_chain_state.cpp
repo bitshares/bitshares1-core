@@ -647,13 +647,6 @@ namespace bts { namespace blockchain {
       return prev_state->fetch_asset_proposal( asset_id, proposal_id );
    }
 
-   void pending_chain_state::index_transaction( const address& addr, const transaction_id_type& trx_id )
-   {
-      chain_interface_ptr prev_state = _prev_state.lock();
-      FC_ASSERT( prev_state );
-      prev_state->index_transaction( addr, trx_id );
-   }
-
    void pending_chain_state::init_account_db_interface()
    {
        account_db_interface& interface = _account_db_interface;

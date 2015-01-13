@@ -38,6 +38,39 @@ namespace bts { namespace blockchain {
       return address( *this );
    }
 
+   set<address> withdraw_condition::owners()const
+   {
+       switch( withdraw_condition_types( type ) )
+       {
+           case withdraw_signature_type:
+               return set<address>{ this->as<withdraw_with_signature>().owner };
+           case withdraw_vesting_type:
+               return set<address>{ this->as<withdraw_vesting>().owner };
+           case withdraw_multisig_type:
+               return this->as<withdraw_with_multisig>().owners;
+           case withdraw_escrow_type:
+           {
+               const auto escrow = this->as<withdraw_with_escrow>();
+               return set<address>{ escrow.sender, escrow.receiver, escrow.escrow };
+           }
+           default:
+               return set<address>();
+       }
+   }
+
+   optional<address> withdraw_condition::owner()const
+   {
+       switch( withdraw_condition_types( type ) )
+       {
+           case withdraw_signature_type:
+               return this->as<withdraw_with_signature>().owner;
+           case withdraw_vesting_type:
+               return this->as<withdraw_vesting>().owner;
+           default:
+               return optional<address>();
+       }
+   }
+
    string withdraw_condition::type_label()const
    {
       string label = string( this->type );
