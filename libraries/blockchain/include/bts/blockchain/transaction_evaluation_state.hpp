@@ -65,7 +65,9 @@ namespace bts { namespace blockchain {
 
          void validate_asset( const asset& a )const;
 
-         bool scan_deltas( uint32_t op_index, function<bool( const asset& )> callback )const;
+         bool scan_deltas( const uint32_t op_index, const function<bool( const asset& )> callback )const;
+
+         void scan_addresses( const chain_interface&, const function<void( const address& )> callback )const;
 
          signed_transaction                             trx;
 

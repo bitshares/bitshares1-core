@@ -140,13 +140,13 @@ namespace bts { namespace client {
          void configure_from_command_line(int argc, char** argv);
          fc::future<void> start();
          void open(const path& data_dir,
-                   optional<fc::path> genesis_file_path = optional<fc::path>(),
-                   std::function<void(float)> reindex_status_callback = std::function<void(float)>());
+                   const optional<fc::path>& genesis_file_path = fc::optional<fc::path>(),
+                   const fc::optional<bool> statistics_enabled = fc::optional<bool>(),
+                   const std::function<void( float )> replay_status_callback = std::function<void( float )>() );
 
          void init_cli();
          void set_daemon_mode(bool daemon_mode);
          void set_client_debug_name(const string& name);
-
 
          chain_database_ptr         get_chain()const;
          wallet_ptr                 get_wallet()const;

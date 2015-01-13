@@ -7,7 +7,6 @@
 #include <bts/blockchain/genesis_json.hpp>
 #include <bts/blockchain/market_engine.hpp>
 #include <bts/blockchain/time.hpp>
-#include <bts/blockchain/balance_operations.hpp>
 
 #include <fc/io/fstream.hpp>
 #include <fc/io/raw_variant.hpp>
@@ -18,6 +17,8 @@
 #include <iostream>
 
 namespace bts { namespace blockchain {
+
+   const static short MAX_RECENT_OPERATIONS = 20;
 
    namespace detail
    {
@@ -1754,7 +1755,7 @@ namespace bts { namespace blockchain {
        store( record_to_store );
    } FC_CAPTURE_AND_RETHROW( (record_to_store) ) }
 
-   vector<operation> chain_database::get_recent_operations(operation_type_enum t)
+   vector<operation> chain_database::get_recent_operations(operation_type_enum t)const
    {
       const auto& recent_op_queue = my->_recent_operations[t];
       vector<operation> recent_ops(recent_op_queue.size());
@@ -1770,13 +1771,12 @@ namespace bts { namespace blockchain {
         recent_op_queue.pop_front();
    }
 
-
-    oobject_record             chain_database::get_object_record( const object_id_type id )const
+    oobject_record chain_database::get_object_record( const object_id_type id )const
     {
        return my->_object_db.fetch_optional( id );
     }
 
-    void                       chain_database::store_object_record( const object_record& obj )
+    void chain_database::store_object_record( const object_record& obj )
     { try {
         switch( obj.type() )
         {
@@ -1874,7 +1874,6 @@ namespace bts { namespace blockchain {
       auto trx_rec = my->_id_to_transaction_record_db.fetch_optional( trx_id );
       if( trx_rec || exact )
       {
-         //ilog( "trx_rec: ${id} => ${t}", ("id",trx_id)("t",trx_rec) );
          if( trx_rec )
             FC_ASSERT( trx_rec->trx.id() == trx_id,"", ("trx_rec->id",trx_rec->trx.id()) );
          return trx_rec;
@@ -1897,21 +1896,6 @@ namespace bts { namespace blockchain {
                                            const transaction_record& record_to_store )
    { try {
        store( record_to_store );
-
-       auto index_balance = [this, record_id](const balance_id_type& balance_id) {
-          auto balance = get_balance_record(balance_id);
-          if( balance )
-             for( auto addr : balance->owners() )
-                index_transaction(addr, record_id);
-       };
-       for( const operation& op : record_to_store.trx.operations )
-       {
-          if( op.type == deposit_op_type )
-             index_balance(op.as<deposit_operation>().balance_id());
-          else if( op.type == withdraw_op_type )
-             index_balance(op.as<withdraw_operation>().balance_id);
-          // TODO: index transaction for relevant addresses in all different operation types.
-       }
    } FC_CAPTURE_AND_RETHROW( (record_id)(record_to_store) ) }
 
    void chain_database::scan_balances( function<void( const balance_record& )> callback, bool include_empty )const
@@ -2183,10 +2167,10 @@ namespace bts { namespace blockchain {
     map<balance_id_type, balance_record> chain_database::get_balances( const balance_id_type& first, uint32_t limit )const
     { try {
         map<balance_id_type, balance_record> records;
-        for( auto iter = my->_balance_id_to_record.ordered_lower_bound( first );
-             iter.valid() && records.size() <= limit; ++iter )
+        for( auto iter = my->_balance_id_to_record.ordered_lower_bound( first ); iter.valid(); ++iter )
         {
             records[ iter.key() ] = iter.value();
+            if( records.size() >= limit ) break;
         }
         return records;
     } FC_CAPTURE_AND_RETHROW( (first)(limit) ) }
@@ -2219,11 +2203,11 @@ namespace bts { namespace blockchain {
     { try {
         vector<account_record> records;
         records.reserve( std::min( size_t( limit ), my->_account_name_to_id.size() ) );
-        for( auto iter = my->_account_name_to_id.ordered_lower_bound( first );
-             iter.valid() && records.size() <= limit; ++iter )
+        for( auto iter = my->_account_name_to_id.ordered_lower_bound( first ); iter.valid(); ++iter )
         {
             const oaccount_record& record = lookup<account_record>( iter.value() );
             if( record.valid() ) records.push_back( *record );
+            if( records.size() >= limit ) break;
         }
         return records;
     } FC_CAPTURE_AND_RETHROW( (first)(limit) ) }
@@ -2232,11 +2216,11 @@ namespace bts { namespace blockchain {
     { try {
         vector<asset_record> records;
         records.reserve( std::min( size_t( limit ), my->_asset_symbol_to_id.size() ) );
-        for( auto iter = my->_asset_symbol_to_id.ordered_lower_bound( first );
-             iter.valid() && records.size() <= limit; ++iter )
+        for( auto iter = my->_asset_symbol_to_id.ordered_lower_bound( first ); iter.valid(); ++iter )
         {
             const oasset_record& record = lookup<asset_record>( iter.value() );
             if( record.valid() ) records.push_back( *record );
+            if( records.size() >= limit ) break;
         }
         return records;
     } FC_CAPTURE_AND_RETHROW( (first)(limit) ) }
@@ -2644,9 +2628,7 @@ namespace bts { namespace blockchain {
        return optional<market_order>();
    } FC_CAPTURE_AND_RETHROW( (key) ) }
 
-   vector<market_order> chain_database::get_market_bids( const string& quote_symbol,
-                                                          const string& base_symbol,
-                                                          uint32_t limit  )
+   vector<market_order> chain_database::get_market_bids( const string& quote_symbol, const string& base_symbol, uint32_t limit  )
    { try {
        auto quote_id = get_asset_id( quote_symbol );
        auto base_id  = get_asset_id( base_symbol );
@@ -2673,7 +2655,7 @@ namespace bts { namespace blockchain {
              else break;
 
 
-             if( results.size() == limit )
+             if( results.size() >= limit )
                 return results;
 
              --market_itr;
@@ -2696,7 +2678,7 @@ namespace bts { namespace blockchain {
              else break;
 
 
-             if( results.size() == limit )
+             if( results.size() >= limit )
                 return results;
 
              --market_itr;
@@ -2716,8 +2698,7 @@ namespace bts { namespace blockchain {
        return optional<market_order>();
    } FC_CAPTURE_AND_RETHROW( (key) ) }
 
-   vector<market_order> chain_database::get_market_shorts( const string& quote_symbol,
-                                                          uint32_t limit  )
+   vector<market_order> chain_database::get_market_shorts( const string& quote_symbol, uint32_t limit )
    { try {
        asset_id_type quote_id = get_asset_id( quote_symbol );
        asset_id_type base_id  = 0;
@@ -2745,7 +2726,7 @@ namespace bts { namespace blockchain {
              break;
           }
 
-          if( results.size() == limit )
+          if( results.size() >= limit )
              return results;
 
           --market_itr;
@@ -2782,7 +2763,7 @@ namespace bts { namespace blockchain {
              break;
           }
 
-          if( results.size() == limit )
+          if( results.size() >= limit )
              return results;
 
           ++market_itr;
@@ -2833,9 +2814,7 @@ namespace bts { namespace blockchain {
 
    } FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
-   vector<market_order> chain_database::get_market_asks( const string& quote_symbol,
-                                                          const string& base_symbol,
-                                                          uint32_t limit  )
+   vector<market_order> chain_database::get_market_asks( const string& quote_symbol, const string& base_symbol, uint32_t limit )
    { try {
        auto quote_asset_id = get_asset_id( quote_symbol );
        auto base_asset_id  = get_asset_id( base_symbol );
@@ -2858,7 +2837,7 @@ namespace bts { namespace blockchain {
                 break;
              }
 
-             if( results.size() == limit )
+             if( results.size() >= limit )
                 return results;
 
              ++market_itr;
@@ -2879,7 +2858,7 @@ namespace bts { namespace blockchain {
                 break;
              }
 
-             if( results.size() == limit )
+             if( results.size() >= limit )
                 return results;
 
              ++market_itr;
@@ -3712,8 +3691,7 @@ namespace bts { namespace blockchain {
                            (_ask_db)(_bid_db)(_short_db)(_collateral_db) \
                            (_market_transactions_db)(_market_status_db)(_market_history_db) \
                            (_slot_index_to_record)(_slot_timestamp_to_delegate) \
-                           (_object_db)(_edge_index)(_reverse_edge_index) \
-                           (_recent_operations)
+                           (_object_db)(_edge_index)(_reverse_edge_index)
 #define GET_DATABASE_SIZE(r, data, elem) stats[BOOST_PP_STRINGIZE(elem)] = my->elem.size();
      BOOST_PP_SEQ_FOR_EACH(GET_DATABASE_SIZE, _, CHAIN_DB_DATABASES)
      return stats;
@@ -3746,11 +3724,6 @@ namespace bts { namespace blockchain {
    optional<proposal_record> chain_database::fetch_asset_proposal( asset_id_type asset_id, proposal_id_type proposal_id )const
    {
       return my->_asset_proposal_db.fetch_optional( std::make_pair(asset_id,proposal_id) );
-   }
-
-   void chain_database::index_transaction( const address& addr, const transaction_id_type& trx_id )
-   {
-      my->_address_to_trx_index.store( std::make_pair(addr,trx_id), char(0) );
    }
 
    vector<transaction_record> chain_database::fetch_address_transactions( const address& addr )
@@ -3922,6 +3895,18 @@ namespace bts { namespace blockchain {
        interface.insert_into_id_map = [&]( const transaction_id_type& id, const transaction_record& record )
        {
            my->_id_to_transaction_record_db.store( id, record );
+
+           if( my->_statistics_enabled )
+           {
+               const auto scan_address = [&]( const address& addr )
+               {
+                   my->_address_to_trx_index.store( std::make_pair( addr, id ), char( 0 ) );
+               };
+               record.scan_addresses( *this, scan_address );
+
+               for( const operation& op : record.trx.operations )
+                   store_recent_operation( op );
+           }
        };
 
        interface.insert_into_unique_set = [&]( const transaction& trx )
@@ -3932,6 +3917,19 @@ namespace bts { namespace blockchain {
 
        interface.erase_from_id_map = [&]( const transaction_id_type& id )
        {
+           if( my->_statistics_enabled )
+           {
+               const otransaction_record record = interface.lookup_by_id( id );
+               if( record.valid() )
+               {
+                   const auto scan_address = [&]( const address& addr )
+                   {
+                       my->_address_to_trx_index.remove( std::make_pair( addr, id ) );
+                   };
+                   record->scan_addresses( *this, scan_address );
+               }
+           }
+
            my->_id_to_transaction_record_db.remove( id );
        };
 
