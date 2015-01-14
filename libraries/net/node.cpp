@@ -1737,6 +1737,13 @@ namespace bts { namespace net { namespace detail {
         originating_peer->node_id = user_data["node_id"].as<node_id_t>();
       if (user_data.contains("last_known_fork_block_number"))
         originating_peer->last_known_fork_block_number = user_data["last_known_fork_block_number"].as<uint32_t>();
+
+      // EMF: Fix for the main blockchain (bitshares & master branch in git) only:
+      // the BTS_FORK_TO_UNIX_TIME_LIST wasn't maintained for a few versions (0.4.23 - 0.4.28)
+      // and clients in this range are lying about what fork block they're on.  Ignore the block they 
+      // report, which will force us to estimate the block based on the git revision age they report.
+      if (originating_peer->last_known_fork_block_number <= 1315314)
+        originating_peer->last_known_fork_block_number = 0;
     }
 
     void node_impl::on_hello_message( peer_connection* originating_peer, const hello_message& hello_message_received )
