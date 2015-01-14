@@ -718,6 +718,8 @@ void detail::wallet_impl::scan_transaction_experimental( const transaction_evalu
         ulog( "wallet_transaction_record_v2:\n${rec}", ("rec",fc::json::to_pretty_string( record )) );
         _wallet_db.experimental_transactions[ record.id ] = record;
     }
+
+    _dirty_balances |= relevant_to_me;
 } FC_CAPTURE_AND_RETHROW( (eval_state)(account_balances)(account_names)(record)(store_record) ) }
 
 transaction_ledger_entry detail::wallet_impl::apply_transaction_experimental( const signed_transaction& transaction )

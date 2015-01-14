@@ -1189,11 +1189,6 @@ set<pretty_transaction_experimental> client_impl::wallet_transaction_history_exp
    return _wallet->transaction_history_experimental( account_name );
 } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
-vector<snapshot_record> client_impl::wallet_check_sharedrop()const
-{ try {
-   return _wallet->check_sharedrop();
-} FC_CAPTURE_AND_RETHROW() }
-
 wallet_transaction_record client_impl::wallet_get_transaction( const string& transaction_id )
 { try {
    return _wallet->get_transaction( transaction_id );

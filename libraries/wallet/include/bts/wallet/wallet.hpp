@@ -581,8 +581,6 @@ namespace bts { namespace wallet {
          wallet_transaction_record          recover_transaction( const string& transaction_id_prefix, const string& recipient_account );
          optional<variant_object>           verify_titan_deposit( const string& transaction_id_prefix );
 
-         vector<snapshot_record>            check_sharedrop()const;
-
          vote_summary get_vote_proportion( const string& account_name );
 
          private_key_type get_private_key( const address& addr )const;

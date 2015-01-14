@@ -20,42 +20,87 @@ default (unlocked) >>> debug_wait_for_block_by_number 4
 OK
 default (unlocked) >>> help blockchain_get_delegate_slot_records
 Usage:
-blockchain_get_delegate_slot_records <delegate_name> [start_block_num] [count]                        Query the block production slot records for a particular delegate
-Query the block production slot records for a particular delegate
+blockchain_get_delegate_slot_records <delegate_name> [count]                                          Query the most recent block production slot records for a particular delegate
+Query the most recent block production slot records for a particular delegate
 
 Parameters:
   delegate_name (string, required): Delegate whose block production slot records to query
-  start_block_num (int64_t, optional, defaults to "-1000"): Only return slot records after the specified block's timestamp; negative to start backwards from the current head block
-  count (uint32_t, optional, defaults to "10"): Return at most count slot records
+  count (uint32_t, optional, defaults to "10"): The number of most recent slot records to return
 
 Returns:
   slot_records_list
-default (unlocked) >>> blockchain_get_delegate_slot_records delegate42 1
+
+aliases: get_slot
+default (unlocked) >>> blockchain_get_delegate_slot_records delegate42
 [{
-    "start_time": "2014-06-20T14:40:30",
-    "block_producer_id": 43,
+    "index": {
+      "delegate_id": 43,
+      "timestamp": "2014-06-20T14:40:30"
+    },
     "block_id": "a7410f0d620d950dc1c5516dd944f9376f451367"
   }
 ]
 default (unlocked) >>> blockchain_get_delegate_slot_records delegate43 1
 [{
-    "start_time": "2014-06-20T14:40:40",
-    "block_producer_id": 44,
+    "index": {
+      "delegate_id": 44,
+      "timestamp": "2014-06-20T14:40:40"
+    },
     "block_id": "f5b47785afda7ffa82a66914c67415787e9d3613"
+  },{
+    "index": {
+      "delegate_id": 43,
+      "timestamp": "2014-06-20T14:40:30"
+    },
+    "block_id": "a7410f0d620d950dc1c5516dd944f9376f451367"
   }
 ]
 default (unlocked) >>> blockchain_get_delegate_slot_records delegate44 -1
 [{
-    "start_time": "2014-06-20T14:40:50",
-    "block_producer_id": 45,
+    "index": {
+      "delegate_id": 45,
+      "timestamp": "2014-06-20T14:40:50"
+    },
     "block_id": "92930b5f41d28fe58b43672483e08df67413ebb9"
+  },{
+    "index": {
+      "delegate_id": 44,
+      "timestamp": "2014-06-20T14:40:40"
+    },
+    "block_id": "f5b47785afda7ffa82a66914c67415787e9d3613"
+  },{
+    "index": {
+      "delegate_id": 43,
+      "timestamp": "2014-06-20T14:40:30"
+    },
+    "block_id": "a7410f0d620d950dc1c5516dd944f9376f451367"
   }
 ]
 default (unlocked) >>> blockchain_get_delegate_slot_records delegate45 4
 [{
-    "start_time": "2014-06-20T14:41:00",
-    "block_producer_id": 46,
+    "index": {
+      "delegate_id": 46,
+      "timestamp": "2014-06-20T14:41:00"
+    },
     "block_id": "087eea976d1e77640ae72e4ed6f2261e58870228"
+  },{
+    "index": {
+      "delegate_id": 45,
+      "timestamp": "2014-06-20T14:40:50"
+    },
+    "block_id": "92930b5f41d28fe58b43672483e08df67413ebb9"
+  },{
+    "index": {
+      "delegate_id": 44,
+      "timestamp": "2014-06-20T14:40:40"
+    },
+    "block_id": "f5b47785afda7ffa82a66914c67415787e9d3613"
+  },{
+    "index": {
+      "delegate_id": 43,
+      "timestamp": "2014-06-20T14:40:30"
+    },
+    "block_id": "a7410f0d620d950dc1c5516dd944f9376f451367"
   }
 ]
 default (unlocked) >>> quit

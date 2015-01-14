@@ -1,5 +1,5 @@
 default (unlocked) >>> wallet_account_create testaccount
-"XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
+"XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
 default (unlocked) >>> help wallet_get_account
 Usage:
 wallet_get_account <account_name>                                                                     Get the account record for a given name
@@ -16,10 +16,10 @@ default (unlocked) >>> wallet_get_account testaccount
   "id": 0,
   "name": "testaccount",
   "public_data": null,
-  "owner_key": "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt",
+  "owner_key": "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra",
   "active_key_history": [[
       "2014-06-20T14:40:30",
-      "XTS5AQGjeRu5sEBvvERaV8i1tstV1fx2ywGUmvWgsBPEjFoR27oQg"
+      "XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX"
     ]
   ],
   "registration_date": "1970-01-01T00:00:00",
