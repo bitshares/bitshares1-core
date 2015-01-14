@@ -108,7 +108,7 @@ namespace bts { namespace blockchain {
 
             bts::db::level_map<block_id_type,int32_t>                                   _revalidatable_future_blocks_db; //int32_t is unused, this is a set
 
-            bts::db::fast_level_map<block_id_type, pending_chain_state>                 _block_id_to_undo_state;
+            bts::db::level_map<block_id_type, pending_chain_state>                      _block_id_to_undo_state;
 
             // blocks in the current 'official' chain.
             bts::db::level_map<uint32_t,block_id_type>                                  _block_num_to_id_db;
