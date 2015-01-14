@@ -1,3 +1,4 @@
+#include <bts/blockchain/balance_operations.hpp>
 #include <bts/blockchain/operation_factory.hpp>
 #include <bts/blockchain/pending_chain_state.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
@@ -278,7 +279,7 @@ namespace bts { namespace blockchain {
          FC_CAPTURE_AND_THROW( unknown_asset_id, (asset_to_validate) );
    } FC_CAPTURE_AND_RETHROW( (asset_to_validate) ) }
 
-   bool transaction_evaluation_state::scan_deltas( uint32_t op_index, function<bool( const asset& )> callback )const
+   bool transaction_evaluation_state::scan_deltas( const uint32_t op_index, const function<bool( const asset& )> callback )const
    { try {
        bool ret = false;
        for( const auto& item : deltas )
@@ -293,5 +294,38 @@ namespace bts { namespace blockchain {
        }
        return ret;
    } FC_CAPTURE_AND_RETHROW( (op_index) ) }
+
+   void transaction_evaluation_state::scan_addresses( const chain_interface& chain,
+                                                      const function<void( const address& )> callback )const
+   { try {
+       for( const operation& op : trx.operations )
+       {
+           switch( operation_type_enum( op.type ) )
+           {
+               case withdraw_op_type:
+               {
+                   const obalance_record balance_record = chain.get_balance_record( op.as<withdraw_operation>().balance_id );
+                   if( balance_record.valid() )
+                   {
+                       const set<address>& owners = balance_record->owners();
+                       for( const address& addr : owners )
+                           callback( addr );
+                   }
+                   break;
+               }
+               case deposit_op_type:
+               {
+                   const set<address>& owners = op.as<deposit_operation>().condition.owners();
+                   for( const address& addr : owners )
+                       callback( addr );
+                   break;
+               }
+               default:
+               {
+                   break;
+               }
+           }
+       }
+   } FC_CAPTURE_AND_RETHROW() }
 
 } } // bts::blockchain

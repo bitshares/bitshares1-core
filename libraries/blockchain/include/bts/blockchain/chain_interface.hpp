@@ -46,8 +46,6 @@ namespace bts { namespace blockchain {
    };
    typedef uint32_t chain_property_type;
 
-   const static short MAX_RECENT_OPERATIONS = 20;
-
    /**
     *  @class chain_interface
     *  @brief Abstracts the difference between the chain_database and pending_chain_state
@@ -173,9 +171,6 @@ namespace bts { namespace blockchain {
          virtual void                       store_balance_record( const balance_record& r )                 = 0;
          virtual void                       store_account_record( const account_record& r )                 = 0;
 
-         virtual void                       store_recent_operation( const operation& o )                    = 0;
-         virtual vector<operation>          get_recent_operations( operation_type_enum t )                  = 0;
-
          virtual void                       store_object_record( const object_record& obj )                 = 0;
          virtual oobject_record             get_object_record( const object_id_type id )const              = 0;
 
@@ -221,8 +216,6 @@ namespace bts { namespace blockchain {
          virtual std::set<std::pair<asset_id_type, asset_id_type>> get_dirty_markets()const;
 
          virtual void                       set_market_transactions( vector<market_transaction> trxs )      = 0;
-
-         virtual void                       index_transaction( const address& addr, const transaction_id_type& trx_id ) = 0;
 
          template<typename T, typename U>
          optional<T> lookup( const U& key )const

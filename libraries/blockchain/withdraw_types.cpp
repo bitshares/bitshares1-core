@@ -38,6 +38,39 @@ namespace bts { namespace blockchain {
       return address( *this );
    }
 
+   set<address> withdraw_condition::owners()const
+   {
+       switch( withdraw_condition_types( type ) )
+       {
+           case withdraw_signature_type:
+               return set<address>{ this->as<withdraw_with_signature>().owner };
+           case withdraw_vesting_type:
+               return set<address>{ this->as<withdraw_vesting>().owner };
+           case withdraw_multisig_type:
+               return this->as<withdraw_with_multisig>().owners;
+           case withdraw_escrow_type:
+           {
+               const auto escrow = this->as<withdraw_with_escrow>();
+               return set<address>{ escrow.sender, escrow.receiver, escrow.escrow };
+           }
+           default:
+               return set<address>();
+       }
+   }
+
+   optional<address> withdraw_condition::owner()const
+   {
+       switch( withdraw_condition_types( type ) )
+       {
+           case withdraw_signature_type:
+               return this->as<withdraw_with_signature>().owner;
+           case withdraw_vesting_type:
+               return this->as<withdraw_vesting>().owner;
+           default:
+               return optional<address>();
+       }
+   }
+
    string withdraw_condition::type_label()const
    {
       string label = string( this->type );
@@ -82,19 +115,20 @@ namespace bts { namespace blockchain {
       }
    } FC_CAPTURE_AND_RETHROW( (ignore_owner) ) }
 
-   public_key_type withdraw_with_signature::encrypt_memo_data(
-           const fc::ecc::private_key& one_time_private_key,
-           const fc::ecc::public_key&  to_public_key,
-           const fc::ecc::private_key& from_private_key,
-           const std::string& memo_message,
-           const fc::ecc::public_key&  memo_pub_key,
-           memo_flags_enum memo_type )
+   public_key_type withdraw_with_signature::encrypt_memo_data(const fc::ecc::private_key& one_time_private_key,
+                                                              const fc::ecc::public_key& to_public_key,
+                                                              const fc::ecc::private_key& from_private_key,
+                                                              const std::string& memo_message,
+                                                              const fc::ecc::public_key& memo_pub_key,
+                                                              memo_flags_enum memo_type,
+                                                              bool use_stealth_address)
    {
       memo = titan_memo();
       const auto secret = one_time_private_key.get_shared_secret( to_public_key );
       const auto ext_to_public_key = extended_public_key( to_public_key );
       const auto secret_ext_public_key = ext_to_public_key.child( fc::sha256::hash( secret ) );
-      const auto secret_public_key = secret_ext_public_key.get_pub_key();
+      const auto secret_public_key = use_stealth_address?
+               secret_ext_public_key.get_pub_key() : to_public_key;
       owner = address( secret_public_key );
 
       fc::sha512 check_secret;

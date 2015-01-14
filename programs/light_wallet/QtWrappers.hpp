@@ -4,87 +4,60 @@
 #include <QLatin1String>
 #include <QObject>
 #include <QDebug>
+#include <QQmlListProperty>
 
 #include <bts/light_wallet/light_wallet.hpp>
 
 #include "QtConversions.hpp"
 
-#define SETTER_(TYPE, INTERNAL_NAME, EXTERNAL_NAME) \
-   void set ## EXTERNAL_NAME(TYPE arg) { \
-      auto conv = convert(arg); \
-      if( m.INTERNAL_NAME == conv ) return; \
-      m.INTERNAL_NAME = conv; \
-      Q_EMIT EXTERNAL_NAME ## Changed(arg); \
-   }
-#define SETTER(TYPE, NAME) SETTER_(TYPE, NAME, NAME)
-#define GETTER_(TYPE, INTERNAL_NAME, EXTERNAL_NAME) \
-   TYPE EXTERNAL_NAME() { \
-      return convert(m.INTERNAL_NAME); \
-   }
-#define GETTER(TYPE, NAME) GETTER_(TYPE, NAME, NAME)
-
-class LightTransactionSummary : public QObject
+class LedgerEntry : public QObject
 {
    Q_OBJECT
-   Q_PROPERTY(QDateTime when READ when WRITE setwhen NOTIFY whenChanged)
-   Q_PROPERTY(QString from READ from WRITE setfrom NOTIFY fromChanged)
-   Q_PROPERTY(QString to READ to WRITE setto NOTIFY toChanged)
-   Q_PROPERTY(qreal amount READ amount WRITE setamount NOTIFY amountChanged)
-   Q_PROPERTY(QString symbol READ symbol WRITE setsymbol NOTIFY symbolChanged)
-   Q_PROPERTY(qreal fee READ fee WRITE setfee NOTIFY feeChanged)
-   Q_PROPERTY(QString feeSymbol READ feeSymbol WRITE setfeeSymbol NOTIFY feeSymbolChanged)
-   Q_PROPERTY(QString memo READ memo WRITE setmemo NOTIFY memoChanged)
-   Q_PROPERTY(QString status READ status WRITE setstatus NOTIFY statusChanged)
+   Q_PROPERTY(QString sender MEMBER m_sender NOTIFY stub)
+   Q_PROPERTY(QString receiver MEMBER m_receiver NOTIFY stub)
+   Q_PROPERTY(qreal amount MEMBER m_amount NOTIFY stub)
+   Q_PROPERTY(QString symbol MEMBER m_symbol NOTIFY stub)
+   Q_PROPERTY(QString memo MEMBER m_memo NOTIFY stub)
+
+   QString m_sender;
+   QString m_receiver;
+   qreal m_amount;
+   QString m_symbol;
+   QString m_memo;
 
 public:
-   LightTransactionSummary(bts::light_wallet::light_transaction_summary&& summary)
-      : m(summary){}
-
-   GETTER(QDateTime, when)
-   GETTER(QString, from)
-   GETTER(QString, to)
-   qreal amount() { return m.amount; }
-   GETTER(QString, symbol)
-   qreal fee() { return m.fee; }
-   GETTER_(QString, fee_symbol, feeSymbol)
-   GETTER(QString, memo)
-   GETTER(QString, status)
-
-public Q_SLOTS:
-   SETTER(QDateTime, when)
-   SETTER(QString, from)
-   SETTER(QString, to)
-   void setamount(qreal newAmount)
-   {
-      if( newAmount == m.amount ) return;
-      m.amount = newAmount;
-      Q_EMIT amountChanged(m.amount);
-   }
-   SETTER(QString, symbol)
-   void setfee(qreal newFee)
-   {
-      if( newFee == m.fee ) return;
-      m.fee = newFee;
-      Q_EMIT feeChanged(m.fee);
-   }
-   SETTER_(QString, fee_symbol, feeSymbol)
-   SETTER(QString, memo)
-   SETTER(QString, status)
+   LedgerEntry(QObject* parent = nullptr): QObject(parent){}
+   ~LedgerEntry(){}
 
 Q_SIGNALS:
-   void whenChanged(QDateTime arg);
-   void fromChanged(QString arg);
-   void toChanged(QString arg);
-   void amountChanged(qreal arg);
-   void symbolChanged(QString arg);
-   void feeChanged(qreal arg);
-   void feeSymbolChanged(QString arg);
-   void memoChanged(QString arg);
-   void statusChanged(QString arg);
+   //None of the properties change, so squelch warnings by setting this as their NOTIFY property
+   void stub();
+};
+
+class TransactionSummary : public QObject
+{
+   Q_OBJECT
+   Q_PROPERTY(QString id MEMBER m_id NOTIFY stub)
+   Q_PROPERTY(QDateTime when MEMBER m_when NOTIFY stub)
+   Q_PROPERTY(QQmlListProperty<LedgerEntry> ledger READ ledger CONSTANT)
+
+public:
+   TransactionSummary(QString id, QDateTime timestamp, QList<LedgerEntry*>&& ledger, QObject* parent = nullptr);
+   ~TransactionSummary(){}
+
+   QQmlListProperty<LedgerEntry> ledger()
+   {
+      return QQmlListProperty<LedgerEntry>(this, m_ledger);
+   }
 
 private:
+   QString m_id;
+   QDateTime m_when;
+   QList<LedgerEntry*> m_ledger;
 
-   bts::light_wallet::light_transaction_summary m;
+Q_SIGNALS:
+   //None of the properties change, so squelch warnings by setting this as their NOTIFY property
+   void stub();
 };
 
 class Balance : public QObject

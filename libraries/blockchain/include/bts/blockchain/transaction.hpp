@@ -72,14 +72,15 @@ namespace bts { namespace blockchain {
                               fc::ecc::private_key one_time_private_key,
                               memo_flags_enum memo_type = from_memo );
 
-      public_key_type deposit_to_account( fc::ecc::public_key receiver_key,
-                                asset amount,
-                                fc::ecc::private_key from_key,
-                                const string& memo_message,
-                                slate_id_type delegate_id,
-                                const fc::ecc::public_key& memo_public_key,
-                                fc::ecc::private_key one_time_private_key,
-                                memo_flags_enum memo_type = from_memo );
+      public_key_type deposit_to_account(fc::ecc::public_key receiver_key,
+                                         asset amount,
+                                         fc::ecc::private_key from_key,
+                                         const string& memo_message,
+                                         slate_id_type delegate_id,
+                                         const fc::ecc::public_key& memo_public_key,
+                                         fc::ecc::private_key one_time_private_key,
+                                         memo_flags_enum memo_type = from_memo,
+                                         bool use_stealth_address = true);
 
 
       void register_account( const string& name,

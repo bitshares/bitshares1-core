@@ -174,7 +174,8 @@ transaction_builder& transaction_builder::update_account_registration(const wall
 transaction_builder& transaction_builder::deposit_asset(const bts::wallet::wallet_account_record& payer,
                                                         const bts::blockchain::account_record& recipient,
                                                         const asset& amount,
-                                                        const string& memo, vote_selection_method vote_method,
+                                                        const string& memo,
+                                                        vote_selection_method vote_method,
                                                         fc::optional<public_key_type> memo_sender)
 { try {
    if( recipient.is_retracted() )
@@ -191,21 +192,11 @@ transaction_builder& transaction_builder::deposit_asset(const bts::wallet::walle
        memo_sender = payer.active_key();
 
    optional<public_key_type> titan_one_time_key;
-   if( recipient.is_public_account() )
-   {
-      trx.deposit(recipient.active_key(), amount, _wimpl->select_slate(trx, amount.asset_id, vote_method));
-   } else {
-      auto one_time_key = _wimpl->get_new_private_key(payer.name);
-      titan_one_time_key = one_time_key.get_public_key();
-      trx.deposit_to_account(recipient.active_key(),
-                             amount,
-                             _wimpl->self->get_private_key(*memo_sender),
-                             memo,
-                             _wimpl->select_slate(trx, amount.asset_id, vote_method),
-                             *memo_sender,
-                             one_time_key,
-                             from_memo);
-   }
+   auto one_time_key = _wimpl->get_new_private_key(payer.name);
+   titan_one_time_key = one_time_key.get_public_key();
+   trx.deposit_to_account(recipient.active_key(), amount, _wimpl->self->get_private_key(*memo_sender), memo,
+                          _wimpl->select_slate(trx, amount.asset_id, vote_method),
+                          *memo_sender, one_time_key, from_memo, !recipient.is_public_account());
 
    deduct_balance(payer.owner_key, amount);
 
@@ -918,8 +909,8 @@ transaction_builder& transaction_builder::asset_authorize_key( const string& sym
    return *this;
 } FC_CAPTURE_AND_RETHROW( (symbol)(owner)(meta) ) }
 
-//Time to get desperate
 //Most common case where the fee gets paid
+//Called when pay_fee doesn't find a positive balance in the trx to pay the fee with
 bool transaction_builder::withdraw_fee()
 {
    const auto balances = _wimpl->self->get_spendable_account_balances();
@@ -941,8 +932,10 @@ bool transaction_builder::withdraw_fee()
           const asset balance( balance_item.second, balance_item.first );
           const asset fee = _wimpl->self->get_transaction_fee( balance.asset_id );
           if( fee.asset_id != balance.asset_id || fee > balance )
-              continue;
+             //Forget this cheapskate
+             continue;
 
+          //Got some money, do ya? Not anymore!
           deduct_balance(bag_holder, fee);
           transaction_record.fee = fee;
           return true;

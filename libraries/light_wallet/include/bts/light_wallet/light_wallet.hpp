@@ -6,6 +6,7 @@
 #include <bts/blockchain/asset_record.hpp>
 #include <bts/rpc/rpc_client.hpp>
 #include <bts/wallet/config.hpp>
+#include <bts/wallet/wallet_records.hpp>
 
 #define BTS_LIGHT_WALLET_PORT 8899
 #define BTS_LIGHT_WALLET_DEFAULT_FEE  50000 // 0.5 XTS
@@ -26,19 +27,6 @@ namespace bts { namespace light_wallet {
        map<balance_id_type,memo_status>             memos;
 
        std::map<pair<account_id_type,asset_id_type>,std::set<transaction_id_type>> transaction_index;
-   };
-
-   struct light_transaction_summary
-   {
-       time_point_sec when;
-       string         from;
-       string         to;
-       double         amount;
-       string         symbol;
-       double         fee;
-       string         fee_symbol;
-       string         memo;
-       string         status; // pending, confirmed, error
    };
 
    class light_wallet 
@@ -81,7 +69,7 @@ namespace bts { namespace light_wallet {
          asset  get_fee( const string& symbol );
 
          map<string,double> balance()const;
-         vector<fc::variant_object> transactions( const string& symbol );
+         vector<wallet::transaction_ledger_entry> transactions( const string& symbol );
 
          optional<asset_record> get_asset_record( const string& symbol );
          optional<asset_record> get_asset_record( const asset_id_type& id );
@@ -90,6 +78,9 @@ namespace bts { namespace light_wallet {
          fc::path                         _wallet_file;
          optional<fc::ecc::private_key>   _private_key;
          optional<light_wallet_data>      _data;
+
+   private:
+         bts::wallet::transaction_ledger_entry summarize(const fc::variant_object& transaction_bundle);
    };
 
 } }
@@ -104,5 +95,3 @@ FC_REFLECT( bts::light_wallet::light_wallet_data,
             (price_cache)
             (memos)
             (transaction_index) );
-
-FC_REFLECT( bts::light_wallet::light_transaction_summary, (when)(from)(to)(amount)(symbol)(fee)(fee_symbol)(memo)(status) );

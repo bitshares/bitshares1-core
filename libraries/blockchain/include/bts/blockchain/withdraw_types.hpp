@@ -44,8 +44,10 @@ namespace bts { namespace blockchain {
          return fc::raw::unpack<WithdrawType>(data);
       }
 
-      balance_id_type get_address()const;
-      string type_label()const;
+      balance_id_type   get_address()const;
+      set<address>      owners()const;
+      optional<address> owner()const;
+      string            type_label()const;
 
       asset_id_type                                     asset_id;
       slate_id_type                                     slate_id = 0;
@@ -107,11 +109,12 @@ namespace bts { namespace blockchain {
 
       omemo_status     decrypt_memo_data( const fc::ecc::private_key& receiver_key, bool ignore_owner = false )const;
       public_key_type  encrypt_memo_data( const fc::ecc::private_key& one_time_private_key,
-                                      const fc::ecc::public_key&  to_public_key,
-                                      const fc::ecc::private_key& from_private_key,
-                                      const std::string& memo_message,
-                                      const fc::ecc::public_key&  memo_pub_key,
-                                      memo_flags_enum memo_type = from_memo);
+                                          const fc::ecc::public_key&  to_public_key,
+                                          const fc::ecc::private_key& from_private_key,
+                                          const std::string& memo_message,
+                                          const fc::ecc::public_key&  memo_pub_key,
+                                          memo_flags_enum memo_type = from_memo,
+                                          bool use_stealth_address = true);
 
       memo_data    decrypt_memo_data( const fc::sha512& secret )const;
       void         encrypt_memo_data( const fc::sha512& secret, const memo_data& );

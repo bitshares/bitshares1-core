@@ -23,6 +23,7 @@ class Account : public QObject
    bool m_isRegistered;
    QDateTime m_registrationDate;
    QObject* balanceMaster = new QObject(this);
+   QObject* ledgerMaster = new QObject(this);
 
 public:
    Account(bts::light_wallet::light_wallet* wallet,
@@ -45,6 +46,8 @@ public:
       return m_registrationDate;
    }
    QQmlListProperty<Balance> balances();
+
+   Q_INVOKABLE QList<QObject*> transactionHistory(QString asset_symbol);
 
 public Q_SLOTS:
    void setName(QString arg)

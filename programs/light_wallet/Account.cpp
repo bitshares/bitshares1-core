@@ -1,7 +1,11 @@
 #include <bts/blockchain/types.hpp>
 
+#include <QStringList>
+
 #include "Account.hpp"
 #include "QtConversions.hpp"
+
+using std::string;
 
 Account::Account(bts::light_wallet::light_wallet* wallet,
                  const bts::blockchain::account_record& account,
@@ -49,4 +53,68 @@ QQmlListProperty<Balance> Account::balances()
    };
 
    return QQmlListProperty<Balance>(balanceMaster, this, count, at);
+}
+
+QList<QObject*> Account::transactionHistory(QString asset_symbol)
+{
+   QList<QObject*> history;
+
+   for( bts::wallet::transaction_ledger_entry trx : m_wallet->transactions(convert(asset_symbol)) )
+   {
+      TransactionSummary* summary = ledgerMaster->findChild<TransactionSummary*>(convert(string(trx.id)));
+      if( summary == nullptr )
+      {
+         QList<LedgerEntry*> ledger;
+
+         for( auto label : trx.delta_labels )
+         {
+            QStringList participants = convert(label.second).split('>');
+            if( participants.size() == 1 ) participants.prepend(tr("Unknown"));
+
+            for( bts::blockchain::asset amount : trx.delta_amounts[label.second] )
+            {
+               auto asset = m_wallet->get_asset_record(amount.asset_id);
+               if( !asset ) continue;
+
+               LedgerEntry* entry = new LedgerEntry(summary);
+
+               entry->setProperty("sender", participants.first());
+               entry->setProperty("receiver", participants.last());
+               entry->setProperty("amount", double(amount.amount) / asset->precision);
+               entry->setProperty("symbol", convert(asset->symbol));
+               if( trx.operation_notes.count(label.first) )
+                  entry->setProperty("memo", convert(trx.operation_notes[label.first]));
+
+               ledger.append(entry);
+            }
+         }
+
+         if( trx.delta_amounts.count("Fee") )
+         {
+            for( bts::blockchain::asset fee : trx.delta_amounts["Fee"] )
+            {
+               auto asset = m_wallet->get_asset_record(fee.asset_id);
+               if( !asset ) continue;
+
+               LedgerEntry* entry = new LedgerEntry(summary);
+               entry->setProperty("receiver", tr("Network"));
+               entry->setProperty("amount", double(fee.amount) / asset->precision);
+               entry->setProperty("symbol", convert(asset->symbol));
+               entry->setProperty("memo", tr("Transaction Fee"));
+
+               ledger.append(entry);
+            }
+         }
+
+         summary = new TransactionSummary(convert(string(trx.id)), convert(trx.timestamp), std::move(ledger), ledgerMaster);
+         summary->setObjectName(convert(string(trx.id)));
+      }
+
+      history.append(summary);
+   }
+
+   std::sort(history.begin(), history.end(), [](QObject* first, QObject* second) {
+      return first->property("timestamp").toDateTime() < second->property("timestamp").toDateTime();
+   });
+   return history;
 }

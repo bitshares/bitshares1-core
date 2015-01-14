@@ -290,7 +290,10 @@ public:
    bool                                                    _sync_mode = false;
 
    rpc_server_config                                       _tmp_rpc_config;
+
    bts::net::node_ptr                                      _p2p_node = nullptr;
+   bool                                                    _simulated_network = false;
+
    bts_gntp_notifier_ptr                                   _notifier;
    fc::future<void>                                        _blocks_too_old_monitor_done;
 

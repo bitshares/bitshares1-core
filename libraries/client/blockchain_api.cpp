@@ -46,6 +46,7 @@ vector<account_record> client_impl::blockchain_list_delegates( uint32_t first, u
 
 vector<string> client_impl::blockchain_list_missing_block_delegates( uint32_t block_num )
 {
+   FC_ASSERT( _chain_db->get_statistics_enabled() );
    if (block_num == 0 || block_num == 1)
       return vector<string>();
    vector<string> delegates;
@@ -377,6 +378,7 @@ vector<account_record> detail::client_impl::blockchain_list_accounts( const stri
 
 vector<account_record> detail::client_impl::blockchain_list_recently_updated_accounts()const
 {
+   FC_ASSERT( _chain_db->get_statistics_enabled() );
    vector<operation> account_updates = _chain_db->get_recent_operations(update_account_op_type);
    vector<account_record> accounts;
    accounts.reserve(account_updates.size());
@@ -393,6 +395,7 @@ vector<account_record> detail::client_impl::blockchain_list_recently_updated_acc
 
 vector<account_record> detail::client_impl::blockchain_list_recently_registered_accounts()const
 {
+   FC_ASSERT( _chain_db->get_statistics_enabled() );
    vector<operation> account_registrations = _chain_db->get_recent_operations(register_account_op_type);
    vector<account_record> accounts;
    accounts.reserve(account_registrations.size());

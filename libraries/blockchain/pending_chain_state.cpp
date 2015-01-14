@@ -1,6 +1,5 @@
 #include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/pending_chain_state.hpp>
-#include <bts/blockchain/balance_operations.hpp>
 #include <fc/io/raw_variant.hpp>
 
 namespace bts { namespace blockchain {
@@ -91,10 +90,6 @@ namespace bts { namespace blockchain {
       for( const auto& item : market_history )  prev_state->store_market_history_record( item.first, item.second );
       for( const auto& item : market_statuses ) prev_state->store_market_status( item.second );
       for( const auto& item : asset_proposals ) prev_state->store_asset_proposal( item.second );
-      for( const auto& items : recent_operations )
-      {
-         for( const auto& item : items.second )    prev_state->store_recent_operation( item );
-      }
       for( const auto& item : burns ) prev_state->store_burn_record( burn_record(item.first,item.second) );
       for( const auto& item : objects ) prev_state->store_object_record( item.second );
 
@@ -118,24 +113,6 @@ namespace bts { namespace blockchain {
    void pending_chain_state::store_transaction( const transaction_id_type& id, const transaction_record& rec )
    {
        store( rec );
-
-       //if( get_statistics_enabled() )
-       //{
-           auto index_balance = [this, id](const balance_id_type& balance_id) {
-              auto balance = get_balance_record(balance_id);
-              if( balance )
-                 for( auto addr : balance->owners() )
-                    index_transaction(addr, id);
-           };
-           for( const operation& op : rec.trx.operations )
-           {
-              if( op.type == deposit_op_type )
-                 index_balance(op.as<deposit_operation>().balance_id());
-              else if( op.type == withdraw_op_type )
-                 index_balance(op.as<withdraw_operation>().balance_id);
-              // TODO: index transaction for relevant addresses in all different operation types.
-           }
-       //}
    }
 
    void pending_chain_state::get_undo_state( const chain_interface_ptr& undo_state_arg )const
@@ -231,8 +208,6 @@ namespace bts { namespace blockchain {
 
       const auto dirty_markets = prev_state->get_dirty_markets();
       undo_state->set_dirty_markets( dirty_markets );
-
-      /* NOTE: Recent operations are currently not rewound on undo */
    }
 
    /** load the state from a variant */
@@ -306,22 +281,6 @@ namespace bts { namespace blockchain {
    void pending_chain_state::store_balance_record( const balance_record& r )
    {
        store( r );
-   }
-
-   vector<operation> pending_chain_state::get_recent_operations(operation_type_enum t)
-   {
-      const auto& recent_op_queue = recent_operations[t];
-      vector<operation> recent_ops(recent_op_queue.size());
-      std::copy(recent_op_queue.begin(), recent_op_queue.end(), recent_ops.begin());
-      return recent_ops;
-   }
-
-   void pending_chain_state::store_recent_operation(const operation& o)
-   {
-      auto& recent_op_queue = recent_operations[o.type];
-      recent_op_queue.push_back(o);
-      if( recent_op_queue.size() > MAX_RECENT_OPERATIONS )
-        recent_op_queue.pop_front();
    }
 
    oobject_record pending_chain_state::get_object_record(const object_id_type id)const
@@ -664,13 +623,6 @@ namespace bts { namespace blockchain {
       auto itr = asset_proposals.find( std::make_pair( asset_id, proposal_id ) );
       if( itr != asset_proposals.end() ) return itr->second;
       return prev_state->fetch_asset_proposal( asset_id, proposal_id );
-   }
-
-   void pending_chain_state::index_transaction( const address& addr, const transaction_id_type& trx_id )
-   {
-      chain_interface_ptr prev_state = _prev_state.lock();
-      FC_ASSERT( prev_state );
-      prev_state->index_transaction( addr, trx_id );
    }
 
    void pending_chain_state::init_account_db_interface()

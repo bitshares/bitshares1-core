@@ -76,6 +76,7 @@ namespace bts { namespace db {
         void close()
         {
           _db.reset();
+          _cache.reset();
         }
 
         fc::optional<Value> fetch_optional( const Key& k )
