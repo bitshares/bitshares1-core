@@ -11,12 +11,21 @@ Item {
    property string assetSymbol
 
    ScrollView {
-      id: historyList
+      id: historyScroller
       anchors.fill: parent
       flickableItem.interactive: true
+      // @disable-check M16
+      verticalScrollBarPolicy: Qt.platform.os in ["android", "ios"]? Qt.ScrollBarAsNeeded : Qt.ScrollBarAlwaysOff
 
       ListView {
+         id: historyList
          model: wallet.account.transactionHistory(assetSymbol)
+
+         Connections {
+            target: wallet
+            onSynced: historyList.model = wallet.account.transactionHistory(assetSymbol)
+         }
+
          delegate: Rectangle {
             width: parent.width - visuals.margins * 2
             height: transactionSummary.height
@@ -51,26 +60,28 @@ Item {
                   delegate: RowLayout {
                      width: parent.width
                      property real senderWidth: senderLabel.width
+                     property bool incoming: receiver === accountName
 
                      Item { Layout.preferredWidth: visuals.margins }
                      Label {
                         id: senderLabel
-                        text: sender
+                        text: incoming? sender : receiver
                         Layout.preferredWidth: (text === "" && index)?
                                                   ledgerRepeater.itemAt(index - 1).senderWidth : implicitWidth
                         font.pixelSize: visuals.textBaseSize * .75
                         elide: Text.ElideRight
-                        Layout.maximumWidth: historyList.width / 4
+                        Layout.maximumWidth: historyScroller.width / 4
                      }
                      Label {
-                        text: "→ " + amount + " " + symbol + " →"
+                        text: incoming? "→" : "←"
                         font.pointSize: visuals.textBaseSize * .75
                         Layout.minimumWidth: implicitWidth
                      }
                      Label {
-                        text: receiver
+                        text: amount + " " + symbol
+                        color: incoming? "green" : "red"
                         font.pixelSize: visuals.textBaseSize * .75
-                        Layout.maximumWidth: historyList.width / 3
+                        Layout.maximumWidth: historyScroller.width / 3
                      }
                      Label {
                         text: memo
@@ -83,6 +94,7 @@ Item {
                }
                Item { Layout.preferredHeight: visuals.margins }
             }
+            Ink { anchors.fill: parent }
          }
       }
    }

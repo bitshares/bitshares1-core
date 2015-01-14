@@ -51,7 +51,7 @@ ApplicationWindow {
    QtObject {
       id: visuals
 
-      property color backgroundColor: "white"
+      property color backgroundColor: Qt.lighter(buttonColor)
       property color textColor: "#535353"
       property color lightTextColor: "#757575"
       property color buttonColor: "#28A9F6"

@@ -33,7 +33,7 @@ Item {
             delegate: Rectangle {
                width: parent.width
                height: assetRow.height + visuals.spacing/2
-               color: index % 2? "transparent" : "lightgrey"
+               color: index % 2? "transparent" : "#11000000"
 
                Rectangle { width: parent.width; height: 1; color: "darkgrey"; visible: index }
                RowLayout {
