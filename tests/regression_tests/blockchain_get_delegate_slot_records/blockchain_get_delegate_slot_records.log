@@ -20,17 +20,18 @@ default (unlocked) >>> debug_wait_for_block_by_number 4
 OK
 default (unlocked) >>> help blockchain_get_delegate_slot_records
 Usage:
-blockchain_get_delegate_slot_records <delegate_name> [start_block_num] [count]                        Query the block production slot records for a particular delegate
-Query the block production slot records for a particular delegate
+blockchain_get_delegate_slot_records <delegate_name> [count]                                          Query the most recent block production slot records for a particular delegate
+Query the most recent block production slot records for a particular delegate
 
 Parameters:
   delegate_name (string, required): Delegate whose block production slot records to query
-  start_block_num (int64_t, optional, defaults to "-1000"): Only return slot records after the specified block's timestamp; negative to start backwards from the current head block
-  count (uint32_t, optional, defaults to "10"): Return at most count slot records
+  count (uint32_t, optional, defaults to "10"): The number of most recent slot records to return
 
 Returns:
   slot_records_list
-default (unlocked) >>> blockchain_get_delegate_slot_records delegate42 1
+
+aliases: get_slot
+default (unlocked) >>> blockchain_get_delegate_slot_records delegate42
 [{
     "start_time": "2014-06-20T14:40:30",
     "block_producer_id": 43,
