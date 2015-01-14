@@ -58,22 +58,23 @@ Item {
                         text: sender
                         Layout.preferredWidth: (text === "" && index)?
                                                   ledgerRepeater.itemAt(index - 1).senderWidth : implicitWidth
-                        font.pixelSize: visuals.textBaseSize
+                        font.pixelSize: visuals.textBaseSize * .75
                         elide: Text.ElideRight
-                        Layout.maximumWidth: historyList.width / 3
+                        Layout.maximumWidth: historyList.width / 4
                      }
                      Label {
-                        text: "→"
-                        font.pointSize: visuals.textBaseSize
+                        text: "→ " + amount + " " + symbol + " →"
+                        font.pointSize: visuals.textBaseSize * .75
+                        Layout.minimumWidth: implicitWidth
                      }
                      Label {
                         text: receiver
-                        font.pixelSize: visuals.textBaseSize
+                        font.pixelSize: visuals.textBaseSize * .75
                         Layout.maximumWidth: historyList.width / 3
                      }
                      Label {
                         text: memo
-                        font.pixelSize: visuals.textBaseSize
+                        font.pixelSize: visuals.textBaseSize * .75
                         Layout.fillWidth: true
                         horizontalAlignment: Text.AlignRight
                      }
