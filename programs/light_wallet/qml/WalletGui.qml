@@ -3,6 +3,8 @@ import QtQuick.Controls 1.3
 import QtQuick.Layouts 1.1
 import QtQuick.Window 2.2
 
+import Material 0.1
+
 import "utils.js" as Utils
 
 Item {
@@ -36,7 +38,7 @@ Item {
             visible: wallet.unlocked
             onClicked: {
                wallet.lockWallet()
-               uiStack.pop(welcomeUi)
+               uiStack.pop(null)
             }
          }
          Label {
@@ -94,6 +96,12 @@ Item {
                wallet.lockWallet()
                uiStack.pop()
             }
+            onOpenHistory: uiStack.push({item: historyUi, properties: {accountName: account, assetSymbol: symbol}})
+         }
+      }
+      Component {
+         id: historyUi
+         HistoryLayout {
          }
       }
    }

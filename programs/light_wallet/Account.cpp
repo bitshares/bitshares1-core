@@ -106,7 +106,9 @@ QList<QObject*> Account::transactionHistory(QString asset_symbol)
             }
          }
 
-         summary = new TransactionSummary(convert(string(trx.id)), convert(trx.timestamp), std::move(ledger), ledgerMaster);
+         summary = new TransactionSummary(convert(string(trx.id)),
+                                          convert(fc::get_approximate_relative_time_string(trx.timestamp)),
+                                          std::move(ledger), ledgerMaster);
          summary->setObjectName(convert(string(trx.id)));
       }
 
