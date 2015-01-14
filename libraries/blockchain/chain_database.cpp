@@ -755,8 +755,7 @@ namespace bts { namespace blockchain {
           if( _head_block_header.block_num < last_checkpoint_block_num )
                 return;  // don't bother saving it...
 
-          pending_chain_state_ptr undo_state = std::make_shared<pending_chain_state>( nullptr );
-          undo_state->set_chain_id( _chain_id );
+          pending_chain_state_ptr undo_state = std::make_shared<pending_chain_state>( pending_state );
           pending_state->get_undo_state( undo_state );
 
           const int32_t old_block_num = self->get_head_block_num() - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY;
@@ -1158,7 +1157,11 @@ namespace bts { namespace blockchain {
          undo_state_ptr->apply_changes();
 
          _head_block_id = previous_block_id;
-         _head_block_header = self->get_block_header( _head_block_id );
+
+         if( _head_block_id == block_id_type() )
+             _head_block_header = signed_block_header();
+         else
+             _head_block_header = self->get_block_header( _head_block_id );
 
          //Schedule the observer notifications for later; the chain is in a
          //non-premptable state right now, and observers may yield.
@@ -1721,7 +1724,7 @@ namespace bts { namespace blockchain {
                   }
                   catch (const fc::exception& e) //swallow any invalidation exceptions except for time_in_future invalidations
                   {
-                    wlog("fork permanently rejected as it has permanently invalid block");
+                    wlog("fork permanently rejected as it has permanently invalid block: ${x}", ("x",e.to_detail_string()));
                   }
               }
             --highest_unchecked_block_number;
