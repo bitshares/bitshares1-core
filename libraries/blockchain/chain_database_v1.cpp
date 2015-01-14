@@ -12,7 +12,7 @@
 namespace bts { namespace blockchain { namespace detail {
 
 void chain_database_impl::pay_delegate_v1( const pending_chain_state_ptr& pending_state, const public_key_type& block_signee,
-                                           const block_id_type& block_id, block_record& record )
+                                           const block_id_type& block_id, oblock_record& record )
 { try {
       oaccount_record delegate_record = self->get_account_record( address( block_signee ) );
       FC_ASSERT( delegate_record.valid() );
@@ -47,11 +47,11 @@ void chain_database_impl::pay_delegate_v1( const pending_chain_state_ptr& pendin
       delegate_record->delegate_info->total_paid += accepted_paycheck;
       pending_state->store_account_record( *delegate_record );
 
-      if( _statistics_enabled )
+      if( record.valid() )
       {
-          record.signee_shares_issued = 0;
-          record.signee_fees_collected = accepted_paycheck;
-          record.signee_fees_destroyed = burned_paycheck;
+          record->signee_shares_issued = 0;
+          record->signee_fees_collected = accepted_paycheck;
+          record->signee_fees_destroyed = burned_paycheck;
       }
 } FC_CAPTURE_AND_RETHROW( (block_signee)(block_id)(record) ) }
 

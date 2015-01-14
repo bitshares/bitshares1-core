@@ -710,7 +710,7 @@ namespace bts { namespace blockchain {
       }
 
       void chain_database_impl::pay_delegate( const pending_chain_state_ptr& pending_state, const public_key_type& block_signee,
-                                              const block_id_type& block_id, block_record& record )
+                                              const block_id_type& block_id, oblock_record& record )
       { try {
           if( pending_state->get_head_block_num() < BTS_V0_4_28_FORK_BLOCK_NUM )
               return pay_delegate_v2( pending_state, block_signee, block_id, record );
@@ -748,11 +748,11 @@ namespace bts { namespace blockchain {
           pending_state->store_account_record( *delegate_record );
           pending_state->store_asset_record( *base_asset_record );
 
-          if( _statistics_enabled )
+          if( record.valid() )
           {
-              record.signee_shares_issued = accepted_new_shares;
-              record.signee_fees_collected = accepted_collected_fees;
-              record.signee_fees_destroyed = destroyed_collected_fees;
+              record->signee_shares_issued = accepted_new_shares;
+              record->signee_fees_collected = accepted_collected_fees;
+              record->signee_fees_destroyed = destroyed_collected_fees;
           }
       } FC_CAPTURE_AND_RETHROW( (block_signee)(block_id)(record) ) }
 
@@ -897,7 +897,7 @@ namespace bts { namespace blockchain {
 
       void chain_database_impl::update_random_seed( const secret_hash_type& new_secret,
                                                     const pending_chain_state_ptr& pending_state,
-                                                    block_record& record )
+                                                    oblock_record& record )
       { try {
          const auto current_seed = pending_state->get_current_random_seed();
          fc::sha512::encoder enc;
@@ -905,9 +905,7 @@ namespace bts { namespace blockchain {
          fc::raw::pack( enc, current_seed );
          const auto& new_seed = fc::ripemd160::hash( enc.result() );
          pending_state->set_property( last_random_seed_id, variant( new_seed ) );
-
-         if( _statistics_enabled )
-             record.random_seed = new_seed;
+         if( record.valid() ) record->random_seed = new_seed;
       } FC_CAPTURE_AND_RETHROW( (new_secret) ) }
 
       void chain_database_impl::update_active_delegate_list( const full_block& block_data,
@@ -990,13 +988,9 @@ namespace bts { namespace blockchain {
             update_delegate_production_info( block_data, pending_state, block_signee );
 
             oblock_record block_record;
-            if( _statistics_enabled )
-            {
-                block_record = self->get_block_record( block_id );
-                FC_ASSERT( block_record.valid() );
-            }
+            if( _statistics_enabled ) block_record = self->get_block_record( block_id );
 
-            pay_delegate( pending_state, block_signee, block_id, *block_record );
+            pay_delegate( pending_state, block_signee, block_id, block_record );
 
             if( block_data.block_num < BTS_V0_4_9_FORK_BLOCK_NUM )
                 apply_transactions( block_data, pending_state );
@@ -1008,13 +1002,11 @@ namespace bts { namespace blockchain {
 
             update_active_delegate_list( block_data, pending_state );
 
-            update_random_seed( block_data.previous_secret, pending_state, *block_record );
+            update_random_seed( block_data.previous_secret, pending_state, block_record );
 
             save_undo_state( block_id, pending_state );
 
-            // TODO: verify that apply changes can be called any number of
-            // times without changing the database other than the first
-            // attempt.
+            // TODO: Verify idempotency
             pending_state->apply_changes();
 
             mark_included( block_id, true );
@@ -1088,7 +1080,7 @@ namespace bts { namespace blockchain {
                 }
             }
 
-            if( _statistics_enabled )
+            if( block_record.valid() )
             {
                 block_record->processing_time = time_point::now() - start_time;
                 _block_id_to_block_record_db.store( block_id, *block_record );
