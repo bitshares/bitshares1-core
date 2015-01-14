@@ -1418,15 +1418,11 @@ bts::net::node_ptr client::get_node()const { return my->_p2p_node; }
 
 fc::variant_object version_info()
 {
-   string client_version(bts::utilities::git_revision_description);
-   // starting around version 0.4.28, our release tags change from
-   // looking like "v0.4.27" to "bts/0.4.28".  This converts the tag
-   // back into something that looks like the old format for displaying
-   // to the user
-   if (boost::starts_with(client_version, "bts/") ||
-       boost::starts_with(client_version, "dvs/") ||
-	   boost::starts_with(client_version, "xts/"))
-     client_version = std::string("v") + client_version.substr(4);
+   string client_version( bts::utilities::git_revision_description );
+   const size_t pos = client_version.find( '/' );
+   if( pos != string::npos && client_version.size() > pos )
+       client_version = client_version.substr( pos + 1 );
+
 #ifdef BTS_TEST_NETWORK
    client_version += "-testnet-" + std::to_string( BTS_TEST_NETWORK_VERSION );
 #endif

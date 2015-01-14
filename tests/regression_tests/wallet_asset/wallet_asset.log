@@ -1,7 +1,7 @@
 default (unlocked) >>> wallet_account_create test
-"XTS4vVntPW61PsnrBRW2BWEZkDYUT24b8WDhatR8EiPajChvj69Ng"
+"XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
 default (unlocked) >>> wallet_account_create test2
-"XTS7kcgrsa7FkVvaoRsp5QUs4H5YfyFZdrkueBMc8fC4osc694jpy"
+"XTS56gEKGQjqxWuEF7umuaaFbPTYQ1kP9LWRQHsyoojVmWML1yoNM"
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================

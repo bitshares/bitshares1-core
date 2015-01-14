@@ -1,5 +1,5 @@
 default (unlocked) >>> wallet_account_create test
-"XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
+"XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
 default (unlocked) >>> wallet_transfer 100000 XTS delegate0 test
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
@@ -42,15 +42,15 @@ default (unlocked) >>> blockchain_get_account test
 Name: test
 Registered: <d-ign></d-ign>
 Last Updated: <d-ign></d-ign>
-Owner Key: XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt
+Owner Key: XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra
 Active Key History:
-- XTS5AQGjeRu5sEBvvERaV8i1tstV1fx2ywGUmvWgsBPEjFoR27oQg, last used <d-ign></d-ign>
+- XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX, last used <d-ign></d-ign>
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
 ==========================================================================================================================================
 102   test                            0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 
-Block Signing Key: XTS5AQGjeRu5sEBvvERaV8i1tstV1fx2ywGUmvWgsBPEjFoR27oQg
+Block Signing Key: XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX
 default (unlocked) >>> help blockchain_get_account_public_balance
 Usage:
 blockchain_get_account_public_balance <account_name>                                                  Get the account record for a given name

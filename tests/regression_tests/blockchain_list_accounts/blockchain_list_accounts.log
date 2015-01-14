@@ -32,7 +32,6 @@ delegate22 *                       XTS5R2tbsxSvgfD3gUzmUVFVWoLRXGbuC1uPHdxEDagR6
 delegate23 *                       XTS8FA6Cvd19PeG8cuvLsF8qPGcfccUypXCv2arXYqpUc43CGFTs5           <d-ign>2014-06-20T14:40:27</d-ign>0              0              
 delegate24 *                       XTS8W4L9GNvTR31kaQD1iaWoH75mWpwisPP4CazhxoHp977uvWrvS           <d-ign>2014-06-20T14:40:27</d-ign>0              0              
 delegate25 *                       XTS5VWxNgabK1nv47GoYJjv8JSUTP2s6nurBT6rwdcHJY8QE3ez5s           <d-ign>2014-06-20T14:40:27</d-ign>0              0              
-delegate26 *                       XTS5W2YJZsZtp4CitW6L1AtWmX7ogu7SdJSMmJJSnHdoAEB8kN1LP           <d-ign>2014-06-20T14:40:27</d-ign>0              0              
 (wallet closed) >>> blockchain_list_accounts delegate0 5
 NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVAL       
 -------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -41,10 +40,9 @@ delegate1 *                        XTS7gEAmuw9tvjLnZcEpGtPfseYZ53QDHnaRuqPkSCYfp
 delegate10 *                       XTS6BshpM7TMyZLKt4nP2H9PLegT2J4hQbWwSdCAkBT4qsfr5u9we           <d-ign>2014-06-20T14:40:27</d-ign>0              0              
 delegate100 *                      XTS5eovbuPjx28541PhMJ5LFtcdRP8eNtNt9MjSwHoH6oggf88REy           <d-ign>2014-06-20T14:40:27</d-ign>0              0              
 delegate11 *                       XTS5URw2q7TfyTkLrvkU51AvcWNAxtyJZwp7f4Lk4jrFykhCTLmPZ           <d-ign>2014-06-20T14:40:27</d-ign>0              0              
-(wallet closed) >>> blockchain_list_accounts 1 5
+(wallet closed) >>> blockchain_list_accounts delegate1 4
 NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVAL       
 -------------------------------------------------------------------------------------------------------------------------------------------------------
-delegate0 *                        XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z           <d-ign>2014-06-20T14:40:27</d-ign>0              0              
 delegate1 *                        XTS7gEAmuw9tvjLnZcEpGtPfseYZ53QDHnaRuqPkSCYfprakYVg54           <d-ign>2014-06-20T14:40:27</d-ign>0              0              
 delegate10 *                       XTS6BshpM7TMyZLKt4nP2H9PLegT2J4hQbWwSdCAkBT4qsfr5u9we           <d-ign>2014-06-20T14:40:27</d-ign>0              0              
 delegate100 *                      XTS5eovbuPjx28541PhMJ5LFtcdRP8eNtNt9MjSwHoH6oggf88REy           <d-ign>2014-06-20T14:40:27</d-ign>0              0              
