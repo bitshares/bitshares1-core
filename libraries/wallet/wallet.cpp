@@ -4337,34 +4337,6 @@ namespace detail {
         fs.close();
    }
 
-   vector<snapshot_record> wallet::check_sharedrop()const
-   { try {
-       vector<snapshot_record> snapshot_records;
-
-       const auto scan_balance = [&]( const balance_record& record )
-       {
-           if( !record.snapshot_info.valid() )
-               return;
-
-           if( record.condition.type != withdraw_vesting_type )
-               return;
-
-           const auto owner = record.owner();
-           if( !owner.valid() )
-               return;
-
-           const owallet_key_record key_record = my->_wallet_db.lookup_key( *owner );
-           if( !key_record.valid() || !key_record->has_private_key() )
-               return;
-
-           snapshot_records.push_back( *record.snapshot_info );
-       };
-
-       my->_blockchain->scan_balances( scan_balance, false );
-
-       return snapshot_records;
-   } FC_CAPTURE_AND_RETHROW() }
-
    wallet_transaction_record wallet::asset_authorize_key( const string& paying_account_name,
                                                   const string& symbol,
                                                   const address& key,
