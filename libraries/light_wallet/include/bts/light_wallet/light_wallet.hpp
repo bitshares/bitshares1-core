@@ -74,6 +74,8 @@ namespace bts { namespace light_wallet {
          optional<asset_record> get_asset_record( const string& symbol );
          optional<asset_record> get_asset_record( const asset_id_type& id );
 
+         oaccount_record get_account_record(const string& identifier );
+
          bts::rpc::rpc_client             _rpc;
          fc::path                         _wallet_file;
          optional<fc::ecc::private_key>   _private_key;
@@ -81,6 +83,8 @@ namespace bts { namespace light_wallet {
 
    private:
          bts::wallet::transaction_ledger_entry summarize(const fc::variant_object& transaction_bundle);
+
+         map<string, account_record> _account_cache;
    };
 
 } }

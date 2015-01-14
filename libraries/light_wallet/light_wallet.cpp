@@ -182,7 +182,7 @@ void light_wallet::transfer( double amount,
    auto symbol_asset = get_asset_record( symbol );
    FC_ASSERT( symbol_asset.valid() );
 
-   auto to_account  = _rpc.blockchain_get_account( to_account_name );
+   auto to_account  = get_account_record( to_account_name );
    FC_ASSERT( to_account.valid() );
 
    asset fee = get_fee( symbol );
@@ -243,7 +243,7 @@ map<string, double> light_wallet::balance() const
 {
    FC_ASSERT(is_open());
 
-   map<string, double> balances = {{BTS_BLOCKCHAIN_SYMBOL, 0}};
+   map<string, double> balances = {{BTS_BLOCKCHAIN_SYMBOL, 0},{"USD", 0},{"GLD", 0}};
    for( auto balance : _data->balance_record_cache ) {
       asset_record record = _data->asset_record_cache.at(balance.second.asset_id());
       balances[record.symbol] += balance.second.balance / double(record.precision);
@@ -351,7 +351,26 @@ optional<asset_record> light_wallet::get_asset_record(const asset_id_type& id)
    if( result )
       _data->asset_record_cache[result->id] = *result;
    return result;
-} FC_CAPTURE_AND_RETHROW( (id) ) }
+   } FC_CAPTURE_AND_RETHROW( (id) ) }
+
+oaccount_record light_wallet::get_account_record(const string& identifier)
+{
+   auto itr = _account_cache.find(identifier);
+   if( itr != _account_cache.end() )
+      return itr->second;
+   wlog("Cache miss on account ${a}", ("a", identifier));
+
+   auto account = _rpc.blockchain_get_account(identifier);
+   if( account )
+   {
+      _account_cache[account->name] = *account;
+      _account_cache[string(account->owner_key)] = *account;
+      _account_cache[string(account->active_key())] = *account;
+      _account_cache[string(account->owner_address())] = *account;
+      _account_cache[string(account->active_address())] = *account;
+   }
+   return account;
+}
 
 bts::wallet::transaction_ledger_entry light_wallet::summarize(const fc::variant_object& transaction_bundle)
 { try {
@@ -385,7 +404,7 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const fc::variant_
                   if( status )
                   {
                      summary.operation_notes[i] = status->get_message();
-                     auto sender = _rpc.blockchain_get_account(string(status->from));
+                     auto sender = get_account_record(string(status->from));
                      if( sender )
                         summary.delta_labels[i] = sender->name + ">";
                      else
@@ -395,7 +414,7 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const fc::variant_
                summary.delta_labels[i] += _data->user_account.name;
             } else {
                summary.delta_labels[i] = string(condition.owner);
-               auto account = _rpc.blockchain_get_account(string(condition.owner));
+               auto account = get_account_record(string(condition.owner));
                if( account ) summary.delta_labels[i] = account->name;
             }
 
