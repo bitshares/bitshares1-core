@@ -4,12 +4,12 @@
 #include <bts/utilities/words.hpp>
 #include <bts/wallet/config.hpp>
 #include <bts/wallet/exceptions.hpp>
+
+#include <fc/crypto/aes.hpp>
+#include <fc/network/http/connection.hpp>
 #include <fc/network/resolve.hpp>
 #include <fc/network/url.hpp>
-#include <fc/network/http/connection.hpp>
-#include <fc/crypto/aes.hpp>
 #include <fc/reflect/variant.hpp>
-
 #include <fc/thread/non_preemptable_scope_check.hpp>
 
 namespace bts { namespace client { namespace detail {
@@ -76,6 +76,7 @@ void detail::client_impl::wallet_backup_restore( const fc::path& json_filename,
 // This should be able to get an encrypted private key or WIF key out of any reasonable JSON object.
 void read_keys( const fc::variant& vo, vector<private_key_type>& keys, const string& password )
 {
+//    FC_ASSERT(!"Error decrypting private key - did you use the wrong password?");
     ilog("@n read_keys");
     ilog("@n ${o}", ("o", vo));
     try {
@@ -87,15 +88,34 @@ void read_keys( const fc::variant& vo, vector<private_key_type>& keys, const str
     catch (...) {
         ilog("@n I couldn't parse that as a wif key: ${vo}", ("vo", vo));
     }
+    vector<char> bytes;
+    vector<char> plain_text;
+    fc::sha512 password_bytes;
+    bool skip_me = false;
     try {
         auto bytes = vo.as<vector<char>>();
-        fc::sha512 password_bytes = fc::sha512::hash( password.c_str(), password.size() );
-        const auto plain_text = fc::aes_decrypt( password_bytes, bytes );
-        keys.push_back( fc::raw::unpack<private_key_type>( plain_text ) );
+        password_bytes = fc::sha512::hash( password.c_str(), password.size() );
     }
-    catch (const fc::exception& e) {
+    catch (...)
+    {
+        ulog("error, setting skip_me=true");
         ilog("@n I couldn't parse that as a byte array: ${vo}", ("vo", vo));
-        ilog("@n ${e}", ("e", e));
+        skip_me = true;
+
+    }
+    if( NOT skip_me )
+    {
+        ulog("not skipping");
+        try {
+            plain_text = fc::aes_decrypt( password_bytes, bytes );
+            keys.push_back( fc::raw::unpack<private_key_type>( plain_text ) );
+        } catch (...)
+        {
+            //FC_CAPTURE_AND_THROW( bts::wallet::invalid_password, () );
+            //
+            // Actually, we can't tell the difference between a failed decryption due to a bad password
+            // and failed decrypt due to junk.
+        }
     }
     try {
         auto obj = vo.get_object();
@@ -104,7 +124,12 @@ void read_keys( const fc::variant& vo, vector<private_key_type>& keys, const str
         {
             read_keys( kv.value(), keys, password );
         }
-    } catch (...) {
+    } 
+    catch( const bts::wallet::invalid_password& e )
+    {
+        throw;
+    }
+    catch (...) {
         ilog("@n I couldn't parse that as an object: ${o}", ("o", vo));
     }
     try {
@@ -114,7 +139,12 @@ void read_keys( const fc::variant& vo, vector<private_key_type>& keys, const str
             read_keys( obj, keys, password );
         }
         ilog("@n it's an object ${o}", ("o", vo));
-    } catch (...) {
+    } 
+    catch( const bts::wallet::invalid_password& e )
+    {
+        throw;
+    }
+    catch (...) {
         ilog("@n I couldn't parse that as an array: ${o}", ("o", vo));
     }
     ilog("@n I couldn't parse that as anything!: ${o}", ("o", vo));
@@ -123,9 +153,10 @@ void read_keys( const fc::variant& vo, vector<private_key_type>& keys, const str
 void detail::client_impl::wallet_import_keys_from_json( const fc::path& json_filename,
                                                         const string& imported_wallet_passphrase,
                                                         const string& account )
-{
+{ try {
     FC_ASSERT( fc::exists( json_filename ) );
     FC_ASSERT( _wallet->is_open() );
+    FC_ASSERT( _wallet->is_unlocked() );
 
     vector<private_key_type> keys;
     auto object = fc::json::from_file<fc::variant>( json_filename );
@@ -137,7 +168,8 @@ void detail::client_impl::wallet_import_keys_from_json( const fc::path& json_fil
         _wallet->import_private_key( key, account, false );
         ilog("@n imported key: ${key}", ("key", key));
     }
-}
+    ulog( "No errors were encountered, but there is currently no way to check if keys were decrypted using the correct password." );
+} FC_CAPTURE_AND_RETHROW( (json_filename) ) }
 
 bool detail::client_impl::wallet_set_automatic_backups( bool enabled )
 {
@@ -251,10 +283,11 @@ wallet_transaction_record detail::client_impl::wallet_publish_version( const str
 
 wallet_transaction_record detail::client_impl::wallet_collect_genesis_balances( const string& account_name )
 {
-    uint32_t withdraw_type_mask = 0;
-    withdraw_type_mask |= 1 << withdraw_null_type;
-    withdraw_type_mask |= 1 << withdraw_signature_type;
-    auto record = _wallet->collect_withdraw_types( account_name, withdraw_type_mask, true, true );
+    const auto filter = []( const balance_record& record ) -> bool
+    {
+        return record.condition.type == withdraw_signature_type && record.snapshot_info.valid();
+    };
+    auto record = _wallet->collect_account_balances( account_name, filter, "collect genesis", true );
     _wallet->cache_transaction( record );
     network_broadcast_transaction( record.trx );
     return record;
@@ -262,10 +295,11 @@ wallet_transaction_record detail::client_impl::wallet_collect_genesis_balances( 
 
 wallet_transaction_record detail::client_impl::wallet_collect_vested_balances( const string& account_name )
 {
-    uint32_t withdraw_type_mask = 0;
-    withdraw_type_mask |= 1 << withdraw_null_type;
-    withdraw_type_mask |= 1 << withdraw_vesting_type;
-    auto record = _wallet->collect_withdraw_types( account_name, withdraw_type_mask, false, true );
+    const auto filter = []( const balance_record& record ) -> bool
+    {
+        return record.condition.type == withdraw_vesting_type;
+    };
+    auto record = _wallet->collect_account_balances( account_name, filter, "collect vested", true );
     _wallet->cache_transaction( record );
     network_broadcast_transaction( record.trx );
     return record;
@@ -815,7 +849,7 @@ wallet_transaction_record detail::client_impl::wallet_asset_update(
    for( auto item : issuer_permissions ) issuer_perms_int |= item;
    auto record = _wallet->update_asset( symbol, name, description, public_data, maximum_share_supply,
                                         precision, issuer_fee, flags_int, issuer_perms_int, issuer_account_name,
-                                        required_sigs, authority);
+                                        required_sigs, authority, true );
 
    _wallet->cache_transaction( record );
    network_broadcast_transaction( record.trx );
@@ -1240,11 +1274,12 @@ vector<bts::wallet::escrow_summary> client_impl::wallet_escrow_summary( const st
 
 account_balance_summary_type client_impl::wallet_account_balance( const string& account_name )const
 {
-  return _wallet->get_account_balances( account_name, false );
+    return _wallet->get_spendable_account_balances( account_name );
 }
 
 account_extended_balance_type client_impl::wallet_account_balance_extended( const string& account_name )const
 {
+#if 0
     const map<string, vector<balance_record>>& balance_records = _wallet->get_account_balance_records( account_name, false, -1 );
 
     map<string, map<string, map<asset_id_type, share_type>>> raw_balances;
@@ -1291,11 +1326,8 @@ account_extended_balance_type client_impl::wallet_account_balance_extended( cons
     }
 
     return extended_balances;
-}
-
-account_balance_id_summary_type client_impl::wallet_account_balance_ids( const string& account_name )const
-{
-  return _wallet->get_account_balance_ids( account_name, false );
+#endif
+    return account_extended_balance_type();
 }
 
 account_balance_summary_type client_impl::wallet_account_yield( const string& account_name )const

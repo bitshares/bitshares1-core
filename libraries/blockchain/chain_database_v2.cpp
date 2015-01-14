@@ -32,9 +32,12 @@ void chain_database_impl::pay_delegate_v2( const pending_chain_state_ptr& pendin
       base_asset_record->collected_fees = 0;
       pending_state->store_asset_record( *base_asset_record );
 
-      record.signee_shares_issued = accepted_paycheck;
-      record.signee_fees_collected = 0;
-      record.signee_fees_destroyed = destroyed_collected_fees;
+      if( _statistics_enabled )
+      {
+          record.signee_shares_issued = accepted_paycheck;
+          record.signee_fees_collected = 0;
+          record.signee_fees_destroyed = destroyed_collected_fees;
+      }
 } FC_CAPTURE_AND_RETHROW( (block_signee)(block_id)(record) ) }
 
 } } } // bts::blockchain::detail

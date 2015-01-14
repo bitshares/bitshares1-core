@@ -12,6 +12,7 @@ namespace bts { namespace blockchain {
       init_balance_db_interface();
       init_transaction_db_interface();
       init_feed_db_interface();
+      init_slot_db_interface();
    }
 
    pending_chain_state::~pending_chain_state()
@@ -75,6 +76,7 @@ namespace bts { namespace blockchain {
       apply_records( prev_state, _balance_id_to_record, _balance_id_remove );
       apply_records( prev_state, _transaction_id_to_record, _transaction_id_remove );
       apply_records( prev_state, _feed_index_to_record, _feed_index_remove );
+      apply_records( prev_state, _slot_index_to_record, _slot_index_remove );
 
       for( const auto& item : properties )      prev_state->set_property( (chain_property_enum)item.first, item.second );
       for( const auto& item : authorizations )  prev_state->authorize( item.first.first, item.first.second, item.second );
@@ -85,14 +87,9 @@ namespace bts { namespace blockchain {
       for( const auto& item : shorts )          prev_state->store_short_record( item.first, item.second );
       for( const auto& item : collateral )      prev_state->store_collateral_record( item.first, item.second );
       for( const auto& item : slates )          prev_state->store_delegate_slate( item.first, item.second );
-      for( const auto& item : slots )           prev_state->store_slot_record( item.second );
       for( const auto& item : market_history )  prev_state->store_market_history_record( item.first, item.second );
       for( const auto& item : market_statuses ) prev_state->store_market_status( item.second );
       for( const auto& item : asset_proposals ) prev_state->store_asset_proposal( item.second );
-      for( const auto& items : recent_operations )
-      {
-         for( const auto& item : items.second )    prev_state->store_recent_operation( item );
-      }
       for( const auto& item : burns ) prev_state->store_burn_record( burn_record(item.first,item.second) );
       for( const auto& item : objects ) prev_state->store_object_record( item.second );
 
@@ -129,6 +126,7 @@ namespace bts { namespace blockchain {
       populate_undo_state( undo_state, prev_state, _balance_id_to_record, _balance_id_remove );
       populate_undo_state( undo_state, prev_state, _transaction_id_to_record, _transaction_id_remove );
       populate_undo_state( undo_state, prev_state, _feed_index_to_record, _feed_index_remove );
+      populate_undo_state( undo_state, prev_state, _slot_index_to_record, _slot_index_remove );
 
       for( const auto& item : properties )
       {
@@ -190,16 +188,6 @@ namespace bts { namespace blockchain {
          if( prev_value.valid() ) undo_state->store_collateral_record( item.first, *prev_value );
          else  undo_state->store_collateral_record( item.first, collateral_record() );
       }
-      for( const auto& item : slots )
-      {
-         auto prev_value = prev_state->get_slot_record( item.first );
-         if( prev_value ) undo_state->store_slot_record( *prev_value );
-         else
-         {
-             slot_record invalid_slot_record;
-             undo_state->store_slot_record( invalid_slot_record );
-         }
-      }
       for( const auto& item : market_statuses )
       {
          auto prev_value = prev_state->get_market_status( item.first.first, item.first.second );
@@ -220,8 +208,6 @@ namespace bts { namespace blockchain {
 
       const auto dirty_markets = prev_state->get_dirty_markets();
       undo_state->set_dirty_markets( dirty_markets );
-
-      /* NOTE: Recent operations are currently not rewound on undo */
    }
 
    /** load the state from a variant */
@@ -295,22 +281,6 @@ namespace bts { namespace blockchain {
    void pending_chain_state::store_balance_record( const balance_record& r )
    {
        store( r );
-   }
-
-   vector<operation> pending_chain_state::get_recent_operations(operation_type_enum t)
-   {
-      const auto& recent_op_queue = recent_operations[t];
-      vector<operation> recent_ops(recent_op_queue.size());
-      std::copy(recent_op_queue.begin(), recent_op_queue.end(), recent_ops.begin());
-      return recent_ops;
-   }
-
-   void pending_chain_state::store_recent_operation(const operation& o)
-   {
-      auto& recent_op_queue = recent_operations[o.type];
-      recent_op_queue.push_back(o);
-      if( recent_op_queue.size() > MAX_RECENT_OPERATIONS )
-        recent_op_queue.pop_front();
    }
 
    oobject_record pending_chain_state::get_object_record(const object_id_type id)const
@@ -555,16 +525,17 @@ namespace bts { namespace blockchain {
 
    void pending_chain_state::store_slot_record( const slot_record& r )
    {
-      slots[ r.start_time ] = r;
+       store( r );
    }
 
-   oslot_record pending_chain_state::get_slot_record( const time_point_sec start_time )const
+   oslot_record pending_chain_state::get_slot_record( const slot_index index )const
    {
-      chain_interface_ptr prev_state = _prev_state.lock();
-      auto itr = slots.find( start_time );
-      if( itr != slots.end() ) return itr->second;
-      if( prev_state ) return prev_state->get_slot_record( start_time );
-      return oslot_record();
+       return lookup<slot_record>( index );
+   }
+
+   oslot_record pending_chain_state::get_slot_record( const time_point_sec timestamp )const
+   {
+       return lookup<slot_record>( timestamp );
    }
 
    void pending_chain_state::store_market_history_record(const market_history_key& key, const market_history_record& record)
@@ -652,13 +623,6 @@ namespace bts { namespace blockchain {
       auto itr = asset_proposals.find( std::make_pair( asset_id, proposal_id ) );
       if( itr != asset_proposals.end() ) return itr->second;
       return prev_state->fetch_asset_proposal( asset_id, proposal_id );
-   }
-
-   void pending_chain_state::index_transaction( const address& addr, const transaction_id_type& trx_id )
-   {
-      chain_interface_ptr prev_state = _prev_state.lock();
-      FC_ASSERT( prev_state );
-      prev_state->index_transaction( addr, trx_id );
    }
 
    void pending_chain_state::init_account_db_interface()
@@ -868,6 +832,52 @@ namespace bts { namespace blockchain {
        {
            _feed_index_to_record.erase( index );
            _feed_index_remove.insert( index );
+       };
+   }
+
+   void pending_chain_state::init_slot_db_interface()
+   {
+       slot_db_interface& interface = _slot_db_interface;
+
+       interface.lookup_by_index = [&]( const slot_index index ) -> oslot_record
+       {
+           const auto iter = _slot_index_to_record.find( index );
+           if( iter != _slot_index_to_record.end() ) return iter->second;
+           if( _slot_index_remove.count( index ) > 0 ) return oslot_record();
+           const chain_interface_ptr prev_state = _prev_state.lock();
+           if( prev_state ) return prev_state->lookup<slot_record>( index );
+           return oslot_record();
+       };
+
+       interface.lookup_by_timestamp = [&]( const time_point_sec timestamp ) -> oslot_record
+       {
+           const auto iter = _slot_timestamp_to_delegate.find( timestamp );
+           if( iter != _slot_timestamp_to_delegate.end() ) return interface.lookup_by_index( slot_index( iter->second, timestamp ) );
+           const chain_interface_ptr prev_state = _prev_state.lock();
+           if( prev_state ) return prev_state->lookup<slot_record>( timestamp );
+           return oslot_record();
+       };
+
+       interface.insert_into_index_map = [&]( const slot_index index, const slot_record& record )
+       {
+           _slot_index_remove.erase( index );
+           _slot_index_to_record[ index ] = record;
+       };
+
+       interface.insert_into_timestamp_map = [&]( const time_point_sec timestamp, const account_id_type delegate_id )
+       {
+           _slot_timestamp_to_delegate[ timestamp ] = delegate_id;
+       };
+
+       interface.erase_from_index_map = [&]( const slot_index index )
+       {
+           _slot_index_to_record.erase( index );
+           _slot_index_remove.insert( index );
+       };
+
+       interface.erase_from_timestamp_map = [&]( const time_point_sec timestamp )
+       {
+           _slot_timestamp_to_delegate.erase( timestamp );
        };
    }
 

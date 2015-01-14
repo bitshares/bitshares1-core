@@ -104,12 +104,12 @@ namespace bts { namespace client {
           string              relay_account_name;
           /** if this client provides faucet services, specify the account to pay from here */
           string              faucet_account_name;
-          bool                track_statistics = true;
 
           fc::optional<std::string> growl_notify_endpoint;
           fc::optional<std::string> growl_password;
           fc::optional<std::string> growl_bitshares_client_identifier;
 
+          bool                statistics_enabled = false;
     };
 
 
@@ -134,13 +134,13 @@ namespace bts { namespace client {
          void configure_from_command_line(int argc, char** argv);
          fc::future<void> start();
          void open(const path& data_dir,
-                   optional<fc::path> genesis_file_path = optional<fc::path>(),
-                   std::function<void(float)> reindex_status_callback = std::function<void(float)>());
+                   const optional<fc::path>& genesis_file_path = fc::optional<fc::path>(),
+                   const fc::optional<bool> statistics_enabled = fc::optional<bool>(),
+                   const std::function<void( float )> replay_status_callback = std::function<void( float )>() );
 
          void init_cli();
          void set_daemon_mode(bool daemon_mode);
          void set_client_debug_name(const string& name);
-
 
          chain_database_ptr         get_chain()const;
          wallet_ptr                 get_wallet()const;
@@ -213,6 +213,5 @@ FC_REFLECT( bts::client::config,
             (light_relay_fee)
             (relay_account_name)
             (faucet_account_name)
-            (track_statistics)
-           )
-
+            (statistics_enabled)
+            )

@@ -11,6 +11,7 @@
 #include <bts/blockchain/market_records.hpp>
 #include <bts/blockchain/object_record.hpp>
 #include <bts/blockchain/site_record.hpp>
+#include <bts/blockchain/slot_record.hpp>
 #include <bts/blockchain/transaction_record.hpp>
 #include <bts/blockchain/types.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
@@ -19,11 +20,13 @@ namespace bts { namespace blockchain {
 
    enum chain_property_enum
    {
-      last_asset_id            = 0,
-      last_account_id          = 1,
-      last_random_seed_id      = 2,
-      active_delegate_list_id  = 3,
-      chain_id                 = 4, // hash of initial state
+      database_version         = 0,
+      chain_id                 = 1,
+      last_asset_id            = 2,
+      last_account_id          = 3,
+      active_delegate_list_id  = 4,
+      last_random_seed_id      = 5,
+      statistics_enabled       = 6,
       /**
        *  N = num delegates
        *  Initial condition = 2N
@@ -37,14 +40,11 @@ namespace bts { namespace blockchain {
        *  are present. Less than 60% and you
        *  are on the minority chain.
        */
-      confirmation_requirement = 5,
-      database_version         = 6, // database version, to know when we need to upgrade
-      dirty_markets            = 7,
-      last_object_id           = 8  // all object types that aren't legacy
+      confirmation_requirement = 7,
+      dirty_markets            = 8,
+      last_object_id           = 9
    };
    typedef uint32_t chain_property_type;
-
-   const static short MAX_RECENT_OPERATIONS = 20;
 
    /**
     *  @class chain_interface
@@ -118,6 +118,9 @@ namespace bts { namespace blockchain {
          virtual void                       set_property( chain_property_enum property_id,
                                                           const fc::variant& property_value )               = 0;
 
+         virtual void                       set_statistics_enabled( bool enabled );
+         virtual bool                       get_statistics_enabled()const;
+
          virtual void                       set_required_confirmations( uint64_t );
          virtual uint64_t                   get_required_confirmations()const;
 
@@ -173,9 +176,6 @@ namespace bts { namespace blockchain {
          virtual void                       store_balance_record( const balance_record& r )                 = 0;
          virtual void                       store_account_record( const account_record& r )                 = 0;
 
-         virtual void                       store_recent_operation( const operation& o )                    = 0;
-         virtual vector<operation>          get_recent_operations( operation_type_enum t )                  = 0;
-
          virtual void                       store_object_record( const object_record& obj )                 = 0;
          virtual oobject_record             get_object_record( const object_id_type id )const              = 0;
 
@@ -209,8 +209,9 @@ namespace bts { namespace blockchain {
 
          virtual uint32_t                   get_head_block_num()const                                       = 0;
 
-         virtual void                       store_slot_record( const slot_record& r )                       = 0;
-         virtual oslot_record               get_slot_record( const time_point_sec start_time )const        = 0;
+         virtual void                       store_slot_record( const slot_record& ) = 0;
+         virtual oslot_record               get_slot_record( const slot_index )const = 0;
+         virtual oslot_record               get_slot_record( const time_point_sec )const = 0;
 
          virtual void                       store_market_history_record( const market_history_key& key,
                                                                          const market_history_record& record ) = 0;
@@ -220,8 +221,6 @@ namespace bts { namespace blockchain {
          virtual std::set<std::pair<asset_id_type, asset_id_type>> get_dirty_markets()const;
 
          virtual void                       set_market_transactions( vector<market_transaction> trxs )      = 0;
-
-         virtual void                       index_transaction( const address& addr, const transaction_id_type& trx_id ) = 0;
 
          template<typename T, typename U>
          optional<T> lookup( const U& key )const
@@ -261,19 +260,24 @@ namespace bts { namespace blockchain {
          friend struct feed_record;
          feed_db_interface _feed_db_interface;
          virtual void init_feed_db_interface() = 0;
+
+         friend struct slot_record;
+         slot_db_interface _slot_db_interface;
+         virtual void init_slot_db_interface() = 0;
    };
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;
 
 } } // bts::blockchain
 
 FC_REFLECT_ENUM( bts::blockchain::chain_property_enum,
-                 (last_asset_id)
-                 (last_account_id)
-                 (last_random_seed_id)
-                 (last_object_id)
-                 (active_delegate_list_id)
-                 (chain_id)
-                 (confirmation_requirement)
-                 (database_version)
-                 (dirty_markets)
-                 )
+        (database_version)
+        (chain_id)
+        (last_asset_id)
+        (last_account_id)
+        (active_delegate_list_id)
+        (last_random_seed_id)
+        (statistics_enabled)
+        (confirmation_requirement)
+        (dirty_markets)
+        (last_object_id)
+        )

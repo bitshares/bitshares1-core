@@ -38,6 +38,7 @@ add_library( bts_blockchain
              transaction_record.cpp
              feed_record.cpp
              market_records.cpp
+             slot_record.cpp
              object_record.cpp
              edge_record.cpp
              site_record.cpp

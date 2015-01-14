@@ -115,6 +115,7 @@ void wallet_impl::scan_market_transaction(
         }
 
         _wallet_db.store_transaction( record );
+        _dirty_balances = true;
     }
 
     auto okey_ask = _wallet_db.lookup_key( mtrx.ask_owner );
@@ -194,12 +195,15 @@ void wallet_impl::scan_market_transaction(
         }
 
         _wallet_db.store_transaction( record );
+        _dirty_balances = true;
     }
 } FC_CAPTURE_AND_RETHROW() }
 
 // TODO: No longer needed with scan_genesis_experimental and get_account_balance_records
 void wallet_impl::scan_balances()
 {
+    scan_balances_experimental();
+
    /* Delete ledger entries for any genesis balances before we can reconstruct them */
    const auto my_accounts = self->list_my_accounts();
    for( const auto& account : my_accounts )
@@ -570,6 +574,8 @@ wallet_transaction_record wallet_impl::scan_transaction(
     /* Only overwrite existing record if you did not create it or overwriting was explicitly specified */
     if( store_record && ( !already_exists || overwrite_existing ) )
         _wallet_db.store_transaction( *transaction_record );
+
+    _dirty_balances |= store_record;
 
     return *transaction_record;
 } FC_CAPTURE_AND_RETHROW() }
@@ -1354,7 +1360,9 @@ wallet_transaction_record wallet::scan_transaction( const string& transaction_id
    for( const auto& item : keys )
        private_keys.push_back( item.first );
    const auto now = blockchain::now();
-   return my->scan_transaction( transaction_record->trx, block_num, block.timestamp, private_keys, now, overwrite_existing );
+   const auto record = my->scan_transaction( transaction_record->trx, block_num, block.timestamp, private_keys, now, overwrite_existing );
+   if( my->_dirty_balances ) my->scan_balances_experimental();
+   return record;
 } FC_CAPTURE_AND_RETHROW() }
 
 vector<wallet_transaction_record> wallet::get_transactions( const string& transaction_id_prefix )
@@ -1385,6 +1393,7 @@ void wallet_impl::sign_transaction( signed_transaction& transaction, const unord
 void wallet::cache_transaction( wallet_transaction_record& transaction_record )
 { try {
    my->_blockchain->store_pending_transaction( transaction_record.trx, true );
+   my->scan_balances_experimental();
 
    transaction_record.record_id = transaction_record.trx.id();
    transaction_record.created_time = blockchain::now();

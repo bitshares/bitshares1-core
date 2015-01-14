@@ -5,13 +5,13 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QDebug>
-#include <QQmlListProperty>
 
 #include <bts/light_wallet/light_wallet.hpp>
 
 #include <fc/thread/thread.hpp>
 
 #include "QtWrappers.hpp"
+#include "Account.hpp"
 
 class LightWallet : public QObject
 {
@@ -25,7 +25,6 @@ class LightWallet : public QObject
    Q_PROPERTY(QString openError READ openError NOTIFY errorOpening)
    Q_PROPERTY(QString unlockError READ unlockError NOTIFY errorUnlocking)
    Q_PROPERTY(QString brainKey READ brainKey NOTIFY brainKeyChanged)
-   Q_PROPERTY(QQmlListProperty<Balance> balances READ balances NOTIFY balancesChanged)
 
 public:
    LightWallet()
@@ -70,7 +69,6 @@ public:
    {
       return m_brainKey;
    }
-   QQmlListProperty<Balance> balances();
    Account* account() const
    {
       return m_account;
@@ -93,6 +91,8 @@ public Q_SLOTS:
 
    void clearBrainKey();
 
+   void sync();
+
 Q_SIGNALS:
    void walletExistsChanged(bool exists);
    void errorConnecting(QString error);
@@ -103,8 +103,9 @@ Q_SIGNALS:
    void openChanged(bool open);
    void unlockedChanged(bool unlocked);
    void brainKeyChanged(QString key);
-   void balancesChanged(QQmlListProperty<Balance> balances);
    void accountChanged(Account* arg);
+
+   void synced();
 
 private:
    fc::thread m_walletThread;
@@ -116,7 +117,6 @@ private:
    QString m_openError;
    QString m_unlockError;
    QString m_brainKey;
-   QList<Balance*> m_balanceCache;
    Account* m_account = nullptr;
 
    void generateBrainKey();

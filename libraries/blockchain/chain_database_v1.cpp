@@ -47,9 +47,12 @@ void chain_database_impl::pay_delegate_v1( const pending_chain_state_ptr& pendin
       delegate_record->delegate_info->total_paid += accepted_paycheck;
       pending_state->store_account_record( *delegate_record );
 
-      record.signee_shares_issued = 0;
-      record.signee_fees_collected = accepted_paycheck;
-      record.signee_fees_destroyed = burned_paycheck;
+      if( _statistics_enabled )
+      {
+          record.signee_shares_issued = 0;
+          record.signee_fees_collected = accepted_paycheck;
+          record.signee_fees_destroyed = burned_paycheck;
+      }
 } FC_CAPTURE_AND_RETHROW( (block_signee)(block_id)(record) ) }
 
 void chain_database_impl::execute_markets_v1( const fc::time_point_sec timestamp, const pending_chain_state_ptr& pending_state )

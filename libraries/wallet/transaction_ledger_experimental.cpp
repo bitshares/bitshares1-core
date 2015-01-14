@@ -4,13 +4,38 @@
 #include <bts/wallet/wallet_impl.hpp>
 #include <fc/io/json.hpp> // TODO: Temporary
 
-using namespace bts::wallet;
-using namespace bts::wallet::detail;
+namespace bts { namespace wallet {
 
-void wallet_impl::scan_block_experimental( uint32_t block_num,
-                                           const map<private_key_type, string>& account_keys,
-                                           const map<address, string>& account_balances,
-                                           const set<string>& account_names )
+void detail::wallet_impl::scan_balances_experimental()
+{ try {
+    const auto pending_state = _blockchain->get_pending_state();
+
+    const auto scan_balance = [&]( const balance_record& record )
+    {
+        const balance_id_type id = record.id();
+        const obalance_record pending_record = pending_state->get_balance_record( id );
+        if( !pending_record.valid() ) return;
+
+        const set<address>& owners = pending_record->owners();
+        for( const address& owner : owners )
+        {
+            const owallet_key_record key_record = _wallet_db.lookup_key( owner );
+            if( !key_record.valid() || !key_record->has_private_key() ) continue;
+
+            _balance_records[ id ] = *pending_record;
+            break;
+        }
+    };
+
+    _balance_records.clear();
+    _blockchain->scan_balances( scan_balance, true );
+    _dirty_balances = false;
+} FC_CAPTURE_AND_RETHROW() }
+
+void detail::wallet_impl::scan_block_experimental( uint32_t block_num,
+                                                   const map<private_key_type, string>& account_keys,
+                                                   const map<address, string>& account_balances,
+                                                   const set<string>& account_names )
 { try {
     const signed_block_header block_header = _blockchain->get_block_header( block_num );
     const vector<transaction_record> transaction_records = _blockchain->get_transactions_for_block( block_header.id() );
@@ -28,16 +53,17 @@ void wallet_impl::scan_block_experimental( uint32_t block_num,
 } FC_CAPTURE_AND_RETHROW( (block_num)(account_balances)(account_names) ) }
 
 // For initiating manual transaction scanning
-transaction_ledger_entry wallet_impl::scan_transaction_experimental( const transaction_evaluation_state& eval_state,
-                                                                     uint32_t block_num,
-                                                                     const time_point_sec timestamp,
-                                                                     bool overwrite_existing )
+transaction_ledger_entry detail::wallet_impl::scan_transaction_experimental( const transaction_evaluation_state& eval_state,
+                                                                             uint32_t block_num,
+                                                                             const time_point_sec timestamp,
+                                                                             bool overwrite_existing )
 { try {
     const map<private_key_type, string> account_keys = _wallet_db.get_account_private_keys( _wallet_password );
 
     // TODO: Move this into a separate function
     map<address, string> account_balances;
-    const account_balance_record_summary_type balance_record_summary = self->get_account_balance_records( "", true, -1 );
+    //const account_balance_record_summary_type balance_record_summary = self->get_account_balance_records( "", true, -1 );
+    const account_balance_record_summary_type balance_record_summary;
     for( const auto& balance_item : balance_record_summary )
     {
         const string& account_name = balance_item.first;
@@ -75,13 +101,13 @@ transaction_ledger_entry wallet_impl::scan_transaction_experimental( const trans
                                           account_balances, account_names, overwrite_existing );
 } FC_CAPTURE_AND_RETHROW( (eval_state)(block_num)(timestamp)(overwrite_existing) ) }
 
-transaction_ledger_entry wallet_impl::scan_transaction_experimental( const transaction_evaluation_state& eval_state,
-                                                                     uint32_t block_num,
-                                                                     const time_point_sec timestamp,
-                                                                     const map<private_key_type, string>& account_keys,
-                                                                     const map<address, string>& account_balances,
-                                                                     const set<string>& account_names,
-                                                                     bool overwrite_existing )
+transaction_ledger_entry detail::wallet_impl::scan_transaction_experimental( const transaction_evaluation_state& eval_state,
+                                                                             uint32_t block_num,
+                                                                             const time_point_sec timestamp,
+                                                                             const map<private_key_type, string>& account_keys,
+                                                                             const map<address, string>& account_balances,
+                                                                             const set<string>& account_names,
+                                                                             bool overwrite_existing )
 { try {
     transaction_ledger_entry record;
 
@@ -110,12 +136,12 @@ transaction_ledger_entry wallet_impl::scan_transaction_experimental( const trans
  * - Scan the transaction's operations
  * - Perform some cleanup and record-keeping
  */
-void wallet_impl::scan_transaction_experimental( const transaction_evaluation_state& eval_state,
-                                                 const map<private_key_type, string>& account_keys,
-                                                 const map<address, string>& account_balances,
-                                                 const set<string>& account_names,
-                                                 transaction_ledger_entry& record,
-                                                 bool store_record )
+void detail::wallet_impl::scan_transaction_experimental( const transaction_evaluation_state& eval_state,
+                                                         const map<private_key_type, string>& account_keys,
+                                                         const map<address, string>& account_balances,
+                                                         const set<string>& account_names,
+                                                         transaction_ledger_entry& record,
+                                                         bool store_record )
 { try {
     map<string, map<asset_id_type, share_type>> raw_delta_amounts;
     uint16_t op_index = 0;
@@ -692,167 +718,170 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
         ulog( "wallet_transaction_record_v2:\n${rec}", ("rec",fc::json::to_pretty_string( record )) );
         _wallet_db.experimental_transactions[ record.id ] = record;
     }
+
+    _dirty_balances |= relevant_to_me;
 } FC_CAPTURE_AND_RETHROW( (eval_state)(account_balances)(account_names)(record)(store_record) ) }
 
-transaction_ledger_entry wallet_impl::apply_transaction_experimental( const signed_transaction& transaction )
+transaction_ledger_entry detail::wallet_impl::apply_transaction_experimental( const signed_transaction& transaction )
 { try {
-   const transaction_evaluation_state_ptr eval_state = _blockchain->store_pending_transaction( transaction, true );
-   FC_ASSERT( eval_state != nullptr );
-   return scan_transaction_experimental( *eval_state, -1, blockchain::now(), true );
+    const transaction_evaluation_state_ptr eval_state = _blockchain->store_pending_transaction( transaction, true );
+    FC_ASSERT( eval_state != nullptr );
+    return scan_transaction_experimental( *eval_state, -1, blockchain::now(), true );
 } FC_CAPTURE_AND_RETHROW( (transaction) ) }
 
 transaction_ledger_entry wallet::scan_transaction_experimental( const string& transaction_id_prefix, bool overwrite_existing )
 { try {
-   FC_ASSERT( is_open() );
-   FC_ASSERT( is_unlocked() );
+    FC_ASSERT( is_open() );
+    FC_ASSERT( is_unlocked() );
 
-   // TODO: Separate this finding logic
-   if( transaction_id_prefix.size() < 8 || transaction_id_prefix.size() > string( transaction_id_type() ).size() )
-       FC_THROW_EXCEPTION( invalid_transaction_id, "Invalid transaction id!", ("transaction_id_prefix",transaction_id_prefix) );
+    // TODO: Separate this finding logic
+    if( transaction_id_prefix.size() < 8 || transaction_id_prefix.size() > string( transaction_id_type() ).size() )
+        FC_THROW_EXCEPTION( invalid_transaction_id, "Invalid transaction id!", ("transaction_id_prefix",transaction_id_prefix) );
 
-   const auto transaction_id = variant( transaction_id_prefix ).as<transaction_id_type>();
-   const auto transaction_record = my->_blockchain->get_transaction( transaction_id, false );
-   if( !transaction_record.valid() )
-       FC_THROW_EXCEPTION( transaction_not_found, "Transaction not found!", ("transaction_id_prefix",transaction_id_prefix) );
+    const auto transaction_id = variant( transaction_id_prefix ).as<transaction_id_type>();
+    const auto transaction_record = my->_blockchain->get_transaction( transaction_id, false );
+    if( !transaction_record.valid() )
+        FC_THROW_EXCEPTION( transaction_not_found, "Transaction not found!", ("transaction_id_prefix",transaction_id_prefix) );
 
-   const auto block_num = transaction_record->chain_location.block_num;
-   const auto block = my->_blockchain->get_block_header( block_num );
+    const auto block_num = transaction_record->chain_location.block_num;
+    const auto block = my->_blockchain->get_block_header( block_num );
 
-   return my->scan_transaction_experimental( *transaction_record, block_num, block.timestamp, overwrite_existing );
+    return my->scan_transaction_experimental( *transaction_record, block_num, block.timestamp, overwrite_existing );
 } FC_CAPTURE_AND_RETHROW( (transaction_id_prefix)(overwrite_existing) ) }
 
 void wallet::add_transaction_note_experimental( const string& transaction_id_prefix, const string& note )
 { try {
-   FC_ASSERT( is_open() );
-   FC_ASSERT( is_unlocked() );
+    FC_ASSERT( is_open() );
+    FC_ASSERT( is_unlocked() );
 
-   // TODO: Separate this finding logic
-   if( transaction_id_prefix.size() < 8 || transaction_id_prefix.size() > string( transaction_id_type() ).size() )
-       FC_THROW_EXCEPTION( invalid_transaction_id, "Invalid transaction id!", ("transaction_id_prefix",transaction_id_prefix) );
+    // TODO: Separate this finding logic
+    if( transaction_id_prefix.size() < 8 || transaction_id_prefix.size() > string( transaction_id_type() ).size() )
+        FC_THROW_EXCEPTION( invalid_transaction_id, "Invalid transaction id!", ("transaction_id_prefix",transaction_id_prefix) );
 
-   const auto transaction_id = variant( transaction_id_prefix ).as<transaction_id_type>();
-   const auto transaction_record = my->_blockchain->get_transaction( transaction_id, false );
-   if( !transaction_record.valid() )
-       FC_THROW_EXCEPTION( transaction_not_found, "Transaction not found!", ("transaction_id_prefix",transaction_id_prefix) );
+    const auto transaction_id = variant( transaction_id_prefix ).as<transaction_id_type>();
+    const auto transaction_record = my->_blockchain->get_transaction( transaction_id, false );
+    if( !transaction_record.valid() )
+        FC_THROW_EXCEPTION( transaction_not_found, "Transaction not found!", ("transaction_id_prefix",transaction_id_prefix) );
 
-   const auto record_id = transaction_record->trx.id();
-   if( my->_wallet_db.experimental_transactions.count( record_id ) == 0 ) // TODO
-       FC_THROW_EXCEPTION( transaction_not_found, "Transaction not found!", ("transaction_id_prefix",transaction_id_prefix) );
+    const auto record_id = transaction_record->trx.id();
+    if( my->_wallet_db.experimental_transactions.count( record_id ) == 0 ) // TODO
+        FC_THROW_EXCEPTION( transaction_not_found, "Transaction not found!", ("transaction_id_prefix",transaction_id_prefix) );
 
-   auto record = my->_wallet_db.experimental_transactions[ record_id ];
-   if( !note.empty() )
-       record.operation_notes[ transaction_record->trx.operations.size() ] = note;
-   else
-       record.operation_notes.erase( transaction_record->trx.operations.size() );
-   my->_wallet_db.experimental_transactions[ record_id ] = record;
-
+    auto record = my->_wallet_db.experimental_transactions[ record_id ];
+    if( !note.empty() )
+        record.operation_notes[ transaction_record->trx.operations.size() ] = note;
+    else
+        record.operation_notes.erase( transaction_record->trx.operations.size() );
+    my->_wallet_db.experimental_transactions[ record_id ] = record;
 } FC_CAPTURE_AND_RETHROW( (transaction_id_prefix)(note) ) }
 
 set<pretty_transaction_experimental> wallet::transaction_history_experimental( const string& account_name )
 { try {
-   FC_ASSERT( is_open() );
-   FC_ASSERT( is_unlocked() );
+    FC_ASSERT( is_open() );
+    FC_ASSERT( is_unlocked() );
 
-   set<pretty_transaction_experimental> history;
+    set<pretty_transaction_experimental> history;
 
-   const auto& transactions = my->_wallet_db.get_transactions();
-   for( const auto& item : transactions )
-   {
-       try
-       {
-           scan_transaction_experimental( string( item.second.trx.id() ), false );
-       }
-       catch( ... )
-       {
-       }
-   }
+    const auto& transactions = my->_wallet_db.get_transactions();
+    for( const auto& item : transactions )
+    {
+        try
+        {
+            scan_transaction_experimental( string( item.second.trx.id() ), false );
+        }
+        catch( ... )
+        {
+        }
+    }
 
-   for( const auto& item : my->_wallet_db.experimental_transactions ) // TODO
-   {
-       history.insert( to_pretty_transaction_experimental( item.second ) );
-   }
+    for( const auto& item : my->_wallet_db.experimental_transactions ) // TODO
+    {
+        history.insert( to_pretty_transaction_experimental( item.second ) );
+    }
 
-   const auto account_records = list_my_accounts();
-   // TODO: Merge this into to_pretty_trx
-   map<string, map<asset_id_type, share_type>> balances;
-   for( const auto& record : history )
-   {
-       for( const auto& item : record.delta_amounts )
-       {
-           const string& label = item.first;
-           const auto has_label = [&]( const wallet_account_record& account_record )
-           {
-               return account_record.name == label;
-           };
+    const auto account_records = list_my_accounts();
+    // TODO: Merge this into to_pretty_trx
+    map<string, map<asset_id_type, share_type>> balances;
+    for( const auto& record : history )
+    {
+        for( const auto& item : record.delta_amounts )
+        {
+            const string& label = item.first;
+            const auto has_label = [&]( const wallet_account_record& account_record )
+            {
+                return account_record.name == label;
+            };
 
-           if( !std::any_of( account_records.begin(), account_records.end(), has_label ) )
-               continue;
+            if( !std::any_of( account_records.begin(), account_records.end(), has_label ) )
+                continue;
 
-           for( const asset& delta_amount : item.second )
-               balances[ label ][ delta_amount.asset_id ] += delta_amount.amount;
-       }
+            for( const asset& delta_amount : item.second )
+                balances[ label ][ delta_amount.asset_id ] += delta_amount.amount;
+        }
 
-       for( const auto& item : balances )
-       {
-           const string& label = item.first;
-           for( const auto& balance_item : item.second )
-           {
-               const asset balance_amount( balance_item.second, balance_item.first );
-               record.balances.push_back( std::make_pair( label, balance_amount ) );
-           }
-       }
-   }
+        for( const auto& item : balances )
+        {
+            const string& label = item.first;
+            for( const auto& balance_item : item.second )
+            {
+                const asset balance_amount( balance_item.second, balance_item.first );
+                record.balances.push_back( std::make_pair( label, balance_amount ) );
+            }
+        }
+    }
 
-   return history;
+    return history;
 } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
 pretty_transaction_experimental wallet::to_pretty_transaction_experimental( const transaction_ledger_entry& record )
 { try {
-   pretty_transaction_experimental result;
-   transaction_ledger_entry& ugly_result = result;
-   ugly_result = record;
+    pretty_transaction_experimental result;
+    transaction_ledger_entry& ugly_result = result;
+    ugly_result = record;
 
-   for( const auto& item : record.delta_amounts )
-   {
-       const string& delta_label = item.first;
-       for( const asset& delta_amount : item.second )
-       {
-           if( delta_amount.amount >= 0)
-               result.outputs.emplace_back( delta_label, delta_amount );
-           else
-               result.inputs.emplace_back( delta_label, -delta_amount );
-       }
-   }
+    for( const auto& item : record.delta_amounts )
+    {
+        const string& delta_label = item.first;
+        for( const asset& delta_amount : item.second )
+        {
+            if( delta_amount.amount >= 0)
+                result.outputs.emplace_back( delta_label, delta_amount );
+            else
+                result.inputs.emplace_back( delta_label, -delta_amount );
+        }
+    }
 
-   result.notes.reserve( record.operation_notes.size() );
-   for( const auto& item : record.operation_notes )
-   {
-       const auto& note = item.second;
-       result.notes.push_back( note );
-   }
+    result.notes.reserve( record.operation_notes.size() );
+    for( const auto& item : record.operation_notes )
+    {
+        const auto& note = item.second;
+        result.notes.push_back( note );
+    }
 
-   const auto delta_compare = []( const std::pair<string, asset>& a, const std::pair<string, asset>& b ) -> bool
-   {
-       const string& a_label = a.first;
-       const string& b_label = b.first;
+    const auto delta_compare = []( const std::pair<string, asset>& a, const std::pair<string, asset>& b ) -> bool
+    {
+        const string& a_label = a.first;
+        const string& b_label = b.first;
 
-       const asset& a_amount = a.second;
-       const asset& b_amount = b.second;
+        const asset& a_amount = a.second;
+        const asset& b_amount = b.second;
 
-       if( a_label == b_label )
-           return a_amount.asset_id < b_amount.asset_id;
+        if( a_label == b_label )
+            return a_amount.asset_id < b_amount.asset_id;
 
-       if( islower( a_label[0] ) != islower( b_label[0] ) )
-           return islower( a_label[0] );
+        if( islower( a_label[0] ) != islower( b_label[0] ) )
+            return islower( a_label[0] );
 
-       if( (a_label.find( "FEE" ) == string::npos) != (b_label.find( "FEE" ) == string::npos) )
-           return a_label.find( "FEE" ) == string::npos;
+        if( (a_label.find( "FEE" ) == string::npos) != (b_label.find( "FEE" ) == string::npos) )
+            return a_label.find( "FEE" ) == string::npos;
 
-       return a < b;
-   };
+        return a < b;
+    };
 
-   std::sort( result.inputs.begin(), result.inputs.end(), delta_compare );
-   std::sort( result.outputs.begin(), result.outputs.end(), delta_compare );
+    std::sort( result.inputs.begin(), result.inputs.end(), delta_compare );
+    std::sort( result.outputs.begin(), result.outputs.end(), delta_compare );
 
-   return result;
+    return result;
 } FC_CAPTURE_AND_RETHROW( (record) ) }
+
+} } // bts::wallet

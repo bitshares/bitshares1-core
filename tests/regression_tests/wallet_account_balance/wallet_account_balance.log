@@ -27,7 +27,7 @@ Returns:
 default (unlocked) >>> wallet_account_balance_extended delegate0
 [[
     "delegate0",[[
-        "SIGNATURE",[{
+        "GENESIS",[{
             "amount": 1980198019801,
             "asset_id": 0
           }

@@ -6,6 +6,7 @@
 #include <bts/blockchain/asset_record.hpp>
 #include <bts/rpc/rpc_client.hpp>
 #include <bts/wallet/config.hpp>
+#include <bts/wallet/wallet_records.hpp>
 
 #define BTS_LIGHT_WALLET_PORT 8899
 #define BTS_LIGHT_WALLET_DEFAULT_FEE  50000 // 0.5 XTS
@@ -18,25 +19,14 @@ namespace bts { namespace light_wallet {
        vector<char>                                 encrypted_private_key;
        account_record                               user_account;
        fc::time_point                               last_balance_sync_time;
-       fc::time_point                               last_transaction_sync_time;
+       uint32_t                                     last_transaction_sync_block;
        map<balance_id_type,balance_record>          balance_record_cache;
-       map<transaction_id_type,transaction_record>  transaction_record_cache;
+       map<transaction_id_type, fc::variant_object> transaction_record_cache;
        map<asset_id_type,asset_record>              asset_record_cache;
        map<string,pair<price,fc::time_point> >      price_cache;
        map<balance_id_type,memo_status>             memos;
-   };
 
-   struct light_transaction_summary
-   {
-       time_point_sec when;
-       string         from;
-       string         to;
-       double         amount;
-       string         symbol;
-       double         fee;
-       string         fee_symbol;
-       string         memo;
-       string         status; // pending, confirmed, error
+       std::map<pair<account_id_type,asset_id_type>,std::set<transaction_id_type>> transaction_index;
    };
 
    class light_wallet 
@@ -79,23 +69,29 @@ namespace bts { namespace light_wallet {
          asset  get_fee( const string& symbol );
 
          map<string,double> balance()const;
+         vector<wallet::transaction_ledger_entry> transactions( const string& symbol );
 
          optional<asset_record> get_asset_record( const string& symbol );
+         optional<asset_record> get_asset_record( const asset_id_type& id );
 
          bts::rpc::rpc_client             _rpc;
          fc::path                         _wallet_file;
          optional<fc::ecc::private_key>   _private_key;
          optional<light_wallet_data>      _data;
+
+   private:
+         bts::wallet::transaction_ledger_entry summarize(const fc::variant_object& transaction_bundle);
    };
 
 } }
 FC_REFLECT( bts::light_wallet::light_wallet_data,
             (encrypted_private_key)
             (user_account)
+            (last_balance_sync_time)
+            (last_transaction_sync_block)
             (balance_record_cache)
             (transaction_record_cache)
             (asset_record_cache)
             (price_cache)
-            (memos) );
-
-FC_REFLECT( bts::light_wallet::light_transaction_summary, (when)(from)(to)(amount)(symbol)(fee)(fee_symbol)(memo)(status) );
+            (memos)
+            (transaction_index) );

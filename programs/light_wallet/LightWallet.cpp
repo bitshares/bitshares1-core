@@ -22,11 +22,6 @@ bool LightWallet::walletExists() const
    return fc::exists(m_walletPath);
 }
 
-QQmlListProperty<Balance> LightWallet::balances()
-{
-   return QQmlListProperty<Balance>(this, m_balanceCache);
-}
-
 void LightWallet::connectToServer(QString host, quint16 port, QString user, QString password)
 {
    IN_THREAD
@@ -85,7 +80,7 @@ void LightWallet::createWallet(QString accountName, QString password)
 
 void LightWallet::openWallet()
 {
-   IN_THREAD
+   //Opening the wallet should be fast, it's just a local file and we're not doing much crypto. Let it be blocking.
    try {
       m_wallet.open(m_walletPath);
    } catch (fc::exception e) {
@@ -99,11 +94,6 @@ void LightWallet::openWallet()
 
    updateAccount(m_wallet.account());
    qDebug() << "Opened wallet belonging to" << m_account->name();
-
-   m_brainKey = QSettings().value(QStringLiteral("brainKey"), QString()).toString();
-   if( !m_brainKey.isEmpty() )
-      Q_EMIT brainKeyChanged(m_brainKey);
-   END_THREAD
 }
 
 void LightWallet::closeWallet()
@@ -125,7 +115,7 @@ void LightWallet::unlockWallet(QString password)
       m_wallet.unlock(convert(password));
       if( isUnlocked() )
       {
-         qDebug() << "Unlocked wallet.";
+         qDebug() << "Unlocked wallet; active address is" << std::string(m_wallet.account().active_address()).c_str();
          auto ciphertext = QSettings().value(QStringLiteral("brainKey"), QString()).toByteArray();
          fc::sha512 key = fc::sha512::hash(convert(password));
          auto plaintext = fc::aes_decrypt(key, std::vector<char>(ciphertext.data(),
@@ -135,6 +125,7 @@ void LightWallet::unlockWallet(QString password)
             Q_EMIT brainKeyChanged(m_brainKey);
       }
    } catch (fc::exception e) {
+      qDebug() << "Error during unlock:" << e.to_detail_string().c_str();
       m_unlockError = QStringLiteral("Incorrect password.");
       Q_EMIT errorUnlocking(m_unlockError);
    }
@@ -168,6 +159,7 @@ void LightWallet::registerAccount()
       } else
          Q_EMIT errorRegistering(QStringLiteral("Server did not register account. Please try again later."));
    } catch( const bts::light_wallet::account_already_registered& e ) {
+      //If light_wallet throws account_already_registered, it's because someone snagged the name already.
       qDebug() << "Account registered out from under us: " << e.to_detail_string().c_str();
       Q_EMIT errorRegistering(QStringLiteral("Oops! Someone just registered that name. Please pick another one."));
    } catch (const fc::exception& e) {
@@ -186,6 +178,18 @@ void LightWallet::clearBrainKey()
    QSettings().remove(QStringLiteral("brainKey"));
    m_brainKey.clear();
    Q_EMIT brainKeyChanged(m_brainKey);
+}
+
+void LightWallet::sync()
+{
+   IN_THREAD
+   if( !isConnected() ) return;
+
+   m_wallet.sync_balance();
+   m_wallet.sync_transactions();
+
+   Q_EMIT synced();
+   END_THREAD
 }
 
 void LightWallet::generateBrainKey()
@@ -210,11 +214,12 @@ void LightWallet::updateAccount(const bts::blockchain::account_record& account)
    if( !m_account )
    {
       //Tricky threading. We're probably running in the bitshares thread, but we want Account to belong to the UI thread
-      //so it can be a child of LightWallet (this). Create it in this thread, then move it to the UI thread, then set
-      //its parent.
-      m_account = new Account(account);
+      //so it can be a child of LightWallet (this).
+      //Create it in this thread, then move it to the UI thread, then set its parent.
+      m_account = new Account(&m_wallet, account);
       m_account->moveToThread(thread());
       m_account->setParent(this);
+      connect(this, &LightWallet::synced, m_account, &Account::balancesChanged);
       Q_EMIT accountChanged(m_account);
 
       connect(m_account, &Account::nameChanged, [this](QString name) {

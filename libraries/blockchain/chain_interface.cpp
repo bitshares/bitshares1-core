@@ -413,6 +413,18 @@ namespace bts { namespace blockchain {
       }
    } FC_CAPTURE_AND_RETHROW( (a) ) }
 
+   void chain_interface::set_statistics_enabled( bool enabled )
+   { try {
+      set_property( statistics_enabled, fc::variant( enabled ) );
+   } FC_CAPTURE_AND_RETHROW( (enabled) ) }
+
+   bool chain_interface::get_statistics_enabled()const
+   { try {
+      const optional<variant> result = get_property( statistics_enabled );
+      if( result.valid() ) return result->as_bool();
+      return false;
+   } FC_CAPTURE_AND_RETHROW() }
+
    void chain_interface::set_required_confirmations( uint64_t c )
    { try {
       set_property( confirmation_requirement, fc::variant( c ) );

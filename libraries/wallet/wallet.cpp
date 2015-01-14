@@ -57,7 +57,6 @@ namespace detail {
        return _wallet_db.get_pending_transactions();
    }
 
-
    void wallet_impl::withdraw_to_transaction(
            const asset& amount_to_withdraw,
            const string& from_account_name,
@@ -68,7 +67,7 @@ namespace detail {
       FC_ASSERT( !from_account_name.empty() );
       auto amount_remaining = amount_to_withdraw;
 
-      const account_balance_record_summary_type balance_records = self->get_account_balance_records( from_account_name );
+      const account_balance_record_summary_type balance_records = self->get_spendable_account_balance_records( from_account_name );
       if( balance_records.find( from_account_name ) == balance_records.end() )
          FC_CAPTURE_AND_THROW( insufficient_funds, (from_account_name)(amount_to_withdraw)(balance_records) );
       for( const auto& record : balance_records.at( from_account_name ) )
@@ -261,6 +260,9 @@ namespace detail {
           ulog( "Scan failure." );
           throw *scan_exception;
       }
+
+      if( _dirty_balances )
+          scan_balances_experimental();
    } FC_CAPTURE_AND_RETHROW( (start)(end)(fast_scan) ) }
 
    void wallet_impl::upgrade_version()
@@ -887,6 +889,8 @@ namespace detail {
           close();
           std::rethrow_exception(open_file_failure);
       }
+
+      my->scan_balances_experimental();
    } FC_CAPTURE_AND_RETHROW( (wallet_name) ) }
 
    void wallet::close()
@@ -1539,7 +1543,7 @@ namespace detail {
        uint64_t total = 0;
        auto summary = vote_summary();
 
-       const account_balance_record_summary_type items = get_account_balance_records( account_name );
+       const account_balance_record_summary_type items = get_spendable_account_balance_records( account_name );
        for( const auto& item : items )
        {
            const auto& records = item.second;
@@ -2083,8 +2087,9 @@ namespace detail {
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(account_to_pay_with)(sign) ) }
 
-   wallet_transaction_record wallet::collect_withdraw_types( const string& account_name, uint32_t withdraw_type_mask,
-                                                             bool snapshots_only, bool sign )
+   wallet_transaction_record wallet::collect_account_balances( const string& account_name,
+                                                               const function<bool( const balance_record& )> filter,
+                                                               const string& memo_message, bool sign )
    { try {
       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
@@ -2093,7 +2098,30 @@ namespace detail {
       if( !account_record.valid() || !account_record->is_my_account )
           FC_CAPTURE_AND_THROW( unknown_receive_account, (account_name) );
 
-      const auto balance_records = get_account_balance_records( account_name, false, withdraw_type_mask, snapshots_only );
+      account_balance_record_summary_type balance_records;
+      const time_point_sec now = my->_blockchain->get_pending_state()->now();
+
+      const auto scan_balance = [&]( const balance_id_type& id, const balance_record& record )
+      {
+          if( !filter( record ) ) return;
+
+          const asset balance = record.get_spendable_balance( now );
+          if( balance.amount == 0 ) return;
+
+          const optional<address> owner = record.owner();
+          if( !owner.valid() ) return;
+
+          const owallet_key_record key_record = my->_wallet_db.lookup_key( *owner );
+          if( !key_record.valid() || !key_record->has_private_key() ) return;
+
+          const owallet_account_record account_record = my->_wallet_db.lookup_account( key_record->account_address );
+          if( !account_record.valid() || account_record->name != account_name ) return;
+
+          balance_records[ account_name ].push_back( record );
+      };
+
+      scan_balances( scan_balance );
+
       if( balance_records.find( account_name ) == balance_records.end() )
           FC_CAPTURE_AND_THROW( insufficient_funds, (account_name) );
 
@@ -2127,7 +2155,7 @@ namespace detail {
       entry.from_account = account_record->owner_key;
       entry.to_account = account_record->owner_key;
       entry.amount = total_balance - get_transaction_fee();
-      entry.memo = "collect vested";
+      entry.memo = memo_message;
 
       auto record = wallet_transaction_record();
       record.ledger_entries.push_back( entry );
@@ -2227,7 +2255,7 @@ namespace detail {
        FC_ASSERT( account_record.valid(), "Cannot find a local account with that name!",
                   ("collecting_account_name",*collecting_account_name) );
 
-       map<string, vector<balance_record>> items = get_account_balance_records();
+       map<string, vector<balance_record>> items = get_spendable_account_balance_records();
        for( const auto& item : items )
        {
            const auto& name = item.first;
@@ -4105,103 +4133,67 @@ namespace detail {
       return result;
    }
 
-   // TODO: Handle multiple owners
-   account_balance_record_summary_type wallet::get_account_balance_records( const string& account_name, bool include_empty,
-                                                                            uint32_t withdraw_type_mask, bool snapshots_only )const
+   void wallet::scan_balances( const function<void( const balance_id_type&, const balance_record& )> callback )const
+   {
+       for( const auto& item : my->_balance_records )
+           callback( item.first, item.second );
+   }
+
+   account_balance_record_summary_type wallet::get_spendable_account_balance_records( const string& account_name )const
    { try {
-      if( !is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
+       map<string, vector<balance_record>> balances;
+       const time_point_sec now = my->_blockchain->get_pending_state()->now();
 
-      map<string, vector<balance_record>> balance_records;
-      const auto pending_state = my->_blockchain->get_pending_state();
+       const auto scan_balance = [&]( const balance_id_type& id, const balance_record& record )
+       {
+           if( record.condition.type != withdraw_signature_type ) return;
 
-      const auto scan_balance = [&]( const balance_record& record )
-      {
-          if( !((1 << uint8_t( record.condition.type )) & withdraw_type_mask) ) return;
+           const asset balance = record.get_spendable_balance( now );
+           if( balance.amount == 0 ) return;
 
-          /*
-          // This makes testing too difficult
-          if( record.snapshot_info.valid() )
-          {
-              if( !((1 << uint8_t( withdraw_null_type )) & withdraw_type_mask) )
-                  return;
-          }
-          else if( snapshots_only )
-          {
-              return;
-          }
-          */
+           const optional<address> owner = record.owner();
+           if( !owner.valid() ) return;
 
-          const auto owner = record.owner();
-          if( !owner.valid() ) return;
+           const owallet_key_record key_record = my->_wallet_db.lookup_key( *owner );
+           if( !key_record.valid() || !key_record->has_private_key() ) return;
 
-          const auto key_record = my->_wallet_db.lookup_key( *owner );
-          if( !key_record.valid() || !key_record->has_private_key() ) return;
+           const owallet_account_record account_record = my->_wallet_db.lookup_account( key_record->account_address );
+           const string name = account_record.valid() ? account_record->name : string( key_record->public_key );
+           if( !account_name.empty() && name != account_name ) return;
 
-          const auto account_address = key_record->account_address;
-          const auto account_record = my->_wallet_db.lookup_account( account_address );
-          const auto name = account_record.valid() ? account_record->name : string( key_record->public_key );
-          if( !account_name.empty() && name != account_name ) return;
+           balances[ name ].push_back( record );
+       };
 
-          const auto balance_id = record.id();
-          const auto pending_record = pending_state->get_balance_record( balance_id );
-          if( !pending_record.valid() ) return;
-          if( !include_empty && pending_record->get_spendable_balance( pending_state->now() ).amount == 0 ) return;
+       scan_balances( scan_balance );
+       return balances;
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
-          balance_records[ name ].push_back( *pending_record );
-      };
-
-      my->_blockchain->scan_balances( scan_balance, include_empty );
-
-      return balance_records;
-   } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_type_mask) ) }
-
-   account_balance_id_summary_type wallet::get_account_balance_ids( const string& account_name, bool include_empty,
-                                                                    uint32_t withdraw_type_mask, bool snapshots_only )const
+   account_balance_summary_type wallet::get_spendable_account_balances( const string& account_name )const
    { try {
-      map<string, vector<balance_id_type>> balance_ids;
+       map<string, map<asset_id_type, share_type>> balances;
 
-      const map<string, vector<balance_record>>& items = get_account_balance_records( account_name, include_empty,
-                                                                                      withdraw_type_mask, snapshots_only );
-      for( const auto& item : items )
-      {
-          const auto& name = item.first;
-          const auto& records = item.second;
+       const map<string, vector<balance_record>> records = get_spendable_account_balance_records( account_name );
+       const time_point_sec now = my->_blockchain->get_pending_state()->now();
 
-          for( const auto& record : records )
-              balance_ids[ name ].push_back( record.id() );
-      }
+       for( const auto& item : records )
+       {
+           const string& name = item.first;
+           for( const balance_record& record : item.second )
+           {
+               const asset balance = record.get_spendable_balance( now );
+               balances[ name ][ balance.asset_id ] += balance.amount;
+           }
+       }
 
-      return balance_ids;
-   } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_type_mask) ) }
-
-   account_balance_summary_type wallet::get_account_balances( const string& account_name, bool include_empty,
-                                                              uint32_t withdraw_type_mask, bool snapshots_only )const
-   { try {
-      map<string, map<asset_id_type, share_type>> balances;
-
-      const map<string, vector<balance_record>>& items = get_account_balance_records( account_name, include_empty,
-                                                                                      withdraw_type_mask, snapshots_only );
-      for( const auto& item : items )
-      {
-          const auto& name = item.first;
-          const auto& records = item.second;
-
-          for( const auto& record : records )
-          {
-              const auto balance = record.get_spendable_balance( my->_blockchain->get_pending_state()->now() );
-              balances[ name ][ balance.asset_id ] += balance.amount;
-          }
-      }
-
-      return balances;
-   } FC_CAPTURE_AND_RETHROW( (account_name)(include_empty)(withdraw_type_mask) ) }
+       return balances;
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
    account_balance_summary_type wallet::get_account_yield( const string& account_name )const
    { try {
       map<string, map<asset_id_type, share_type>> yield_summary;
-      const auto pending_state = my->_blockchain->get_pending_state();
+      const time_point_sec now = my->_blockchain->get_pending_state()->now();
 
-      map<string, vector<balance_record>> items = get_account_balance_records( account_name );
+      map<string, vector<balance_record>> items = get_spendable_account_balance_records( account_name );
       for( const auto& item : items )
       {
           const auto& name = item.first;
@@ -4209,60 +4201,19 @@ namespace detail {
 
           for( const auto& record : records )
           {
-              const auto balance = record.get_spendable_balance( my->_blockchain->get_pending_state()->now() );
+              const auto balance = record.get_spendable_balance( now );
               // TODO: Memoize these
-              const auto asset_rec = pending_state->get_asset_record( balance.asset_id );
+              const auto asset_rec = my->_blockchain->get_asset_record( balance.asset_id );
               if( !asset_rec.valid() || !asset_rec->is_market_issued() ) continue;
 
-              const auto yield = record.calculate_yield( pending_state->now(), balance.amount,
-                                 asset_rec->collected_fees, asset_rec->current_share_supply );
+              const auto yield = record.calculate_yield( now, balance.amount, asset_rec->collected_fees,
+                                                         asset_rec->current_share_supply );
               yield_summary[ name ][ yield.asset_id ] += yield.amount;
           }
       }
 
       return yield_summary;
-   } FC_CAPTURE_AND_RETHROW() }
-
-
-   asset  wallet::asset_worth( const asset& base, const string& price_in_symbol )const
-   {
-       auto oquote = my->_blockchain->get_asset_record( price_in_symbol );
-       ulog("Asset worth for:\n base: ${base}\n quote: ${quote}", ("base", base)("quote", price_in_symbol));
-       FC_ASSERT( oquote.valid() );
-       if( oquote->id == base.asset_id )
-           return base;
-
-       asset_id_type quote_id = oquote->id;
-       asset_id_type base_id = base.asset_id;
-       if (oquote->id < base.asset_id ) // switch orientation
-       {
-           quote_id = base.asset_id;
-           base_id = oquote->id;
-       }
-
-       auto market_stat = my->_blockchain->get_market_status( oquote->id, base.asset_id );
-       return asset(0);
-   }
-
-   asset wallet::get_account_net_worth( const string& account_name, const string& symbol )const
-   {
-       ulog("get_account_net_worth in asset:  USD");
-       auto btsx_worth = asset( 0, 0 );
-       auto balances = get_account_balance_records( account_name );
-       for( auto map : balances )
-       {
-           for( auto record : map.second )
-           {
-               //const auto balance = asset( record.balance, record.condition.asset_id );
-               //ulog("asset: ${asset}", ("asset", asset));
-               //btsx_worth += asset_worth(balance, "BTS_BLOCKCHAIN_SYMBOL" );
-           }
-       }
-       // open orders
-       // balances
-       // - debt
-       return btsx_worth;
-   }
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
    account_vote_summary_type wallet::get_account_vote_summary( const string& account_name )const
    { try {
@@ -4270,7 +4221,7 @@ namespace detail {
       auto raw_votes = map<account_id_type, int64_t>();
       auto result = account_vote_summary_type();
 
-      const account_balance_record_summary_type items = get_account_balance_records( account_name );
+      const account_balance_record_summary_type items = get_spendable_account_balance_records( account_name );
       for( const auto& item : items )
       {
           const auto& records = item.second;

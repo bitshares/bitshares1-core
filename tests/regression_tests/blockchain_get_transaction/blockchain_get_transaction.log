@@ -55,47 +55,37 @@ default (unlocked) >>> blockchain_get_transaction 2becf1e08b48b7d9eba9c494b3a471
         "1f07787593e6158df2ab1559f42a5dc9d8f2a9e0e0a60f519372e83ad3051bce4c5d1e89548c662d51cc31d72ae0ad6382cc9da5cb7743791185b954cfab4d4455"
       ]
     },
-    "current_op_index": 2,
     "signed_keys": [
+      "XTSA5wQqHYd93W65JzCZ1wtmBq9DbtTRyqD",
       "XTSDG4CLPoePEPHaRaDszT4ix8gA1ghTb6FF",
       "XTSEbFjCRUUsoN3FUJTeBbWX7SZx1bMrFzUH",
       "XTSF4Bjx9KdtUChuTn8wL9T6aBFrLBq6wyDJ",
-      "XTSA5wQqHYd93W65JzCZ1wtmBq9DbtTRyqD",
       "XTSPcpRoTjhdb9KBYXmsFB3nfe2BYiZV88Be"
     ],
     "validation_error": null,
-    "provided_deposits": [[
-        "XTS2ARvyMbamQZcjduNxA2PcFZsyq6S8KPXo",{
-          "amount": 10000000,
-          "asset_id": 0
-        }
-      ]
-    ],
     "deposits": [[
-        0,{
-          "amount": 10000000,
-          "asset_id": 0
-        }
+        0,
+        10000000
       ]
     ],
     "withdraws": [[
-        0,{
-          "amount": 10050000,
-          "asset_id": 0
-        }
+        0,
+        10050000
       ]
     ],
     "yield": [],
     "deltas": [[
-        0,{
-          "amount": 10000000,
-          "asset_id": 0
-        }
+        0,[[
+            0,
+            10000000
+          ]
+        ]
       ],[
-        1,{
-          "amount": -10050000,
-          "asset_id": 0
-        }
+        1,[[
+            0,
+            -10050000
+          ]
+        ]
       ]
     ],
     "required_fees": {

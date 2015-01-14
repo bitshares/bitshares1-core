@@ -1,78 +1,99 @@
 import QtQuick 2.4
 import QtQuick.Controls 1.3
 import QtQuick.Layouts 1.1
+import QtQuick.Window 2.2
 
 import "utils.js" as Utils
 
-StackView {
-   id: walletGui
+Item {
+   id: guiContainer
 
-   property real minimumWidth: (!!currentItem)? currentItem.minimumWidth : 1
-   property real minimumHeight: (!!currentItem)? currentItem.minimumHeight : 1
+   property real minimumWidth: Math.max(uiStack.minimumWidth, header.minimumWidth)
+   property real minimumHeight: header.height + uiStack.minimumHeight
 
-   initialItem: WelcomeLayout {
-      id: welcomeBox
-      needsRegistration: !(wallet.account && wallet.account.isRegistered)
+   Rectangle {
+      id: header
+      width: parent.width
+      height: assetHeaderRow.height + visuals.margins * 2
+      color: "#22000000"
 
-      function proceed() {
-         if( Stack.status !== Stack.Active )
-            return;
+      property real minimumWidth: drawerButton.width + accountNameLabel.width*2 + visuals.margins * 2
 
-         console.log("Finished welcome screen.")
-         clearPassword()
-         push(assetsUi)
-      }
-      function registerAccount() {
-         welcomeBox.state = "REGISTERING"
-         Utils.connectOnce(wallet.account.isRegisteredChanged, proceed,
-                           function() { return wallet.account.isRegistered })
-         Utils.connectOnce(wallet.onErrorRegistering, function(reason) {
-            //FIXME: Do something much, much better here...
-            console.log("Can't register: " + reason)
-         })
+      Item {
+         id: assetHeaderRow
+         width: parent.width - visuals.margins * 2
+         height: drawerButton.height
+         y: visuals.margins
+         anchors.horizontalCenter: parent.horizontalCenter
 
-         if( wallet.connected ) {
-            wallet.registerAccount()
-         } else {
-            // Not connected. Schedule for when we reconnect.
-            wallet.runWhenConnected(function() {
-               wallet.registerAccount()
-            })
+         Button {
+            id: drawerButton
+            anchors.left: parent.left
+            style: WalletButtonStyle{}
+            width: Screen.pixelDensity * 10
+            height: Screen.pixelDensity * 8
+            text: "···"
+            visible: wallet.unlocked
+            onClicked: {
+               wallet.lockWallet()
+               uiStack.pop(welcomeUi)
+            }
+         }
+         Label {
+            id: accountNameLabel
+            anchors.centerIn: parent
+            color: visuals.textColor
+            font.pixelSize: visuals.textBaseSize * 1.1
+            text: wallet.account.name
          }
       }
-      
-      onPasswordEntered: {
-         if( wallet.unlocked && wallet.account && wallet.account.isRegistered )
-            return proceed()
-
-         // First time through; there's no wallet, no account, not registered. First, create the wallet.
-         if( !wallet.walletExists ) {
-            Utils.connectOnce(wallet.walletExistsChanged, function(walletWasCreated) {
-               if( walletWasCreated ) {
-                  registerAccount()
-               } else {
-                  //TODO: failed to create wallet. What now?
-                  window.showError("Unable to create wallet. Cannot continue.")
-                  welcomeBox.state = ""
-               }
-            })
-            wallet.createWallet(username, password)
-         } else if ( !wallet.account.isRegistered ) {
-            //Wallet is created, so the account exists, but it's not registered yet. Take care of that now.
-            registerAccount()
-         } else {
-            Utils.connectOnce(wallet.onUnlockedChanged, proceed, function() { return wallet.unlocked })
-            wallet.unlockWallet(password)
-         }
-      }
+      Rectangle { height: 1; width: parent.width; color: visuals.lightTextColor; anchors.bottom: parent.bottom }
    }
 
-   Component {
-      id: assetsUi
-      AssetsLayout {
-         onLockRequested: {
-            wallet.lockWallet()
-            walletGui.pop()
+   StackView {
+      id: uiStack
+      anchors {
+         top: header.bottom
+         bottom: parent.bottom
+      }
+      width: parent.width
+
+      property real minimumWidth: (!!currentItem)? currentItem.minimumWidth : 1
+      property real minimumHeight: (!!currentItem)? currentItem.minimumHeight : 1
+
+      initialItem: wallet.unlocked? [welcomeUi, assetsUi] : welcomeUi
+
+      Component {
+         id: welcomeUi
+         WelcomeLayout {
+            id: welcomeBox
+
+            function proceed() {
+               if( Stack.status !== Stack.Active )
+                  return;
+
+               console.log("Finished welcome screen.")
+               clearPassword()
+               uiStack.push(assetsUi)
+            }
+
+            onPasswordEntered: {
+               if( wallet.unlocked )
+                  return proceed()
+
+               Utils.connectOnce(wallet.onUnlockedChanged, proceed, function() { return wallet.unlocked })
+               wallet.unlockWallet(password)
+            }
+         }
+      }
+
+      Component {
+         id: assetsUi
+         AssetsLayout {
+            onLockRequested: {
+               wallet.lockWallet()
+               uiStack.pop()
+            }
          }
       }
    }

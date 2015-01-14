@@ -9,39 +9,14 @@ namespace bts { namespace blockchain {
        condition = withdraw_condition( withdraw_with_signature( owner ), balance_arg.asset_id, delegate_id );
    }
 
-   // TODO: Rename to owner_address
-   optional<address> balance_record::owner()const
-   {
-       switch( withdraw_condition_types( condition.type ) )
-       {
-           case withdraw_signature_type:
-               return condition.as<withdraw_with_signature>().owner;
-           case withdraw_vesting_type:
-               return condition.as<withdraw_vesting>().owner;
-           default:
-               return optional<address>();
-       }
-   }
-
-   // TODO: Rename to owner_addresses
    set<address> balance_record::owners()const
    {
-       switch( withdraw_condition_types( condition.type ) )
-       {
-           case withdraw_signature_type:
-               return set<address>{ condition.as<withdraw_with_signature>().owner };
-           case withdraw_vesting_type:
-               return set<address>{ condition.as<withdraw_vesting>().owner };
-           case withdraw_multisig_type:
-               return condition.as<withdraw_with_multisig>().owners;
-           case withdraw_escrow_type:
-           {
-               const auto escrow = condition.as<withdraw_with_escrow>();
-               return set<address>{ escrow.sender, escrow.receiver, escrow.escrow };
-           }
-           default:
-               return set<address>();
-       }
+       return condition.owners();
+   }
+
+   optional<address> balance_record::owner()const
+   {
+       return condition.owner();
    }
 
    bool balance_record::is_owner( const address& addr )const

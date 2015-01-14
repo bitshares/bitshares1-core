@@ -31,8 +31,8 @@ namespace bts { namespace blockchain {
       balance_id_type            id()const { return condition.get_address(); }
       slate_id_type              slate_id()const { return condition.slate_id; }
 
-      optional<address>          owner()const;
       set<address>               owners()const;
+      optional<address>          owner()const;
       bool                       is_owner( const address& addr )const;
       bool                       is_owner( const public_key_type& key )const;
 

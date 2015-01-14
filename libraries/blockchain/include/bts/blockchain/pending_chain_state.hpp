@@ -75,9 +75,6 @@ namespace bts { namespace blockchain {
          virtual void                   store_balance_record( const balance_record& r )override;
          virtual void                   store_account_record( const account_record& r )override;
 
-         virtual vector<operation>      get_recent_operations( operation_type_enum t )override;
-         virtual void                   store_recent_operation( const operation& o )override;
-
          virtual void                   store_object_record( const object_record& obj )override;
          virtual oobject_record         get_object_record( const object_id_type id )const override;
 
@@ -97,8 +94,9 @@ namespace bts { namespace blockchain {
          virtual optional<variant>      get_property( chain_property_enum property_id )const override;
          virtual void                   set_property( chain_property_enum property_id, const variant& property_value )override;
 
-         virtual void                   store_slot_record( const slot_record& r ) override;
-         virtual oslot_record           get_slot_record( const time_point_sec start_time )const override;
+         virtual void                   store_slot_record( const slot_record& ) override;
+         virtual oslot_record           get_slot_record( const slot_index )const override;
+         virtual oslot_record           get_slot_record( const time_point_sec )const override;
 
          virtual void                   store_market_history_record( const market_history_key& key,
                                                                      const market_history_record& record )override;
@@ -146,11 +144,6 @@ namespace bts { namespace blockchain {
 
          virtual void                   set_market_transactions( vector<market_transaction> trxs )override;
 
-         /**
-          *  This is a pass through method that goes stright to chain database whether or not transaction ID is valid
-          */
-         virtual void                  index_transaction( const address& addr, const transaction_id_type& trx_id ) override;
-
          unordered_map< chain_property_type, variant>                       properties;
 
          unordered_map<account_id_type, account_record>                     _account_id_to_record;
@@ -169,13 +162,16 @@ namespace bts { namespace blockchain {
          unordered_set<transaction_id_type>                                 _transaction_id_remove;
          unordered_set<digest_type>                                         _transaction_digests;
 
-         unordered_map< slate_id_type, delegate_slate>                      slates;
-         map<time_point_sec, slot_record>                                   slots;
-
-         map<burn_record_key,burn_record_value>                             burns;
-
          map<feed_index, feed_record>                                       _feed_index_to_record;
          set<feed_index>                                                    _feed_index_remove;
+
+         map<slot_index, slot_record>                                       _slot_index_to_record;
+         set<slot_index>                                                    _slot_index_remove;
+         map<time_point_sec, account_id_type>                               _slot_timestamp_to_delegate;
+
+         unordered_map< slate_id_type, delegate_slate>                      slates;
+
+         map<burn_record_key,burn_record_value>                             burns;
 
          map< market_index_key, order_record>                               asks;
          map< market_index_key, order_record>                               bids;
@@ -204,13 +200,13 @@ namespace bts { namespace blockchain {
       private:
          // Not serialized
          std::weak_ptr<chain_interface>                                     _prev_state;
-         map<operation_type_enum, std::deque<operation>>                    recent_operations;
 
          virtual void init_account_db_interface()override;
          virtual void init_asset_db_interface()override;
          virtual void init_balance_db_interface()override;
          virtual void init_transaction_db_interface()override;
          virtual void init_feed_db_interface()override;
+         virtual void init_slot_db_interface()override;
    };
    typedef std::shared_ptr<pending_chain_state> pending_chain_state_ptr;
 
@@ -230,11 +226,13 @@ FC_REFLECT( bts::blockchain::pending_chain_state,
         (_transaction_id_to_record)
         (_transaction_id_remove)
         (_transaction_digests)
-        (slates)
-        (slots)
-        (burns)
         (_feed_index_to_record)
         (_feed_index_remove)
+        (_slot_index_to_record)
+        (_slot_index_remove)
+        (_slot_timestamp_to_delegate)
+        (slates)
+        (burns)
         (asks)
         (bids)
         (relative_asks)

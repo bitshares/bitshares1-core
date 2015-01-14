@@ -25,6 +25,8 @@ namespace bts { namespace db {
      public:
         void open( const fc::path& dir, bool create = true, size_t cache_size = 0 )
         { try {
+           FC_ASSERT( !is_open(), "Database is already open!" );
+
            ldb::Options opts;
            opts.comparator = &_comparer;
            opts.create_if_missing = create;
@@ -55,10 +57,10 @@ namespace bts { namespace db {
            std::string ldbPath = dir.to_native_ansi_path();
 
            ldb::DB* ndb = nullptr;
-           auto ntrxstat = ldb::DB::Open( opts, ldbPath.c_str(), &ndb );
+           const auto ntrxstat = ldb::DB::Open( opts, ldbPath.c_str(), &ndb );
            if( !ntrxstat.ok() )
            {
-               FC_THROW_EXCEPTION( db_in_use_exception, "Unable to open database ${db}\n\t${msg}",
+               FC_THROW_EXCEPTION( level_map_open_failure, "Failure opening database: ${db}\nStatus: ${msg}",
                                    ("db",dir)("msg",ntrxstat.ToString()) );
            }
            _db.reset( ndb );
@@ -74,6 +76,7 @@ namespace bts { namespace db {
         void close()
         {
           _db.reset();
+          _cache.reset();
         }
 
         fc::optional<Value> fetch_optional( const Key& k )
@@ -98,7 +101,7 @@ namespace bts { namespace db {
            }
            if( !status.ok() )
            {
-               FC_THROW_EXCEPTION( db_exception, "database error: ${msg}", ("msg", status.ToString() ) );
+               FC_THROW_EXCEPTION( level_map_failure, "database error: ${msg}", ("msg", status.ToString() ) );
            }
            fc::datastream<const char*> datastream(value.c_str(), value.size());
            Value tmp;
@@ -152,7 +155,7 @@ namespace bts { namespace db {
            }
            if( !itr._it->status().ok() )
            {
-               FC_THROW_EXCEPTION( db_exception, "database error: ${msg}", ("msg", itr._it->status().ToString() ) );
+               FC_THROW_EXCEPTION( level_map_failure, "database error: ${msg}", ("msg", itr._it->status().ToString() ) );
            }
 
            if( itr.valid() )
@@ -236,7 +239,7 @@ namespace bts { namespace db {
            auto status = _db->Put( sync ? _sync_options : _write_options, ks, vs );
            if( !status.ok() )
            {
-               FC_THROW_EXCEPTION( db_exception, "database error: ${msg}", ("msg", status.ToString() ) );
+               FC_THROW_EXCEPTION( level_map_failure, "database error: ${msg}", ("msg", status.ToString() ) );
            }
         } FC_RETHROW_EXCEPTIONS( warn, "error storing ${key} = ${value}", ("key",k)("value",v) ); }
 
@@ -252,7 +255,7 @@ namespace bts { namespace db {
            }
            if( !status.ok() )
            {
-               FC_THROW_EXCEPTION( db_exception, "database error: ${msg}", ("msg", status.ToString() ) );
+               FC_THROW_EXCEPTION( level_map_failure, "database error: ${msg}", ("msg", status.ToString() ) );
            }
         } FC_RETHROW_EXCEPTIONS( warn, "error removing ${key}", ("key",k) ); }
 
