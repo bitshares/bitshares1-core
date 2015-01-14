@@ -11,23 +11,23 @@ Returns:
 default (unlocked) >>> wallet_list_unregistered_accounts 
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
 default (unlocked) >>> wallet_account_create testaccount1
-"XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
+"XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
 default (unlocked) >>> wallet_account_create testaccount2
-"XTS56gEKGQjqxWuEF7umuaaFbPTYQ1kP9LWRQHsyoojVmWML1yoNM"
+"XTS5DBeMtFiZaive82nTRuZjBbfZMVFZbudCs86bDfh3XwkKSdUqw"
 default (unlocked) >>> wallet_account_create testaccount3
-"XTS6Cew5rd9JffKPMP1puWnm4bZBUsSYmGWN1xRQGqQQhQTHV8JG7"
+"XTS5W4ayhoWynsujeA8BZ1vMo3MXkTwpmegf3qVdtjzBUpo5DAxqi"
 default (unlocked) >>> wallet_account_create testaccount4
-"XTS6XtfD6n2T2i3GE4BVuabQUvZRAxVLYUUTLpf7sFAqRxnA3i8Kf"
+"XTS6jzSPgDy5VP5qGAPswD5ZCfJk43eEetGXPfwSFvMxkNbhk8QQm"
 default (unlocked) >>> wallet_account_create testaccount5
-"XTS7HUZfUXP7gRt9c6apSfZiDysWTGgemBbCyqcQy2ZzEakWcGNf4"
+"XTS5b87BU2kxsKGZMJyo5Vmq6XRcawoUnR8jb6K5ZLaHwt47p3v5P"
 default (unlocked) >>> wallet_account_create testaccount6
-"XTS8ACzNnB17SaX3q1ibw67RKK6T622gZ8qAmK6RrQonym2wiby1d"
+"XTS6Pm82RqMbVkfjRYstTDpem913pzURN5kak2JtSZR1ysaPEfQ8N"
 default (unlocked) >>> wallet_list_unregistered_accounts 
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
-testaccount1                       XTS5AQGjeRu5sEBvvERaV8i1tstV1fx2ywGUmvWgsBPEjFoR27oQg           NO                    NO             0         
-testaccount2                       XTS7SqKwNVVDfvCua847Ethffm1qmuRAdSL32nPKtLGErj7SX5h7P           NO                    NO             0         
-testaccount3                       XTS5Rxfap5N3xWj4effGBy81F8uvmpqaUgmTkeP5HUyRUZewZo2eC           NO                    NO             0         
-testaccount4                       XTS7yQqMYMNjKEH2XL6cYL1RsruuNGE4czoWc4cNFGzcpAkCL1673           NO                    NO             0         
-testaccount5                       XTS6N4UBkJ6LF28yiPYS4wCjemjjq4TVKRk7FYrVxN4pmcdaoi6Nr           NO                    NO             0         
-testaccount6                       XTS8NfmBLRRWDr1wp3sFJeDmytV9KKYtWgHTUYREHyS1G2ouPA92s           NO                    NO             0         
+testaccount1                       XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX           NO                    NO             0         
+testaccount2                       XTS4vjfVZKusbLxknrEhVnqXSbbAZpzPU9yPmd48hAmeZrc1U1Eqq           NO                    NO             0         
+testaccount3                       XTS631H2Uz5E5LrH1QEeDkAj5ZWUNCWMCU6iJyVoeK3qc7JmpRibf           NO                    NO             0         
+testaccount4                       XTS5j9bSNzxRykrRCjB3SwFn7woVpcMVm461QxwNzxrsPxoL4zkyr           NO                    NO             0         
+testaccount5                       XTS5XMmkkwGDq8xXUu9PWVX3y7Ha3PvhsGaiPqqEfaSibhy5L8QCg           NO                    NO             0         
+testaccount6                       XTS7H4uyMQmVNjVPKAJfFVJ35PUiuv3Dkcenp1ExLncyhgFPwXMho           NO                    NO             0         
 default (unlocked) >>> quit

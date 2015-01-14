@@ -1,5 +1,5 @@
 default (unlocked) >>> wallet_account_create test
-"XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
+"XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
 default (unlocked) >>> wallet_get_info
 {
   "data_dir": "<d-ign></d-ign>",
