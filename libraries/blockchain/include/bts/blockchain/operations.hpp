@@ -196,6 +196,7 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (auction_bid_op_type)
                  (make_sale_op_type)
                  (buy_sale_op_type)
+                 (pay_fee_op_type)
                  )
 
 FC_REFLECT( bts::blockchain::operation, (type)(data) )
