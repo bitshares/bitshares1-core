@@ -258,7 +258,7 @@ void wallet_impl::scan_balances()
        transaction_record->ledger_entries.push_back( entry );
        _wallet_db.store_transaction( *transaction_record );
    };
-   _blockchain->scan_balances( scan_balance, true );
+   _blockchain->scan_balances( scan_balance );
 }
 
 void wallet_impl::scan_registered_accounts()
@@ -1317,7 +1317,7 @@ vector<wallet_transaction_record> wallet::get_transactions( const string& transa
 
 void wallet_impl::sign_transaction( signed_transaction& transaction, const unordered_set<address>& required_signatures )const
 { try {
-   const auto chain_id = _blockchain->chain_id();
+   const auto chain_id = _blockchain->get_chain_id();
    for( const auto& addr : required_signatures )
        transaction.sign( self->get_private_key( addr ), chain_id );
 } FC_CAPTURE_AND_RETHROW() }

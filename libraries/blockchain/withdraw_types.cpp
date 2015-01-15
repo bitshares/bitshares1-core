@@ -27,10 +27,31 @@ namespace bts { namespace blockchain {
          memcpy( message.data, message_str.c_str(), message_str.size() );
       }
    }
+   void extended_memo_data::set_message( const std::string& message_str )
+   {
+      FC_ASSERT( message_str.size() <= sizeof( message ) + sizeof(extra_message) );
+      if( message_str.size() && message_str.size() < sizeof(message) )
+      {
+         memcpy( message.data, message_str.c_str(), message_str.size() );
+      }
+      else
+      {
+         memcpy( message.data, message_str.c_str(), sizeof(message) );
+         memcpy( message.data, message_str.c_str() + sizeof(message), message_str.size() - sizeof(message) );
+      }
+   }
 
    std::string memo_data::get_message()const
    {
+      // add .c_str() to auto-truncate at null byte
       return std::string( (const char*)&message, sizeof(message) ).c_str();
+   }
+
+   std::string extended_memo_data::get_message()const
+   {
+      // add .c_str() to auto-truncate at null byte
+      return (std::string( (const char*)&message, sizeof(message) )
+             + std::string( (const char*)&extra_message, sizeof(extra_message) )).c_str();
    }
 
    balance_id_type withdraw_condition::get_address()const

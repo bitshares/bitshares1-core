@@ -563,7 +563,7 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
                 out << std::setw( 8 );
                 string str;
                 if( transaction.is_virtual )
-                  str = "[" + string(transaction.trx_id).substr(0, 6) + "]";
+                  str = "VIRTUAL";
                 else
                   str = string(transaction.trx_id).substr(0, 8);
                 if( FILTER_OUTPUT_FOR_TESTS )

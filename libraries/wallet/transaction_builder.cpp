@@ -793,7 +793,7 @@ transaction_builder& transaction_builder::finalize( bool pay_fee )
 
 wallet_transaction_record& transaction_builder::sign()
 { try {
-   auto chain_id = _wimpl->_blockchain->chain_id();
+   const auto chain_id = _wimpl->_blockchain->get_chain_id();
 
    for( const auto& address : required_signatures )
    {

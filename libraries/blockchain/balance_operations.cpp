@@ -556,5 +556,9 @@ namespace bts { namespace blockchain {
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 
+   void pay_fee_operation::evaluate( transaction_evaluation_state& eval_state )
+   {
+      eval_state._max_fee[this->amount.asset_id] += this->amount.amount;
+   }
 
 } } // bts::blockchain

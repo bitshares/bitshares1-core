@@ -18,12 +18,9 @@ namespace bts { namespace blockchain {
          void                           authorize( asset_id_type asset_id, const address& owner, object_id_type oid = 0 ) override;
          optional<object_id_type>       get_authorization( asset_id_type asset_id, const address& owner )const override;
 
-         virtual void                   set_feed( const feed_record&  ) override;
-         virtual ofeed_record           get_feed( const feed_index )const override;
          virtual void                   set_market_dirty( const asset_id_type quote_id, const asset_id_type base_id )override;
 
          virtual fc::time_point_sec     now()const override;
-         virtual digest_type            chain_id()const override;
 
          virtual void                       store_asset_proposal( const proposal_record& r ) override;
          virtual optional<proposal_record>  fetch_asset_proposal( asset_id_type asset_id, proposal_id_type proposal_id )const override;
@@ -34,11 +31,6 @@ namespace bts { namespace blockchain {
          virtual oprice                 get_active_feed_price( const asset_id_type quote_id,
                                                                const asset_id_type base_id = 0 )const override;
 
-         virtual oasset_record          get_asset_record( const asset_id_type id )const override;
-         virtual obalance_record        get_balance_record( const balance_id_type& id )const override;
-         virtual oaccount_record        get_account_record( const account_id_type id )const override;
-         virtual oaccount_record        get_account_record( const address& owner )const override;
-
          virtual odelegate_slate        get_delegate_slate( slate_id_type id )const override;
          virtual void                   store_delegate_slate( slate_id_type id, const delegate_slate& slate ) override;
 
@@ -46,9 +38,6 @@ namespace bts { namespace blockchain {
          virtual otransaction_record    get_transaction( const transaction_id_type& trx_id, bool exact = true )const override;
 
          virtual void                   store_transaction( const transaction_id_type&, const transaction_record&  ) override;
-
-         virtual oasset_record          get_asset_record( const string& symbol )const override;
-         virtual oaccount_record        get_account_record( const string& name )const override;
 
          virtual omarket_status         get_market_status( const asset_id_type quote_id, const asset_id_type base_id )override;
          virtual void                   store_market_status( const market_status& s ) override;
@@ -69,10 +58,6 @@ namespace bts { namespace blockchain {
          virtual void                   store_short_record( const market_index_key& key, const order_record& ) override;
          virtual void                   store_collateral_record( const market_index_key& key, const collateral_record& ) override;
 
-         virtual void                   store_asset_record( const asset_record& r )override;
-         virtual void                   store_balance_record( const balance_record& r )override;
-         virtual void                   store_account_record( const account_record& r )override;
-
          virtual void                   store_object_record( const object_record& obj )override;
          virtual oobject_record         get_object_record( const object_id_type id )const override;
 
@@ -91,10 +76,6 @@ namespace bts { namespace blockchain {
 
          virtual optional<variant>      get_property( chain_property_enum property_id )const override;
          virtual void                   set_property( chain_property_enum property_id, const variant& property_value )override;
-
-         virtual void                   store_slot_record( const slot_record& ) override;
-         virtual oslot_record           get_slot_record( const slot_index )const override;
-         virtual oslot_record           get_slot_record( const time_point_sec )const override;
 
          virtual void                   store_market_history_record( const market_history_key& key,
                                                                      const market_history_record& record )override;

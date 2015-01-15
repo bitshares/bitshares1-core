@@ -120,7 +120,14 @@ namespace bts { namespace blockchain {
       auto fee_itr = balance.find( 0 );
       if( fee_itr != balance.end() ) xts_fees += asset( fee_itr->second, 0);
 
+      auto max_fee_itr = _max_fee.find( 0 );
+      if( max_fee_itr != _max_fee.end() )
+      {
+         FC_ASSERT( xts_fees.amount <= max_fee_itr->second, "", ("max_fee",_max_fee)("xts_fees",xts_fees) );
+      }
+
       xts_fees += alt_fees_paid;
+
 
       if( required_fees > xts_fees )
       {
@@ -165,6 +172,12 @@ namespace bts { namespace blockchain {
          {
             // fees paid in something other than XTS are discounted 50%
             alt_fees_paid += asset( (fee.second*2)/3, fee.first ) * *median_price;
+
+            auto max_fee_itr = _max_fee.find( fee.first );
+            if( max_fee_itr != _max_fee.end() )
+            {
+               FC_ASSERT( fee.second <= max_fee_itr->second );
+            }
          }
       }
 
@@ -201,7 +214,7 @@ namespace bts { namespace blockchain {
 
         if( !_skip_signature_check )
         {
-           const auto trx_digest = trx_arg.digest( _current_state->chain_id() );
+           const auto trx_digest = trx_arg.digest( _current_state->get_chain_id() );
            for( const auto& sig : trx_arg.signatures )
            {
               auto key = fc::ecc::public_key( sig, trx_digest, enforce_canonical ).serialize();

@@ -28,7 +28,7 @@ void detail::wallet_impl::scan_balances_experimental()
     };
 
     _balance_records.clear();
-    _blockchain->scan_balances( scan_balance, true );
+    _blockchain->scan_balances( scan_balance );
     _dirty_balances = false;
 } FC_CAPTURE_AND_RETHROW() }
 

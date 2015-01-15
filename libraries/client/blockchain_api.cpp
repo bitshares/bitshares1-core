@@ -433,7 +433,7 @@ variant_object client_impl::blockchain_get_info()const
 {
    auto info = fc::mutable_variant_object();
 
-   info["blockchain_id"]                        = _chain_db->chain_id();
+   info["blockchain_id"]                        = _chain_db->get_chain_id();
 
    info["name"]                                 = BTS_BLOCKCHAIN_NAME;
    info["symbol"]                               = BTS_BLOCKCHAIN_SYMBOL;
@@ -456,6 +456,8 @@ variant_object client_impl::blockchain_get_info()const
    info["asset_shares_max"]                     = BTS_BLOCKCHAIN_MAX_SHARES;
    info["short_symbol_asset_reg_fee"]           = _chain_db->get_asset_registration_fee( BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE );
    info["long_symbol_asset_reg_fee"]            = _chain_db->get_asset_registration_fee( BTS_BLOCKCHAIN_MAX_SUB_SYMBOL_SIZE );
+
+   info["statistics_enabled"]                   = _chain_db->get_statistics_enabled();
 
    info["relay_fee"]                            = _chain_db->get_relay_fee();
    info["max_pending_queue_size"]               = BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE;
