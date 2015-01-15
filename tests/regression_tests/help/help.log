@@ -172,7 +172,6 @@ wallet_builder_add_signature <builder> [broadcast] [builder_path]
 wallet_builder_file_add_signature [broadcast] [builder_path]                                        
 wallet_burn <amount_to_burn> <asset_symbol> <from_account_name> <for_or_against> <to_account_name> [public_message] [anonymous] 
 wallet_change_passphrase <passphrase>                                                               
-wallet_check_sharedrop                                                                              
 wallet_check_vote_proportion <account>                                                              
 wallet_close                                                                                        
 wallet_collect_genesis_balances <account_name>                                                      
