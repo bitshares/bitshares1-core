@@ -135,12 +135,6 @@ namespace bts { namespace blockchain {
          full_block                  generate_block( const time_point_sec block_timestamp,
                                                      const delegate_config& config = delegate_config() );
 
-         /**
-          *  The chain ID is the hash of the initial_config loaded when the
-          *  database was first created.
-          */
-         virtual digest_type         chain_id()const override;
-
          optional<block_fork_data>   get_block_fork_data( const block_id_type& )const;
          bool                        is_known_block( const block_id_type& id )const;
          bool                        is_included_block( const block_id_type& id )const;

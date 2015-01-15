@@ -662,13 +662,13 @@ namespace bts { namespace cli {
       {
         if(FILTER_OUTPUT_FOR_TESTS)
         {
-          out << std::setw(15) << "<d-ign>" << transaction.digest(client->get_chain()->chain_id()).str().substr(0, 8) << "</d-ign>";
-          out << std::setw(20) << "<d-ign>" << string(transaction.expiration) << "</d-ign>";
+          out << std::setw(15) << "<d-ign>" << string( transaction.id() ).substr( 0, 8 ) << "</d-ign>";
+          out << std::setw(20) << "<d-ign>" << string( transaction.expiration ) << "</d-ign>";
         }
         else
         {
-          out << std::setw(15) << transaction.digest(client->get_chain()->chain_id()).str().substr(0, 8);
-          out << std::setw(20) << string(transaction.expiration);
+          out << std::setw(15) << string( transaction.id() ).substr( 0, 8 );
+          out << std::setw(20) << string( transaction.expiration );
         }
 
         out << std::setw(10) << transaction.data_size()

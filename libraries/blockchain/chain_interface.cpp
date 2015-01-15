@@ -400,16 +400,34 @@ namespace bts { namespace blockchain {
       }
    } FC_CAPTURE_AND_RETHROW( (a) ) }
 
-   void chain_interface::set_statistics_enabled( bool enabled )
+   void chain_interface::set_chain_id( const digest_type& id )
    { try {
-      set_property( statistics_enabled, fc::variant( enabled ) );
+      set_property( chain_id, variant( id ) );
+   } FC_CAPTURE_AND_RETHROW( (id) ) }
+
+   digest_type chain_interface::get_chain_id()const
+   { try {
+      static optional<digest_type> value;
+      if( value.valid() ) return *value;
+      const optional<variant> result = get_property( chain_id );
+      FC_ASSERT( result.valid() );
+      value = result->as<digest_type>();
+      return *value;
+   } FC_CAPTURE_AND_RETHROW() }
+
+   void chain_interface::set_statistics_enabled( const bool enabled )
+   { try {
+      set_property( statistics_enabled, variant( enabled ) );
    } FC_CAPTURE_AND_RETHROW( (enabled) ) }
 
    bool chain_interface::get_statistics_enabled()const
    { try {
+      static optional<bool> value;
+      if( value.valid() ) return *value;
       const optional<variant> result = get_property( statistics_enabled );
-      if( result.valid() ) return result->as_bool();
-      return false;
+      FC_ASSERT( result.valid() );
+      value = result->as_bool();
+      return *value;
    } FC_CAPTURE_AND_RETHROW() }
 
    void chain_interface::set_required_confirmations( uint64_t c )

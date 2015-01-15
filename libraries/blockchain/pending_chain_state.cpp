@@ -38,13 +38,6 @@ namespace bts { namespace blockchain {
       return prev_state->now();
    }
 
-   digest_type pending_chain_state::chain_id()const
-   {
-      const chain_interface_ptr prev_state = _prev_state.lock();
-      FC_ASSERT( prev_state );
-      return prev_state->chain_id();
-   }
-
    fc::ripemd160 pending_chain_state::get_current_random_seed()const
    {
       const chain_interface_ptr prev_state = _prev_state.lock();
@@ -98,7 +91,7 @@ namespace bts { namespace blockchain {
 
    bool pending_chain_state::is_known_transaction( const transaction& trx )const
    { try {
-       if( _transaction_digests.count( trx.digest( chain_id() ) ) > 0 ) return true;
+       if( _transaction_digests.count( trx.digest( get_chain_id() ) ) > 0 ) return true;
        chain_interface_ptr prev_state = _prev_state.lock();
        if( prev_state ) return prev_state->is_known_transaction( trx );
        return false;
@@ -787,7 +780,7 @@ namespace bts { namespace blockchain {
 
        interface.insert_into_unique_set = [&]( const transaction& trx )
        {
-           _transaction_digests.insert( trx.digest( chain_id() ) );
+           _transaction_digests.insert( trx.digest( get_chain_id() ) );
        };
 
        interface.erase_from_id_map = [&]( const transaction_id_type& id )
@@ -798,7 +791,7 @@ namespace bts { namespace blockchain {
 
        interface.erase_from_unique_set = [&]( const transaction& trx )
        {
-           _transaction_digests.erase( trx.digest( chain_id() ) );
+           _transaction_digests.erase( trx.digest( get_chain_id() ) );
        };
    }
 

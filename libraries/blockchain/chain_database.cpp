@@ -166,7 +166,7 @@ namespace bts { namespace blockchain {
           {
               const transaction& trx = iter.value().trx;
               if( trx.expiration > self->now() )
-                  _unique_transactions.emplace( trx, _chain_id );
+                  _unique_transactions.emplace( trx, self->get_chain_id() );
           }
 
           for( auto iter = _feed_index_to_record.begin(); iter.valid(); ++iter )
@@ -195,14 +195,9 @@ namespace bts { namespace blockchain {
 
       digest_type chain_database_impl::initialize_genesis( const optional<path>& genesis_file, const bool statistics_enabled )
       { try {
-         digest_type chain_id = self->chain_id();
-         if( chain_id != digest_type() )
-         {
-            wlog( "Genesis state already initialized" );
-            return chain_id;
-         }
-
          genesis_state config;
+         digest_type chain_id;
+
          if( !genesis_file.valid() )
          {
            std::cout << "Initializing state from built-in genesis file\n";
@@ -232,8 +227,7 @@ namespace bts { namespace blockchain {
            chain_id = enc.result();
          }
 
-         _chain_id = chain_id;
-         self->set_property( bts::blockchain::chain_id, variant( _chain_id ) );
+         self->set_chain_id( chain_id );
 
          // Check genesis state
          FC_ASSERT( config.delegates.size() >= BTS_BLOCKCHAIN_NUM_DELEGATES,
@@ -373,15 +367,12 @@ namespace bts { namespace blockchain {
          self->set_property( chain_property_enum::last_asset_id, asset_id );
          self->set_property( chain_property_enum::last_account_id, uint64_t( config.delegates.size() ) );
          self->set_property( chain_property_enum::active_delegate_list_id, fc::variant( self->next_round_active_delegates() ) );
-
-         _statistics_enabled = statistics_enabled;
-         self->set_statistics_enabled( _statistics_enabled );
-
+         self->set_statistics_enabled( statistics_enabled );
          self->set_property( chain_property_enum::last_object_id, 0 );
 
          self->sanity_check();
-         return _chain_id;
-      } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+         return chain_id;
+      } FC_CAPTURE_AND_RETHROW( (genesis_file)(statistics_enabled) ) }
 
       std::vector<block_id_type> chain_database_impl::fetch_blocks_at_number( uint32_t block_num )
       {
@@ -844,7 +835,7 @@ namespace bts { namespace blockchain {
           delegate_info.last_block_num_produced = produced_block.block_num;
           pending_state->store_account_record( *delegate_record );
 
-          if( _statistics_enabled )
+          if( self->get_statistics_enabled() )
           {
               const slot_record slot( produced_block.timestamp, delegate_id, produced_block.id() );
               pending_state->store_slot_record( slot );
@@ -872,7 +863,7 @@ namespace bts { namespace blockchain {
               delegate_record->delegate_info->blocks_missed += 1;
               pending_state->store_account_record( *delegate_record );
 
-              if( _statistics_enabled )
+              if( self->get_statistics_enabled() )
                   pending_state->store_slot_record( slot_record( block_timestamp, delegate_id )  );
           }
 
@@ -976,7 +967,7 @@ namespace bts { namespace blockchain {
             update_delegate_production_info( block_data, pending_state, block_signee );
 
             oblock_record block_record;
-            if( _statistics_enabled ) block_record = self->get_block_record( block_id );
+            if( self->get_statistics_enabled() ) block_record = self->get_block_record( block_id );
 
             pay_delegate( pending_state, block_signee, block_id, block_record );
 
@@ -1316,12 +1307,6 @@ namespace bts { namespace blockchain {
           }
           else
           {
-              const optional<variant> property = get_property( bts::blockchain::chain_id );
-              FC_ASSERT( property.valid() );
-              my->_chain_id = property->as<digest_type>();
-
-              my->_statistics_enabled = get_statistics_enabled();
-
               my->populate_indexes();
           }
 
@@ -2368,11 +2353,6 @@ namespace bts { namespace blockchain {
          my->_property_db.store( property_id, property_value );
    } FC_CAPTURE_AND_RETHROW( (property_id)(property_value) ) }
 
-   digest_type chain_database::chain_id()const
-   {
-         return my->_chain_id;
-   }
-
    fc::variant_object chain_database::find_delegate_vote_discrepancies() const
    {
       unordered_map<account_id_type, share_type> calculated_balances;
@@ -3084,7 +3064,7 @@ namespace bts { namespace blockchain {
 
    bool chain_database::is_known_transaction( const transaction& trx )const
    { try {
-       return my->_unique_transactions.count( unique_transaction_key( trx, chain_id() ) ) > 0;
+       return my->_unique_transactions.count( unique_transaction_key( trx, get_chain_id() ) ) > 0;
    } FC_CAPTURE_AND_RETHROW( (trx) ) }
 
    void chain_database::skip_signature_verification( bool state )
@@ -3891,7 +3871,7 @@ namespace bts { namespace blockchain {
        {
            my->_id_to_transaction_record_db.store( id, record );
 
-           if( my->_statistics_enabled )
+           if( get_statistics_enabled() )
            {
                const auto scan_address = [&]( const address& addr )
                {
@@ -3907,12 +3887,12 @@ namespace bts { namespace blockchain {
        interface.insert_into_unique_set = [&]( const transaction& trx )
        {
            if( trx.expiration > this->now() )
-               my->_unique_transactions.emplace( trx, chain_id() );
+               my->_unique_transactions.emplace( trx, get_chain_id() );
        };
 
        interface.erase_from_id_map = [&]( const transaction_id_type& id )
        {
-           if( my->_statistics_enabled )
+           if( get_statistics_enabled() )
            {
                const otransaction_record record = interface.lookup_by_id( id );
                if( record.valid() )
@@ -3930,7 +3910,7 @@ namespace bts { namespace blockchain {
 
        interface.erase_from_unique_set = [&]( const transaction& trx )
        {
-           my->_unique_transactions.erase( unique_transaction_key( trx, chain_id() ) );
+           my->_unique_transactions.erase( unique_transaction_key( trx, get_chain_id() ) );
        };
    }
 
@@ -3988,25 +3968,25 @@ namespace bts { namespace blockchain {
 
        interface.insert_into_index_map = [&]( const slot_index index, const slot_record& record )
        {
-           if( !my->_statistics_enabled ) return;
+           if( !get_statistics_enabled() ) return;
            my->_slot_index_to_record.store( index, record );
        };
 
        interface.insert_into_timestamp_map = [&]( const time_point_sec timestamp, const account_id_type delegate_id )
        {
-           if( !my->_statistics_enabled ) return;
+           if( !get_statistics_enabled() ) return;
            my->_slot_timestamp_to_delegate.store( timestamp, delegate_id );
        };
 
        interface.erase_from_index_map = [&]( const slot_index index )
        {
-           if( !my->_statistics_enabled ) return;
+           if( !get_statistics_enabled() ) return;
            my->_slot_index_to_record.remove( index );
        };
 
        interface.erase_from_timestamp_map = [&]( const time_point_sec timestamp )
        {
-           if( !my->_statistics_enabled ) return;
+           if( !get_statistics_enabled() ) return;
            my->_slot_timestamp_to_delegate.remove( timestamp );
        };
    }

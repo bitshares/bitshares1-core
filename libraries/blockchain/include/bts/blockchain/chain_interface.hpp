@@ -57,7 +57,6 @@ namespace bts { namespace blockchain {
          virtual ~chain_interface(){};
 
          virtual fc::time_point_sec now()const = 0;
-         virtual digest_type chain_id()const = 0;
 
          optional<string>                   get_parent_account_name( const string& account_name )const;
          bool                               is_valid_account_name( const string& name )const;
@@ -92,6 +91,12 @@ namespace bts { namespace blockchain {
                                                            const string& quote_symbol,
                                                            bool do_precision_dance = true )const;
 
+         void                               set_chain_id( const digest_type& id );
+         digest_type                        get_chain_id()const;
+
+         void                               set_statistics_enabled( const bool enabled );
+         bool                               get_statistics_enabled()const;
+
          virtual void                       store_burn_record( const burn_record& br ) = 0;
          virtual oburn_record               fetch_burn_record( const burn_record_key& key )const = 0;
 
@@ -112,9 +117,6 @@ namespace bts { namespace blockchain {
          virtual optional<variant>          get_property( chain_property_enum property_id )const            = 0;
          virtual void                       set_property( chain_property_enum property_id,
                                                           const fc::variant& property_value )               = 0;
-
-         virtual void                       set_statistics_enabled( bool enabled );
-         virtual bool                       get_statistics_enabled()const;
 
          virtual void                       set_required_confirmations( uint64_t );
          virtual uint64_t                   get_required_confirmations()const;

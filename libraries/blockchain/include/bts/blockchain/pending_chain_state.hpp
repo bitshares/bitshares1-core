@@ -23,7 +23,6 @@ namespace bts { namespace blockchain {
          virtual void                   set_market_dirty( const asset_id_type quote_id, const asset_id_type base_id )override;
 
          virtual fc::time_point_sec     now()const override;
-         virtual digest_type            chain_id()const override;
 
          virtual void                       store_asset_proposal( const proposal_record& r ) override;
          virtual optional<proposal_record>  fetch_asset_proposal( asset_id_type asset_id, proposal_id_type proposal_id )const override;
