@@ -490,14 +490,6 @@
         "aliases" : ["hx"]
       },
       {
-        "method_name": "wallet_check_sharedrop",
-        "description": "",
-        "return_type": "snapshot_record_list",
-        "parameters" : [],
-        "prerequisites" : ["wallet_open"],
-        "is_const": true
-      },
-      {
         "method_name": "wallet_remove_transaction",
         "description": "Removes the specified transaction record from your transaction history. USE WITH CAUTION! Rescan cannot reconstruct all transaction details",
         "return_type": "void",
@@ -938,6 +930,11 @@
         "return_type": "address",
         "parameters":
         [
+            {
+              "name": "symbol",
+              "type": "string",
+              "description": "which asset"
+            },
             {
               "name": "m",
               "type": "uint32_t",
@@ -1855,22 +1852,6 @@
             "name" : "account_name",
             "type" : "account_name",
             "description" : "the account to get a balance for, or leave empty for all accounts",
-            "default_value" : ""
-         }
-         ],
-         "is_const" : true,
-         "prerequisites" : ["wallet_open"],
-         "aliases" : []
-      },
-      {
-         "method_name"    : "wallet_account_balance_ids",
-         "description"    : "Lists the balance record ids for the specified account",
-         "return_type"    : "account_balance_id_summary_type",
-         "parameters"     : [
-         {
-            "name" : "account_name",
-            "type" : "account_name",
-            "description" : "the account to list balance ids for, or leave empty for all accounts",
             "default_value" : ""
          }
          ],

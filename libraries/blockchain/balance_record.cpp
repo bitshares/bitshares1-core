@@ -9,39 +9,14 @@ namespace bts { namespace blockchain {
        condition = withdraw_condition( withdraw_with_signature( owner ), balance_arg.asset_id, delegate_id );
    }
 
-   // TODO: Rename to owner_address
-   optional<address> balance_record::owner()const
-   {
-       switch( withdraw_condition_types( condition.type ) )
-       {
-           case withdraw_signature_type:
-               return condition.as<withdraw_with_signature>().owner;
-           case withdraw_vesting_type:
-               return condition.as<withdraw_vesting>().owner;
-           default:
-               return optional<address>();
-       }
-   }
-
-   // TODO: Rename to owner_addresses
    set<address> balance_record::owners()const
    {
-       switch( withdraw_condition_types( condition.type ) )
-       {
-           case withdraw_signature_type:
-               return set<address>{ condition.as<withdraw_with_signature>().owner };
-           case withdraw_vesting_type:
-               return set<address>{ condition.as<withdraw_vesting>().owner };
-           case withdraw_multisig_type:
-               return condition.as<withdraw_with_multisig>().owners;
-           case withdraw_escrow_type:
-           {
-               const auto escrow = condition.as<withdraw_with_escrow>();
-               return set<address>{ escrow.sender, escrow.receiver, escrow.escrow };
-           }
-           default:
-               return set<address>();
-       }
+       return condition.owners();
+   }
+
+   optional<address> balance_record::owner()const
+   {
+       return condition.owner();
    }
 
    bool balance_record::is_owner( const address& addr )const
@@ -108,11 +83,12 @@ namespace bts { namespace blockchain {
        FC_ASSERT( false, "Should never get here!" );
    }
 
-    balance_id_type balance_record::get_multisig_balance_id( uint32_t m, const vector<address>& addrs )
+    balance_id_type balance_record::get_multisig_balance_id( asset_id_type asset_id, uint32_t m, const vector<address>& addrs )
     { try {
-        withdraw_with_multisig condition;
-        condition.required = m;
-        condition.owners = set<address>(addrs.begin(), addrs.end());
+        withdraw_with_multisig multisig_condition;
+        multisig_condition.required = m;
+        multisig_condition.owners = set<address>(addrs.begin(), addrs.end());
+        withdraw_condition condition( multisig_condition, asset_id, 0 );
         auto balance = balance_record(condition);
         return balance.id();
     } FC_CAPTURE_AND_RETHROW( (m)(addrs) ) }

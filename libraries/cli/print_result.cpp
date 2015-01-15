@@ -1137,6 +1137,8 @@ namespace bts { namespace cli {
       block["next_secret_hash"] = "<d-ign>" + block["next_secret_hash"].as_string() + "</d-ign>";
     if(!block["delegate_signature"].is_null() && FILTER_OUTPUT_FOR_TESTS)
       block["delegate_signature"] = "<d-ign>" + block["delegate_signature"].as_string() + "</d-ign>";
+    if(!block["random_seed"].is_null() && FILTER_OUTPUT_FOR_TESTS)
+      block["random_seed"] = "<d-ign>" + block["random_seed"].as_string() + "</d-ign>";
     if(!block["processing_time"].is_null() && FILTER_OUTPUT_FOR_TESTS)
       block["processing_time"] = "<d-ign>" + block["processing_time"].as_string() + "</d-ign>";
     out << fc::json::to_pretty_string(block) << "\n";

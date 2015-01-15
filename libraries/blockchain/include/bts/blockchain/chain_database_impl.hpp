@@ -31,53 +31,65 @@ namespace bts { namespace blockchain {
          public:
             void                                        open_database(const fc::path& data_dir );
             void                                        clear_invalidation_of_future_blocks();
-            digest_type                                 initialize_genesis( const optional<path>& genesis_file );
+            digest_type                                 initialize_genesis( const optional<path>& genesis_file,
+                                                                            const bool statistics_enabled );
             void                                        populate_indexes();
 
             std::pair<block_id_type, block_fork_data>   store_and_index( const block_id_type& id, const full_block& blk );
+
             void                                        clear_pending(  const full_block& blk );
+            void                                        revalidate_pending();
+
             void                                        switch_to_fork( const block_id_type& block_id );
             void                                        extend_chain( const full_block& blk );
             vector<block_id_type>                       get_fork_history( const block_id_type& id );
             void                                        pop_block();
+
             void                                        mark_invalid( const block_id_type& id, const fc::exception& reason );
             void                                        mark_as_unchecked( const block_id_type& id );
             void                                        mark_included( const block_id_type& id, bool state );
+
             void                                        verify_header( const full_block&, const public_key_type& block_signee );
+
             void                                        apply_transactions( const full_block& block,
                                                                             const pending_chain_state_ptr& );
+
             void                                        pay_delegate( const pending_chain_state_ptr& pending_state,
                                                                       const public_key_type& block_signee,
                                                                       const block_id_type& block_id,
-                                                                      block_record& record );
+                                                                      oblock_record& record );
             void                                        pay_delegate_v2( const pending_chain_state_ptr& pending_state,
                                                                          const public_key_type& block_signee,
                                                                          const block_id_type& block_id,
-                                                                         block_record& record );
+                                                                         oblock_record& record );
             void                                        pay_delegate_v1( const pending_chain_state_ptr& pending_state,
                                                                          const public_key_type& block_signee,
                                                                          const block_id_type& block_id,
-                                                                         block_record& record );
+                                                                         oblock_record& record );
+
             void                                        save_undo_state( const block_id_type& id,
                                                                          const pending_chain_state_ptr& );
+
             void                                        update_head_block( const full_block& blk );
+
             std::vector<block_id_type>                  fetch_blocks_at_number( uint32_t block_num );
+
             std::pair<block_id_type, block_fork_data>   recursive_mark_as_linked(const std::unordered_set<block_id_type>& ids );
             void                                        recursive_mark_as_invalid( const std::unordered_set<block_id_type>& ids, const fc::exception& reason );
 
             void                                        execute_markets(const fc::time_point_sec timestamp, const pending_chain_state_ptr& pending_state );
             void                                        execute_markets_v1(const fc::time_point_sec timestamp, const pending_chain_state_ptr& pending_state );
+
             void                                        update_random_seed( const secret_hash_type& new_secret,
                                                                             const pending_chain_state_ptr& pending_state,
-                                                                            block_record& record );
+                                                                            oblock_record& record );
+
             void                                        update_active_delegate_list(const full_block& block_data,
                                                                                     const pending_chain_state_ptr& pending_state );
 
             void                                        update_delegate_production_info( const full_block& block_data,
                                                                                          const pending_chain_state_ptr& pending_state,
                                                                                          const public_key_type& block_signee );
-
-            void                                        revalidate_pending();
 
             fc::future<void> _revalidate_pending;
             fc::mutex        _push_block_mutex;
@@ -89,14 +101,16 @@ namespace bts { namespace blockchain {
              *  After a new block is pushed this state is recalculated based upon what ever
              *  pending transactions remain.
              */
-            pending_chain_state_ptr                                                     _pending_trx_state;
+            pending_chain_state_ptr                                                     _pending_trx_state = nullptr;
 
 
             chain_database*                                                             self = nullptr;
             unordered_set<chain_observer*>                                              _observers;
             digest_type                                                                 _chain_id;
-            bool                                                                        _skip_signature_verification;
-            share_type                                                                  _relay_fee;
+            bool                                                                        _skip_signature_verification = false;
+            share_type                                                                  _relay_fee = BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE;
+
+            bool                                                                        _statistics_enabled = false;
 
             bts::db::level_map<uint32_t, std::vector<block_id_type>>                    _fork_number_db;
             bts::db::level_map<block_id_type,block_fork_data>                           _fork_db;
@@ -136,7 +150,6 @@ namespace bts { namespace blockchain {
             map<fee_index, transaction_evaluation_state_ptr>                            _pending_fee_index;
 
             bts::db::cached_level_map<slate_id_type, delegate_slate>                    _slate_db;
-            bts::db::level_map<time_point_sec, slot_record>                             _slot_record_db;
 
             bts::db::cached_level_map<burn_record_key, burn_record_value>               _burn_db;
 
@@ -155,6 +168,8 @@ namespace bts { namespace blockchain {
             bts::db::cached_level_map<std::pair<asset_id_type,asset_id_type>, market_status> _market_status_db;
             bts::db::cached_level_map<market_history_key, market_history_record>        _market_history_db;
 
+            bts::db::level_map<slot_index, slot_record>                                 _slot_index_to_record;
+            bts::db::level_map<time_point_sec, account_id_type>                         _slot_timestamp_to_delegate;
 
             bts::db::level_map<object_id_type, object_record>                           _object_db;
             bts::db::level_map<edge_index_key, object_id_type/*edge id*/>               _edge_index;
@@ -172,8 +187,6 @@ namespace bts { namespace blockchain {
             bts::db::level_map<pair<asset_id_type,proposal_id_type>, proposal_record>   _asset_proposal_db;
 
             map<operation_type_enum, std::deque<operation>>                             _recent_operations;
-
-            bool _track_stats = true;
       };
   } // end namespace bts::blockchain::detail
 } } // end namespace bts::blockchain

@@ -4,7 +4,7 @@
 namespace bts { namespace blockchain { namespace detail {
 
 void chain_database_impl::pay_delegate_v2( const pending_chain_state_ptr& pending_state, const public_key_type& block_signee,
-                                           const block_id_type& block_id, block_record& record )
+                                           const block_id_type& block_id, oblock_record& record )
 { try {
       if( pending_state->get_head_block_num() < BTS_V0_4_24_FORK_BLOCK_NUM )
           return pay_delegate_v1( pending_state, block_signee, block_id, record );
@@ -32,9 +32,12 @@ void chain_database_impl::pay_delegate_v2( const pending_chain_state_ptr& pendin
       base_asset_record->collected_fees = 0;
       pending_state->store_asset_record( *base_asset_record );
 
-      record.signee_shares_issued = accepted_paycheck;
-      record.signee_fees_collected = 0;
-      record.signee_fees_destroyed = destroyed_collected_fees;
+      if( record.valid() )
+      {
+          record->signee_shares_issued = accepted_paycheck;
+          record->signee_fees_collected = 0;
+          record->signee_fees_destroyed = destroyed_collected_fees;
+      }
 } FC_CAPTURE_AND_RETHROW( (block_signee)(block_id)(record) ) }
 
 } } } // bts::blockchain::detail

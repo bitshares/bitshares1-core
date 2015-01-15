@@ -20,11 +20,6 @@ namespace bts { namespace blockchain {
 
       asset& operator += ( const asset& o );
       asset& operator -= ( const asset& o );
-      asset  operator *  ( const fc::uint128_t& fix6464 )const;
-      asset  operator *  ( uint64_t constant )const
-      {
-         return asset( amount * constant );
-      }
       asset  operator /  ( uint64_t constant )const
       {
          asset tmp(*this);

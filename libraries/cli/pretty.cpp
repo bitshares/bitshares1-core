@@ -410,11 +410,15 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
             out << std::setw(  8 ) << "MISSED";
             out << std::setw( 20 ) << pretty_timestamp( last_block_timestamp );
 
+            string delegate_name = "?";
             const auto slot_record = client->get_chain()->get_slot_record( last_block_timestamp );
-            FC_ASSERT( slot_record.valid() );
-            const auto delegate_record = client->get_chain()->get_account_record( slot_record->block_producer_id );
-            FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
-            out << std::setw( 32 ) << pretty_shorten( delegate_record->name, 31 );
+            if( slot_record.valid() )
+            {
+                const auto delegate_record = client->get_chain()->get_account_record( slot_record->index.delegate_id );
+                if( delegate_record.valid() && delegate_record->is_delegate() )
+                    delegate_name = delegate_record->name;
+            }
+            out << std::setw( 32 ) << pretty_shorten( delegate_name, 31 );
 
             out << std::setw(  8 ) << "N/A";
             out << std::setw(  8 ) << "N/A";

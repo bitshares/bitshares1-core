@@ -2659,7 +2659,7 @@ namespace bts { namespace net { namespace detail {
       {
         _active_connections.erase(originating_peer_ptr);
 
-        if (originating_peer_ptr->get_remote_endpoint())
+        if (inbound_endpoint && originating_peer_ptr->get_remote_endpoint())
         {
           fc::optional<potential_peer_record> updated_peer_record = _potential_peer_db.lookup_entry_for_endpoint(*inbound_endpoint);
           if (updated_peer_record)

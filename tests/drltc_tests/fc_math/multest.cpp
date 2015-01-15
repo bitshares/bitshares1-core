@@ -133,13 +133,13 @@ int main(int argc, char** argv, char** envp)
                 fc::uint128 ns_before;
                 fc::uint128 ns_after;
 
-                ns_before = t_before.tv_sec;
+                ns_before = fc::uint128(uint64_t(t_before.tv_sec));
                 ns_before *= 1000000000;
-                ns_before += t_before.tv_nsec;
+                ns_before += fc::uint128(uint64_t(t_before.tv_nsec));
 
-                ns_after = t_after.tv_sec;
+                ns_after = fc::uint128(uint64_t(t_after.tv_sec));
                 ns_after *= 1000000000;
-                ns_after += t_after.tv_nsec;
+                ns_after += fc::uint128(uint64_t(t_after.tv_nsec));
                 
                 total_time += (ns_after - ns_before);
                 calls++;

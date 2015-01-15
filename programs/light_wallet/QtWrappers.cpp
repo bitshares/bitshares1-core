@@ -1,20 +1,9 @@
 #include "QtWrappers.hpp"
+#include "QtConversions.hpp"
 
-Account::Account(const bts::blockchain::account_record& account, QObject* parent)
+TransactionSummary::TransactionSummary(QString id, QDateTime timestamp, QList<LedgerEntry*>&& ledger, QObject* parent)
    : QObject(parent),
-     m_name(convert(account.name)),
-     m_isRegistered(account.registration_date != fc::time_point_sec()),
-     m_registrationDate(convert(account.registration_date))
+     m_id(id),
+     m_when(timestamp),
+     m_ledger(ledger)
 {}
-
-Account& Account::operator=(const bts::blockchain::account_record& account)
-{
-   m_name = convert(account.name);
-   m_isRegistered = (account.registration_date != fc::time_point_sec());
-   m_registrationDate = convert(account.registration_date);
-   Q_EMIT nameChanged(m_name);
-   Q_EMIT isRegisteredChanged(m_isRegistered);
-   Q_EMIT registrationDateChanged(m_registrationDate);
-
-   return *this;
-}

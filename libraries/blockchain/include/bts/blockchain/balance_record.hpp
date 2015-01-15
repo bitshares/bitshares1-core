@@ -31,8 +31,8 @@ namespace bts { namespace blockchain {
       balance_id_type            id()const { return condition.get_address(); }
       slate_id_type              slate_id()const { return condition.slate_id; }
 
-      optional<address>          owner()const;
       set<address>               owners()const;
+      optional<address>          owner()const;
       bool                       is_owner( const address& addr )const;
       bool                       is_owner( const public_key_type& key )const;
 
@@ -48,7 +48,7 @@ namespace bts { namespace blockchain {
       fc::time_point_sec         deposit_date;
       fc::time_point_sec         last_update;
 
-      static balance_id_type get_multisig_balance_id( uint32_t m, const vector<address>& addrs );
+      static balance_id_type get_multisig_balance_id( asset_id_type asset_id, uint32_t m, const vector<address>& addrs );
 
       static const balance_db_interface& db_interface( const chain_interface& );
    };
