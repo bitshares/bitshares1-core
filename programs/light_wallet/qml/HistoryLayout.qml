@@ -4,7 +4,9 @@ import QtQuick.Layouts 1.1
 
 import Material 0.1
 
-Item {
+Page {
+   title: assetSymbol + " " + qsTr("Transactions")
+
    property real minimumWidth: 30
    property real minimumHeight: units.dp(80)
    property string accountName

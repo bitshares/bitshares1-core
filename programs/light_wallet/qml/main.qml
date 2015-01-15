@@ -1,21 +1,22 @@
 import QtQuick 2.4
-import QtQuick.Controls 1.3
 import QtQuick.Window 2.2
 import QtQuick.Layouts 1.1
 
 import "utils.js" as Utils
 import org.BitShares.Types 1.0
 
+import Material 0.1
+import Material.Transitions 0.1 as T
+
 ApplicationWindow {
    id: window
    visible: true
    width: 540
    height: 960
-   color: visuals.backgroundColor
-   minimumWidth: guiLoader.item? guiLoader.item.minimumWidth : 1
-   minimumHeight: guiLoader.item? guiLoader.item.minimumHeight : 1
+   initialPage: mainPage
 
    readonly property int orientation: window.width < window.height? Qt.PortraitOrientation : Qt.LandscapeOrientation
+   property bool needsOnboarding: !( wallet.account && wallet.account.isRegistered )
 
    function connectToServer() {
       if( !wallet.connected )
@@ -33,14 +34,17 @@ ApplicationWindow {
    Component.onCompleted: {
       if( wallet.walletExists )
          wallet.openWallet()
-
-      if( wallet.account && wallet.account.isRegistered ) {
-         guiLoader.sourceComponent = normalUi
-      } else {
-         guiLoader.sourceComponent = onboardingUi
-      }
+      if( needsOnboarding )
+         onboardLoader.sourceComponent = onboardingUi
 
       connectToServer()
+   }
+   pageStack.onPagePopped: if( pageStack.count === 1 ) wallet.lockWallet()
+
+   theme {
+      primaryColor: "#2196F3"
+      backgroundColor: "#BBDEFB"
+      accentColor: "#80D8FF"
    }
 
    QtObject {
@@ -51,14 +55,12 @@ ApplicationWindow {
    QtObject {
       id: visuals
 
-      property color backgroundColor: Qt.lighter(buttonColor)
       property color textColor: "#535353"
       property color lightTextColor: "#757575"
       property color buttonColor: "#28A9F6"
       property color buttonHoverColor: "#2BB4FF"
       property color buttonPressedColor: "#264D87"
       property color buttonTextColor: "white"
-      property color errorGlowColor: "red"
 
       property real spacing: 40
       property real margins: 20
@@ -95,40 +97,60 @@ ApplicationWindow {
       }
    }
 
-   Component {
-      id: normalUi
+   WelcomeLayout {
+      id: mainPage
+      title: qsTr("Welcome to BitShares")
+      anchors.fill: parent
+      //Make a null transition for initial page; there's no reason to animate the first page appearing.
+      transition: T.PageTransition {function transitionTo(){}}
+      onPasswordEntered: {
+         if( wallet.unlocked )
+            return proceedIfUnlocked()
 
-      WalletGui {
-         id: walletGui
+         Utils.connectOnce(wallet.onUnlockedChanged, proceedIfUnlocked)
+         wallet.unlockWallet(password)
+      }
+
+      function proceedIfUnlocked() {
+         if( !wallet.unlocked )
+            return
+
+         console.log("Finished welcome screen.")
+         clearPassword()
+         window.pageStack.push(assetsUi)
       }
    }
    Component {
       id: onboardingUi
 
       OnboardingLayout {
-         id: onboardingGui
-
-         onFinished: guiLoader.sourceComponent = normalUi
+         onFinished: {
+            pageStack.push(assetsUi)
+            onboardLoader.sourceComponent = null
+         }
       }
    }
+   Component {
+      id: assetsUi
 
+      AssetsLayout {
+         anchors.fill: parent
+         onLockRequested: {
+            wallet.lockWallet()
+            uiStack.pop()
+         }
+         onOpenHistory: window.pageStack.push(historyUi, {"accountName": account, "assetSymbol": symbol})
+      }
+   }
+   Component {
+      id: historyUi
+
+      HistoryLayout {
+      }
+   }
    Loader {
-      id: guiLoader
+      id: onboardLoader
       anchors.fill: parent
-   }
-
-   statusBar: StatusBar {
-      RowLayout {
-         width: parent.width
-
-         Label {
-            id: statusText
-            text: wallet.connected? qsTr("Connected") : qsTr("Disconnected")
-         }
-         Item { Layout.fillWidth: true }
-         Label {
-            id: errorText
-         }
-      }
+      z: 20
    }
 }

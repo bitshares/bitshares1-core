@@ -6,7 +6,7 @@ import Material 0.1
 
 import "utils.js" as Utils
 
-Item {
+MainView {
    id: onboarder
 
    property real minimumWidth: layout.Layout.minimumWidth + visuals.margins * 2
@@ -58,16 +58,17 @@ Item {
 
    Component.onCompleted: nameField.forceActiveFocus()
 
-   ColumnLayout {
-      id: layout
+
+   Rectangle {
       anchors.fill: parent
-      anchors.margins: visuals.margins
+      color: Theme.backgroundColor
+   }
+   Column {
+      id: layout
+      anchors.centerIn: parent
+      width: parent.width - visuals.margins * 2
       spacing: visuals.spacing
 
-      Item {
-         Layout.preferredHeight: window.orientation === Qt.PortraitOrientation?
-                                    window.height / 4 : window.height / 6
-      }
       Label {
          anchors.horizontalCenter: parent.horizontalCenter
          horizontalAlignment: Text.AlignHCenter
@@ -81,13 +82,13 @@ Item {
          text: qsTr("To get started, create a password below.\n" +
                     "This password can be short and easy to remember — we'll make a better one later.")
          anchors.horizontalCenter: parent.horizontalCenter
-         Layout.fillWidth: true
+         width: parent.width
          color: visuals.lightTextColor
          font.pixelSize: visuals.textBaseSize
          wrapMode: Text.WrapAtWordBoundaryOrAnywhere
       }
       ColumnLayout {
-         Layout.fillWidth: true
+         width: parent.width
 
          TextField {
             id: nameField
@@ -107,13 +108,13 @@ Item {
 
             Connections {
                target: wallet
-               onErrorUnlocking: passwordField.errorGlow()
+               onErrorUnlocking: passwordField.shake()
             }
          }
          Button {
             id: openButton
-            style: WalletButtonStyle {}
             text: qsTr("Begin")
+            elevation: 1
             Layout.fillWidth: true
             Layout.preferredHeight: passwordField.height
 
@@ -122,14 +123,13 @@ Item {
                   wallet.account.name = nameField.text
 
                if( passwordField.password.length < 1 ) {
-                  passwordField.errorGlow()
+                  passwordField.shake()
                } else {
                   passwordEntered(passwordField.password)
                }
             }
          }
       }
-      Item { Layout.fillHeight: true }
    }
 
    states: [

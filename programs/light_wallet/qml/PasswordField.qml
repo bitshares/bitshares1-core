@@ -7,6 +7,10 @@ import Material 0.1
 
 RowLayout {
    id: passwordForm
+   transform: Translate {
+      id: passwordTransform
+      x: 0
+   }
 
    property alias placeholderText: passwordText.placeholderText
    property alias password: passwordText.text
@@ -14,11 +18,39 @@ RowLayout {
 
    onFocusChanged: if( focus ) passwordText.focus = true
 
-   function errorGlow() {
-      errorGlow.pulse()
+   function shake() {
+      errorShake.restart()
    }
 
    signal accepted
+
+   SequentialAnimation {
+      id: errorShake
+      loops: 2
+      alwaysRunToEnd: true
+
+      PropertyAnimation {
+         target: passwordTransform
+         property: "x"
+         from: 0; to: units.dp(10)
+         easing.type: Easing.InQuad
+         duration: 25
+      }
+      PropertyAnimation {
+         target: passwordTransform
+         property: "x"
+         from: units.dp(10); to: units.dp(-10)
+         easing.type: Easing.OutInQuad
+         duration: 50
+      }
+      PropertyAnimation {
+         target: passwordTransform
+         property: "x"
+         from: units.dp(-10); to: 0
+         easing.type: Easing.OutQuad
+         duration: 25
+      }
+   }
 
    TextField {
       id: passwordText
@@ -26,6 +58,7 @@ RowLayout {
       echoMode: button.pressed? TextInput.Normal : TextInput.Password
       inputMethodHints: Qt.ImhSensitiveData | Qt.ImhHiddenText
       readOnly: button.pressed
+      floatingLabel: true
 
       onAccepted: passwordForm.accepted()
 
@@ -49,16 +82,11 @@ RowLayout {
             duration: Math.max((passwordText.text.length - 30) * 200, 200)
          }
       }
-      GlowRect {
-         id: errorGlow
-         anchors.fill: passwordText
-         color: visuals.errorGlowColor
-      }
    }
    Button {
       id: button
       text: qsTr("Show")
       Layout.preferredHeight: passwordText.height
-      style: WalletButtonStyle {}
+      elevation: 1
    }
 }

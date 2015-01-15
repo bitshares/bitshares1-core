@@ -4,7 +4,8 @@ import QtQuick.Layouts 1.1
 
 import Material 0.1
 
-Item {
+Page {
+   showBackButton: false
    property real minimumWidth: layout.Layout.minimumWidth + visuals.margins * 2
    property real minimumHeight: layout.Layout.minimumHeight + visuals.margins * 2
 
@@ -13,8 +14,6 @@ Item {
    function clearPassword() {
       passwordField.password = ""
    }
-
-   Stack.onStatusChanged: if( Stack.status === Stack.Active ) { passwordField.forceActiveFocus() }
 
    ColumnLayout {
       id: layout
@@ -43,22 +42,23 @@ Item {
             placeholderText: qsTr("Enter Password")
             fontPixelSize: visuals.textBaseSize * 1.1
             onAccepted: openButton.clicked()
+            focus: true
 
             Connections {
                target: wallet
-               onErrorUnlocking: passwordField.errorGlow()
+               onErrorUnlocking: passwordField.shake()
             }
          }
          Button {
             id: openButton
-            style: WalletButtonStyle {}
             text: qsTr("Open")
             Layout.fillWidth: true
             Layout.preferredHeight: passwordField.height
+            elevation: 1
 
             onClicked: {
                if( passwordField.password.length < 1 ) {
-                  passwordField.errorGlow()
+                  passwordField.shake()
                } else {
                   passwordEntered(passwordField.password)
                }
