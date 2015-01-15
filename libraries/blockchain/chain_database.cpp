@@ -112,7 +112,6 @@ namespace bts { namespace blockchain {
           _asset_symbol_to_id.open( data_dir / "index/asset_symbol_to_id" );
 
           _balance_id_to_record.open( data_dir / "index/balance_id_to_record" );
-          _empty_balance_id_to_record.open( data_dir / "index/empty_balance_id_to_record" );
 
           _id_to_transaction_record_db.open( data_dir / "index/id_to_transaction_record_db" );
 
@@ -1206,7 +1205,6 @@ namespace bts { namespace blockchain {
                  my->_asset_symbol_to_id.set_write_through( write_through );
 
                  my->_balance_id_to_record.set_write_through( write_through );
-                 my->_empty_balance_id_to_record.set_write_through( write_through );
 
                  my->_slate_db.set_write_through( write_through );
                  my->_burn_db.set_write_through( write_through );
@@ -1364,7 +1362,6 @@ namespace bts { namespace blockchain {
       my->_asset_symbol_to_id.close();
 
       my->_balance_id_to_record.close();
-      my->_empty_balance_id_to_record.close();
 
       my->_pending_transaction_db.close();
       my->_id_to_transaction_record_db.close();
@@ -1878,22 +1875,16 @@ namespace bts { namespace blockchain {
        store( record_to_store );
    } FC_CAPTURE_AND_RETHROW( (record_id)(record_to_store) ) }
 
-   void chain_database::scan_balances( function<void( const balance_record& )> callback, bool include_empty )const
+   void chain_database::scan_balances( const function<void( const balance_record& )> callback )const
    { try {
        for( auto iter = my->_balance_id_to_record.unordered_begin();
             iter != my->_balance_id_to_record.unordered_end(); ++iter )
        {
            callback( iter->second );
        }
-       if( !include_empty ) return;
-       for( auto iter = my->_empty_balance_id_to_record.unordered_begin();
-            iter != my->_empty_balance_id_to_record.unordered_end(); ++iter )
-       {
-           callback( iter->second );
-       }
-   } FC_CAPTURE_AND_RETHROW( (include_empty) ) }
+   } FC_CAPTURE_AND_RETHROW() }
 
-   void chain_database::scan_unordered_accounts( function<void( const account_record& )> callback )const
+   void chain_database::scan_unordered_accounts( const function<void( const account_record& )> callback )const
    { try {
        for( auto iter = my->_account_id_to_record.unordered_begin();
             iter != my->_account_id_to_record.unordered_end(); ++iter )
@@ -1902,7 +1893,7 @@ namespace bts { namespace blockchain {
        }
    } FC_CAPTURE_AND_RETHROW() }
 
-   void chain_database::scan_ordered_accounts( function<void( const account_record& )> callback )const
+   void chain_database::scan_ordered_accounts( const function<void( const account_record& )> callback )const
    { try {
        for( auto iter = my->_account_name_to_id.ordered_first(); iter.valid(); ++iter )
        {
@@ -1911,7 +1902,7 @@ namespace bts { namespace blockchain {
        }
    } FC_CAPTURE_AND_RETHROW() }
 
-   void chain_database::scan_unordered_assets( function<void( const asset_record& )> callback )const
+   void chain_database::scan_unordered_assets( const function<void( const asset_record& )> callback )const
    { try {
        for( auto iter = my->_asset_id_to_record.unordered_begin();
             iter != my->_asset_id_to_record.unordered_end(); ++iter )
@@ -1920,7 +1911,7 @@ namespace bts { namespace blockchain {
        }
    } FC_CAPTURE_AND_RETHROW() }
 
-   void chain_database::scan_ordered_assets( function<void( const asset_record& )> callback )const
+   void chain_database::scan_ordered_assets( const function<void( const asset_record& )> callback )const
    { try {
        for( auto iter = my->_asset_symbol_to_id.ordered_first(); iter.valid(); ++iter )
        {
@@ -1929,7 +1920,7 @@ namespace bts { namespace blockchain {
        }
    } FC_CAPTURE_AND_RETHROW() }
 
-   void chain_database::scan_objects( function<void( const object_record& )> callback )const
+   void chain_database::scan_objects( const function<void( const object_record& )> callback )const
    {
         ilog("@n starting object db scan");
         for( auto itr = my->_object_db.begin(); itr.valid(); ++itr )
@@ -2163,7 +2154,7 @@ namespace bts { namespace blockchain {
             if( record.is_owner( addr ) || record.id() == addr )
                 records[ record.id() ] = record;
         };
-        scan_balances( scan_balance, false );
+        scan_balances( scan_balance );
         return records;
    } FC_CAPTURE_AND_RETHROW( (addr) ) }
 
@@ -2175,7 +2166,7 @@ namespace bts { namespace blockchain {
             if( record.is_owner( key ) )
                 records[ record.id() ] = record;
         };
-        scan_balances( scan_balance, false );
+        scan_balances( scan_balance );
         return records;
    } FC_CAPTURE_AND_RETHROW( (key) ) }
 
@@ -3432,7 +3423,7 @@ namespace bts { namespace blockchain {
                     unclaimed_total.amount += record.balance;
             }
         };
-        scan_balances( scan_balance, false );
+        scan_balances( scan_balance );
         return unclaimed_total;
    } FC_CAPTURE_AND_RETHROW() }
 
@@ -3659,7 +3650,7 @@ namespace bts { namespace blockchain {
                            (_property_db) \
                            (_account_id_to_record)(_account_name_to_id)(_account_address_to_id) \
                            (_asset_id_to_record)(_asset_symbol_to_id) \
-                           (_balance_id_to_record)(_empty_balance_id_to_record) \
+                           (_balance_id_to_record) \
                            (_id_to_transaction_record_db)(_pending_transaction_db)(_pending_fee_index) \
                            (_slate_db)(_burn_db) \
                            (_feed_index_to_record) \
@@ -3830,31 +3821,19 @@ namespace bts { namespace blockchain {
 
        interface.lookup_by_id = [&]( const balance_id_type& id ) -> obalance_record
        {
-           auto iter = my->_balance_id_to_record.unordered_find( id );
+           const auto iter = my->_balance_id_to_record.unordered_find( id );
            if( iter != my->_balance_id_to_record.unordered_end() ) return iter->second;
-           iter = my->_empty_balance_id_to_record.unordered_find( id );
-           if( iter != my->_empty_balance_id_to_record.unordered_end() ) return iter->second;
            return obalance_record();
        };
 
        interface.insert_into_id_map = [&]( const balance_id_type& id, const balance_record& record )
        {
-           if( record.balance != 0 )
-           {
-               my->_empty_balance_id_to_record.remove( id );
-               my->_balance_id_to_record.store( id, record );
-           }
-           else
-           {
-               my->_balance_id_to_record.remove( id );
-               my->_empty_balance_id_to_record.store( id, record );
-           }
+           my->_balance_id_to_record.store( id, record );
        };
 
        interface.erase_from_id_map = [&]( const balance_id_type& id )
        {
            my->_balance_id_to_record.remove( id );
-           my->_empty_balance_id_to_record.remove( id );
        };
    }
 

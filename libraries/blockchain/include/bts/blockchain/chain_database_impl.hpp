@@ -129,7 +129,6 @@ namespace bts { namespace blockchain {
             bts::db::fast_level_map<string, asset_id_type>                              _asset_symbol_to_id;
 
             bts::db::fast_level_map<balance_id_type, balance_record>                    _balance_id_to_record;
-            bts::db::fast_level_map<balance_id_type, balance_record>                    _empty_balance_id_to_record;
 
             bts::db::level_map<transaction_id_type,transaction_record>                  _id_to_transaction_record_db;
             set<unique_transaction_key>                                                 _unique_transactions;
