@@ -86,7 +86,7 @@ RowLayout {
    Button {
       id: button
       text: qsTr("Show")
-      Layout.preferredHeight: passwordText.height
+      Layout.preferredHeight: passwordText.height / 1.7
       elevation: 1
    }
 }

@@ -46,13 +46,13 @@ Page {
                   Label {
                      color: visuals.textColor
                      text: amount
-                     font.pixelSize: visuals.textBaseSize * 2
+                     font.pixelSize: units.dp(32)
                   }
                   Item { Layout.fillWidth: true }
                   Label {
                      color: visuals.textColor
                      text: symbol
-                     font.pixelSize: visuals.textBaseSize * 2
+                     font.pixelSize: units.dp(32)
                   }
                   Item { Layout.preferredWidth: visuals.margins }
                   Icon {

@@ -67,14 +67,13 @@ MainView {
       id: layout
       anchors.centerIn: parent
       width: parent.width - visuals.margins * 2
-      spacing: visuals.spacing
 
       Label {
          anchors.horizontalCenter: parent.horizontalCenter
          horizontalAlignment: Text.AlignHCenter
          text: qsTr("Welcome to BitShares")
          color: visuals.textColor
-         font.pixelSize: visuals.textBaseSize * 1.5
+         font.pixelSize: units.dp(28)
          wrapMode: Text.WrapAtWordBoundaryOrAnywhere
       }
       Label {
@@ -94,7 +93,7 @@ MainView {
             id: nameField
             inputMethodHints: Qt.ImhLowercaseOnly
             placeholderText: qsTr("Pick a Username")
-            font.pixelSize: visuals.textBaseSize * 1.1
+            font.pixelSize: units.dp(20)
             Layout.fillWidth: true
             Layout.preferredHeight: implicitHeight
             text: wallet.account? wallet.account.name : ""
@@ -103,7 +102,7 @@ MainView {
             id: passwordField
             Layout.fillWidth: true
             placeholderText: qsTr("Create a Password")
-            fontPixelSize: visuals.textBaseSize * 1.1
+            fontPixelSize: units.dp(20)
             onAccepted: openButton.clicked()
 
             Connections {
