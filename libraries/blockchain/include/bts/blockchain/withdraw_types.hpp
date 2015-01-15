@@ -139,6 +139,7 @@ namespace bts { namespace blockchain {
 
       memo_data    decrypt_memo_data( const fc::sha512& secret )const;
       void         encrypt_memo_data( const fc::sha512& secret, const memo_data& );
+      void         encrypt_memo_data( const fc::sha512& secret, const extended_memo_data& );
 
       address                 owner;
       optional<titan_memo>    memo;
