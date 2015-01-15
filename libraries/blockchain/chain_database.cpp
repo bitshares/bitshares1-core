@@ -1675,26 +1675,6 @@ namespace bts { namespace blockchain {
       return my->_head_block_header.timestamp;
    }
 
-   oasset_record chain_database::get_asset_record( const asset_id_type id )const
-   { try {
-       return lookup<asset_record>( id );
-   } FC_CAPTURE_AND_RETHROW( (id) ) }
-
-   oaccount_record chain_database::get_account_record( const address& account_owner )const
-   { try {
-       return lookup<account_record>( account_owner );
-   } FC_CAPTURE_AND_RETHROW( (account_owner) ) }
-
-   obalance_record chain_database::get_balance_record( const balance_id_type& balance_id )const
-   { try {
-       return lookup<balance_record>( balance_id );
-   } FC_CAPTURE_AND_RETHROW( (balance_id) ) }
-
-   oaccount_record chain_database::get_account_record( const account_id_type account_id )const
-   { try {
-       return lookup<account_record>( account_id );
-   } FC_CAPTURE_AND_RETHROW( (account_id) ) }
-
    asset_id_type chain_database::get_asset_id( const string& symbol )const
    { try {
        auto arec = get_asset_record( symbol );
@@ -1706,31 +1686,6 @@ namespace bts { namespace blockchain {
    { try {
        return get_asset_record(symbol).valid();
    } FC_CAPTURE_AND_RETHROW( (symbol) ) }
-
-   oasset_record chain_database::get_asset_record( const string& symbol )const
-   { try {
-       return lookup<asset_record>( symbol );
-   } FC_CAPTURE_AND_RETHROW( (symbol) ) }
-
-   oaccount_record chain_database::get_account_record( const string& account_name )const
-   { try {
-       return lookup<account_record>( account_name );
-   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
-
-   void chain_database::store_asset_record( const asset_record& asset_to_store )
-   { try {
-       store( asset_to_store );
-   } FC_CAPTURE_AND_RETHROW( (asset_to_store) ) }
-
-   void chain_database::store_balance_record( const balance_record& r )
-   { try {
-       store( r );
-   } FC_CAPTURE_AND_RETHROW( (r) ) }
-
-   void chain_database::store_account_record( const account_record& record_to_store )
-   { try {
-       store( record_to_store );
-   } FC_CAPTURE_AND_RETHROW( (record_to_store) ) }
 
    vector<operation> chain_database::get_recent_operations(operation_type_enum t)const
    {
@@ -2966,21 +2921,6 @@ namespace bts { namespace blockchain {
          my->_slate_db.store( id, slate );
    }
 
-   void chain_database::store_slot_record( const slot_record& r )
-   { try {
-       store( r );
-   } FC_CAPTURE_AND_RETHROW( (r) ) }
-
-   oslot_record chain_database::get_slot_record( const slot_index index )const
-   { try {
-       return lookup<slot_record>( index );
-   } FC_CAPTURE_AND_RETHROW( (index) ) }
-
-   oslot_record chain_database::get_slot_record( const time_point_sec timestamp )const
-   { try {
-       return lookup<slot_record>( timestamp );
-   } FC_CAPTURE_AND_RETHROW( (timestamp) ) }
-
    void chain_database::store_market_history_record(const market_history_key& key, const market_history_record& record)
    {
      if( record.volume == 0 )
@@ -3175,16 +3115,6 @@ namespace bts { namespace blockchain {
       }
 
       return results;
-   }
-
-   void chain_database::set_feed( const feed_record& r )
-   {
-       store( r );
-   }
-
-   ofeed_record chain_database::get_feed( const feed_index i )const
-   {
-       return lookup<feed_record>( i );
    }
 
    // NOTE: Only base asset 0 is snapshotted and addresses can have multiple entries

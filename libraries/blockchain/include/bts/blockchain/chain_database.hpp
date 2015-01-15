@@ -274,17 +274,6 @@ namespace bts { namespace blockchain {
          bool                               is_valid_symbol( const string& asset_symbol )const;
          string                             get_asset_symbol( const asset_id_type asset_id )const;
          asset_id_type                      get_asset_id( const string& asset_symbol )const;
-         virtual oasset_record              get_asset_record( const asset_id_type id )const override;
-         virtual obalance_record            get_balance_record( const balance_id_type& id )const override;
-         virtual oaccount_record            get_account_record( const account_id_type id )const override;
-         virtual oaccount_record            get_account_record( const address& owner )const override;
-
-         virtual oasset_record              get_asset_record( const string& symbol )const override;
-         virtual oaccount_record            get_account_record( const string& name )const override;
-
-         virtual void                       store_asset_record( const asset_record& r )override;
-         virtual void                       store_balance_record( const balance_record& r )override;
-         virtual void                       store_account_record( const account_record& r )override;
 
          virtual vector<operation>          get_recent_operations( operation_type_enum t )const;
          virtual void                       store_recent_operation( const operation& o );
@@ -324,10 +313,6 @@ namespace bts { namespace blockchain {
          virtual void                       store_short_record( const market_index_key& key, const order_record& ) override;
          virtual void                       store_collateral_record( const market_index_key& key, const collateral_record& ) override;
 
-         virtual void                       store_slot_record( const slot_record& )override;
-         virtual oslot_record               get_slot_record( const slot_index )const override;
-         virtual oslot_record               get_slot_record( const time_point_sec )const override;
-
          virtual omarket_status             get_market_status( const asset_id_type quote_id, const asset_id_type base_id )override;
          virtual void                       store_market_status( const market_status& s ) override;
          virtual void                       store_market_history_record( const market_history_key &key, const market_history_record &record ) override;
@@ -348,9 +333,6 @@ namespace bts { namespace blockchain {
                                                                   uint32_t skip_count,
                                                                   uint32_t limit,
                                                                   const address& owner );
-
-         virtual void                       set_feed( const feed_record& )override;
-         virtual ofeed_record               get_feed( const feed_index )const override;
 
          void                               generate_snapshot( const fc::path& filename )const;
          asset                              calculate_supply( const asset_id_type asset_id )const;

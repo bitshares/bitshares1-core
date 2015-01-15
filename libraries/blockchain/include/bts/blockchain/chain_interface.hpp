@@ -103,8 +103,6 @@ namespace bts { namespace blockchain {
          virtual oprice                     get_active_feed_price( const asset_id_type quote_id,
                                                                    const asset_id_type base_id = 0 )const = 0;
 
-         virtual void                       set_feed( const feed_record&  )                                 = 0;
-         virtual ofeed_record               get_feed( const feed_index )const                              = 0;
          virtual void                       set_market_dirty( const asset_id_type quote_id,
                                                               const asset_id_type base_id )                = 0;
 
@@ -153,11 +151,6 @@ namespace bts { namespace blockchain {
                                                                      const collateral_record& )             = 0;
 
 
-         virtual oasset_record              get_asset_record( const asset_id_type id )const                = 0;
-         virtual obalance_record            get_balance_record( const balance_id_type& id )const            = 0;
-         virtual oaccount_record            get_account_record( const account_id_type id )const            = 0;
-         virtual oaccount_record            get_account_record( const address& owner )const                 = 0;
-
          virtual bool                       is_known_transaction( const transaction& trx )const             = 0;
 
          virtual otransaction_record        get_transaction( const transaction_id_type& trx_id,
@@ -165,13 +158,6 @@ namespace bts { namespace blockchain {
 
          virtual void                       store_transaction( const transaction_id_type&,
                                                                 const transaction_record&  )                = 0;
-
-         virtual oasset_record              get_asset_record( const std::string& symbol )const              = 0;
-         virtual oaccount_record            get_account_record( const std::string& name )const              = 0;
-
-         virtual void                       store_asset_record( const asset_record& r )                     = 0;
-         virtual void                       store_balance_record( const balance_record& r )                 = 0;
-         virtual void                       store_account_record( const account_record& r )                 = 0;
 
          virtual void                       store_object_record( const object_record& obj )                 = 0;
          virtual oobject_record             get_object_record( const object_id_type id )const              = 0;
@@ -206,10 +192,6 @@ namespace bts { namespace blockchain {
 
          virtual uint32_t                   get_head_block_num()const                                       = 0;
 
-         virtual void                       store_slot_record( const slot_record& ) = 0;
-         virtual oslot_record               get_slot_record( const slot_index )const = 0;
-         virtual oslot_record               get_slot_record( const time_point_sec )const = 0;
-
          virtual void                       store_market_history_record( const market_history_key& key,
                                                                          const market_history_record& record ) = 0;
          virtual omarket_history_record     get_market_history_record( const market_history_key& key )const = 0;
@@ -218,6 +200,25 @@ namespace bts { namespace blockchain {
          virtual std::set<std::pair<asset_id_type, asset_id_type>> get_dirty_markets()const;
 
          virtual void                       set_market_transactions( vector<market_transaction> trxs )      = 0;
+
+         oaccount_record                    get_account_record( const account_id_type id )const;
+         oaccount_record                    get_account_record( const string& name )const;
+         oaccount_record                    get_account_record( const address& addr )const;
+         void                               store_account_record( const account_record& record );
+
+         oasset_record                      get_asset_record( const asset_id_type id )const;
+         oasset_record                      get_asset_record( const string& symbol )const;
+         void                               store_asset_record( const asset_record& record );
+
+         obalance_record                    get_balance_record( const balance_id_type& id )const;
+         void                               store_balance_record( const balance_record& record );
+
+         ofeed_record                       get_feed_record( const feed_index index )const;
+         void                               store_feed_record( const feed_record& record );
+
+         oslot_record                       get_slot_record( const slot_index index )const;
+         oslot_record                       get_slot_record( const time_point_sec timestamp )const;
+         void                               store_slot_record( const slot_record& record );
 
          template<typename T, typename U>
          optional<T> lookup( const U& key )const

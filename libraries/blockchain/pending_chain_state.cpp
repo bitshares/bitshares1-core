@@ -211,21 +211,6 @@ namespace bts { namespace blockchain {
       return v;
    }
 
-   oasset_record pending_chain_state::get_asset_record( const asset_id_type asset_id )const
-   {
-       return lookup<asset_record>( asset_id );
-   }
-
-   oasset_record pending_chain_state::get_asset_record( const std::string& symbol )const
-   {
-       return lookup<asset_record>( symbol );
-   }
-
-   obalance_record pending_chain_state::get_balance_record( const balance_id_type& balance_id )const
-   {
-       return lookup<balance_record>( balance_id );
-   }
-
    odelegate_slate pending_chain_state::get_delegate_slate( slate_id_type id )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
@@ -238,36 +223,6 @@ namespace bts { namespace blockchain {
    void pending_chain_state::store_delegate_slate( slate_id_type id, const delegate_slate& slate )
    {
       slates[id] = slate;
-   }
-
-   oaccount_record pending_chain_state::get_account_record( const address& owner )const
-   {
-       return lookup<account_record>( owner );
-   }
-
-   oaccount_record pending_chain_state::get_account_record( const account_id_type account_id )const
-   {
-       return lookup<account_record>( account_id );
-   }
-
-   oaccount_record pending_chain_state::get_account_record( const std::string& name )const
-   {
-       return lookup<account_record>( name );
-   }
-
-   void pending_chain_state::store_account_record( const account_record& r )
-   {
-       store( r );
-   }
-
-   void pending_chain_state::store_asset_record( const asset_record& r )
-   {
-       store( r );
-   }
-
-   void pending_chain_state::store_balance_record( const balance_record& r )
-   {
-       store( r );
    }
 
    oobject_record pending_chain_state::get_object_record(const object_id_type id)const
@@ -510,21 +465,6 @@ namespace bts { namespace blockchain {
       _dirty_markets.insert( key.order_price.asset_pair() );
    }
 
-   void pending_chain_state::store_slot_record( const slot_record& r )
-   {
-       store( r );
-   }
-
-   oslot_record pending_chain_state::get_slot_record( const slot_index index )const
-   {
-       return lookup<slot_record>( index );
-   }
-
-   oslot_record pending_chain_state::get_slot_record( const time_point_sec timestamp )const
-   {
-       return lookup<slot_record>( timestamp );
-   }
-
    void pending_chain_state::store_market_history_record(const market_history_key& key, const market_history_record& record)
    {
      market_history[ key ] = record;
@@ -554,16 +494,6 @@ namespace bts { namespace blockchain {
    void pending_chain_state::store_market_status( const market_status& s )
    {
       market_statuses[std::make_pair(s.quote_id,s.base_id)] = s;
-   }
-
-   void pending_chain_state::set_feed( const feed_record& r )
-   {
-       store( r );
-   }
-
-   ofeed_record pending_chain_state::get_feed( const feed_index i )const
-   {
-       return lookup<feed_record>( i );
    }
 
    void pending_chain_state::store_burn_record( const burn_record& br )

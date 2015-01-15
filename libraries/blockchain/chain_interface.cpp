@@ -454,4 +454,74 @@ namespace bts { namespace blockchain {
       return std::set<std::pair<asset_id_type, asset_id_type>>();
    } FC_CAPTURE_AND_RETHROW() }
 
+   oaccount_record chain_interface::get_account_record( const account_id_type id )const
+   { try {
+       return lookup<account_record>( id );
+   } FC_CAPTURE_AND_RETHROW( (id) ) }
+
+   oaccount_record chain_interface::get_account_record( const string& name )const
+   { try {
+       return lookup<account_record>( name );
+   } FC_CAPTURE_AND_RETHROW( (name) ) }
+
+   oaccount_record chain_interface::get_account_record( const address& addr )const
+   { try {
+       return lookup<account_record>( addr );
+   } FC_CAPTURE_AND_RETHROW( (addr) ) }
+
+   void chain_interface::store_account_record( const account_record& record )
+   { try {
+       store( record );
+   } FC_CAPTURE_AND_RETHROW( (record) ) }
+
+   oasset_record chain_interface::get_asset_record( const asset_id_type id )const
+   { try {
+       return lookup<asset_record>( id );
+   } FC_CAPTURE_AND_RETHROW( (id) ) }
+
+   oasset_record chain_interface::get_asset_record( const string& symbol )const
+   { try {
+       return lookup<asset_record>( symbol );
+   } FC_CAPTURE_AND_RETHROW( (symbol) ) }
+
+   void chain_interface::store_asset_record( const asset_record& record )
+   { try {
+       store( record );
+   } FC_CAPTURE_AND_RETHROW( (record) ) }
+
+   obalance_record chain_interface::get_balance_record( const balance_id_type& id )const
+   { try {
+       return lookup<balance_record>( id );
+   } FC_CAPTURE_AND_RETHROW( (id) ) }
+
+   void chain_interface::store_balance_record( const balance_record& record )
+   { try {
+       store( record );
+   } FC_CAPTURE_AND_RETHROW( (record) ) }
+
+   ofeed_record chain_interface::get_feed_record( const feed_index index )const
+   { try {
+       return lookup<feed_record>( index );
+   } FC_CAPTURE_AND_RETHROW( (index) ) }
+
+   void chain_interface::store_feed_record( const feed_record& record )
+   { try {
+       store( record );
+   } FC_CAPTURE_AND_RETHROW( (record) ) }
+
+   oslot_record chain_interface::get_slot_record( const slot_index index )const
+   { try {
+       return lookup<slot_record>( index );
+   } FC_CAPTURE_AND_RETHROW( (index) ) }
+
+   oslot_record chain_interface::get_slot_record( const time_point_sec timestamp )const
+   { try {
+       return lookup<slot_record>( timestamp );
+   } FC_CAPTURE_AND_RETHROW( (timestamp) ) }
+
+   void chain_interface::store_slot_record( const slot_record& record )
+   { try {
+       store( record );
+   } FC_CAPTURE_AND_RETHROW( (record) ) }
+
 } } // bts::blockchain
