@@ -107,7 +107,7 @@ namespace bts { namespace blockchain {
       fc::enum_type<uint8_t,memo_flags_enum>        memo_flags;
       fc::array<char,32>                            extra_message;
    };
-   typedef fc::optional<memo_data>         omemo_data;
+   typedef fc::optional<extended_memo_data> oextended_memo_data;
 
    struct memo_status : public memo_data
    {

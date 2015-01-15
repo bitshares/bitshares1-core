@@ -4,7 +4,9 @@ import QtQuick.Layouts 1.1
 
 import Material 0.1
 
-Item {
+Page {
+   title: assetSymbol + " " + qsTr("Transactions")
+
    property real minimumWidth: 30
    property real minimumHeight: units.dp(80)
    property string accountName
@@ -44,12 +46,12 @@ Item {
                   Item { Layout.preferredWidth: visuals.margins }
                   Label {
                      text: qsTr("Transaction #") + trx.modelData.id.substring(0, 8)
-                     font.pixelSize: visuals.textBaseSize
+                     font.pixelSize: units.dp(20)
                      Layout.fillWidth: true
                   }
                   Label {
                      text: model.modelData.timestamp
-                     font.pixelSize: visuals.textBaseSize
+                     font.pixelSize: units.dp(20)
                   }
                   Item { Layout.preferredWidth: visuals.margins }
                }
@@ -59,35 +61,27 @@ Item {
                   model: trx.modelData.ledger
                   delegate: RowLayout {
                      width: parent.width
-                     property real senderWidth: senderLabel.width
                      property bool incoming: receiver === accountName
 
                      Item { Layout.preferredWidth: visuals.margins }
-                     Label {
-                        id: senderLabel
-                        text: incoming? sender : receiver
-                        Layout.preferredWidth: (text === "" && index)?
-                                                  ledgerRepeater.itemAt(index - 1).senderWidth : implicitWidth
-                        font.pixelSize: visuals.textBaseSize * .75
-                        elide: Text.ElideRight
-                        Layout.maximumWidth: historyScroller.width / 4
+                     RoboHash {
+                        name: incoming? sender : receiver
+                        Layout.fillWidth: true
                      }
                      Label {
                         text: incoming? "→" : "←"
-                        font.pointSize: visuals.textBaseSize * .75
+                        font.pixelSize: units.dp(16)
                         Layout.minimumWidth: implicitWidth
                      }
                      Label {
                         text: amount + " " + symbol
                         color: incoming? "green" : "red"
-                        font.pixelSize: visuals.textBaseSize * .75
-                        Layout.maximumWidth: historyScroller.width / 3
+                        font.pixelSize: units.dp(16)
                      }
+                     Item { Layout.fillWidth: true }
                      Label {
                         text: memo
-                        font.pixelSize: visuals.textBaseSize * .75
-                        Layout.fillWidth: true
-                        horizontalAlignment: Text.AlignRight
+                        font.pixelSize: units.dp(16)
                      }
                      Item { Layout.preferredWidth: visuals.margins }
                   }

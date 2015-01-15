@@ -4040,7 +4040,7 @@ namespace detail {
           }
       };
 
-      my->_blockchain->scan_balances( scan_balance, false );
+      my->_blockchain->scan_balances( scan_balance );
 
       return result;
    }

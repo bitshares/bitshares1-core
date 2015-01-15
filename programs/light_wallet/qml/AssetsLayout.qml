@@ -6,9 +6,10 @@ import Material 0.1
 
 import "utils.js" as Utils
 
-Item {
+Page {
    property real minimumWidth: assetsLayout.Layout.minimumWidth + visuals.margins * 2
-   property real minimumHeight: header.height + assetsLayout.Layout.minimumHeight + visuals.margins * 2
+   property real minimumHeight: assetsLayout.Layout.minimumHeight + visuals.margins * 2
+   title: wallet.account.name + qsTr("'s Balances")
 
    signal lockRequested
    signal openHistory(string account, string symbol)
@@ -45,13 +46,13 @@ Item {
                   Label {
                      color: visuals.textColor
                      text: amount
-                     font.pixelSize: visuals.textBaseSize * 2
+                     font.pixelSize: units.dp(32)
                   }
                   Item { Layout.fillWidth: true }
                   Label {
                      color: visuals.textColor
                      text: symbol
-                     font.pixelSize: visuals.textBaseSize * 2
+                     font.pixelSize: units.dp(32)
                   }
                   Item { Layout.preferredWidth: visuals.margins }
                   Icon {

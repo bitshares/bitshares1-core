@@ -4,7 +4,8 @@ import QtQuick.Layouts 1.1
 
 import Material 0.1
 
-Item {
+Page {
+   showBackButton: false
    property real minimumWidth: layout.Layout.minimumWidth + visuals.margins * 2
    property real minimumHeight: layout.Layout.minimumHeight + visuals.margins * 2
 
@@ -14,57 +15,45 @@ Item {
       passwordField.password = ""
    }
 
-   Stack.onStatusChanged: if( Stack.status === Stack.Active ) { passwordField.forceActiveFocus() }
-
-   ColumnLayout {
+   Column {
       id: layout
-      anchors.fill: parent
-      anchors.margins: visuals.margins
-      spacing: visuals.spacing
+      anchors.centerIn: parent
+      spacing: units.dp(8)
+      width: parent.width - visuals.margins * 2
 
-      Item {
-         Layout.preferredHeight: window.orientation === Qt.PortraitOrientation?
-                                    window.height / 4 : window.height / 6
-      }
       Label {
          anchors.horizontalCenter: parent.horizontalCenter
          horizontalAlignment: Text.AlignHCenter
-         text: qsTr("Welcome back, ") + wallet.account.name
+         text: qsTr("Welcome back")
          color: visuals.textColor
-         font.pixelSize: visuals.textBaseSize * 1.5
+         font.pixelSize: units.dp(28)
          wrapMode: Text.WrapAtWordBoundaryOrAnywhere
       }
-      ColumnLayout {
-         Layout.fillWidth: true
+      PasswordField {
+         id: passwordField
+         width: parent.width
+         placeholderText: qsTr("Enter Password")
+         onAccepted: openButton.clicked()
+         fontPixelSize: units.dp(20)
+         focus: true
 
-         PasswordField {
-            id: passwordField
-            Layout.fillWidth: true
-            placeholderText: qsTr("Enter Password")
-            fontPixelSize: visuals.textBaseSize * 1.1
-            onAccepted: openButton.clicked()
-
-            Connections {
-               target: wallet
-               onErrorUnlocking: passwordField.errorGlow()
-            }
+         Connections {
+            target: wallet
+            onErrorUnlocking: passwordField.shake()
          }
-         Button {
-            id: openButton
-            style: WalletButtonStyle {}
-            text: qsTr("Open")
-            Layout.fillWidth: true
-            Layout.preferredHeight: passwordField.height
-
-            onClicked: {
-               if( passwordField.password.length < 1 ) {
-                  passwordField.errorGlow()
-               } else {
-                  passwordEntered(passwordField.password)
-               }
+      }
+      Button {
+         id: openButton
+         text: qsTr("Open")
+         elevation: 1
+         width: passwordField.width
+         onClicked: {
+            if( passwordField.password.length < 1 ) {
+               passwordField.shake()
+            } else {
+               passwordEntered(passwordField.password)
             }
          }
       }
-      Item { Layout.fillHeight: true }
    }
 }

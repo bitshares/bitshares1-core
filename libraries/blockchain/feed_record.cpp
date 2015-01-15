@@ -22,9 +22,7 @@ namespace bts { namespace blockchain {
     { try {
         const ofeed_record prev_record = lookup( index );
         if( prev_record.valid() )
-        {
             erase_from_index_map( index );
-        }
     } FC_CAPTURE_AND_RETHROW( (index) ) }
 
 } } // bts::blockchain

@@ -219,7 +219,7 @@ public:
    virtual fc::sha256 get_chain_id() const override
    {
       FC_ASSERT( _chain_db != nullptr );
-      return _chain_db->chain_id();
+      return _chain_db->get_chain_id();
    }
    virtual std::vector<bts::net::item_hash_t> get_blockchain_synopsis(uint32_t item_type,
                                                                       const bts::net::item_hash_t& reference_point = bts::net::item_hash_t(),

@@ -97,11 +97,8 @@ namespace bts { namespace blockchain {
 
             chain_database*                                                             self = nullptr;
             unordered_set<chain_observer*>                                              _observers;
-            digest_type                                                                 _chain_id;
             bool                                                                        _skip_signature_verification = false;
             share_type                                                                  _relay_fee = BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE;
-
-            bool                                                                        _statistics_enabled = false;
 
             bts::db::level_map<uint32_t, std::vector<block_id_type>>                    _fork_number_db;
             bts::db::level_map<block_id_type,block_fork_data>                           _fork_db;
@@ -132,7 +129,6 @@ namespace bts { namespace blockchain {
             bts::db::fast_level_map<string, asset_id_type>                              _asset_symbol_to_id;
 
             bts::db::fast_level_map<balance_id_type, balance_record>                    _balance_id_to_record;
-            bts::db::fast_level_map<balance_id_type, balance_record>                    _empty_balance_id_to_record;
 
             bts::db::level_map<transaction_id_type,transaction_record>                  _id_to_transaction_record_db;
             set<unique_transaction_key>                                                 _unique_transactions;

@@ -442,7 +442,6 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const fc::variant_
    for( auto fee : record.balance )
       summary.delta_amounts["Fee"].emplace_back(fee.second, fee.first);
 
-   wdump((summary));
    return summary;
 } FC_CAPTURE_AND_RETHROW( (transaction_bundle) ) }
 

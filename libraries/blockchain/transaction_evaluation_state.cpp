@@ -214,7 +214,7 @@ namespace bts { namespace blockchain {
 
         if( !_skip_signature_check )
         {
-           const auto trx_digest = trx_arg.digest( _current_state->chain_id() );
+           const auto trx_digest = trx_arg.digest( _current_state->get_chain_id() );
            for( const auto& sig : trx_arg.signatures )
            {
               auto key = fc::ecc::public_key( sig, trx_digest, enforce_canonical ).serialize();
