@@ -39,22 +39,8 @@ Page {
                id: transactionSummary
                width: parent.width
 
-               Item { Layout.preferredHeight: visuals.margins }
-               RowLayout {
-                  width: parent.width
+               property string timestamp: model.modelData.timestamp
 
-                  Item { Layout.preferredWidth: visuals.margins }
-                  Label {
-                     text: qsTr("Transaction #") + trx.modelData.id.substring(0, 8)
-                     font.pixelSize: units.dp(20)
-                     Layout.fillWidth: true
-                  }
-                  Label {
-                     text: model.modelData.timestamp
-                     font.pixelSize: units.dp(20)
-                  }
-                  Item { Layout.preferredWidth: visuals.margins }
-               }
                Item { Layout.preferredHeight: visuals.margins }
                Repeater {
                   id: ledgerRepeater
@@ -66,21 +52,23 @@ Page {
                      Item { Layout.preferredWidth: visuals.margins }
                      RoboHash {
                         name: incoming? sender : receiver
-                        Layout.fillWidth: true
+                        Layout.preferredWidth: units.dp(100)
                      }
-                     Label {
-                        text: incoming? "→" : "←"
-                        font.pixelSize: units.dp(16)
-                        Layout.minimumWidth: implicitWidth
+                     Column {
+                        Layout.fillWidth: true
+                        Label {
+                           text: memo
+                           font.pixelSize: units.dp(16)
+                        }
+                        Item { width: 1; height: units.dp(8) }
+                        Label {
+                           text: (index === 0)? (transactionSummary.timestamp) : ""
+                           font.pixelSize: units.dp(16)
+                        }
                      }
                      Label {
                         text: amount + " " + symbol
                         color: incoming? "green" : "red"
-                        font.pixelSize: units.dp(16)
-                     }
-                     Item { Layout.fillWidth: true }
-                     Label {
-                        text: memo
                         font.pixelSize: units.dp(16)
                      }
                      Item { Layout.preferredWidth: visuals.margins }

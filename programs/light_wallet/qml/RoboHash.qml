@@ -6,6 +6,7 @@ import Material 0.1
 
 Column {
    property alias name: robotName.text
+   property alias preferredWidth: robotName.implicitWidth
 
    Image {
       id: roboHash

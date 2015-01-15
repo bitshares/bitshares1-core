@@ -95,23 +95,6 @@ QList<QObject*> Account::transactionHistory(QString asset_symbol)
             }
          }
 
-         if( trx.delta_amounts.count("Fee") )
-         {
-            for( bts::blockchain::asset fee : trx.delta_amounts["Fee"] )
-            {
-               auto asset = m_wallet->get_asset_record(fee.asset_id);
-               if( !asset ) continue;
-
-               LedgerEntry* entry = new LedgerEntry(summary);
-               entry->setProperty("receiver", tr("Network"));
-               entry->setProperty("amount", double(fee.amount) / asset->precision);
-               entry->setProperty("symbol", convert(asset->symbol));
-               entry->setProperty("memo", tr("Transaction Fee"));
-
-               ledger.append(entry);
-            }
-         }
-
          summary = new TransactionSummary(convert(string(trx.id)),
                                           convert(fc::get_approximate_relative_time_string(trx.timestamp)),
                                           std::move(ledger), ledgerMaster);
