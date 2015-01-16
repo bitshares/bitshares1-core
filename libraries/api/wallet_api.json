@@ -2013,7 +2013,7 @@
             {
                "name" : "quantity",
                "type" : "string",
-               "description" : "the quantity of items you would like to buy"
+               "description" : "the maximum quantity of items you would like to buy"
             },
             {
                "name" : "quantity_symbol",
@@ -2033,7 +2033,13 @@
             {
                "name" : "limit_price",
                "type" : "string",
-               "description" : "the limit on what you are willing to pay",
+               "description" : "the maximum unit price you are willing to pay",
+               "default_value" : ""
+            },
+            {
+               "name" : "funding",
+               "type" : "string",
+               "description" : "max total cost of this order (defaults to qty x limit_price or current feed)",
                "default_value" : ""
             }
          ],

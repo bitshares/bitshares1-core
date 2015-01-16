@@ -349,48 +349,107 @@ namespace detail {
                                             const string& order_price,
                                             const string& base_symbol,
                                             const string& quote_symbol,
-                                            const string& limit)
+                                            const string& limit,
+                                            const string& fund_quantity)
    {
+      // is_ba : is bid or ask
+      // is_rel_ba : is relative bid or relative ask
+      const bool is_ba       = ((order_type ==          bid_order) | (order_type ==          ask_order));
+      const bool is_rel_ba   = ((order_type == relative_bid_order) | (order_type == relative_ask_order));
+      const bool is_short    =  (order_type ==        short_order);
+
+	  if( !(is_ba | is_rel_ba | is_short) )
+         FC_THROW_EXCEPTION( invalid_operation, "This function only supports bids, asks and shorts." );
+
       if( !is_receive_account(account_name) )
          FC_CAPTURE_AND_THROW( unknown_receive_account, (account_name) );
       asset quantity = _blockchain->to_ugly_asset(balance, base_symbol);
+
+      // For reference, these are the available order types:
+      //
+      // bid_order,
+      // ask_order,
+      // short_order,
+      // cover_order,
+      // relative_bid_order,
+      // relative_ask_order
+
+      const bool is_zero_price_allowed = is_short;
+
       if( quantity.amount < 0 )
          FC_CAPTURE_AND_THROW( invalid_asset_amount, (balance) );
-      if( quantity.amount == 0 && order_type != cover_order )
+      if( quantity.amount == 0 )
          FC_CAPTURE_AND_THROW( invalid_asset_amount, (balance) );
-      if( order_type != cover_order && atof(order_price.c_str()) < 0 )
+      if( atof(order_price.c_str()) < 0 )
         FC_CAPTURE_AND_THROW( invalid_price, (order_price) );
-      if( (order_type == bid_order || order_type == ask_order) && atof(order_price.c_str()) == 0 )
+      if( (!is_zero_price_allowed) && atof(order_price.c_str()) == 0 )
         FC_CAPTURE_AND_THROW( invalid_price, (order_price) );
-      if( (order_type == relative_bid_order || order_type == relative_ask_order) && atof(order_price.c_str()) == 0 )
-        FC_CAPTURE_AND_THROW( invalid_price, (order_price) );
+
+      // Satoshi conversion (aka precision dance) is because the price
+      //    passed into this function is a ratio of currency *units*
+      //    but the price passed on to the builder is a ratio
+      //    of *satoshis*.  If the base and quote assets have different
+      //    precision, then a numerical conversion will be needed.
+      //
+      // For example, 1 USD = 10000 USD-satoshi, 1 BTS = 100000 BTS-satoshi
+      //
+      // Thus, 0.02 USD / BTS expressed as a ratio of satoshis would be
+      //       0.02 USD / BTS * (1 BTS / 100000 BTS-satoshi) * (10000 USD-satoshi / 1 USD) = 0.002 USD-satoshi per BTS-satoshi.
+      //
+      // HOWEVER in the case of relative orders, the price is a percentage
+      //    which should not get converted.
+      //
+      // And in the case of a short, the order_price is an APR which
+      //    does not get converted, but the limit price is a price,
+      //    which does.
+      
+      const bool needs_satoshi_conversion = is_ba;
 
       price price_arg = _blockchain->to_ugly_price(order_price,
                                                    base_symbol,
                                                    quote_symbol,
-                                                   order_type != short_order);
+                                                   needs_satoshi_conversion);
 
-      //This affects shorts only.
+      // price_limit affects shorts and relative orders.
       oprice price_limit;
       if( !limit.empty() && atof(limit.c_str()) > 0 )
-         price_limit = _blockchain->to_ugly_price(limit, base_symbol, quote_symbol);
+         price_limit = _blockchain->to_ugly_price(limit, base_symbol, quote_symbol, true);
+
+      // funding is only relevant for relative_bid.
+      optional<asset> funding;
+      if( !fund_quantity.empty() && atof(fund_quantity.c_str()) > 0 )
+         funding = _blockchain->to_ugly_asset(fund_quantity, quote_symbol);
 
       if( order_type == bid_order )
          builder->submit_bid(self->get_account(account_name), quantity, price_arg);
       else if( order_type == ask_order )
          builder->submit_ask(self->get_account(account_name), quantity, price_arg);
       else if( order_type == relative_bid_order )
-         builder->submit_relative_bid(self->get_account(account_name), quantity, price_arg, price_limit);
+      {
+		 if ( !funding.valid() )
+		 {
+			 if( price_limit.valid() )
+				 funding = quantity * (*price_limit);
+			 else
+			 {
+                 optional<price> feed = _blockchain->get_active_feed_price(
+                     price_arg.quote_asset_id, price_arg.base_asset_id );
+			     if( !feed.valid() )
+                     FC_THROW_EXCEPTION( insufficient_feeds, "Relative bid must specify either limit price or funding amount when feed is not active" );
+                 funding = quantity * (*feed);
+			 }
+		 }
+         builder->submit_relative_bid(self->get_account(account_name), quantity, *funding, price_arg, price_limit);
+	  }
       else if( order_type == relative_ask_order )
          builder->submit_relative_ask(self->get_account(account_name), quantity, price_arg, price_limit);
       else if( order_type == short_order )
       {
+		 static fc::uint128 max_apr = fc::uint128( 1000, 0 );
+         FC_ASSERT( price_arg.ratio < max_apr, "APR must be less than 1000%" );
          price_arg.ratio /= 100;
-         FC_ASSERT( price_arg.ratio < fc::uint128( 10, 0 ), "APR must be less than 1000%" );
          builder->submit_short(self->get_account(account_name), quantity, price_arg, price_limit);
       }
-      else
-         FC_THROW_EXCEPTION( invalid_operation, "This function only supports bids, asks and shorts." );
    }
 
    void wallet_impl::create_file( const path& wallet_file_path,
@@ -3365,7 +3424,10 @@ namespace detail {
             my->apply_order_to_builder(order_description.first, builder,
                                        args[0], args[1], args[3], args[2], args[4],
                                        //For shorts:
-                                       args.size() > 5? args[5] : string());
+                                       args.size() > 5? args[5] : string(),
+                                       //For relative bids:
+                                       args.size() > 6 ? args[6] : string()
+                                       );
             break;
          default:
             FC_THROW_EXCEPTION( invalid_operation, "Unknown operation type ${op}", ("op", order_description.first) );
@@ -3415,6 +3477,7 @@ namespace detail {
            const string& relative_quote_price,
            const string& quote_symbol,
            const string& limit_price,
+           const string& funding,
            bool sign )
    { try {
       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
@@ -3428,7 +3491,8 @@ namespace detail {
                                  relative_quote_price,
                                  quantity_symbol,
                                  quote_symbol,
-                                 limit_price);
+                                 limit_price,
+                                 funding);
       builder->finalize();
 
       if( sign )
@@ -3436,7 +3500,8 @@ namespace detail {
       return builder->transaction_record;
    } FC_CAPTURE_AND_RETHROW( (from_account_name)
                              (real_quantity)(quantity_symbol)
-                             (relative_quote_price)(quote_symbol)(limit_price)(sign) ) }
+                             (relative_quote_price)(quote_symbol)
+                             (limit_price)(funding)(sign) ) }
    wallet_transaction_record wallet::submit_relative_ask(
            const string& from_account_name,
            const string& real_quantity,

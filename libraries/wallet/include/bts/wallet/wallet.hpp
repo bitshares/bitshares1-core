@@ -473,6 +473,7 @@ namespace bts { namespace wallet {
                  const string& relative_price_per_unit,
                  const string& quote_symbol,
                  const string& limit,
+                 const string& funding,
                  bool sign
                  );
          /**
