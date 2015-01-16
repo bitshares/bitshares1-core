@@ -305,8 +305,9 @@ oblock_record detail::client_impl::blockchain_get_block( const string& block )co
 map<balance_id_type, balance_record> detail::client_impl::blockchain_list_balances( const string& first, uint32_t limit )const
 { try {
     FC_ASSERT( limit > 0 );
-    const auto id_prefix = variant( first ).as<balance_id_type>();
-    return _chain_db->get_balances( id_prefix, limit );
+    balance_id_type id;
+    if( !first.empty() ) id = variant( first ).as<balance_id_type>();
+    return _chain_db->get_balances( id, limit );
 } FC_CAPTURE_AND_RETHROW( (first)(limit) ) }
 
 account_balance_summary_type detail::client_impl::blockchain_get_account_public_balance( const string& account_name ) const

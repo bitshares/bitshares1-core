@@ -299,7 +299,7 @@
             {
               "name" : "first_balance_id",
               "type" : "string",
-              "description" : "prefix of the first balance id to start at",
+              "description" : "the first balance id to start at",
               "default_value" : ""
             },
             {
