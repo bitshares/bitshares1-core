@@ -133,6 +133,7 @@ namespace bts { namespace wallet {
          map<transaction_id_type, fc::exception>    get_pending_transaction_errors()const;
 
          void scan_chain( uint32_t start = 0, uint32_t end = -1, bool fast_scan = false );
+         void cancel_scan();
 
          wallet_transaction_record         scan_transaction( const string& transaction_id_prefix, bool overwrite_existing );
          transaction_ledger_entry          scan_transaction_experimental( const string& transaction_id_prefix, bool overwrite_existing );

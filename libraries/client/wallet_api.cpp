@@ -1147,8 +1147,13 @@ void client_impl::wallet_account_set_favorite( const string& account_name, bool 
 
 void client_impl::wallet_rescan_blockchain( uint32_t start, uint32_t count, bool fast_scan )
 { try {
-   _wallet->scan_chain( start, start + count, fast_scan );
-} FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("count",count) ) }
+    _wallet->scan_chain( start, start + count, fast_scan );
+} FC_CAPTURE_AND_RETHROW( (start)(count)(fast_scan) ) }
+
+void client_impl::wallet_cancel_scan()
+{ try {
+    _wallet->cancel_scan();
+} FC_CAPTURE_AND_RETHROW() }
 
 wallet_transaction_record client_impl::wallet_scan_transaction( const string& transaction_id, bool overwrite_existing )
 { try {

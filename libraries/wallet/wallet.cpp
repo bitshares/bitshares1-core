@@ -807,21 +807,7 @@ namespace detail {
 
    void wallet::close()
    { try {
-      try
-      {
-        ilog( "Canceling wallet scan_chain_task..." );
-        my->_scan_in_progress.cancel_and_wait("wallet::close()");
-        ilog( "Wallet scan_chain_task canceled..." );
-      }
-      catch( const fc::exception& e )
-      {
-        wlog("Unexpected exception from wallet's scan_chain_task() : ${e}", ("e", e));
-      }
-      catch( ... )
-      {
-        wlog("Unexpected exception from wallet's scan_chain_task()");
-      }
-
+      cancel_scan();
       lock();
 
       try
@@ -1033,6 +1019,7 @@ namespace detail {
 
    void wallet::lock()
    {
+      cancel_scan();
       try
       {
         my->_login_map_cleaner_done.cancel_and_wait("wallet::lock()");
@@ -1448,6 +1435,24 @@ namespace detail {
        my->_scan_in_progress = fc::async( [=](){ my->scan_chain_task( start, end, fast_scan ); }, "scan_chain_task" );
        my->_scan_in_progress.on_complete([](fc::exception_ptr ep){if (ep) elog( "Error during chain scan: ${e}", ("e", ep->to_detail_string()));});
    } FC_CAPTURE_AND_RETHROW( (start)(end) ) }
+
+   void wallet::cancel_scan()
+   { try {
+       try
+       {
+           ilog( "Canceling wallet scan_chain_task..." );
+           my->_scan_in_progress.cancel_and_wait("wallet::cancel_scan()");
+           ilog( "Wallet scan_chain_task canceled..." );
+       }
+       catch( const fc::exception& e )
+       {
+           wlog( "Unexpected exception from wallet's scan_chain_task: ${e}", ("e",e) );
+       }
+       catch( ... )
+       {
+           wlog( "Unexpected exception from wallet's scan_chain_task" );
+       }
+   } FC_CAPTURE_AND_RETHROW() }
 
    vote_summary wallet::get_vote_status( const string& account_name )
    {

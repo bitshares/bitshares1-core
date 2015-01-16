@@ -1356,6 +1356,14 @@
         "aliases" : ["scan", "rescan"]
       },
       {
+        "method_name": "wallet_cancel_scan",
+        "description": "Cancel any current scan task",
+        "return_type": "void",
+        "parameters" : [],
+        "prerequisites" : ["wallet_unlocked"],
+        "aliases" : []
+      },
+      {
         "method_name": "wallet_get_transaction",
         "description": "Queries your wallet for the specified transaction",
         "return_type": "transaction_record",
