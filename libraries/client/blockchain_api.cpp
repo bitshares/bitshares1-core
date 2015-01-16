@@ -373,20 +373,7 @@ map<balance_id_type, balance_record> detail::client_impl::blockchain_list_key_ba
 vector<account_record> detail::client_impl::blockchain_list_accounts( const string& first, uint32_t limit )const
 { try {
    FC_ASSERT( limit > 0 );
-
-   string account_name;
-   if( !first.empty() && std::all_of( first.begin(), first.end(), ::isdigit) )
-   {
-       const oaccount_record account_record = _chain_db->get_account_record( std::stoi( first ) );
-       FC_ASSERT( account_record.valid() );
-       account_name = account_record->name;
-   }
-   else
-   {
-       account_name = first;
-   }
-
-   return _chain_db->get_accounts( account_name, limit );
+   return _chain_db->get_accounts( first, limit );
 } FC_CAPTURE_AND_RETHROW( (first)(limit) ) }
 
 vector<account_record> detail::client_impl::blockchain_list_recently_updated_accounts()const
