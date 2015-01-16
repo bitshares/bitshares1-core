@@ -1,6 +1,8 @@
 #include <bts/blockchain/transaction_creation_state.hpp>
 #include <bts/blockchain/balance_operations.hpp>
 
+#include <algorithm>
+
 namespace bts { namespace blockchain {
  
     transaction_creation_state::transaction_creation_state( chain_interface_ptr prev_state )
