@@ -1,5 +1,5 @@
 default (unlocked) >>> wallet_account_create thief
-"XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
+"XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
 default (unlocked) >>> wallet_account_register thief delegate0
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
@@ -12,9 +12,9 @@ default (unlocked) >>> blockchain_get_account thief
 Name: thief
 Registered: <d-ign></d-ign>
 Last Updated: <d-ign></d-ign>
-Owner Key: XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt
+Owner Key: XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra
 Active Key History:
-- XTS5AQGjeRu5sEBvvERaV8i1tstV1fx2ywGUmvWgsBPEjFoR27oQg, last used <d-ign></d-ign>
+- XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX, last used <d-ign></d-ign>
 Not a delegate.
 default (unlocked) >>> wallet_rename_account thief thiever
 Command failed with exception: key belongs to other account (20032)

@@ -58,8 +58,14 @@ QQmlListProperty<Balance> Account::balances()
 QList<QObject*> Account::transactionHistory(QString asset_symbol)
 {
    QList<QObject*> history;
+   auto raw_transactions = m_wallet->transactions(convert(asset_symbol));
+   std::sort(raw_transactions.rbegin(), raw_transactions.rend(),
+             [](const bts::wallet::transaction_ledger_entry& a,
+                const bts::wallet::transaction_ledger_entry& b) {
+      return a.timestamp < b.timestamp;
+   });
 
-   for( bts::wallet::transaction_ledger_entry trx : m_wallet->transactions(convert(asset_symbol)) )
+   for( bts::wallet::transaction_ledger_entry trx : raw_transactions )
    {
       TransactionSummary* summary = ledgerMaster->findChild<TransactionSummary*>(convert(string(trx.id)));
       if( summary == nullptr )
@@ -106,15 +112,15 @@ QList<QObject*> Account::transactionHistory(QString asset_symbol)
             }
          }
 
-         summary = new TransactionSummary(convert(string(trx.id)), convert(trx.timestamp), std::move(ledger), ledgerMaster);
+         summary = new TransactionSummary(convert(string(trx.id)),
+                                          convert(fc::get_approximate_relative_time_string(trx.timestamp)),
+                                          std::move(ledger), ledgerMaster);
          summary->setObjectName(convert(string(trx.id)));
       }
 
+      summary->setProperty("timestamp", convert(fc::get_approximate_relative_time_string(trx.timestamp)));
       history.append(summary);
    }
 
-   std::sort(history.begin(), history.end(), [](QObject* first, QObject* second) {
-      return first->property("timestamp").toDateTime() < second->property("timestamp").toDateTime();
-   });
    return history;
 }

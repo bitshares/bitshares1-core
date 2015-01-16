@@ -2,9 +2,11 @@ import QtQuick 2.4
 import QtQuick.Controls 1.3
 import QtQuick.Layouts 1.1
 
+import Material 0.1
+
 import "utils.js" as Utils
 
-Item {
+MainView {
    id: onboarder
 
    property real minimumWidth: layout.Layout.minimumWidth + visuals.margins * 2
@@ -56,22 +58,22 @@ Item {
 
    Component.onCompleted: nameField.forceActiveFocus()
 
-   ColumnLayout {
-      id: layout
-      anchors.fill: parent
-      anchors.margins: visuals.margins
-      spacing: visuals.spacing
 
-      Item {
-         Layout.preferredHeight: window.orientation === Qt.PortraitOrientation?
-                                    window.height / 4 : window.height / 6
-      }
+   Rectangle {
+      anchors.fill: parent
+      color: Theme.backgroundColor
+   }
+   Column {
+      id: layout
+      anchors.centerIn: parent
+      width: parent.width - visuals.margins * 2
+
       Label {
          anchors.horizontalCenter: parent.horizontalCenter
          horizontalAlignment: Text.AlignHCenter
          text: qsTr("Welcome to BitShares")
          color: visuals.textColor
-         font.pixelSize: visuals.textBaseSize * 1.5
+         font.pixelSize: units.dp(28)
          wrapMode: Text.WrapAtWordBoundaryOrAnywhere
       }
       Label {
@@ -79,19 +81,19 @@ Item {
          text: qsTr("To get started, create a password below.\n" +
                     "This password can be short and easy to remember — we'll make a better one later.")
          anchors.horizontalCenter: parent.horizontalCenter
-         Layout.fillWidth: true
+         width: parent.width
          color: visuals.lightTextColor
          font.pixelSize: visuals.textBaseSize
          wrapMode: Text.WrapAtWordBoundaryOrAnywhere
       }
       ColumnLayout {
-         Layout.fillWidth: true
+         width: parent.width
 
          TextField {
             id: nameField
             inputMethodHints: Qt.ImhLowercaseOnly
             placeholderText: qsTr("Pick a Username")
-            font.pixelSize: visuals.textBaseSize * 1.1
+            font.pixelSize: units.dp(20)
             Layout.fillWidth: true
             Layout.preferredHeight: implicitHeight
             text: wallet.account? wallet.account.name : ""
@@ -100,18 +102,18 @@ Item {
             id: passwordField
             Layout.fillWidth: true
             placeholderText: qsTr("Create a Password")
-            fontPixelSize: visuals.textBaseSize * 1.1
+            fontPixelSize: units.dp(20)
             onAccepted: openButton.clicked()
 
             Connections {
                target: wallet
-               onErrorUnlocking: passwordField.errorGlow()
+               onErrorUnlocking: passwordField.shake()
             }
          }
          Button {
             id: openButton
-            style: WalletButtonStyle {}
             text: qsTr("Begin")
+            elevation: 1
             Layout.fillWidth: true
             Layout.preferredHeight: passwordField.height
 
@@ -120,14 +122,13 @@ Item {
                   wallet.account.name = nameField.text
 
                if( passwordField.password.length < 1 ) {
-                  passwordField.errorGlow()
+                  passwordField.shake()
                } else {
                   passwordEntered(passwordField.password)
                }
             }
          }
       }
-      Item { Layout.fillHeight: true }
    }
 
    states: [

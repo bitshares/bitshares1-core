@@ -579,6 +579,14 @@ namespace bts { namespace blockchain {
 
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
+   void pay_fee_operation::evaluate( transaction_evaluation_state& eval_state )
+   {
+#ifndef WIN32
+#warning [SOFTFORK] Remove this check after BTS_V0_4_28_FORK_BLOCK_NUM has passed
+#endif
+      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_28_FORK_BLOCK_NUM );
 
+      eval_state._max_fee[this->amount.asset_id] += this->amount.amount;
+   }
 
 } } // bts::blockchain

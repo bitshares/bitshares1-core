@@ -112,9 +112,7 @@ namespace bts { namespace blockchain {
     { try {
         const obalance_record prev_record = lookup( id );
         if( prev_record.valid() )
-        {
             erase_from_id_map( id );
-        }
     } FC_CAPTURE_AND_RETHROW( (id) ) }
 
 } } // bts::blockchain

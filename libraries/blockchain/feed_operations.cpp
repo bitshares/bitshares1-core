@@ -48,7 +48,7 @@ namespace bts { namespace blockchain {
       if( !asset_record->is_market_issued() )
           FC_CAPTURE_AND_THROW( invalid_market, (index.quote_id) );
 
-      eval_state._current_state->set_feed( feed_record{ index, feed_price, eval_state._current_state->now() } );
+      eval_state._current_state->store_feed_record( feed_record{ index, feed_price, eval_state._current_state->now() } );
       eval_state._current_state->set_market_dirty( feed_price.quote_asset_id, feed_price.base_asset_id );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 

@@ -38,11 +38,11 @@ class TransactionSummary : public QObject
 {
    Q_OBJECT
    Q_PROPERTY(QString id MEMBER m_id NOTIFY stub)
-   Q_PROPERTY(QDateTime when MEMBER m_when NOTIFY stub)
+   Q_PROPERTY(QString timestamp MEMBER m_when NOTIFY stub)
    Q_PROPERTY(QQmlListProperty<LedgerEntry> ledger READ ledger CONSTANT)
 
 public:
-   TransactionSummary(QString id, QDateTime timestamp, QList<LedgerEntry*>&& ledger, QObject* parent = nullptr);
+   TransactionSummary(QString id, QString timestamp, QList<LedgerEntry*>&& ledger, QObject* parent = nullptr);
    ~TransactionSummary(){}
 
    QQmlListProperty<LedgerEntry> ledger()
@@ -52,7 +52,7 @@ public:
 
 private:
    QString m_id;
-   QDateTime m_when;
+   QString m_when;
    QList<LedgerEntry*> m_ledger;
 
 Q_SIGNALS:

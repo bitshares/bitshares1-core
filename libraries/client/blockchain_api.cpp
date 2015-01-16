@@ -373,7 +373,20 @@ map<balance_id_type, balance_record> detail::client_impl::blockchain_list_key_ba
 vector<account_record> detail::client_impl::blockchain_list_accounts( const string& first, uint32_t limit )const
 { try {
    FC_ASSERT( limit > 0 );
-   return _chain_db->get_accounts( first, limit );
+
+   string account_name;
+   if( !first.empty() && std::all_of( first.begin(), first.end(), ::isdigit) )
+   {
+       const oaccount_record account_record = _chain_db->get_account_record( std::stoi( first ) );
+       FC_ASSERT( account_record.valid() );
+       account_name = account_record->name;
+   }
+   else
+   {
+       account_name = first;
+   }
+
+   return _chain_db->get_accounts( account_name, limit );
 } FC_CAPTURE_AND_RETHROW( (first)(limit) ) }
 
 vector<account_record> detail::client_impl::blockchain_list_recently_updated_accounts()const
@@ -433,7 +446,7 @@ variant_object client_impl::blockchain_get_info()const
 {
    auto info = fc::mutable_variant_object();
 
-   info["blockchain_id"]                        = _chain_db->chain_id();
+   info["blockchain_id"]                        = _chain_db->get_chain_id();
 
    info["name"]                                 = BTS_BLOCKCHAIN_NAME;
    info["symbol"]                               = BTS_BLOCKCHAIN_SYMBOL;
@@ -456,6 +469,8 @@ variant_object client_impl::blockchain_get_info()const
    info["asset_shares_max"]                     = BTS_BLOCKCHAIN_MAX_SHARES;
    info["short_symbol_asset_reg_fee"]           = _chain_db->get_asset_registration_fee( BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE );
    info["long_symbol_asset_reg_fee"]            = _chain_db->get_asset_registration_fee( BTS_BLOCKCHAIN_MAX_SUB_SYMBOL_SIZE );
+
+   info["statistics_enabled"]                   = _chain_db->get_statistics_enabled();
 
    info["relay_fee"]                            = _chain_db->get_relay_fee();
    info["max_pending_queue_size"]               = BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE;

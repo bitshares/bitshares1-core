@@ -170,7 +170,11 @@ else( WIN32 ) # Apple AND Linux
         set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -Wall" )
         set( rt_library rt )
         set( pthread_library pthread)
-        set( crypto_library crypto)
+        if ( NOT DEFINED crypto_library )
+          # I'm not sure why this is here, I guess someone has openssl and can't detect it with find_package()?
+          # if you have a normal install, you can define crypto_library to the empty string to avoid a build error
+          set( crypto_library crypto)
+        endif ()
         if ( FULL_STATIC_BUILD )
           set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++ -static-libgcc")
         endif ( FULL_STATIC_BUILD )

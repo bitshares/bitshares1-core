@@ -6,6 +6,8 @@ import QtQuick.Layouts 1.1
 
 import org.BitShares.Types 1.0
 
+import Material 0.1
+
 ButtonStyle {
    background: Rectangle {
       color: control.hovered?

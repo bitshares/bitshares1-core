@@ -30,7 +30,7 @@ blockchain_get_block_count
 blockchain_get_block_hash <block_number>                                                            
 blockchain_get_block_signee <block>                                                                 
 blockchain_get_block_transactions <block>                                                           
-blockchain_get_delegate_slot_records <delegate_name> [start_block_num] [count]                      
+blockchain_get_delegate_slot_records <delegate_name> [count]                                        
 blockchain_get_edges <from> [to] [name]                                                             
 blockchain_get_feeds_for_asset <asset>                                                              
 blockchain_get_feeds_from_delegate <delegate_name>                                                  
@@ -144,7 +144,6 @@ stop
 validate_address <address>                                                                          
 wallet_account_balance [account_name]                                                               
 wallet_account_balance_extended [account_name]                                                      
-wallet_account_balance_ids [account_name]                                                           
 wallet_account_create <account_name> [private_data]                                                 
 wallet_account_list_public_keys <account_name>                                                      
 wallet_account_order_list [account_name] [limit]                                                    
@@ -173,7 +172,6 @@ wallet_builder_add_signature <builder> [broadcast] [builder_path]
 wallet_builder_file_add_signature [broadcast] [builder_path]                                        
 wallet_burn <amount_to_burn> <asset_symbol> <from_account_name> <for_or_against> <to_account_name> [public_message] [anonymous] 
 wallet_change_passphrase <passphrase>                                                               
-wallet_check_sharedrop                                                                              
 wallet_check_vote_proportion <account>                                                              
 wallet_close                                                                                        
 wallet_collect_genesis_balances <account_name>                                                      
