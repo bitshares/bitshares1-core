@@ -45,9 +45,8 @@ namespace detail {
        if( !self->is_open() || !self->is_unlocked() ) return;
        if( !self->get_transaction_scanning() ) return;
        if( summary.block_data.block_num <= self->get_last_scanned_block_number() ) return;
-       if( _scan_in_progress.valid() && !_scan_in_progress.ready() ) return;
 
-       self->scan_chain( self->get_last_scanned_block_number(), summary.block_data.block_num );
+       self->start_scan( std::min( self->get_last_scanned_block_number() + 1, summary.block_data.block_num ), -1 );
    }
 
    vector<wallet_transaction_record> wallet_impl::get_pending_transactions()const
@@ -188,80 +187,87 @@ namespace detail {
        }
    }
 
-   void wallet_impl::scan_chain_task( uint32_t start, uint32_t end )
+   void wallet_impl::start_scan_task( const uint32_t start_block_num, const uint32_t limit )
    { try {
-      const auto min_end = std::min<size_t>( _blockchain->get_head_block_num(), end );
-      fc::oexception scan_exception;
-      try
-      {
-          // Update local accounts
-          {
-              const auto& accounts = _wallet_db.get_accounts();
-              for( const auto& acct : accounts )
-              {
-                 auto blockchain_acct_rec = _blockchain->get_account_record( acct.second.owner_address() );
-                 if( blockchain_acct_rec.valid() )
-                     _wallet_db.store_account( *blockchain_acct_rec );
-              }
-          }
+       fc::oexception scan_exception;
+       try
+       {
+           const uint32_t head_block_num = _blockchain->get_head_block_num();
+           uint32_t current_block_num = std::max( start_block_num, 1u );
+           uint32_t prev_block_num = current_block_num - 1;
+           uint32_t count = 0;
 
-          const auto now = blockchain::now();
-          _scan_progress = 0;
+           const bool track_progress = current_block_num < head_block_num && limit > 0;
+           if( track_progress )
+           {
+               ulog( "Beginning scan at block ${n}...", ("n",current_block_num) );
+               _scan_progress = 0;
+           }
 
-          // Collect private keys
-          const auto account_keys = _wallet_db.get_account_private_keys( _wallet_password );
-          vector<private_key_type> private_keys;
-          private_keys.reserve( account_keys.size() );
-          for( const auto& item : account_keys )
-              private_keys.push_back( item.first );
+           const auto update_progress = [=]( const uint32_t count )
+           {
+               if( !track_progress ) return;
+               const uint32_t total = std::min( { limit, head_block_num, head_block_num - current_block_num + 1 } );
+               if( total == 0 ) return;
+               _scan_progress = float( count ) / total;
+               if( count % 10000 == 0 ) ulog( "Scanning ${p} done...", ("p",cli::pretty_percent( _scan_progress, 1 )) );
+           };
 
-          if( min_end > start + 1 )
-              ulog( "Beginning scan at block ${n}...", ("n",start) );
+           if( start_block_num == 0 )
+           {
+               scan_balances();
+               scan_accounts();
+           }
+           else if( _dirty_accounts )
+           {
+               scan_accounts();
+           }
 
-          uint32_t last_scanned_block_num = std::min( {self->get_last_scanned_block_number(), start - 1, start} );
-          for( auto block_num = start; !_scan_in_progress.canceled() && block_num <= min_end; ++block_num )
-          {
-              try
-              {
-                  scan_block( block_num, private_keys, now );
-                  last_scanned_block_num = block_num;
-              }
-              catch( const fc::exception& )
-              {
-              }
+           while( current_block_num <= head_block_num && count < limit && !_scan_in_progress.canceled() )
+           {
+               try
+               {
+                   scan_block( current_block_num );
+               }
+               catch( const fc::exception& e )
+               {
+                   elog( "Error scanning block ${n}: ${e}", ("n",current_block_num)("e",e.to_detail_string()) );
+               }
 
-              _scan_progress = float(block_num-start)/(min_end-start+1);
-              if( block_num > start )
-              {
-                  if( (block_num - start) % 10000 == 0 )
-                      ulog( "Scanning ${p} done...", ("p",cli::pretty_percent( _scan_progress, 1 )) );
+               ++count;
+               prev_block_num = current_block_num;
+               ++current_block_num;
 
-                  if( (block_num - start) % 100 == 0 )
-                      fc::usleep( fc::microseconds( 100 ) );
-              }
-          }
+               if( count > 1 )
+               {
+                   update_progress( count );
+                   if( count % 10 == 0 ) fc::usleep( fc::microseconds( 1 ) );
+               }
+           }
 
-          self->set_last_scanned_block_number( last_scanned_block_num );
+           self->set_last_scanned_block_number( std::max( prev_block_num, self->get_last_scanned_block_number() ) );
 
-          _scan_progress = 1;
-          if( min_end > start + 1 )
-              ulog( "Scan completed." );
-      }
-      catch( const fc::exception& e )
-      {
-          scan_exception = e;
-      }
+           if( track_progress )
+           {
+               _scan_progress = 1;
+               ulog( "Scan complete." );
+           }
 
-      if( scan_exception.valid() )
-      {
-          _scan_progress = -1;
-          ulog( "Scan failure." );
-          throw *scan_exception;
-      }
+           if( _dirty_balances ) scan_balances_experimental();
+           if( _dirty_accounts ) scan_accounts();
+       }
+       catch( const fc::exception& e )
+       {
+           scan_exception = e;
+       }
 
-      if( _dirty_balances )
-          scan_balances_experimental();
-   } FC_CAPTURE_AND_RETHROW( (start)(end) ) }
+       if( scan_exception.valid() )
+       {
+           _scan_progress = -1;
+           ulog( "Scan failure." );
+           throw *scan_exception;
+       }
+   } FC_CAPTURE_AND_RETHROW( (start_block_num)(limit) ) }
 
    void wallet_impl::upgrade_version()
    {
@@ -533,12 +539,6 @@ namespace detail {
       return slate_id;
    }
 
-   void wallet_impl::scan_state()
-   { try {
-      scan_registered_accounts();
-      scan_balances();
-   } FC_CAPTURE_AND_RETHROW() }
-
    /**
     *  A valid account is any named account registered in the blockchain or
     *  any local named account.
@@ -802,12 +802,12 @@ namespace detail {
           std::rethrow_exception(open_file_failure);
       }
 
+      my->scan_accounts();
       my->scan_balances_experimental();
    } FC_CAPTURE_AND_RETHROW( (wallet_name) ) }
 
    void wallet::close()
    { try {
-      cancel_scan();
       lock();
 
       try
@@ -825,6 +825,8 @@ namespace detail {
         wlog("Unexpected exception from wallet's relocker()");
       }
 
+      my->_balance_records.clear();
+      my->_dirty_balances = true;
       my->_wallet_db.close();
       my->_current_wallet_path = fc::path();
    } FC_CAPTURE_AND_RETHROW() }
@@ -999,11 +1001,6 @@ namespace detail {
           my->reschedule_relocker();
           wallet_lock_state_changed( false );
           ilog( "Wallet unlocked until time: ${t}", ("t", fc::time_point_sec(*my->_scheduled_lock_time)) );
-
-          /* Scan blocks we have missed while locked */
-          const uint32_t first = get_last_scanned_block_number();
-          if( first < my->_blockchain->get_head_block_num() )
-            scan_chain( first, my->_blockchain->get_head_block_num() );
       }
       catch( ... )
       {
@@ -1020,6 +1017,7 @@ namespace detail {
    void wallet::lock()
    {
       cancel_scan();
+
       try
       {
         my->_login_map_cleaner_done.cancel_and_wait("wallet::lock()");
@@ -1032,8 +1030,12 @@ namespace detail {
       {
         wlog("Unexpected exception from wallet's login_map_cleaner()");
       }
-      my->_wallet_password     = fc::sha512();
+
+      my->_stealth_private_keys.clear();
+      my->_dirty_accounts = true;
+      my->_wallet_password = fc::sha512();
       my->_scheduled_lock_time = fc::optional<fc::time_point>();
+
       wallet_lock_state_changed( true );
       ilog( "Wallet locked at time: ${t}", ("t",blockchain::now()) );
    }
@@ -1048,6 +1050,8 @@ namespace detail {
 
       my->_wallet_db.change_password( my->_wallet_password, new_password );
       my->_wallet_password = new_password;
+
+      my->_dirty_accounts = true;
    } FC_CAPTURE_AND_RETHROW() }
 
    bool wallet::is_unlocked()const
@@ -1101,6 +1105,8 @@ namespace detail {
 
       if( num_accounts_before == 0 )
           set_last_scanned_block_number( my->_blockchain->get_head_block_num() );
+
+       my->_dirty_accounts = true;
 
       return account_public_key;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
@@ -1307,6 +1313,7 @@ namespace detail {
           FC_THROW_EXCEPTION( duplicate_account_name, "You already have the new account name in your wallet!" );
 
       my->_wallet_db.rename_account( *old_key, new_account_name );
+      my->_dirty_accounts = true;
    } FC_CAPTURE_AND_RETHROW( (old_account_name)(new_account_name) ) }
 
    public_key_type wallet::import_private_key( const private_key_type& new_private_key,
@@ -1398,18 +1405,22 @@ namespace detail {
       auto key = bts::utilities::wif_to_key( wif_key );
       if( key.valid() )
       {
-         import_private_key( *key, account_name, create_account );
-         return key->get_public_key();
+          import_private_key( *key, account_name, create_account );
+          my->_dirty_accounts = true;
+          return key->get_public_key();
       }
 
       FC_ASSERT( false, "Error parsing WIF private key" );
 
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
-   void wallet::scan_chain( uint32_t start, uint32_t end )
+   void wallet::start_scan( const uint32_t start_block_num, const uint32_t limit )
    { try {
        if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
        if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
+
+       if( my->_scan_in_progress.valid() && !my->_scan_in_progress.ready() )
+           return;
 
        if( !get_transaction_scanning() )
        {
@@ -1418,23 +1429,12 @@ namespace detail {
            return;
        }
 
-       try
-       {
-           my->_scan_in_progress.cancel_and_wait( "wallet::scan_chain()" );
-       }
-       catch( const fc::exception& )
-       {
-       }
+       const auto scan_chain_task = [=]() { my->start_scan_task( start_block_num, limit ); };
+       my->_scan_in_progress = fc::async( scan_chain_task, "scan_chain_task" );
 
-       if( start == 0 )
-       {
-           my->scan_state();
-           ++start;
-       }
-
-       my->_scan_in_progress = fc::async( [=](){ my->scan_chain_task( start, end ); }, "scan_chain_task" );
-       my->_scan_in_progress.on_complete([](fc::exception_ptr ep){if (ep) elog( "Error during chain scan: ${e}", ("e", ep->to_detail_string()));});
-   } FC_CAPTURE_AND_RETHROW( (start)(end) ) }
+       my->_scan_in_progress.on_complete( []( fc::exception_ptr ep )
+       { if( ep ) elog( "Error during scanning: ${e}", ("e",ep->to_detail_string()) ); } );
+   } FC_CAPTURE_AND_RETHROW( (start_block_num)(limit) ) }
 
    void wallet::cancel_scan()
    { try {
@@ -1446,12 +1446,13 @@ namespace detail {
        }
        catch( const fc::exception& e )
        {
-           wlog( "Unexpected exception from wallet's scan_chain_task: ${e}", ("e",e) );
+           wlog( "Unexpected exception from wallet's scan_chain_task: ${e}", ("e",e.to_detail_string()) );
        }
        catch( ... )
        {
            wlog( "Unexpected exception from wallet's scan_chain_task" );
        }
+       my->_scan_progress = 1;
    } FC_CAPTURE_AND_RETHROW() }
 
    vote_summary wallet::get_vote_status( const string& account_name )
@@ -2160,7 +2161,10 @@ namespace detail {
       builder->finalize();
 
       if( sign )
-         return builder->sign();
+      {
+          my->_dirty_accounts = true;
+          return builder->sign();
+      }
       return builder->transaction_record;
    } FC_CAPTURE_AND_RETHROW( (authorizing_account_name)(delegate_name)(signing_key)(sign) ) }
 
@@ -2212,7 +2216,7 @@ namespace detail {
        FC_ASSERT( account_record.valid() );
 
        // Update local account records with latest global state
-       my->scan_registered_accounts();
+       my->scan_accounts();
 
        ulog( "This may take a while..." );
        uint32_t total_regenerated_key_count = 0;
@@ -2295,8 +2299,11 @@ namespace detail {
 
        ulog( "Successfully generated ${n} keys.", ("n",total_regenerated_key_count) );
 
+       my->_dirty_balances = true;
+       my->_dirty_accounts = true;
+
        if( total_regenerated_key_count > 0 )
-           scan_chain( 0, -1 );
+           start_scan( 0, -1 );
 
        ulog( "Key regeneration may leave the wallet in an inconsistent state." );
        ulog( "It is recommended to create a new wallet and transfer all funds." );
@@ -2328,8 +2335,10 @@ namespace detail {
         ++key_index;
      }
 
+     my->_dirty_accounts = true;
+
      if( recoveries )
-       scan_chain( 0, -1 );
+       start_scan( 0, -1 );
      return recoveries;
    }
 
@@ -3271,7 +3280,10 @@ namespace detail {
       builder->update_account_registration(account, optional<variant>(), new_public_key, optional<share_type>(), payer).
                finalize();
       if( sign )
-         return builder->sign();
+      {
+          my->_dirty_accounts = true;
+          return builder->sign();
+      }
       return builder->transaction_record;
    } FC_CAPTURE_AND_RETHROW( (account_to_update)(pay_from_account)(sign) ) }
 

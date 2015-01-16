@@ -13,35 +13,38 @@ namespace bts { namespace wallet { namespace detail {
 class wallet_impl : public chain_observer
 {
    public:
-       wallet*                                    self = nullptr;
-       bool                                       _is_enabled = true;
-       wallet_db                                  _wallet_db;
-       chain_database_ptr                         _blockchain;
-       path                                       _data_directory;
-       path                                       _current_wallet_path;
-       fc::sha512                                 _wallet_password;
-       fc::optional<fc::time_point>               _scheduled_lock_time;
-       fc::future<void>                           _relocker_done;
-       fc::future<void>                           _scan_in_progress;
+       wallet*                                          self = nullptr;
+       bool                                             _is_enabled = true;
+       wallet_db                                        _wallet_db;
+       chain_database_ptr                               _blockchain = nullptr;
+       path                                             _data_directory;
+       path                                             _current_wallet_path;
+       fc::sha512                                       _wallet_password;
+       fc::optional<fc::time_point>                     _scheduled_lock_time;
+       fc::future<void>                                 _relocker_done;
+       fc::future<void>                                 _scan_in_progress;
 
-       unsigned                                   _num_scanner_threads = 1;
-       vector<std::unique_ptr<fc::thread>>        _scanner_threads;
-       float                                      _scan_progress = 0;
+       unsigned                                         _num_scanner_threads = 1;
+       vector<std::unique_ptr<fc::thread>>              _scanner_threads;
+       float                                            _scan_progress = 1;
 
-       unordered_map<balance_id_type, balance_record> _balance_records;
-       bool                                           _dirty_balances = true;
+       bool                                             _dirty_balances = true;
+       unordered_map<balance_id_type, balance_record>   _balance_records;
+
+       bool                                             _dirty_accounts = true;
+       vector<private_key_type>                         _stealth_private_keys;
 
        struct login_record
        {
            private_key_type key;
            fc::time_point_sec insertion_time;
        };
-       std::map<public_key_type, login_record>    _login_map;
-       fc::future<void>                           _login_map_cleaner_done;
-       const static short                         _login_cleaner_interval_seconds = 60;
-       const static short                         _login_lifetime_seconds = 300;
+       std::map<public_key_type, login_record>          _login_map;
+       fc::future<void>                                 _login_map_cleaner_done;
+       const static short                               _login_cleaner_interval_seconds = 60;
+       const static short                               _login_lifetime_seconds = 300;
 
-       vector<function<void( void )>>             _unlocked_upgrade_tasks;
+       vector<function<void( void )>>                   _unlocked_upgrade_tasks;
 
        wallet_impl();
        ~wallet_impl();
@@ -71,23 +74,18 @@ class wallet_impl : public chain_observer
       void scan_market_transaction(
               const market_transaction& mtrx,
               uint32_t block_num,
-              const time_point_sec block_time,
-              const time_point_sec received_time
+              const time_point_sec block_time
               );
 
       secret_hash_type get_secret( uint32_t block_num,
                                    const private_key_type& delegate_key )const;
 
-      void scan_state();
-
-      void scan_block( uint32_t block_num, const vector<private_key_type>& keys, const time_point_sec received_time );
+      void scan_block( uint32_t block_num );
 
       wallet_transaction_record scan_transaction(
               const signed_transaction& transaction,
               uint32_t block_num,
               const time_point_sec block_timestamp,
-              const vector<private_key_type>& keys,
-              const time_point_sec received_time,
               bool overwrite_existing = false
               );
 
@@ -119,7 +117,7 @@ class wallet_impl : public chain_observer
       bool scan_withdraw( const withdraw_operation& op, wallet_transaction_record& trx_rec, asset& total_fee, public_key_type& from_pub_key );
       bool scan_withdraw_pay( const withdraw_pay_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
 
-      bool scan_deposit( const deposit_operation& op, const vector<private_key_type>& keys, wallet_transaction_record& trx_rec, asset& total_fee );
+      bool scan_deposit( const deposit_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
 
       bool scan_register_account( const register_account_operation& op, wallet_transaction_record& trx_rec );
       bool scan_update_account( const update_account_operation& op, wallet_transaction_record& trx_rec );
@@ -139,15 +137,15 @@ class wallet_impl : public chain_observer
 
       vector<wallet_transaction_record> get_pending_transactions()const;
 
-      void scan_balances();
-      void scan_registered_accounts();
       void withdraw_to_transaction( const asset& amount_to_withdraw,
                                     const string& from_account_name,
                                     signed_transaction& trx,
                                     unordered_set<address>& required_signatures );
       void authorize_update( unordered_set<address>& required_signatures, oaccount_record account, bool need_owner_key = false );
 
-      void scan_chain_task( uint32_t start, uint32_t end );
+      void start_scan_task( const uint32_t start_block_num, const uint32_t limit );
+      void scan_accounts();
+      void scan_balances();
 
       void login_map_cleaner_task();
 

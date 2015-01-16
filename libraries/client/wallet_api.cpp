@@ -1012,7 +1012,7 @@ string detail::client_impl::wallet_import_private_key( const string& wif_key_to_
   const public_key_type new_public_key = _wallet->import_wif_private_key( wif_key_to_import, name, create_account );
 
   if( wallet_rescan_blockchain )
-      _wallet->scan_chain( 0 );
+      _wallet->start_scan( 0, -1 );
 
   const owallet_account_record account_record = _wallet->get_account_for_address( address( new_public_key ) );
   FC_ASSERT( account_record.valid(), "No account for the key we just imported!?" );
@@ -1145,10 +1145,10 @@ void client_impl::wallet_account_set_favorite( const string& account_name, bool 
     _wallet->account_set_favorite( account_name, is_favorite );
 }
 
-void client_impl::wallet_rescan_blockchain( const uint32_t start, const uint32_t count )
+void client_impl::wallet_rescan_blockchain( const uint32_t start_block_num, const uint32_t limit )
 { try {
-    _wallet->scan_chain( start, start + count );
-} FC_CAPTURE_AND_RETHROW( (start)(count) ) }
+    _wallet->start_scan( start_block_num, limit );
+} FC_CAPTURE_AND_RETHROW( (start_block_num)(limit) ) }
 
 void client_impl::wallet_cancel_scan()
 { try {
