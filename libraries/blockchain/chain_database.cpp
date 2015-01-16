@@ -1193,18 +1193,21 @@ namespace bts { namespace blockchain {
 
              my->open_database( data_dir );
 
+             const auto toggle_leveldb = [ this ]( const bool enabled )
+             {
+                 my->_account_id_to_record.toggle_leveldb( enabled );
+                 my->_account_name_to_id.toggle_leveldb( enabled );
+                 my->_account_address_to_id.toggle_leveldb( enabled );
+
+                 my->_asset_id_to_record.toggle_leveldb( enabled );
+                 my->_asset_symbol_to_id.toggle_leveldb( enabled );
+
+                 my->_balance_id_to_record.toggle_leveldb( enabled );
+             };
+
              const auto set_db_cache_write_through = [ this ]( bool write_through )
              {
                  my->_property_db.set_write_through( write_through );
-
-                 my->_account_id_to_record.set_write_through( write_through );
-                 my->_account_name_to_id.set_write_through( write_through );
-                 my->_account_address_to_id.set_write_through( write_through );
-
-                 my->_asset_id_to_record.set_write_through( write_through );
-                 my->_asset_symbol_to_id.set_write_through( write_through );
-
-                 my->_balance_id_to_record.set_write_through( write_through );
 
                  my->_slate_db.set_write_through( write_through );
                  my->_burn_db.set_write_through( write_through );
@@ -1224,6 +1227,7 @@ namespace bts { namespace blockchain {
              };
 
              // For the duration of replaying, we allow certain databases to postpone flushing until we finish
+             toggle_leveldb( false );
              set_db_cache_write_through( false );
 
              my->initialize_genesis( genesis_file, statistics_enabled );
@@ -1291,6 +1295,7 @@ namespace bts { namespace blockchain {
              }
 
              // Re-enable flushing on all cached databases we disabled it on above
+             toggle_leveldb( true );
              set_db_cache_write_through( true );
 
              id_to_data_orig.close();

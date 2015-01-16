@@ -94,7 +94,6 @@ namespace bts { namespace blockchain {
              */
             pending_chain_state_ptr                                                     _pending_trx_state = nullptr;
 
-
             chain_database*                                                             self = nullptr;
             unordered_set<chain_observer*>                                              _observers;
             bool                                                                        _skip_signature_verification = false;

@@ -375,7 +375,7 @@ vector<account_record> detail::client_impl::blockchain_list_accounts( const stri
    FC_ASSERT( limit > 0 );
 
    string account_name;
-   if( std::all_of( first.begin(), first.end(), ::isdigit) )
+   if( !first.empty() && std::all_of( first.begin(), first.end(), ::isdigit) )
    {
        const oaccount_record account_record = _chain_db->get_account_record( std::stoi( first ) );
        FC_ASSERT( account_record.valid() );
