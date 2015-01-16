@@ -188,7 +188,7 @@ namespace detail {
        }
    }
 
-   void wallet_impl::scan_chain_task( uint32_t start, uint32_t end, bool fast_scan )
+   void wallet_impl::scan_chain_task( uint32_t start, uint32_t end )
    { try {
       const auto min_end = std::min<size_t>( _blockchain->get_head_block_num(), end );
       fc::oexception scan_exception;
@@ -236,7 +236,7 @@ namespace detail {
                   if( (block_num - start) % 10000 == 0 )
                       ulog( "Scanning ${p} done...", ("p",cli::pretty_percent( _scan_progress, 1 )) );
 
-                  if( !fast_scan && (block_num - start) % 100 == 0 )
+                  if( (block_num - start) % 100 == 0 )
                       fc::usleep( fc::microseconds( 100 ) );
               }
           }
@@ -261,7 +261,7 @@ namespace detail {
 
       if( _dirty_balances )
           scan_balances_experimental();
-   } FC_CAPTURE_AND_RETHROW( (start)(end)(fast_scan) ) }
+   } FC_CAPTURE_AND_RETHROW( (start)(end) ) }
 
    void wallet_impl::upgrade_version()
    {
@@ -1406,7 +1406,7 @@ namespace detail {
 
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
-   void wallet::scan_chain( uint32_t start, uint32_t end, bool fast_scan )
+   void wallet::scan_chain( uint32_t start, uint32_t end )
    { try {
        if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
        if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
@@ -1432,7 +1432,7 @@ namespace detail {
            ++start;
        }
 
-       my->_scan_in_progress = fc::async( [=](){ my->scan_chain_task( start, end, fast_scan ); }, "scan_chain_task" );
+       my->_scan_in_progress = fc::async( [=](){ my->scan_chain_task( start, end ); }, "scan_chain_task" );
        my->_scan_in_progress.on_complete([](fc::exception_ptr ep){if (ep) elog( "Error during chain scan: ${e}", ("e", ep->to_detail_string()));});
    } FC_CAPTURE_AND_RETHROW( (start)(end) ) }
 
@@ -1441,7 +1441,7 @@ namespace detail {
        try
        {
            ilog( "Canceling wallet scan_chain_task..." );
-           my->_scan_in_progress.cancel_and_wait("wallet::cancel_scan()");
+           my->_scan_in_progress.cancel_and_wait( "wallet::cancel_scan()" );
            ilog( "Wallet scan_chain_task canceled..." );
        }
        catch( const fc::exception& e )
@@ -2296,7 +2296,7 @@ namespace detail {
        ulog( "Successfully generated ${n} keys.", ("n",total_regenerated_key_count) );
 
        if( total_regenerated_key_count > 0 )
-           scan_chain( 0, -1, true );
+           scan_chain( 0, -1 );
 
        ulog( "Key regeneration may leave the wallet in an inconsistent state." );
        ulog( "It is recommended to create a new wallet and transfer all funds." );
@@ -2329,7 +2329,7 @@ namespace detail {
      }
 
      if( recoveries )
-       scan_chain( 0, -1, true );
+       scan_chain( 0, -1 );
      return recoveries;
    }
 

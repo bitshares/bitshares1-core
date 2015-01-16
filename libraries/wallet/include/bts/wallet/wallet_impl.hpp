@@ -147,7 +147,7 @@ class wallet_impl : public chain_observer
                                     unordered_set<address>& required_signatures );
       void authorize_update( unordered_set<address>& required_signatures, oaccount_record account, bool need_owner_key = false );
 
-      void scan_chain_task( uint32_t start, uint32_t end, bool fast_scan );
+      void scan_chain_task( uint32_t start, uint32_t end );
 
       void login_map_cleaner_task();
 

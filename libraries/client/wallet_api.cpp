@@ -1145,10 +1145,10 @@ void client_impl::wallet_account_set_favorite( const string& account_name, bool 
     _wallet->account_set_favorite( account_name, is_favorite );
 }
 
-void client_impl::wallet_rescan_blockchain( uint32_t start, uint32_t count, bool fast_scan )
+void client_impl::wallet_rescan_blockchain( const uint32_t start, const uint32_t count )
 { try {
-    _wallet->scan_chain( start, start + count, fast_scan );
-} FC_CAPTURE_AND_RETHROW( (start)(count)(fast_scan) ) }
+    _wallet->scan_chain( start, start + count );
+} FC_CAPTURE_AND_RETHROW( (start)(count) ) }
 
 void client_impl::wallet_cancel_scan()
 { try {
