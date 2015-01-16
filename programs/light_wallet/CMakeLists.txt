@@ -32,7 +32,7 @@ add_definitions(-DQT_NO_KEYWORDS)
 
 file(GLOB qml_files qml/*.qml qml/*.js)
 
-add_executable(LightWallet WIN32 MACOSX_BUNDLE main.cpp LightWallet.cpp Account.cpp QtWrappers.cpp ${qml_files})
+add_executable(LightWallet WIN32 MACOSX_BUNDLE main.cpp LightWallet.cpp Account.cpp QtWrappers.cpp RoboHash.cpp ${qml_files})
 qt5_use_modules(LightWallet Quick Gui Qml)
 
 target_link_libraries(LightWallet fc bts_light_wallet

@@ -1,0 +1,56 @@
+>>> debug_advance_time 1 second
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> debug_deterministic_private_keys 0 1 alice true alice.fund true true
+>>> balance
+>>> wallet_import_private_key "5KasHemYTcbGtHXKHNx5sUMPrrz8r4GuU3ao157F6Wx95y7NnbN" alice true
+>>> wallet_account_register alice alice.fund null -1 public_account
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> balance alice
+>>> blockchain_get_account alice
+>>> wallet_close
+>>> debug_enable_output false
+>>> wallet_create wbob password
+>>> wallet_set_automatic_backups false
+>>> debug_enable_output true
+>>> debug_deterministic_private_keys 0 1 bob true bob true true
+>>> balance
+>>> wallet_account_register bob bob null -1 public_account
+>>> wallet_transfer 100 XTS bob alice to_owner_key
+>>> wallet_close
+>>> wallet_open default
+>>> wallet_unlock 99999999 password
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> wait 1
+>>> history alice
+>>> balance alice
+>>> wallet_account_update_active_key alice alice.fund "5KQ152uzrbwtWfj58WGKREtVsik3poVnNGnU1QxJEZjW7VVZca9"
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> wallet_close
+>>> wallet_open wbob
+>>> wallet_unlock 99999999 password
+>>> wallet_transfer 100 XTS bob alice to_new_key
+>>> wallet_close
+>>> wallet_open default
+>>> wallet_unlock 99999999 password
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> wallet_close
+>>> debug_enable_output false
+>>> wallet_create walice2 password
+>>> wallet_set_automatic_backups false
+>>> debug_enable_output true
+>>> wallet_import_private_key "5KQ152uzrbwtWfj58WGKREtVsik3poVnNGnU1QxJEZjW7VVZca9"
+>>> wallet_rescan_blockchain
+>>> wait 1
+>>> wallet_list_accounts
+>>> balance alice
+>>> history alice
+>>> wallet_transfer 99.5 XTS alice bob
+>>> quit
+

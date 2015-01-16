@@ -296,7 +296,7 @@ namespace detail {
                     if( !bal_rec.snapshot_info.valid() ) return;
                     const auto id = bal_rec.id().addr;
                     present |= _wallet_db.lookup_transaction( id ).valid();
-               }, true );
+               } );
 
                if( present )
                {
@@ -308,7 +308,7 @@ namespace detail {
                             if( !bal_rec.snapshot_info.valid() ) return;
                             const auto id = bal_rec.id().addr;
                             _wallet_db.remove_transaction( id );
-                       }, true );
+                       } );
                        scan_balances();
                    };
                    _unlocked_upgrade_tasks.push_back( rescan );
@@ -4128,7 +4128,7 @@ namespace detail {
           }
       };
 
-      my->_blockchain->scan_balances( scan_balance, false );
+      my->_blockchain->scan_balances( scan_balance );
 
       return result;
    }

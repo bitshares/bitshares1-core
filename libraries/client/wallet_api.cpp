@@ -124,7 +124,7 @@ void read_keys( const fc::variant& vo, vector<private_key_type>& keys, const str
         {
             read_keys( kv.value(), keys, password );
         }
-    } 
+    }
     catch( const bts::wallet::invalid_password& e )
     {
         throw;
@@ -139,7 +139,7 @@ void read_keys( const fc::variant& vo, vector<private_key_type>& keys, const str
             read_keys( obj, keys, password );
         }
         ilog("@n it's an object ${o}", ("o", vo));
-    } 
+    }
     catch( const bts::wallet::invalid_password& e )
     {
         throw;
@@ -1027,29 +1027,20 @@ string detail::client_impl::wallet_dump_private_key( const std::string& input )
 {
   try
   {
-      ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
-      //If input is an account name...
-      return utilities::key_to_wif( _wallet->get_active_private_key( input ) );
+     ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
+     //If input is an address...
+     return utilities::key_to_wif( _wallet->get_private_key( address( input ) ) );
   }
   catch( ... )
   {
       try
       {
          ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
-         //If input is an address...
-         return utilities::key_to_wif( _wallet->get_private_key( address( input ) ) );
+         //If input is a public key...
+         return utilities::key_to_wif( _wallet->get_private_key( address( public_key_type( input ) ) ) );
       }
       catch( ... )
       {
-          try
-          {
-             ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
-             //If input is a public key...
-             return utilities::key_to_wif( _wallet->get_private_key( address( public_key_type( input ) ) ) );
-          }
-          catch( ... )
-          {
-          }
       }
   }
 

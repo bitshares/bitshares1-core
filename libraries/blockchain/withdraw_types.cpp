@@ -27,10 +27,31 @@ namespace bts { namespace blockchain {
          memcpy( message.data, message_str.c_str(), message_str.size() );
       }
    }
+   void extended_memo_data::set_message( const std::string& message_str )
+   {
+      FC_ASSERT( message_str.size() <= sizeof( message ) + sizeof(extra_message) );
+      if( message_str.size() && message_str.size() < sizeof(message) )
+      {
+         memcpy( message.data, message_str.c_str(), message_str.size() );
+      }
+      else
+      {
+         memcpy( message.data, message_str.c_str(), sizeof(message) );
+         memcpy( message.data, message_str.c_str() + sizeof(message), message_str.size() - sizeof(message) );
+      }
+   }
 
    std::string memo_data::get_message()const
    {
+      // add .c_str() to auto-truncate at null byte
       return std::string( (const char*)&message, sizeof(message) ).c_str();
+   }
+
+   std::string extended_memo_data::get_message()const
+   {
+      // add .c_str() to auto-truncate at null byte
+      return (std::string( (const char*)&message, sizeof(message) )
+             + std::string( (const char*)&extra_message, sizeof(extra_message) )).c_str();
    }
 
    balance_id_type withdraw_condition::get_address()const
@@ -135,15 +156,26 @@ namespace bts { namespace blockchain {
       if( from_private_key.get_secret() != fc::ecc::private_key().get_secret() )
         check_secret = from_private_key.get_shared_secret( secret_public_key );
 
-      memo_data memo_content;
-      memo_content.set_message( memo_message );
-      memo_content.from = memo_pub_key;
-      memo_content.from_signature = check_secret._hash[0];
-      memo_content.memo_flags = memo_type;
-
-      memo->one_time_key = one_time_private_key.get_public_key();
-
-      encrypt_memo_data( secret, memo_content );
+      if( memo_message.size() <= BTS_BLOCKCHAIN_MAX_MEMO_SIZE )
+      {
+         memo_data memo_content;
+         memo_content.set_message( memo_message );
+         memo_content.from = memo_pub_key;
+         memo_content.from_signature = check_secret._hash[0];
+         memo_content.memo_flags = memo_type;
+         memo->one_time_key = one_time_private_key.get_public_key();
+         encrypt_memo_data( secret, memo_content );
+      }
+      else
+      {
+         extended_memo_data memo_content;
+         memo_content.set_message( memo_message );
+         memo_content.from = memo_pub_key;
+         memo_content.from_signature = check_secret._hash[0];
+         memo_content.memo_flags = memo_type;
+         memo->one_time_key = one_time_private_key.get_public_key();
+         encrypt_memo_data( secret, memo_content );
+      }
       return secret_public_key;
    }
 
@@ -155,6 +187,12 @@ namespace bts { namespace blockchain {
 
    void withdraw_with_signature::encrypt_memo_data( const fc::sha512& secret,
                                              const memo_data& memo_content )
+   {
+      FC_ASSERT( memo.valid() );
+      memo->encrypted_memo_data = fc::aes_encrypt( secret, fc::raw::pack( memo_content ) );
+   }
+   void withdraw_with_signature::encrypt_memo_data( const fc::sha512& secret,
+                                             const extended_memo_data& memo_content )
    {
       FC_ASSERT( memo.valid() );
       memo->encrypted_memo_data = fc::aes_encrypt( secret, fc::raw::pack( memo_content ) );

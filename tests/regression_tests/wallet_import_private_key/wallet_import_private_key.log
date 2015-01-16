@@ -7,19 +7,19 @@ OK
 testwallet2 (unlocked) >>> wallet_set_automatic_backups false
 false
 testwallet2 (unlocked) >>> wallet_account_create testaccount 
-"XTS7dr2hs2vY6395Wdv1MaMrzvBE116JKsMJ8rVSQdEL3DUx7BJH5"
+"XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
 testwallet2 (unlocked) >>> wallet_account_create testaccount2
-"XTS7mAdPLnZeq3ck1ztd6FTnziEboJnvChkYjEtvztKvc7KRyTMUV"
+"XTS56gEKGQjqxWuEF7umuaaFbPTYQ1kP9LWRQHsyoojVmWML1yoNM"
 testwallet2 (unlocked) >>> wallet_dump_private_key testaccount
-"5J48vThtrp6T17SYcPLMfPXHQDLrdbydQGoLLemA3SFPuvpxZYc"
+"5KS7xDP2FKvEjpHTqUHhvUHz6GCJYC2e39bzWzDJW3cxPtPTwG6"
 testwallet2 (unlocked) >>> wallet_dump_private_key testaccount2
-"5JGptLDufmBrMAbLWJwQ2Heh5bpj9xH1a9G87ZuaWrn12i3HTYi"
+"5JVAWyPfNrdM1uutU6uKYkKacEdJtjabQ5BVcHApdgrWeR8mUPQ"
 testwallet2 (unlocked) >>> wallet_open testwallet1
 OK
 testwallet1 (locked) >>> wallet_unlock 9999 password
 OK
 testwallet1 (unlocked) >>> wallet_account_create testaccount
-"XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
+"XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
 testwallet1 (unlocked) >>> help wallet_import_private_key 
 Usage:
 wallet_import_private_key <wif_key> [account_name] [create_new_account] [rescan]                      Loads the private key into the specified account. Returns which account it was actually imported to.
@@ -38,7 +38,7 @@ aliases: import_key, importprivkey
 testwallet1 (unlocked) >>> wallet_import_private_key 5KXkrnm5jb5eq75pieMohVxT3YR3b9V6r9mAc9pFKSG9yM1vdXJ testaccount false true
 "testaccount"
 testwallet1 (unlocked) >>> wallet_dump_private_key testaccount
-"5KS7xDP2FKvEjpHTqUHhvUHz6GCJYC2e39bzWzDJW3cxPtPTwG6"
+"5J34mbwS4unYpfvyVzh5yLqe5ZL4BXqbVh5piGw4uHRe8pKdi33"
 testwallet1 (unlocked) >>> wallet_account_list_public_keys testaccount
 [{
     "hex": "03210c243d6e3d35a2cd4a0e33914d58366e9c23a18f2301331864af2f8148e394",
@@ -49,27 +49,27 @@ testwallet1 (unlocked) >>> wallet_account_list_public_keys testaccount
     "btc_normal_address": "1MRLRKYnyne5bfCgnjovFReGh8KvwfSus1",
     "btc_compressed_address": "12tvS6JZ4LDVM1o6AjYY92nYaQ787WUtuC"
   },{
-    "hex": "02f969a87ca684e235b95bff54981ab2125aa331969e290ea9278645b2988892ff",
-    "native_pubkey": "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt",
-    "native_address": "XTSEz7eoMUssHQBeeH5xLr38Rg8RSJXYBebN",
-    "pts_normal_address": "PZqJmL4CBann1nABLuiza9H6h222exNzT7",
-    "pts_compressed_address": "PoBu4vy326x1U3zvWfUjcgf8QqwVKHEJ9x",
-    "btc_normal_address": "12uXdFN4RUqiDWMKyR59R833SmbCrHzjjQ",
-    "btc_compressed_address": "1GG7vrGuFzzwfnC59AptTfR5AbWfVskurs"
+    "hex": "02e310a74ab789949e7a8b17b0ae06a70cb414bdec78513375a572fb592d33c0d4",
+    "native_pubkey": "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra",
+    "native_address": "XTSFVXDozgCnWhF3w4efcv75jaVPkkMVbcKm",
+    "pts_normal_address": "PaWvEfxXFR1LWPEsVzWCGZPe7ESvNoPUpA",
+    "pts_compressed_address": "PvrSYijUNcwCsJca8UN8B5yERhTCW1a2PU",
+    "btc_normal_address": "13b96bGPVK4Gi7S28VrM7Y9arz26W3qtkr",
+    "btc_compressed_address": "1PvfQe3LcWz952oikyiH24jBBT2NdN3Faq"
   },{
-    "hex": "0224218aaf2aa51dec20d8cf619e89e6ca9d3e6e70878fed7a32bee8787c371979",
-    "native_pubkey": "XTS5AQGjeRu5sEBvvERaV8i1tstV1fx2ywGUmvWgsBPEjFoR27oQg",
-    "native_address": "XTSMNAMFHWLkAb77ECrscyRQNQKES2GfY5ve",
-    "pts_normal_address": "PuLxL4UXnLsFBvHVnSZpmN9hAP1eWqCXLZ",
-    "pts_compressed_address": "PrV8DcHjZpvJep9CCjwxPZiGY6bbS7Q5C4",
-    "btc_normal_address": "1NRBBynQ2EvBPeUeQwuycLudv8apo1wedb",
-    "btc_compressed_address": "1KZM5XbboiyErYLLqFJ7EYUDHrAmWqkSNJ"
+    "hex": "02d6a0351c151cf57938e0f540830cb390305081aed4a6f01ec42668d7b85f03eb",
+    "native_pubkey": "XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX",
+    "native_address": "XTSFtXy1oqCnZ5Sw5txgm2421smvzZ6jwVUM",
+    "pts_normal_address": "PvRmwBk2YNJUqcuJCJF9acrHzqetRxow7B",
+    "pts_compressed_address": "PmBMQNvypoMaUTRQUqQNX7KgW1m9Vvrh1a",
+    "btc_normal_address": "1PVzo73tnGMR3M6SpobJRbcEkbE4bd4iE3",
+    "btc_compressed_address": "1EFaGJEr4hQWgBcZ7LkXN65dFmLKiCLdSb"
   }
 ]
-testwallet1 (unlocked) >>> wallet_dump_private_key XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt
-"5K8dupxvPDBADHXLHpTcUxn6EKBVypwU6j7sNqG3mCYKLUZyasd"
-testwallet1 (unlocked) >>> wallet_dump_private_key XTSEz7eoMUssHQBeeH5xLr38Rg8RSJXYBebN
-"5K8dupxvPDBADHXLHpTcUxn6EKBVypwU6j7sNqG3mCYKLUZyasd"
+testwallet1 (unlocked) >>> wallet_dump_private_key XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra
+"5KV9x9uKC8DdWozG9NRC9ySRqgPGn9XgcZrgVWxntsh4msJF9zb"
+testwallet1 (unlocked) >>> wallet_dump_private_key XTSFVXDozgCnWhF3w4efcv75jaVPkkMVbcKm
+"5KV9x9uKC8DdWozG9NRC9ySRqgPGn9XgcZrgVWxntsh4msJF9zb"
 testwallet1 (unlocked) >>> wallet_import_private_key 5JdxsVV1B5oKiTBT3NraUenTii89Lj7jnFidg6M3HwcxyV572Cb testaccount2 true true
 "testaccount2"
 testwallet1 (unlocked) >>> wallet_dump_private_key testaccount2

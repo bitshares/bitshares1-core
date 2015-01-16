@@ -1,0 +1,5845 @@
+default (unlocked) >>> debug_advance_time 1 second
+OK
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> debug_deterministic_private_keys 0 3 alice true alice true
+[
+  "5HpUwrtzSztqQpJxVHLsrZkVzVjVv9nUXeauYeeSxguzcmpgRcK",
+  "5JuNNRpMexdnkHMn5RocYnKePjmHB8HHoaEuYWFHxC8eH4ELWi7",
+  "5KgGWyx1aXqT2EQFiipCCfyG3CZhNbEUwYmNDFBa7YWrT9thvXn"
+]
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
+[[
+    "init0",{
+      "index": 0,
+      "record_id": "9ccfe8d880d8fd3e840b082d3e1712f31b44dd57",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 1
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSCqYzCShVhUFRQqCJr6hRPxps4LFgbfFPQ",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f2faf2d307fd6818fd86725683789bc66047c241f8c65b2618cf759552213d28006b6fcec4ada98ba041369122bb4aca888513ea1cbdd114d516310df9929fe90",
+          "2058c9fe35872295439d6cee8aec99835b84a49b62f55672f5f481e02f2bb74cf276e010cc884c0edd4840a138b91e45d18fa0e48e71bb45989ec477d22087894e"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS6zyx2EZgMabvUViayeXPeX4Ag4MbfbuvhNqgSpkFzxT9U3ADgE",
+          "to_account": "XTS6zyx2EZgMabvUViayeXPeX4Ag4MbfbuvhNqgSpkFzxT9U3ADgE",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init1",{
+      "index": 0,
+      "record_id": "bb5babd4e8fbd9122831d79c366e4ffc321bbb86",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 2
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSDRHNV6fZpdqh8UQYwSyBnU11binMgnjsq",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f07787593e6158df2ab1559f42a5dc9d8f2a9e0e0a60f519372e83ad3051bce4c100784fca8f2a3d4ab28231be1e20c73aa6bcad336cabf6146d272852616c7a7",
+          "1f7a101ede52c43d9e32ab851bdfb3ca727d28ed1dc25fa4466878a006d54ed27f0f1fa13a4cb02f160982b09a9ba724422126c592b8882ed5fee7f69f9ce3d75f"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5F5vVtNeh2KPcu5BHqwjkCQxnViJMyQ5JzhEovLL4v7B28QFJZ",
+          "to_account": "XTS5F5vVtNeh2KPcu5BHqwjkCQxnViJMyQ5JzhEovLL4v7B28QFJZ",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init10",{
+      "index": 0,
+      "record_id": "8687f9e6eb5f886675fce3893738d4611be88e5b",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 11
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSBfRd27Q2EPUdLDGrhvEKBP6ev95N2pyyp",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "201ccfbd17aff3dc4df5f22573b87ef22cedb950842ce34dc63b7a0c9c5d3705982b1a8fb0083275057c24d0b06b93ca5c909d1a260c6f9617e21b4ee4714b5964",
+          "1f3610e2dfed4e17ae2277026e85e2ee44251d8cba97be1737c86e25b9131f89c06bb1dc6baa4456bb20708183e99c4182db7764473d4e2bff904aa472fbd45162"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS7qq8u9dtLqoTrvFGnhQe12cHsaEYDrrWrUdUx1F2cfbB8KQJj1",
+          "to_account": "XTS7qq8u9dtLqoTrvFGnhQe12cHsaEYDrrWrUdUx1F2cfbB8KQJj1",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init100",{
+      "index": 0,
+      "record_id": "4c12a2665a6217fbbccf5f85351cfb19228f792b",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 101
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSFGCvYH6rHBhzt8M7st7SbQPkcXnWmUL9U",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "20537bdfd3152f0bd46eea7fa57aeccd89719d238de14d8a22ac848b4e69e38d9f14882df3c96cdfaa5007af56410fdaf415b70b7285b8922436c3ab1b2f99cb95",
+          "20545273f8ee5fc36bb460dc25a2784a99066f9f3a9b64e044a3fb3b5b9450a7450b9cc78a728b51c148701d39f9260d7b53cffb1473054e77ed908ba4db7b032f"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS6aLFRms9YwQzmVyyRMrGmsXXEZZhmQWGqJhzMWANaBSPPQoVGT",
+          "to_account": "XTS6aLFRms9YwQzmVyyRMrGmsXXEZZhmQWGqJhzMWANaBSPPQoVGT",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init11",{
+      "index": 0,
+      "record_id": "1404fab9aa3f1e44d075ce18c6fccf0f340499c3",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 12
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS33RD8RTDWPrwLFgtqtjFKCz54Bjh6hwYD",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f5b75f2c1629e550a003f5c96abd18d35d0ea7e13abc47752e0e95366a85d5da57ccb1f18bd1f2d0b9e38f747f3783b0d739b37c94cb72de67e246ee2a28b7797",
+          "2045f0ac995618c48784ccf3ba3db3f4fd3c91c646cdd2f9c8213eb528f7f101a923fbb54dbcd87860d74ee82243e6821858c4cf7394d341ac825258c8d6a1d7eb"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS6M12C1p4pqao82kx1da4kV9yme68R8SUz2cPahcRi1emUHMD2N",
+          "to_account": "XTS6M12C1p4pqao82kx1da4kV9yme68R8SUz2cPahcRi1emUHMD2N",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init12",{
+      "index": 0,
+      "record_id": "64db1cf14a279b2c00e7d39683a574b61ed0ea3e",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 13
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSLcU32omjNY2V4E3LBeFdSaz6kQorXjc3r",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "20031ca16bc19ddf3277e7f450ca46ee9ddbef45c47b107171605caee5a7b9d6ea6d90664f07111d45eee388dc0d6e0d514eba3b707be41fa708c47818c05b03fc",
+          "1f672c5579fc74835305c615ec09f1dd64259e54f563bbed8c1d968c540f8b120a6002930c50563a052b5edfbc39863524cf355f0e2dc898d6004e976f65a56c19"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS7b2XvxTf8ikWx2gTB6xF4gpJV1zgZZamdwrN3U7ip6KkdDhKxN",
+          "to_account": "XTS7b2XvxTf8ikWx2gTB6xF4gpJV1zgZZamdwrN3U7ip6KkdDhKxN",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init13",{
+      "index": 0,
+      "record_id": "fb91489c1aaf2be2162b30ac1d6ad957062576fc",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 14
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSAJWdq8AVCRcgQ5MsZiPuhU58cwXSkHYjM",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "2063614f772ecd2cc3dca6156f766e48d0fb3f17b53bb13fa40787167a2b60604055ad2a32fd0af419f7884565a3561eca2220b83a99a6d04f3f181f747af1b968",
+          "1f55719b6e62cc62101e60a811a51c233bed95c45e7af1f7601cebaa53b3beed806826a823d9697c413a951937e512ab35bb835a9c90e40e1a908d0a111cda26c2"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5EAuX5sJGaA9XvGTBPp81BX1oKrU4dshN2CE3DM3HiBAvEQRtU",
+          "to_account": "XTS5EAuX5sJGaA9XvGTBPp81BX1oKrU4dshN2CE3DM3HiBAvEQRtU",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init14",{
+      "index": 0,
+      "record_id": "f6c79e2061300f44746fe1ca07660be490cf0c90",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 15
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSE85JVrQvVw1rkg3w9FxgrDVXuoFvrkWRb",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "2000ec56bb10e68d90c6a5ada1082e094d6fb91d6c4bb9e9ad02a107bcdc369cf078a6656c832a3926cb4e4ced24644a877ffbd1e63a9b23440e1c2adf5a085f48",
+          "1f0be6a70d9f111f39f566be7d8e2c5b9f9bfec0a2e2e1c38a0d3cbd0d14b15482227db50117ff28dec8047b6de72df97cf5c85108abb1d9ca480885da0a11aa38"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS8NgvBZWegDmc1odUi23acBJdTb1UwFBvPffD5mzLmcwyZDajFP",
+          "to_account": "XTS8NgvBZWegDmc1odUi23acBJdTb1UwFBvPffD5mzLmcwyZDajFP",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init15",{
+      "index": 0,
+      "record_id": "e1c9e62d125807dabaa4f6d2ca14e97da6a1d6e4",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 16
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSEdcjho5KssBMk2dUV3fUUnh9GvhkLpowG",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f1a713be80a19728e393317c56a786509e9bb680350976722f0777e28e83093b350748a4a4df57bc407737f38c36ed257a3e22262647113608c4969f76505d3a6",
+          "1f16d836531cf769675c83f90344b20a041b57f8e8c0d84b9a42c1e10a21e02b152158d48cb2e0f190d29fde5ca01041423305818a58c2c9ee8b49af7199f4321e"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS8UASReLmumDf863UcQFCkscb3AtRn5c7nmfBJMHAK7tnBYEphU",
+          "to_account": "XTS8UASReLmumDf863UcQFCkscb3AtRn5c7nmfBJMHAK7tnBYEphU",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init16",{
+      "index": 0,
+      "record_id": "bf384c69294b35c57bf4e2a8e8e0137d91b7c4e3",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 17
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSDaW4Y2mryUbefgfw5ft5aaa5xnNPBCSWz",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f403a59f002320e8df783e39bb86f0da131d559559262f4a56465a99834be440d35f23f89a1a405efc745e71e75658e0505bc5108647cc3906992d3cf194d2d44",
+          "2010b638aa1c66ef7bf53c7958b1f02bdd1e638811976fa01d852a3765020fb5341cfbd6f6b2fca383538b2061dd539178ef79026be85ac69ed76ebc8ae5a5f5ea"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS8XmK1vdR7wJ3aXgfirGfeSW1bG6Jg1Jj55h8zNaVntEmNVpsYY",
+          "to_account": "XTS8XmK1vdR7wJ3aXgfirGfeSW1bG6Jg1Jj55h8zNaVntEmNVpsYY",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init17",{
+      "index": 0,
+      "record_id": "fc8ad952d4715da1c9aa03a491c3e696e7b79935",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 18
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS7gj9y2wTmgnthaXRTNSHp53HSA5NXQvQG",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f6e07b9a8f6e319f8f5c2745a4e5df5a66a287b4b0902db908815e30693f10c1638eb630c6c32c804cb4537afcdf1aab759dfc3a62a0bfe6ba62b5982122a36d2",
+          "1f4bf85f1458778166b6d3a0371c3665a569b324be781b259d01c6838645cd501024efaa63837a66d9bdcef105fc8e870cc45b6a1afcca63b474d618dcb4d5e6ff"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5uGYxSEpJV7WPFpu8EUFnzg34yuVET9str4xvcLMX7NaNSFiox",
+          "to_account": "XTS5uGYxSEpJV7WPFpu8EUFnzg34yuVET9str4xvcLMX7NaNSFiox",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init18",{
+      "index": 0,
+      "record_id": "1f55f490bc4c2ab927d85bae57876a5d0ae46b98",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 19
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSKJopzDAUorQFDECKmBbqMoedgBskvuan2",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f63636c1bf67c6d25d8bb6353a173f35b3a56c523d35531ffc25e53233edd51184a1a782183ad297c6de9af09f8ff4d02119a8b07e5e6603fd696fdd4e27a0d5b",
+          "206d97f611bbbea05c3aba2f31087d48571b0cef7e1b577c5b5f895712ad74ed4370400ed6754b066649b0c351a445f1eb0bdfa3ff58a3bcdd947892c2202ca0f2"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS8CKSAe5snSPnxswhFapWD1xrGHn2tJCiq1d7pvs9Y4uRAgEB89",
+          "to_account": "XTS8CKSAe5snSPnxswhFapWD1xrGHn2tJCiq1d7pvs9Y4uRAgEB89",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init19",{
+      "index": 0,
+      "record_id": "1f2d589ef66037737f72f315811396c9526fda95",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 20
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS8zrFJkiQQjZvofQ5fMdU5fPqm9eQ7mRh9",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "2030a0d5ed2df0cdf8dffa6dee2cc9ff5e7687a1d69004466231f5cda0255566873b42986691ccebb1f0b6cbc4ee5d2d6a77549a490e643ff03b7831d07012f86f",
+          "1f443c500be02f94500e2dd401fe0bfefbfc850ea3d1805b578b8e3d21d9787e694616e7ba3bc8a8c439563035fa4d7b35aeaac72f5cb5d21d9b95bd01fb9cf606"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5uCH8E2UgRVT1TKqWym7EnzNBRcPkx4H39N8jGxhcq9sWN1RWT",
+          "to_account": "XTS5uCH8E2UgRVT1TKqWym7EnzNBRcPkx4H39N8jGxhcq9sWN1RWT",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init2",{
+      "index": 0,
+      "record_id": "f0c233875548ff388597aac739284fa082b59b7a",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 3
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS28ArRuNANbcM16rez7SpjHwfMsJ45H3Ys",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f58d4a2bddb92e2325006973f651b2abf229bf40024ca23635f4336d64e87f02241fc162113f4583d782dcaadaea4804664a4315a429dfa34f5f46d006c91cb60",
+          "1f56901cb5cec879d35f8b23618f363d8e6fc1452b7b5a5b496791d1a96ec444810ee03dc0a23aa840c3029fa36a3c3f1b2992718f3775d7d35d20c1493ecbed3f"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS7GLjsqokkUXVwpp1A3KgfNJGoaCd9pAxxprxKEK8L5vuroqXkR",
+          "to_account": "XTS7GLjsqokkUXVwpp1A3KgfNJGoaCd9pAxxprxKEK8L5vuroqXkR",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init20",{
+      "index": 0,
+      "record_id": "5e6ad4a0d1fecce383afe401b0776341751a6d3c",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 21
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS7c9d572JW5LuVCZkpqqnZG1VRCgW1Wk3v",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f055cfe691f581facd2e587b5756c7447a179b2f14a0f811efb371b19797589195d2980759b808d60856772adf9af1deb08ab98c942634fbecaebf7c2c9653983",
+          "20627cb6afdbbf838fd605e9544cd1f8b2fac96b57c70d278e175dfd388700bca065de5f7d0b5d27a7d8430d31da0d61ca180a12ea68d19e060514dad9989eaddd"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS8LPs9w8QEgp6NfhiF2mPEmBihqBzZ37TbQPGNaGwSfHsKcLgaV",
+          "to_account": "XTS8LPs9w8QEgp6NfhiF2mPEmBihqBzZ37TbQPGNaGwSfHsKcLgaV",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init21",{
+      "index": 0,
+      "record_id": "688dd3dcac168fe856a8f1f301e7526b3da1fc61",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 22
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSAXr4F54PXdbHmSRieDJfXJTQaYkWH6bPo",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f35cb78d221dd93be5b760056bc5c5163be8a097d8d964c3ab311dd05b35e40607c26362c9fe58bbe20bc0844cddc0d5981a7f1425cd73ce72b1a4bee4b15c40a",
+          "204738d6c705da9352f2845854476e8e84f9598db51ef4e4520024ec0a62d11e2b19c5ef0ef9ab044c3fa2727ab949725e26c3499a749d08e1285dc3a34fb0eb8d"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS7QfRo9rRXd2C1MB28CbSvjP9VfVsbJbX8ipvwDPrTE3B4HJudw",
+          "to_account": "XTS7QfRo9rRXd2C1MB28CbSvjP9VfVsbJbX8ipvwDPrTE3B4HJudw",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init22",{
+      "index": 0,
+      "record_id": "ea8668c1733284b88b03e283e5058ecee5fb0301",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 23
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSDV7gkyy5kDhd6Edxi4sQi1N2WS4iQ43Km",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f1e273a0d0240ff8b1f74068e67ff2c112c539111550f049de194565abf15c0bb22d19b86827a40dc6ae66e54967e1359b21cfd5a6339e95e3ca9c1976a2b7265",
+          "20538f8aa969974b5aaf5de1bf39249de62dc8033f67ea747c0020a279b3ce30fa7e518b65522112ed6ab673bf0dd9786072c04bd2788aa5b058d4b47c0ccd1012"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS6HXrV3r3e8ikweAL3Xi1JzDRGKP6qsgY86KA9uZcw5HSkz42jB",
+          "to_account": "XTS6HXrV3r3e8ikweAL3Xi1JzDRGKP6qsgY86KA9uZcw5HSkz42jB",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init23",{
+      "index": 0,
+      "record_id": "81bd917226b808fcc5ed145b9ed9c1c81091334e",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 24
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS7T77EDcZxTFMQatSBzQitQEbCUFNNRcEU",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "205f1eae0dbe7dfc957ad0549aa3ff4d32fea5a7744e96abbafca88aa2bf501c4f723b587409d477715228297119632ab4ef56649fe4fdcc8f9672314c6bbb824a",
+          "1f15ab4dc857056ac8335a14a4ff893ff49e28c20b46c26effd8cda412a2ce5a6b647afde8917795bdf62e7c1b8845767e3ff06672e6d46f9bc6cbeccf5b050f9f"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS72xfbFWZD8eqTQ1r6ZhpjeFsYV1vB8wCr5Atrs3HD2drDU84ZL",
+          "to_account": "XTS72xfbFWZD8eqTQ1r6ZhpjeFsYV1vB8wCr5Atrs3HD2drDU84ZL",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init24",{
+      "index": 0,
+      "record_id": "4ec817115e85dfd6c1bb5a591578ea241c8b0501",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 25
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSArkrDNh83ptkQzUdM4KctGHv3qbKqnmkr",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "206b2cd97169695e208482181d26c48e6b0fe04e306e96a0cfbc71771d8d70409326463a14c62185108701626799db166b5df949d9843815b68c947aee5740ddf7",
+          "1f3f24db7b9f75ba768f10ffb22563af94f085ac2a3b9b80bc5b4f78b58fa0f01e4e77e07378bd7ca5768ccfde9a1cee3d018cbc2437d2d6c94de1b43c1184c18d"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS51ug5Zb4UU8JZaS4hqSr6pNw5vGoZPXsShDUR1gB14speqULNW",
+          "to_account": "XTS51ug5Zb4UU8JZaS4hqSr6pNw5vGoZPXsShDUR1gB14speqULNW",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init25",{
+      "index": 0,
+      "record_id": "dd952d80290f9573bc8c084dbfff2e9986a8c2a8",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 26
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSKqV2n4KK3koCHjMQqkGaiN1VPFjgxUvtS",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "201a9252658ac42fe919668e6ea15f4664bc33630ccf6ce1bd58c1394e1ca8e0720531565fb57e917563cbcd1680c91da16fbf6cb3f7dd9c4c90003ad825e4d19c",
+          "1f30ca929f771ef6997346f2c9a14098dd82608b0e81ca4eb647d6605dd2ef7b840094a708c8404162a88d448e43f6bc01e310d47df83258a17d6b24813914a6b4"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS7sWPhoPYDVcbaqiRJf9rio2XUjMgBgSY5p15zLJ2AMaSVkEEtT",
+          "to_account": "XTS7sWPhoPYDVcbaqiRJf9rio2XUjMgBgSY5p15zLJ2AMaSVkEEtT",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init26",{
+      "index": 0,
+      "record_id": "7a225ff081417477a44284d9eff6dbd089ee3364",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 27
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS3iZuEmXCoRn8nD9QVxfuwCnJC2p4mSm6g",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f190bf6013dda006902a1edb71db17a98aa65fd58346da6b6b48a31d588a3626c5858308bc5642aef89c0c295e371ab9fd4a07dccdda2824c2d4d867802b06dee",
+          "2006ad88519ab95bae855beeb1e9721e49ab9f9663127dec1f4ca6cc85d61d96d06466939e0e2dd2eb4aa8460078a8d2137a258266b9a0f25fe55a2ae956200983"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS7ZLTXGCKb9hcPPTEGLAoAKbW9PGGxAKxcEqmzFdQYL6QuNZ6TY",
+          "to_account": "XTS7ZLTXGCKb9hcPPTEGLAoAKbW9PGGxAKxcEqmzFdQYL6QuNZ6TY",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init27",{
+      "index": 0,
+      "record_id": "209acf8b32d58c6a97172663c7a397def545bf3e",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 28
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSAB4ZQxjd7hZZBNEGZkHfvFwbJv8AQKTdK",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f22be6badb38f4cb4ca3a4d079571188e45e52cd16161f91bce29f0b08dacbc1c1b03622ef0cd4d06d72d06388cb57f8871a70e47f7fb177b00fa88eb4d2083ee",
+          "203b11927de136864fe696e9c3ed022c81f87f732d109053e74066781e66c7ce36600be25f721d5e0bc4d8381e142c1831d940f5377a3e51c17138cc1fc86f0e03"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS84K9ReNW5Hw9DwahHH2njxZygSAuRQZbA5T1Hn2zzZMqRGsi4B",
+          "to_account": "XTS84K9ReNW5Hw9DwahHH2njxZygSAuRQZbA5T1Hn2zzZMqRGsi4B",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init28",{
+      "index": 0,
+      "record_id": "a0b40df56f04bb888c1ac5a8c4aa5707c76fc708",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 29
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSLPxMv5MKDW7Su3Y15JQJXLTw6JFkoBsFu",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "2078b2017592695dbae5d51b68599fb1abf88d64012c8a334b86ead490e8d4164a0887ceddc05115cb18a68a93b269c159c89fd0dc64921166cc814e7dc8e3e45d",
+          "200e30ca952c6b4cfed060bad09289823b2f519d9c62972ad1d07bfa69ed1e451a635b2ecb98930f058c7ef39bf5737627918d37e3bacbca64e745759edc2b2884"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS8HGCjuregXH5uYBm9KCKc6s1HabiKJ6sXWMggt8Gqke2jmR8WT",
+          "to_account": "XTS8HGCjuregXH5uYBm9KCKc6s1HabiKJ6sXWMggt8Gqke2jmR8WT",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init29",{
+      "index": 0,
+      "record_id": "6cd00c4a79c063cbf6868466b5e4c00f5964ec25",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 30
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSE2wotSN1GdyQkB1kp7VVrMskk5MJ9tGKP",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "202ae582c57f8b2862f0f570c325d3557b6315cfba26488856d994ba4dc442d4857761b02fb0b7e99bd374ba47750b78666252052974b4025a9232864d0c5ac9d2",
+          "1f63bf283852162d6b74a042705367d70e17d727bf32bfe1e3892be855802b2f3c0c21939479ade17f49bd4b7f0eb7b04d3381954e013396d47b1f5fa4ab49b326"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS8bCrgf1ehd13DCdthnDGr6SqGn34DJ9srPsJDvZ95QaQWVfSaC",
+          "to_account": "XTS8bCrgf1ehd13DCdthnDGr6SqGn34DJ9srPsJDvZ95QaQWVfSaC",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init3",{
+      "index": 0,
+      "record_id": "7c9da9782653f8d9beab65156f032fee5e489613",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 4
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSA8NaFBy7ucqRsPcy7XD8v5aWA7otq9MUY",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "201d06c2d11bc41c5c6641d9d5bfa4ec40cd3fc59b43bab06bcd608746129715e37fece899e6ec6fa4f266462ba8f41f7660372618fd98a8015618e58ef17d80f7",
+          "2041ea88c440cd20b67a624af5b89f18c9f657e11360563924b5e76d7c21b4c45d4102cf8f7301879252b3209a487b55ac7e4b60c067c796d90a5a3cc0840d1490"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS8SRRFai9jnq35HRAUfhACkjL9dYwPnA1uSu1fAGzshU3DeXSoj",
+          "to_account": "XTS8SRRFai9jnq35HRAUfhACkjL9dYwPnA1uSu1fAGzshU3DeXSoj",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init30",{
+      "index": 0,
+      "record_id": "223de0f5ec80bae0dd7cf16545d5a810ebd9b701",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 31
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSAHsJt8cEGyWczHBKiJuQqVzhQaBG2Wg6A",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f397f99eb608c81dcb73d21855f14815a2e255b645bad7596b82a893981c4f1475959b3a03f5270420d40fcb8270ffeb3f82e53dbee27091ddee8288b1f6afa46",
+          "1f069dcd033f62c1564080f673833c630e63568f0f6c7e244e42360c448e75bf332e32296992c2dbf052be5a4affff41a0a95d403c16a447baaefc90c92c2cedc0"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS89PhGjy3oQFNa1Qkftbp9Jm4ymH96FgpUXM9kTb3MX7otHJ6GE",
+          "to_account": "XTS89PhGjy3oQFNa1Qkftbp9Jm4ymH96FgpUXM9kTb3MX7otHJ6GE",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init31",{
+      "index": 0,
+      "record_id": "e1bc1b42610113afdef1395a34299df8876cae95",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 32
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSMaVytDEfKRXnH3ijtNCC3iVtYENBPuuo",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "200917ad6df917abd4d8a289c2daae1cb3dac14a66d8cd36e665b30c43ee67cadf7590151f451d9d115c2ea738511b007c3a9678cfebb0b23a96dda0b8e29cc4f0",
+          "20675e964c09b3b819aa01e22509a35765008d4c5925c5a30941d7652244af645c7181e81ada9b1eda69a7be28a168d2e4a8261b36c3f7617c9c25eb9dc878d4d5"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS7cngskrZzNKE56SDa5t9xaSgRNkPpWf99REVhwXz9paBGaqFP1",
+          "to_account": "XTS7cngskrZzNKE56SDa5t9xaSgRNkPpWf99REVhwXz9paBGaqFP1",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init32",{
+      "index": 0,
+      "record_id": "f116a30292cb71c7dc6d2275dae132afd81772ef",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 33
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSFpgvYCffUZXN2YXsGntvJJ7tz4AKfZ7BX",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f7534f3f190dc0e4964bc5d526a7781113f1c88638e08025dedaddb963a5031c759a33da1fed91c22cf29cacbd88a5ff661d80c8143d19e301f65b29137cf7e84",
+          "1f4144b8f7542de65a954486054a7bfaa5c05699e9bb12258e5cfe6affae686c2f28982c944e7946bd6645661f0c082475c96c56e8c78e27251ecc2bd4d4d8dd68"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS6tCqPtEpuUCuyo4q87kFJET5swocCZpvD3Q9wHK7h9xsWBv5H7",
+          "to_account": "XTS6tCqPtEpuUCuyo4q87kFJET5swocCZpvD3Q9wHK7h9xsWBv5H7",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init33",{
+      "index": 0,
+      "record_id": "f75ede2c1ad74fdc2f8b5f91b79bf2fbb5702e89",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 34
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSC4mtuJttwxsKvVumaXP2HRD6yr2zRM9ZA",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "206f4be880925fe1dbb11b6227f0e19f473255dee7c65b76d50ea2b4cae29acf3d4ef2c41d51105ef44168e7d33c33fab47d57ed94bd807ef6592d11825046b01e",
+          "1f3fcf944a66711f7a1acbe2391a8383500867b1cac3e7c73b15c5837b41ad425b39c810d3928e58347f9bc8c9a21a36c4107d2aa728aa89169d14b9d5fe671453"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS6HSe6iDRd4YAnr9F5qk6sfnkDMbsQVkzbSHAm8wMNB21LA1aVk",
+          "to_account": "XTS6HSe6iDRd4YAnr9F5qk6sfnkDMbsQVkzbSHAm8wMNB21LA1aVk",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init34",{
+      "index": 0,
+      "record_id": "7da4a19a55ccc9f55a851ebb2572785eb9d524a6",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 35
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS8ZcJ44rLBDnEoDnkSifxGGvN4HEB7GVku",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "202f7d5c8d2d51349ff763083b1f71ebc8411ae73f4ef4803dd3e33149658bc7c64900bbb901fc5faf2e0f56808b53425c7d939cad5845cde894446609650d90bf",
+          "1f211c90c7ddb98153e6c408f66a402984ce3b95fe7f5dcf439eae2801418a59582296de7da23c0fe1f01d81747ec8b54016fed961e684e0ada0f74637b44d4b0b"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5Q8Kog7UEsMW8j26NvmSpwxL521UHTExEyLnByyf8iMa7Vy2t8",
+          "to_account": "XTS5Q8Kog7UEsMW8j26NvmSpwxL521UHTExEyLnByyf8iMa7Vy2t8",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init35",{
+      "index": 0,
+      "record_id": "50a13600afe5723622a28251ed11c87ff647207f",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 36
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSAzb23CMwXreMo4Q7vGcoBTFzV3Qxsmfwx",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "201b3fcfe5e895be45db6e7be5f702d21f83850b6ac4022ccd81bc6164d618a69c5b363455de7a330b53ecaca50510b3ce02b17392ed8c0033cfa766ce0e0ed634",
+          "207e49f4fd44b03169e81bc37dfd131ec2146812e87f643971d4161039e616d31173fecec4e4e2a6ea573f4b4ac863f738df988e3317fd7d9b2cb26a026f76f96d"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5N9rBcADRN948GgHi7USVQHTwe2HUUEtfF67EMp34DGuCHsrmW",
+          "to_account": "XTS5N9rBcADRN948GgHi7USVQHTwe2HUUEtfF67EMp34DGuCHsrmW",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init36",{
+      "index": 0,
+      "record_id": "9d47cfda99b0eacd606e2e60826519a1f1a233e5",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 37
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSBbuNVw1uHoYiSYsz2hCjXCLrBtCH1bVuh",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f6198272affac13c5b0058e21746313a359cb87ec2cf365cc2d7917919fb3faf05fb005eb269cfef4f876b05f1b863237eb13dc9712aafca5ef2be1519a424159",
+          "1f3db11a2e97421c51c73ebf8ab0f4e547ee3d9268f31990a7d485f59ff737e3ad5a2ebceb7e88dd86a8cb1dd0392b007e778dad29bba2d651f79b08244e3828d3"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS7zszm3HhpNNTAp6sUi6cBmQppmnkA16HkMFHrf2z7nRv4VwryY",
+          "to_account": "XTS7zszm3HhpNNTAp6sUi6cBmQppmnkA16HkMFHrf2z7nRv4VwryY",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init37",{
+      "index": 0,
+      "record_id": "7a94ae0d5b0139275593840a4888c91fa2e67c7f",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 38
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSQ8whFFQXmzzqgCwtph7eg2AcnEeNVwJQ3",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "206b0a4dbf146bf68bc32d47a922cba8896d538615718d743f444f4586a3271c4c65594d65bb30c9382e0bef52c281a02d5bbb55a4fd255db011df7dc55b90302c",
+          "1f329e978a5dd570b97cf276a29733734c656ed8f98d5709e1f19f56552d8913fc785515e2870886ec9c2c5667153831db9d9eab09c8ba68f32b9494b28b451c3e"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS857devju4c9Bpd3W9gMrhwJdj6kHGsXfj25QwAgdmCnBM1TSXn",
+          "to_account": "XTS857devju4c9Bpd3W9gMrhwJdj6kHGsXfj25QwAgdmCnBM1TSXn",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init38",{
+      "index": 0,
+      "record_id": "af0a12d1a1276e22c6eedb912345c2f13e9466bb",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 39
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS8k2o5uZ9X1Xy471dL7TGrSeuGkn464QXE",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "204b43aaf222d7389e5ad144517d19381ed0ce954d7c78a9748e219a8cbbf3fa0c3205effa1459ce04200e0d7329239a8ec60103c5efc365018410838327a8acfc",
+          "2057720bd1ecf9ca61a028ee5713de9fdd6a73d09547e80b92d9c55bccd234161c18f15d84c2483292a37c4116e0521e72b53f687752c40d13d665085de529942f"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS6aQwobEFtyvzdwTmwsiyo6LjK3LxP4xnDRxnEfa3Uiqv3Z24ou",
+          "to_account": "XTS6aQwobEFtyvzdwTmwsiyo6LjK3LxP4xnDRxnEfa3Uiqv3Z24ou",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init39",{
+      "index": 0,
+      "record_id": "714cce3ae76c808161cfb2b51495e479699399b5",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 40
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSJbZhi5roRhrFPRXmvqVaVa7ZCMfzZTz4a",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "202a1bf59a4a5ba92e87e9802aee33dbda1281a72117cceada0ff5ac2e891aa12d427c48a8d41a59002f217fd21479e6c44a9b5566b77a91402c5bc6363c1283ba",
+          "1f2a62e2c9c7cc4b16abdc84ef921cddb9521b74cbf68b19a9148446183f79e1366a4281d27046b964c0e6b9f1d15988aca43acd5a68a69f32b9d5c63208f04d52"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5GxQSd523cpqtoYAXkZUnR8fptaxMa4hQiwW5saMd36CEPvbyh",
+          "to_account": "XTS5GxQSd523cpqtoYAXkZUnR8fptaxMa4hQiwW5saMd36CEPvbyh",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init4",{
+      "index": 0,
+      "record_id": "ac28170e8fb4131294fea3f11f04f3ca3110eb42",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 5
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS9juE6mTjcMdihS9xobCi2WMfAYTFKm5KW",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "203788931fd71bbd27203b6c105f39139132930cc5571cb4accdc03b8b7b57358b037d61e1b909e43b399951215f00d88e5fe31dadc778fbeeaac3eb8be9d4373b",
+          "20761a05b255dd4a733824c27ad5a3ba759dadb684b30d36a6063a955092a08aba7682a52b71b00240952e3818c7c7a54ac11ed3e832fafad14e09e6af3fd38c0b"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS8S5bHi5UPoQvEQZY6rKDxcCG57JaYB49mXsnShCmVTxfunLrRt",
+          "to_account": "XTS8S5bHi5UPoQvEQZY6rKDxcCG57JaYB49mXsnShCmVTxfunLrRt",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init40",{
+      "index": 0,
+      "record_id": "78755cf43634a1f55565e79d6a61c21832e8624d",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 41
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS5dQ6pxS9RNE5pxwnQ5PViyuHx9QVXRFKN",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f0454335aeedc8d59fee0da894cf573c7c8eb6e2f7182f7efbec24dbee6800437360496104f51198b66f13afb855a6715dc65962171d67b1e5a9ed72984e30cad",
+          "1f7f4746857d9854230dec9bfd85afa15e87dd4e54b5e0a2669cd11bb35f8c32b445930756e8b8d23aedba778c5d507e47ef5f3fafecc4dda41dbd609def280362"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS6jHo6TCP7VMGQA8kjnaay9tm6JsUpKvpVjemwKF2bxV9gt1GMz",
+          "to_account": "XTS6jHo6TCP7VMGQA8kjnaay9tm6JsUpKvpVjemwKF2bxV9gt1GMz",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init41",{
+      "index": 0,
+      "record_id": "78805346d5a870b03d4b023dd14afa8ea09974d4",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 42
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSDLugFhc6d4Z6FK8z515JVZUxqBZNxWmci",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "202a20baa2c3143b123a85d1337f61d0f02768cfbf2deab1f1f3c8f8ac8a7b85a44866a89b9b2f15ab6547d5151b21df7ea50cce9c6f0cca54f4c32d792eac3667",
+          "1f281561142e7107cb45ddb8cd18c01bb708f34c6b952d3aab1b6e6c7a99fe305d5a5c5fce0f029e038bde388f8383d3222e0a02f6ca7c4d8b4c4296b0feeadbbb"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS54QnbqWXNMrcxWYMjuznURzbw2h4NDAjSDa8upVmnQftKD1hBN",
+          "to_account": "XTS54QnbqWXNMrcxWYMjuznURzbw2h4NDAjSDa8upVmnQftKD1hBN",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init42",{
+      "index": 0,
+      "record_id": "b3a13372e3f0af21144a0c9dd3a2f9a07151dcde",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 43
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_pay_op_type",
+            "data": {
+              "amount": 50000,
+              "account_id": 43
+            }
+          }
+        ],
+        "signatures": [
+          "1f47575711bdb1319a3d978a84add3bcac5d86e7156620b0c64143ed98f366c3243b092a6b33018af0cd7a33d4ba91472ec990e7d682d794d43ebb869a7226a5a9"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS6UQWeSnsBc2Bbx13aMSbKv5bMHKdMCHRdy1PRFHxbtiVgVTwvv",
+          "to_account": "XTS6UQWeSnsBc2Bbx13aMSbKv5bMHKdMCHRdy1PRFHxbtiVgVTwvv",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init43",{
+      "index": 0,
+      "record_id": "f7f1953c4bedfd96aebc8f751d8e535d3599a661",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 44
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSPCWBJeXC49od4gknhPnXgprSCseyV4Spf",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "202016a35958c92177411983f89be605031218c5d72698c93f3d51a1ccfb7ec1f64a47061e3b206786f808d2abea8152511be70f5f0fded75aaadfcb4e431284e2",
+          "1f7deb9a70a861f7e1e618f729a2155b95bcee777a977428f11470c72bf5cafb6d3f8a72a9dec6202c6a13236381143de2d9a9178753bf290bf137c99e35d42bd2"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS7sxSvm8uQH8bTqHKq7SzUetZfyfCtvFxus3GQmr7v5km3NDDMG",
+          "to_account": "XTS7sxSvm8uQH8bTqHKq7SzUetZfyfCtvFxus3GQmr7v5km3NDDMG",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init44",{
+      "index": 0,
+      "record_id": "b29549945a663e79207388006eed523412433b3d",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 45
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_pay_op_type",
+            "data": {
+              "amount": 50000,
+              "account_id": 45
+            }
+          }
+        ],
+        "signatures": [
+          "20483616561342b1fc71bcb1e0e57b45c22b7a0c99b3398d26377ed0cb2ab8840962b41fcd36ce9f6274bee9645ec557b1aafe753f82c3884ec0cf748cca90ea45"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5igMUr6SMkftQcSiCwb2qfioKq5xkJPyWrgBdcm1KjdVjnG58V",
+          "to_account": "XTS5igMUr6SMkftQcSiCwb2qfioKq5xkJPyWrgBdcm1KjdVjnG58V",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init45",{
+      "index": 0,
+      "record_id": "c8aa556f7f35bc73458452916290ba99322b9583",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 46
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSJzdnywjyNZAGQCVa1sLtWkA5QXWEymVbd",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f1cb68ddabaf54fb2f038e4d8f4c1679bee901035022b76e9287b0ce737fd3e9e5a5a742503aaca483fb4893e6c063c9c70c88f78a6c9540df6b41a0af6015fb9",
+          "1f23bdc9b8baa02e0f83b3b85ca2af16df11ee99caaee2e58fe989b77ab3f8c68c5d34ec9ac1fbb69480284ed774cce1aab40d25c95eb3d3ee2096730edaf7458d"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS8YckSWprQsjZR4A3DLYYk58vUH3dnzDpUhzJiRhfUiFayKUqJo",
+          "to_account": "XTS8YckSWprQsjZR4A3DLYYk58vUH3dnzDpUhzJiRhfUiFayKUqJo",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init46",{
+      "index": 0,
+      "record_id": "0d910918661f2d39605d0eeb8f62a8c3698e23c5",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 47
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSEcqTTzWrb57AS3iK3q2vvnJNPvbS9TppG",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f30768d56d5195cee92204c4d5c8e7145e8c55669e842f3a561b72dfd2b0d4a4933ee10d79abfae4b0df0998618cd1033d4486113a7081a9caa87db4224b5403f",
+          "1f78173ca8b8c32448cbd759be00d735766ef516d72c8e8a538f1c70d07af8f9a51652db6acfbba782e825c39dce5d22d18c8fe8eb77cc9eb267daba28ba759775"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS6AM8k17VqA64k84DUeEXnr4cqwVu8KHCcDN1EHNRwM3zvMfhMC",
+          "to_account": "XTS6AM8k17VqA64k84DUeEXnr4cqwVu8KHCcDN1EHNRwM3zvMfhMC",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init47",{
+      "index": 0,
+      "record_id": "1077f6c0957f492bed38e687943bbbae140a893b",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 48
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS4mnbs2WBejRAFcwnKjygusbADJTGpM4ou",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f56e12f96a43847ef96f2c99a4a2d8c13bc9198cf2610f33b6a15e0fb9036914a190187a8ccf15bd844fbf40b612025e17a3e6ca703b402db8e467e65ab21c38a",
+          "206e944e5a06126e790d3e92d02a4a3bfab3b8dc90a37da5a01824d7005adf8bb4733e1e76bbd9b07086a36457b7a95241244617c96b7ee20830de2fa89818d001"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS818V3YKTCPdAP273fA9vLB5T2uyhR976VakaFDiEgHNmRQGBVZ",
+          "to_account": "XTS818V3YKTCPdAP273fA9vLB5T2uyhR976VakaFDiEgHNmRQGBVZ",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init48",{
+      "index": 0,
+      "record_id": "34adcf15e6825b057a81a997b99453561013b83c",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 49
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSEazaE4B18JC9g5HYrvmrTY4c28qb6uuL1",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "2031f147c7000ff3a2b05448d54766637b172c898897c8a18b056a1860bbf4afb45b378b5922fa6618b88c7d99b38d793132d2d7174a5f4166873c5ddc7228c668",
+          "201936cb2cbd1f3c5d9a46fdbb1ad9a7a62826230f03bc56ccc66a352f9b264a45162e1d919316e3e2bd1be2017bed3fb0f9ca945a0b6a37cc6cc371039fa607fe"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS8kALJYJkAjexS1CBHBqzfYJfi68uEotdAijNTshG32bEPfFcd6",
+          "to_account": "XTS8kALJYJkAjexS1CBHBqzfYJfi68uEotdAijNTshG32bEPfFcd6",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init49",{
+      "index": 0,
+      "record_id": "e77a2d1fa32069cc7891692c98651a37047d2b48",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 50
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSA5mLZfBuQjxK21DDTL5ekueXRZERpEczd",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "2000a64803bb213309ea4974a2ec465b5cbe51f48f1b35146003321f5366658992503db45e4be46cf27b97a7a4f838606059fb110e5c9e64216e936686984a1915",
+          "206bd10e0a9940cd7c9ddf16b8559942de9d35e962d2956ef89fee15844bd137da4b2ace2ed990a1cbad631ddadd0c8eba62921896955a64ebac1731bd64523f1a"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5b3w82YLLGMo69GWPg7amTipWzxAy2LpAJatUdk4cZDi8t7fU6",
+          "to_account": "XTS5b3w82YLLGMo69GWPg7amTipWzxAy2LpAJatUdk4cZDi8t7fU6",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init5",{
+      "index": 0,
+      "record_id": "e36b72a2d565122159b053f3e983bdc64ea4a7c1",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 6
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSHziTu6Tm16hMGaQixhh1WfrrKi8ETwoSW",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f19679fa7a84adc9ce10742bd8a8cfe037a99f3ea1170de36da46bba9bb87b5c472055a99525ad422fec793da686bf495e754df617b226bd4df27128c80af1295",
+          "1f7ebb7d31d4dd542010d1738c901ea13e4cdae4ef6e13d3da4420fdb9c582ca72106a3459dde0edce59f0dff0b3e4d76edcb349fa0345c1e7a1ef18c2683bd526"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5ua4YHLMeeR4ufnhgsoLzYcsfkVozvQmT69LhV1TdcDAgCxjXq",
+          "to_account": "XTS5ua4YHLMeeR4ufnhgsoLzYcsfkVozvQmT69LhV1TdcDAgCxjXq",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init50",{
+      "index": 0,
+      "record_id": "c74964649167408e83100ae80cf6d5da788e81b5",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 51
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSBLvYRH7KHsGDRzN8v3xKvoaqLDEmW4He",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f5787f8f754f348600e4bf8f451471573a9ce984c2eddc165f4ddcd9c879fc6725a8f3e9f7aa8cdd996e786219c419bd6fc530d323bc072b5af0a392395537ed8",
+          "20670930e619fa6b6cd57d38ad471e1c2636c3118f75373fc7763ac2d87e49140862d82af4945dc505329fb4ef6a50880ccaa623a62574691c999de304e624190c"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS6N3nTTgiLBvgC1Ax18PzoS8iMLjohNJxUGjudefRUtUM744S93",
+          "to_account": "XTS6N3nTTgiLBvgC1Ax18PzoS8iMLjohNJxUGjudefRUtUM744S93",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init51",{
+      "index": 0,
+      "record_id": "7fc92435faffca95b9a0c11767b2d02227e327f8",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 52
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSBrF9zqPLnHUNrW35jcNUUa5Z6WbYFMozZ",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "20221c105f720706d7c550a66c18db81b5b7e620c8722318ed7df864fe53454efb418bc10e64ce1c5a45a3ea6b6abe2a6888c936479ee717aef01488444cb7ba93",
+          "202f3f415c5338d7530faee91089900f939e0792d784794001ca2add36feea19b267c496ac1d975f973856ba48258bf47996a9c42cd2b7281df900fa2732845618"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5LQkJ2VYZ1qB1sdpzFgkATPdrzKetNr9i8iedjAgpvS7psH9a9",
+          "to_account": "XTS5LQkJ2VYZ1qB1sdpzFgkATPdrzKetNr9i8iedjAgpvS7psH9a9",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init52",{
+      "index": 0,
+      "record_id": "f6fa0ba7a2e22c4d1b3a63989d306697f0a904f7",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 53
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSKc8Z2okQ12Ayv5k44VsYP43na2XHrDVmk",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f3301d111d34c167a91b9dd4bed13153b5cf7ed5f753a9e8402c1f979c6cc0d11371e01f11c01b0fc9c8e45f540cf0bce1c834c339b91f1f1a3c60a026c1eed38",
+          "205f0017bf932c4d9e5431abab5a21ee704ada941b06a1d1751c860d18b86bbe56500f402f4fbfce3e186beeca47aad175e4de4d8ec22653dc4812c226a729361a"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS7hL5rPiPT7uTjuE8xLEcxnNQRNEomXGgw2z6rQQF3FeA9stxrE",
+          "to_account": "XTS7hL5rPiPT7uTjuE8xLEcxnNQRNEomXGgw2z6rQQF3FeA9stxrE",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init53",{
+      "index": 0,
+      "record_id": "006decc1dfa554d5b6719db5f1e1510a47251448",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 54
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSCcZxPgMT1DZWxDLvrMeofhjX6AABQnkjB",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "2074dd80455d7afc0644daeb78b541b62be6f149bfc23ecdb51592f98bc3f633165974a5f431cc20ca8fa4dfbd21472cd4ea7aad960c5eb6b52f2f6d5018503430",
+          "1f6d2f30214fff9e44a5d75469d013469853cb4303447c3cff8da56aeffd5909d175f902414053902a30d3e4d0c85f9dd353d7290e523100cd9066d23244d1732d"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS6HSbjSdtJhpLQUJwmfisH8g6wAV2hPhTYBNJZdFw4b8wKEWGq5",
+          "to_account": "XTS6HSbjSdtJhpLQUJwmfisH8g6wAV2hPhTYBNJZdFw4b8wKEWGq5",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init54",{
+      "index": 0,
+      "record_id": "01cc4cf39877da492dcbce9c466464452512d8f2",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 55
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSFoTWHD1YoAYa1E3evnWMJaDAXhSk8Bzds",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "200d306a917bacec0581f929e858f35e8c847296ce3a12751b7da9eeb11371c1ec76eb33988e7209d88c826f2595a48119a47242f32aa73b6741121e31138116d0",
+          "1f3b8dbc92dec4d9667df914317951e6b545bc0bce7487af8224c011fe11a87a100c410cb69ed5bd5443a24b28508c7e4ca4c831a5482e73ac1734c637abf5bd70"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5GSuF8nA7h71QpTjEF4aCarGHzVAV67aYMq1MERdPxA3bxJzSB",
+          "to_account": "XTS5GSuF8nA7h71QpTjEF4aCarGHzVAV67aYMq1MERdPxA3bxJzSB",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init55",{
+      "index": 0,
+      "record_id": "ccedfe5b7c83025c3d162c357cda06fe7f9d4cec",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 56
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS96FCBDyEnk9Kb5LzAXUV1tEmGJ3qfBSvV",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f0e9d554d9759c33a92f788902d55c85eeac6f98d79704e6e715e58782592f479390b255a4ef1a29590d81a1a44bb5cbdd490b2605c7abf3db8de23900195633c",
+          "200d137632bd748a4faed2b8112fc7fab5bcfc2396cde9acae6bb290f31af6b33e7154b05f1cfc7221b93a9921e8e7b4bb0c62fbade6f25e21ad0710e1f6264f15"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS6cVwW5AezpBEAha4csrmmLxo2dR2jpicKMDkm5EjeEbPTuepcy",
+          "to_account": "XTS6cVwW5AezpBEAha4csrmmLxo2dR2jpicKMDkm5EjeEbPTuepcy",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init56",{
+      "index": 0,
+      "record_id": "ca933da15169391e8eab40db5e8693984b9a6323",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 57
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS7rufupxwyUTBusd9wS5Ji3gadHDS19851",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f5c3cf5cfc48fe1aed14aaf9804c226028bd63034c5bcb92d768b89fd5731ea557a173043a83633f500699f5a95eccf11de2d93b824c22c3e65b7a9c2cd84fad1",
+          "1f572c6270178667177cc3339b36ef9519d0264fb1f70bd84f6ac03d97b82e9ac07da62061275622293942aee670ff86ecad1f5a12fcf9eb6435d6b1fc0f5cd551"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS7xJfa8yeUaRNQBT3Zh89ATyhtCXzouELC5s56tmCZAcg8tM7d4",
+          "to_account": "XTS7xJfa8yeUaRNQBT3Zh89ATyhtCXzouELC5s56tmCZAcg8tM7d4",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init57",{
+      "index": 0,
+      "record_id": "666d0c3caed8a68183cdcc726afedbb484597def",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 58
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS6Kaxej7yU47yDHcpGroGwBfySu1pcGjQ9",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f5415275081b49277b5aabdb20427ad4f24da7b159916e6bf037500b724e210b94b46b59356e17e87383112468b94b3acb4042f92b8f1c79503e86df034caef36",
+          "1f5bd98c5cdd74c9b2b86b03d867b88923aff7b743b59e25d276fb8791ea88146e12bde2cd9bc977fc0ed6d2364394af0ed20157a2d31ee5bec3dd75982e18ab80"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS6gKTWHhw9L4skT5iAj73KtFYPDiQsJfKfZAYE4Qwjw85odNxqh",
+          "to_account": "XTS6gKTWHhw9L4skT5iAj73KtFYPDiQsJfKfZAYE4Qwjw85odNxqh",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init58",{
+      "index": 0,
+      "record_id": "63eaef5645cb9ae3c51d5792a1586f2763ac4470",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 59
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSL54vkVDgoaBVWjh6BbcDQSuArFgdD3Vmu",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f43ac619d9a900bcb77b2289a0084760668930740b4b5accf1a2550c322f5cfda242b8fb8a5a6807ee729b5ae8cc642e0340025c52d7572542172cf48dd076aa4",
+          "2063e8125505c62b6463567741857f4c58a05265f0bd0e63c2c7a0e9d935a85a000c4840250d4d9e9b28033161f256ea3dfe3afed5e03056801fa9ad694c2e9a2e"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS6UKQe2NtXC8cpbnWNwnqQvmMgSBxk5REURevaxG59SFBj9ZZHV",
+          "to_account": "XTS6UKQe2NtXC8cpbnWNwnqQvmMgSBxk5REURevaxG59SFBj9ZZHV",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init59",{
+      "index": 0,
+      "record_id": "5e4a04e8f15e02706de65dbce8c64efde2ed754c",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 60
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS5NUX9vRKJwjn9C9MZA7yjqYyE5mPCiVPt",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f38a58240a0c25917099e5a44bb6bc51010d0550ee36551df6cd88532af1b6c427830227a4b7a302ab94f1000dbf27368d09ff7d7c5420c990f6f5a9d4a8aa390",
+          "2056995dc48ec83b9909f1ca3d987657c73526e1326e5354fffb2ad4dcb9256da923ae52e17bb57f0707a7e2874d0007d678cce88f2dc8fc59fc125d2b0a8c6de8"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS7xVRjEqbCDcWG4fQHP6PDMMRheP1uu23thuV8FKriTsbGKNAp5",
+          "to_account": "XTS7xVRjEqbCDcWG4fQHP6PDMMRheP1uu23thuV8FKriTsbGKNAp5",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init6",{
+      "index": 0,
+      "record_id": "e0eb02ff50345f2a87f3df112dffbb14b35adbd5",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 7
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSKchfKR6ziA5wiQVEbVwNxfnKxZig1uU4j",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f5d5394eb45774669ef34f18d85083421ac42dddca4210aa0bc13804645d532e20ceaa0be620ca3f77f6a1e436d367d7152cd591df16e1d8ec0bbc6b94f21a3cf",
+          "20063bd0498e31ee5abd21b0bf499a74006f8dfe2777b8386ca1312c8808f77ef730357617b9533d91506f38c39b676b4bb22febb3eb99d0abfea621921dcb3092"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5TYZyTK1wXRBwnjx9WJ5YhGmR7dVEWESzYwnQWUwj2ZYX49YPE",
+          "to_account": "XTS5TYZyTK1wXRBwnjx9WJ5YhGmR7dVEWESzYwnQWUwj2ZYX49YPE",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init60",{
+      "index": 0,
+      "record_id": "01b02450e2a3b2375d566c1d77a0f2c0bb632f9a",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 61
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS5G8egrcugc3Ti9qdHh99QEkx8CeG8T47E",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f67096c7be69b2b23a45b32ba77c1e09bb831cb86e78e7cd31c4fc30eaeb824ad5924ac1e4109094da32ef3f377eaad37bab46df64d46fd0f76d95b03ad659341",
+          "204f4a3d08ca3de7eac70698244191156ae35ec05854f13f7b5b60c5197344683a355c45f58ec8d21bac7963585bd2901b662673cef3df5122cbb1a3c98b584245"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS8Vb5fN5s1r2zqsqQHRS7s2NRJy3RBBSK3Hin6x6pc2sM3Gq1Jg",
+          "to_account": "XTS8Vb5fN5s1r2zqsqQHRS7s2NRJy3RBBSK3Hin6x6pc2sM3Gq1Jg",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init61",{
+      "index": 0,
+      "record_id": "f36b75c03281c11b4ab5559eabb40fa35586a91b",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 62
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSAoTgaG6EZjdyNEZsnAMemdYSirD99cQDF",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "205532efbe169ddeae828306d7b3138e12d96addf325e2d8471ac0316f57202aa771fc77cadb0e04337881765b48c0c7fb2f2555a9689f7d927b7b4f352dc9f092",
+          "1f02b0bf023f94db75533e618884b7f42f115de92b3d3ba0698b42213e494206861d77ad6866b8cc893388e53fdceb134a7e9cea74a64eadb2fefc0dbb42eba191"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS8QpGSPqYpfqPwqHXBtRtHThjjoPy9J2guZUGxxMChKJjXcizoj",
+          "to_account": "XTS8QpGSPqYpfqPwqHXBtRtHThjjoPy9J2guZUGxxMChKJjXcizoj",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init62",{
+      "index": 0,
+      "record_id": "4b7880243f17bc8b04fca2b845ef1627987ca219",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 63
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSMSEtAaFpr8VuJsjaoGdoe53SMdqm9mVt5",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f67156e5e807deb6d4079d69167587cac84c5f3b79c34f23295243643a010611430faf7ae47832f8bc12552f5dda624351589d0ce404bdd1b9a38120b75ed9a5d",
+          "1f764de74b3d9c3f5c2a76ec6d55a0264fc50d9faa2de8808ab85ea020d59236246044c20b07ac6a58b20106cf49616440c2d3ea6b4423335bc470e82321096804"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS6TWSKKTdvDpmfeYh7dque1ShZzNwmN9qcgYKNFnY14hbrKr9Ev",
+          "to_account": "XTS6TWSKKTdvDpmfeYh7dque1ShZzNwmN9qcgYKNFnY14hbrKr9Ev",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init63",{
+      "index": 0,
+      "record_id": "07b6903b5729d3df979c41e6c8cd56568f93638e",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 64
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS4sRqF9164Tw4iZpRZAua82UgqPowGEsKt",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "204d27df02ebcb92dc8a1dc67d6c573732ea7ed6434edcd614dcc2068fb811e1c717b0c301791053b225f4c1e109b5a9c490c71de3f75979ee6c88eb2b94b6054f",
+          "201a05248b6c12f7672135d5663a041efa46fd7869e08b6839a7ca5150c087363e6f2462e0062bb9b7a20a4ce44d4dbd331b65800c387e28aa5a080cfcd84cb70b"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5MYyAXkbWFDHktuKMdMdQNuzxW6M12WAHhQNcxYvHBiSfxKkAc",
+          "to_account": "XTS5MYyAXkbWFDHktuKMdMdQNuzxW6M12WAHhQNcxYvHBiSfxKkAc",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init64",{
+      "index": 0,
+      "record_id": "7a3c096ab31581034721292624bec540c444e09f",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 65
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSKjHAP8k7CAbnUJeQwJ7E4radqs4frDAhp",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f5922806dde39edf4effe2a8830acbb614aacf126a1838acc9332c6abbd0b55c86e221cfbeadfe40ca91098557e2e91fcc8956c5f897e8aff47e2de9e50c4e4bb",
+          "1f048cd90bad6cf8e6c36c66c9b8f8ef62b69eb3e816612bb608f97b41b85a5023665fe2f446cb02492227969d4b75b604731e38a2b23ab1bc2a44cadeb2053465"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS6HmBNaUAsSAif5g5KBBWeDjipnPreZvot5C6cmyuDrghsVCTxE",
+          "to_account": "XTS6HmBNaUAsSAif5g5KBBWeDjipnPreZvot5C6cmyuDrghsVCTxE",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init65",{
+      "index": 0,
+      "record_id": "67d332811b392766e6b947080669ff4bf5de61c3",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 66
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS751K9wwSquDrKZkKG5eekXWrb9CkM8avQ",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "2070e7f978c48c824eccd732e32e745ede01bdc64f4ff244f2faaeb8374d652cd74d197117e27121eea27837ad73208c6a87368e25d468a02a26081dbd1532cb7c",
+          "1f75c10c91ca77fc2c936770f2ebf7f15c0104c6a87e1f3cbc59782debbd0c04ce0310fb5a8dec4c9ec82e52b4af9ffdbda8828036aabafef50ddc1e1c52740a6e"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS78DjwyzHYrDHx6bdCTAPGozWSNwiukjtnbadUVXRWTcsb7she8",
+          "to_account": "XTS78DjwyzHYrDHx6bdCTAPGozWSNwiukjtnbadUVXRWTcsb7she8",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init66",{
+      "index": 0,
+      "record_id": "61fe3c43ed5b1ceb285b96bced5a732d29a203bd",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 67
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS6fz4vyP8VEGfs2C3UK3F9CgvNfhHiggFx",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f147e962789c6768166350db94080752fee66ef5fd13a0e7952c31dd22246891f38d22de612b5d0a54b6142bfab2e49c7b25d2438b72da0458673e6dce03f1378",
+          "207f905444401ffcdf009828e427ca4662dcfbc1f7d8f0df58b384cd10bf2dd3007ac3608b6280d4a0490db65d28995bc5d278fc6a8c1418b997a753ee3db216db"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS7RHQ7hYucfMnudGHTR1zX1khujX2rJW2xw1mLCGxuSvasyi1kF",
+          "to_account": "XTS7RHQ7hYucfMnudGHTR1zX1khujX2rJW2xw1mLCGxuSvasyi1kF",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init67",{
+      "index": 0,
+      "record_id": "aed0535b02a220f7175a705e983fcfa351495b7a",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 68
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS3atQenfhPhvJ7aGkdg5bQcZaFgFLXFA1S",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f6a7e85819feb7bfedc17030f479c6b3a9e316232c02a9d8262d18e57e21fea3f79ac36c84f131cc10b5cd6e26d01080109bb3534ea183bdc36633740bcb177eb",
+          "203fd93fb511da7c5343a01d41d5845ade6029fef3a6727fe715b5aed32214042d5b77670f6f6a472f9a79140a3e06672282a92a48f2a9342131e1ff47910bd410"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5aqaTKqmBGcewJq5LTKAReJNA5iRKiBwpj79NsQutVFXUexfJN",
+          "to_account": "XTS5aqaTKqmBGcewJq5LTKAReJNA5iRKiBwpj79NsQutVFXUexfJN",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init68",{
+      "index": 0,
+      "record_id": "4952c022be71c60543b4338bc369890baaef8774",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 69
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSDbWnvHznw8GLhdAi32bwbDAUj54ZWCPhm",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f2f0d95934b6a5154c4faaa8fe48997f6b7714ca55052168057097429f015758233615e975f8b2647e4ac28c30819fcb9c30721d4d39e04eef9c9b54d27f10036",
+          "204aed9a436b036a55321ffd61c420e25c5c6b3c39eba8f2448a4f4ddbd3e354d92a98bf011163fe5ce579e5b83805f12556c94f15052908fd582047e10f1ba21b"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS6iTiiNN46LoAGyma6iqB1BZVGMLkisxSwX4cpFzaSDgJnVHrka",
+          "to_account": "XTS6iTiiNN46LoAGyma6iqB1BZVGMLkisxSwX4cpFzaSDgJnVHrka",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init69",{
+      "index": 0,
+      "record_id": "d529a027fc60c9c7705d815c7c32dae8bb478546",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 70
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS4b97TN5sM7jbBDkKExXbtNpgWDXCnduAh",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "205e0fdfaa2bd15f3c92839d2d69d827392e77f999d4f24a6f9cbed820b1d759df68a14a465772e467b8d72c5f3645c06357e5481ecddf5406469ba1eb72faf430",
+          "2027fd6ddb9067b55ecba37670ca77c66412b1c06fab3844186b8d5febe9f92e2e7b64f212848224d1700af76ce716530e0a34931675cd643596e25fb2405498bc"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS6WK1iautwcPiU5PNUD3MASqoM9XDaViWmHdzmns1qktUiFKaGt",
+          "to_account": "XTS6WK1iautwcPiU5PNUD3MASqoM9XDaViWmHdzmns1qktUiFKaGt",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init7",{
+      "index": 0,
+      "record_id": "6e57578469e08e5e6f044fac58825ea0846458ad",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 8
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSKXY4ze5KYJBE4ZCkNUMcN92ZLduGdrxBs",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f4d29e8dc8511a33b8570790a0829ffb9b1660341fee1975b95f8e6ebceb3cb0f1e906dbc7b6d9e5f06df973f2367d04f64155a17453a681f229ab093670306b2",
+          "1f309c85b90f565a4eaa453a0b2854989aebe3d95805a43470ca7ab9f6c88a2cd50f5ff3308f9a7076f7a45e60ec775906362c24716ce697a6ea93faf8fdbf4c63"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5iU3oJf4wStot76riHokAz9dAk5v2TNxZAX14utiWPUuEdaEyv",
+          "to_account": "XTS5iU3oJf4wStot76riHokAz9dAk5v2TNxZAX14utiWPUuEdaEyv",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init70",{
+      "index": 0,
+      "record_id": "f78f788df3a6067c57bbf15fd10603388e69d573",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 71
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS4bTmQWiVepvZwXV4nceqz4YRQBmU3DXHw",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f70333b05e76c1ecc5db15ba6a928e2acc461291849baa665bcefcce0d11de5585bf2e31eb220d9551ce8c37d6b228160917beda81af7371f2fffa2090291f52a",
+          "1f5ea6475e8e0019f75e1b54bd2699f155730bd29fa83d6d3e37991cbe66bdbaad2c7edcb0b96a7403f8ae13fd29e2f1168d044efd16b7fbdae3fb4480054158c1"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5jWpcoVArFE1yFANZoXWzwYsm6wGeeniLynBc4uqsGEp3R3o7G",
+          "to_account": "XTS5jWpcoVArFE1yFANZoXWzwYsm6wGeeniLynBc4uqsGEp3R3o7G",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init71",{
+      "index": 0,
+      "record_id": "c5366314539e0ea357ce438498e3aeb6bbad00fa",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 72
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSFTq56Sm4ZVT5pMXb9UaQ2EC8YKrZCw8Gv",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f05900ca05149e0c0fd0e3f88be94098f09c54d5296696c27a7cad1c224e6fb4d515369b1e05edb2bb312ac4ab5d5e7ed054d48461ff73a308c535043dd4401e8",
+          "20146c110cf76498f60fa91d3d368aa20d1b53c6f03f9903edf6b1a386d600b67632766d6b10d76232881e0773bca2d697c692bf60af97e5c7d61bceca503ae819"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5kh6Lc8d2sKJquQ9XkKJxVHMkW79TPXq6zZmWJyCgqTUDXTGKT",
+          "to_account": "XTS5kh6Lc8d2sKJquQ9XkKJxVHMkW79TPXq6zZmWJyCgqTUDXTGKT",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init72",{
+      "index": 0,
+      "record_id": "35b712ccd72f28caf51c450d62e5124d79d30168",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 73
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSGtrCyKQpr7nRypXuxUM1dzo8g278JRet5",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f1b315facadd52818fc41aac691f0e8db0132cc56bdcae2fc1821974a2d7d4506677adceaa7bdb2f0e6840893e672e3ddeaeccae409d0a591fea673636f819caf",
+          "2033432fb8440fad24b3c0c24e79169e06ef923b2fec1484aa85ab5943e0a4651c3d441014ec4de8d4134b52e852ad26787ea85d0cfb463636c29b1b964c479bb0"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS8Ru52VKSoBTC5qn8Dh7T4s7oAZxxbDN6RF1BQTwaknhBWr7vRd",
+          "to_account": "XTS8Ru52VKSoBTC5qn8Dh7T4s7oAZxxbDN6RF1BQTwaknhBWr7vRd",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init73",{
+      "index": 0,
+      "record_id": "4da566fd3b3a80c663b80c713eb85e8c47a72b00",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 74
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSAyUz3S2ri8obPFc4MD55uAHD1RPoRVSLv",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "2079379d0828c0a71e009b5cbdd7ec2f2cbe95bfd45238eed4f6ea4d8566670acc37851205d88807a3fc8be1827820244550a3a3f8c2bbe4d41dd56f020efd41a1",
+          "205b440cfcf6181bca8cce909161e72b20fc087da3bec305fa54707c8a8d8b670726a40a418635fe4171036c0b37c48a2947400bf639f43798c582f4313cfb89aa"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS7MSseH5eq3DHKqkrBJb4Gva4YEcbc7XQ7YgJLy3zU6UWHzMJ67",
+          "to_account": "XTS7MSseH5eq3DHKqkrBJb4Gva4YEcbc7XQ7YgJLy3zU6UWHzMJ67",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init74",{
+      "index": 0,
+      "record_id": "85cda47a23f3e5fb70a050ead5b636f777d54994",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 75
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS6GUCHx4sygUHrUegZvQ23ASv8iU3Kv2BX",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "20139a49d8d681a60879b7c4b3e4b8d70ec9eeeacbdd1c1f987a90de0af6def3cc33f667d2b8830353663902f47f4d712273f0b6b15e8d1e72d168982c9d43292b",
+          "1f254dc2eec0f501382e54d899c896815e70e6a69222e4047c47ae9d33f634387d484dd8205f604cd3dc384480afe5e5d43a3fc4108ed0552f59b03bce4a03be39"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5NqRg4YG1jTtSgrAkcsA7voxg4h8ChrTh54Paczad2pnFMyRUY",
+          "to_account": "XTS5NqRg4YG1jTtSgrAkcsA7voxg4h8ChrTh54Paczad2pnFMyRUY",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init75",{
+      "index": 0,
+      "record_id": "021fa026581b02ab5471fd7321dc5de11a556df3",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 76
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS7zc2HCYxkvLkMbkPGpadjKUEoQJeCGW2m",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f3c58af82ecc103e7cb5aad65f9b589a50cfcd6395a00ed49025f42af5fcddff1622f3fd6b7106239ebf323930e8d4c831c161ef20b673f054a4a97b0d12ef039",
+          "206ec5ad395bd9b835529e5ce2a62287e72461e29bc199e98911f27e61fc0d2b7e0cdd88e9a29f1343b2d91340a0f7db0266dc2465641930ac03146f52ca2cb62c"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS55NAS895kdK131Wr6vNGYQQ1jn84AvJeKsKjNU4ScSiZGJZz76",
+          "to_account": "XTS55NAS895kdK131Wr6vNGYQQ1jn84AvJeKsKjNU4ScSiZGJZz76",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init76",{
+      "index": 0,
+      "record_id": "7b10ee903ea898b570f651cc2de76d4849976ea1",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 77
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSPQHFU3MjLs4aYUnvnqRrjTUuPj7aGALWv",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f34bf15b988962eddf8aecdd3a12bf6835eef4b0fd0fcaafe985e7fa48c3f91060e3c4ad6f7c142abab3f99a1f15ed9c0a8be31a4530c221cd788eb81b86776bd",
+          "1f18383309d8fff465711fed88afd413d751475639b9158ffd5022e4ce1b6c3f0772208706535a95f061d37fc73f3b0ee0fb0b7a11600fb1c6b225e11912d8fafc"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS51PF1s23ScFY4exfTb9NR3btzQJw8taJKBS6FdokB9ksyDUpsQ",
+          "to_account": "XTS51PF1s23ScFY4exfTb9NR3btzQJw8taJKBS6FdokB9ksyDUpsQ",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init77",{
+      "index": 0,
+      "record_id": "4c110d586c774e3d364e133d021564a5b3e88e0d",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 78
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSMidcLPXa4WSwpcbMkgmMnx81CcG9oGGTk",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f130eb23f3cc7e7150afa7447858efb9e8c3d48c5de2ad07f11aca2f4525cee945f99bece024339ae7137ba0b74f542b4e9e1506ad0948921e65a764af138f2ab",
+          "1f231de691908d325335338bbc91092c48585f614f021b3f7fcc90d3930dca1bac4cbeabc783101574af51c487be7cf24f0d5e46b83b3bf9531320a025ab2022ed"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS57Y3EbJ8CDGnhV6VwzpK4wYTjD9UtAg8z36K5cL8qHmWLHbMU9",
+          "to_account": "XTS57Y3EbJ8CDGnhV6VwzpK4wYTjD9UtAg8z36K5cL8qHmWLHbMU9",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init78",{
+      "index": 0,
+      "record_id": "ef4cb6b61ae11b4b3961e18ed7903a322a20cbd0",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 79
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSNPHmskV6kH4VRWg1xKqrecqV3HXfUgvC7",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f6531392e5c11eb408a44cb234c8a8da84b199f298b6d0e23b9f29a70c47bdb7c5b9a93d543a999b5b9082c01a0731c069a368451edc820432b13c533bf918337",
+          "2012dee8e3a8e63eb0354f17c0713fde9caa27e318b5e733cf32e08a7e636ae3b9445245a854d28cf737a56e15885ed330fb8bd8dedf5ec666ec8b894abd96c4c6"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS8iuUhNu8U87X6cx7KbcXTDYYC8P9qmn9d65oczB3Vhv9vS5thh",
+          "to_account": "XTS8iuUhNu8U87X6cx7KbcXTDYYC8P9qmn9d65oczB3Vhv9vS5thh",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init79",{
+      "index": 0,
+      "record_id": "3cae889c9be13697b30acc4fee64a862431ad648",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 80
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSASvy8MJF7mA3oxGR1MpJzfLbq5oFFqS9y",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f2a5ce259800217936a55838aca826b0fa17ea5a8ff58cb61c38fd31e39f9d23c3bef28579cd3705f7c5f12872c83b4878e5a5fa7e2a93e6e03f2e63cffdc31fd",
+          "202de2622a5c6d30a4529ff8dbad7b41cb65a53e9a4a06adbcc6c1ee8414a240342140d6c1c2dc64133fb380a1828dd27a73a6cef375e79b652ffe0c9e24f8ac39"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS6hCjQm2gpVdVPywY2H2bxUFPzam6sQWHtTqb2YpMqpP25AdWEQ",
+          "to_account": "XTS6hCjQm2gpVdVPywY2H2bxUFPzam6sQWHtTqb2YpMqpP25AdWEQ",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init8",{
+      "index": 0,
+      "record_id": "6250b13b56a1cfb305ae5564c7f496b3f0f12a9f",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 9
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSGReLGhXMA7xrngH5BvgTk8W5RyQYMvCA2",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "20425f2c238a725ba2dd4c9dd88043529c0e1adeb64bc6d02c0344eeb944f4828f2ac9e9d0269e0e58012d1a4f06316836ea78ea756501f4fcc02e6202e64be84c",
+          "204015b588033862e5db4757b5b3b8aa87777430ba77ccc88448237cea0dd7f1253cff3ad879c753c509b61ffc2583424833b052503e4d4c5260f1ecc98fc3f1f9"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS6G1Xn1jsvLUrmLfdraXgwmrRQh8GJzesHPmCv5ZRAHWoianbSt",
+          "to_account": "XTS6G1Xn1jsvLUrmLfdraXgwmrRQh8GJzesHPmCv5ZRAHWoianbSt",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init80",{
+      "index": 0,
+      "record_id": "93fc09780a887b6f9ac5feebc9db522e5d16880f",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 81
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS67Mf5rMHz7aTWq3dBhB8S7PS5KU9b1AyH",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "200166a53ff79b2e1923b65519cc166c0aeccb775c4fa4ca096902cc55bbdaf78d00a36d6f49d6044860a39a83b3385d3bd1962a4964ed57adc1d86efcc9a3a350",
+          "1f04cbf1722dec5481f03feed611b2dea3b08e7378d710eafe51fe9cb17c7c30ce41087887779c2c98c4c81d04f6fc9c1985d03ed773c22298a23d491f8bfcc5c9"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5VYa6sJ6NnvuDj9MaZyDKH2DKiNDfbDsm2QsqSRv4AtgSKo4QH",
+          "to_account": "XTS5VYa6sJ6NnvuDj9MaZyDKH2DKiNDfbDsm2QsqSRv4AtgSKo4QH",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init81",{
+      "index": 0,
+      "record_id": "b42bac4bcbd25b82f82e336a36f7bb5e38e362a9",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 82
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSBoVCNxiCdMDKscyYqHqbE4hz1cHHsbD3V",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "2055f9b527f5b12137aa4e51637550cd9d048d57b1d1585bc8ded1e1ee67d6636b17914e17bfad804c8248961e39410e2f15debb9dd0516b0f5b0db2cbcb5169cf",
+          "1f21425afa2119cd7d0a6bd5b9f5ba1e2cf8915ca6ea2b6ad86723de23d25f2f5d6f9dcce2a6ff25a513255f3bc556192be182c7684ff5f40684fd9a503d61590f"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS8Xhsb7KM7ToRgsQRTUYe7TudZ9x9jFi5F5knbB5VFScCACv4Pi",
+          "to_account": "XTS8Xhsb7KM7ToRgsQRTUYe7TudZ9x9jFi5F5knbB5VFScCACv4Pi",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init82",{
+      "index": 0,
+      "record_id": "c5aee124cc732fc5814c5ffb8ab4292e8e1ebceb",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 83
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSDophucabphTpsRpSPzjdJkeNJwBzzgaSh",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f0e35a2b75ffe6e472da8edd1c36b7b83822b4b4d81927e0a14e2662bb0598e4844bf4fe7650c8e4afd7832484c866962b2dfe6466ddec7c93dc853503ad50ff1",
+          "1f38d282629357c42e5c5881f02a8336c910b906db10ca63c71691767f437c677929b07be1ebf5df5768334470256edab3101ed9928856f1d355bd2907dd42d792"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5kzDm6dp1xzoxKWXkyMNFaGcWvwSjD8P4FT9FxTrdbQqHeAdxP",
+          "to_account": "XTS5kzDm6dp1xzoxKWXkyMNFaGcWvwSjD8P4FT9FxTrdbQqHeAdxP",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init83",{
+      "index": 0,
+      "record_id": "030f59388b936001628e6a85ba27e6d5760582e1",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 84
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSMXPmesaWwM9jEnon8Zn2PqTVLRD5gdvs7",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f74bf6d3fcde33f340d4ead46319640ae7fa25275a3c6e8b487b76ca65c43501d684f120e62e0bd522867099f2c733a0edeb33a8944db9395ce6af5af1b2a1195",
+          "2056eb898e6940982e1d6cbd4e2bb2fa7c4a6a121e2135049a132a2357f09606aa520bd8e98240445584ad3055ce246a66e6af67b3adb2abc76f2b472a0b5d27bf"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5CLSr7pZrNa8zMG2dsL299yfXctviXqSHg5egEUk9iipDBCnao",
+          "to_account": "XTS5CLSr7pZrNa8zMG2dsL299yfXctviXqSHg5egEUk9iipDBCnao",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init84",{
+      "index": 0,
+      "record_id": "11d2b945003b0f72b9f2ee6601e2ec05622cba7d",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 85
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS6EykSs8V1w5agZhjrJWccNKbvFcLVtFj5",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f1815266346ced5d5a12961ee6e343b6ea37aaad20ea33cf7282d86871be95da040f765889f5f8b56e83834582080f8fd8bed40c41db4120a14648b7cef365706",
+          "1f07e9b3248a80e32b4fbc8c44d108995286b6a2efeaab4cfd6857ecf07182460941d492964e5cba6456aad42966a1b7fb422bc4fdfaa57b284abb9c49293881e1"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS8e93ShEZShKqfX8xNNYE3ys43t2EFiN54myhuYSVAqn1LX17ni",
+          "to_account": "XTS8e93ShEZShKqfX8xNNYE3ys43t2EFiN54myhuYSVAqn1LX17ni",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init85",{
+      "index": 0,
+      "record_id": "77f9e9b0d0e907a3fb9b74b0c848bf4c71b7d5aa",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 86
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSNTqDVLZv42c4GkHAqMzRDgiR5bkHLV4vf",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f03f5bc8ba9574a92b827018f212ca4ca6433a734fc80247b3c1e1efc43215ce25f7db7ef6f9f9c8ba229d8799c9696c5ff1c543fe860083c19ae48649267b7a4",
+          "20644cd07df7abb852136b20d1bfa5a7ca865e27a68803ba71d8cdfec62c9b0cef06fe05e9cfe2d7fdf87f8f59b2bbcc3a7f00687254c1ca8911dc37450ef2b59c"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5seTZo2pYQ2WZm4YRjdwWnp7QbxGRxb5WEtoUyhMvudxXQbunu",
+          "to_account": "XTS5seTZo2pYQ2WZm4YRjdwWnp7QbxGRxb5WEtoUyhMvudxXQbunu",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init86",{
+      "index": 0,
+      "record_id": "3c20bb06ef7f775e6e6ec1565d4a429e9214691b",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 87
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSN61chrZ5tNNhwN5joDHeg3C8g8NPsvCRh",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "206ccee2c9e06edd9564c2b79e6f5ab451da830d76d8cd155a3eba58521f1aed37410e6932fd09b1650def09d64b22970e6f27922702b42a731df16d1c147b862e",
+          "1f4547b5b4923d82099059a0d767aa2cd168e3b74fa613d69de8175c6a369a196920d049efed45c2701b69c4943f1a1c5feb9c76fa8c8f07cbc8a8c0fc0e70a0e8"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5wnB5nrfmT4zHLVR174MJ8BpMP1jFvvdf8hvYoyCoYmT3pSoCn",
+          "to_account": "XTS5wnB5nrfmT4zHLVR174MJ8BpMP1jFvvdf8hvYoyCoYmT3pSoCn",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init87",{
+      "index": 0,
+      "record_id": "1cf1b613548b12b2aa6251960777a32db813e82a",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 88
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS7R3EME5WhGDKHixVUvCbkC3koMBy5xmCP",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "201f7ad3bcee7988c09d6059d41f04f1248d69ab06a3bf310c468e7455be7314983ae1e7fbaca470430173e4480b050cd10470cf2a37bf03e6b2851aa102bf1af8",
+          "2052f82a688c2701ae5ae178200014814eeb18e36febe1cf7b4b8fb34f86dea2a64c3a69e577a1e4578cb9e3f8bcecaa839dde005c11413d17caef8c7744e638ea"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS8CkYGYAvxLMB81PvC9QscYe4qTg9uWQziRbPqCpCTKMbBuzHVP",
+          "to_account": "XTS8CkYGYAvxLMB81PvC9QscYe4qTg9uWQziRbPqCpCTKMbBuzHVP",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init88",{
+      "index": 0,
+      "record_id": "ee5de567754988c4f00cdaf5f7aaa8371c288859",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 89
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSJkytgwaUWB3aMSS1mwD4gEECGXdNwjQJd",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "201169b2a312f844daacacbdaab5d7b04e73ccd9e086fb27ea7adebc630ea9d0d17e7d9e8e8be2a469e0ba068532b3a971f91e6fed896b94fdedc6dc80f345457a",
+          "2033076649056201f7c633f4b984e0cf92ba1a28d4f57e98a051d0a98ea926ba1361f0da824c57a9e6df8a6778eed1822b9b8769441f9f773573c89019e5d0d3ed"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS88cEHtigtJ7ReMqPkqh3LXuLzBEjgXwtkYXABGeUrtEv1Gcat7",
+          "to_account": "XTS88cEHtigtJ7ReMqPkqh3LXuLzBEjgXwtkYXABGeUrtEv1Gcat7",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init89",{
+      "index": 0,
+      "record_id": "fa1f0081f3faa35828dd733654a690baad0e5857",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 90
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS5pNLtkBujzTQzN9cgTMjkD3LckVysbcTE",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f04fd0229f19489d8ba6b6e9521b7b01940753d38ff61033cbc22a5063ba3420278f00b119e955a4198f54426441118acd0a9317d63838b3c7719c5231e714d30",
+          "1f07722ff9c40d60ac830038a9872dfcc046a259781098e9737f65ae24f5b868032fc4468fb5ea05b5ffcc84013f5fe2d5537a6cbea6b52905b5b793f564c96942"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS7bM8j8JNSgVG8xAzsnakg3i2tYfifQnobsKMjqjkviU53LP8MQ",
+          "to_account": "XTS7bM8j8JNSgVG8xAzsnakg3i2tYfifQnobsKMjqjkviU53LP8MQ",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init9",{
+      "index": 0,
+      "record_id": "8ecb88fe385e410c36650dae0dc058bc75fe16ef",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 10
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS71rsD7Ynkhc8sR2A5Pz5G9v1Je8igfNRQ",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "20425cf7595e3f3f92e4b7761648f1303a9f0438946ff3d8ae01666cf32449a54f5ee649714751eb0172469044285289d6bcd1d07b8ac000913444a18634fd7f3c",
+          "2000cdff4b870a1e0ddb03ee5c54429221b1f5eb25a491495a74e830b0980afdad7cef0ce99e44aaca140565698956c46920686ba9f2082521c4885b9b63bb4cda"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS54zCyPHmHwPfVYqdjLe2wsxkzk9ypfYDQ9Lt5YCFrXgLS79fnw",
+          "to_account": "XTS54zCyPHmHwPfVYqdjLe2wsxkzk9ypfYDQ9Lt5YCFrXgLS79fnw",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init90",{
+      "index": 0,
+      "record_id": "4d59009b84d9efffed84a5219cc392f5495cd342",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 91
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSNF6xpdd4nCxTXd4jjyEfeCbKzxFYmciA4",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f653681af8fdbc99eaa818a1d34e11c091f4bf6b2f8870e9c6bc5712ee3735a92033e0f8570e4d6795b1d532688e5ab7a67ef5f86457999359f88c809de2f30cf",
+          "2002a340eb288644e1732d8a0ed6ff490651c3154bab865225b9df4c73b138f3e41dfb22bd8eb8cdbd51b4d169533421df1e7f15e183e7a77145948f9bd1864f0d"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS8UMcDZqx9xtEQKmwZMjxwEgTNjNNgsoMTWDYSkMpjyMkM1tTRm",
+          "to_account": "XTS8UMcDZqx9xtEQKmwZMjxwEgTNjNNgsoMTWDYSkMpjyMkM1tTRm",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init91",{
+      "index": 0,
+      "record_id": "67dd0829c2e42d7b35dd21cf5e1008ba6d53de46",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 92
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSCYqD4pB3E4rSzh51NyAw8ps4XEz94WrsW",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f67f26d9cc2ab575fc7cfcb5506efd68be7581941ff95c6b2352dbf57ad3657e8770464e4ef2e085e7e2ffc07fd2a8c16b7db55fcefff2b8f710454c9e97d4f47",
+          "2009eff5fc220366446fbe8e91243dc262539c1d562b164632c7230047464d41d618f53be552e35a617267e93de054a96a290de3e8c2bd37e481824f481cddc664"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5BaJHG7FbcZ5yxxnpEccFApuf2CxGXfci5smYBfS9apvzgxDRp",
+          "to_account": "XTS5BaJHG7FbcZ5yxxnpEccFApuf2CxGXfci5smYBfS9apvzgxDRp",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init92",{
+      "index": 0,
+      "record_id": "a89e478a782aa612b0f5f0b295512a2179300f2e",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 93
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSCWkpyxEDmykvQDTRTr1QZTrBR5jA4bxDw",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f1004c6b37718cc2f8691b047d8f869d6b0105cd305f150afdb57275373ae795928268ab983b1e61e4eaeb7f57cf42105afd78c87c644fe692a0f4e6a118c2bb6",
+          "20669ae044c3f81957bba89eaac38bf03431be95e2574e9badcdb68497cdc6e0132dba7e727e65e9c7c0c5629164974de49d81c677567c5c7a6aba31a72fbd62e2"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS8PqPTfXsHGfdJ5Bfj96ASKjXkdFcm1co6weWF1ZaTCSXTZRYRd",
+          "to_account": "XTS8PqPTfXsHGfdJ5Bfj96ASKjXkdFcm1co6weWF1ZaTCSXTZRYRd",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init93",{
+      "index": 0,
+      "record_id": "105fdf36aeb04000c36c54c09c4352ec323a0c92",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 94
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSAxXVTKRPKtKMEJoVrSxEeaCMKgUgYv7Ba",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "202c7f3801da5da03d56f2fc9301d46698e9791a464de11a8e89c4b483740c76022272d1996d71d5ab6593865bae64eb4dbccd9b650db62abb182b6b3e7d65973c",
+          "1f5e93b062079a88e2e1e3ffee1a3dd6be79bd407e8fb582429f8f760da36ab48e45d311f90dae453554b664166fa5c4d81128581ff6f2e35f8dfd644928a59b89"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS8CgxubAVSoktNXMx7DXdfRV7HJuJfd8Bm6pTyPYKim88vms5xR",
+          "to_account": "XTS8CgxubAVSoktNXMx7DXdfRV7HJuJfd8Bm6pTyPYKim88vms5xR",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init94",{
+      "index": 0,
+      "record_id": "1b240c5ac94be17f6ce288545c34d9a92fa4eeab",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 95
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS5etrVdjUjU4v8ofsPfb1hMGMCZJaAfyhB",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "2054d5a7b3783c954800ce24fb6dc6a947564d5085c93235fe8504f25569f9d18455cc037fea55227758cbfc5f271c0e3794b08744a3aea0f289686d72bf2cd831",
+          "2004dcff834cd51fc5089214f8642b464083367edb9797d17a7e084cd73fe5bd3e1636b78bb59df76250a7bbd7da483ddd04334b3d4f879b1a81166047e86d5798"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5iXCQuVx1RUrmSC7czzpz9mhYWugZDqySa6VLJFrC8hiafbsNu",
+          "to_account": "XTS5iXCQuVx1RUrmSC7czzpz9mhYWugZDqySa6VLJFrC8hiafbsNu",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init95",{
+      "index": 0,
+      "record_id": "80e96325449330d00d64799b069939210e600403",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 96
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSMjeUWr636gqGBMhTn5wdGXFbV2EsQ4ETu",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f18e747f3a2fc94418e847a98e31f2aa7d4e0ef532e17ceb56ce7554516716f1d3411f55273eae4255995eb4351ec7f5ad6303db3df34ce5bfbedc0724e3630ce",
+          "2041c6cce8b0fd3e8ee7e262acc0c1b7f4ddc07d734725b72ebf8fce36e8ebd86b1240623d7b34407c23662915bcab79179c49a3d0ac90d218944d26139e95c223"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS8QcCwrEi1SNoLDaAd1V88BFiYEgMqdUCu7jsYfZ5AKzeiGQHqv",
+          "to_account": "XTS8QcCwrEi1SNoLDaAd1V88BFiYEgMqdUCu7jsYfZ5AKzeiGQHqv",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init96",{
+      "index": 0,
+      "record_id": "f54e7300249a0e128f993d169f503e38f2e66d1e",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 97
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSG5uP6Avg8HjBEg4cZjzr3dJbisQoWho7u",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "203679d9507cb390ecfbef1f52b177fda5f85974258b8502f100390e54997cdaa7449852b7e66871e547d6e715c78ee83f1c4b82fa11a279a3dfc2c7383ca1ee18",
+          "204051ec3da4c773052e76e85deb9a224bca5c8c01841d1e7c42f9c5da642effe935cc23c9d0236f7196ea75c76a2f3720af675e156fecb5c926d896a66542de66"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS7UXhCy8cSGXe2ffd3jfZ9jGwhPqPqSa8CVD15AqBMPxFppBx9C",
+          "to_account": "XTS7UXhCy8cSGXe2ffd3jfZ9jGwhPqPqSa8CVD15AqBMPxFppBx9C",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init97",{
+      "index": 0,
+      "record_id": "ad550a84f5f60787b413da1e7d37d6c82415f5ff",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 98
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSJ1Z8bsYgGbAEuLc81jMRK36FVMd4MiTew",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "205d952973c0854e086a952e42c9d72cce873e9b6091c03b53b4178dccd0ac4cf803d4be41ac343035d5028c053d7a17fc84e832fbacbde02783d9ace6ab914b2c",
+          "20276ac53af8462a41322eada20c8c7d93df57522519060ec6fcc99f536c77838573355b805834b52ad8f94c4f1cd4fcdd8e50a1034789a0df6092a09fba595dae"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS7pTRzogLgEMTysvP1WysxpwiU2ybfJze27GS8pfJvNWiyM11gG",
+          "to_account": "XTS7pTRzogLgEMTysvP1WysxpwiU2ybfJze27GS8pfJvNWiyM11gG",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init98",{
+      "index": 0,
+      "record_id": "33b5d2092827e0ae8336de74ef9144857226bee1",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 99
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSAfmdCNQWe3Yy8d74zbJzEhwUnSafyvkHm",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "1f569730d35373840e017b7b214119118e488b20a50738f3cc211e7d99e2f6a0497a752daf81bc38171c2c8db3e16338c894264e2a73329a170fdab039e17ee503",
+          "1f236a2c8282baa9e4994955bd8206ac430c5757f3e81ec915da3a8a068bb213775be4d1aac87b69a5e1d1d961225e9968440825091abf9eaa9b3b2135da722609"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS5ajDimwsV9ZhpchqGzJjV7uF2TxPFGQdbFW2tZ5uHxVJULjJ72",
+          "to_account": "XTS5ajDimwsV9ZhpchqGzJjV7uF2TxPFGQdbFW2tZ5uHxVJULjJ72",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ],[
+    "init99",{
+      "index": 0,
+      "record_id": "95fc6edadee27271599dea9c2e3bc62652156cb7",
+      "block_num": 0,
+      "is_virtual": false,
+      "is_confirmed": false,
+      "is_market": false,
+      "trx": {
+        "expiration": "2014-06-20T15:40:51",
+        "slate_id": null,
+        "operations": [{
+            "type": "update_feed_op_type",
+            "data": {
+              "index": {
+                "quote_id": 1,
+                "delegate_id": 100
+              },
+              "value": {
+                "ratio": "0.002",
+                "quote_asset_id": 1,
+                "base_asset_id": 0
+              }
+            }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTSAbAP1rhF5bGf7Jb1epqscDHeBJSa6fNgc",
+              "amount": 50000,
+              "claim_input_data": ""
+            }
+          }
+        ],
+        "signatures": [
+          "2077f323e2c1d76b3aa7ace77b298bccaad468871987f5664785b1bef4c03c855f64e9cfdd90d39545edf6d030e249cb665a5d0886a8ad7e076f5d7db2ffbef5d0",
+          "1f2117196b3f5093fe129592651a64620af0690ab09f181a4e28941cd689ace2a24088f3d0588340a3dd033a89dcc9f3c814e85f35016ea7f5a61f84c5ec4c5562"
+        ]
+      },
+      "ledger_entries": [{
+          "from_account": "XTS6vBfm1EqxeLgtjtdBRLzj7E6exr8gFDM2vkDEoqBzT8gCZhFeS",
+          "to_account": "XTS6vBfm1EqxeLgtjtdBRLzj7E6exr8gFDM2vkDEoqBzT8gCZhFeS",
+          "amount": {
+            "amount": 0,
+            "asset_id": 0
+          },
+          "memo": "publish price feeds",
+          "memo_from_account": null
+        }
+      ],
+      "fee": {
+        "amount": 50000,
+        "asset_id": 0
+      },
+      "created_time": "2014-06-20T14:40:51",
+      "received_time": "2014-06-20T14:40:51",
+      "extra_addresses": []
+    }
+  ]
+]
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_list_feed_prices
+[[
+    "USD",
+    0.02
+  ]
+]
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           300,000.00000 XTS           
+default (unlocked) >>> wallet_market_submit_short alice 100000 XTS 0 USD
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:41:01</d-ign>PENDING   alice               alice               100,000.00000 XTS       short USD @ 0.% APR                         0.50000 XTS         <d-ign> 22aa6879</d-ign>
+default (unlocked) >>> wallet_market_submit_ask alice 50000 XTS 0.02 USD
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:41:01</d-ign>PENDING   alice               alice               50,000.00000 XTS        sell XTS @ 0.02 USD / XTS                   0.50000 XTS         <d-ign> 7b4837fb</d-ign>
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+No Orders
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.020000000000 USD                   50,000.00000 XTS            1,000.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1,000.0000 USD            100,000.00000 XTS                       0.000000 % | 
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           149,999.00000 XTS           
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             |
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.010000000000 USD                  112,500.00000 XTS            1,000.0000 USD              30 weeks ago   150,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           149,999.00000 XTS           
+                                1,000.0000 USD              
+default (unlocked) >>> wallet_market_submit_bid alice 1000 XTS 0.01975 USD
+Command failed with exception: stupid order (20034)
+You are attempting to bid at more than 5% above the buy price. This bid is based on economically unsound principles, and is ill-advised. If you're sure you want to do this, place your bid again and set allow_stupid_bid to true.
+
+
+
+default (unlocked) >>> quit

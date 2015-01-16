@@ -208,7 +208,7 @@ int main(int argc, char** argv)
     {
       probe.start(this_node_info.remote_endpoint,
                   my_node_id,
-                  chain_db->chain_id());
+                  chain_db->get_chain_id());
       probe.wait();
 
       this_node_info.node_id = probe._node_id;

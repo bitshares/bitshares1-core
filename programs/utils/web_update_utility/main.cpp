@@ -150,10 +150,10 @@ int main()
 
         //What could possibly go wrong??
         update.majorVersion = parts[0].toInt();
-        update.patchVersion = parts[1].toInt();
+        update.forkVersion = parts[1].toInt();
         update.minorVersion = parts[2].toInt();
         update.patchVersion = parts[3].toStdString()[0];
-
+        
         if (util.manifest().updates.find(update) == util.manifest().updates.end())
         {
             cout << "That version isn't in this manifest. Seriously, can't you get anything right? I really don't need this. I'm done. Ugh.";

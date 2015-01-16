@@ -13,7 +13,7 @@ aliases: votes
 default (unlocked) >>> wallet_account_vote_summary
 No votes found.
 default (unlocked) >>> wallet_account_create test
-"XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
+"XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test my_message vote_all
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================

@@ -413,16 +413,34 @@ namespace bts { namespace blockchain {
       }
    } FC_CAPTURE_AND_RETHROW( (a) ) }
 
-   void chain_interface::set_statistics_enabled( bool enabled )
+   void chain_interface::set_chain_id( const digest_type& id )
    { try {
-      set_property( statistics_enabled, fc::variant( enabled ) );
+      set_property( chain_id, variant( id ) );
+   } FC_CAPTURE_AND_RETHROW( (id) ) }
+
+   digest_type chain_interface::get_chain_id()const
+   { try {
+      static optional<digest_type> value;
+      if( value.valid() ) return *value;
+      const optional<variant> result = get_property( chain_id );
+      FC_ASSERT( result.valid() );
+      value = result->as<digest_type>();
+      return *value;
+   } FC_CAPTURE_AND_RETHROW() }
+
+   void chain_interface::set_statistics_enabled( const bool enabled )
+   { try {
+      set_property( statistics_enabled, variant( enabled ) );
    } FC_CAPTURE_AND_RETHROW( (enabled) ) }
 
    bool chain_interface::get_statistics_enabled()const
    { try {
+      static optional<bool> value;
+      if( value.valid() ) return *value;
       const optional<variant> result = get_property( statistics_enabled );
-      if( result.valid() ) return result->as_bool();
-      return false;
+      FC_ASSERT( result.valid() );
+      value = result->as_bool();
+      return *value;
    } FC_CAPTURE_AND_RETHROW() }
 
    void chain_interface::set_required_confirmations( uint64_t c )
@@ -448,5 +466,75 @@ namespace bts { namespace blockchain {
       if( result.valid() ) return result->as<std::set<std::pair<asset_id_type, asset_id_type>>>();
       return std::set<std::pair<asset_id_type, asset_id_type>>();
    } FC_CAPTURE_AND_RETHROW() }
+
+   oaccount_record chain_interface::get_account_record( const account_id_type id )const
+   { try {
+       return lookup<account_record>( id );
+   } FC_CAPTURE_AND_RETHROW( (id) ) }
+
+   oaccount_record chain_interface::get_account_record( const string& name )const
+   { try {
+       return lookup<account_record>( name );
+   } FC_CAPTURE_AND_RETHROW( (name) ) }
+
+   oaccount_record chain_interface::get_account_record( const address& addr )const
+   { try {
+       return lookup<account_record>( addr );
+   } FC_CAPTURE_AND_RETHROW( (addr) ) }
+
+   void chain_interface::store_account_record( const account_record& record )
+   { try {
+       store( record );
+   } FC_CAPTURE_AND_RETHROW( (record) ) }
+
+   oasset_record chain_interface::get_asset_record( const asset_id_type id )const
+   { try {
+       return lookup<asset_record>( id );
+   } FC_CAPTURE_AND_RETHROW( (id) ) }
+
+   oasset_record chain_interface::get_asset_record( const string& symbol )const
+   { try {
+       return lookup<asset_record>( symbol );
+   } FC_CAPTURE_AND_RETHROW( (symbol) ) }
+
+   void chain_interface::store_asset_record( const asset_record& record )
+   { try {
+       store( record );
+   } FC_CAPTURE_AND_RETHROW( (record) ) }
+
+   obalance_record chain_interface::get_balance_record( const balance_id_type& id )const
+   { try {
+       return lookup<balance_record>( id );
+   } FC_CAPTURE_AND_RETHROW( (id) ) }
+
+   void chain_interface::store_balance_record( const balance_record& record )
+   { try {
+       store( record );
+   } FC_CAPTURE_AND_RETHROW( (record) ) }
+
+   ofeed_record chain_interface::get_feed_record( const feed_index index )const
+   { try {
+       return lookup<feed_record>( index );
+   } FC_CAPTURE_AND_RETHROW( (index) ) }
+
+   void chain_interface::store_feed_record( const feed_record& record )
+   { try {
+       store( record );
+   } FC_CAPTURE_AND_RETHROW( (record) ) }
+
+   oslot_record chain_interface::get_slot_record( const slot_index index )const
+   { try {
+       return lookup<slot_record>( index );
+   } FC_CAPTURE_AND_RETHROW( (index) ) }
+
+   oslot_record chain_interface::get_slot_record( const time_point_sec timestamp )const
+   { try {
+       return lookup<slot_record>( timestamp );
+   } FC_CAPTURE_AND_RETHROW( (timestamp) ) }
+
+   void chain_interface::store_slot_record( const slot_record& record )
+   { try {
+       store( record );
+   } FC_CAPTURE_AND_RETHROW( (record) ) }
 
 } } // bts::blockchain

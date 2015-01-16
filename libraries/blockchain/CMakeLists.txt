@@ -30,6 +30,7 @@ add_library( bts_blockchain
              address.cpp
              pts_address.cpp
              extended_address.cpp
+             transaction_creation_state.cpp
 
              account_record.cpp
              asset_record.cpp
