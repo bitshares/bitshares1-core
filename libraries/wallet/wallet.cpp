@@ -1449,11 +1449,14 @@ namespace detail {
        my->_scan_in_progress.on_complete([](fc::exception_ptr ep){if (ep) elog( "Error during chain scan: ${e}", ("e", ep->to_detail_string()));});
    } FC_CAPTURE_AND_RETHROW( (start)(end) ) }
 
-   vote_summary wallet::get_vote_proportion( const string& account_name )
+   vote_summary wallet::get_vote_status( const string& account_name )
    {
        uint64_t total_possible = 0;
        uint64_t total = 0;
        auto summary = vote_summary();
+       summary.up_to_date_with_recommendation = true;
+
+       auto my_slate = my->select_delegate_vote( vote_recommended );
 
        const account_balance_record_summary_type items = get_spendable_account_balance_records( account_name );
        for( const auto& item : items )
@@ -1461,6 +1464,10 @@ namespace detail {
            const auto& records = item.second;
            for( const auto& record : records )
            {
+               if( record.asset_id() != 0 )
+                   continue;
+               if( record.slate_id() != my_slate.id() && record.balance > 1 * BTS_BLOCKCHAIN_PRECISION ) // ignore dust
+                   summary.up_to_date_with_recommendation = false;
                auto oslate = my->_blockchain->get_delegate_slate( record.slate_id() );
                if( oslate.valid() )
                    total += record.get_spendable_balance( my->_blockchain->now() ).amount * oslate->supported_delegates.size();

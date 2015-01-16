@@ -2330,8 +2330,8 @@
          "aliases" : ["votes"]
       },
       {
-         "method_name" : "wallet_check_vote_proportion",
-         "description" : "Check how much this account is utilizing its voting power",
+         "method_name" : "wallet_check_vote_status",
+         "description" : "Get info about the votes of balances controlled by this account",
          "return_type" : "vote_summary",
          "parameters"  : [
              {

@@ -1508,9 +1508,9 @@ account_vote_summary_type client_impl::wallet_account_vote_summary( const string
    return _wallet->get_account_vote_summary( account_name );
 }
 
-vote_summary   client_impl::wallet_check_vote_proportion( const string& account_name )
+vote_summary   client_impl::wallet_check_vote_status( const string& account_name )
 {
-    return _wallet->get_vote_proportion( account_name );
+    return _wallet->get_vote_status( account_name );
 }
 
 void client_impl::wallet_delegate_set_block_production( const string& delegate_name, bool enabled )
