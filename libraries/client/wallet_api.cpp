@@ -452,12 +452,11 @@ wallet_transaction_record detail::client_impl::wallet_transfer_from(
         const vote_selection_method& selection_method )
 {
     asset amount = _chain_db->to_ugly_asset(amount_to_transfer, asset_symbol);
-    auto sender = _wallet->get_account(from_account_name);
     auto payer = _wallet->get_account(paying_account_name);
     auto recipient = _wallet->get_account(to_account_name);
     transaction_builder_ptr builder = _wallet->create_transaction_builder();
     auto record = builder->deposit_asset(payer, recipient, amount,
-                                         memo_message, selection_method, sender.owner_key)
+                                         memo_message, selection_method, from_account_name)
                           .finalize()
                           .sign();
 
