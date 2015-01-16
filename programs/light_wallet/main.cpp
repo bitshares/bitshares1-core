@@ -8,7 +8,6 @@
 
 #include "QtWrappers.hpp"
 #include "LightWallet.hpp"
-#include "RoboHash.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -33,7 +32,13 @@ int main(int argc, char *argv[])
                                            QStringLiteral("Ledger entries can only be created in backend."));
 
    QQmlApplicationEngine engine;
-   engine.addImageProvider(QStringLiteral("robohash"), new RoboHash());
+   auto nam = engine.networkAccessManager();
+   if( nam )
+   {
+      QNetworkDiskCache* cache = new QNetworkDiskCache(&engine);
+      cache->setCacheDirectory(QStandardPaths::writableLocation(QStandardPaths::DataLocation) + "/cache");
+      nam->setCache(cache);
+   }
    engine.load(QUrl(QStringLiteral("qml/main.qml")));
 
    return app.exec();

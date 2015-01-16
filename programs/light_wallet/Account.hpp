@@ -46,6 +46,7 @@ public:
       return m_registrationDate;
    }
    QQmlListProperty<Balance> balances();
+   Q_INVOKABLE qreal balance(QString symbol);
 
    Q_INVOKABLE QList<QObject*> transactionHistory(QString asset_symbol);
 

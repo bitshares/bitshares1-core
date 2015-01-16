@@ -55,6 +55,11 @@ QQmlListProperty<Balance> Account::balances()
    return QQmlListProperty<Balance>(balanceMaster, this, count, at);
 }
 
+qreal Account::balance(QString symbol)
+{
+   return m_wallet->balance()[convert(symbol)];
+}
+
 QList<QObject*> Account::transactionHistory(QString asset_symbol)
 {
    QList<QObject*> history;

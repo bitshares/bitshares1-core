@@ -22,6 +22,7 @@ Page {
       ListView {
          id: historyList
          model: wallet.account.transactionHistory(assetSymbol)
+         spacing: visuals.margins / 2
 
          Connections {
             target: wallet
@@ -32,9 +33,9 @@ Page {
             width: parent.width - visuals.margins * 2
             height: transactionSummary.height
             anchors.horizontalCenter: parent.horizontalCenter
+            radius: units.dp(5)
             property var trx: model
 
-            Rectangle { width: parent.width; height: 1; color: "darkgrey"; visible: index }
             ColumnLayout {
                id: transactionSummary
                width: parent.width
@@ -78,6 +79,39 @@ Page {
             }
             Ink { anchors.fill: parent }
          }
+
+         footer: View {
+            height: balanceLabel.height + visuals.margins*2
+            width: parent.width - visuals.margins*2
+            x: visuals.margins
+            backgroundColor: Theme.primaryColor
+            z: 2
+            elevation: 2
+            elevationInverted: true
+
+            Label {
+               anchors.verticalCenter: parent.verticalCenter
+               x: visuals.margins
+               text: qsTr("Balance:")
+               color: "white"
+               font.pixelSize: units.dp(24)
+            }
+            Label {
+               id: balanceLabel
+               anchors.verticalCenter: parent.verticalCenter
+               anchors.right: parent.right
+               anchors.rightMargin: visuals.margins
+               text: wallet.account.balance(assetSymbol) + " " + assetSymbol
+               color: "white"
+               font.pixelSize: units.dp(24)
+
+               Connections {
+                  target: wallet
+                  onSynced: balanceLabel.text = wallet.account.balance(assetSymbol) + " " + assetSymbol
+               }
+            }
+         }
+         footerPositioning: ListView.PullBackFooter
       }
    }
 }
