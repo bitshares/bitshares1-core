@@ -76,23 +76,23 @@ namespace bts { namespace blockchain {
           }
 
           _property_db.open( data_dir / "index/property_db" );
-          auto database_version = _property_db.fetch_optional( chain_property_enum::database_version );
-          if( !database_version || database_version->as_int64() < BTS_BLOCKCHAIN_DATABASE_VERSION )
+          const optional<variant> version = self->get_property( database_version );
+          if( !version.valid() || version->as_int64() < BTS_BLOCKCHAIN_DATABASE_VERSION )
           {
-              if ( !rebuild_index )
+              if( !rebuild_index )
               {
-                wlog( "old database version, upgrade and re-sync" );
+                wlog( "Old database version, upgrade and replay history" );
                 _property_db.close();
                 fc::remove_all( data_dir / "index" );
                 fc::create_directories( data_dir / "index" );
                 _property_db.open( data_dir / "index/property_db" );
                 rebuild_index = true;
               }
-              self->set_property( chain_property_enum::database_version, BTS_BLOCKCHAIN_DATABASE_VERSION );
+              self->set_property( database_version, BTS_BLOCKCHAIN_DATABASE_VERSION );
           }
-          else if( database_version && !database_version->is_null() && database_version->as_int64() > BTS_BLOCKCHAIN_DATABASE_VERSION )
+          else if( version.valid() && version->as_int64() > BTS_BLOCKCHAIN_DATABASE_VERSION )
           {
-             FC_CAPTURE_AND_THROW( new_database_version, (database_version)(BTS_BLOCKCHAIN_DATABASE_VERSION) );
+             FC_CAPTURE_AND_THROW( new_database_version, (version)(BTS_BLOCKCHAIN_DATABASE_VERSION) );
           }
 
           _fork_number_db.open( data_dir / "index/fork_number_db" );
@@ -1195,6 +1195,8 @@ namespace bts { namespace blockchain {
 
              const auto toggle_leveldb = [ this ]( const bool enabled )
              {
+                 my->_property_db.toggle_leveldb( enabled );
+
                  my->_account_id_to_record.toggle_leveldb( enabled );
                  my->_account_name_to_id.toggle_leveldb( enabled );
                  my->_account_address_to_id.toggle_leveldb( enabled );
@@ -1203,13 +1205,14 @@ namespace bts { namespace blockchain {
                  my->_asset_symbol_to_id.toggle_leveldb( enabled );
 
                  my->_balance_id_to_record.toggle_leveldb( enabled );
+
+                 my->_slate_db.toggle_leveldb( enabled );
+
+                 my->_market_transactions_db.toggle_leveldb( enabled );
              };
 
              const auto set_db_cache_write_through = [ this ]( bool write_through )
              {
-                 my->_property_db.set_write_through( write_through );
-
-                 my->_slate_db.set_write_through( write_through );
                  my->_burn_db.set_write_through( write_through );
 
                  my->_feed_index_to_record.set_write_through( write_through );
@@ -1222,7 +1225,6 @@ namespace bts { namespace blockchain {
                  my->_collateral_db.set_write_through( write_through );
 
                  my->_market_status_db.set_write_through( write_through );
-                 my->_market_transactions_db.set_write_through( write_through );
                  my->_market_history_db.set_write_through( write_through );
              };
 
@@ -2291,9 +2293,11 @@ namespace bts { namespace blockchain {
         return slot_records;
     } FC_CAPTURE_AND_RETHROW( (delegate_id)(count) ) }
 
-   optional<variant> chain_database::get_property( chain_property_enum property_id )const
+   optional<variant> chain_database::get_property( const chain_property_enum property_id )const
    { try {
-      return my->_property_db.fetch_optional( property_id );
+       const auto iter = my->_property_db.unordered_find( property_id );
+       if( iter != my->_property_db.unordered_end() ) return iter->second;
+       return optional<variant>();
    } FC_CAPTURE_AND_RETHROW( (property_id) ) }
 
    void chain_database::set_property( chain_property_enum property_id, const fc::variant& property_value )
@@ -2913,10 +2917,12 @@ namespace bts { namespace blockchain {
       return my->_pending_trx_state;
    }
 
-   odelegate_slate chain_database::get_delegate_slate( slate_id_type id )const
-   {
-      return my->_slate_db.fetch_optional( id );
-   }
+   odelegate_slate chain_database::get_delegate_slate( const slate_id_type id )const
+   { try {
+       const auto iter = my->_slate_db.unordered_find( id );
+       if( iter != my->_slate_db.unordered_end() ) return iter->second;
+       return odelegate_slate();
+   } FC_CAPTURE_AND_RETHROW( (id) ) }
 
    void chain_database::store_delegate_slate( slate_id_type id, const delegate_slate& slate )
    {
@@ -3030,12 +3036,12 @@ namespace bts { namespace blockchain {
       }
    }
 
-   vector<market_transaction> chain_database::get_market_transactions( uint32_t block_num  )const
-   {
-      auto tmp = my->_market_transactions_db.fetch_optional(block_num);
-      if( tmp ) return *tmp;
-      return vector<market_transaction>();
-   }
+   vector<market_transaction> chain_database::get_market_transactions( const uint32_t block_num )const
+   { try {
+       const auto iter = my->_market_transactions_db.unordered_find( block_num );
+       if( iter != my->_market_transactions_db.unordered_end() ) return iter->second;
+       return vector<market_transaction>();
+   } FC_CAPTURE_AND_RETHROW( (block_num) ) }
 
    vector<order_history_record> chain_database::market_order_history(asset_id_type quote,
                                                                      asset_id_type base,
@@ -3045,11 +3051,12 @@ namespace bts { namespace blockchain {
    {
       FC_ASSERT(limit <= 10000, "Limit must be at most 10000!");
 
-      auto current_block_num = get_head_block_num();
-      auto get_transactions_from_prior_block = [&]() -> vector<market_transaction> {
-          auto itr = my->_market_transactions_db.lower_bound(current_block_num);
+      uint32_t current_block_num = get_head_block_num();
+      const auto get_transactions_from_prior_block = [&]() -> vector<market_transaction>
+      {
+          auto itr = my->_market_transactions_db.ordered_lower_bound(current_block_num);
           if (current_block_num == get_head_block_num())
-              itr = my->_market_transactions_db.last();
+              itr = my->_market_transactions_db.ordered_last();
 
           if (itr.valid()) --itr;
           if (itr.valid())
@@ -3476,17 +3483,17 @@ namespace bts { namespace blockchain {
        fc::path next_path;
        ulog( "This will take a while..." );
 
-       next_path = dir / "_market_transactions_db.json";
-       my->_market_transactions_db.export_to_json( next_path );
-       ulog( "Dumped ${p}", ("p",next_path) );
+       //next_path = dir / "_market_transactions_db.json";
+       //my->_market_transactions_db.export_to_json( next_path );
+       //ulog( "Dumped ${p}", ("p",next_path) );
 
-       next_path = dir / "_slate_db.json";
-       my->_slate_db.export_to_json( next_path );
-       ulog( "Dumped ${p}", ("p",next_path) );
+       //next_path = dir / "_slate_db.json";
+       //my->_slate_db.export_to_json( next_path );
+       //ulog( "Dumped ${p}", ("p",next_path) );
 
-       next_path = dir / "_property_db.json";
-       my->_property_db.export_to_json( next_path );
-       ulog( "Dumped ${p}", ("p",next_path) );
+       //next_path = dir / "_property_db.json";
+       //my->_property_db.export_to_json( next_path );
+       //ulog( "Dumped ${p}", ("p",next_path) );
 
        next_path = dir / "_block_num_to_id_db.json";
        my->_block_num_to_id_db.export_to_json( next_path );
