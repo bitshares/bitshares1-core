@@ -1520,14 +1520,14 @@ void client::configure_from_command_line(int argc, char** argv)
    fc::path datadir = bts::client::get_data_dir(option_variables);
    if( !fc::exists( datadir ) )
    {
-     std::cout << "creating new data directory " << datadir.preferred_string() << "\n";
+     std::cout << "Creating new data directory " << datadir.preferred_string() << "\n";
      fc::create_directories(datadir);
 #ifndef WIN32
      int perm = 0700;
-     std::cout << "setting UNIX permissions on new data directory to " << std::oct << perm << std::dec << "\n";
+     std::cout << "Setting UNIX permissions on new data directory to " << std::oct << perm << std::dec << "\n";
      fc::chmod( datadir, perm );
 #else
-     std::cout << "note, new data directory is readable by all user accounts on non-UNIX OS\n";
+     std::cout << "Note: new data directory is readable by all user accounts on non-UNIX OS\n";
 #endif
    }
 

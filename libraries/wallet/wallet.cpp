@@ -1001,6 +1001,8 @@ namespace detail {
           my->reschedule_relocker();
           wallet_lock_state_changed( false );
           ilog( "Wallet unlocked until time: ${t}", ("t", fc::time_point_sec(*my->_scheduled_lock_time)) );
+
+          my->scan_accounts();
       }
       catch( ... )
       {
