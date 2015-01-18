@@ -691,6 +691,10 @@
         "cpp_return_type" : "bts::wallet::vote_selection_method"
       },
       {
+        "type_name" : "account_key_type",
+        "cpp_return_type" : "bts::wallet::account_key_type"
+      },
+      {
         "type_name" : "vote_summary",
         "cpp_return_type" : "bts::wallet::vote_summary"
       },

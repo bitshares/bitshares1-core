@@ -50,9 +50,9 @@ namespace bts { namespace cli {
   class buffered_istream_with_eot_hack : public virtual fc::buffered_istream
   {
   public:
-    buffered_istream_with_eot_hack(fc::istream_ptr is) : 
+    buffered_istream_with_eot_hack(fc::istream_ptr is) :
       fc::buffered_istream(is) {}
-    buffered_istream_with_eot_hack(fc::buffered_istream&& o) : 
+    buffered_istream_with_eot_hack(fc::buffered_istream&& o) :
       fc::buffered_istream(std::move(o)) {}
 
     std::size_t readsome(char* buf, std::size_t len) override
@@ -360,7 +360,7 @@ namespace bts { namespace cli {
                       _input_stream_log ? &*_input_stream_log : nullptr
                       );
             }
-            
+
             fc::variants parse_interactive_command(fc::buffered_istream& argument_stream, const string& command)
             {
               try
@@ -529,6 +529,7 @@ namespace bts { namespace cli {
                        this_parameter.type == "filename" ||
                        this_parameter.type == "public_key" ||
                        this_parameter.type == "order_id" ||
+                       this_parameter.type == "account_key_type" ||
                        this_parameter.type == "vote_selection_method" ||
                        this_parameter.type == "transaction_id" ||
                        this_parameter.type == "operation_type" ||

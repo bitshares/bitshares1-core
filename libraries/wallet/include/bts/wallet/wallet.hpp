@@ -608,5 +608,3 @@ namespace bts { namespace wallet {
    typedef std::weak_ptr<wallet> wallet_weak_ptr;
 
 } } // bts::wallet
-
-FC_REFLECT_ENUM( bts::wallet::vote_selection_method, (vote_none)(vote_all)(vote_random)(vote_recommended) )

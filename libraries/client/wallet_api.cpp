@@ -1022,8 +1022,8 @@ string detail::client_impl::wallet_import_private_key( const string& wif_key_to_
   return account_record->name;
 }
 
-string detail::client_impl::wallet_dump_private_key( const std::string& input )
-{
+optional<string> detail::client_impl::wallet_dump_private_key( const string& input )const
+{ try {
   try
   {
      ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
@@ -1042,9 +1042,27 @@ string detail::client_impl::wallet_dump_private_key( const std::string& input )
       {
       }
   }
+  return optional<string>();
+} FC_CAPTURE_AND_RETHROW( (input) ) }
 
-  return "key not found";
-}
+optional<string> detail::client_impl::wallet_dump_account_private_key( const string& account_name,
+                                                                       const account_key_type& key_type )const
+{ try {
+    const owallet_account_record account_record = _wallet->get_account( account_name );
+    FC_ASSERT( account_record.valid() );
+    switch( key_type )
+    {
+        case owner_key:
+            return utilities::key_to_wif( _wallet->get_private_key( account_record->owner_address() ) );
+        case active_key:
+            return utilities::key_to_wif( _wallet->get_private_key( account_record->active_address() ) );
+        case signing_key:
+            FC_ASSERT( account_record->is_delegate() );
+            return utilities::key_to_wif( _wallet->get_private_key( account_record->signing_address() ) );
+        default:
+            return optional<string>();
+    }
+} FC_CAPTURE_AND_RETHROW( (account_name)(key_type) ) }
 
 bts::mail::message detail::client_impl::wallet_mail_create(const std::string& sender,
                                                            const std::string& subject,

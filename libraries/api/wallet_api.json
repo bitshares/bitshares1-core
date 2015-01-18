@@ -2303,17 +2303,38 @@
       },
       {
          "method_name" : "wallet_dump_private_key",
-         "description" : "Reveals the private key corresponding to an account, public key, or address",
-         "return_type"  : "string",
+         "description" : "Reveals the private key corresponding to the specified public key or address; use with caution",
+         "return_type"  : "optional_string",
          "parameters" : [
              {
                 "name" : "input",
                 "type" : "string",
-                "description" : "an account name, public key, or address (quoted hash of public key)"
+                "description" : "public key or address to dump private key for"
              }
          ],
+         "is_const" : true,
          "prerequisites" : ["wallet_unlocked"],
          "aliases" : [ "dump_private_key", "dumpprivkey" ]
+      },
+      {
+         "method_name" : "wallet_dump_account_private_key",
+         "description" : "Reveals the specified account private key; use with caution",
+         "return_type"  : "optional_string",
+         "parameters" : [
+             {
+                "name" : "account_name",
+                "type" : "string",
+                "description" : "account name to dump private key for"
+             },
+             {
+                "name" : "key_type",
+                "type" : "account_key_type",
+                "description" : "which account private key to dump; one of {owner_key, active_key, signing_key}"
+             }
+         ],
+         "is_const" : true,
+         "prerequisites" : ["wallet_unlocked"],
+         "aliases" : []
       },
       {
          "method_name" : "wallet_account_vote_summary",
