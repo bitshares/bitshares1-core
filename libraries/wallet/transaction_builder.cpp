@@ -176,7 +176,7 @@ transaction_builder& transaction_builder::deposit_asset(const bts::wallet::walle
                                                         const asset& amount,
                                                         const string& memo,
                                                         vote_selection_method vote_method,
-                                                        fc::optional<public_key_type> memo_sender)
+                                                        fc::optional<string> memo_sender)
 { try {
    if( recipient.is_retracted() )
        FC_CAPTURE_AND_THROW( account_retracted, (recipient) );
@@ -189,14 +189,21 @@ transaction_builder& transaction_builder::deposit_asset(const bts::wallet::walle
        FC_CAPTURE_AND_THROW( memo_too_long, (memo) );
 
    if( !memo_sender.valid() )
-       memo_sender = payer.active_key();
+       memo_sender = payer.name;
+   const owallet_account_record memo_account = _wimpl->_wallet_db.lookup_account( *memo_sender );
+   FC_ASSERT( memo_account.valid() && memo_account->is_my_account );
+
+   public_key_type memo_key = memo_account->owner_key;
+   if( !_wimpl->_wallet_db.has_private_key( memo_key ) )
+       memo_key = memo_account->active_key();
+   FC_ASSERT( _wimpl->_wallet_db.has_private_key( memo_key ) );
 
    optional<public_key_type> titan_one_time_key;
    auto one_time_key = _wimpl->get_new_private_key(payer.name);
    titan_one_time_key = one_time_key.get_public_key();
-   trx.deposit_to_account(recipient.active_key(), amount, _wimpl->self->get_private_key(*memo_sender), memo,
+   trx.deposit_to_account(recipient.active_key(), amount, _wimpl->self->get_private_key(memo_key), memo,
                           _wimpl->select_slate(trx, amount.asset_id, vote_method),
-                          *memo_sender, one_time_key, from_memo, !recipient.is_public_account());
+                          memo_key, one_time_key, from_memo, !recipient.is_public_account());
 
    deduct_balance(payer.owner_key, amount);
 
@@ -205,11 +212,11 @@ transaction_builder& transaction_builder::deposit_asset(const bts::wallet::walle
    entry.to_account = recipient.owner_key;
    entry.amount = amount;
    entry.memo = memo;
-   if( *memo_sender != payer.active_key() )
+   if( *memo_sender != payer.name )
       entry.memo_from_account = *memo_sender;
    transaction_record.ledger_entries.push_back(std::move(entry));
 
-   auto memo_signature = _wimpl->self->get_private_key(*memo_sender).sign_compact(fc::sha256::hash(memo.data(),
+   auto memo_signature = _wimpl->self->get_private_key(memo_key).sign_compact(fc::sha256::hash(memo.data(),
                                                                                                    memo.size()));
    notices.emplace_back(std::make_pair(mail::transaction_notice_message(string(memo),
                                                                         std::move(titan_one_time_key),

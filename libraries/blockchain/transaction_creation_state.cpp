@@ -1,6 +1,8 @@
 #include <bts/blockchain/transaction_creation_state.hpp>
 #include <bts/blockchain/balance_operations.hpp>
 
+#include <algorithm>
+
 namespace bts { namespace blockchain {
  
     transaction_creation_state::transaction_creation_state( chain_interface_ptr prev_state )
@@ -27,6 +29,7 @@ namespace bts { namespace blockchain {
                 eval_state.evaluate_operation( trx.operations.back() );
 
                 required_signatures.front().owners.insert( *owner );
+                required_signatures.front().required = required_signatures.front().owners.size();
 
                 if( left_to_withdraw == 0 )
                    break;

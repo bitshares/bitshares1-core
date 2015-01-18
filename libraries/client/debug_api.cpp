@@ -239,7 +239,7 @@ fc::variants client_impl::debug_deterministic_private_keys(
       create_account = false;
    }
    if( wallet_rescan_blockchain )
-      _wallet->scan_chain( 0 );
+      _wallet->start_scan( 0, -1 );
 
    return result;
 }

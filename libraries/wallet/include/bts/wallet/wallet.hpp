@@ -132,7 +132,8 @@ namespace bts { namespace wallet {
          vector<wallet_transaction_record>          get_pending_transactions()const;
          map<transaction_id_type, fc::exception>    get_pending_transaction_errors()const;
 
-         void scan_chain( uint32_t start = 0, uint32_t end = -1, bool fast_scan = false );
+         void start_scan( const uint32_t start_block_num, const uint32_t limit );
+         void cancel_scan();
 
          wallet_transaction_record         scan_transaction( const string& transaction_id_prefix, bool overwrite_existing );
          transaction_ledger_entry          scan_transaction_experimental( const string& transaction_id_prefix, bool overwrite_existing );
@@ -581,7 +582,7 @@ namespace bts { namespace wallet {
          wallet_transaction_record          recover_transaction( const string& transaction_id_prefix, const string& recipient_account );
          optional<variant_object>           verify_titan_deposit( const string& transaction_id_prefix );
 
-         vote_summary get_vote_proportion( const string& account_name );
+         vote_summary get_vote_status( const string& account_name );
 
          private_key_type get_private_key( const address& addr )const;
          public_key_type get_public_key( const address& addr) const;
@@ -607,5 +608,3 @@ namespace bts { namespace wallet {
    typedef std::weak_ptr<wallet> wallet_weak_ptr;
 
 } } // bts::wallet
-
-FC_REFLECT_ENUM( bts::wallet::vote_selection_method, (vote_none)(vote_all)(vote_random)(vote_recommended) )

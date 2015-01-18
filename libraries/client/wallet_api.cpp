@@ -452,12 +452,11 @@ wallet_transaction_record detail::client_impl::wallet_transfer_from(
         const vote_selection_method& selection_method )
 {
     asset amount = _chain_db->to_ugly_asset(amount_to_transfer, asset_symbol);
-    auto sender = _wallet->get_account(from_account_name);
     auto payer = _wallet->get_account(paying_account_name);
     auto recipient = _wallet->get_account(to_account_name);
     transaction_builder_ptr builder = _wallet->create_transaction_builder();
     auto record = builder->deposit_asset(payer, recipient, amount,
-                                         memo_message, selection_method, sender.owner_key)
+                                         memo_message, selection_method, from_account_name)
                           .finalize()
                           .sign();
 
@@ -1013,7 +1012,7 @@ string detail::client_impl::wallet_import_private_key( const string& wif_key_to_
   const public_key_type new_public_key = _wallet->import_wif_private_key( wif_key_to_import, name, create_account );
 
   if( wallet_rescan_blockchain )
-      _wallet->scan_chain( 0 );
+      _wallet->start_scan( 0, -1 );
 
   const owallet_account_record account_record = _wallet->get_account_for_address( address( new_public_key ) );
   FC_ASSERT( account_record.valid(), "No account for the key we just imported!?" );
@@ -1023,8 +1022,8 @@ string detail::client_impl::wallet_import_private_key( const string& wif_key_to_
   return account_record->name;
 }
 
-string detail::client_impl::wallet_dump_private_key( const std::string& input )
-{
+optional<string> detail::client_impl::wallet_dump_private_key( const string& input )const
+{ try {
   try
   {
      ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
@@ -1043,9 +1042,27 @@ string detail::client_impl::wallet_dump_private_key( const std::string& input )
       {
       }
   }
+  return optional<string>();
+} FC_CAPTURE_AND_RETHROW( (input) ) }
 
-  return "key not found";
-}
+optional<string> detail::client_impl::wallet_dump_account_private_key( const string& account_name,
+                                                                       const account_key_type& key_type )const
+{ try {
+    const owallet_account_record account_record = _wallet->get_account( account_name );
+    FC_ASSERT( account_record.valid() );
+    switch( key_type )
+    {
+        case owner_key:
+            return utilities::key_to_wif( _wallet->get_private_key( account_record->owner_address() ) );
+        case active_key:
+            return utilities::key_to_wif( _wallet->get_private_key( account_record->active_address() ) );
+        case signing_key:
+            FC_ASSERT( account_record->is_delegate() );
+            return utilities::key_to_wif( _wallet->get_private_key( account_record->signing_address() ) );
+        default:
+            return optional<string>();
+    }
+} FC_CAPTURE_AND_RETHROW( (account_name)(key_type) ) }
 
 bts::mail::message detail::client_impl::wallet_mail_create(const std::string& sender,
                                                            const std::string& subject,
@@ -1146,10 +1163,15 @@ void client_impl::wallet_account_set_favorite( const string& account_name, bool 
     _wallet->account_set_favorite( account_name, is_favorite );
 }
 
-void client_impl::wallet_rescan_blockchain( uint32_t start, uint32_t count, bool fast_scan )
+void client_impl::wallet_rescan_blockchain( const uint32_t start_block_num, const uint32_t limit )
 { try {
-   _wallet->scan_chain( start, start + count, fast_scan );
-} FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("count",count) ) }
+    _wallet->start_scan( start_block_num, limit );
+} FC_CAPTURE_AND_RETHROW( (start_block_num)(limit) ) }
+
+void client_impl::wallet_cancel_scan()
+{ try {
+    _wallet->cancel_scan();
+} FC_CAPTURE_AND_RETHROW() }
 
 wallet_transaction_record client_impl::wallet_scan_transaction( const string& transaction_id, bool overwrite_existing )
 { try {
@@ -1509,9 +1531,9 @@ account_vote_summary_type client_impl::wallet_account_vote_summary( const string
    return _wallet->get_account_vote_summary( account_name );
 }
 
-vote_summary   client_impl::wallet_check_vote_proportion( const string& account_name )
+vote_summary   client_impl::wallet_check_vote_status( const string& account_name )
 {
-    return _wallet->get_vote_proportion( account_name );
+    return _wallet->get_vote_status( account_name );
 }
 
 void client_impl::wallet_delegate_set_block_production( const string& delegate_name, bool enabled )
