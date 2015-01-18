@@ -17,13 +17,13 @@ namespace bts { namespace wallet {
            wallet_db*                                        self = nullptr;
            bts::db::level_map<int32_t,generic_wallet_record> _records;
 
-           void store_and_reload_generic_record( const generic_wallet_record& record )
+           void store_and_reload_generic_record( const generic_wallet_record& record, const bool sync )
            { try {
                auto index = record.get_wallet_record_index();
                FC_ASSERT( index != 0 );
                FC_ASSERT( _records.is_open() );
 #ifndef BTS_TEST_NETWORK
-               _records.store( index, record, true ); // Sync
+               _records.store( index, record, sync );
 #else
                _records.store( index, record );
 #endif
@@ -200,10 +200,10 @@ namespace bts { namespace wallet {
        return my->_records.is_open() && wallet_master_key.valid();
    }
 
-   void wallet_db::store_and_reload_generic_record( const generic_wallet_record& record )
+   void wallet_db::store_and_reload_generic_record( const generic_wallet_record& record, const bool sync )
    {
        FC_ASSERT( my->_records.is_open() );
-       my->store_and_reload_generic_record( record );
+       my->store_and_reload_generic_record( record, sync );
    }
 
    int32_t wallet_db::new_wallet_record_index()
@@ -555,7 +555,7 @@ namespace bts { namespace wallet {
        key_data& temp = *key_record;
        temp = key;
 
-       store_and_reload_record( *key_record );
+       store_and_reload_record( *key_record, true );
 
        if( key_record->has_private_key() )
        {
@@ -568,7 +568,7 @@ namespace bts { namespace wallet {
                if( key_record->account_address != account_record->owner_address() )
                {
                    key_record->account_address = account_record->owner_address();
-                   store_and_reload_record( *key_record );
+                   store_and_reload_record( *key_record, true );
                }
 
                if( !account_record->is_my_account )
@@ -975,11 +975,7 @@ namespace bts { namespace wallet {
    { try {
        try
        {
-#ifndef BTS_TEST_NETWORK
-           my->_records.remove( index, true ); // Sync
-#else
            my->_records.remove( index );
-#endif
        }
        catch( const fc::key_not_found_exception& )
        {
@@ -999,7 +995,7 @@ namespace bts { namespace wallet {
       master_key key;
       key.encrypt_key(new_password,extended_key);
       auto key_record = wallet_master_key_record( key, -1 );
-      store_and_reload_record( key_record );
+      store_and_reload_record( key_record, true );
    } FC_CAPTURE_AND_RETHROW() }
 
    void wallet_db::change_password( const fc::sha512& old_password,
@@ -1015,7 +1011,7 @@ namespace bts { namespace wallet {
          {
             auto priv_key = key.second.decrypt_private_key( old_password );
             key.second.encrypt_private_key( new_password, priv_key );
-            store_and_reload_record( key.second );
+            store_and_reload_record( key.second, true );
          }
       }
    } FC_CAPTURE_AND_RETHROW() }

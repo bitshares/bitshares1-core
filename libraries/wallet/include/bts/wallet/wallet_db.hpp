@@ -96,33 +96,24 @@ namespace bts { namespace wallet {
          void change_password( const fc::sha512& old_password,
                                const fc::sha512& new_password );
 
-         const unordered_map< transaction_id_type, wallet_transaction_record >& get_transactions()const
-         {
-            return transactions;
-         }
-         const unordered_map< int32_t,wallet_account_record >& get_accounts()const
-         {
-            return accounts;
-         }
-         const map< address, wallet_key_record >& get_keys()const
-         {
-            return keys;
-         }
+         const unordered_map<transaction_id_type, wallet_transaction_record>& get_transactions()const { return transactions; }
+         const unordered_map<int32_t,wallet_account_record>& get_accounts()const { return accounts; }
+         const unordered_map< address, wallet_key_record >& get_keys()const { return keys; }
 
-         map<transaction_id_type, transaction_ledger_entry> experimental_transactions;
+         unordered_map<transaction_id_type, transaction_ledger_entry>   experimental_transactions;
 
       private:
          optional<wallet_master_key_record>                             wallet_master_key;
 
          unordered_map<int32_t, wallet_account_record>                  accounts;
-         map<address, wallet_key_record>                                keys;
+         unordered_map<address, wallet_key_record>                      keys;
          unordered_map<transaction_id_type, wallet_transaction_record>  transactions;
          map<property_enum, wallet_property_record>                     properties;
-         map<string, wallet_setting_record>                             settings;
+         unordered_map<string, wallet_setting_record>                   settings;
 
          // Caches to lookup accounts
          unordered_map<address, int32_t>                                address_to_account_wallet_record_index;
-         map<string, int32_t>                                           name_to_account_wallet_record_index;
+         unordered_map<string, int32_t>                                 name_to_account_wallet_record_index;
          unordered_map<account_id_type, int32_t>                        account_id_to_wallet_record_index;
 
          // Cache to lookup keys
@@ -134,17 +125,17 @@ namespace bts { namespace wallet {
          void remove_item( int32_t index );
 
          template<typename T>
-         void store_and_reload_record( T& record_to_store )
+         void store_and_reload_record( T& record_to_store, const bool sync = false )
          {
             if( record_to_store.wallet_record_index == 0 )
                record_to_store.wallet_record_index = new_wallet_record_index();
-            store_and_reload_generic_record( generic_wallet_record( record_to_store ) );
+            store_and_reload_generic_record( generic_wallet_record( record_to_store ), sync );
          }
 
-        void store_and_reload_generic_record( const generic_wallet_record& record );
+         void store_and_reload_generic_record( const generic_wallet_record& record, const bool sync = false );
 
-        friend class detail::wallet_db_impl;
-        unique_ptr<detail::wallet_db_impl> my;
+         friend class detail::wallet_db_impl;
+         unique_ptr<detail::wallet_db_impl> my;
    };
 
 } } // bts::wallet
