@@ -1338,6 +1338,11 @@ account_extended_balance_type client_impl::wallet_account_balance_extended( cons
     return account_extended_balance_type();
 }
 
+account_vesting_balance_summary_type client_impl::wallet_account_vesting_balances( const string& account_name )const
+{ try {
+    return _wallet->get_account_vesting_balances( account_name );
+} FC_CAPTURE_AND_RETHROW( (account_name) ) }
+
 account_balance_summary_type client_impl::wallet_account_yield( const string& account_name )const
 {
   return _wallet->get_account_yield( account_name );

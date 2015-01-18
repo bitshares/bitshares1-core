@@ -1862,6 +1862,22 @@
          "aliases" : []
       },
       {
+         "method_name"    : "wallet_account_vesting_balances",
+         "description"    : "List the vesting balances available to the specified account",
+         "return_type"    : "account_vesting_balance_summary_type",
+         "parameters"     : [
+         {
+            "name" : "account_name",
+            "type" : "account_name",
+            "description" : "the account name to list vesting balances for, or leave empty for all accounts",
+            "default_value" : ""
+         }
+         ],
+         "is_const" : true,
+         "prerequisites" : ["wallet_open"],
+         "aliases" : [ "vesting" ]
+      },
+      {
          "method_name"    : "wallet_account_yield",
          "description"    : "Lists the total accumulated yield for asset balances",
          "return_type"    : "account_balance_summary_type",
