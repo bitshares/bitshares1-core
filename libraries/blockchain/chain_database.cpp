@@ -3807,7 +3807,7 @@ namespace bts { namespace blockchain {
 
        interface.insert_into_unique_set = [&]( const transaction& trx )
        {
-           my->_unique_transactions.emplace( trx, get_chain_id() );
+           my->_unique_transactions.emplace_hint( my->_unique_transactions.cend(), trx, get_chain_id() );
        };
 
        interface.erase_from_id_map = [&]( const transaction_id_type& id )
