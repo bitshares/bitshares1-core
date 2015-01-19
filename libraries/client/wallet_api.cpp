@@ -1382,9 +1382,10 @@ wallet_transaction_record client_impl::wallet_market_submit_relative_bid(
        const string& quantity_symbol,
        const string& relative_quote_price,
        const string& quote_symbol,
-       const string& limit_price )
+       const string& limit_price,
+       const string& funding )
 {
-  auto record = _wallet->submit_relative_bid( from_account, quantity, quantity_symbol, relative_quote_price, quote_symbol, limit_price, true );
+  auto record = _wallet->submit_relative_bid( from_account, quantity, quantity_symbol, relative_quote_price, quote_symbol, limit_price, funding, true );
   _wallet->cache_transaction( record );
   network_broadcast_transaction( record.trx );
   return record;
