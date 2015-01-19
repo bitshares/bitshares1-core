@@ -6,7 +6,6 @@ import "utils.js" as Utils
 import org.BitShares.Types 1.0
 
 import Material 0.1
-import Material.Transitions 0.1 as T
 
 ApplicationWindow {
    id: window
@@ -39,7 +38,7 @@ ApplicationWindow {
 
       connectToServer()
    }
-   pageStack.onPagePopped: if( pageStack.count === 1 ) wallet.lockWallet()
+   pageStack.onPopped: if( pageStack.count === 1 ) wallet.lockWallet()
 
    theme {
       primaryColor: "#2196F3"
@@ -55,18 +54,7 @@ ApplicationWindow {
    QtObject {
       id: visuals
 
-      property color textColor: "#535353"
-      property color lightTextColor: "#757575"
-      property color buttonColor: "#28A9F6"
-      property color buttonHoverColor: "#2BB4FF"
-      property color buttonPressedColor: "#264D87"
-      property color buttonTextColor: "white"
-
-      property real spacing: 40
       property real margins: 20
-
-      property real textBaseSize: window.orientation === Qt.PortraitOrientation?
-                                     window.height * .02 : window.width * .03
    }
    Timer {
       id: refreshPoller
@@ -100,9 +88,6 @@ ApplicationWindow {
    WelcomeLayout {
       id: mainPage
       title: qsTr("Welcome to BitShares")
-      anchors.fill: parent
-      //Make a null transition for initial page; there's no reason to animate the first page appearing.
-      transition: T.PageTransition {function transitionTo(){}}
       onPasswordEntered: {
          if( wallet.unlocked )
             return proceedIfUnlocked()
@@ -134,18 +119,24 @@ ApplicationWindow {
       id: assetsUi
 
       AssetsLayout {
-         anchors.fill: parent
          onLockRequested: {
             wallet.lockWallet()
             uiStack.pop()
          }
          onOpenHistory: window.pageStack.push(historyUi, {"accountName": account, "assetSymbol": symbol})
+         onOpenTransfer: window.pageStack.push(transferUi)
       }
    }
    Component {
       id: historyUi
 
       HistoryLayout {
+      }
+   }
+   Component {
+      id: transferUi
+
+      TransferLayout {
       }
    }
    Loader {
