@@ -28,7 +28,7 @@ uint32_t wallet::import_bitcoin_wallet(
    for( const auto& key : keys )
       import_private_key( key, account_name );
 
-   scan_chain( 0, 1 );
+   start_scan( 0, 1 );
    ulog( "Successfully imported ${x} keys from ${file}", ("x",keys.size())("file",wallet_dat.filename()) );
    return keys.size();
 } FC_CAPTURE_AND_RETHROW( (wallet_dat)(account_name) ) }
@@ -51,7 +51,7 @@ uint32_t wallet::import_multibit_wallet(
    for( const auto& key : keys )
       import_private_key( key, account_name );
 
-   scan_chain( 0, 1 );
+   start_scan( 0, 1 );
    ulog( "Successfully imported ${x} keys from ${file}", ("x",keys.size())("file",wallet_dat.filename()) );
    return keys.size();
 } FC_CAPTURE_AND_RETHROW( (wallet_dat)(account_name) ) }
@@ -74,7 +74,7 @@ uint32_t wallet::import_electrum_wallet(
    for( const auto& key : keys )
       import_private_key( key, account_name );
 
-   scan_chain( 0, 1 );
+   start_scan( 0, 1 );
    ulog( "Successfully imported ${x} keys from ${file}", ("x",keys.size())("file",wallet_dat.filename()) );
    return keys.size();
 } FC_CAPTURE_AND_RETHROW( (wallet_dat)(account_name) ) }
@@ -97,7 +97,7 @@ uint32_t wallet::import_armory_wallet(
    for( const auto& key : keys )
       import_private_key( key, account_name );
 
-   scan_chain( 0, 1 );
+   start_scan( 0, 1 );
    ulog( "Successfully imported ${x} keys from ${file}", ("x",keys.size())("file",wallet_dat.filename()) );
    return keys.size();
 } FC_CAPTURE_AND_RETHROW( (wallet_dat)(account_name) ) }
@@ -122,6 +122,6 @@ void wallet::import_keyhotee( const std::string& firstname,
 
     import_private_key(private_key, fc::to_lower(keyhoteeid), true);
 
-    scan_chain( 0, 1 );
+    start_scan( 0, 1 );
     ulog( "Successfully imported Keyhotee private key.\n" );
 } FC_CAPTURE_AND_RETHROW( (firstname)(middlename)(lastname)(brainkey)(keyhoteeid) ) }

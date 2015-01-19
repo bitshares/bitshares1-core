@@ -1334,26 +1334,28 @@
         "parameters" :
           [
             {
-              "name" : "first_block_number",
+              "name" : "start_block_num",
               "type" : "uint32_t",
               "description" : "the first block to scan",
               "default_value" : 0
             },
             {
-              "name" : "num_blocks",
+              "name" : "limit",
               "type" : "uint32_t",
-              "description" : "the number of blocks to scan",
+              "description" : "the maximum number of blocks to scan",
               "default_value" : -1
-            },
-            {
-              "name" : "fast_scan",
-              "type" : "bool",
-              "description" : "true to scan as fast as possible but freeze the rest of your computer, and false otherwise",
-              "default_value" : false
             }
           ],
         "prerequisites" : ["wallet_unlocked"],
         "aliases" : ["scan", "rescan"]
+      },
+      {
+        "method_name": "wallet_cancel_scan",
+        "description": "Cancel any current scan task",
+        "return_type": "void",
+        "parameters" : [],
+        "prerequisites" : ["wallet_unlocked"],
+        "aliases" : []
       },
       {
         "method_name": "wallet_get_transaction",
@@ -1860,6 +1862,22 @@
          "aliases" : []
       },
       {
+         "method_name"    : "wallet_account_vesting_balances",
+         "description"    : "List the vesting balances available to the specified account",
+         "return_type"    : "account_vesting_balance_summary_type",
+         "parameters"     : [
+         {
+            "name" : "account_name",
+            "type" : "account_name",
+            "description" : "the account name to list vesting balances for, or leave empty for all accounts",
+            "default_value" : ""
+         }
+         ],
+         "is_const" : true,
+         "prerequisites" : ["wallet_open"],
+         "aliases" : [ "vesting" ]
+      },
+      {
          "method_name"    : "wallet_account_yield",
          "description"    : "Lists the total accumulated yield for asset balances",
          "return_type"    : "account_balance_summary_type",
@@ -2301,17 +2319,38 @@
       },
       {
          "method_name" : "wallet_dump_private_key",
-         "description" : "Reveals the private key corresponding to an account, public key, or address",
-         "return_type"  : "string",
+         "description" : "Reveals the private key corresponding to the specified public key or address; use with caution",
+         "return_type"  : "optional_string",
          "parameters" : [
              {
                 "name" : "input",
                 "type" : "string",
-                "description" : "an account name, public key, or address (quoted hash of public key)"
+                "description" : "public key or address to dump private key for"
              }
          ],
+         "is_const" : true,
          "prerequisites" : ["wallet_unlocked"],
          "aliases" : [ "dump_private_key", "dumpprivkey" ]
+      },
+      {
+         "method_name" : "wallet_dump_account_private_key",
+         "description" : "Reveals the specified account private key; use with caution",
+         "return_type"  : "optional_string",
+         "parameters" : [
+             {
+                "name" : "account_name",
+                "type" : "string",
+                "description" : "account name to dump private key for"
+             },
+             {
+                "name" : "key_type",
+                "type" : "account_key_type",
+                "description" : "which account private key to dump; one of {owner_key, active_key, signing_key}"
+             }
+         ],
+         "is_const" : true,
+         "prerequisites" : ["wallet_unlocked"],
+         "aliases" : []
       },
       {
          "method_name" : "wallet_account_vote_summary",
@@ -2330,8 +2369,8 @@
          "aliases" : ["votes"]
       },
       {
-         "method_name" : "wallet_check_vote_proportion",
-         "description" : "Check how much this account is utilizing its voting power",
+         "method_name" : "wallet_check_vote_status",
+         "description" : "Get info about the votes of balances controlled by this account",
          "return_type" : "vote_summary",
          "parameters"  : [
              {

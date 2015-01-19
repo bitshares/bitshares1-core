@@ -548,9 +548,9 @@ namespace bts { namespace blockchain {
 
        interface.lookup_by_id = [&]( const account_id_type id ) -> oaccount_record
        {
-           if( _account_id_remove.count( id ) > 0 ) return oaccount_record();
            const auto iter = _account_id_to_record.find( id );
            if( iter != _account_id_to_record.end() ) return iter->second;
+           if( _account_id_remove.count( id ) > 0 ) return oaccount_record();
            const chain_interface_ptr prev_state = _prev_state.lock();
            FC_ASSERT( prev_state );
            return prev_state->lookup<account_record>( id );
@@ -559,19 +559,23 @@ namespace bts { namespace blockchain {
        interface.lookup_by_name = [&]( const string& name ) -> oaccount_record
        {
            const auto iter = _account_name_to_id.find( name );
-           if( iter != _account_name_to_id.end() ) return interface.lookup_by_id( iter->second );
+           if( iter != _account_name_to_id.end() ) return _account_id_to_record.at( iter->second );
            const chain_interface_ptr prev_state = _prev_state.lock();
            FC_ASSERT( prev_state );
-           return prev_state->lookup<account_record>( name );
+           const oaccount_record record = prev_state->lookup<account_record>( name );
+           if( record.valid() && _account_id_remove.count( record->id ) == 0 ) return *record;
+           return oaccount_record();
        };
 
        interface.lookup_by_address = [&]( const address& addr ) -> oaccount_record
        {
            const auto iter = _account_address_to_id.find( addr );
-           if( iter != _account_address_to_id.end() ) return interface.lookup_by_id( iter->second );
+           if( iter != _account_address_to_id.end() ) return _account_id_to_record.at( iter->second );
            const chain_interface_ptr prev_state = _prev_state.lock();
            FC_ASSERT( prev_state );
-           return prev_state->lookup<account_record>( addr );
+           const oaccount_record record = prev_state->lookup<account_record>( addr );
+           if( record.valid() && _account_id_remove.count( record->id ) == 0 ) return *record;
+           return oaccount_record();
        };
 
        interface.insert_into_id_map = [&]( const account_id_type id, const account_record& record )
@@ -621,9 +625,9 @@ namespace bts { namespace blockchain {
 
        interface.lookup_by_id = [&]( const asset_id_type id ) -> oasset_record
        {
-           if( _asset_id_remove.count( id ) > 0 ) return oasset_record();
            const auto iter = _asset_id_to_record.find( id );
            if( iter != _asset_id_to_record.end() ) return iter->second;
+           if( _asset_id_remove.count( id ) > 0 ) return oasset_record();
            const chain_interface_ptr prev_state = _prev_state.lock();
            FC_ASSERT( prev_state );
            return prev_state->lookup<asset_record>( id );
@@ -632,10 +636,12 @@ namespace bts { namespace blockchain {
        interface.lookup_by_symbol = [&]( const string& symbol ) -> oasset_record
        {
            const auto iter = _asset_symbol_to_id.find( symbol );
-           if( iter != _asset_symbol_to_id.end() ) return interface.lookup_by_id( iter->second );
+           if( iter != _asset_symbol_to_id.end() ) return _asset_id_to_record.at( iter->second );
            const chain_interface_ptr prev_state = _prev_state.lock();
            FC_ASSERT( prev_state );
-           return prev_state->lookup<asset_record>( symbol );
+           const oasset_record record = prev_state->lookup<asset_record>( symbol );
+           if( record.valid() && _asset_id_remove.count( record->id ) == 0 ) return *record;
+           return oasset_record();
        };
 
        interface.insert_into_id_map = [&]( const asset_id_type id, const asset_record& record )
@@ -667,9 +673,9 @@ namespace bts { namespace blockchain {
 
        interface.lookup_by_id = [&]( const balance_id_type& id ) -> obalance_record
        {
-           if( _balance_id_remove.count( id ) > 0 ) return obalance_record();
            const auto iter = _balance_id_to_record.find( id );
            if( iter != _balance_id_to_record.end() ) return iter->second;
+           if( _balance_id_remove.count( id ) > 0 ) return obalance_record();
            const chain_interface_ptr prev_state = _prev_state.lock();
            FC_ASSERT( prev_state );
            return prev_state->lookup<balance_record>( id );
@@ -694,9 +700,9 @@ namespace bts { namespace blockchain {
 
        interface.lookup_by_id = [&]( const transaction_id_type& id ) -> otransaction_record
        {
-           if( _transaction_id_remove.count( id ) > 0 ) return otransaction_record();
            const auto iter = _transaction_id_to_record.find( id );
            if( iter != _transaction_id_to_record.end() ) return iter->second;
+           if( _transaction_id_remove.count( id ) > 0 ) return otransaction_record();
            const chain_interface_ptr prev_state = _prev_state.lock();
            FC_ASSERT( prev_state );
            return prev_state->lookup<transaction_record>( id );
@@ -731,9 +737,9 @@ namespace bts { namespace blockchain {
 
        interface.lookup_by_index = [&]( const feed_index index ) -> ofeed_record
        {
-           if( _feed_index_remove.count( index ) > 0 ) return ofeed_record();
            const auto iter = _feed_index_to_record.find( index );
            if( iter != _feed_index_to_record.end() ) return iter->second;
+           if( _feed_index_remove.count( index ) > 0 ) return ofeed_record();
            const chain_interface_ptr prev_state = _prev_state.lock();
            FC_ASSERT( prev_state );
            return prev_state->lookup<feed_record>( index );
@@ -758,9 +764,9 @@ namespace bts { namespace blockchain {
 
        interface.lookup_by_index = [&]( const slot_index index ) -> oslot_record
        {
-           if( _slot_index_remove.count( index ) > 0 ) return oslot_record();
            const auto iter = _slot_index_to_record.find( index );
            if( iter != _slot_index_to_record.end() ) return iter->second;
+           if( _slot_index_remove.count( index ) > 0 ) return oslot_record();
            const chain_interface_ptr prev_state = _prev_state.lock();
            FC_ASSERT( prev_state );
            return prev_state->lookup<slot_record>( index );
@@ -769,10 +775,12 @@ namespace bts { namespace blockchain {
        interface.lookup_by_timestamp = [&]( const time_point_sec timestamp ) -> oslot_record
        {
            const auto iter = _slot_timestamp_to_delegate.find( timestamp );
-           if( iter != _slot_timestamp_to_delegate.end() ) return interface.lookup_by_index( slot_index( iter->second, timestamp ) );
+           if( iter != _slot_timestamp_to_delegate.end() ) return _slot_index_to_record.at( slot_index( iter->second, timestamp ) );
            const chain_interface_ptr prev_state = _prev_state.lock();
            FC_ASSERT( prev_state );
-           return prev_state->lookup<slot_record>( timestamp );
+           const oslot_record record = prev_state->lookup<slot_record>( timestamp );
+           if( record.valid() && _slot_index_remove.count( record->index ) == 0 ) return *record;
+           return oslot_record();
        };
 
        interface.insert_into_index_map = [&]( const slot_index index, const slot_record& record )
