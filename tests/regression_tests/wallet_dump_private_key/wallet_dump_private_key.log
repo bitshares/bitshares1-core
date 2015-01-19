@@ -1,24 +1,51 @@
 default (unlocked) >>> wallet_account_create test
 "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 1
+OK
 default (unlocked) >>> wallet_list_accounts
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
 test                               XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX           NO                    NO             0         
+default (unlocked) >>> wallet_account_list_public_keys test
+[{
+    "hex": "02d6a0351c151cf57938e0f540830cb390305081aed4a6f01ec42668d7b85f03eb",
+    "native_pubkey": "XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX",
+    "native_address": "XTSFtXy1oqCnZ5Sw5txgm2421smvzZ6jwVUM",
+    "pts_normal_address": "PvRmwBk2YNJUqcuJCJF9acrHzqetRxow7B",
+    "pts_compressed_address": "PmBMQNvypoMaUTRQUqQNX7KgW1m9Vvrh1a",
+    "btc_normal_address": "1PVzo73tnGMR3M6SpobJRbcEkbE4bd4iE3",
+    "btc_compressed_address": "1EFaGJEr4hQWgBcZ7LkXN65dFmLKiCLdSb"
+  },{
+    "hex": "02e310a74ab789949e7a8b17b0ae06a70cb414bdec78513375a572fb592d33c0d4",
+    "native_pubkey": "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra",
+    "native_address": "XTSFVXDozgCnWhF3w4efcv75jaVPkkMVbcKm",
+    "pts_normal_address": "PaWvEfxXFR1LWPEsVzWCGZPe7ESvNoPUpA",
+    "pts_compressed_address": "PvrSYijUNcwCsJca8UN8B5yERhTCW1a2PU",
+    "btc_normal_address": "13b96bGPVK4Gi7S28VrM7Y9arz26W3qtkr",
+    "btc_compressed_address": "1PvfQe3LcWz952oikyiH24jBBT2NdN3Faq"
+  }
+]
 default (unlocked) >>> help wallet_dump_private_key
 Usage:
-wallet_dump_private_key <input>                                                                       Reveals the private key corresponding to an account, public key, or address
-Reveals the private key corresponding to an account, public key, or address
+wallet_dump_private_key <input>                                                                       Reveals the private key corresponding to the specified public key or address; use with caution
+Reveals the private key corresponding to the specified public key or address; use with caution
 
 Parameters:
-  input (string, required): an account name, public key, or address (quoted hash of public key)
+  input (string, required): public key or address to dump private key for
 
 Returns:
-  string
+  optional_string
 
 aliases: dump_private_key, dumpprivkey
 default (unlocked) >>> wallet_dump_private_key test
-"5J34mbwS4unYpfvyVzh5yLqe5ZL4BXqbVh5piGw4uHRe8pKdi33"
+null
 default (unlocked) >>> wallet_dump_private_key XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra
 "5KV9x9uKC8DdWozG9NRC9ySRqgPGn9XgcZrgVWxntsh4msJF9zb"
-default (unlocked) >>> wallet_dump_private_key test2
-"key not found"
+default (unlocked) >>> wallet_dump_private_key XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX
+"5J34mbwS4unYpfvyVzh5yLqe5ZL4BXqbVh5piGw4uHRe8pKdi33"
+default (unlocked) >>> wallet_dump_private_key XTSFtXy1oqCnZ5Sw5txgm2421smvzZ6jwVUM
+"5J34mbwS4unYpfvyVzh5yLqe5ZL4BXqbVh5piGw4uHRe8pKdi33"
+default (unlocked) >>> wallet_dump_private_key XTS5nkoz8qNcLPF8w7xSpnf6CCFcgioGMDqsvw7G7hgEvMAxL6fCc
+null
 default (unlocked) >>> quit

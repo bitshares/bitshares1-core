@@ -23,7 +23,7 @@ default (unlocked) >>> wallet_get_info
   "unlocked": true,
   "unlocked_until": "<d-ign></d-ign>",
   "unlocked_until_timestamp": "<d-ign></d-ign>",
-  "scan_progress": "0.00 %",
+  "scan_progress": "100.00 %",
   "version": "<d-ign></d-ign>"
 }
 default (unlocked) >>> quit
