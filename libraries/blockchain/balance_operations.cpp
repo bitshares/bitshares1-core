@@ -214,8 +214,6 @@ namespace bts { namespace blockchain {
 
             case withdraw_vesting_type:
             {
-                FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_5_0_FORK_BLOCK_NUM );
-
                 const withdraw_vesting condition = current_balance_record->condition.as<withdraw_vesting>();
                 const address owner = condition.owner;
                 if( !eval_state.check_signature( owner ) )
@@ -225,7 +223,10 @@ namespace bts { namespace blockchain {
 
             case withdraw_multisig_type:
             {
-               FC_ASSERT( !"Not supported yet!" );
+#ifndef WIN32
+#warning [SOFTFORK] Remove this check after BTS_V0_6_0_FORK_BLOCK_NUM has passed
+#endif
+               FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_6_0_FORK_BLOCK_NUM );
 
                auto multisig = current_balance_record->condition.as<withdraw_with_multisig>();
                uint32_t valid_signatures = 0;
@@ -330,7 +331,10 @@ namespace bts { namespace blockchain {
 
    void release_escrow_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-      FC_ASSERT( !"This operation is not enabled yet!" );
+#ifndef WIN32
+#warning [SOFTFORK] Remove this check after BTS_V0_6_0_FORK_BLOCK_NUM has passed
+#endif
+      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_6_0_FORK_BLOCK_NUM );
 
       auto escrow_balance_record = eval_state._current_state->get_balance_record( this->escrow_id );
       FC_ASSERT( escrow_balance_record.valid() );
@@ -473,7 +477,10 @@ namespace bts { namespace blockchain {
 
    void update_balance_vote_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-      FC_ASSERT( !"This operation is not enabled yet!" );
+#ifndef WIN32
+#warning [SOFTFORK] Remove this check after BTS_V0_6_0_FORK_BLOCK_NUM has passed
+#endif
+      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_6_0_FORK_BLOCK_NUM );
 
       auto current_balance_record = eval_state._current_state->get_balance_record( this->balance_id );
       FC_ASSERT( current_balance_record.valid(), "No such balance!" );

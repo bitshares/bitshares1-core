@@ -702,7 +702,7 @@ namespace bts { namespace blockchain {
       void chain_database_impl::pay_delegate( const pending_chain_state_ptr& pending_state, const public_key_type& block_signee,
                                               const block_id_type& block_id, oblock_record& record )
       { try {
-          if( pending_state->get_head_block_num() < BTS_V0_4_28_FORK_BLOCK_NUM )
+          if( pending_state->get_head_block_num() < BTS_V0_6_0_FORK_BLOCK_NUM )
               return pay_delegate_v2( pending_state, block_signee, block_id, record );
 
           oasset_record base_asset_record = pending_state->get_asset_record( asset_id_type( 0 ) );
