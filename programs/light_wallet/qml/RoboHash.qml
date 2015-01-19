@@ -6,7 +6,7 @@ import Material 0.1
 
 Column {
    property alias name: robotName.text
-   readonly property alias preferredWidth: robotName.implicitWidth
+   property real preferredWidth: Math.max(robotName.implicitWidth, roboHash.width)
 
    function __imageSource() {
       if( name.toLowerCase() === name )
@@ -17,10 +17,16 @@ Column {
 
    Image {
       id: roboHash
+      anchors.horizontalCenter: parent.horizontalCenter
       height: units.dp(64)
       width: units.dp(64)
       source: __imageSource()
       fillMode: Image.PreserveAspectFit
+      sourceSize {
+         width: units.dp(64)
+         height: units.dp(64)
+      }
+
       AnimatedImage {
          anchors.fill: parent
          fillMode: Image.Pad

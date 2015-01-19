@@ -11,32 +11,25 @@ Page {
       id: hashBar
       y: visuals.margins
       width: parent.width
-      height: recipientHash.height
+      height: amountLabel.y + amountLabel.height + visuals.margins
 
       RoboHash {
          name: wallet.account.name
          x: visuals.margins
-         width: Math.min(units.dp(120), preferredWidth)
+         width: Math.min(units.dp(110), preferredWidth)
       }
-      Column {
-         anchors.centerIn: parent
-
-         Label {
-            anchors.horizontalCenter: parent.horizontalCenter
-            font.pixelSize: hashBar.height - units.dp(16)
-            text: "→"
-         }
-         Label {
-            anchors.horizontalCenter: parent.horizontalCenter
-            font.pixelSize: units.dp(16)
-            color: "red"
-            text: "10 XTS"
-         }
+      Label {
+         id: amountLabel
+         anchors.horizontalCenter: parent.horizontalCenter
+         anchors.top: recipientHash.bottom
+         style: "display1"
+         color: "red"
+         text: "1,000,000.0001 XTS"
       }
       RoboHash {
          id: recipientHash
-         name: "Unknown"
-         width: Math.min(units.dp(120), preferredWidth)
+         name: toNameField.text? toNameField.text : "Unknown"
+         width: Math.min(units.dp(110), preferredWidth)
          anchors.right: parent.right
          anchors.rightMargin: visuals.margins
       }
@@ -67,6 +60,8 @@ Page {
          focus: true
       }
       RowLayout {
+         id: amountRow
+         z: 2
          anchors.top: toNameField.bottom
          anchors.topMargin: units.dp(3)
          width: parent.width
@@ -104,11 +99,18 @@ Page {
             }
             Menu {
                id: assetMenu
+               width: parent.width * 1.1
                model: wallet.account.availableAssets
                owner: assetSymbol
                onElementSelected: assetSymbol.text = elementData
             }
          }
+      }
+      Label {
+         font.pixelSize: units.dp(12)
+         anchors.top: amountRow.bottom
+         anchors.right: amountRow.right
+         text: qsTr("Available balance: ") + wallet.account.balance(assetSymbol.text) + " " + assetSymbol.text
       }
    }
 }
