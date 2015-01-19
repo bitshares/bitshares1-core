@@ -150,14 +150,27 @@ namespace bts { namespace blockchain {
 
        cur_record->last_update = eval_state._current_state->now();
 
-       auto asset_rec = eval_state._current_state->get_asset_record( cur_record->condition.asset_id );
+       const oasset_record asset_rec = eval_state._current_state->get_asset_record( cur_record->condition.asset_id );
+       FC_ASSERT( asset_rec.valid() );
+
+       if( eval_state._current_state->get_head_block_num() >= BTS_V0_6_0_FORK_BLOCK_NUM )
+       {
+           if( asset_rec->is_user_issued() )
+           {
+               const string& symbol = asset_rec->symbol;
+               if( symbol.size() > 3 && symbol.find( "BIT" ) == 0 )
+               {
+                   const oasset_record victim_record = eval_state._current_state->get_asset_record( symbol.substr( 3 ) );
+                   FC_ASSERT( !victim_record.valid() || !victim_record->is_market_issued() );
+               }
+           }
+       }
 
        if( eval_state._current_state->get_head_block_num() >= BTS_V0_5_0_FORK_BLOCK_NUM )
        {
            if( asset_rec->is_market_issued() ) FC_ASSERT( cur_record->condition.slate_id == 0 );
        }
 
-       FC_ASSERT( asset_rec.valid() );
        if( asset_rec->is_restricted() )
        {
          for( const auto& owner : cur_record->owners() )
