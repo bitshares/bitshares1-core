@@ -20,13 +20,6 @@ namespace bts { namespace blockchain {
       return enc.result();
    }
 
-   size_t signed_transaction::data_size()const
-   {
-      fc::datastream<size_t> ds;
-      fc::raw::pack(ds,*this);
-      return ds.tellp();
-   }
-
    transaction_id_type signed_transaction::id()const
    {
       fc::sha512::encoder enc;
@@ -34,10 +27,22 @@ namespace bts { namespace blockchain {
       return fc::ripemd160::hash( enc.result() );
    }
 
+   size_t signed_transaction::data_size()const
+   {
+      fc::datastream<size_t> ds;
+      fc::raw::pack(ds,*this);
+      return ds.tellp();
+   }
+
    void signed_transaction::sign( const fc::ecc::private_key& signer, const digest_type& chain_id )
    {
       signatures.push_back( signer.sign_compact( digest(chain_id) ) );
    }
+
+   public_key_type signed_transaction::get_signing_key( const size_t sig_index, const digest_type& chain_id )const
+   { try {
+       return fc::ecc::public_key( signatures.at( sig_index ), this->digest( chain_id ), false );
+   } FC_CAPTURE_AND_RETHROW( (sig_index)(chain_id) ) }
 
    void transaction::set_object( const object_record& obj )
    {

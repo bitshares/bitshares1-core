@@ -52,6 +52,21 @@ struct pretty_transaction
     optional<fc::exception>     error;
 };
 
+struct pretty_vesting_balance
+{
+    balance_id_type     balance_id;
+    optional<string>    sharedrop_address;
+
+    time_point_sec      start_time;
+    uint32_t            duration = 0;
+
+    asset_id_type       asset_id;
+    share_type          original_balance;
+    share_type          vested_balance;
+    share_type          claimed_balance;
+    share_type          available_balance;
+};
+
 }} // bts::wallet
 
 FC_REFLECT( bts::wallet::public_key_summary, (hex)(native_pubkey)(native_address)(pts_normal_address)(pts_compressed_address)(btc_normal_address)(btc_compressed_address) );
@@ -65,7 +80,6 @@ FC_REFLECT( bts::wallet::pretty_ledger_entry,
             (memo)
             (running_balances)
             );
-
 FC_REFLECT( bts::wallet::pretty_transaction,
             (is_virtual)
             (is_confirmed)
@@ -79,3 +93,14 @@ FC_REFLECT( bts::wallet::pretty_transaction,
             (expiration_timestamp)
             (error)
             );
+FC_REFLECT( bts::wallet::pretty_vesting_balance,
+        (balance_id)
+        (sharedrop_address)
+        (start_time)
+        (duration)
+        (asset_id)
+        (original_balance)
+        (vested_balance)
+        (claimed_balance)
+        (available_balance)
+        );

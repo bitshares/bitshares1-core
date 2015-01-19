@@ -1210,13 +1210,13 @@
             },
             {
                 "name": "amount_to_sender",
-                "type": "share_type",
+                "type": "real_amount",
                 "description": "Amount to release back to the sender.",
                 "default_value": 0
             },
             {
                 "name": "amount_to_receiver",
-                "type": "share_type",
+                "type": "real_amount",
                 "description": "Amount to release to receiver.",
                 "default_value": 0
             }
@@ -1860,6 +1860,22 @@
          "is_const" : true,
          "prerequisites" : ["wallet_open"],
          "aliases" : []
+      },
+      {
+         "method_name"    : "wallet_account_vesting_balances",
+         "description"    : "List the vesting balances available to the specified account",
+         "return_type"    : "account_vesting_balance_summary_type",
+         "parameters"     : [
+         {
+            "name" : "account_name",
+            "type" : "account_name",
+            "description" : "the account name to list vesting balances for, or leave empty for all accounts",
+            "default_value" : ""
+         }
+         ],
+         "is_const" : true,
+         "prerequisites" : ["wallet_open"],
+         "aliases" : [ "vesting" ]
       },
       {
          "method_name"    : "wallet_account_yield",

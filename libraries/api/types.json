@@ -322,14 +322,12 @@
       {
         "type_name" : "pretty_transaction",
         "cpp_return_type" : "bts::wallet::pretty_transaction",
-        "cpp_include_file" : "bts/wallet/pretty.hpp",
-        "default_example" : "TODO"
+        "cpp_include_file" : "bts/wallet/pretty.hpp"
       },
       {
         "type_name" : "pretty_transactions",
         "cpp_return_type" : "std::vector<bts::wallet::pretty_transaction>",
-        "cpp_include_file" : "bts/wallet/pretty.hpp",
-        "default_example" : "TODO"
+        "cpp_include_file" : "bts/wallet/pretty.hpp"
       },
       {
         "type_name" : "experimental_transactions",
@@ -350,6 +348,10 @@
       {
          "type_name" : "account_extended_balance_type",
          "cpp_return_type" : "bts::wallet::account_extended_balance_type"
+      },
+      {
+         "type_name" : "account_vesting_balance_summary_type",
+         "cpp_return_type" : "bts::wallet::account_vesting_balance_summary_type"
       },
       {
          "type_name" : "market_order",

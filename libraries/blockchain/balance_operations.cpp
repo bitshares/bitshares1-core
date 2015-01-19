@@ -123,6 +123,8 @@ namespace bts { namespace blockchain {
        if( !cur_record.valid() )
        {
           cur_record = balance_record( this->condition );
+          if( this->condition.type == withdraw_escrow_type )
+             cur_record->meta_data = variant_object("creating_transaction_id", eval_state.trx.id() );
        }
 
        if( cur_record->balance == 0 )

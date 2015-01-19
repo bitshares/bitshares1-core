@@ -4088,6 +4088,8 @@ namespace detail {
              escrow_summary sum;
              sum.balance_id = record.id();
              sum.balance    = record.get_spendable_balance( time_point_sec() );
+             if( record.meta_data.is_object() )
+                sum.creating_transaction_id = record.meta_data.get_object()["creating_transaction_id"].as<transaction_id_type>();
 
              if( sender_key_record )
              {
@@ -4211,6 +4213,44 @@ namespace detail {
            }
        }
 
+       return balances;
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
+
+   account_vesting_balance_summary_type wallet::get_account_vesting_balances( const string& account_name )const
+   { try {
+       map<string, vector<pretty_vesting_balance>> balances;
+       const time_point_sec now = my->_blockchain->get_pending_state()->now();
+
+       const auto scan_balance = [&]( const balance_id_type& id, const balance_record& record )
+       {
+           if( record.condition.type != withdraw_vesting_type ) return;
+
+           const optional<address> owner = record.owner();
+           if( !owner.valid() ) return;
+
+           const owallet_key_record key_record = my->_wallet_db.lookup_key( *owner );
+           if( !key_record.valid() || !key_record->has_private_key() ) return;
+
+           const owallet_account_record account_record = my->_wallet_db.lookup_account( key_record->account_address );
+           const string name = account_record.valid() ? account_record->name : string( key_record->public_key );
+           if( !account_name.empty() && name != account_name ) return;
+
+           const withdraw_vesting& condition = record.condition.as<withdraw_vesting>();
+           pretty_vesting_balance balance;
+           balance.balance_id = id;
+           if( record.snapshot_info.valid() ) balance.sharedrop_address = record.snapshot_info->original_address;
+           balance.start_time = condition.start_time;
+           balance.duration = condition.duration;
+           balance.asset_id = record.asset_id();
+           balance.original_balance = condition.original_balance;
+           balance.claimed_balance = balance.original_balance - record.balance;
+           balance.available_balance = record.get_spendable_balance( now ).amount;
+           balance.vested_balance = balance.claimed_balance + balance.available_balance;
+
+           balances[ name ].push_back( std::move( balance ) );
+       };
+
+       scan_balances( scan_balance );
        return balances;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 

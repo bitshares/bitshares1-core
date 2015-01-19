@@ -65,6 +65,7 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec(clientb, "wallet_publish_price_feed delegate2 1 USD" );
    exec(clientb, "wallet_publish_price_feed delegate4 1 USD" );
    exec(clientb, "wallet_publish_price_feed delegate6 1 USD" );
+   return;
    exec(clientb, "wallet_publish_price_feed delegate8 1 USD" );
    exec(clientb, "wallet_publish_price_feed delegate10 1 USD" );
    exec(clientb, "wallet_publish_price_feed delegate12 1 USD" );
@@ -145,6 +146,8 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    produce_block(clientb);
    exec( clienta, "wallet_release_escrow b-account XTS6AwRFEQ5nu8d2B14qVujPAJDN73bTKgGb receiver 3333333 0" );
    produce_block(clienta);
+   exec( clientb, "wallet_escrow_summary delegate24" );
+   exec( clienta, "wallet_escrow_summary b-account" );
    exec( clientb, "balance delegate24" );
    // wallet_market_submit_relative_bid <from_account_name> <quantity> <quantity_symbol> <relative_price> <base_symbol> [limit_price]
    exec( clienta, "balance b-account" );
@@ -153,6 +156,11 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    produce_block(clienta);
    exec(clienta, "balance" );
    exec(clientb, "balance" );
+   exec( clienta, "wallet_release_escrow delegate36 XTS6AwRFEQ5nu8d2B14qVujPAJDN73bTKgGb receiver 1234 4567" );
+   produce_block(clienta);
+   exec( clientb, "wallet_escrow_summary delegate24" );
+   exec( clienta, "wallet_escrow_summary b-account" );
+   return;
 
    exec( clienta, "wallet_market_submit_relative_ask b-account 1 XTS .0001 USD .02" );
    exec( clienta, "wallet_market_submit_relative_ask b-account 4 XTS .0005 USD 1.3" );
@@ -789,6 +797,7 @@ BOOST_FIXTURE_TEST_CASE( malicious_trading, chain_fixture )
 } FC_LOG_AND_RETHROW() }
 #endif
 
+/*
 BOOST_AUTO_TEST_CASE( timetest )
 { 
   auto block_time =  fc::variant( "20140617T024645" ).as<fc::time_point_sec>();
@@ -802,3 +811,4 @@ BOOST_FIXTURE_TEST_CASE( fork_testing, chain_fixture )
    exec( clientb, "info" );
    exec( clienta, "info" );
 }
+*/
