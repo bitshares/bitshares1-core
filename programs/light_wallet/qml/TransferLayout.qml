@@ -50,7 +50,7 @@ Page {
       y: hashBar.y + hashBar.height + visuals.margins
    }
 
-   Rectangle {
+   Item {
       anchors.top: splitter.bottom
       anchors.left: parent.left
       anchors.right: parent.right
@@ -78,6 +78,7 @@ Page {
             placeholderText: qsTr("Amount")
             floatingLabel: true
             font.pixelSize: units.dp(20)
+            validator: DoubleValidator {bottom: 0; notation: DoubleValidator.StandardNotation}
          }
          TextField {
             id: assetSymbol
