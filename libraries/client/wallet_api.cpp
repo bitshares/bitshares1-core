@@ -738,8 +738,8 @@ transaction_builder detail::client_impl::wallet_set_edge(
 wallet_transaction_record detail::client_impl::wallet_release_escrow( const string& paying_account_name,
                                                                       const address& escrow_balance_id,
                                                                       const string& released_by,
-                                                                      const share_type& amount_to_sender,
-                                                                      const share_type& amount_to_receiver )
+                                                                      double amount_to_sender,
+                                                                      double amount_to_receiver )
 {
     auto payer = _wallet->get_account(paying_account_name);
     auto balance_rec = _chain_db->get_balance_record( escrow_balance_id );
@@ -748,6 +748,14 @@ wallet_transaction_record detail::client_impl::wallet_release_escrow( const stri
     FC_ASSERT( released_by == "sender" ||
                released_by == "receiver" ||
                released_by == "agent" );
+
+    auto asset_rec = _chain_db->get_asset_record( balance_rec->asset_id() );
+    FC_ASSERT( asset_rec.valid() );
+    if( asset_rec->precision )
+    {
+       amount_to_sender   *= asset_rec->precision;
+       amount_to_receiver *= asset_rec->precision;
+    }
 
     auto escrow_cond = balance_rec->condition.as<withdraw_with_escrow>();
     address release_by_address;
@@ -1048,17 +1056,16 @@ optional<string> detail::client_impl::wallet_dump_private_key( const string& inp
 optional<string> detail::client_impl::wallet_dump_account_private_key( const string& account_name,
                                                                        const account_key_type& key_type )const
 { try {
-    const owallet_account_record account_record = _wallet->get_account( account_name );
-    FC_ASSERT( account_record.valid() );
+    const auto account_record = _wallet->get_account( account_name );
     switch( key_type )
     {
         case owner_key:
-            return utilities::key_to_wif( _wallet->get_private_key( account_record->owner_address() ) );
+            return utilities::key_to_wif( _wallet->get_private_key( account_record.owner_address() ) );
         case active_key:
-            return utilities::key_to_wif( _wallet->get_private_key( account_record->active_address() ) );
+            return utilities::key_to_wif( _wallet->get_private_key( account_record.active_address() ) );
         case signing_key:
-            FC_ASSERT( account_record->is_delegate() );
-            return utilities::key_to_wif( _wallet->get_private_key( account_record->signing_address() ) );
+            FC_ASSERT( account_record.is_delegate() );
+            return utilities::key_to_wif( _wallet->get_private_key( account_record.signing_address() ) );
         default:
             return optional<string>();
     }
@@ -1337,6 +1344,11 @@ account_extended_balance_type client_impl::wallet_account_balance_extended( cons
 #endif
     return account_extended_balance_type();
 }
+
+account_vesting_balance_summary_type client_impl::wallet_account_vesting_balances( const string& account_name )const
+{ try {
+    return _wallet->get_account_vesting_balances( account_name );
+} FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
 account_balance_summary_type client_impl::wallet_account_yield( const string& account_name )const
 {

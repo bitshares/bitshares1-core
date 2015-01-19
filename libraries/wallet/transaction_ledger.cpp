@@ -620,7 +620,8 @@ bool wallet_impl::scan_withdraw( const withdraw_operation& op,
            }
            else if( entry.amount.amount == 0 )
            {
-               entry.amount = amount;
+               if( amount != trx_rec.fee )
+                   entry.amount = amount;
                new_entry = false;
                break;
            }

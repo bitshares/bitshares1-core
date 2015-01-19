@@ -73,7 +73,7 @@ namespace bts { namespace blockchain {
 
    void update_account_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-      if( eval_state._current_state->get_head_block_num() < BTS_V0_4_28_FORK_BLOCK_NUM )
+      if( eval_state._current_state->get_head_block_num() < BTS_V0_6_0_FORK_BLOCK_NUM )
           return evaluate_v1( eval_state );
 
       oaccount_record current_record = eval_state._current_state->get_account_record( this->account_id );
@@ -169,9 +169,9 @@ namespace bts { namespace blockchain {
    void update_signing_key_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
 #ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_4_28_FORK_BLOCK_NUM has passed
+#warning [SOFTFORK] Remove this check after BTS_V0_6_0_FORK_BLOCK_NUM has passed
 #endif
-      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_28_FORK_BLOCK_NUM );
+      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_6_0_FORK_BLOCK_NUM );
 
       oaccount_record account_rec = eval_state._current_state->get_account_record( this->account_id );
       if( !account_rec.valid() )

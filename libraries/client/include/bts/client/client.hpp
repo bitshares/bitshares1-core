@@ -1,25 +1,49 @@
 #pragma once
+
+#include <bts/api/common_api.hpp>
 #include <bts/blockchain/chain_database.hpp>
-#include <bts/wallet/wallet.hpp>
 #include <bts/net/node.hpp>
 #include <bts/rpc/rpc_client_api.hpp>
-#include <bts/api/common_api.hpp>
 #include <bts/rpc_stubs/common_api_client.hpp>
-#include <fc/thread/thread.hpp>
-#include <fc/log/logger_config.hpp>
-#include <memory>
-#include <boost/program_options.hpp>
+#include <bts/wallet/wallet.hpp>
 
+#include <fc/log/logger_config.hpp>
+#include <fc/thread/thread.hpp>
+
+#include <boost/program_options.hpp>
+#include <memory>
 
 namespace bts { namespace rpc {
-  class rpc_server;
-  typedef std::shared_ptr<rpc_server> rpc_server_ptr;
+    class rpc_server;
+    typedef std::shared_ptr<rpc_server> rpc_server_ptr;
 } }
+
 namespace bts { namespace cli {
     class cli;
-}};
+} };
 
 namespace bts { namespace client {
+
+    static const auto SEED_NODES = std::vector<std::string>
+    {
+        "46.226.109.66:1776",
+        "54.77.51.177:1776",
+        "54.79.27.224:1776",
+        "61.129.33.213:1776",
+        "84.238.140.192:42577",
+        "85.214.53.224:1776",
+        "95.85.33.16:8764",
+        "104.131.35.149:1776",
+        "106.185.26.162:1776",
+        "178.62.50.61:1776",
+        "178.62.50.61:1777",
+        "178.62.50.61:1778",
+        "178.62.50.61:1779",
+        "178.62.157.161:1776",
+        "180.153.142.120:1777",
+        "185.25.22.21:1776",
+        "188.226.195.137:60696"
+    };
 
     using namespace bts::blockchain;
     using namespace bts::wallet;
@@ -66,71 +90,44 @@ namespace bts { namespace client {
 
     struct config
     {
-       config( ) :
-          default_peers(vector<string>{
-                  "5.101.106.138:1776",
-                  "5.101.106.138:1777",
-                  "5.101.106.138:1778",
-                  "46.226.109.66:1776",
-                  "54.77.51.177:1776",
-                  "54.79.27.224:1776",
-                  "61.129.33.213:1776",
-                  "84.238.140.192:42577",
-                  "85.214.53.224:1776",
-                  "95.85.33.16:8764",
-                  "104.131.35.149:1776",
-                  "106.185.26.162:1776",
-                  "178.62.50.61:1776",
-                  "178.62.50.61:1777",
-                  "178.62.50.61:1778",
-                  "178.62.50.61:1779",
-                  "178.62.157.161:1776",
-                  "180.153.142.120:1777",
-                  "185.25.22.21:1776",
-                  "188.226.195.137:60696"
-                  }),
-          mail_server_enabled(false),
-          wallet_enabled(true),
-          ignore_console(false),
-          use_upnp(true),
-          maximum_number_of_connections(BTS_NET_DEFAULT_MAX_CONNECTIONS),
-          client_debug_name("")
-          {
-              logging = fc::logging_config::default_config();
-          }
+        fc::logging_config  logging = fc::logging_config::default_config();
+        bool                ignore_console = false;
+        string              client_debug_name;
 
-          rpc_server_config   rpc;
-          vector<string>      default_peers;
-          vector<string>      chain_servers;
-          chain_server_config chain_server;
-          bool                mail_server_enabled;
-          bool                wallet_enabled;
-          bool                ignore_console;
-          bool                use_upnp;
-          optional<fc::path>  genesis_config;
-          uint16_t            maximum_number_of_connections;
-          fc::logging_config  logging;
-          string              wallet_callback_url;
-          string              client_debug_name;
-          double              relay_fee = double(BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE)/BTS_BLOCKCHAIN_PRECISION;
-          double              light_relay_fee = double(BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE)/BTS_BLOCKCHAIN_PRECISION;
-          /** relay account name is used to specify the name of the account that must be paid when
-           * network_broadcast_transaction is called by a light weight client.  If it is unset then
-           * no fee will be charged.  The fee charged by the light server will be the fee charged
-           * light_relay_fee for allowing general network transactions to propagate.  In effect, light clients
-           * pay 2x the fees, one to the relay_account_name and one to the network delegates.
-           */
-          string              relay_account_name;
-          /** if this client provides faucet services, specify the account to pay from here */
-          string              faucet_account_name;
+        rpc_server_config   rpc;
 
-          fc::optional<std::string> growl_notify_endpoint;
-          fc::optional<std::string> growl_password;
-          fc::optional<std::string> growl_bitshares_client_identifier;
+        optional<fc::path>  genesis_config;
+        bool                statistics_enabled = false;
 
-          bool                statistics_enabled = false;
+        vector<string>      default_peers = SEED_NODES;
+        uint16_t            maximum_number_of_connections = BTS_NET_DEFAULT_MAX_CONNECTIONS;
+        bool                use_upnp = true;
+
+        vector<string>      chain_servers;
+        chain_server_config chain_server;
+
+        bool                wallet_enabled = true;
+        share_type          min_relay_fee = BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE;
+        string              wallet_callback_url;
+
+        share_type          light_relay_fee = BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE;
+        /** relay account name is used to specify the name of the account that must be paid when
+         * network_broadcast_transaction is called by a light weight client.  If it is unset then
+         * no fee will be charged.  The fee charged by the light server will be the fee charged
+         * light_relay_fee for allowing general network transactions to propagate.  In effect, light clients
+         * pay 2x the fees, one to the relay_account_name and one to the network delegates.
+         */
+        string              relay_account_name;
+
+        /** if this client provides faucet services, specify the account to pay from here */
+        string              faucet_account_name;
+
+        optional<string>    growl_notify_endpoint;
+        optional<string>    growl_password;
+        optional<string>    growl_bitshares_client_identifier;
+
+        bool                mail_server_enabled = false;
     };
-
 
     /**
      * @class client
@@ -221,16 +218,26 @@ FC_REFLECT(bts::client::client_notification, (timestamp)(message)(signature) )
 FC_REFLECT( bts::client::rpc_server_config, (enable)(rpc_user)(rpc_password)(rpc_endpoint)(httpd_endpoint)(htdocs) )
 FC_REFLECT( bts::client::chain_server_config, (enabled)(listen_port) )
 FC_REFLECT( bts::client::config,
-            (rpc)(default_peers)(chain_servers)(chain_server)(mail_server_enabled)
-            (wallet_enabled)(ignore_console)(logging)
-            (wallet_callback_url)
-            (client_debug_name)
-            (growl_notify_endpoint)
-            (growl_password)
-            (growl_bitshares_client_identifier)
-            (relay_fee)
-            (light_relay_fee)
-            (relay_account_name)
-            (faucet_account_name)
-            (statistics_enabled)
-            )
+        (logging)
+        (ignore_console)
+        (client_debug_name)
+        (rpc)
+        (genesis_config)
+        (statistics_enabled)
+        (default_peers)
+        (maximum_number_of_connections)
+        (use_upnp)
+        (chain_servers)
+        (chain_server)
+        (wallet_enabled)
+        (min_relay_fee)
+        (wallet_callback_url)
+        (light_relay_fee)
+        (relay_account_name)
+        (faucet_account_name)
+        (growl_notify_endpoint)
+        (growl_password)
+        (growl_bitshares_client_identifier)
+        (mail_server_enabled)
+        (rpc)
+    )

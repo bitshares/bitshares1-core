@@ -103,7 +103,7 @@ namespace bts { namespace blockchain {
        if( this->amount <= 0 )
           FC_CAPTURE_AND_THROW( negative_deposit, (amount) );
 
-       if( eval_state._current_state->get_head_block_num() >= DVS_V0_5_0_FORK_BLOCK_NUM )
+       if( eval_state._current_state->get_head_block_num() >= BTS_V0_5_0_FORK_BLOCK_NUM )
        {
            switch( withdraw_condition_types( this->condition.type ) )
            {
@@ -123,6 +123,8 @@ namespace bts { namespace blockchain {
        if( !cur_record.valid() )
        {
           cur_record = balance_record( this->condition );
+          if( this->condition.type == withdraw_escrow_type )
+             cur_record->meta_data = variant_object("creating_transaction_id", eval_state.trx.id() );
        }
 
        if( cur_record->balance == 0 )
@@ -148,14 +150,27 @@ namespace bts { namespace blockchain {
 
        cur_record->last_update = eval_state._current_state->now();
 
-       auto asset_rec = eval_state._current_state->get_asset_record( cur_record->condition.asset_id );
+       const oasset_record asset_rec = eval_state._current_state->get_asset_record( cur_record->condition.asset_id );
+       FC_ASSERT( asset_rec.valid() );
 
-       if( eval_state._current_state->get_head_block_num() >= DVS_V0_5_0_FORK_BLOCK_NUM )
+       if( eval_state._current_state->get_head_block_num() >= BTS_V0_6_0_FORK_BLOCK_NUM )
+       {
+           if( asset_rec->is_user_issued() )
+           {
+               const string& symbol = asset_rec->symbol;
+               if( symbol.size() > 3 && symbol.find( "BIT" ) == 0 )
+               {
+                   const oasset_record victim_record = eval_state._current_state->get_asset_record( symbol.substr( 3 ) );
+                   FC_ASSERT( !victim_record.valid() || !victim_record->is_market_issued() );
+               }
+           }
+       }
+
+       if( eval_state._current_state->get_head_block_num() >= BTS_V0_5_0_FORK_BLOCK_NUM )
        {
            if( asset_rec->is_market_issued() ) FC_ASSERT( cur_record->condition.slate_id == 0 );
        }
 
-       FC_ASSERT( asset_rec.valid() );
        if( asset_rec->is_restricted() )
        {
          for( const auto& owner : cur_record->owners() )
@@ -212,8 +227,6 @@ namespace bts { namespace blockchain {
 
             case withdraw_vesting_type:
             {
-                FC_ASSERT( eval_state._current_state->get_head_block_num() >= DVS_V0_5_0_FORK_BLOCK_NUM );
-
                 const withdraw_vesting condition = current_balance_record->condition.as<withdraw_vesting>();
                 const address owner = condition.owner;
                 if( !eval_state.check_signature( owner ) )
@@ -223,7 +236,10 @@ namespace bts { namespace blockchain {
 
             case withdraw_multisig_type:
             {
-               FC_ASSERT( !"Not supported yet!" );
+#ifndef WIN32
+#warning [SOFTFORK] Remove this check after BTS_V0_6_0_FORK_BLOCK_NUM has passed
+#endif
+               FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_6_0_FORK_BLOCK_NUM );
 
                auto multisig = current_balance_record->condition.as<withdraw_with_multisig>();
                uint32_t valid_signatures = 0;
@@ -328,7 +344,10 @@ namespace bts { namespace blockchain {
 
    void release_escrow_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-      FC_ASSERT( !"This operation is not enabled yet!" );
+#ifndef WIN32
+#warning [SOFTFORK] Remove this check after BTS_V0_6_0_FORK_BLOCK_NUM has passed
+#endif
+      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_6_0_FORK_BLOCK_NUM );
 
       auto escrow_balance_record = eval_state._current_state->get_balance_record( this->escrow_id );
       FC_ASSERT( escrow_balance_record.valid() );
@@ -468,10 +487,12 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_balance_record( *escrow_balance_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-
    void update_balance_vote_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-      FC_ASSERT( !"This operation is not enabled yet!" );
+#ifndef WIN32
+#warning [SOFTFORK] Remove this check after BTS_V0_6_0_FORK_BLOCK_NUM has passed
+#endif
+      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_6_0_FORK_BLOCK_NUM );
 
       auto current_balance_record = eval_state._current_state->get_balance_record( this->balance_id );
       FC_ASSERT( current_balance_record.valid(), "No such balance!" );
@@ -580,13 +601,13 @@ namespace bts { namespace blockchain {
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
    void pay_fee_operation::evaluate( transaction_evaluation_state& eval_state )
-   {
+   { try {
 #ifndef WIN32
 #warning [SOFTFORK] Remove this check after BTS_V0_4_28_FORK_BLOCK_NUM has passed
 #endif
       FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_28_FORK_BLOCK_NUM );
 
       eval_state._max_fee[this->amount.asset_id] += this->amount.amount;
-   }
+   } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 } } // bts::blockchain

@@ -18,6 +18,8 @@ namespace bts { namespace wallet {
    typedef map<string, map<asset_id_type, share_type>> account_balance_summary_type;
    typedef map<string, map<string, vector<asset>>> account_extended_balance_type;
 
+   typedef map<string, vector<pretty_vesting_balance>> account_vesting_balance_summary_type;
+
    typedef map<string, int64_t> account_vote_summary_type;
 
    typedef std::pair<order_type_enum, vector<string>> order_description;
@@ -555,6 +557,8 @@ namespace bts { namespace wallet {
 
          account_balance_record_summary_type get_spendable_account_balance_records( const string& account_name = "" )const;
          account_balance_summary_type       get_spendable_account_balances( const string& account_name = "" )const;
+
+         account_vesting_balance_summary_type get_account_vesting_balances( const string& account_name = "" )const;
 
          account_balance_summary_type       get_account_yield( const string& account_name = "" )const;
          account_vote_summary_type          get_account_vote_summary( const string& account_name = "" )const;

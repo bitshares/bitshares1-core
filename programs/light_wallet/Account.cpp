@@ -55,6 +55,20 @@ QQmlListProperty<Balance> Account::balances()
    return QQmlListProperty<Balance>(balanceMaster, this, count, at);
 }
 
+qreal Account::balance(QString symbol)
+{
+   return m_wallet->balance()[convert(symbol)];
+}
+
+QStringList Account::availableAssets()
+{
+   QStringList assets;
+   for( auto balance : m_wallet->balance() )
+      if( balance.second > 0 )
+         assets.append(convert(balance.first));
+   return assets;
+}
+
 QList<QObject*> Account::transactionHistory(QString asset_symbol)
 {
    QList<QObject*> history;
@@ -90,23 +104,6 @@ QList<QObject*> Account::transactionHistory(QString asset_symbol)
                entry->setProperty("symbol", convert(asset->symbol));
                if( trx.operation_notes.count(label.first) )
                   entry->setProperty("memo", convert(trx.operation_notes[label.first]));
-
-               ledger.append(entry);
-            }
-         }
-
-         if( trx.delta_amounts.count("Fee") )
-         {
-            for( bts::blockchain::asset fee : trx.delta_amounts["Fee"] )
-            {
-               auto asset = m_wallet->get_asset_record(fee.asset_id);
-               if( !asset ) continue;
-
-               LedgerEntry* entry = new LedgerEntry(summary);
-               entry->setProperty("receiver", tr("Network"));
-               entry->setProperty("amount", double(fee.amount) / asset->precision);
-               entry->setProperty("symbol", convert(asset->symbol));
-               entry->setProperty("memo", tr("Transaction Fee"));
 
                ledger.append(entry);
             }

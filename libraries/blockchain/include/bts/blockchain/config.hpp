@@ -11,7 +11,7 @@
  *  @brief Defines global constants that determine blockchain behavior
  */
 #define BTS_BLOCKCHAIN_VERSION                              109
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     185
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     186
 
 /**
  *  The address prepended to string representation of
@@ -32,7 +32,7 @@
 
 #define BTS_BLOCKCHAIN_NUM_DELEGATES                        uint32_t(101)
 #define BTS_MAX_DELEGATE_PAY_PER_BLOCK                      int64_t( 50 * BTS_BLOCKCHAIN_PRECISION ) // 50 XTS
-#define BTS_BLOCKCHAIN_MAX_UNDO_HISTORY                     ( BTS_BLOCKCHAIN_NUM_DELEGATES * 16 )
+#define BTS_BLOCKCHAIN_MAX_UNDO_HISTORY                     ( BTS_BLOCKCHAIN_BLOCKS_PER_HOUR * 2 )
 
 #define BTS_BLOCKCHAIN_MAX_SLATE_SIZE                       (BTS_BLOCKCHAIN_NUM_DELEGATES + (BTS_BLOCKCHAIN_NUM_DELEGATES/10))
 #define BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC       (60*60*24*2)
