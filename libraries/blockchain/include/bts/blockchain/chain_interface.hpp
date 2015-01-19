@@ -209,7 +209,6 @@ namespace bts { namespace blockchain {
          oasset_record                      get_asset_record( const asset_id_type id )const;
          oasset_record                      get_asset_record( const string& symbol )const;
          void                               store_asset_record( const asset_record& record );
-         bool                               is_banned_asset( const asset_record& record );
 
          obalance_record                    get_balance_record( const balance_id_type& id )const;
          void                               store_balance_record( const balance_record& record );

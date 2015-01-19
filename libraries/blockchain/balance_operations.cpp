@@ -175,8 +175,6 @@ namespace bts { namespace blockchain {
       FC_ASSERT( asset_rec.valid() );
       bool issuer_override = asset_rec->is_retractable() && eval_state.verify_authority( asset_rec->authority );
 
-      if( eval_state._current_state->is_banned_asset( *asset_rec ) )
-          FC_ASSERT(false, "This asset was frozen because its name mimics an existing market-issued asset.");
 
       if( !issuer_override )
       {
