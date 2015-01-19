@@ -94,7 +94,6 @@ namespace bts { namespace blockchain {
              */
             pending_chain_state_ptr                                                     _pending_trx_state = nullptr;
 
-
             chain_database*                                                             self = nullptr;
             unordered_set<chain_observer*>                                              _observers;
             bool                                                                        _skip_signature_verification = false;
@@ -117,7 +116,7 @@ namespace bts { namespace blockchain {
             signed_block_header                                                         _head_block_header;
             block_id_type                                                               _head_block_id;
 
-            bts::db::cached_level_map<uint32_t, fc::variant>                            _property_db;
+            bts::db::fast_level_map<uint32_t, fc::variant>                              _property_db;
 
             bts::db::fast_level_map<account_id_type, account_record>                    _account_id_to_record;
             bts::db::fast_level_map<string, account_id_type>                            _account_name_to_id;
@@ -136,7 +135,7 @@ namespace bts { namespace blockchain {
             bts::db::level_map<transaction_id_type, signed_transaction>                 _pending_transaction_db;
             map<fee_index, transaction_evaluation_state_ptr>                            _pending_fee_index;
 
-            bts::db::cached_level_map<slate_id_type, delegate_slate>                    _slate_db;
+            bts::db::fast_level_map<slate_id_type, delegate_slate>                      _slate_db;
 
             bts::db::cached_level_map<burn_record_key, burn_record_value>               _burn_db;
 
@@ -149,9 +148,9 @@ namespace bts { namespace blockchain {
             bts::db::cached_level_map<market_index_key, order_record>                   _relative_bid_db;
             bts::db::cached_level_map<market_index_key, order_record>                   _short_db;
             bts::db::cached_level_map<market_index_key, collateral_record>              _collateral_db;
-            set< expiration_index >                                                     _collateral_expiration_index;
+            set<expiration_index>                                                       _collateral_expiration_index;
 
-            bts::db::cached_level_map<uint32_t, std::vector<market_transaction>>        _market_transactions_db;
+            bts::db::fast_level_map<uint32_t, std::vector<market_transaction>>          _market_transactions_db;
             bts::db::cached_level_map<std::pair<asset_id_type,asset_id_type>, market_status> _market_status_db;
             bts::db::cached_level_map<market_history_key, market_history_record>        _market_history_db;
 

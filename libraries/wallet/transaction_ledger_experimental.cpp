@@ -22,7 +22,7 @@ void detail::wallet_impl::scan_balances_experimental()
             const owallet_key_record key_record = _wallet_db.lookup_key( owner );
             if( !key_record.valid() || !key_record->has_private_key() ) continue;
 
-            _balance_records[ id ] = *pending_record;
+            _balance_records[ id ] = std::move( *pending_record );
             break;
         }
     };

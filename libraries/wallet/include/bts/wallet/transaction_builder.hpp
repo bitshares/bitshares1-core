@@ -171,7 +171,7 @@ namespace bts { namespace wallet {
                                          const asset& amount,
                                          const string& memo,
                                          vote_selection_method vote_method = vote_recommended,
-                                         fc::optional<public_key_type> memo_sender = fc::optional<public_key_type>());
+                                         fc::optional<string> memo_sender = fc::optional<string>());
 
       /**
        * @brief Transfer funds from payer to a raw address

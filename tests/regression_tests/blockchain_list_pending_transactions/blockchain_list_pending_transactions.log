@@ -38,6 +38,22 @@ default (unlocked) >>> debug_wait_for_block_by_number 2
 OK
 default (unlocked) >>> debug_wait 2
 OK
+default (unlocked) >>> help wallet_account_transaction_history
+Usage:
+wallet_account_transaction_history [account_name] [asset_symbol] [limit] [start_block_num] [end_block_num]   Lists transaction history for the specified account
+Lists transaction history for the specified account
+
+Parameters:
+  account_name (string, optional, defaults to ""): the name of the account for which the transaction history will be returned, "" for all accounts
+  asset_symbol (string, optional, defaults to ""): only include transactions involving the specified asset, or "" to include all
+  limit (int32_t, optional, defaults to 0): limit the number of returned transactions; negative for most recent and positive for least recent. 0 does not limit
+  start_block_num (uint32_t, optional, defaults to 0): the earliest block number to list transactions from; 0 to include all transactions starting from genesis
+  end_block_num (uint32_t, optional, defaults to -1): the latest block to list transaction from; -1 to include all transactions ending at the head block
+
+Returns:
+  pretty_transactions
+
+aliases: history, listtransactions
 default (unlocked) >>> history test
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
 ==============================================================================================================================================================================================

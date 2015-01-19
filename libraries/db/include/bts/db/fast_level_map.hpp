@@ -7,89 +7,74 @@ template<typename K, typename V>
 class fast_level_map
 {
     level_map<K, V>             _ldb;
-    std::unordered_map<K, V>    _cache;
+    fc::optional<fc::path>      _ldb_path;
+    bool                        _ldb_enabled = true;
 
-    bool                        _cache_write_through = true;
-    std::unordered_set<K>       _cache_dirty_store;
-    std::unordered_set<K>       _cache_dirty_remove;
+    std::unordered_map<K, V>    _cache;
 
 public:
 
+    ~fast_level_map()
+    {
+        close();
+    }
+
     void open( const fc::path& path )
     { try {
-        _ldb.open( path );
+        FC_ASSERT( !_ldb_path.valid() );
+        _ldb_path = path;
+        _ldb.open( *_ldb_path );
+        _cache.reserve( _ldb.size() );
         for( auto iter = _ldb.begin(); iter.valid(); ++iter )
             _cache.emplace( iter.key(), iter.value() );
     } FC_CAPTURE_AND_RETHROW( (path) ) }
 
     void close()
     { try {
-        flush();
+        if( _ldb_path.valid() )
+        {
+            if( !_ldb_enabled ) toggle_leveldb( true );
+            _ldb.close();
+            _ldb_path = fc::optional<fc::path>();
+        }
         _cache.clear();
-        _ldb.close();
     } FC_CAPTURE_AND_RETHROW() }
 
-    void set_write_through( bool write_through )
+    void toggle_leveldb( const bool enabled )
     { try {
-        if( write_through == _cache_write_through )
+        FC_ASSERT( _ldb_path.valid() );
+        if( enabled == _ldb_enabled )
             return;
 
-        if( write_through )
-            flush();
-
-        _cache_write_through = write_through;
-    } FC_CAPTURE_AND_RETHROW( (write_through) ) }
-
-    void flush()
-    { try {
-        if( _cache_dirty_store.empty() && _cache_dirty_remove.empty() )
-            return;
-
-        auto batch = _ldb.create_batch();
-
-        for( const auto& key : _cache_dirty_store )
+        if( enabled )
         {
-            batch.store( key, _cache.at( key ) );
+            _ldb.open( *_ldb_path );
+            auto batch = _ldb.create_batch();
+            for( const auto& item : _cache )
+                batch.store( item.first, item.second );
+            batch.commit();
         }
-        _cache_dirty_store.clear();
-
-        for( const auto& key : _cache_dirty_remove )
+        else
         {
-            batch.remove( key );
+            _ldb.close();
+            fc::remove_all( *_ldb_path );
         }
-        _cache_dirty_remove.clear();
 
-        batch.commit();
-    } FC_CAPTURE_AND_RETHROW() }
+        _ldb_enabled = enabled;
+    } FC_CAPTURE_AND_RETHROW( (enabled) ) }
 
     void store( const K& key, const V& value )
     { try {
         _cache[ key ] = value;
-
-        if( _cache_write_through )
-        {
+        if( _ldb_enabled )
             _ldb.store( key, value );
-        }
-        else
-        {
-            _cache_dirty_remove.erase( key );
-            _cache_dirty_store.insert( key );
-        }
     } FC_CAPTURE_AND_RETHROW( (key)(value) ) }
 
     void remove( const K& key )
     { try {
         _cache.erase( key );
-
-        if( _cache_write_through )
-        {
+        if( _ldb_enabled )
             _ldb.remove( key );
-        }
-        else
-        {
-            _cache_dirty_store.erase( key );
-            _cache_dirty_remove.insert( key );
-        }
     } FC_CAPTURE_AND_RETHROW( (key) ) }
 
     auto empty()const -> decltype( _cache.empty() )

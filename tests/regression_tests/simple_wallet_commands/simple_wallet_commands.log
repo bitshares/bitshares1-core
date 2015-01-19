@@ -15,11 +15,24 @@ wallet (unlocked) >>> wallet_get_info
   "unlocked": true,
   "unlocked_until": "<d-ign></d-ign>",
   "unlocked_until_timestamp": "<d-ign></d-ign>",
-  "scan_progress": "0.00 %",
+  "scan_progress": "100.00 %",
   "version": "<d-ign></d-ign>"
 }
 wallet (unlocked) >>> wallet_set_automatic_backups false
 false
+wallet (unlocked) >>> help wallet_account_create
+Usage:
+wallet_account_create <account_name> [private_data]                                                   Add new account for receiving payments
+Add new account for receiving payments
+
+Parameters:
+  account_name (account_name, required): the name you will use to refer to this receive account
+  private_data (json_variant, optional, defaults to null): Extra data to store with this account record
+
+Returns:
+  public_key
+
+aliases: wallet_create_account, create_account
 wallet (unlocked) >>> wallet_account_create testaccount
 "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
 wallet (unlocked) >>> wallet_account_balance testaccount
@@ -41,14 +54,6 @@ Returns:
 aliases: public_keys
 wallet (unlocked) >>> wallet_account_list_public_keys testaccount
 [{
-    "hex": "02e310a74ab789949e7a8b17b0ae06a70cb414bdec78513375a572fb592d33c0d4",
-    "native_pubkey": "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra",
-    "native_address": "XTSFVXDozgCnWhF3w4efcv75jaVPkkMVbcKm",
-    "pts_normal_address": "PaWvEfxXFR1LWPEsVzWCGZPe7ESvNoPUpA",
-    "pts_compressed_address": "PvrSYijUNcwCsJca8UN8B5yERhTCW1a2PU",
-    "btc_normal_address": "13b96bGPVK4Gi7S28VrM7Y9arz26W3qtkr",
-    "btc_compressed_address": "1PvfQe3LcWz952oikyiH24jBBT2NdN3Faq"
-  },{
     "hex": "02d6a0351c151cf57938e0f540830cb390305081aed4a6f01ec42668d7b85f03eb",
     "native_pubkey": "XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX",
     "native_address": "XTSFtXy1oqCnZ5Sw5txgm2421smvzZ6jwVUM",
@@ -56,20 +61,20 @@ wallet (unlocked) >>> wallet_account_list_public_keys testaccount
     "pts_compressed_address": "PmBMQNvypoMaUTRQUqQNX7KgW1m9Vvrh1a",
     "btc_normal_address": "1PVzo73tnGMR3M6SpobJRbcEkbE4bd4iE3",
     "btc_compressed_address": "1EFaGJEr4hQWgBcZ7LkXN65dFmLKiCLdSb"
+  },{
+    "hex": "02e310a74ab789949e7a8b17b0ae06a70cb414bdec78513375a572fb592d33c0d4",
+    "native_pubkey": "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra",
+    "native_address": "XTSFVXDozgCnWhF3w4efcv75jaVPkkMVbcKm",
+    "pts_normal_address": "PaWvEfxXFR1LWPEsVzWCGZPe7ESvNoPUpA",
+    "pts_compressed_address": "PvrSYijUNcwCsJca8UN8B5yERhTCW1a2PU",
+    "btc_normal_address": "13b96bGPVK4Gi7S28VrM7Y9arz26W3qtkr",
+    "btc_compressed_address": "1PvfQe3LcWz952oikyiH24jBBT2NdN3Faq"
   }
 ]
 wallet (unlocked) >>> wallet_account_rename testaccount myaccount
 OK
 wallet (unlocked) >>> wallet_account_list_public_keys myaccount
 [{
-    "hex": "02e310a74ab789949e7a8b17b0ae06a70cb414bdec78513375a572fb592d33c0d4",
-    "native_pubkey": "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra",
-    "native_address": "XTSFVXDozgCnWhF3w4efcv75jaVPkkMVbcKm",
-    "pts_normal_address": "PaWvEfxXFR1LWPEsVzWCGZPe7ESvNoPUpA",
-    "pts_compressed_address": "PvrSYijUNcwCsJca8UN8B5yERhTCW1a2PU",
-    "btc_normal_address": "13b96bGPVK4Gi7S28VrM7Y9arz26W3qtkr",
-    "btc_compressed_address": "1PvfQe3LcWz952oikyiH24jBBT2NdN3Faq"
-  },{
     "hex": "02d6a0351c151cf57938e0f540830cb390305081aed4a6f01ec42668d7b85f03eb",
     "native_pubkey": "XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX",
     "native_address": "XTSFtXy1oqCnZ5Sw5txgm2421smvzZ6jwVUM",
@@ -77,6 +82,14 @@ wallet (unlocked) >>> wallet_account_list_public_keys myaccount
     "pts_compressed_address": "PmBMQNvypoMaUTRQUqQNX7KgW1m9Vvrh1a",
     "btc_normal_address": "1PVzo73tnGMR3M6SpobJRbcEkbE4bd4iE3",
     "btc_compressed_address": "1EFaGJEr4hQWgBcZ7LkXN65dFmLKiCLdSb"
+  },{
+    "hex": "02e310a74ab789949e7a8b17b0ae06a70cb414bdec78513375a572fb592d33c0d4",
+    "native_pubkey": "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra",
+    "native_address": "XTSFVXDozgCnWhF3w4efcv75jaVPkkMVbcKm",
+    "pts_normal_address": "PaWvEfxXFR1LWPEsVzWCGZPe7ESvNoPUpA",
+    "pts_compressed_address": "PvrSYijUNcwCsJca8UN8B5yERhTCW1a2PU",
+    "btc_normal_address": "13b96bGPVK4Gi7S28VrM7Y9arz26W3qtkr",
+    "btc_compressed_address": "1PvfQe3LcWz952oikyiH24jBBT2NdN3Faq"
   }
 ]
 wallet (unlocked) >>> wallet_list_my_accounts
@@ -135,7 +148,7 @@ wallet (unlocked) >>> wallet_get_info
   "unlocked": true,
   "unlocked_until": "<d-ign></d-ign>",
   "unlocked_until_timestamp": "<d-ign></d-ign>",
-  "scan_progress": "0.00 %",
+  "scan_progress": "100.00 %",
   "version": "<d-ign></d-ign>"
 }
 wallet (unlocked) >>> wallet_close

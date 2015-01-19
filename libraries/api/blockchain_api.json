@@ -114,7 +114,7 @@
             {
               "name" : "first_account_name",
               "type" : "account_name",
-              "description" : "the first account name to include. May be either a name or an index",
+              "description" : "the first account name to include",
               "default_value" : ""
             },
             {
@@ -299,14 +299,14 @@
             {
               "name" : "first_balance_id",
               "type" : "string",
-              "description" : "prefix of the first balance id to start at",
+              "description" : "the first balance id to start at",
               "default_value" : ""
             },
             {
               "name" : "limit",
               "type" : "uint32_t",
               "description" : "the maximum number of items to list",
-              "default_value" : 4
+              "default_value" : 20
             }
         ],
         "is_const" : true,

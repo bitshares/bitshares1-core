@@ -156,6 +156,7 @@ wallet_account_transaction_history [account_name] [asset_symbol] [limit] [start_
 wallet_account_update_active_key <account_to_update> <pay_from_account> [new_active_key]            
 wallet_account_update_private_data <account_name> [private_data]                                    
 wallet_account_update_registration <account_name> <pay_from_account> [public_data] [delegate_pay_rate] 
+wallet_account_vesting_balances [account_name]                                                      
 wallet_account_vote_summary [account_name]                                                          
 wallet_account_yield [account_name]                                                                 
 wallet_add_contact_account <account_name> <account_key>                                             
@@ -171,8 +172,9 @@ wallet_balance_set_vote_info <balance_id> [voter_address] [vote_method] [sign_an
 wallet_builder_add_signature <builder> [broadcast] [builder_path]                                   
 wallet_builder_file_add_signature [broadcast] [builder_path]                                        
 wallet_burn <amount_to_burn> <asset_symbol> <from_account_name> <for_or_against> <to_account_name> [public_message] [anonymous] 
+wallet_cancel_scan                                                                                  
 wallet_change_passphrase <passphrase>                                                               
-wallet_check_vote_proportion <account>                                                              
+wallet_check_vote_status <account>                                                                  
 wallet_close                                                                                        
 wallet_collect_genesis_balances <account_name>                                                      
 wallet_collect_vested_balances <account_name>                                                       
@@ -180,6 +182,7 @@ wallet_create <wallet_name> <new_passphrase> [brain_key]
 wallet_delegate_set_block_production <delegate_name> <enabled>                                      
 wallet_delegate_update_signing_key <authorizing_account_name> <delegate_name> <signing_key>         
 wallet_delegate_withdraw_pay <delegate_name> <to_account_name> <amount_to_withdraw>                 
+wallet_dump_account_private_key <account_name> <key_type>                                           
 wallet_dump_private_key <input>                                                                     
 wallet_escrow_summary [account_name]                                                                
 wallet_generate_brain_seed                                                                          
@@ -239,7 +242,7 @@ wallet_release_escrow <pay_fee_with_account_name> <escrow_balance_id> <released_
 wallet_remove_contact_account <account_name>                                                        
 wallet_remove_transaction <transaction_id>                                                          
 wallet_repair_records [collecting_account_name]                                                     
-wallet_rescan_blockchain [first_block_number] [num_blocks] [fast_scan]                              
+wallet_rescan_blockchain [start_block_num] [limit]                                                  
 wallet_scan_transaction <transaction_id> [overwrite_existing]                                       
 wallet_scan_transaction_experimental <transaction_id> [overwrite_existing]                          
 wallet_set_automatic_backups <enabled>                                                              
