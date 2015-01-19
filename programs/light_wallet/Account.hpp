@@ -16,6 +16,7 @@ class Account : public QObject
    Q_PROPERTY(bool isRegistered READ isRegistered NOTIFY isRegisteredChanged)
    Q_PROPERTY(QDateTime registrationDate READ registrationDate NOTIFY registrationDateChanged)
    Q_PROPERTY(QQmlListProperty<Balance> balances READ balances NOTIFY balancesChanged)
+   Q_PROPERTY(QStringList availableAssets READ availableAssets NOTIFY balancesChanged STORED false)
 
    bts::light_wallet::light_wallet* m_wallet;
 
@@ -46,6 +47,8 @@ public:
       return m_registrationDate;
    }
    QQmlListProperty<Balance> balances();
+   Q_INVOKABLE qreal balance(QString symbol);
+   Q_INVOKABLE QStringList availableAssets();
 
    Q_INVOKABLE QList<QObject*> transactionHistory(QString asset_symbol);
 

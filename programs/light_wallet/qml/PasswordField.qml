@@ -85,8 +85,13 @@ RowLayout {
    }
    Button {
       id: button
-      text: qsTr("Show")
+      height: units.dp(48)
       Layout.preferredHeight: passwordText.height / 1.7
-      elevation: 1
+
+      Icon {
+         name: "image/remove_red_eye"
+         anchors.centerIn: parent
+         size: units.dp(32)
+      }
    }
 }

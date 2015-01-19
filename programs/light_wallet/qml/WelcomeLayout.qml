@@ -25,8 +25,7 @@ Page {
          anchors.horizontalCenter: parent.horizontalCenter
          horizontalAlignment: Text.AlignHCenter
          text: qsTr("Welcome back")
-         color: visuals.textColor
-         font.pixelSize: units.dp(28)
+         style: "headline"
          wrapMode: Text.WrapAtWordBoundaryOrAnywhere
       }
       PasswordField {
@@ -45,7 +44,6 @@ Page {
       Button {
          id: openButton
          text: qsTr("Open")
-         elevation: 1
          width: passwordField.width
          onClicked: {
             if( passwordField.password.length < 1 ) {

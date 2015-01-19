@@ -22,6 +22,7 @@ Page {
       ListView {
          id: historyList
          model: wallet.account.transactionHistory(assetSymbol)
+         spacing: visuals.margins / 2
 
          Connections {
             target: wallet
@@ -32,29 +33,15 @@ Page {
             width: parent.width - visuals.margins * 2
             height: transactionSummary.height
             anchors.horizontalCenter: parent.horizontalCenter
+            radius: units.dp(5)
             property var trx: model
 
-            Rectangle { width: parent.width; height: 1; color: "darkgrey"; visible: index }
             ColumnLayout {
                id: transactionSummary
                width: parent.width
 
-               Item { Layout.preferredHeight: visuals.margins }
-               RowLayout {
-                  width: parent.width
+               property string timestamp: model.modelData.timestamp
 
-                  Item { Layout.preferredWidth: visuals.margins }
-                  Label {
-                     text: qsTr("Transaction #") + trx.modelData.id.substring(0, 8)
-                     font.pixelSize: units.dp(20)
-                     Layout.fillWidth: true
-                  }
-                  Label {
-                     text: model.modelData.timestamp
-                     font.pixelSize: units.dp(20)
-                  }
-                  Item { Layout.preferredWidth: visuals.margins }
-               }
                Item { Layout.preferredHeight: visuals.margins }
                Repeater {
                   id: ledgerRepeater
@@ -66,21 +53,23 @@ Page {
                      Item { Layout.preferredWidth: visuals.margins }
                      RoboHash {
                         name: incoming? sender : receiver
-                        Layout.fillWidth: true
+                        Layout.preferredWidth: units.dp(100)
                      }
-                     Label {
-                        text: incoming? "→" : "←"
-                        font.pixelSize: units.dp(16)
-                        Layout.minimumWidth: implicitWidth
+                     Column {
+                        Layout.fillWidth: true
+                        Label {
+                           text: memo
+                           font.pixelSize: units.dp(16)
+                        }
+                        Item { width: 1; height: units.dp(8) }
+                        Label {
+                           text: (index === 0)? (transactionSummary.timestamp) : ""
+                           font.pixelSize: units.dp(16)
+                        }
                      }
                      Label {
                         text: amount + " " + symbol
                         color: incoming? "green" : "red"
-                        font.pixelSize: units.dp(16)
-                     }
-                     Item { Layout.fillWidth: true }
-                     Label {
-                        text: memo
                         font.pixelSize: units.dp(16)
                      }
                      Item { Layout.preferredWidth: visuals.margins }
@@ -90,6 +79,39 @@ Page {
             }
             Ink { anchors.fill: parent }
          }
+
+         footer: View {
+            height: balanceLabel.height + visuals.margins*2
+            width: parent.width - visuals.margins*2
+            x: visuals.margins
+            backgroundColor: Theme.primaryColor
+            z: 2
+            elevation: 2
+            elevationInverted: true
+
+            Label {
+               anchors.verticalCenter: parent.verticalCenter
+               x: visuals.margins
+               text: qsTr("Balance:")
+               color: "white"
+               font.pixelSize: units.dp(24)
+            }
+            Label {
+               id: balanceLabel
+               anchors.verticalCenter: parent.verticalCenter
+               anchors.right: parent.right
+               anchors.rightMargin: visuals.margins
+               text: wallet.account.balance(assetSymbol) + " " + assetSymbol
+               color: "white"
+               font.pixelSize: units.dp(24)
+
+               Connections {
+                  target: wallet
+                  onSynced: balanceLabel.text = wallet.account.balance(assetSymbol) + " " + assetSymbol
+               }
+            }
+         }
+         footerPositioning: ListView.PullBackFooter
       }
    }
 }

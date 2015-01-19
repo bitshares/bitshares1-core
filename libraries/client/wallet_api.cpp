@@ -1048,17 +1048,16 @@ optional<string> detail::client_impl::wallet_dump_private_key( const string& inp
 optional<string> detail::client_impl::wallet_dump_account_private_key( const string& account_name,
                                                                        const account_key_type& key_type )const
 { try {
-    const owallet_account_record account_record = _wallet->get_account( account_name );
-    FC_ASSERT( account_record.valid() );
+    const auto account_record = _wallet->get_account( account_name );
     switch( key_type )
     {
         case owner_key:
-            return utilities::key_to_wif( _wallet->get_private_key( account_record->owner_address() ) );
+            return utilities::key_to_wif( _wallet->get_private_key( account_record.owner_address() ) );
         case active_key:
-            return utilities::key_to_wif( _wallet->get_private_key( account_record->active_address() ) );
+            return utilities::key_to_wif( _wallet->get_private_key( account_record.active_address() ) );
         case signing_key:
-            FC_ASSERT( account_record->is_delegate() );
-            return utilities::key_to_wif( _wallet->get_private_key( account_record->signing_address() ) );
+            FC_ASSERT( account_record.is_delegate() );
+            return utilities::key_to_wif( _wallet->get_private_key( account_record.signing_address() ) );
         default:
             return optional<string>();
     }
