@@ -489,19 +489,6 @@ namespace bts { namespace blockchain {
        store( record );
    } FC_CAPTURE_AND_RETHROW( (record) ) }
 
-   bool chain_interface::is_banned_asset( const asset_record& record )
-   { try {
-       if( record.symbol.substr(0, 3) == "BIT" )
-       {
-           auto orec = get_asset_record( record.symbol.substr(3) );
-           if( orec.valid() && orec->is_market_issued() )
-           {
-               return true;
-           }
-       }
-       return false;
-   } FC_CAPTURE_AND_RETHROW( (record) ) }
-
    obalance_record chain_interface::get_balance_record( const balance_id_type& id )const
    { try {
        return lookup<balance_record>( id );

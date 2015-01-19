@@ -34,7 +34,6 @@ namespace bts { namespace blockchain {
       asset_id_type  asset_id;
   };
 
-
   /**
    *  A price is the result of dividing 2 asset classes and has
    *  the fixed point format 64.64 and -1 equals infinite.
