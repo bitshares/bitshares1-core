@@ -1,0 +1,133 @@
+default (unlocked) >>> wallet_import_private_key "5JMnSU8bfBcu67oA9KemNm5jbs9RTp2eBHqxoR53WWyB4CH2QJF" account1 true false
+"account1"
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_account_balance account1
+ACCOUNT                         BALANCE                     
+============================================================
+account1                        2,000.00000 XTS             
+default (unlocked) >>> wallet_list_accounts
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
+account1                           XTS5qLJBGDBFX7BpBgs17tynUfvDpQGiMJGoXafF3Ro5JjvdR1n1j           NO                    NO             0         
+default (unlocked) >>> wallet_account_set_approval mydelegate 1
+1
+default (unlocked) >>> wallet_list_accounts
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
+account1                           XTS5qLJBGDBFX7BpBgs17tynUfvDpQGiMJGoXafF3Ro5JjvdR1n1j           NO                    NO             0         
+mydelegate *                       XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX           <d-ign>       </d-ign>NO             1         
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> help blockchain_get_slate
+Usage:
+blockchain_get_slate <slate>                                                                          Retrieves a map of delegate IDs and names defined by the given slate ID or recommending account
+Retrieves a map of delegate IDs and names defined by the given slate ID or recommending account
+
+Parameters:
+  slate (string, required): slate ID or recommending account name for which to retrieve the slate of delegates
+
+Returns:
+  map<account_id_type, string>
+
+aliases: get_slate
+default (unlocked) >>> blockchain_get_slate mydelegate
+[[
+    2,
+    "delegate1"
+  ],[
+    3,
+    "delegate2"
+  ],[
+    4,
+    "delegate3"
+  ],[
+    6,
+    "delegate5"
+  ],[
+    11,
+    "delegate10"
+  ],[
+    21,
+    "delegate20"
+  ],[
+    41,
+    "delegate40"
+  ]
+]
+default (unlocked) >>> wallet_transfer 100 XTS account1 account0 "vote_all" vote_all
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   account1            account0            100.00000 XTS           vote_all                                    0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_transfer 100 XTS account1 account0 "vote_recommended" vote_recommended
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   account1            account0            100.00000 XTS           vote_recommended                            0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_account_balance account1
+ACCOUNT                         BALANCE                     
+============================================================
+account1                        1,799.00000 XTS             
+default (unlocked) >>> blockchain_get_slate mydelegate
+[[
+    2,
+    "delegate1"
+  ],[
+    6,
+    "delegate5"
+  ],[
+    11,
+    "delegate10"
+  ],[
+    21,
+    "delegate20"
+  ],[
+    41,
+    "delegate40"
+  ]
+]
+default (unlocked) >>> wallet_transfer 100 XTS account1 account0 "vote_recommended #2" vote_recommended
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   account1            account0            100.00000 XTS           vote_recommended #2                         0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_account_balance account1
+ACCOUNT                         BALANCE                     
+============================================================
+account1                        1,698.50000 XTS             
+default (unlocked) >>> history
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+<d-ign></d-ign>4         delegate0           account1            2,000.00000 XTS                                                     2,000.00000 XTS         0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>9         account1            account0            100.00000 XTS           vote_all                                    1,899.50000 XTS         0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>11        account1            account0            100.00000 XTS           vote_recommended                            1,799.00000 XTS         0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>15        account1            account0            100.00000 XTS           vote_recommended #2                         1,698.50000 XTS         0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> quit
