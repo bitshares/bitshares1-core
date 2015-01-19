@@ -6,7 +6,6 @@ import "utils.js" as Utils
 import org.BitShares.Types 1.0
 
 import Material 0.1
-import Material.Transitions 0.1 as T
 
 ApplicationWindow {
    id: window
@@ -39,7 +38,7 @@ ApplicationWindow {
 
       connectToServer()
    }
-   pageStack.onPagePopped: if( pageStack.count === 1 ) wallet.lockWallet()
+   pageStack.onPopped: if( pageStack.count === 1 ) wallet.lockWallet()
 
    theme {
       primaryColor: "#2196F3"
@@ -100,9 +99,6 @@ ApplicationWindow {
    WelcomeLayout {
       id: mainPage
       title: qsTr("Welcome to BitShares")
-      anchors.fill: parent
-      //Make a null transition for initial page; there's no reason to animate the first page appearing.
-      transition: T.PageTransition {function transitionTo(){}}
       onPasswordEntered: {
          if( wallet.unlocked )
             return proceedIfUnlocked()
@@ -134,7 +130,6 @@ ApplicationWindow {
       id: assetsUi
 
       AssetsLayout {
-         anchors.fill: parent
          onLockRequested: {
             wallet.lockWallet()
             uiStack.pop()
