@@ -1006,6 +1006,7 @@ namespace bts { namespace blockchain {
 
             _block_num_to_id_db.store( block_data.block_num, block_id );
 
+            // NOTE: The following hardforks cannot be rewound
             if( block_data.block_num == BTS_V0_4_16_FORK_BLOCK_NUM )
             {
                 auto base_asset_record = self->get_asset_record( asset_id_type( 0 ) );
