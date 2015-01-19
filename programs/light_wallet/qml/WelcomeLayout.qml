@@ -25,8 +25,7 @@ Page {
          anchors.horizontalCenter: parent.horizontalCenter
          horizontalAlignment: Text.AlignHCenter
          text: qsTr("Welcome back")
-         color: visuals.textColor
-         font.pixelSize: units.dp(28)
+         style: "headline"
          wrapMode: Text.WrapAtWordBoundaryOrAnywhere
       }
       PasswordField {

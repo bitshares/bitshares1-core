@@ -34,7 +34,7 @@ Page {
             model: wallet.account.balances
             delegate: Rectangle {
                width: parent.width
-               height: assetRow.height + visuals.spacing/2
+               height: assetRow.height + visuals.margins
                color: index % 2? "transparent" : "#11000000"
 
                Rectangle { width: parent.width; height: 1; color: "darkgrey"; visible: index }
@@ -45,13 +45,11 @@ Page {
 
                   Item { Layout.preferredWidth: visuals.margins }
                   Label {
-                     color: visuals.textColor
                      text: amount
                      font.pixelSize: units.dp(32)
                   }
                   Item { Layout.fillWidth: true }
                   Label {
-                     color: visuals.textColor
                      text: symbol
                      font.pixelSize: units.dp(32)
                   }

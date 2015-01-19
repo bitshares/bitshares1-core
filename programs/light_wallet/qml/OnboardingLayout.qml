@@ -67,13 +67,13 @@ MainView {
       id: layout
       anchors.centerIn: parent
       width: parent.width - visuals.margins * 2
+      spacing: visuals.margins
 
       Label {
          anchors.horizontalCenter: parent.horizontalCenter
          horizontalAlignment: Text.AlignHCenter
          text: qsTr("Welcome to BitShares")
-         color: visuals.textColor
-         font.pixelSize: units.dp(28)
+         style: "headline"
          wrapMode: Text.WrapAtWordBoundaryOrAnywhere
       }
       Label {
@@ -82,8 +82,7 @@ MainView {
                     "This password can be short and easy to remember — we'll make a better one later.")
          anchors.horizontalCenter: parent.horizontalCenter
          width: parent.width
-         color: visuals.lightTextColor
-         font.pixelSize: visuals.textBaseSize
+         style: "subheading"
          wrapMode: Text.WrapAtWordBoundaryOrAnywhere
       }
       ColumnLayout {

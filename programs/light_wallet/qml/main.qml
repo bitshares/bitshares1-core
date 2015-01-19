@@ -54,18 +54,7 @@ ApplicationWindow {
    QtObject {
       id: visuals
 
-      property color textColor: "#535353"
-      property color lightTextColor: "#757575"
-      property color buttonColor: "#28A9F6"
-      property color buttonHoverColor: "#2BB4FF"
-      property color buttonPressedColor: "#264D87"
-      property color buttonTextColor: "white"
-
-      property real spacing: 40
       property real margins: 20
-
-      property real textBaseSize: window.orientation === Qt.PortraitOrientation?
-                                     window.height * .02 : window.width * .03
    }
    Timer {
       id: refreshPoller
