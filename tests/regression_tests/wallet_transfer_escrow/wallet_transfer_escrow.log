@@ -117,7 +117,7 @@ default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> wallet_escrow_summary sender
 [{
-    "creating_transaction_id": "0000000000000000000000000000000000000000",
+    "creating_transaction_id": "e4d1f3d76c0470fc238fd35df01cf139a7636ff2",
     "balance_id": "XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3",
     "balance": {
       "amount": 100000000,
@@ -131,7 +131,7 @@ default (unlocked) >>> wallet_escrow_summary sender
 ]
 default (unlocked) >>> wallet_escrow_summary receiver
 [{
-    "creating_transaction_id": "0000000000000000000000000000000000000000",
+    "creating_transaction_id": "e4d1f3d76c0470fc238fd35df01cf139a7636ff2",
     "balance_id": "XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3",
     "balance": {
       "amount": 100000000,
@@ -195,7 +195,7 @@ default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> wallet_escrow_summary sender
 [{
-    "creating_transaction_id": "0000000000000000000000000000000000000000",
+    "creating_transaction_id": "e4d1f3d76c0470fc238fd35df01cf139a7636ff2",
     "balance_id": "XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3",
     "balance": {
       "amount": 80000000,
@@ -209,7 +209,7 @@ default (unlocked) >>> wallet_escrow_summary sender
 ]
 default (unlocked) >>> wallet_escrow_summary receiver
 [{
-    "creating_transaction_id": "0000000000000000000000000000000000000000",
+    "creating_transaction_id": "e4d1f3d76c0470fc238fd35df01cf139a7636ff2",
     "balance_id": "XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3",
     "balance": {
       "amount": 80000000,
@@ -276,7 +276,7 @@ default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> wallet_escrow_summary sender
 [{
-    "creating_transaction_id": "0000000000000000000000000000000000000000",
+    "creating_transaction_id": "e4d1f3d76c0470fc238fd35df01cf139a7636ff2",
     "balance_id": "XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3",
     "balance": {
       "amount": 70000000,
@@ -290,7 +290,7 @@ default (unlocked) >>> wallet_escrow_summary sender
 ]
 default (unlocked) >>> wallet_escrow_summary receiver
 [{
-    "creating_transaction_id": "0000000000000000000000000000000000000000",
+    "creating_transaction_id": "e4d1f3d76c0470fc238fd35df01cf139a7636ff2",
     "balance_id": "XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3",
     "balance": {
       "amount": 70000000,
@@ -358,7 +358,7 @@ default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> wallet_escrow_summary sender
 [{
-    "creating_transaction_id": "0000000000000000000000000000000000000000",
+    "creating_transaction_id": "e4d1f3d76c0470fc238fd35df01cf139a7636ff2",
     "balance_id": "XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3",
     "balance": {
       "amount": 36700000,
@@ -372,7 +372,7 @@ default (unlocked) >>> wallet_escrow_summary sender
 ]
 default (unlocked) >>> wallet_escrow_summary receiver
 [{
-    "creating_transaction_id": "0000000000000000000000000000000000000000",
+    "creating_transaction_id": "e4d1f3d76c0470fc238fd35df01cf139a7636ff2",
     "balance_id": "XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3",
     "balance": {
       "amount": 36700000,

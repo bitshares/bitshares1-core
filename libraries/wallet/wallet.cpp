@@ -4000,6 +4000,8 @@ namespace detail {
              escrow_summary sum;
              sum.balance_id = record.id();
              sum.balance    = record.get_spendable_balance( time_point_sec() );
+             if( record.meta_data.is_object() )
+                sum.creating_transaction_id = record.meta_data.get_object()["creating_transaction_id"].as<transaction_id_type>();
 
              if( sender_key_record )
              {
