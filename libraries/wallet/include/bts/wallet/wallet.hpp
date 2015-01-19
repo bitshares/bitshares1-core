@@ -471,15 +471,17 @@ namespace bts { namespace wallet {
           *
           *  Requires the user have 6003.4 USD
           */
-         wallet_transaction_record submit_relative_bid(const string& from_account_name,
-                 const string& real_quantity,
-                 const string& quantity_symbol,
-                 const string& relative_price_per_unit,
-                 const string& quote_symbol,
-                 const string& limit,
-                 const string& funding,
+         wallet_transaction_record sell(
+                 const string& from_account,
+                 const string& sell_quantity,
+                 const string& sell_quantity_symbol,
+                 const string& price_limit,
+                 const string& price_symbol,
+                 const string& relative_percent,
+                 bool allow_stupid,
                  bool sign
                  );
+
          /**
           *  ie: submit_ask( 10 BTC at 600.34 USD per BTC )
           *

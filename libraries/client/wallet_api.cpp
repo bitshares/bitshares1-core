@@ -1355,7 +1355,7 @@ account_balance_summary_type client_impl::wallet_account_yield( const string& ac
   return _wallet->get_account_yield( account_name );
 }
 
-wallet_transaction_record client_impl::wallet_market_sell(
+wallet_transaction_record client_impl::wallet_market_sell2(
        const  string& from_account,
        double quantity,
        const  string& quantity_symbol,
@@ -1406,6 +1406,7 @@ wallet_transaction_record client_impl::wallet_market_sell(
    wallet_transaction_record record;
    return record;
 }
+
 wallet_transaction_record client_impl::wallet_market_submit_bid(
        const string& from_account,
        const string& quantity,
@@ -1427,16 +1428,17 @@ wallet_transaction_record client_impl::wallet_market_submit_bid(
   network_broadcast_transaction( record.trx );
   return record;
 }
-wallet_transaction_record client_impl::wallet_market_submit_relative_bid(
+wallet_transaction_record client_impl::wallet_market_sell(
        const string& from_account,
-       const string& quantity,
-       const string& quantity_symbol,
-       const string& relative_quote_price,
-       const string& quote_symbol,
-       const string& limit_price,
-       const string& funding )
+       const string& sell_quantity,
+       const string& sell_quantity_symbol,
+       const string& price_limit,
+       const string& price_symbol,
+       const string& relative_price,
+       bool allow_stupid
+       )
 {
-  auto record = _wallet->submit_relative_bid( from_account, quantity, quantity_symbol, relative_quote_price, quote_symbol, limit_price, funding, true );
+  auto record = _wallet->sell( from_account, sell_quantity, sell_quantity_symbol, price_limit, price_symbol, relative_price, allow_stupid, true );
   _wallet->cache_transaction( record );
   network_broadcast_transaction( record.trx );
   return record;
