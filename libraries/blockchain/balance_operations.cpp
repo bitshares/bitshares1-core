@@ -103,7 +103,7 @@ namespace bts { namespace blockchain {
        if( this->amount <= 0 )
           FC_CAPTURE_AND_THROW( negative_deposit, (amount) );
 
-       if( eval_state._current_state->get_head_block_num() >= DVS_V0_5_0_FORK_BLOCK_NUM )
+       if( eval_state._current_state->get_head_block_num() >= BTS_V0_5_0_FORK_BLOCK_NUM )
        {
            switch( withdraw_condition_types( this->condition.type ) )
            {
@@ -152,7 +152,7 @@ namespace bts { namespace blockchain {
 
        auto asset_rec = eval_state._current_state->get_asset_record( cur_record->condition.asset_id );
 
-       if( eval_state._current_state->get_head_block_num() >= DVS_V0_5_0_FORK_BLOCK_NUM )
+       if( eval_state._current_state->get_head_block_num() >= BTS_V0_5_0_FORK_BLOCK_NUM )
        {
            if( asset_rec->is_market_issued() ) FC_ASSERT( cur_record->condition.slate_id == 0 );
        }
@@ -214,7 +214,7 @@ namespace bts { namespace blockchain {
 
             case withdraw_vesting_type:
             {
-                FC_ASSERT( eval_state._current_state->get_head_block_num() >= DVS_V0_5_0_FORK_BLOCK_NUM );
+                FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_5_0_FORK_BLOCK_NUM );
 
                 const withdraw_vesting condition = current_balance_record->condition.as<withdraw_vesting>();
                 const address owner = condition.owner;
