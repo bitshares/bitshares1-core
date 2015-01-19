@@ -140,12 +140,19 @@ ApplicationWindow {
             uiStack.pop()
          }
          onOpenHistory: window.pageStack.push(historyUi, {"accountName": account, "assetSymbol": symbol})
+         onOpenTransfer: window.pageStack.push(transferUi)
       }
    }
    Component {
       id: historyUi
 
       HistoryLayout {
+      }
+   }
+   Component {
+      id: transferUi
+
+      TransferLayout {
       }
    }
    Loader {

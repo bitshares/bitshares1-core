@@ -13,6 +13,7 @@ Page {
 
    signal lockRequested
    signal openHistory(string account, string symbol)
+   signal openTransfer()
 
    ColumnLayout {
       id: assetsLayout
@@ -71,5 +72,10 @@ Page {
             }
          }
       }
+   }
+
+   FloatingActionButton {
+      iconName: "content/add"
+      onTriggered: openTransfer()
    }
 }

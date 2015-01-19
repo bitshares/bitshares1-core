@@ -6,7 +6,7 @@ import Material 0.1
 
 Column {
    property alias name: robotName.text
-   property alias preferredWidth: robotName.implicitWidth
+   readonly property alias preferredWidth: robotName.implicitWidth
 
    function __imageSource() {
       if( name.toLowerCase() === name )
@@ -30,10 +30,10 @@ Column {
    }
    Label {
       id: robotName
-      Layout.fillWidth: true
-      Layout.maximumWidth: implicitWidth
       font.pixelSize: units.dp(16)
       elide: Text.ElideRight
       width: Math.min(parent.width, implicitWidth)
+      horizontalAlignment: Text.AlignHCenter
+      anchors.horizontalCenter: roboHash.horizontalCenter
    }
 }

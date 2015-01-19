@@ -60,6 +60,15 @@ qreal Account::balance(QString symbol)
    return m_wallet->balance()[convert(symbol)];
 }
 
+QStringList Account::availableAssets()
+{
+   QStringList assets;
+   for( auto balance : m_wallet->balance() )
+      if( balance.second > 0 )
+         assets.append(convert(balance.first));
+   return assets;
+}
+
 QList<QObject*> Account::transactionHistory(QString asset_symbol)
 {
    QList<QObject*> history;

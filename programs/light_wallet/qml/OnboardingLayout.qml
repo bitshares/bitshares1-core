@@ -91,7 +91,7 @@ MainView {
 
          TextField {
             id: nameField
-            inputMethodHints: Qt.ImhLowercaseOnly
+            inputMethodHints: Qt.ImhLowercaseOnly | Qt.ImhLatinOnly
             placeholderText: qsTr("Pick a Username")
             font.pixelSize: units.dp(20)
             Layout.fillWidth: true
@@ -113,7 +113,6 @@ MainView {
          Button {
             id: openButton
             text: qsTr("Begin")
-            elevation: 1
             Layout.fillWidth: true
             Layout.preferredHeight: passwordField.height
 

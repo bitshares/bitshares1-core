@@ -45,7 +45,6 @@ Page {
       Button {
          id: openButton
          text: qsTr("Open")
-         elevation: 1
          width: passwordField.width
          onClicked: {
             if( passwordField.password.length < 1 ) {
