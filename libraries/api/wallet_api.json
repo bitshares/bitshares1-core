@@ -1210,13 +1210,13 @@
             },
             {
                 "name": "amount_to_sender",
-                "type": "share_type",
+                "type": "real_amount",
                 "description": "Amount to release back to the sender.",
                 "default_value": 0
             },
             {
                 "name": "amount_to_receiver",
-                "type": "share_type",
+                "type": "real_amount",
                 "description": "Amount to release to receiver.",
                 "default_value": 0
             }
