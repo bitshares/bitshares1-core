@@ -210,7 +210,7 @@ namespace bts { namespace blockchain {
            FC_CAPTURE_AND_THROW( invalid_transaction_expiration, (trx_arg)(_current_state->now()) );
 
         if( _current_state->is_known_transaction( trx_arg ) )
-           FC_CAPTURE_AND_THROW( duplicate_transaction, (trx_arg.id()) );
+           FC_CAPTURE_AND_THROW( duplicate_transaction, (trx.id()) );
 
         if( !_skip_signature_check )
         {
@@ -234,6 +234,8 @@ namespace bts { namespace blockchain {
         post_evaluate();
         validate_required_fee();
         update_delegate_votes();
+
+        _current_state->store_transaction( trx.id(), transaction_record( transaction_location(), *this ) );
       }
       catch ( const fc::exception& e )
       {
