@@ -688,12 +688,15 @@ namespace bts { namespace blockchain {
                transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_state.get() );
                trx_eval_state->evaluate( trx, _skip_signature_verification );
 
+               const transaction_id_type& trx_id = trx.id();
+               otransaction_record record = pending_state->lookup<transaction_record>( trx_id );
+               FC_ASSERT( record.valid() );
+               record->chain_location = transaction_location( block.block_num, trx_num );
+               pending_state->store_transaction( trx_id, *record );
+
                // TODO:  capture the evaluation state with a callback for wallets...
                // summary.transaction_states.emplace_back( std::move(trx_eval_state) );
 
-               transaction_location trx_loc( block.block_num, trx_num );
-               transaction_record record( trx_loc, *trx_eval_state);
-               pending_state->store_transaction( trx.id(), record );
                ++trx_num;
             }
          } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_num",trx_num) )

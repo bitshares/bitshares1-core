@@ -217,7 +217,7 @@ namespace bts { namespace blockchain {
         if( _current_state->get_head_block_num() >= BTS_V0_4_26_FORK_BLOCK_NUM )
         {
             if( _current_state->is_known_transaction( trx_arg ) )
-               FC_CAPTURE_AND_THROW( duplicate_transaction, (trx_arg.id()) );
+               FC_CAPTURE_AND_THROW( duplicate_transaction, (trx.id()) );
         }
 
         if( !_skip_signature_check )
@@ -242,6 +242,8 @@ namespace bts { namespace blockchain {
         post_evaluate();
         validate_required_fee();
         update_delegate_votes();
+
+        _current_state->store_transaction( trx.id(), transaction_record( transaction_location(), *this ) );
       }
       catch ( const fc::exception& e )
       {
