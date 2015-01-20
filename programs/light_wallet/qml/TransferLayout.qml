@@ -7,32 +7,31 @@ import Material 0.1
 Page {
    title: "Transfer"
    
-   Item {
+   RowLayout {
       id: hashBar
-      y: visuals.margins
-      width: parent.width
-      height: amountLabel.y + amountLabel.height + visuals.margins
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.right:  parent.right
+      anchors.margins: visuals.margins
 
       RoboHash {
          name: wallet.account.name
          x: visuals.margins
-         width: Math.min(units.dp(110), preferredWidth)
-      }
-      Label {
-         id: amountLabel
-         anchors.horizontalCenter: parent.horizontalCenter
-         anchors.top: recipientHash.bottom
-         style: "display1"
-         color: "red"
-         text: "1,000,000.0001 XTS"
+         Layout.fillWidth: true
       }
       RoboHash {
          id: recipientHash
          name: toNameField.text? toNameField.text : "Unknown"
-         width: Math.min(units.dp(110), preferredWidth)
-         anchors.right: parent.right
-         anchors.rightMargin: visuals.margins
+         Layout.fillWidth: true
       }
+   }
+   Label {
+      id: amountLabel
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.top: hashBar.bottom
+      style: "display1"
+      color: "red"
+      text: Number(amountField.text) + " " + assetSymbol.text
    }
 
    Rectangle {
@@ -40,7 +39,7 @@ Page {
       color: "darkgrey";
       height: 1;
       width: parent.width;
-      y: hashBar.y + hashBar.height + visuals.margins
+      y: amountLabel.y + amountLabel.height + visuals.margins
    }
 
    Item {
@@ -110,7 +109,36 @@ Page {
          font.pixelSize: units.dp(12)
          anchors.top: amountRow.bottom
          anchors.right: amountRow.right
-         text: qsTr("Available balance: ") + wallet.account.balance(assetSymbol.text) + " " + assetSymbol.text
+         text: {
+            var fee = wallet.getFee(assetSymbol.text)
+            return qsTr("Available balance: ") + wallet.account.balance(assetSymbol.text) + " " + assetSymbol.text +
+                  "\n" + qsTr("Transaction fee: ") + fee.amount + " " + fee.symbol
+         }
+      }
+      TextField {
+         id: memoField
+         width: parent.width
+         maximumLength: wallet.maxMemoSize
+         placeholderText: qsTr("Memo")
+         floatingLabel: true
+         font.pixelSize: units.dp(20)
+         anchors.top: amountRow.bottom
+         anchors.margins: units.dp(3)
+      }
+      Row {
+         anchors {
+            right: parent.right
+            bottom: parent.bottom
+         }
+         spacing: visuals.margins
+
+         Button {
+            text: qsTr("Cancel")
+            onClicked: pop()
+         }
+         Button {
+            text: qsTr("Send")
+         }
       }
    }
 }

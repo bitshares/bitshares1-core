@@ -6,7 +6,6 @@ import Material 0.1
 
 Column {
    property alias name: robotName.text
-   property real preferredWidth: Math.max(robotName.implicitWidth, roboHash.width)
 
    function __imageSource() {
       if( name.toLowerCase() === name )
@@ -38,7 +37,7 @@ Column {
       id: robotName
       font.pixelSize: units.dp(16)
       elide: Text.ElideRight
-      width: Math.min(parent.width, implicitWidth)
+      Layout.minimumWidth: units.dp(64)
       horizontalAlignment: Text.AlignHCenter
       anchors.horizontalCenter: roboHash.horizontalCenter
    }

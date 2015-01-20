@@ -229,8 +229,7 @@ oprice light_wallet::get_median_feed_price( const string& symbol )
 asset light_wallet::get_fee( const string& symbol )
 { try {
    auto symbol_asset = get_asset_record(symbol);
-   FC_ASSERT( symbol_asset.valid() );
-   if( symbol_asset->id != 0 )
+   if( symbol_asset.valid() && symbol_asset->id != 0 )
    {
       oprice median_feed = get_median_feed_price( symbol );
       if( median_feed )
@@ -243,7 +242,7 @@ map<string, double> light_wallet::balance() const
 {
    FC_ASSERT(is_open());
 
-   map<string, double> balances = {{BTS_BLOCKCHAIN_SYMBOL, 0},{"USD", 0},{"GLD", 0}};
+   map<string, double> balances = {{BTS_BLOCKCHAIN_SYMBOL, 0},{"USD", 5},{"GLD", 0.7}};
    for( auto balance : _data->balance_record_cache ) {
       asset_record record = _data->asset_record_cache.at(balance.second.asset_id());
       balances[record.symbol] += balance.second.balance / double(record.precision);

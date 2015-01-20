@@ -26,6 +26,8 @@ class LightWallet : public QObject
    Q_PROPERTY(QString unlockError READ unlockError NOTIFY errorUnlocking)
    Q_PROPERTY(QString brainKey READ brainKey NOTIFY brainKeyChanged)
 
+   Q_PROPERTY(qint16 maxMemoSize READ maxMemoSize CONSTANT)
+
 public:
    LightWallet()
       : m_walletThread("Wallet Implementation Thread")
@@ -73,6 +75,12 @@ public:
    {
       return m_account;
    }
+   qint16 maxMemoSize() const
+   {
+      return BTS_BLOCKCHAIN_MAX_EXTENDED_MEMO_SIZE;
+   }
+
+   Q_INVOKABLE Balance* getFee(QString assetSymbol);
 
 public Q_SLOTS:
    void connectToServer( QString host, quint16 port,

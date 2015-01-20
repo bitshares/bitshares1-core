@@ -37,6 +37,8 @@
 #define BTS_BLOCKCHAIN_MAX_SLATE_SIZE                       (BTS_BLOCKCHAIN_NUM_DELEGATES + (BTS_BLOCKCHAIN_NUM_DELEGATES/10))
 #define BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC       (60*60*24*2)
 #define BTS_BLOCKCHAIN_MAX_MEMO_SIZE                        19 // bytes
+#define BTS_BLOCKCHAIN_EXTENDED_MEMO_SIZE                   32 // bytes
+#define BTS_BLOCKCHAIN_MAX_EXTENDED_MEMO_SIZE               (BTS_BLOCKCHAIN_MAX_MEMO_SIZE + BTS_BLOCKCHAIN_EXTENDED_MEMO_SIZE)
 
 /**
  *  The maximum amount that can be issued for user assets.

@@ -32,27 +32,17 @@ Account& Account::operator=(const bts::blockchain::account_record& account)
 QQmlListProperty<Balance> Account::balances()
 {
    auto count = [](QQmlListProperty<Balance>* list) -> int {
-      return static_cast<Account*>(list->data)->m_wallet->balance().size();
+      return static_cast<QList<Balance*>*>(list->data)->size();
    };
    auto at = [](QQmlListProperty<Balance>* list, int index) -> Balance* {
-      auto account = static_cast<Account*>(list->data);
-      auto balances = account->m_wallet->balance();
-      auto itr = balances.begin();
-      for( int i = 0; i < index; ++i )
-         ++itr;
-
-      Balance* balance = account->balanceMaster->findChild<Balance*>(convert(itr->first));
-      if( balance == nullptr )
-      {
-         balance = new Balance(convert(itr->first), itr->second, account->balanceMaster);
-         balance->setObjectName(convert(itr->first));
-      } else
-         balance->setProperty("amount", itr->second);
-
-      return balance;
+      return static_cast<QList<Balance*>*>(list->data)->at(index);
    };
 
-   return QQmlListProperty<Balance>(balanceMaster, this, count, at);
+   while( !balanceList.empty() )
+      balanceList.takeFirst()->deleteLater();
+   for( auto balance : m_wallet->balance() )
+      balanceList.append(new Balance(convert(balance.first), balance.second, this));
+   return QQmlListProperty<Balance>(this, &balanceList, count, at);
 }
 
 qreal Account::balance(QString symbol)

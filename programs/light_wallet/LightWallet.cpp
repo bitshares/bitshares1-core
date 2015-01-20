@@ -8,9 +8,17 @@
 
 #include <QDebug>
 #include <QSettings>
+#include <QEventLoop>
 
-#define IN_THREAD m_walletThread.async([=] {
+#define IN_THREAD \
+   QEventLoop _THREAD_WAIT_LOOP_; \
+   m_walletThread.async([=, &_THREAD_WAIT_LOOP_] {
 #define END_THREAD }, __FUNCTION__);
+#define END_WAIT_THREAD \
+      QEventLoopLocker _THREAD_LOCKER_(&_THREAD_WAIT_LOOP_); \
+   END_THREAD \
+   fc::yield(); \
+   _THREAD_WAIT_LOOP_.exec();
 
 inline static QString normalize(const QString& key)
 {
@@ -20,6 +28,25 @@ inline static QString normalize(const QString& key)
 bool LightWallet::walletExists() const
 {
    return fc::exists(m_walletPath);
+}
+
+Balance* LightWallet::getFee(QString assetSymbol)
+{
+   // QML takes ownership of these objects, and will delete them.
+   Balance* fee = new Balance(assetSymbol, -1);
+
+   IN_THREAD
+      try {
+         auto rawFee = m_wallet.get_fee(convert(assetSymbol));
+         auto feeAsset = m_wallet.get_asset_record(rawFee.asset_id);
+         fee->setProperty("amount", double(rawFee.amount) / feeAsset->precision);
+         fee->setProperty("symbol", convert(feeAsset->symbol));
+      } catch (const fc::exception& e) {
+         qDebug() << "Unable to get fee for" << assetSymbol << "because" << e.to_detail_string().c_str();
+      }
+   END_WAIT_THREAD
+
+   return fee;
 }
 
 void LightWallet::connectToServer(QString host, quint16 port, QString user, QString password)
