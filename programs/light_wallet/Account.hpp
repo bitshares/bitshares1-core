@@ -23,10 +23,8 @@ class Account : public QObject
    QString m_name;
    bool m_isRegistered;
    QDateTime m_registrationDate;
-   QObject* balanceMaster = new QObject(this);
    QList<Balance*> balanceList;
-   QObject* ledgerMaster = new QObject(this);
-   QList<LedgerEntry*> ledgerEntries;
+   QObjectList transactionList;
 
 public:
    Account(bts::light_wallet::light_wallet* wallet,

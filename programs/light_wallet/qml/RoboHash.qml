@@ -37,8 +37,7 @@ Column {
       id: robotName
       font.pixelSize: units.dp(16)
       elide: Text.ElideRight
-      Layout.minimumWidth: units.dp(64)
-      horizontalAlignment: Text.AlignHCenter
-      anchors.horizontalCenter: roboHash.horizontalCenter
+      width: Math.min(implicitWidth, parent.width)
+      anchors.horizontalCenter: parent.horizontalCenter
    }
 }

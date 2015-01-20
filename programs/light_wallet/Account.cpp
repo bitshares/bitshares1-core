@@ -61,7 +61,6 @@ QStringList Account::availableAssets()
 
 QList<QObject*> Account::transactionHistory(QString asset_symbol)
 {
-   QList<QObject*> history;
    auto raw_transactions = m_wallet->transactions(convert(asset_symbol));
    std::sort(raw_transactions.rbegin(), raw_transactions.rend(),
              [](const bts::wallet::transaction_ledger_entry& a,
@@ -71,43 +70,43 @@ QList<QObject*> Account::transactionHistory(QString asset_symbol)
 
    for( bts::wallet::transaction_ledger_entry trx : raw_transactions )
    {
-      TransactionSummary* summary = ledgerMaster->findChild<TransactionSummary*>(convert(string(trx.id)));
-      if( summary == nullptr )
+      if( std::find_if(transactionList.begin(), transactionList.end(), [&trx] (QObject* o) -> bool {
+                       return o->property("id").toString() == convert(string(trx.id));
+      }) != transactionList.end() )
+         continue;
+
+      QList<LedgerEntry*> ledger;
+
+      for( auto label : trx.delta_labels )
       {
-         QList<LedgerEntry*> ledger;
+         QStringList participants = convert(label.second).split('>');
+         if( participants.size() == 1 ) participants.prepend(tr("Unknown"));
 
-         for( auto label : trx.delta_labels )
+         for( bts::blockchain::asset amount : trx.delta_amounts[label.second] )
          {
-            QStringList participants = convert(label.second).split('>');
-            if( participants.size() == 1 ) participants.prepend(tr("Unknown"));
+            auto asset = m_wallet->get_asset_record(amount.asset_id);
+            if( !asset ) continue;
 
-            for( bts::blockchain::asset amount : trx.delta_amounts[label.second] )
-            {
-               auto asset = m_wallet->get_asset_record(amount.asset_id);
-               if( !asset ) continue;
+            LedgerEntry* entry = new LedgerEntry();
 
-               LedgerEntry* entry = new LedgerEntry(summary);
+            entry->setProperty("sender", participants.first());
+            entry->setProperty("receiver", participants.last());
+            entry->setProperty("amount", double(amount.amount) / asset->precision);
+            entry->setProperty("symbol", convert(asset->symbol));
+            if( trx.operation_notes.count(label.first) )
+               entry->setProperty("memo", convert(trx.operation_notes[label.first]));
 
-               entry->setProperty("sender", participants.first());
-               entry->setProperty("receiver", participants.last());
-               entry->setProperty("amount", double(amount.amount) / asset->precision);
-               entry->setProperty("symbol", convert(asset->symbol));
-               if( trx.operation_notes.count(label.first) )
-                  entry->setProperty("memo", convert(trx.operation_notes[label.first]));
-
-               ledger.append(entry);
-            }
+            ledger.append(entry);
          }
-
-         summary = new TransactionSummary(convert(string(trx.id)),
-                                          convert(fc::get_approximate_relative_time_string(trx.timestamp)),
-                                          std::move(ledger), ledgerMaster);
-         summary->setObjectName(convert(string(trx.id)));
       }
 
+      TransactionSummary* summary = new TransactionSummary(convert(string(trx.id)),
+                                                           convert(fc::get_approximate_relative_time_string(trx.timestamp)),
+                                                           std::move(ledger), this);
+
       summary->setProperty("timestamp", convert(fc::get_approximate_relative_time_string(trx.timestamp)));
-      history.append(summary);
+      transactionList.append(summary);
    }
 
-   return history;
+   return transactionList;
 }

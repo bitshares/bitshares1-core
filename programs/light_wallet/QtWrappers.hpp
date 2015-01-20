@@ -42,6 +42,7 @@ class TransactionSummary : public QObject
    Q_PROPERTY(QQmlListProperty<LedgerEntry> ledger READ ledger CONSTANT)
 
 public:
+   // TransactionSummary takes ownership of the LedgerEntries in ledger
    TransactionSummary(QString id, QString timestamp, QList<LedgerEntry*>&& ledger, QObject* parent = nullptr);
    ~TransactionSummary(){}
 
