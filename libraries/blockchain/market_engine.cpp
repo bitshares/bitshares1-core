@@ -216,15 +216,19 @@ namespace bts { namespace blockchain { namespace detail {
                 pay_current_bid( mtrx, *quote_asset );
                 pay_current_cover( mtrx, *quote_asset );
             }
-            else if( (_current_ask->type == ask_order || _current_ask->type == relative_bid_order) &&
+            else if( (_current_ask->type == ask_order || _current_ask->type == relative_ask_order)  &&
                      _current_bid->type == short_order )
             {
+                FC_ASSERT( _feed_price.valid() );
+
                 // Bound collateral ratio (maximizes collateral of new margin position)
                 price collateral_rate          = *_feed_price; // Asserted valid above
                 collateral_rate.ratio          /= 2; // 2x from short, 1 x from long == 3x default collateral
-                const asset ask_quantity_usd   = _current_ask->get_quote_quantity();
+                const asset ask_quantity_usd   = _current_ask->get_quote_quantity(*_feed_price);
                 const asset short_quantity_usd = _current_bid->get_balance() * collateral_rate;
                 const asset usd_exchanged      = std::min( short_quantity_usd, ask_quantity_usd );
+
+                wdump( (ask_quantity_usd)(short_quantity_usd)(usd_exchanged) );
 
                 mtrx.ask_received   = usd_exchanged;
 
@@ -548,8 +552,9 @@ namespace bts { namespace blockchain { namespace detail {
       FC_ASSERT( _current_ask->type == ask_order || _current_ask->type == relative_ask_order );
       FC_ASSERT( mtrx.ask_type == ask_order || mtrx.ask_type == relative_ask_order );
 
+      wdump( (_current_ask->state.balance)(mtrx.ask_paid.amount) );
       _current_ask->state.balance -= mtrx.ask_paid.amount;
-      FC_ASSERT( _current_ask->state.balance >= 0 );
+      FC_ASSERT( _current_ask->state.balance >= 0, "balance: ${b}", ("b",_current_ask->state.balance) );
 
       auto ask_balance_address = withdraw_condition( withdraw_with_signature(mtrx.ask_owner), _quote_id ).get_address();
       auto ask_payout = _pending_state->get_balance_record( ask_balance_address );
