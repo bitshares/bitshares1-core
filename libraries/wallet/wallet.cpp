@@ -1881,6 +1881,7 @@ namespace detail {
       {
          auto quote_asset_record = my->_blockchain->get_asset_record( item.first );
          auto base_asset_record  = my->_blockchain->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
+         FC_ASSERT( quote_asset_record.valid(), "Invalid Symbol '${symbol}'", ("symbol",item.first) );
 
 
          asset price_shares( item.second *  quote_asset_record->precision, quote_asset_record->id );

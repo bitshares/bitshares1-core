@@ -534,7 +534,9 @@ transaction_builder& transaction_builder::submit_relative_ask(const wallet_accou
    validate_market(quote_price.quote_asset_id, quote_price.base_asset_id);
    FC_ASSERT(cost.asset_id == quote_price.base_asset_id);
 
-   auto order_key = order_key_for_account(from_account.owner_address(), from_account.name);
+   public_key_type order_key;
+
+   order_key = order_key_for_account(from_account.owner_address(), from_account.name);
 
    //Charge this account for the ask
    deduct_balance(from_account.owner_address(), cost);

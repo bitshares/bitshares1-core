@@ -509,6 +509,8 @@ namespace bts { namespace blockchain {
 #warning figure out how to set the real fee here
 #endif
 
+      FC_ASSERT( balance > fee );
+
       auto asset_rec = eval_state._current_state->get_asset_record( current_balance_record->condition.asset_id );
       if( asset_rec->is_market_issued() ) FC_ASSERT( current_balance_record->condition.slate_id == 0 );
 
