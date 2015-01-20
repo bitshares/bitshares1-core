@@ -1,25 +1,33 @@
 #pragma once
+
+#include <bts/api/common_api.hpp>
 #include <bts/blockchain/chain_database.hpp>
-#include <bts/wallet/wallet.hpp>
 #include <bts/net/node.hpp>
 #include <bts/rpc/rpc_client_api.hpp>
-#include <bts/api/common_api.hpp>
 #include <bts/rpc_stubs/common_api_client.hpp>
-#include <fc/thread/thread.hpp>
-#include <fc/log/logger_config.hpp>
-#include <memory>
-#include <boost/program_options.hpp>
+#include <bts/wallet/wallet.hpp>
 
+#include <fc/log/logger_config.hpp>
+#include <fc/thread/thread.hpp>
+
+#include <boost/program_options.hpp>
+#include <memory>
 
 namespace bts { namespace rpc {
-  class rpc_server;
-  typedef std::shared_ptr<rpc_server> rpc_server_ptr;
+    class rpc_server;
+    typedef std::shared_ptr<rpc_server> rpc_server_ptr;
 } }
+
 namespace bts { namespace cli {
     class cli;
-}};
+} };
 
 namespace bts { namespace client {
+
+    static const auto SEED_NODES = std::vector<std::string>
+    {
+        std::string( BTS_NET_TEST_SEED_IP ) + ":" + std::to_string( BTS_NET_TEST_P2P_PORT + BTS_TEST_NETWORK_VERSION )
+    };
 
     using namespace bts::blockchain;
     using namespace bts::wallet;
@@ -66,14 +74,6 @@ namespace bts { namespace client {
 
     struct config
     {
-        config( )
-        {
-#ifdef BTS_TEST_NETWORK
-            uint32_t port = BTS_NET_TEST_P2P_PORT + BTS_TEST_NETWORK_VERSION;
-            default_peers[ 0 ] += ":" + std::to_string( port );
-#endif
-        }
-
         fc::logging_config  logging = fc::logging_config::default_config();
         bool                ignore_console = false;
         string              client_debug_name;
@@ -83,7 +83,7 @@ namespace bts { namespace client {
         optional<fc::path>  genesis_config;
         bool                statistics_enabled = false;
 
-        vector<string>      default_peers = vector<string>{ BTS_NET_TEST_SEED_IP };
+        vector<string>      default_peers = SEED_NODES;
         uint16_t            maximum_number_of_connections = BTS_NET_DEFAULT_MAX_CONNECTIONS;
         bool                use_upnp = true;
 

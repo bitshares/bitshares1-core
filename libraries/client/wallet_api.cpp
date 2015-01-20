@@ -738,8 +738,8 @@ transaction_builder detail::client_impl::wallet_set_edge(
 wallet_transaction_record detail::client_impl::wallet_release_escrow( const string& paying_account_name,
                                                                       const address& escrow_balance_id,
                                                                       const string& released_by,
-                                                                      const share_type& amount_to_sender,
-                                                                      const share_type& amount_to_receiver )
+                                                                      double amount_to_sender,
+                                                                      double amount_to_receiver )
 {
     auto payer = _wallet->get_account(paying_account_name);
     auto balance_rec = _chain_db->get_balance_record( escrow_balance_id );
@@ -748,6 +748,14 @@ wallet_transaction_record detail::client_impl::wallet_release_escrow( const stri
     FC_ASSERT( released_by == "sender" ||
                released_by == "receiver" ||
                released_by == "agent" );
+
+    auto asset_rec = _chain_db->get_asset_record( balance_rec->asset_id() );
+    FC_ASSERT( asset_rec.valid() );
+    if( asset_rec->precision )
+    {
+       amount_to_sender   *= asset_rec->precision;
+       amount_to_receiver *= asset_rec->precision;
+    }
 
     auto escrow_cond = balance_rec->condition.as<withdraw_with_escrow>();
     address release_by_address;
@@ -1374,9 +1382,10 @@ wallet_transaction_record client_impl::wallet_market_submit_relative_bid(
        const string& quantity_symbol,
        const string& relative_quote_price,
        const string& quote_symbol,
-       const string& limit_price )
+       const string& limit_price,
+       const string& funding )
 {
-  auto record = _wallet->submit_relative_bid( from_account, quantity, quantity_symbol, relative_quote_price, quote_symbol, limit_price, true );
+  auto record = _wallet->submit_relative_bid( from_account, quantity, quantity_symbol, relative_quote_price, quote_symbol, limit_price, funding, true );
   _wallet->cache_transaction( record );
   network_broadcast_transaction( record.trx );
   return record;

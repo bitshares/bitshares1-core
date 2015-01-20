@@ -115,6 +115,8 @@ namespace bts { namespace blockchain {
        if( !cur_record.valid() )
        {
           cur_record = balance_record( this->condition );
+          if( this->condition.type == withdraw_escrow_type )
+             cur_record->meta_data = variant_object("creating_transaction_id", eval_state.trx.id() );
        }
 
        if( cur_record->balance == 0 )
@@ -140,11 +142,11 @@ namespace bts { namespace blockchain {
 
        cur_record->last_update = eval_state._current_state->now();
 
-       auto asset_rec = eval_state._current_state->get_asset_record( cur_record->condition.asset_id );
+       const oasset_record asset_rec = eval_state._current_state->get_asset_record( cur_record->condition.asset_id );
+       FC_ASSERT( asset_rec.valid() );
 
        if( asset_rec->is_market_issued() ) FC_ASSERT( cur_record->condition.slate_id == 0 );
 
-       FC_ASSERT( asset_rec.valid() );
        if( asset_rec->is_restricted() )
        {
          for( const auto& owner : cur_record->owners() )
@@ -446,7 +448,6 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_balance_record( *escrow_balance_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-
    void update_balance_vote_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
       auto current_balance_record = eval_state._current_state->get_balance_record( this->balance_id );
@@ -463,6 +464,8 @@ namespace bts { namespace blockchain {
 #ifndef WIN32
 #warning figure out how to set the real fee here
 #endif
+
+      FC_ASSERT( balance > fee );
 
       auto asset_rec = eval_state._current_state->get_asset_record( current_balance_record->condition.asset_id );
       if( asset_rec->is_market_issued() ) FC_ASSERT( current_balance_record->condition.slate_id == 0 );
@@ -555,10 +558,9 @@ namespace bts { namespace blockchain {
 
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-
    void pay_fee_operation::evaluate( transaction_evaluation_state& eval_state )
-   {
+   { try {
       eval_state._max_fee[this->amount.asset_id] += this->amount.amount;
-   }
+   } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 } } // bts::blockchain

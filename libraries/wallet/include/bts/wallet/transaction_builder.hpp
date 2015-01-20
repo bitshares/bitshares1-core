@@ -253,6 +253,7 @@ namespace bts { namespace wallet {
 
       transaction_builder& submit_relative_bid(const wallet_account_record& from_account,
                                       const asset& real_quantity,
+                                      const asset& funding,
                                       const price& delta_quote_price,
                                       const optional<price>& limit
                                       );

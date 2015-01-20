@@ -36,7 +36,7 @@ namespace bts {
       FC_ASSERT( base58str.substr( 0, prefix_len ) == prefix );
       std::vector<char> v = fc::from_base58( base58str.substr( prefix_len ) );
       FC_ASSERT( v.size() > 4, "all addresses must have a 4 byte checksum" );
-      FC_ASSERT(v.size() <= sizeof( fc::ripemd160 ) + 4, "all addresses are less than 24 bytes");
+      FC_ASSERT( v.size() == sizeof( fc::ripemd160 ) + 4, "all addresses must base58 decode to exactly 24 bytes" );
       const fc::ripemd160 checksum = fc::ripemd160::hash( v.data(), v.size() - 4 );
       FC_ASSERT( memcmp( v.data() + 20, (char*)checksum._hash, 4 ) == 0, "address checksum mismatch" );
       return true;

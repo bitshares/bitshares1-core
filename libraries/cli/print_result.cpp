@@ -727,27 +727,16 @@ namespace bts { namespace cli {
     price short_execution_price( 0, quote_id, base_id );
     if( status.valid() && status->current_feed_price.valid() )
         short_execution_price = *status->current_feed_price;
+    share_type total_short_shares = 0;
 
     std::copy_if(shorts.begin(), shorts.end(), std::back_inserter(bids_asks.first), [&short_execution_price](const market_order& order) -> bool {
-        return order.state.limit_price && *order.state.limit_price < short_execution_price;
+        if( order.state.limit_price && *order.state.limit_price < short_execution_price )
+          return true;
+        return false;
     });
 
-    shorts.erase(std::remove_if(shorts.begin(), shorts.end(), [&short_execution_price](const market_order& short_order) -> bool {
-      //Remove if the short execution price is past the price limit
-      return (short_order.state.limit_price.valid() ?
-                  *short_order.state.limit_price < short_execution_price : false);
-    }), shorts.end());
+    
 
-    std::sort( bids_asks.first.begin(), bids_asks.first.end(), [=]( const market_order& a, const market_order& b ) -> bool
-               {
-                  return a.get_price( feed_price ) > b.get_price( feed_price );
-               }
-             );
-    std::sort( bids_asks.second.begin(), bids_asks.second.end(), [=]( const market_order& a, const market_order& b ) -> bool
-               {
-                  return a.get_price( feed_price ) < b.get_price( feed_price );
-               }
-             );
 
     if( bids_asks.first.empty() && bids_asks.second.empty() && shorts.empty() )
     {
@@ -763,18 +752,36 @@ namespace bts { namespace cli {
       short_wall.market_index.order_price = short_execution_price;
       for (auto order : shorts)
       {
-         if( order.get_price() >= short_execution_price )
-           short_wall.state.balance += ((order.get_quantity() * short_execution_price)).amount;
+         if( order.get_price(feed_price) >= short_execution_price )
+           short_wall.state.balance += ((order.get_quantity(feed_price) * short_execution_price)).amount;
          else
-           short_wall.state.balance += (order.get_quantity() * order.get_price()).amount;
+           short_wall.state.balance += (order.get_quantity(feed_price) * order.get_price()).amount;
       }
 
       auto pos = std::lower_bound(bids_asks.first.begin(), bids_asks.first.end(), short_wall, [](const market_order& a, const market_order& b) -> bool {
         return !(a.market_index == b.market_index) && !(a.market_index < b.market_index);
       });
       if (short_wall.state.balance != 0)
-        bids_asks.first.insert(pos, short_wall);
+        bids_asks.first.insert(pos == bids_asks.first.end() ? bids_asks.first.begin() : pos, short_wall);
+      ulog( "Short Wall ${w} ", ("w", short_wall) );
+      wlog( "Short Wall ${w} ", ("w", short_wall) );
     }
+
+    shorts.erase(std::remove_if(shorts.begin(), shorts.end(), [&short_execution_price](const market_order& short_order) -> bool {
+      //Remove if the short execution price is past the price limit
+      return short_order.state.limit_price &&  *short_order.state.limit_price < short_execution_price;
+    }), shorts.end());
+
+    std::sort( bids_asks.first.begin(), bids_asks.first.end(), [=]( const market_order& a, const market_order& b ) -> bool
+               {
+                  return a.get_price( feed_price ) > b.get_price( feed_price );
+               }
+             );
+    std::sort( bids_asks.second.begin(), bids_asks.second.end(), [=]( const market_order& a, const market_order& b ) -> bool
+               {
+                  return a.get_price( feed_price ) < b.get_price( feed_price );
+               }
+             );
 
     //bid_itr may be invalidated by now... reset it.
     bid_itr = bids_asks.first.begin();

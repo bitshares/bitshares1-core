@@ -46,6 +46,7 @@ namespace bts { namespace blockchain {
       osnapshot_record           snapshot_info;
       fc::time_point_sec         deposit_date;
       fc::time_point_sec         last_update;
+      variant                    meta_data; // extra meta data about every balance
 
       static balance_id_type get_multisig_balance_id( asset_id_type asset_id, uint32_t m, const vector<address>& addrs );
 
@@ -67,4 +68,4 @@ namespace bts { namespace blockchain {
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::snapshot_record, (original_address)(original_balance) )
-FC_REFLECT( bts::blockchain::balance_record, (condition)(balance)(restricted_owner)(snapshot_info)(deposit_date)(last_update) )
+FC_REFLECT( bts::blockchain::balance_record, (condition)(balance)(restricted_owner)(snapshot_info)(deposit_date)(last_update)(meta_data) )
