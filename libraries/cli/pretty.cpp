@@ -934,7 +934,10 @@ string pretty_order_list( const vector<std::pair<order_id_type, market_order>>& 
     out << std::setw( 20 ) << "BALANCE";
     out << std::setw( 20 ) << "COST";
     out << std::setw( 20 ) << "COLLATERAL";
+    out << std::setw( 20 ) << "LIMIT";
     out << std::setw( 40 ) << "ID";
+    out << "   ";
+    out << std::setw( 20 ) << "OWNER";
     out << "\n";
 
     out << pretty_line( 162 );
@@ -963,7 +966,11 @@ string pretty_order_list( const vector<std::pair<order_id_type, market_order>>& 
            out << std::setw( 20 ) << "N/A";
         else
            out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( asset( *order.collateral ) );
+
+        out << std::setw( 20 ) << (order.get_limit_price() ? client->get_chain()->to_pretty_price( *order.get_limit_price() ) : "NONE");
         out << std::setw( 40 ) << string( id );
+        out << "   ";
+        out << std::setw( 20 ) << string( order.get_owner() );
 
         out << "\n";
     }
