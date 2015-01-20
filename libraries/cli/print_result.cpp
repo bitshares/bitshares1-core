@@ -727,7 +727,7 @@ namespace bts { namespace cli {
     price short_execution_price( 0, quote_id, base_id );
     if( status.valid() && status->current_feed_price.valid() )
         short_execution_price = *status->current_feed_price;
-    share_type total_short_shares = 0;
+    //share_type total_short_shares = 0;
 
     std::copy_if(shorts.begin(), shorts.end(), std::back_inserter(bids_asks.first), [&short_execution_price](const market_order& order) -> bool {
         if( order.state.limit_price && *order.state.limit_price < short_execution_price )
@@ -735,7 +735,7 @@ namespace bts { namespace cli {
         return false;
     });
 
-    
+
 
 
     if( bids_asks.first.empty() && bids_asks.second.empty() && shorts.empty() )
@@ -799,7 +799,7 @@ namespace bts { namespace cli {
     {
       if(bid_itr != bids_asks.first.end())
       {
-        bool short_wall = (bid_itr->get_owner() == address());
+        //bool short_wall = (bid_itr->get_owner() == address());
         bool is_short_order = bid_itr->type == short_order;
 
         if (is_short_order)
@@ -901,7 +901,7 @@ namespace bts { namespace cli {
           {
               const auto& order = *bid_itr;
               auto collateral = order.get_balance();
-              collateral.amount /= 2; 
+              collateral.amount /= 2;
 
               out << std::left << std::setw( 26 );
               if( status.valid() && status->current_feed_price.valid() )
