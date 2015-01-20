@@ -39,7 +39,9 @@ default (unlocked) >>> help wallet_market_submit_relative_ask
 >>> wallet_market_submit_relative_ask dan 60 XTS .99 USD 
 >>> wallet_market_submit_relative_ask dan 40 XTS 1.11 USD .004
 >>> wallet_market_submit_relative_ask dan 50 XTS 1.1  USD .05
->>> wallet_market_submit_short scott 100 XTS .1 USD
+>>> wallet_market_submit_short scott 50 XTS .1 USD .8
+>>> wallet_market_submit_short scott 50 XTS .1 USD 
+>>> wallet_market_submit_short scott 100 XTS .1 USD .003
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4
