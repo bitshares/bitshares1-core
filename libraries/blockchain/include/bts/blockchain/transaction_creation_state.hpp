@@ -42,6 +42,18 @@ namespace bts { namespace blockchain {
                                   const optional<private_key_type>& from    = nullptr,
                                   bool                              stealth = false );
 
+
+         void sell( const public_key_type& order_key,
+                    const asset& amount_to_sell,
+                    asset_id_type asset_to_receive,
+                    double base_price,
+                    double relative_percent );
+
+
+         /**
+          * Withdraws enough to pay a fee with the given asset, preferring existing
+          * withdraw balances first.  
+          */
          void pay_fee( const asset& amount );
 
          signed_transaction           trx;

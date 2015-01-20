@@ -1355,6 +1355,57 @@ account_balance_summary_type client_impl::wallet_account_yield( const string& ac
   return _wallet->get_account_yield( account_name );
 }
 
+wallet_transaction_record client_impl::wallet_market_sell(
+       const  string& from_account,
+       double quantity,
+       const  string& quantity_symbol,
+       double base_price,
+       const  string& receive_symbol,
+       double relative_percent,
+       bool   allow_stupid_bid )
+{
+   FC_ASSERT( relative_percent >= 0 );
+   FC_ASSERT( base_price >= 0 );
+   FC_ASSERT( quantity_symbol != receive_symbol );
+
+   auto q_asset = _chain_db->get_asset_record( quantity_symbol );
+   auto r_asset = _chain_db->get_asset_record( receive_symbol );
+   FC_ASSERT( q_asset, "Unknown Asset Type: ${a}", ("a",quantity_symbol) );
+   FC_ASSERT( r_asset, "Unknown Asset Type: ${a}", ("a",receive_symbol) );
+
+   auto quote_id = std::max(q_asset->id,r_asset->id);
+   auto base_id  = std::min(q_asset->id,r_asset->id);
+
+   if( relative_percent != 0 )
+   {
+      oprice feed_price  = _chain_db->get_active_feed_price( quote_id, base_id );
+      FC_ASSERT( feed_price, "A price feed is required for relative orders" );
+   }
+   if( base_price == 0 ) FC_ASSERT( relative_percent > 0, "if no price is specified, then a relative percent must be specified" );
+
+   auto trx_fee = _wallet->get_transaction_fee( q_asset->id );
+
+   asset quantity_to_sell( quantity * q_asset->precision, q_asset->id );
+
+   transaction_creation_state creator(_chain_db);
+   _wallet->initialize_transaction_creator( creator, from_account );
+
+   if( trx_fee.asset_id == q_asset->id )
+   {
+      creator.withdraw( trx_fee + quantity_to_sell );
+   }
+   else
+   {
+      creator.withdraw( quantity_to_sell );
+      creator.withdraw( trx_fee );
+   }
+   auto new_pub_key = _wallet->get_new_public_key( from_account );
+   creator.sell( new_pub_key, quantity_to_sell, base_price, r_asset->id, relative_percent );
+   _wallet->sign_transaction_creator( creator );
+
+   wallet_transaction_record record;
+   return record;
+}
 wallet_transaction_record client_impl::wallet_market_submit_bid(
        const string& from_account,
        const string& quantity,

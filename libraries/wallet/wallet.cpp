@@ -4487,5 +4487,16 @@ namespace detail {
          return builder->sign();
       return builder->transaction_record;
    }
+   void wallet::initialize_transaction_creator( transaction_creation_state& c, const string& account_name )
+   {
+      c.pending_state._balance_id_to_record = my->_balance_records;
+      vector<public_key_type>  keys = get_public_keys_in_account( account_name );
+      for( auto key : keys ) c.add_known_key( key );
+   }
+
+   void wallet::sign_transaction_creator( transaction_creation_state& c )
+   {
+
+   }
 
 } } // bts::wallet
