@@ -105,6 +105,7 @@ namespace bts { namespace blockchain {
 
     void balance_db_interface::store( const balance_record& record )const
     { try {
+        FC_ASSERT( record.balance >= 0 ); // Sanity check
         insert_into_id_map( record.id(), record );
     } FC_CAPTURE_AND_RETHROW( (record) ) }
 

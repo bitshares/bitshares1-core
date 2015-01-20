@@ -401,13 +401,9 @@ namespace bts { namespace blockchain { namespace detail {
       }
 
       auto call_collateral = collateral;
-      call_collateral.amount *= 2;
-      call_collateral.amount /= 3;
-      //auto cover_price = mtrx.bid_price;
+      call_collateral.amount *= 3;
+      call_collateral.amount /= 4;
       auto cover_price = mtrx.bid_paid / call_collateral;
-      //cover_price.ratio *= 2;
-      //cover_price.ratio /= 3;
-      // auto cover_price = mtrx.bid_paid / asset( (3*collateral.amount)/4, _base_id );
 
       market_index_key cover_index( cover_price, _current_bid->get_owner() );
       auto ocover_record = _pending_state->get_collateral_record( cover_index );
