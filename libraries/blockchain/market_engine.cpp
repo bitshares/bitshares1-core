@@ -216,7 +216,7 @@ namespace bts { namespace blockchain { namespace detail {
                 pay_current_bid( mtrx, *quote_asset );
                 pay_current_cover( mtrx, *quote_asset );
             }
-            else if( (_current_ask->type == ask_order || _current_ask->type == relative_bid_order) &&
+            else if( (_current_ask->type == ask_order || _current_ask->type == relative_ask_order)  &&
                      _current_bid->type == short_order )
             {
                 // Bound collateral ratio (maximizes collateral of new margin position)
@@ -225,6 +225,8 @@ namespace bts { namespace blockchain { namespace detail {
                 const asset ask_quantity_usd   = _current_ask->get_quote_quantity();
                 const asset short_quantity_usd = _current_bid->get_balance() * collateral_rate;
                 const asset usd_exchanged      = std::min( short_quantity_usd, ask_quantity_usd );
+
+                //wdump( (ask_quantity_usd)(short_quantity_usd)(usd_exchanged) );
 
                 mtrx.ask_received   = usd_exchanged;
 
