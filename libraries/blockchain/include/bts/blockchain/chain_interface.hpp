@@ -58,6 +58,12 @@ namespace bts { namespace blockchain {
 
          virtual fc::time_point_sec now()const = 0;
 
+         chain_interface(){}
+
+         // don't copy member variables
+         chain_interface( const chain_interface& ){} 
+         chain_interface& operator=(const chain_interface&){ return *this; }; 
+
          optional<string>                   get_parent_account_name( const string& account_name )const;
          bool                               is_valid_account_name( const string& name )const;
          bool                               is_valid_symbol_name( const string& symbol )const;

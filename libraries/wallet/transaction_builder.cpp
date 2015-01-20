@@ -212,8 +212,7 @@ transaction_builder& transaction_builder::deposit_asset(const bts::wallet::walle
    entry.to_account = recipient.owner_key;
    entry.amount = amount;
    entry.memo = memo;
-   if( *memo_sender != payer.name )
-      entry.memo_from_account = *memo_sender;
+   if( *memo_sender != payer.name ) entry.memo_from_account = memo_account->owner_key;
    transaction_record.ledger_entries.push_back(std::move(entry));
 
    auto memo_signature = _wimpl->self->get_private_key(memo_key).sign_compact(fc::sha256::hash(memo.data(),
