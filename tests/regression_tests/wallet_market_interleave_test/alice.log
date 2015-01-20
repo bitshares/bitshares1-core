@@ -39,7 +39,7 @@ default (unlocked) >>> help wallet_market_submit_relative_ask
 >>> wallet_market_submit_relative_ask dan 60 XTS .99 USD 
 >>> wallet_market_submit_relative_ask dan 50 XTS 1.1 USD .005
 >>> wallet_market_submit_relative_ask dan 50 XTS 1.1 USD .05
->>> wallet_market_submit_short scott 100 XTS 0 USD
+>>> wallet_market_submit_short scott 100 XTS .1 USD
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4
@@ -47,6 +47,18 @@ OK
 >>> blockchain_market_order_book USD XTS
 >>> wallet_market_order_list USD XTS -1 dan
 >>> wallet_market_order_list USD XTS -1 scott
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 4
+OK
+>>> blockchain_market_order_book USD XTS
+>>> wallet_market_order_list USD XTS -1 dan
+>>> wallet_market_order_list USD XTS -1 scott
+>>> wallet_market_submit_short scott 1000 XTS 0 USD
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 4
+OK
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4
