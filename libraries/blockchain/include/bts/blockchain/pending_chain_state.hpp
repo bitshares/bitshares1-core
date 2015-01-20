@@ -9,6 +9,10 @@ namespace bts { namespace blockchain {
    {
       public:
                                         pending_chain_state( chain_interface_ptr prev_state = chain_interface_ptr() );
+                                        pending_chain_state( const pending_chain_state& cpy );
+         void                           init();
+         pending_chain_state&           operator=(const pending_chain_state&) = default;
+
          virtual                        ~pending_chain_state()override;
 
          void                           set_prev_state( chain_interface_ptr prev_state );

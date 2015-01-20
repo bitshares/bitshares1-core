@@ -7,6 +7,16 @@ namespace bts { namespace blockchain {
    pending_chain_state::pending_chain_state( chain_interface_ptr prev_state )
    :_prev_state( prev_state )
    {
+      init();
+   }
+   pending_chain_state::pending_chain_state( const pending_chain_state& p )
+   {
+      *this = p;
+      init();
+   }
+
+   void pending_chain_state::init()
+   {
       init_account_db_interface();
       init_asset_db_interface();
       init_balance_db_interface();
@@ -671,7 +681,7 @@ namespace bts { namespace blockchain {
    {
        balance_db_interface& interface = _balance_db_interface;
 
-       interface.lookup_by_id = [&]( const balance_id_type& id ) -> obalance_record
+       interface.lookup_by_id = [this]( const balance_id_type& id ) -> obalance_record
        {
            const auto iter = _balance_id_to_record.find( id );
            if( iter != _balance_id_to_record.end() ) return iter->second;
@@ -681,13 +691,13 @@ namespace bts { namespace blockchain {
            return prev_state->lookup<balance_record>( id );
        };
 
-       interface.insert_into_id_map = [&]( const balance_id_type& id, const balance_record& record )
+       interface.insert_into_id_map = [this]( const balance_id_type& id, const balance_record& record )
        {
            _balance_id_remove.erase( id );
            _balance_id_to_record[ id ] = record;
        };
 
-       interface.erase_from_id_map = [&]( const balance_id_type& id )
+       interface.erase_from_id_map = [this]( const balance_id_type& id )
        {
            _balance_id_to_record.erase( id );
            _balance_id_remove.insert( id );
