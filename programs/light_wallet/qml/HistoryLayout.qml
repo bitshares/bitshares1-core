@@ -29,55 +29,8 @@ Page {
             onSynced: historyList.model = wallet.account.transactionHistory(assetSymbol)
          }
 
-         delegate: Rectangle {
-            width: parent.width - visuals.margins * 2
-            height: transactionSummary.height
-            anchors.horizontalCenter: parent.horizontalCenter
-            radius: units.dp(5)
-            property var trx: model
-
-            ColumnLayout {
-               id: transactionSummary
-               width: parent.width
-
-               property string timestamp: model.modelData.timestamp
-
-               Item { Layout.preferredHeight: visuals.margins }
-               Repeater {
-                  id: ledgerRepeater
-                  model: trx.modelData.ledger
-                  delegate: RowLayout {
-                     width: parent.width
-                     property bool incoming: receiver === accountName
-
-                     Item { Layout.preferredWidth: visuals.margins }
-                     RoboHash {
-                        name: incoming? sender : receiver
-                        Layout.preferredWidth: units.dp(100)
-                     }
-                     Column {
-                        Layout.fillWidth: true
-                        Label {
-                           text: memo
-                           font.pixelSize: units.dp(16)
-                        }
-                        Item { width: 1; height: units.dp(8) }
-                        Label {
-                           text: (index === 0)? (transactionSummary.timestamp) : ""
-                           font.pixelSize: units.dp(16)
-                        }
-                     }
-                     Label {
-                        text: amount + " " + symbol
-                        color: incoming? "green" : "red"
-                        font.pixelSize: units.dp(16)
-                     }
-                     Item { Layout.preferredWidth: visuals.margins }
-                  }
-               }
-               Item { Layout.preferredHeight: visuals.margins }
-            }
-            Ink { anchors.fill: parent }
+         delegate: Transaction {
+            trx: model
          }
 
          footer: View {

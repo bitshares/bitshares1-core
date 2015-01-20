@@ -43,11 +43,14 @@ Page {
    }
 
    Item {
-      anchors.top: splitter.bottom
-      anchors.left: parent.left
-      anchors.right: parent.right
-      anchors.bottom: parent.bottom
-      anchors.margins: visuals.margins
+      id: transferForm
+      anchors {
+         top: splitter.bottom
+         left: parent.left
+         right: parent.right
+         bottom: parent.bottom
+         margins: visuals.margins
+      }
 
       TextField {
          id: toNameField
@@ -125,20 +128,43 @@ Page {
          anchors.top: amountRow.bottom
          anchors.margins: units.dp(3)
       }
-      Row {
-         anchors {
-            right: parent.right
-            bottom: parent.bottom
-         }
-         spacing: visuals.margins
+   }
+   Item {
+      id: confirmForm
+      anchors {
+         top: splitter.bottom
+         left: parent.left
+         right: parent.right
+         bottom: parent.bottom
+         margins: visuals.margins
+      }
+      visible: false
 
-         Button {
-            text: qsTr("Cancel")
-            onClicked: pop()
-         }
-         Button {
-            text: qsTr("Send")
-         }
+
+   }
+
+   Row {
+      anchors {
+         right: parent.right
+         bottom: parent.bottom
+         margins: visuals.margins
+      }
+      spacing: visuals.margins
+
+      Button {
+         text: qsTr("Cancel")
+         onClicked: pop()
+      }
+      Button {
+         text: qsTr("Send")
       }
    }
+
+   states: [
+      State {
+         name: "confirmation"
+
+      }
+
+   ]
 }
