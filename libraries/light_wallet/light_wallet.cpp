@@ -10,12 +10,26 @@
 namespace bts { namespace light_wallet {
 using std::string;
 
-light_wallet::light_wallet()
+light_wallet::light_wallet(const fc::path& data_dir)
+   : _data_dir(data_dir)
 {
+   try {
+      _chain_cache = std::make_shared<pending_chain_state>();
+      *_chain_cache = fc::json::from_file<pending_chain_state>( data_dir / "chain_cache.json" );
+   } catch ( const fc::exception& e )
+   {
+      elog( "Error loading chain cache: ${e}", ("e", e.to_detail_string()));
+   }
 }
 
 light_wallet::~light_wallet()
 {
+   try {
+      fc::json::save_to_file(*_chain_cache, _data_dir / "chain_cache.json");
+      _chain_cache.reset();
+   } catch( const fc::exception& e) {
+      edump((e));
+   }
 }
 
 void light_wallet::connect( const string& host, const string& user, const string& pass, uint16_t port )
@@ -56,12 +70,35 @@ void light_wallet::disconnect()
 void light_wallet::open( const fc::path& wallet_json )
 {
    _wallet_file = wallet_json;
-   _data = fc::json::from_file<light_wallet_data>( wallet_json );
+
+   auto tmp = wallet_json.generic_string() + ".tmp";
+   auto bak = wallet_json.generic_string() + ".bak";
+
+   if( fc::exists(bak) )
+   {
+      try {
+         _data = fc::json::from_file<light_wallet_data>( tmp );
+      } catch (...) {
+         _data = fc::json::from_file<light_wallet_data>( bak );
+      }
+
+      if( fc::exists(tmp) )
+         fc::rename(tmp, wallet_json.generic_string() + "." + fc::to_string(fc::time_point::now().sec_since_epoch()) + ".tmp");
+      if( fc::exists(bak) )
+         fc::rename(bak, wallet_json.generic_string() + "." + fc::to_string(fc::time_point::now().sec_since_epoch()) + ".bak");
+   } else
+      _data = fc::json::from_file<light_wallet_data>( wallet_json );
 }
 
 void light_wallet::save()
 {
-   fc::json::save_to_file(_data, _wallet_file, false);
+   fc::path tmp = _wallet_file.generic_string() + ".tmp";
+   fc::path bak = _wallet_file.generic_string() + ".bak";
+
+   fc::rename(_wallet_file, bak);
+   fc::json::save_to_file(_data, tmp, false);
+   fc::rename(tmp, _wallet_file);
+   fc::remove(bak);
 }
 
 void light_wallet::close()

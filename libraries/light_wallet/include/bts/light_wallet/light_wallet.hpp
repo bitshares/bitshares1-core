@@ -4,6 +4,7 @@
 #include <bts/blockchain/balance_record.hpp>
 #include <bts/blockchain/block_record.hpp>
 #include <bts/blockchain/asset_record.hpp>
+#include <bts/blockchain/chain_database.hpp>
 #include <bts/rpc/rpc_client.hpp>
 #include <bts/wallet/config.hpp>
 #include <bts/wallet/wallet_records.hpp>
@@ -32,7 +33,7 @@ namespace bts { namespace light_wallet {
    class light_wallet 
    {
       public:
-         light_wallet();
+         light_wallet(const fc::path& data_dir);
          ~light_wallet();
 
          void connect( const string& host, const string& user = "any", const string& pass = "none", uint16_t port = 0 );
@@ -77,9 +78,11 @@ namespace bts { namespace light_wallet {
          oaccount_record get_account_record(const string& identifier );
 
          bts::rpc::rpc_client             _rpc;
+         fc::path                         _data_dir;
          fc::path                         _wallet_file;
          optional<fc::ecc::private_key>   _private_key;
          optional<light_wallet_data>      _data;
+         pending_chain_state_ptr          _chain_cache;
 
    private:
          bts::wallet::transaction_ledger_entry summarize(const fc::variant_object& transaction_bundle);

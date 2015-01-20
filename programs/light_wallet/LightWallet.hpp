@@ -30,10 +30,10 @@ class LightWallet : public QObject
 
 public:
    LightWallet()
-      : m_walletThread("Wallet Implementation Thread")
+      : m_walletThread("Wallet Implementation Thread"),
+        m_wallet(QStandardPaths::writableLocation(QStandardPaths::DataLocation).toStdWString())
    {
       auto path = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
-      qDebug() << "Creating data directory:" << path;
       QDir(path).mkpath(".");
    }
    virtual ~LightWallet()
