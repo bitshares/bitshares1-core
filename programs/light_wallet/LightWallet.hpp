@@ -39,7 +39,8 @@ public:
    virtual ~LightWallet()
    {
       m_walletThread.quit();
-      m_wallet.save();
+      if( walletExists() )
+         m_wallet.save();
    }
 
    bool walletExists() const;
