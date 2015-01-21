@@ -355,16 +355,19 @@ namespace detail {
    {
 	   // TODO:  allow_stupid
 	   oasset_record sell_arec = _blockchain->get_asset_record( sell_quantity_symbol );
-	   oasset_record price_arec = _blockchain->get_asset_record( price_symbol );	   
+	   oasset_record price_arec = _blockchain->get_asset_record( price_symbol );
 
        // TODO: Add symbol to error messages, use exception ID instead of assert
 	   FC_ASSERT( sell_arec.valid(), "could not find record for asset being sold" );
 	   FC_ASSERT( price_arec.valid(), "could not find record for asset being bought" );
 
-       if( sell_arec->id == price_arec->id )
+	   const asset_id_type sell_id = sell_arec->id;
+	   const asset_id_type price_id = price_arec->id;
+
+       if( sell_id == price_id )
           FC_CAPTURE_AND_THROW( invalid_market, (sell_quantity_symbol)(price_symbol) );
 
-       const bool is_bid = (sell_arec->id > price_arec->id);
+       const bool is_bid = (sell_id > price_id);
        if( is_bid )
        {
 		   // n.b. bid base/quote is opposite of ask
@@ -376,8 +379,8 @@ namespace detail {
    	       price relative_price = str_to_relative_price(
    	           relative_price_str, base_symbol, quote_symbol );
 
-	       price limit_price = _blockchain->to_ugly_price(
-               price_limit, base_symbol, quote_symbol, true);
+           price limit_price = _blockchain->to_ugly_asset( price_limit, price_symbol )
+                             / _blockchain->to_ugly_asset( "1", sell_quantity_symbol );
 
 		   if( relative_price.ratio > 0 )
 		   {
@@ -418,8 +421,8 @@ namespace detail {
    	       price relative_price = str_to_relative_price(
    	           relative_price_str, base_symbol, quote_symbol );
 		   
-	       price limit_price = _blockchain->to_ugly_price(
-               price_limit, base_symbol, quote_symbol, true);
+           price limit_price = _blockchain->to_ugly_asset( price_limit, price_symbol )
+                             / _blockchain->to_ugly_asset( "1", sell_quantity_symbol );
 
 		   if( relative_price.ratio > 0 )
 		   {
