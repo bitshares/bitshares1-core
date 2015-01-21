@@ -2290,11 +2290,12 @@ namespace bts { namespace blockchain {
         slot_records.reserve( std::min( count, get_head_block_num() ) );
 
         const slot_index key = slot_index( delegate_id, my->_head_block_header.timestamp );
-        for( auto iter = my->_slot_index_to_record.lower_bound( key ); iter.valid() && slot_records.size() <= count; ++iter )
+        for( auto iter = my->_slot_index_to_record.lower_bound( key ); iter.valid(); ++iter )
         {
             const slot_record& record = iter.value();
             if( record.index.delegate_id != delegate_id ) break;
             slot_records.push_back( record );
+            if( slot_records.size() >= count ) break;
         }
 
         return slot_records;
