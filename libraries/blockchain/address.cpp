@@ -12,14 +12,6 @@ namespace bts {
    {
       FC_ASSERT( is_valid( base58str ) );
       std::string prefix( BTS_ADDRESS_PREFIX );
-      try
-      {
-          if( is_valid_v1( base58str ) )
-              prefix = std::string( "BTSX" );
-      }
-      catch( ... )
-      {
-      }
       std::vector<char> v = fc::from_base58( base58str.substr( prefix.size() ) );
       memcpy( (char*)addr._hash, v.data(), std::min<size_t>( v.size()-4, sizeof( addr ) ) );
    }
@@ -30,12 +22,11 @@ namespace bts {
       addr = fc::ripemd160::hash( enc.result() );
    }
 
-   bool address::is_valid( const std::string& base58str )
+   bool address::is_valid( const std::string& base58str, const std::string& prefix )
    {
-      if( is_valid_v1( base58str ) )
+      if( prefix == BTS_ADDRESS_PREFIX && is_valid( base58str, "BTSX" ) )
           return true;
 
-      std::string prefix( BTS_ADDRESS_PREFIX );
       const size_t prefix_len = prefix.size();
       if( base58str.size() <= prefix_len )
           return false;
@@ -55,20 +46,6 @@ namespace bts {
       const fc::ripemd160 checksum = fc::ripemd160::hash( v.data(), v.size() - 4 );
       if( memcmp( v.data() + 20, (char*)checksum._hash, 4 ) != 0 )
           return false;
-      return true;
-   }
-
-   bool address::is_valid_v1( const std::string& base58str )
-   {
-      std::string prefix( "BTSX" );
-      const size_t prefix_len = prefix.size();
-      FC_ASSERT( base58str.size() > prefix_len );
-      FC_ASSERT( base58str.substr( 0, prefix_len ) == prefix );
-      std::vector<char> v = fc::from_base58( base58str.substr( prefix_len ) );
-      FC_ASSERT( v.size() > 4, "all addresses must have a 4 byte checksum" );
-      FC_ASSERT( v.size() == sizeof( fc::ripemd160 ) + 4, "all addresses must base58 decode to exactly 24 bytes" );
-      const fc::ripemd160 checksum = fc::ripemd160::hash( v.data(), v.size() - 4 );
-      FC_ASSERT( memcmp( v.data() + 20, (char*)checksum._hash, 4 ) == 0, "address checksum mismatch" );
       return true;
    }
 
