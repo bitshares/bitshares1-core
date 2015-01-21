@@ -17,6 +17,8 @@ namespace bts { namespace blockchain {
 
     public_key_type::public_key_type( const std::string& base58str )
     {
+	   // TODO:  Refactor syntactic checks into static is_valid()
+	   //        to make public_key_type API more similar to address API
        std::string prefix( BTS_ADDRESS_PREFIX );
        try
        {

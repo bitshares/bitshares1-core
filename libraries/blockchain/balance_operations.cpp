@@ -194,7 +194,6 @@ namespace bts { namespace blockchain {
       if( !current_balance_record.valid() )
          FC_CAPTURE_AND_THROW( unknown_balance_record, (balance_id) );
 
-
 #ifndef WIN32
 #warning [SOFTFORK] Remove this check after BTS_V0_6_1_FORK_BLOCK_NUM has passed
 #endif
