@@ -22,9 +22,8 @@ namespace bts {
       addr = fc::ripemd160::hash( enc.result() );
    }
 
-   bool address::is_valid( const std::string& base58str )
+   bool address::is_valid( const std::string& base58str, const std::string& prefix )
    {
-      std::string prefix( BTS_ADDRESS_PREFIX );
       const size_t prefix_len = prefix.size();
       if( base58str.size() <= prefix_len )
           return false;
