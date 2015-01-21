@@ -400,11 +400,15 @@ namespace detail {
 		   }
 		   else
 		   {
+               asset desired_quantity = _blockchain->to_ugly_asset(
+                   sell_quantity, sell_quantity_symbol ) * limit_price;
+               string desired_quantity_str = _blockchain->to_pretty_asset( desired_quantity );
+
 			   // absolute bid.
                this->apply_order_to_builder(bid_order,
                                             builder,
                                             from_account_name,
-                                            sell_quantity,
+                                            desired_quantity_str,
                                             limit_price,
                                             base_symbol,
                                             quote_symbol,
