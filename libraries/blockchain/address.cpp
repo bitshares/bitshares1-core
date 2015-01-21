@@ -22,11 +22,6 @@ namespace bts {
       addr = fc::ripemd160::hash( enc.result() );
    }
 
-   /**
-    *  Validates checksum and length of base58 address
-    *
-    *  @return true if successful, throws an exception with reason if invalid.
-    */
    bool address::is_valid( const std::string& base58str )
    {
       std::string prefix( BTS_ADDRESS_PREFIX );
