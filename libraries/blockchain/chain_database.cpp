@@ -2291,7 +2291,11 @@ namespace bts { namespace blockchain {
 
         const slot_index key = slot_index( delegate_id, my->_head_block_header.timestamp );
         for( auto iter = my->_slot_index_to_record.lower_bound( key ); iter.valid() && slot_records.size() <= count; ++iter )
-            slot_records.push_back( iter.value() );
+        {
+            const slot_record& record = iter.value();
+            if( record.index.delegate_id != delegate_id ) break;
+            slot_records.push_back( record );
+        }
 
         return slot_records;
     } FC_CAPTURE_AND_RETHROW( (delegate_id)(count) ) }
