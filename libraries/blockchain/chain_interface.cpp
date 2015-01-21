@@ -353,14 +353,8 @@ namespace bts { namespace blockchain {
    string chain_interface::to_pretty_asset( const asset& a )const
    { try {
       const auto oasset = get_asset_record( a.asset_id );
-      if( oasset.valid() )
-      {
-         return oasset->amount_to_string(a.amount);
-      }
-      else
-      {
-         return fc::to_pretty_string( a.amount ) + " ???";
-      }
+      if( oasset.valid() ) return oasset->amount_to_string(a.amount);
+      return fc::to_pretty_string( a.amount ) + " ???";
    } FC_CAPTURE_AND_RETHROW( (a) ) }
 
    void chain_interface::set_chain_id( const digest_type& id )

@@ -103,9 +103,9 @@ namespace bts { namespace blockchain {
       /** messages are a constant length to preven analysis of
        * transactions with the same length memo_data
        */
-      fc::array<char,BTS_BLOCKCHAIN_MAX_MEMO_SIZE>  message;
-      fc::enum_type<uint8_t,memo_flags_enum>        memo_flags;
-      fc::array<char,32>                            extra_message;
+      fc::array<char,BTS_BLOCKCHAIN_MAX_MEMO_SIZE>      message;
+      fc::enum_type<uint8_t,memo_flags_enum>            memo_flags;
+      fc::array<char,BTS_BLOCKCHAIN_EXTENDED_MEMO_SIZE> extra_message;
    };
    typedef fc::optional<extended_memo_data> oextended_memo_data;
 
