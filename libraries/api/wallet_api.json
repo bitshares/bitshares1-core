@@ -822,8 +822,8 @@
             },
             {
               "name" : "to_address",
-              "type" : "address",
-              "description" : "the address to transfer to"
+              "type" : "string",
+              "description" : "the address or pubkey to transfer to"
             },
             {
               "name" : "memo_message",
