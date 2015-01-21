@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bts/blockchain/chain_database.hpp>
+#include <bts/blockchain/transaction_creation_state.hpp>
 #include <bts/mail/message.hpp>
 #include <bts/wallet/pretty.hpp>
 #include <bts/wallet/transaction_builder.hpp>
@@ -38,6 +39,9 @@ namespace bts { namespace wallet {
       public:
          wallet( chain_database_ptr chain, bool enabled = true );
          virtual ~wallet();
+
+         void initialize_transaction_creator( transaction_creation_state& c, const string& account_name );
+         void sign_transaction_creator( transaction_creation_state& c );
 
          //Emitted when wallet is locked or unlocked. Argument is true if wallet is now locked; false otherwise.
          fc::signal<void( bool )>  wallet_lock_state_changed;
@@ -467,15 +471,17 @@ namespace bts { namespace wallet {
           *
           *  Requires the user have 6003.4 USD
           */
-         wallet_transaction_record submit_relative_bid(const string& from_account_name,
-                 const string& real_quantity,
-                 const string& quantity_symbol,
-                 const string& relative_price_per_unit,
-                 const string& quote_symbol,
-                 const string& limit,
-                 const string& funding,
+         wallet_transaction_record sell(
+                 const string& from_account,
+                 const string& sell_quantity,
+                 const string& sell_quantity_symbol,
+                 const string& price_limit,
+                 const string& price_symbol,
+                 const string& relative_percent,
+                 bool allow_stupid,
                  bool sign
                  );
+
          /**
           *  ie: submit_ask( 10 BTC at 600.34 USD per BTC )
           *

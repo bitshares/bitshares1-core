@@ -60,17 +60,19 @@ namespace bts { namespace blockchain {
                }
                else if( at_time > vesting_condition.start_time )
                {
-                   const auto elapsed_time = (at_time - vesting_condition.start_time).to_seconds();
+                   const uint32_t elapsed_time = (at_time - vesting_condition.start_time).to_seconds();
                    FC_ASSERT( elapsed_time > 0 && elapsed_time < vesting_condition.duration );
-                   max_claimable = (vesting_condition.original_balance * elapsed_time) / vesting_condition.duration;
+                   const fc::uint128 numerator = fc::uint128( vesting_condition.original_balance ) * fc::uint128( elapsed_time );
+                   max_claimable = (numerator / fc::uint128( vesting_condition.duration )).to_uint64();
                    FC_ASSERT( max_claimable >= 0 && max_claimable < vesting_condition.original_balance );
                }
 
                const share_type claimed_so_far = vesting_condition.original_balance - balance;
-               FC_ASSERT( claimed_so_far >= 0 && claimed_so_far <= vesting_condition.original_balance );
+               FC_ASSERT( claimed_so_far >= 0 && claimed_so_far <= max_claimable );
 
                const share_type spendable_balance = max_claimable - claimed_so_far;
-               FC_ASSERT( spendable_balance >= 0 && spendable_balance <= vesting_condition.original_balance );
+               FC_ASSERT( spendable_balance >= 0 && spendable_balance <= max_claimable );
+               FC_ASSERT( spendable_balance + claimed_so_far == max_claimable );
 
                return asset( spendable_balance, condition.asset_id );
            }

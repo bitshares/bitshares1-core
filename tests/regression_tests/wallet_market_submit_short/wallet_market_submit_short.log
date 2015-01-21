@@ -97,12 +97,12 @@ N/A                           100.00000 XTS                 50.000000 %         
 N/A                           100.00000 XTS                 10.000000 %                   10.1 XMO / XTS                ff60f2064550cba4ceff9358b7094d4133669191
 
 default (unlocked) >>> wallet_market_order_list XMO XTS
-TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
+TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
-short_order         100.00000 XTS       1000. XMO / XTS               100.00000 XTS       100,000.00 XMO      N/A                 2ba1d2d14065f7b98023f562bbf826d879351e45
-short_order         100.00000 XTS       3000. XMO / XTS               100.00000 XTS       300,000.00 XMO      N/A                 91a6854ee01f7be85985fa6c8af8a604a9945d72
-short_order         100.00000 XTS       500. XMO / XTS                100.00000 XTS       50,000.00 XMO       N/A                 964bf739d6c0b4b1df0b2353ddac550cc1a3860d
-short_order         100.00000 XTS       100. XMO / XTS                100.00000 XTS       10,000.00 XMO       N/A                 ff60f2064550cba4ceff9358b7094d4133669191
+short_order         100.00000 XTS       1000. XMO / XTS               100.00000 XTS       100,000.00 XMO      N/A                 2.1 XMO / XTS       2ba1d2d14065f7b98023f562bbf826d879351e45   XTSGeRFZj44f4X6wLZnMjF8JgccYcL2tM3rr
+short_order         100.00000 XTS       3000. XMO / XTS               100.00000 XTS       300,000.00 XMO      N/A                 NONE                91a6854ee01f7be85985fa6c8af8a604a9945d72   XTS6nYMeLzw4DwuCkmUQ76bBDGiK1S7CoKtD
+short_order         100.00000 XTS       500. XMO / XTS                100.00000 XTS       50,000.00 XMO       N/A                 3.3334 XMO / XTS    964bf739d6c0b4b1df0b2353ddac550cc1a3860d   XTS8HcMQqAkWCwPzhrzHMvLMm91RuDkMLXbS
+short_order         100.00000 XTS       100. XMO / XTS                100.00000 XTS       10,000.00 XMO       N/A                 10.1 XMO / XTS      ff60f2064550cba4ceff9358b7094d4133669191   XTS3qGsHqiMAMdeYMt2n6cWbLLC2oBdmwwRU
 default (unlocked) >>> help blockchain_calculate_debt
 Usage:
 blockchain_calculate_debt <asset> [include_interest]                                                  Calculate the total amount of a market-issued asset that is owed to the network by open short positions

@@ -5,41 +5,34 @@ import QtQuick.Layouts 1.1
 import Material 0.1
 
 Page {
+   id: transferPage
    title: "Transfer"
    
-   Item {
+   RowLayout {
       id: hashBar
-      y: visuals.margins
-      width: parent.width
-      height: recipientHash.height
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.right:  parent.right
+      anchors.margins: visuals.margins
 
       RoboHash {
          name: wallet.account.name
          x: visuals.margins
-         width: Math.min(units.dp(120), preferredWidth)
-      }
-      Column {
-         anchors.centerIn: parent
-
-         Label {
-            anchors.horizontalCenter: parent.horizontalCenter
-            font.pixelSize: hashBar.height - units.dp(16)
-            text: "→"
-         }
-         Label {
-            anchors.horizontalCenter: parent.horizontalCenter
-            font.pixelSize: units.dp(16)
-            color: "red"
-            text: "10 XTS"
-         }
+         Layout.fillWidth: true
       }
       RoboHash {
          id: recipientHash
-         name: "Unknown"
-         width: Math.min(units.dp(120), preferredWidth)
-         anchors.right: parent.right
-         anchors.rightMargin: visuals.margins
+         name: toNameField.text? toNameField.text : "Unknown"
+         Layout.fillWidth: true
       }
+   }
+   Label {
+      id: amountLabel
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.top: hashBar.bottom
+      style: "display1"
+      color: "red"
+      text: Number(amountField.text) + " " + assetSymbol.text
    }
 
    Rectangle {
@@ -47,15 +40,18 @@ Page {
       color: "darkgrey";
       height: 1;
       width: parent.width;
-      y: hashBar.y + hashBar.height + visuals.margins
+      y: amountLabel.y + amountLabel.height + visuals.margins
    }
 
    Item {
-      anchors.top: splitter.bottom
-      anchors.left: parent.left
-      anchors.right: parent.right
-      anchors.bottom: parent.bottom
-      anchors.margins: visuals.margins
+      id: transferForm
+      anchors {
+         top: splitter.bottom
+         left: parent.left
+         right: parent.right
+         bottom: parent.bottom
+         margins: visuals.margins
+      }
 
       TextField {
          id: toNameField
@@ -67,6 +63,8 @@ Page {
          focus: true
       }
       RowLayout {
+         id: amountRow
+         z: 2
          anchors.top: toNameField.bottom
          anchors.topMargin: units.dp(3)
          width: parent.width
@@ -104,11 +102,85 @@ Page {
             }
             Menu {
                id: assetMenu
+               width: parent.width * 1.1
                model: wallet.account.availableAssets
                owner: assetSymbol
                onElementSelected: assetSymbol.text = elementData
             }
          }
       }
+      Label {
+         font.pixelSize: units.dp(12)
+         anchors.top: amountRow.bottom
+         anchors.right: amountRow.right
+         text: {
+            var fee = wallet.getFee(assetSymbol.text)
+            return qsTr("Available balance: ") + wallet.account.balance(assetSymbol.text) + " " + assetSymbol.text +
+                  "\n" + qsTr("Transaction fee: ") + fee.amount + " " + fee.symbol
+         }
+      }
+      TextField {
+         id: memoField
+         width: parent.width
+         maximumLength: wallet.maxMemoSize
+         placeholderText: qsTr("Memo")
+         floatingLabel: true
+         font.pixelSize: units.dp(20)
+         anchors.top: amountRow.bottom
+         anchors.margins: units.dp(3)
+      }
    }
+   Item {
+      id: confirmForm
+      anchors {
+         top: splitter.bottom
+         left: parent.left
+         right: parent.right
+         bottom: parent.bottom
+         margins: visuals.margins
+      }
+      visible: false
+
+      Transaction {
+         id: transactionPreview
+         width: parent.width
+         anchors.horizontalCenter: parent.horizontalCenter
+      }
+   }
+
+   Row {
+      anchors {
+         right: parent.right
+         bottom: parent.bottom
+         margins: visuals.margins
+      }
+      spacing: visuals.margins
+
+      Button {
+         text: qsTr("Cancel")
+         onClicked: pop()
+      }
+      Button {
+         text: qsTr("Send")
+         onClicked: {
+            transactionPreview.trx = wallet.account.beginTransfer(toNameField.text, amountField.text,
+                                                                  assetSymbol.text, memoField.text);
+            transferPage.state = "confirmation"
+         }
+      }
+   }
+
+   states: [
+      State {
+         name: "confirmation"
+         PropertyChanges {
+            target: transferForm
+            visible: false
+         }
+         PropertyChanges {
+            target: confirmForm
+            visible: true
+         }
+      }
+   ]
 }

@@ -6,4 +6,7 @@ TransactionSummary::TransactionSummary(QString id, QString timestamp, QList<Ledg
      m_id(id),
      m_when(timestamp),
      m_ledger(ledger)
-{}
+{
+   for( auto entry : m_ledger )
+      entry->setParent(this);
+}

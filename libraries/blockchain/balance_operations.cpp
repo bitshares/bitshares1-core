@@ -504,11 +504,7 @@ namespace bts { namespace blockchain {
       ilog("last_update_secs is: ${secs}", ("secs", last_update_secs) );
 
       auto balance = current_balance_record->balance;
-      auto fee = 50000; // TODO
-#ifndef WIN32
-#warning figure out how to set the real fee here
-#endif
-
+      auto fee = BTS_BLOCKCHAIN_PRECISION / 2;
       FC_ASSERT( balance > fee );
 
       auto asset_rec = eval_state._current_state->get_asset_record( current_balance_record->condition.asset_id );

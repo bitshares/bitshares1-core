@@ -94,6 +94,8 @@ namespace bts { namespace blockchain { namespace detail {
             mtrx.bid_type  = _current_bid->type;
             mtrx.ask_type  = _current_ask->type;
 
+            wdump( (mtrx) );
+
             if( _current_bid->type == short_order )
             {
                 FC_ASSERT( quote_asset->is_market_issued() );
@@ -116,7 +118,7 @@ namespace bts { namespace blockchain { namespace detail {
             {
                 if( _current_bid->state.limit_price.valid() )
                 {
-                  if( *_current_bid->state.limit_price < mtrx.ask_price )
+                  if( *_current_bid->state.limit_price <= mtrx.ask_price )
                   {
                       _current_bid.reset(); continue;
                   }
@@ -126,8 +128,9 @@ namespace bts { namespace blockchain { namespace detail {
             {
                 if( _current_ask->state.limit_price.valid() )
                 {
-                  if( *_current_ask->state.limit_price > mtrx.ask_price )
+                  if( *_current_ask->state.limit_price >= mtrx.ask_price )
                   {
+                     wlog( "skip relative ask due to limit > ask_price" );
                       _current_ask.reset(); continue;
                   }
                 }
@@ -155,7 +158,11 @@ namespace bts { namespace blockchain { namespace detail {
             // get_next_ask() will return all covers first after checking expiration... which means
             // if it is not a cover then we can stop matching orders as soon as there exists a spread
             //// The ask price hasn't been reached
-            else if( mtrx.bid_price < mtrx.ask_price ) break;
+            else if( mtrx.bid_price < mtrx.ask_price )
+            {
+               wlog( "bid_price ${b} < ask_price ${a}; exit market loop", ("b",mtrx.bid_price)("a",mtrx.ask_price) );
+               break;
+            }
 
             if( _current_ask->type == cover_order && _current_bid->type == short_order )
             {
@@ -216,15 +223,19 @@ namespace bts { namespace blockchain { namespace detail {
                 pay_current_bid( mtrx, *quote_asset );
                 pay_current_cover( mtrx, *quote_asset );
             }
-            else if( (_current_ask->type == ask_order || _current_ask->type == relative_bid_order) &&
+            else if( (_current_ask->type == ask_order || _current_ask->type == relative_ask_order)  &&
                      _current_bid->type == short_order )
             {
+                FC_ASSERT( _feed_price.valid() );
+
                 // Bound collateral ratio (maximizes collateral of new margin position)
                 price collateral_rate          = *_feed_price; // Asserted valid above
                 collateral_rate.ratio          /= 2; // 2x from short, 1 x from long == 3x default collateral
-                const asset ask_quantity_usd   = _current_ask->get_quote_quantity();
+                const asset ask_quantity_usd   = _current_ask->get_quote_quantity(*_feed_price);
                 const asset short_quantity_usd = _current_bid->get_balance() * collateral_rate;
                 const asset usd_exchanged      = std::min( short_quantity_usd, ask_quantity_usd );
+
+                wdump( (ask_quantity_usd)(short_quantity_usd)(usd_exchanged) );
 
                 mtrx.ask_received   = usd_exchanged;
 
@@ -249,9 +260,10 @@ namespace bts { namespace blockchain { namespace detail {
             else if( (_current_ask->type == ask_order || _current_ask->type == relative_ask_order) &&
                      (_current_bid->type == bid_order || _current_bid->type == relative_bid_order ) )
             {
-                const asset bid_quantity_xts = _current_bid->get_quantity();
-                const asset ask_quantity_xts = _current_ask->get_quantity();
+                const asset bid_quantity_xts = _current_bid->get_quantity( _feed_price ? *_feed_price : price() );
+                const asset ask_quantity_xts = _current_ask->get_quantity( _feed_price ? *_feed_price : price() );
                 const asset quantity_xts = std::min( bid_quantity_xts, ask_quantity_xts );
+                wdump( (bid_quantity_xts)(ask_quantity_xts)(quantity_xts) );
 
                 // Everyone gets the price they asked for
                 mtrx.ask_received   = quantity_xts * mtrx.ask_price;
@@ -260,12 +272,16 @@ namespace bts { namespace blockchain { namespace detail {
                 mtrx.ask_paid       = quantity_xts;
                 mtrx.bid_received   = quantity_xts;
 
+                wdump((mtrx));
+
                 // Handle rounding errors
                 if( quantity_xts == bid_quantity_xts )
                    mtrx.bid_paid = _current_bid->get_balance();
 
                 if( quantity_xts == ask_quantity_xts )
                    mtrx.ask_paid = _current_ask->get_balance();
+
+                wdump((mtrx));
 
                 mtrx.fees_collected = mtrx.bid_paid - mtrx.ask_received;
 
@@ -399,13 +415,9 @@ namespace bts { namespace blockchain { namespace detail {
       }
 
       auto call_collateral = collateral;
-      call_collateral.amount *= 2;
-      call_collateral.amount /= 3;
-      //auto cover_price = mtrx.bid_price;
+      call_collateral.amount *= 3;
+      call_collateral.amount /= 4;
       auto cover_price = mtrx.bid_paid / call_collateral;
-      //cover_price.ratio *= 2;
-      //cover_price.ratio /= 3;
-      // auto cover_price = mtrx.bid_paid / asset( (3*collateral.amount)/4, _base_id );
 
       market_index_key cover_index( cover_price, _current_bid->get_owner() );
       auto ocover_record = _pending_state->get_collateral_record( cover_index );
@@ -552,8 +564,9 @@ namespace bts { namespace blockchain { namespace detail {
       FC_ASSERT( _current_ask->type == ask_order || _current_ask->type == relative_ask_order );
       FC_ASSERT( mtrx.ask_type == ask_order || mtrx.ask_type == relative_ask_order );
 
+      wdump( (_current_ask->state.balance)(mtrx.ask_paid.amount) );
       _current_ask->state.balance -= mtrx.ask_paid.amount;
-      FC_ASSERT( _current_ask->state.balance >= 0 );
+      FC_ASSERT( _current_ask->state.balance >= 0, "balance: ${b}", ("b",_current_ask->state.balance) );
 
       auto ask_balance_address = withdraw_condition( withdraw_with_signature(mtrx.ask_owner), _quote_id ).get_address();
       auto ask_payout = _pending_state->get_balance_record( ask_balance_address );

@@ -18,29 +18,30 @@ default (unlocked) >>> wallet_transfer 10000 XTS delegate0 testaccount2
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 <d-ign></d-ign>PENDING   delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_wait_for_block_by_number 1 relative
+OK
+default (unlocked) >>> wallet_asset_issue 10000 XMO testaccount1 "Sending some assets"
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> debug_wait_for_block_by_number 2 relative
 OK
 default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
-1     XMO    DIGITAL_DEVICE1         AN ASSET                                        delegate0                       0.00 %    0.00 XMO                    
-0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,199.99901 XTS     
+1     XMO    DIGITAL_DEVICE1         AN ASSET                                        delegate0                       0.20 %    10,000.00 XMO               
+0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,249.99901 XTS     
 default (unlocked) >>> balance
 ACCOUNT                         BALANCE                     
 ============================================================
-delegate0                       19,291,878.69801 XTS        
+delegate0                       19,291,878.19801 XTS        
 delegate1                       19,801,980.19801 XTS        
 delegate2                       19,801,980.19801 XTS        
 delegate3                       19,801,980.19801 XTS        
 delegate4                       19,801,980.19801 XTS        
 testaccount1                    100.00000 XTS               
+                                10,000.00 XMO               
 testaccount2                    10,000.00000 XTS            
-default (unlocked) >>> wallet_asset_issue 10000 XMO testaccount1 "Sending some assets"
-TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
-======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         <d-ign></d-ign>
-default (unlocked) >>> debug_wait_for_block_by_number 1 relative
-OK
 default (unlocked) >>> history
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
@@ -52,7 +53,7 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 <d-ign></d-ign>1         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.50000 XTS   <d-ign></d-ign>
 <d-ign></d-ign>2         delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>3         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>5         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>4         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
@@ -76,13 +77,13 @@ testaccount1                    99.50000 XTS
                                 8,500.00 XMO                
 testaccount2                    10,000.00000 XTS            
 default (unlocked) >>> blockchain_market_list_bids XMO XTS
-TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
+TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
-bid_order           500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 ee62e3cee425e0410eae3a3b614020fa70cd0e21
+bid_order           500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 NONE                ee62e3cee425e0410eae3a3b614020fa70cd0e21   XTSGeRFZj44f4X6wLZnMjF8JgccYcL2tM3rr
 default (unlocked) >>> wallet_market_order_list XMO XTS
-TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
+TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
-bid_order           500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 ee62e3cee425e0410eae3a3b614020fa70cd0e21
+bid_order           500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 NONE                ee62e3cee425e0410eae3a3b614020fa70cd0e21   XTSGeRFZj44f4X6wLZnMjF8JgccYcL2tM3rr
 default (unlocked) >>> blockchain_market_order_book XMO XTS
      BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
@@ -99,7 +100,7 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 <d-ign></d-ign>1         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.50000 XTS   <d-ign></d-ign>
 <d-ign></d-ign>2         delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>3         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>5         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>4         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>6         testaccount1        BID-ee62e3ce        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> wallet_market_submit_ask testaccount2 100 XTS 2.9 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
@@ -108,18 +109,18 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> blockchain_market_list_bids XMO XTS
-TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
+TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
-bid_order           500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 ee62e3cee425e0410eae3a3b614020fa70cd0e21
+bid_order           500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 NONE                ee62e3cee425e0410eae3a3b614020fa70cd0e21   XTSGeRFZj44f4X6wLZnMjF8JgccYcL2tM3rr
 default (unlocked) >>> blockchain_market_list_asks XMO XTS
-TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
+TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
-ask_order           100.00000 XTS       2.9 XMO / XTS                 100.00000 XTS       290.00 XMO          N/A                 c2c88fbf1e2b73670f147d693076569e8dcad09e
+ask_order           100.00000 XTS       2.9 XMO / XTS                 100.00000 XTS       290.00 XMO          N/A                 NONE                c2c88fbf1e2b73670f147d693076569e8dcad09e   XTSAHX84FNdwfdPKyqkxmJTn4juqUANfxVQT
 default (unlocked) >>> wallet_market_order_list XMO XTS
-TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
+TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
-ask_order           100.00000 XTS       2.9 XMO / XTS                 100.00000 XTS       290.00 XMO          N/A                 c2c88fbf1e2b73670f147d693076569e8dcad09e
-bid_order           500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 ee62e3cee425e0410eae3a3b614020fa70cd0e21
+ask_order           100.00000 XTS       2.9 XMO / XTS                 100.00000 XTS       290.00 XMO          N/A                 NONE                c2c88fbf1e2b73670f147d693076569e8dcad09e   XTSAHX84FNdwfdPKyqkxmJTn4juqUANfxVQT
+bid_order           500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 NONE                ee62e3cee425e0410eae3a3b614020fa70cd0e21   XTSGeRFZj44f4X6wLZnMjF8JgccYcL2tM3rr
 default (unlocked) >>> blockchain_market_order_book XMO XTS
      BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
@@ -158,7 +159,7 @@ default (unlocked) >>> history
  <d-ign></d-ign>1         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.50000 XTS   <d-ign></d-ign>
  <d-ign></d-ign>2         delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         <d-ign></d-ign>
  <d-ign></d-ign>3         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         <d-ign></d-ign>
- <d-ign></d-ign>5         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         <d-ign></d-ign>
+ <d-ign></d-ign>4         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         <d-ign></d-ign>
  <d-ign></d-ign>6         testaccount1        BID-ee62e3ce        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         <d-ign></d-ign>
  <d-ign></d-ign>8         testaccount2        ASK-c2c88fbf        100.00000 XTS           sell XTS @ 2.9 XMO / XTS                    0.50000 XTS         <d-ign></d-ign>
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -169,15 +170,15 @@ default (unlocked) >>> history
 |                              ASK-c2c88fbf        testaccount2        290.00 XMO              ask proceeds @ 2.9 XMO / XTS                                            |
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 default (unlocked) >>> blockchain_market_list_bids XMO XTS
-TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
+TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
-bid_order           400.00000 XTS       3. XMO / XTS                  1,200.00 XMO        1,200.00 XMO        N/A                 ee62e3cee425e0410eae3a3b614020fa70cd0e21
+bid_order           400.00000 XTS       3. XMO / XTS                  1,200.00 XMO        1,200.00 XMO        N/A                 NONE                ee62e3cee425e0410eae3a3b614020fa70cd0e21   XTSGeRFZj44f4X6wLZnMjF8JgccYcL2tM3rr
 default (unlocked) >>> blockchain_market_list_asks XMO XTS
 No market orders found.
 default (unlocked) >>> wallet_market_order_list XMO XTS
-TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
+TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
-bid_order           400.00000 XTS       3. XMO / XTS                  1,200.00 XMO        1,200.00 XMO        N/A                 ee62e3cee425e0410eae3a3b614020fa70cd0e21
+bid_order           400.00000 XTS       3. XMO / XTS                  1,200.00 XMO        1,200.00 XMO        N/A                 NONE                ee62e3cee425e0410eae3a3b614020fa70cd0e21   XTSGeRFZj44f4X6wLZnMjF8JgccYcL2tM3rr
 default (unlocked) >>> blockchain_market_order_book XMO XTS
      BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
@@ -198,18 +199,18 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> blockchain_market_list_bids XMO XTS
-TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
+TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
-bid_order           400.00000 XTS       3. XMO / XTS                  1,200.00 XMO        1,200.00 XMO        N/A                 ee62e3cee425e0410eae3a3b614020fa70cd0e21
+bid_order           400.00000 XTS       3. XMO / XTS                  1,200.00 XMO        1,200.00 XMO        N/A                 NONE                ee62e3cee425e0410eae3a3b614020fa70cd0e21   XTSGeRFZj44f4X6wLZnMjF8JgccYcL2tM3rr
 default (unlocked) >>> blockchain_market_list_asks XMO XTS
-TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
+TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
-ask_order           100.00000 XTS       3.1 XMO / XTS                 100.00000 XTS       310.00 XMO          N/A                 49e68e53713a4e1d331bd1f610244495c469a2e6
+ask_order           100.00000 XTS       3.1 XMO / XTS                 100.00000 XTS       310.00 XMO          N/A                 NONE                49e68e53713a4e1d331bd1f610244495c469a2e6   XTSGDvDbnWocshStkdFngbFMRf8cPbfHS7Lt
 default (unlocked) >>> wallet_market_order_list XMO XTS
-TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
+TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
-ask_order           100.00000 XTS       3.1 XMO / XTS                 100.00000 XTS       310.00 XMO          N/A                 49e68e53713a4e1d331bd1f610244495c469a2e6
-bid_order           400.00000 XTS       3. XMO / XTS                  1,200.00 XMO        1,200.00 XMO        N/A                 ee62e3cee425e0410eae3a3b614020fa70cd0e21
+ask_order           100.00000 XTS       3.1 XMO / XTS                 100.00000 XTS       310.00 XMO          N/A                 NONE                49e68e53713a4e1d331bd1f610244495c469a2e6   XTSGDvDbnWocshStkdFngbFMRf8cPbfHS7Lt
+bid_order           400.00000 XTS       3. XMO / XTS                  1,200.00 XMO        1,200.00 XMO        N/A                 NONE                ee62e3cee425e0410eae3a3b614020fa70cd0e21   XTSGeRFZj44f4X6wLZnMjF8JgccYcL2tM3rr
 default (unlocked) >>> blockchain_market_order_book XMO XTS
      BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
@@ -246,7 +247,7 @@ default (unlocked) >>> history
  <d-ign></d-ign>1         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.50000 XTS   <d-ign></d-ign>
  <d-ign></d-ign>2         delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         <d-ign></d-ign>
  <d-ign></d-ign>3         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         <d-ign></d-ign>
- <d-ign></d-ign>5         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         <d-ign></d-ign>
+ <d-ign></d-ign>4         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         <d-ign></d-ign>
  <d-ign></d-ign>6         testaccount1        BID-ee62e3ce        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         <d-ign></d-ign>
  <d-ign></d-ign>8         testaccount2        ASK-c2c88fbf        100.00000 XTS           sell XTS @ 2.9 XMO / XTS                    0.50000 XTS         <d-ign></d-ign>
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------

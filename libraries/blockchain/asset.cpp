@@ -20,21 +20,21 @@ namespace bts { namespace blockchain {
      // infinity times anything else is infinity
      if( l.is_infinite() )
      {
-         if( r.ratio == 0 )
+         if( r.ratio == fc::uint128_t(0) )
              FC_THROW_EXCEPTION( price_multiplication_undefined, "price multiplication undefined (0 * inf)" );
          return l;
      }
      if( r.is_infinite() )
      {
-         if( l.ratio == 0 )
+         if( l.ratio == fc::uint128_t(0) )
              FC_THROW_EXCEPTION( price_multiplication_undefined, "price multiplication undefined (inf * 0)" );
          return r;
      }
      
      // zero times anything is zero (infinity is already handled above)
-     if( l.ratio == 0 )
+     if( l.ratio == fc::uint128_t(0) )
          return l;
-     if( r.ratio == 0 )
+     if( r.ratio == fc::uint128_t(0) )
          return r;
 
      fc::bigint product = l.ratio;
@@ -43,7 +43,7 @@ namespace bts { namespace blockchain {
 
      // if the quotient is zero, it means there was an underflow
      //    (i.e. the result is nonzero but too small to represent)
-     if( product == 0 )
+     if( product == fc::bigint() )
          FC_THROW_EXCEPTION( price_multiplication_underflow, "price multiplication underflow" );
 
      static fc::bigint bi_infinity = price::infinite();

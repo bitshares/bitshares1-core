@@ -4,6 +4,7 @@
 #include <bts/blockchain/balance_record.hpp>
 #include <bts/blockchain/block_record.hpp>
 #include <bts/blockchain/asset_record.hpp>
+#include <bts/blockchain/chain_database.hpp>
 #include <bts/rpc/rpc_client.hpp>
 #include <bts/wallet/config.hpp>
 #include <bts/wallet/wallet_records.hpp>
@@ -32,7 +33,7 @@ namespace bts { namespace light_wallet {
    class light_wallet 
    {
       public:
-         light_wallet();
+         light_wallet(const fc::path& data_dir);
          ~light_wallet();
 
          void connect( const string& host, const string& user = "any", const string& pass = "none", uint16_t port = 0 );
@@ -57,10 +58,10 @@ namespace bts { namespace light_wallet {
          account_record& account();
          account_record& fetch_account();
          
-         void transfer( double amount, 
-                        const string& symbol, 
-                        const string& to_account_name, 
-                        const string& memo );
+         fc::variant_object transfer( const string& amount,
+                                      const string& symbol,
+                                      const string& to_account_name,
+                                      const string& memo );
 
          void sync_balance( bool resync_all = false);
          void sync_transactions();
@@ -69,6 +70,7 @@ namespace bts { namespace light_wallet {
          asset  get_fee( const string& symbol );
 
          map<string,double> balance()const;
+         bts::wallet::transaction_ledger_entry summarize(const fc::variant_object& transaction_bundle);
          vector<wallet::transaction_ledger_entry> transactions( const string& symbol );
 
          optional<asset_record> get_asset_record( const string& symbol );
@@ -77,12 +79,14 @@ namespace bts { namespace light_wallet {
          oaccount_record get_account_record(const string& identifier );
 
          bts::rpc::rpc_client             _rpc;
+         fc::path                         _data_dir;
          fc::path                         _wallet_file;
          optional<fc::ecc::private_key>   _private_key;
          optional<light_wallet_data>      _data;
+         pending_chain_state_ptr          _chain_cache;
 
    private:
-         bts::wallet::transaction_ledger_entry summarize(const fc::variant_object& transaction_bundle);
+         fc::ecc::private_key create_one_time_key(uint64_t sequence_number);
 
          map<string, account_record> _account_cache;
    };

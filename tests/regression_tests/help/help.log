@@ -216,10 +216,11 @@ wallet_market_cancel_order <order_id>
 wallet_market_cancel_orders <order_ids>                                                             
 wallet_market_cover <from_account_name> <quantity> <quantity_symbol> <cover_id>                     
 wallet_market_order_list <base_symbol> <quote_symbol> [limit] [account_name]                        
+wallet_market_sell <from_account_name> <quantity> <quantity_symbol> <base_price> <receive_symbol> <relative_percent> [allow_stupid] 
 wallet_market_submit_ask <from_account_name> <sell_quantity> <sell_quantity_symbol> <ask_price> <ask_price_symbol> [allow_stupid_ask] 
 wallet_market_submit_bid <from_account_name> <quantity> <quantity_symbol> <base_price> <base_symbol> [allow_stupid_bid] 
 wallet_market_submit_relative_ask <from_account_name> <sell_quantity> <sell_quantity_symbol> <relative_ask_price> <ask_price_symbol> [limit_ask_price] 
-wallet_market_submit_relative_bid <from_account_name> <quantity> <quantity_symbol> <relative_price> <base_symbol> [limit_price] 
+wallet_market_submit_relative_bid <from_account_name> <quantity> <quantity_symbol> <relative_price> <base_symbol> [limit_price] [funding] 
 wallet_market_submit_short <from_account_name> <short_collateral> <collateral_symbol> <interest_rate> <quote_symbol> [short_price_limit] 
 wallet_multisig_deposit <amount> <symbol> <from_name> <m> <addresses> [vote_method]                 
 wallet_multisig_get_balance_id <symbol> <m> <addresses>                                             

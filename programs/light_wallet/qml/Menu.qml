@@ -35,7 +35,8 @@ Card {
    signal elementSelected(var elementData)
    
    Column {
-      anchors.centerIn: parent
+      anchors.left: parent.left
+      anchors.verticalCenter: parent.verticalCenter
       anchors.margins: units.dp(15)
       spacing: units.dp(20)
       Repeater {

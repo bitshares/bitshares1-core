@@ -175,10 +175,19 @@ class wallet_impl : public chain_observer
                                   const string& order_price,
                                   const string& base_symbol,
                                   const string& quote_symbol,
-                                  const string& short_price_limit = string(),
-                                  const string& fund_quantity = string()
+                                  const string& short_price_limit = string()
                                  );
-
+      
+      void apply_sell_order_to_builder(
+                                       transaction_builder_ptr builder,
+                                       const string& from_account_name,
+                                       const string& sell_quantity,
+                                       const string& sell_quantity_symbol,
+                                       const string& price_limit,
+                                       const string& price_symbol,
+                                       const string& relative_percent,
+                                       bool allow_stupid
+                                      );
 
       template<typename ConditionType>
       bool scan_condition( const ConditionType& deposit, const asset& amount,
@@ -286,6 +295,8 @@ class wallet_impl : public chain_observer
           }
           return cache_deposit;
       }
+
+      price str_to_relative_price( const string& str, const string& base_symbol, const string& quote_symbol );
 };
 
 } } } // bts::wallet::detail

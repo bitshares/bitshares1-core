@@ -212,8 +212,7 @@ transaction_builder& transaction_builder::deposit_asset(const bts::wallet::walle
    entry.to_account = recipient.owner_key;
    entry.amount = amount;
    entry.memo = memo;
-   if( *memo_sender != payer.name )
-      entry.memo_from_account = *memo_sender;
+   if( *memo_sender != payer.name ) entry.memo_from_account = memo_account->owner_key;
    transaction_record.ledger_entries.push_back(std::move(entry));
 
    auto memo_signature = _wimpl->self->get_private_key(memo_key).sign_compact(fc::sha256::hash(memo.data(),
@@ -468,25 +467,22 @@ transaction_builder& transaction_builder::submit_bid(const wallet_account_record
 
 
 transaction_builder& transaction_builder::submit_relative_bid(const wallet_account_record& from_account,
-                                                     const asset& real_quantity,
-                                                     const asset& funding,
+                                                     const asset& sell_quantity,
                                                      const price& quote_price,
                                                      const optional<price>& limit )
 { try {
    validate_market(quote_price.quote_asset_id, quote_price.base_asset_id);
 
-   FC_ASSERT(funding.asset_id == quote_price.quote_asset_id);
-
    auto order_key = order_key_for_account(from_account.owner_address(), from_account.name);
 
    //Charge this account for the bid
-   deduct_balance(from_account.owner_address(), funding);
-   trx.relative_bid(funding, quote_price, limit, order_key);
+   deduct_balance(from_account.owner_address(), sell_quantity);
+   trx.relative_bid(sell_quantity, quote_price, limit, order_key);
 
    auto entry = ledger_entry();
    entry.from_account = from_account.owner_key;
    entry.to_account = order_key;
-   entry.amount = funding;
+   entry.amount = sell_quantity;
    entry.memo = "relative buy " + _wimpl->_blockchain->get_asset_symbol(quote_price.base_asset_id) +
                 " @ delta " + _wimpl->_blockchain->to_pretty_price(quote_price);
 
@@ -495,7 +491,7 @@ transaction_builder& transaction_builder::submit_relative_bid(const wallet_accou
 
    required_signatures.insert(order_key);
    return *this;
-} FC_CAPTURE_AND_RETHROW( (from_account.name)(funding)(quote_price) ) }
+} FC_CAPTURE_AND_RETHROW( (from_account.name)(sell_quantity)(quote_price) ) }
 
 transaction_builder& transaction_builder::submit_ask(const wallet_account_record& from_account,
                                                      const asset& cost,
