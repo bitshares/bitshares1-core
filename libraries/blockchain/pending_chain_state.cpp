@@ -1,5 +1,6 @@
 #include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/pending_chain_state.hpp>
+#include <bts/blockchain/time.hpp>
 #include <fc/io/raw_variant.hpp>
 
 namespace bts { namespace blockchain {
@@ -44,9 +45,8 @@ namespace bts { namespace blockchain {
    fc::time_point_sec pending_chain_state::now()const
    {
       const chain_interface_ptr prev_state = _prev_state.lock();
-      if( prev_state )
-         return prev_state->now();
-      return fc::time_point::now();
+      if( !prev_state ) return get_slot_start_time( blockchain::now() );
+      return prev_state->now();
    }
 
    fc::ripemd160 pending_chain_state::get_current_random_seed()const
