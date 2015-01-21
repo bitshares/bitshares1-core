@@ -57,6 +57,7 @@ public:
    Q_INVOKABLE QList<QObject*> transactionHistory(QString asset_symbol);
 
    Q_INVOKABLE TransactionSummary* beginTransfer(QString recipient, QString amount, QString symbol, QString memo);
+   Q_INVOKABLE bool completeTransfer(QString password);
 
 public Q_SLOTS:
    void setName(QString arg)
@@ -73,4 +74,6 @@ Q_SIGNALS:
    void isRegisteredChanged(bool arg);
    void registrationDateChanged(QDateTime arg);
    void balancesChanged();
+
+   void error(QString errorString);
 };

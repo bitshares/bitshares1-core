@@ -13,6 +13,7 @@ RowLayout {
    }
 
    property alias placeholderText: passwordText.placeholderText
+   property alias floatingLabel: passwordText.floatingLabel
    property alias password: passwordText.text
    property alias fontPixelSize: passwordText.font.pixelSize
 

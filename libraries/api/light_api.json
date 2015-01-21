@@ -2,6 +2,13 @@
    "category": "Wallet Methods",
    "methods" : [
       {
+         "method_name" : "fetch_welcome_package",
+         "description" : "Return all the data a light wallet needs to bootstrap itself.",
+         "return_type" : "variant_object",
+         "parameters"  : [],
+         "prerequisites" : ["no_prerequisites"]
+      },
+      {
          "method_name" : "request_register_account",
          "description" : "Adds an account record to the request queue",
          "return_type" : "bool",

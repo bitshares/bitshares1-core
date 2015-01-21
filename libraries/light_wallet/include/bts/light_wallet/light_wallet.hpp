@@ -58,10 +58,11 @@ namespace bts { namespace light_wallet {
          account_record& account();
          account_record& fetch_account();
          
-         fc::variant_object transfer( const string& amount,
-                                      const string& symbol,
-                                      const string& to_account_name,
-                                      const string& memo );
+         fc::variant_object prepare_transfer( const string& amount,
+                                              const string& symbol,
+                                              const string& to_account_name,
+                                              const string& memo );
+         bool complete_transfer(const string& password , const fc::variant_object& transaction_bundle);
 
          void sync_balance( bool resync_all = false);
          void sync_transactions();
@@ -84,9 +85,14 @@ namespace bts { namespace light_wallet {
          optional<fc::ecc::private_key>   _private_key;
          optional<light_wallet_data>      _data;
          pending_chain_state_ptr          _chain_cache;
+         oaccount_record                  _relay_fee_collector;
+         asset                            _relay_fee;
+         asset                            _network_fee;
 
+         void fetch_welcome_package();
    private:
          fc::ecc::private_key create_one_time_key(uint64_t sequence_number);
+         asset get_network_fee( const string& symbol );
 
          map<string, account_record> _account_cache;
    };

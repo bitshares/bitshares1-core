@@ -7,6 +7,8 @@ import Material 0.1
 Page {
    id: transferPage
    title: "Transfer"
+
+   signal transferComplete(string assetSymbol)
    
    RowLayout {
       id: hashBar
@@ -145,6 +147,17 @@ Page {
          id: transactionPreview
          width: parent.width
          anchors.horizontalCenter: parent.horizontalCenter
+         accountName: wallet.account.name
+      }
+
+      PasswordField {
+         id: confirmPassword
+         placeholderText: qsTr("Enter password to confirm transaction")
+         floatingLabel: false
+         width: parent.width
+         anchors.horizontalCenter: parent.horizontalCenter
+         anchors.top: transactionPreview.bottom
+         anchors.topMargin: visuals.margins
       }
    }
 
@@ -157,15 +170,18 @@ Page {
       spacing: visuals.margins
 
       Button {
+         id: cancelButton
          text: qsTr("Cancel")
          onClicked: pop()
       }
       Button {
+         id: continueButton
          text: qsTr("Send")
          onClicked: {
             transactionPreview.trx = wallet.account.beginTransfer(toNameField.text, amountField.text,
                                                                   assetSymbol.text, memoField.text);
             transferPage.state = "confirmation"
+            confirmPassword.forceActiveFocus()
          }
       }
    }
@@ -180,6 +196,20 @@ Page {
          PropertyChanges {
             target: confirmForm
             visible: true
+         }
+         PropertyChanges {
+            target: cancelButton
+            onClicked: transferPage.state = ""
+         }
+         PropertyChanges {
+            target: continueButton
+            text: qsTr("Confirm")
+            onClicked: {
+               if( wallet.account.completeTransfer(confirmPassword.password) )
+                  transferComplete(assetSymbol.text)
+               else
+                  confirmPassword.shake()
+            }
          }
       }
    ]

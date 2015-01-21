@@ -43,7 +43,7 @@ MainView {
             } else {
                //TODO: failed to create wallet. What now?
                window.showError("Unable to create wallet. Cannot continue.")
-               welcomeBox.state = ""
+               onboarder.state = ""
             }
          })
          wallet.createWallet(username, password)
