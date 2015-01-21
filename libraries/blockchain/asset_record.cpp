@@ -24,8 +24,8 @@ namespace bts { namespace blockchain {
 
     const asset_db_interface& asset_record::db_interface( const chain_interface& db )
     { try {
-          return db._asset_db_interface;
-       } FC_CAPTURE_AND_RETHROW() }
+        return db._asset_db_interface;
+    } FC_CAPTURE_AND_RETHROW() }
 
     asset asset_record::asset_from_string( const string& amount )const
     {

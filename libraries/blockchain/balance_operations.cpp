@@ -167,7 +167,6 @@ namespace bts { namespace blockchain {
       if( !current_balance_record.valid() )
          FC_CAPTURE_AND_THROW( unknown_balance_record, (balance_id) );
 
-
       if( this->amount > current_balance_record->get_spendable_balance( eval_state._current_state->now() ).amount )
          FC_CAPTURE_AND_THROW( insufficient_funds, (current_balance_record)(amount) );
 

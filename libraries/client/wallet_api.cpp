@@ -425,14 +425,19 @@ wallet_transaction_record detail::client_impl::wallet_transfer_to_address(
         double amount_to_transfer,
         const string& asset_symbol,
         const string& from_account_name,
-        const address& to_address,
+        const string& to_address,
         const string& memo_message,
         const vote_selection_method& selection_method )
 {
+    address effective_address;
+    if( address::is_valid( to_address ) )
+        effective_address = address( to_address );
+    else
+        effective_address = address( public_key_type( to_address ) );
     auto record =  _wallet->transfer_asset_to_address( amount_to_transfer,
                                                        asset_symbol,
                                                        from_account_name,
-                                                       to_address,
+                                                       effective_address,
                                                        memo_message,
                                                        selection_method,
                                                        true );

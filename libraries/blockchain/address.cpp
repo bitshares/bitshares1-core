@@ -22,25 +22,29 @@ namespace bts {
       addr = fc::ripemd160::hash( enc.result() );
    }
 
-   /**
-    *  Validates checksum and length of base58 address
-    *
-    *  @return true if successful, throws an exception with reason if invalid.
-    */
-    // TODO: This should return false rather than throwing
-   bool address::is_valid( const std::string& base58str )
-   { try {
-      std::string prefix( BTS_ADDRESS_PREFIX );
+   bool address::is_valid( const std::string& base58str, const std::string& prefix )
+   {
       const size_t prefix_len = prefix.size();
-      FC_ASSERT( base58str.size() > prefix_len );
-      FC_ASSERT( base58str.substr( 0, prefix_len ) == prefix );
-      std::vector<char> v = fc::from_base58( base58str.substr( prefix_len ) );
-      FC_ASSERT( v.size() > 4, "all addresses must have a 4 byte checksum" );
-      FC_ASSERT( v.size() == sizeof( fc::ripemd160 ) + 4, "all addresses must base58 decode to exactly 24 bytes" );
+      if( base58str.size() <= prefix_len )
+          return false;
+      if( base58str.substr( 0, prefix_len ) != prefix )
+          return false;
+      std::vector<char> v;
+      try
+      {
+		  v = fc::from_base58( base58str.substr( prefix_len ) );
+	  }
+	  catch( const fc::parse_error_exception& e )
+	  {
+		  return false;
+	  }
+      if( v.size() != sizeof( fc::ripemd160 ) + 4 )
+          return false;
       const fc::ripemd160 checksum = fc::ripemd160::hash( v.data(), v.size() - 4 );
-      FC_ASSERT( memcmp( v.data() + 20, (char*)checksum._hash, 4 ) == 0, "address checksum mismatch" );
+      if( memcmp( v.data() + 20, (char*)checksum._hash, 4 ) != 0 )
+          return false;
       return true;
-   } FC_RETHROW_EXCEPTIONS( warn, "invalid address '${a}'", ("a", base58str) ) }
+   }
 
    address::address( const fc::ecc::public_key& pub )
    {

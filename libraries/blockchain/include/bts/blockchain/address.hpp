@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bts/blockchain/config.hpp>
 #include <bts/blockchain/pts_address.hpp>
 
 #include <fc/array.hpp>
@@ -36,10 +37,11 @@ namespace bts { namespace blockchain {
        address( const withdraw_condition& condition );
        address( const public_key_type& pubkey );
 
-       static bool is_valid(const std::string& base58str );
-       explicit operator    std::string()const; ///< converts to base58 + checksum
+       static bool is_valid( const std::string& base58str, const std::string& prefix = BTS_ADDRESS_PREFIX );
 
-       fc::ripemd160      addr;
+       explicit operator std::string()const; ///< converts to base58 + checksum
+
+       fc::ripemd160 addr;
    };
    inline bool operator == ( const address& a, const address& b ) { return a.addr == b.addr; }
    inline bool operator != ( const address& a, const address& b ) { return a.addr != b.addr; }
