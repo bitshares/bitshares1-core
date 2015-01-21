@@ -328,38 +328,7 @@ namespace bts { namespace blockchain {
    { try {
       const auto record = get_asset_record( symbol );
       if( !record ) FC_CAPTURE_AND_THROW( unknown_asset_symbol, (symbol) );
-      asset ugly_asset(0, record->id);
-
-      // Multiply by the precision and truncate if there are extra digits.
-      // example: 100.500019 becomes 10050001
-      const auto decimal = amount.find(".");
-      ugly_asset.amount += atoll(amount.substr(0, decimal).c_str()) * record->precision;
-
-      if( decimal != string::npos )
-      {
-          string fraction_string = amount.substr(decimal+1);
-          share_type fraction = atoll(fraction_string.c_str());
-
-          if( !fraction_string.empty() && fraction > 0 )
-          {
-              while( fraction < record->precision )
-                 fraction *= 10;
-              while( fraction >= record->precision )
-                 fraction /= 10;
-              while( fraction_string.size() && fraction_string[0] == '0')
-              {
-                 fraction /= 10;
-                 fraction_string.erase(0, 1);
-              }
-
-              if( ugly_asset.amount >= 0 )
-                  ugly_asset.amount += fraction;
-              else
-                  ugly_asset.amount -= fraction;
-          }
-      }
-
-      return ugly_asset;
+      return record->asset_from_string(amount);
    } FC_CAPTURE_AND_RETHROW( (amount)(symbol) ) }
 
    price chain_interface::to_ugly_price(const std::string& price_string,
@@ -384,15 +353,9 @@ namespace bts { namespace blockchain {
    string chain_interface::to_pretty_asset( const asset& a )const
    { try {
       const auto oasset = get_asset_record( a.asset_id );
-      const share_type amount = ( a.amount >= 0 ) ? a.amount : -a.amount;
       if( oasset.valid() )
       {
-         const auto precision = oasset->precision;
-         string decimal = fc::to_string( precision + ( amount % precision ) );
-         decimal[0] = '.';
-         const auto str = fc::to_pretty_string( amount / precision ) + decimal + " " + oasset->symbol;
-         if( a.amount < 0 ) return "-" + str;
-         return str;
+         return oasset->amount_to_string(a.amount);
       }
       else
       {

@@ -24,8 +24,55 @@ namespace bts { namespace blockchain {
 
     const asset_db_interface& asset_record::db_interface( const chain_interface& db )
     { try {
-        return db._asset_db_interface;
-    } FC_CAPTURE_AND_RETHROW() }
+          return db._asset_db_interface;
+       } FC_CAPTURE_AND_RETHROW() }
+
+    asset asset_record::asset_from_string( const string& amount )const
+    {
+       asset ugly_asset(0, id);
+
+       // Multiply by the precision and truncate if there are extra digits.
+       // example: 100.500019 becomes 10050001
+       const auto decimal = amount.find(".");
+       ugly_asset.amount += atoll(amount.substr(0, decimal).c_str()) * precision;
+
+       if( decimal != string::npos )
+       {
+          string fraction_string = amount.substr(decimal+1);
+          share_type fraction = atoll(fraction_string.c_str());
+
+          if( !fraction_string.empty() && fraction > 0 )
+          {
+             while( fraction < precision )
+                fraction *= 10;
+             while( fraction >= precision )
+                fraction /= 10;
+             while( fraction_string.size() && fraction_string[0] == '0')
+             {
+                fraction /= 10;
+                fraction_string.erase(0, 1);
+             }
+
+             if( ugly_asset.amount >= 0 )
+                ugly_asset.amount += fraction;
+             else
+                ugly_asset.amount -= fraction;
+          }
+       }
+
+       return ugly_asset;
+    }
+
+    string asset_record::amount_to_string( share_type amount, bool append_symbol )const
+    {
+       const share_type shares = ( amount >= 0 ) ? amount : -amount;
+       string decimal = fc::to_string( precision + ( shares % precision ) );
+       decimal[0] = '.';
+       auto str = fc::to_pretty_string( shares / precision ) + decimal;
+       if( append_symbol ) str += " " + symbol;
+       if( amount < 0 ) return "-" + str;
+       return str;
+    }
 
     oasset_record asset_db_interface::lookup( const asset_id_type id )const
     { try {

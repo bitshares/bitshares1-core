@@ -5,6 +5,7 @@ import QtQuick.Layouts 1.1
 import Material 0.1
 
 Page {
+   id: transferPage
    title: "Transfer"
    
    RowLayout {
@@ -140,7 +141,11 @@ Page {
       }
       visible: false
 
-
+      Transaction {
+         id: transactionPreview
+         width: parent.width
+         anchors.horizontalCenter: parent.horizontalCenter
+      }
    }
 
    Row {
@@ -157,14 +162,25 @@ Page {
       }
       Button {
          text: qsTr("Send")
+         onClicked: {
+            transactionPreview.trx = wallet.account.beginTransfer(toNameField.text, amountField.text,
+                                                                  assetSymbol.text, memoField.text);
+            transferPage.state = "confirmation"
+         }
       }
    }
 
    states: [
       State {
          name: "confirmation"
-
+         PropertyChanges {
+            target: transferForm
+            visible: false
+         }
+         PropertyChanges {
+            target: confirmForm
+            visible: true
+         }
       }
-
    ]
 }

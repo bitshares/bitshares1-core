@@ -5,9 +5,7 @@ import QtQuick.Layouts 1.1
 import Material 0.1
 
 Rectangle {
-   width: parent.width - visuals.margins * 2
    height: transactionSummary.height
-   anchors.horizontalCenter: parent.horizontalCenter
    radius: units.dp(5)
 
    property var trx
@@ -16,14 +14,13 @@ Rectangle {
       id: transactionSummary
       width: parent.width
       
-      property string timestamp: trx.modelData.timestamp
+      property string timestamp: trx.timestamp
       
       Item { Layout.preferredHeight: visuals.margins }
       Repeater {
          id: ledgerRepeater
-         model: trx.modelData.ledger
+         model: trx.ledger
          delegate: RowLayout {
-            width: parent.width
             property bool incoming: receiver === accountName
             
             Item { Layout.preferredWidth: visuals.margins }
@@ -40,7 +37,7 @@ Rectangle {
                Item { width: 1; height: units.dp(8) }
                Label {
                   text: (index === 0)? (transactionSummary.timestamp) : ""
-                  font.pixelSize: units.dp(16)
+                  font.pixelSize: units.dp(12)
                }
             }
             Label {
@@ -51,6 +48,15 @@ Rectangle {
             Item { Layout.preferredWidth: visuals.margins }
          }
       }
+      Label {
+         font.pixelSize: units.dp(10)
+         font.weight: Font.Light
+         font.italic: true
+         anchors.right: parent.right
+         anchors.rightMargin: visuals.margins
+         text: qsTr("Fee: ") + trx.feeAmount + " " + trx.feeSymbol
+      }
+
       Item { Layout.preferredHeight: visuals.margins }
    }
    Ink { anchors.fill: parent }

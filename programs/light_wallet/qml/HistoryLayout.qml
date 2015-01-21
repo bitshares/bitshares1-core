@@ -30,7 +30,9 @@ Page {
          }
 
          delegate: Transaction {
-            trx: model
+            width: parent.width - visuals.margins * 2
+            anchors.horizontalCenter: parent.horizontalCenter
+            trx: model.modelData
          }
 
          footer: View {

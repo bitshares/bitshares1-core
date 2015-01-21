@@ -26,6 +26,10 @@ class Account : public QObject
    QList<Balance*> balanceList;
    QObjectList transactionList;
 
+   fc::variant_object pending_transaction;
+
+   TransactionSummary* buildSummary(bts::wallet::transaction_ledger_entry trx);
+
 public:
    Account(bts::light_wallet::light_wallet* wallet,
            const bts::light_wallet::account_record& account,
@@ -51,6 +55,8 @@ public:
    Q_INVOKABLE QStringList availableAssets();
 
    Q_INVOKABLE QList<QObject*> transactionHistory(QString asset_symbol);
+
+   Q_INVOKABLE TransactionSummary* beginTransfer(QString recipient, QString amount, QString symbol, QString memo);
 
 public Q_SLOTS:
    void setName(QString arg)

@@ -36,16 +36,19 @@ namespace bts { namespace blockchain {
              }
           }
        }
-       FC_ASSERT( left_to_withdraw == 0 );
+       FC_ASSERT( left_to_withdraw == 0, "Unable to withdraw requested amount.",
+                  ("left_to_withdraw", left_to_withdraw)
+                  ("all_balances", pending_state._balance_id_to_record)
+                  ("available_keys", eval_state.signed_keys) );
     }
 
     void transaction_creation_state::add_known_key( const address& key )
     {
-      eval_state.signed_keys.insert(key); 
+      eval_state.signed_keys.insert(key);
     }
 
-    public_key_type transaction_creation_state::deposit( const asset&           amount, 
-                                              const public_key_type&            to, 
+    public_key_type transaction_creation_state::deposit( const asset&           amount,
+                                              const public_key_type&            to,
                                               slate_id_type                     slate,
                                               const optional<private_key_type>& one_time_key,
                                               const string&                     memo,
@@ -60,13 +63,13 @@ namespace bts { namespace blockchain {
        else
        {
           withdraw_with_signature by_account;
-          receive_key = by_account.encrypt_memo_data( *one_time_key, 
+          receive_key = by_account.encrypt_memo_data( *one_time_key,
                                                       to,
-                                                      from ? *from 
-                                                           : fc::ecc::private_key(), 
-                                                      memo, 
-                                                      one_time_key->get_public_key(), 
-                                                      to_memo, 
+                                                      from ? *from
+                                                           : fc::ecc::private_key(),
+                                                      memo,
+                                                      one_time_key->get_public_key(),
+                                                      to_memo,
                                                       stealth );
 
           deposit_operation op;
