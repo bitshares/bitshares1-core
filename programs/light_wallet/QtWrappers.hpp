@@ -39,9 +39,12 @@ class TransactionSummary : public QObject
    Q_OBJECT
    Q_PROPERTY(QString id MEMBER m_id NOTIFY stub)
    Q_PROPERTY(QString timestamp MEMBER m_when NOTIFY stub)
+   Q_PROPERTY(QString feeAmount MEMBER m_feeAmount NOTIFY stub)
+   Q_PROPERTY(QString feeSymbol MEMBER m_feeSymbol NOTIFY stub)
    Q_PROPERTY(QQmlListProperty<LedgerEntry> ledger READ ledger CONSTANT)
 
 public:
+   // TransactionSummary takes ownership of the LedgerEntries in ledger
    TransactionSummary(QString id, QString timestamp, QList<LedgerEntry*>&& ledger, QObject* parent = nullptr);
    ~TransactionSummary(){}
 
@@ -53,6 +56,8 @@ public:
 private:
    QString m_id;
    QString m_when;
+   QString m_feeAmount;
+   QString m_feeSymbol;
    QList<LedgerEntry*> m_ledger;
 
 Q_SIGNALS:

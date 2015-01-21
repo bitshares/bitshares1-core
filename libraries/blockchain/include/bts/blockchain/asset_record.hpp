@@ -68,6 +68,9 @@ namespace bts { namespace blockchain {
       vector<char>        reserved;
 
       static const asset_db_interface& db_interface( const chain_interface& );
+
+      asset asset_from_string( const string& amount )const;
+      string amount_to_string( share_type amount, bool append_symbol = true )const;
    };
    typedef fc::optional<asset_record> oasset_record;
 

@@ -60,6 +60,53 @@ namespace bts { namespace blockchain {
                }
                else if( at_time > vesting_condition.start_time )
                {
+                   const uint32_t elapsed_time = (at_time - vesting_condition.start_time).to_seconds();
+                   FC_ASSERT( elapsed_time > 0 && elapsed_time < vesting_condition.duration );
+                   const fc::uint128 numerator = fc::uint128( vesting_condition.original_balance ) * fc::uint128( elapsed_time );
+                   max_claimable = (numerator / fc::uint128( vesting_condition.duration )).to_uint64();
+                   FC_ASSERT( max_claimable >= 0 && max_claimable < vesting_condition.original_balance );
+               }
+
+               const share_type claimed_so_far = vesting_condition.original_balance - balance;
+               FC_ASSERT( claimed_so_far >= 0 && claimed_so_far <= max_claimable );
+
+               const share_type spendable_balance = max_claimable - claimed_so_far;
+               FC_ASSERT( spendable_balance >= 0 && spendable_balance <= max_claimable );
+               FC_ASSERT( spendable_balance + claimed_so_far == max_claimable );
+
+               return asset( spendable_balance, condition.asset_id );
+           }
+           default:
+           {
+               elog( "balance_record::get_spendable_balance() called on unsupported withdraw type!" );
+               return asset();
+           }
+       }
+       FC_ASSERT( false, "Should never get here!" );
+   }
+
+   asset balance_record::get_spendable_balance_v1( const time_point_sec at_time )const
+   {
+       switch( withdraw_condition_types( condition.type ) )
+       {
+           case withdraw_signature_type:
+           case withdraw_escrow_type:
+           case withdraw_multisig_type:
+           {
+               return asset( balance, condition.asset_id );
+           }
+           case withdraw_vesting_type:
+           {
+               const withdraw_vesting vesting_condition = condition.as<withdraw_vesting>();
+
+               // First calculate max that could be claimed assuming no prior withdrawals
+               share_type max_claimable = 0;
+               if( at_time >= vesting_condition.start_time + vesting_condition.duration )
+               {
+                   max_claimable = vesting_condition.original_balance;
+               }
+               else if( at_time > vesting_condition.start_time )
+               {
                    const auto elapsed_time = (at_time - vesting_condition.start_time).to_seconds();
                    FC_ASSERT( elapsed_time > 0 && elapsed_time < vesting_condition.duration );
                    max_claimable = (vesting_condition.original_balance * elapsed_time) / vesting_condition.duration;
@@ -105,6 +152,7 @@ namespace bts { namespace blockchain {
 
     void balance_db_interface::store( const balance_record& record )const
     { try {
+        FC_ASSERT( record.balance >= 0 ); // Sanity check
         insert_into_id_map( record.id(), record );
     } FC_CAPTURE_AND_RETHROW( (record) ) }
 

@@ -425,14 +425,19 @@ wallet_transaction_record detail::client_impl::wallet_transfer_to_address(
         double amount_to_transfer,
         const string& asset_symbol,
         const string& from_account_name,
-        const address& to_address,
+        const string& to_address,
         const string& memo_message,
         const vote_selection_method& selection_method )
 {
+    address effective_address;
+    if( address::is_valid( to_address ) )
+        effective_address = address( to_address );
+    else
+        effective_address = address( public_key_type( to_address ) );
     auto record =  _wallet->transfer_asset_to_address( amount_to_transfer,
                                                        asset_symbol,
                                                        from_account_name,
-                                                       to_address,
+                                                       effective_address,
                                                        memo_message,
                                                        selection_method,
                                                        true );
@@ -1355,6 +1360,58 @@ account_balance_summary_type client_impl::wallet_account_yield( const string& ac
   return _wallet->get_account_yield( account_name );
 }
 
+wallet_transaction_record client_impl::wallet_market_sell2(
+       const  string& from_account,
+       double quantity,
+       const  string& quantity_symbol,
+       double base_price,
+       const  string& receive_symbol,
+       double relative_percent,
+       bool   allow_stupid_bid )
+{
+   FC_ASSERT( relative_percent >= 0 );
+   FC_ASSERT( base_price >= 0 );
+   FC_ASSERT( quantity_symbol != receive_symbol );
+
+   auto q_asset = _chain_db->get_asset_record( quantity_symbol );
+   auto r_asset = _chain_db->get_asset_record( receive_symbol );
+   FC_ASSERT( q_asset, "Unknown Asset Type: ${a}", ("a",quantity_symbol) );
+   FC_ASSERT( r_asset, "Unknown Asset Type: ${a}", ("a",receive_symbol) );
+
+   auto quote_id = std::max(q_asset->id,r_asset->id);
+   auto base_id  = std::min(q_asset->id,r_asset->id);
+
+   if( relative_percent != 0 )
+   {
+      oprice feed_price  = _chain_db->get_active_feed_price( quote_id, base_id );
+      FC_ASSERT( feed_price, "A price feed is required for relative orders" );
+   }
+   if( base_price == 0 ) FC_ASSERT( relative_percent > 0, "if no price is specified, then a relative percent must be specified" );
+
+   auto trx_fee = _wallet->get_transaction_fee( q_asset->id );
+
+   asset quantity_to_sell( quantity * q_asset->precision, q_asset->id );
+
+   transaction_creation_state creator(_chain_db);
+   _wallet->initialize_transaction_creator( creator, from_account );
+
+   if( trx_fee.asset_id == q_asset->id )
+   {
+      creator.withdraw( trx_fee + quantity_to_sell );
+   }
+   else
+   {
+      creator.withdraw( quantity_to_sell );
+      creator.withdraw( trx_fee );
+   }
+   auto new_pub_key = _wallet->get_new_public_key( from_account );
+   creator.sell( new_pub_key, quantity_to_sell, base_price, r_asset->id, relative_percent );
+   _wallet->sign_transaction_creator( creator );
+
+   wallet_transaction_record record;
+   return record;
+}
+
 wallet_transaction_record client_impl::wallet_market_submit_bid(
        const string& from_account,
        const string& quantity,
@@ -1376,15 +1433,17 @@ wallet_transaction_record client_impl::wallet_market_submit_bid(
   network_broadcast_transaction( record.trx );
   return record;
 }
-wallet_transaction_record client_impl::wallet_market_submit_relative_bid(
+wallet_transaction_record client_impl::wallet_market_sell(
        const string& from_account,
-       const string& quantity,
-       const string& quantity_symbol,
-       const string& relative_quote_price,
-       const string& quote_symbol,
-       const string& limit_price )
+       const string& sell_quantity,
+       const string& sell_quantity_symbol,
+       const string& price_limit,
+       const string& price_symbol,
+       const string& relative_price,
+       bool allow_stupid
+       )
 {
-  auto record = _wallet->submit_relative_bid( from_account, quantity, quantity_symbol, relative_quote_price, quote_symbol, limit_price, true );
+  auto record = _wallet->sell( from_account, sell_quantity, sell_quantity_symbol, price_limit, price_symbol, relative_price, allow_stupid, true );
   _wallet->cache_transaction( record );
   network_broadcast_transaction( record.trx );
   return record;

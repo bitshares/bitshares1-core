@@ -173,6 +173,7 @@ namespace bts { namespace blockchain {
       asset         get_quantity( const price& base = price() )const;
       asset         get_quote_quantity( const price& base = price() )const;
       address       get_owner()const { return market_index.owner; }
+      optional<price>  get_limit_price()const { return state.limit_price; }
 
       fc::enum_type<uint8_t, order_type_enum>   type = null_order;
       market_index_key                          market_index;

@@ -7,6 +7,53 @@
 
 using std::string;
 
+TransactionSummary* Account::buildSummary(bts::wallet::transaction_ledger_entry trx)
+{
+   QList<LedgerEntry*> ledger;
+   wdump((trx));
+
+   for( auto label : trx.delta_labels )
+   {
+      QStringList participants = convert(label.second).split('>');
+      if( participants.size() == 1 ) participants.prepend(tr("Unknown"));
+
+      for( bts::blockchain::asset amount : trx.delta_amounts[label.second] )
+      {
+         auto asset = m_wallet->get_asset_record(amount.asset_id);
+         if( !asset ) continue;
+
+         LedgerEntry* entry = new LedgerEntry();
+
+         entry->setProperty("sender", participants.first());
+         entry->setProperty("receiver", participants.last());
+         entry->setProperty("amount", double(amount.amount) / asset->precision);
+         entry->setProperty("symbol", convert(asset->symbol));
+         if( trx.operation_notes.count(label.first) )
+            entry->setProperty("memo", convert(trx.operation_notes[label.first]));
+
+         ledger.append(entry);
+      }
+   }
+
+   TransactionSummary* summary = new TransactionSummary(convert(string(trx.id)),
+                                                        convert(fc::get_approximate_relative_time_string(trx.timestamp)),
+                                                        std::move(ledger), this);
+
+   if( trx.delta_amounts.count("Fee") && trx.delta_amounts["Fee"].size() )
+   {
+      auto fee = trx.delta_amounts["Fee"].front();
+      if( bts::blockchain::oasset_record record = m_wallet->get_asset_record(fee.asset_id) )
+      {
+         summary->setProperty("feeAmount", convert(record->amount_to_string(fee.amount, false)).remove(QRegExp("0*$")));
+         summary->setProperty("feeSymbol", convert(record->symbol));
+      }
+   }
+
+   summary->setProperty("timestamp", convert(fc::get_approximate_relative_time_string(trx.timestamp)));
+
+   return summary;
+}
+
 Account::Account(bts::light_wallet::light_wallet* wallet,
                  const bts::blockchain::account_record& account,
                  QObject* parent)
@@ -32,27 +79,17 @@ Account& Account::operator=(const bts::blockchain::account_record& account)
 QQmlListProperty<Balance> Account::balances()
 {
    auto count = [](QQmlListProperty<Balance>* list) -> int {
-      return static_cast<Account*>(list->data)->m_wallet->balance().size();
+      return static_cast<QList<Balance*>*>(list->data)->size();
    };
    auto at = [](QQmlListProperty<Balance>* list, int index) -> Balance* {
-      auto account = static_cast<Account*>(list->data);
-      auto balances = account->m_wallet->balance();
-      auto itr = balances.begin();
-      for( int i = 0; i < index; ++i )
-         ++itr;
-
-      Balance* balance = account->balanceMaster->findChild<Balance*>(convert(itr->first));
-      if( balance == nullptr )
-      {
-         balance = new Balance(convert(itr->first), itr->second, account->balanceMaster);
-         balance->setObjectName(convert(itr->first));
-      } else
-         balance->setProperty("amount", itr->second);
-
-      return balance;
+      return static_cast<QList<Balance*>*>(list->data)->at(index);
    };
 
-   return QQmlListProperty<Balance>(balanceMaster, this, count, at);
+   while( !balanceList.empty() )
+      balanceList.takeFirst()->deleteLater();
+   for( auto balance : m_wallet->balance() )
+      balanceList.append(new Balance(convert(balance.first), balance.second, this));
+   return QQmlListProperty<Balance>(this, &balanceList, count, at);
 }
 
 qreal Account::balance(QString symbol)
@@ -71,7 +108,6 @@ QStringList Account::availableAssets()
 
 QList<QObject*> Account::transactionHistory(QString asset_symbol)
 {
-   QList<QObject*> history;
    auto raw_transactions = m_wallet->transactions(convert(asset_symbol));
    std::sort(raw_transactions.rbegin(), raw_transactions.rend(),
              [](const bts::wallet::transaction_ledger_entry& a,
@@ -81,43 +117,31 @@ QList<QObject*> Account::transactionHistory(QString asset_symbol)
 
    for( bts::wallet::transaction_ledger_entry trx : raw_transactions )
    {
-      TransactionSummary* summary = ledgerMaster->findChild<TransactionSummary*>(convert(string(trx.id)));
-      if( summary == nullptr )
-      {
-         QList<LedgerEntry*> ledger;
+      if( std::find_if(transactionList.begin(), transactionList.end(), [&trx] (QObject* o) -> bool {
+                       return o->property("id").toString() == convert(string(trx.id));
+      }) != transactionList.end() )
+         continue;
 
-         for( auto label : trx.delta_labels )
-         {
-            QStringList participants = convert(label.second).split('>');
-            if( participants.size() == 1 ) participants.prepend(tr("Unknown"));
-
-            for( bts::blockchain::asset amount : trx.delta_amounts[label.second] )
-            {
-               auto asset = m_wallet->get_asset_record(amount.asset_id);
-               if( !asset ) continue;
-
-               LedgerEntry* entry = new LedgerEntry(summary);
-
-               entry->setProperty("sender", participants.first());
-               entry->setProperty("receiver", participants.last());
-               entry->setProperty("amount", double(amount.amount) / asset->precision);
-               entry->setProperty("symbol", convert(asset->symbol));
-               if( trx.operation_notes.count(label.first) )
-                  entry->setProperty("memo", convert(trx.operation_notes[label.first]));
-
-               ledger.append(entry);
-            }
-         }
-
-         summary = new TransactionSummary(convert(string(trx.id)),
-                                          convert(fc::get_approximate_relative_time_string(trx.timestamp)),
-                                          std::move(ledger), ledgerMaster);
-         summary->setObjectName(convert(string(trx.id)));
-      }
-
-      summary->setProperty("timestamp", convert(fc::get_approximate_relative_time_string(trx.timestamp)));
-      history.append(summary);
+      transactionList.append(buildSummary(std::move(trx)));
    }
 
-   return history;
+   return transactionList;
+}
+
+TransactionSummary* Account::beginTransfer(QString recipient, QString amount, QString symbol, QString memo)
+{
+   try {
+      pending_transaction = m_wallet->transfer(convert(amount), convert(symbol), convert(recipient), convert(memo));
+   } catch (const fc::exception& e) {
+      qDebug() << "Failed to transfer:" << e.to_detail_string().c_str();
+      return nullptr;
+   }
+
+   auto summary = buildSummary(m_wallet->summarize(pending_transaction));
+   summary->setParent(nullptr);
+   summary->setProperty("timestamp", QStringLiteral("Pending"));
+   connect(summary, &QObject::destroyed, [] {
+      qDebug() << "Summary cleaned";
+   });
+   return summary;
 }
