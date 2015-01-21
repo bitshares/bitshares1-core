@@ -79,6 +79,15 @@ namespace bts { namespace blockchain {
        return receive_key;
     }
 
+    void transaction_creation_state::sell(const public_key_type& order_key,
+                                          const asset& amount_to_sell,
+                                          asset_id_type asset_to_receive,
+                                          double base_price,
+                                          double relative_percent)
+    {
+        // TODO
+    }
+
     void transaction_creation_state::pay_fee( const asset& amount )
     {
         // TODO
