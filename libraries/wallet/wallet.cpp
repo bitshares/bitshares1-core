@@ -394,6 +394,7 @@ namespace detail {
 			                                relative_price,
 			                                base_symbol,
 			                                quote_symbol,
+			                                false,
 			                                limit_price
 			                               );
 		   }
@@ -406,7 +407,8 @@ namespace detail {
                                             sell_quantity,
                                             limit_price,
                                             base_symbol,
-                                            quote_symbol
+                                            quote_symbol,
+                                            false
                                            );
 		   }
 	   }
@@ -437,6 +439,7 @@ namespace detail {
                                             relative_price,
                                             base_symbol,
                                             quote_symbol,
+                                            false,
                                             limit_price
                                            );
 		   }
@@ -449,7 +452,8 @@ namespace detail {
                                             sell_quantity,
                                             limit_price,
                                             base_symbol,
-                                            quote_symbol
+                                            quote_symbol,
+                                            false
                                            );
 		   }
 	   }
@@ -463,7 +467,9 @@ namespace detail {
                                             const string& order_price,
                                             const string& base_symbol,
                                             const string& quote_symbol,
-                                            const string& limit)
+                                            bool needs_satoshi_conversion,
+                                            const string& limit
+                                            )
    {
 	  // description of "balance" parameter:
 	  // in the case of ask, relative ask, relative bid, "balance" is an existing balance to be sold
@@ -521,8 +527,6 @@ namespace detail {
       //    does not get converted, but the limit price is a price,
       //    which does.
       
-      const bool needs_satoshi_conversion = is_ba;
-
       price price_arg = _blockchain->to_ugly_price(order_price,
                                                    base_symbol,
                                                    quote_symbol,
@@ -3546,6 +3550,7 @@ namespace detail {
             FC_ASSERT(args.size() > 4, "Incorrect number of arguments.");
             my->apply_order_to_builder(order_description.first, builder,
                                        args[0], args[1], args[3], args[2], args[4],
+                                       true,
                                        //For shorts:
                                        args.size() > 5? args[5] : string()
                                        );
@@ -3580,7 +3585,9 @@ namespace detail {
                                  real_quantity,
                                  quote_price,
                                  quantity_symbol,
-                                 quote_symbol);
+                                 quote_symbol,
+                                 true
+                                 );
       builder->finalize();
 
       if( sign )
@@ -3651,6 +3658,7 @@ namespace detail {
                                  relative_quote_price,
                                  quantity_symbol,
                                  quote_symbol,
+                                 true,
                                  limit_price);
       builder->finalize();
 
@@ -3680,7 +3688,8 @@ namespace detail {
                                  real_quantity,
                                  quote_price,
                                  quantity_symbol,
-                                 quote_symbol);
+                                 quote_symbol,
+                                 true);
       builder->finalize();
 
       if( sign )
@@ -3710,6 +3719,7 @@ namespace detail {
                                  apr,
                                  collateral_symbol,
                                  quote_symbol,
+                                 true,
                                  price_limit);
       builder->finalize();
 
