@@ -8,6 +8,16 @@
 
 namespace bts { namespace client { namespace detail {
 
+fc::variant_object client_impl::fetch_welcome_package()
+{
+   fc::mutable_variant_object welcome_package;
+   welcome_package["chain_id"] = _chain_db->get_chain_id();
+   welcome_package["relay_fee_collector"] = _chain_db->get_account_record(_config.faucet_account_name);
+   welcome_package["relay_fee_amount"] = _config.light_relay_fee;
+   welcome_package["network_fee_amount"] = share_type(BTS_BLOCKCHAIN_PRECISION / 2) - _config.light_relay_fee;
+   return welcome_package;
+}
+
 /**
  *  When a light weight client is attempting to register an account for the first time they will
  *  call this method with the account to be registered.  If this light wallet server is

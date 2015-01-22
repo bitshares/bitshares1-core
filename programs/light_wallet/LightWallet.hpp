@@ -27,6 +27,7 @@ class LightWallet : public QObject
    Q_PROPERTY(QString brainKey READ brainKey NOTIFY brainKeyChanged)
 
    Q_PROPERTY(qint16 maxMemoSize READ maxMemoSize CONSTANT)
+   Q_PROPERTY(QString baseAssetSymbol READ baseAssetSymbol CONSTANT)
 
 public:
    LightWallet()
@@ -39,7 +40,8 @@ public:
    virtual ~LightWallet()
    {
       m_walletThread.quit();
-      m_wallet.save();
+      if( walletExists() )
+         m_wallet.save();
    }
 
    bool walletExists() const;
@@ -81,6 +83,16 @@ public:
    }
 
    Q_INVOKABLE Balance* getFee(QString assetSymbol);
+   Q_INVOKABLE bool accountExists(QString name);
+   Q_INVOKABLE bool isValidAccountName(QString name)
+   {
+      return bts::blockchain::chain_database::is_valid_account_name(convert(name));
+   }
+
+   QString baseAssetSymbol() const
+   {
+      return QStringLiteral(BTS_BLOCKCHAIN_SYMBOL);
+   }
 
 public Q_SLOTS:
    void connectToServer( QString host, quint16 port,

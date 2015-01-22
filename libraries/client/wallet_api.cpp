@@ -76,9 +76,8 @@ void detail::client_impl::wallet_backup_restore( const fc::path& json_filename,
 // This should be able to get an encrypted private key or WIF key out of any reasonable JSON object.
 void read_keys( const fc::variant& vo, vector<private_key_type>& keys, const string& password )
 {
-//    FC_ASSERT(!"Error decrypting private key - did you use the wrong password?");
     ilog("@n read_keys");
-    ilog("@n ${o}", ("o", vo));
+    //ilog("@n ${o}", ("o", vo));
     try {
       auto wif_key = vo.as_string();
       auto key = bts::utilities::wif_to_key( wif_key );
@@ -86,7 +85,7 @@ void read_keys( const fc::variant& vo, vector<private_key_type>& keys, const str
           keys.push_back(*key);
     }
     catch (...) {
-        ilog("@n I couldn't parse that as a wif key: ${vo}", ("vo", vo));
+        //ilog("@n I couldn't parse that as a wif key: ${vo}", ("vo", vo));
     }
     vector<char> bytes;
     vector<char> plain_text;
@@ -99,7 +98,7 @@ void read_keys( const fc::variant& vo, vector<private_key_type>& keys, const str
     catch (...)
     {
         ulog("error, setting skip_me=true");
-        ilog("@n I couldn't parse that as a byte array: ${vo}", ("vo", vo));
+        //ilog("@n I couldn't parse that as a byte array: ${vo}", ("vo", vo));
         skip_me = true;
 
     }
@@ -119,7 +118,7 @@ void read_keys( const fc::variant& vo, vector<private_key_type>& keys, const str
     }
     try {
         auto obj = vo.get_object();
-        ilog("@n it's an object ${o}", ("o", obj));
+        //ilog("@n it's an object ${o}", ("o", obj));
         for( auto kv : obj )
         {
             read_keys( kv.value(), keys, password );
@@ -130,7 +129,7 @@ void read_keys( const fc::variant& vo, vector<private_key_type>& keys, const str
         throw;
     }
     catch (...) {
-        ilog("@n I couldn't parse that as an object: ${o}", ("o", vo));
+        //ilog("@n I couldn't parse that as an object: ${o}", ("o", vo));
     }
     try {
         auto arr = vo.as<vector<variant>>();
@@ -138,16 +137,16 @@ void read_keys( const fc::variant& vo, vector<private_key_type>& keys, const str
         {
             read_keys( obj, keys, password );
         }
-        ilog("@n it's an object ${o}", ("o", vo));
+        //ilog("@n it's an object ${o}", ("o", vo));
     }
     catch( const bts::wallet::invalid_password& e )
     {
         throw;
     }
     catch (...) {
-        ilog("@n I couldn't parse that as an array: ${o}", ("o", vo));
+        //ilog("@n I couldn't parse that as an array: ${o}", ("o", vo));
     }
-    ilog("@n I couldn't parse that as anything!: ${o}", ("o", vo));
+    //ilog("@n I couldn't parse that as anything!: ${o}", ("o", vo));
 }
 
 void detail::client_impl::wallet_import_keys_from_json( const fc::path& json_filename,
@@ -157,16 +156,34 @@ void detail::client_impl::wallet_import_keys_from_json( const fc::path& json_fil
     FC_ASSERT( fc::exists( json_filename ) );
     FC_ASSERT( _wallet->is_open() );
     FC_ASSERT( _wallet->is_unlocked() );
+    _wallet->get_account( account );
 
+    const auto object = fc::json::from_file<fc::variant>( json_filename );
     vector<private_key_type> keys;
-    auto object = fc::json::from_file<fc::variant>( json_filename );
-
     read_keys( object, keys, imported_wallet_passphrase );
-    ilog("@n Read keys: ${keys}", ("keys", keys));
-    for( auto key : keys )
+
+    for( const auto& key : keys )
     {
-        _wallet->import_private_key( key, account, false );
-        ilog("@n imported key: ${key}", ("key", key));
+        const auto addr = address( key.get_public_key() );
+        try
+        {
+            _wallet->get_private_key( addr );
+            // We already have this key and import_private_key would fail if we tried. Do nothing.
+            continue;
+        }
+        catch( const fc::exception& )
+        {
+        }
+
+        const oaccount_record blockchain_account_record = _chain_db->get_account_record( addr );
+        if( blockchain_account_record.valid() && blockchain_account_record->name != account )
+        { // This key exists on the blockchain and I don't have it - don't associate it with a name when you import it
+            _wallet->import_private_key( key, optional<string>(), false );
+        }
+        else
+        {
+            _wallet->import_private_key( key, account, false );
+        }
     }
     ulog( "No errors were encountered, but there is currently no way to check if keys were decrypted using the correct password." );
 } FC_CAPTURE_AND_RETHROW( (json_filename) ) }

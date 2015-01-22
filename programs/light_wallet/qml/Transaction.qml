@@ -9,6 +9,7 @@ Rectangle {
    radius: units.dp(5)
 
    property var trx
+   property string accountName
    
    ColumnLayout {
       id: transactionSummary
@@ -31,7 +32,8 @@ Rectangle {
             Column {
                Layout.fillWidth: true
                Label {
-                  text: memo
+                  text: memo? memo : "No memo provided"
+                  font.italic: !memo
                   font.pixelSize: units.dp(16)
                }
                Item { width: 1; height: units.dp(8) }

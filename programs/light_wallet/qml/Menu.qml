@@ -22,10 +22,9 @@ Card {
      */
    function open(selectedElement, ownerX, ownerY) {
       var element = menuRepeater.itemAt(model.indexOf(selectedElement))
-      var elementXY = menuRepeater.mapToItem(owner, element.x, element.y)
-      console.log("(" + ownerX + "," + ownerY + ") -> (" + elementXY.x + "," + elementXY.y + ")")
+      var elementXY = element.mapToItem(owner, element.labelX, element.labelY)
       x += ownerX - elementXY.x
-      y += ownerY - elementXY.y + element.height
+      y += ownerY - elementXY.y
       opened = true
    }
    function close() {
@@ -36,15 +35,25 @@ Card {
    
    Column {
       anchors.left: parent.left
+      anchors.right: parent.right
       anchors.verticalCenter: parent.verticalCenter
       anchors.margins: units.dp(15)
-      spacing: units.dp(20)
       Repeater {
          id: menuRepeater
-         delegate: Label {
-            text: modelData
-            font.pixelSize: units.dp(20)
-            style: "menu"
+         delegate: Item {
+            height: units.dp(45)
+            width: parent.width
+
+            property alias labelX: label.x
+            property alias labelY: label.y
+
+            Label {
+               id: label
+               anchors.verticalCenter: parent.verticalCenter
+               text: modelData
+               font.pixelSize: units.dp(20)
+               style: "menu"
+            }
             Ink {
                anchors.fill: parent
                onClicked: {
