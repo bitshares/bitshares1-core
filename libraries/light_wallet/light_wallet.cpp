@@ -353,7 +353,7 @@ map<string, double> light_wallet::balance() const
    FC_ASSERT(is_open());
 
    map<string, double> balances = {{BTS_BLOCKCHAIN_SYMBOL, 0}};
-   for( auto balance : _data->balance_record_cache ) {
+   for( auto balance : _chain_cache->_balance_id_to_record ) {
       asset_record record = _data->asset_record_cache.at(balance.second.asset_id());
       balances[record.symbol] += balance.second.balance / double(record.precision);
    }
@@ -377,11 +377,30 @@ vector<bts::wallet::transaction_ledger_entry> light_wallet::transactions(const s
 void light_wallet::sync_balance( bool resync_all )
 { try {
    FC_ASSERT( is_open() );
+   static bool first_time = true;
+   std::vector<fc::variants> batch_args;
+
+   if( first_time )
+   {
+      //Refresh old balances
+      for( auto balance : _chain_cache->_balance_id_to_record )
+         batch_args.push_back(fc::variants(1, fc::variant(balance.first)));
+
+      try {
+         auto balance_records = _rpc.batch("blockchain_get_balance", batch_args);
+         for( const auto& rec : balance_records )
+            _chain_cache->store_balance_record(rec.as<balance_record>());
+      } catch (...) {
+         resync_all = true;
+      }
+
+      first_time = false;
+   }
 
    if( resync_all )
    {
      _data->last_balance_sync_time = fc::time_point();
-     _data->balance_record_cache.clear();
+     _chain_cache->_balance_id_to_record.clear();
    }
 
    if( _data->last_balance_sync_time + fc::seconds(10) > fc::time_point::now() )
@@ -391,23 +410,22 @@ void light_wallet::sync_balance( bool resync_all )
 
    auto new_balances = _rpc.blockchain_list_address_balances( string(address(_data->user_account.active_key())),
                                                               _data->last_balance_sync_time );
-   std::vector<fc::variants> dirty_assets;
 
+   batch_args.clear();
    for( auto item : new_balances )
    {
-      _data->balance_record_cache[item.first] = item.second;
       _chain_cache->store_balance_record(item.second);
-      dirty_assets.push_back(fc::variants(1, fc::variant(item.second.asset_id())));
+      batch_args.push_back(fc::variants(1, fc::variant(item.second.asset_id())));
 
       if( item.second.last_update > sync_time )
          sync_time = item.second.last_update;
    }
 
-   auto asset_records = _rpc.batch("blockchain_get_asset", dirty_assets);
+   auto asset_records = _rpc.batch("blockchain_get_asset", batch_args);
    for( int i = 0; i < asset_records.size(); ++i )
    {
       _chain_cache->store_asset_record(asset_records[i].as<asset_record>());
-      _data->asset_record_cache[dirty_assets[i][0].as<asset_id_type>()] = asset_records[i].as<asset_record>();
+      _data->asset_record_cache[batch_args[i][0].as<asset_id_type>()] = asset_records[i].as<asset_record>();
    }
 
    _data->last_balance_sync_time = sync_time;

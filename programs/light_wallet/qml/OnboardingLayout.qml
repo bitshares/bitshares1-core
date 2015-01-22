@@ -100,7 +100,8 @@ MainView {
             characterLimit: 64
             onEditingFinished: nameAvailable()
 
-            property string defaultHelperText: qsTr("May contain letters, numbers and hyphens.\nMust start with a letter and end with a letter or number.")
+            property string defaultHelperText: qsTr("May contain letters, numbers and hyphens.\n" +
+                                                    "Must start with a letter and end with a letter or number.")
 
             function nameAvailable() {
                if( wallet.accountExists(text) ) {
