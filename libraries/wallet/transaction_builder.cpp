@@ -441,10 +441,14 @@ transaction_builder& transaction_builder::submit_bid(const wallet_account_record
                                                      const price& quote_price)
 { try {
    validate_market(quote_price.quote_asset_id, quote_price.base_asset_id);
-
-   asset cost = real_quantity * quote_price;
-   FC_ASSERT(cost.asset_id == quote_price.quote_asset_id);
-   wdump((cost));
+   asset cost;
+   if( real_quantity.asset_id == quote_price.quote_asset_id )
+       cost = real_quantity;
+   else
+   {
+       cost = real_quantity * quote_price;
+       FC_ASSERT(cost.asset_id == quote_price.quote_asset_id);
+   }
 
    auto order_key = order_key_for_account(from_account.owner_address(), from_account.name);
 
