@@ -84,6 +84,10 @@ public:
 
    Q_INVOKABLE Balance* getFee(QString assetSymbol);
    Q_INVOKABLE bool accountExists(QString name);
+   Q_INVOKABLE bool isValidAccountName(QString name)
+   {
+      return bts::blockchain::chain_database::is_valid_account_name(convert(name));
+   }
 
    QString baseAssetSymbol() const
    {

@@ -96,6 +96,25 @@ MainView {
             Layout.fillWidth: true
             Layout.preferredHeight: implicitHeight
             text: wallet.account? wallet.account.name : ""
+            helperText: defaultHelperText
+            characterLimit: 64
+            onEditingFinished: nameAvailable()
+
+            property string defaultHelperText: qsTr("May contain letters, numbers and hyphens.\nMust start with a letter and end with a letter or number.")
+
+            function nameAvailable() {
+               if( wallet.accountExists(text) ) {
+                  helperText = qsTr("That username is already taken")
+                  displayError = true
+               } else if( characterCount > characterLimit ) {
+                  helperText = qsTr("Name is too long")
+                  displayError = true
+               } else {
+                  helperText = defaultHelperText
+                  displayError = !wallet.isValidAccountName(text)
+               }
+               return !displayError
+            }
          }
          PasswordField {
             id: passwordField
@@ -118,6 +137,9 @@ MainView {
             onClicked: {
                if( wallet.account )
                   wallet.account.name = nameField.text
+
+               if( !nameField.nameAvailable() )
+                  return
 
                if( passwordField.password.length < 1 ) {
                   passwordField.shake()
