@@ -45,8 +45,7 @@
                                     ((BTS_V0_4_23_FORK_BLOCK_NUM,  "0.4.23",    1414426032)) \
                                     ((BTS_V0_4_24_FORK_BLOCK_NUM,  "0.4.24",    1415398550)) \
                                     ((BTS_V0_4_26_FORK_BLOCK_NUM,  "0.4.26",    1418401491)) \
-                                    ((DVS_V0_5_0_FORK_BLOCK_NUM,   "0.5.0",     1421192371)) \
-                                    ((DVS_V0_5_2_FORK_BLOCK_NUM,   "0.5.2",     1421943325)) 
+                                    ((DVS_V0_5_0_FORK_BLOCK_NUM,   "0.5.0",     1421192371))
 
 namespace bts { namespace blockchain {
   uint32_t estimate_last_known_fork_from_git_revision_timestamp(uint32_t revision_time);
