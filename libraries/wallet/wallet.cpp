@@ -353,6 +353,12 @@ namespace detail {
                                             bool allow_stupid
                                             )
    {
+       if( !is_receive_account(from_account_name) )
+           FC_CAPTURE_AND_THROW( unknown_receive_account, (from_account_name) );
+
+	   const wallet_account_record from_account = 
+	       self->get_account( from_account_name );
+	   
 	   // TODO:  allow_stupid
 	   oasset_record sell_arec = _blockchain->get_asset_record( sell_quantity_symbol );
 	   oasset_record price_arec = _blockchain->get_asset_record( price_symbol );
@@ -363,6 +369,8 @@ namespace detail {
 
 	   const asset_id_type sell_id = sell_arec->id;
 	   const asset_id_type price_id = price_arec->id;
+	   
+	   const asset ugly_sell_qty = _blockchain->to_ugly_asset( sell_quantity, sell_quantity_symbol );
 
        if( sell_id == price_id )
           FC_CAPTURE_AND_THROW( invalid_market, (sell_quantity_symbol)(price_symbol) );
@@ -379,41 +387,40 @@ namespace detail {
    	       price relative_price = str_to_relative_price(
    	           relative_price_str, base_symbol, quote_symbol );
 
-           price limit_price = _blockchain->to_ugly_asset( price_limit, price_symbol )
+           oprice limit_price;
+           
+           if( (price_limit != "") &&
+               (price_limit != "0")
+             )
+           {
+                limit_price = _blockchain->to_ugly_asset( price_limit, price_symbol )
                              / _blockchain->to_ugly_asset( "1", sell_quantity_symbol );
-
+                if( (limit_price->ratio == 0) || (limit_price->is_infinite()) )
+                    limit_price.reset();
+           }
+           
 		   if( relative_price.ratio > 0 )
 		   {
 			   // relative bid.
                relative_price.base_asset_id = base_id;
                relative_price.quote_asset_id = quote_id;
-			   this->apply_order_to_builder(relative_bid_order,
-			                                builder,
-			                                from_account_name,
-			                                sell_quantity,
-			                                relative_price,
-			                                base_symbol,
-			                                quote_symbol,
-			                                false,
-			                                limit_price
-			                               );
+
+               builder->submit_relative_bid(
+                   from_account,
+                   ugly_sell_qty,
+                   relative_price,
+                   limit_price);
+
 		   }
 		   else
 		   {
-               asset desired_quantity = _blockchain->to_ugly_asset(
-                   sell_quantity, sell_quantity_symbol ) * limit_price;
-               string desired_quantity_str = _blockchain->to_pretty_asset( desired_quantity );
+			   FC_ASSERT( limit_price.valid(), "Must specify at least one of rel. price or limit price" );
 
 			   // absolute bid.
-               this->apply_order_to_builder(bid_order,
-                                            builder,
-                                            from_account_name,
-                                            desired_quantity_str,
-                                            limit_price,
-                                            base_symbol,
-                                            quote_symbol,
-                                            false
-                                           );
+               builder->submit_bid(
+                   from_account,
+                   ugly_sell_qty,
+                   *limit_price);
 		   }
 	   }
 	   else
@@ -426,9 +433,18 @@ namespace detail {
 
    	       price relative_price = str_to_relative_price(
    	           relative_price_str, base_symbol, quote_symbol );
+
+           oprice limit_price;
 		   
-           price limit_price = _blockchain->to_ugly_asset( price_limit, price_symbol )
-                             / _blockchain->to_ugly_asset( "1", sell_quantity_symbol );
+           if( (price_limit != "") &&
+               (price_limit != "0")
+             )
+           {
+               limit_price = _blockchain->to_ugly_asset( price_limit, price_symbol )
+                           / _blockchain->to_ugly_asset( "1", sell_quantity_symbol );
+                if( (limit_price->ratio == 0) || (limit_price->is_infinite()) )
+                    limit_price.reset();
+           }
 
 		   if( relative_price.ratio > 0 )
 		   {
@@ -436,29 +452,21 @@ namespace detail {
                relative_price.base_asset_id = base_id;
                relative_price.quote_asset_id = quote_id;
 
-               this->apply_order_to_builder(relative_ask_order,
-                                            builder,
-                                            from_account_name,
-                                            sell_quantity,
-                                            relative_price,
-                                            base_symbol,
-                                            quote_symbol,
-                                            false,
-                                            limit_price
-                                           );
+               builder->submit_relative_ask(
+                   from_account,
+                   ugly_sell_qty,
+                   relative_price,
+                   limit_price);
 		   }
 		   else
 		   {
+			   FC_ASSERT( limit_price.valid(), "Must specify at least one of rel. price or limit price" );
+			   
 			   // absolute ask.
-               this->apply_order_to_builder(ask_order,
-                                            builder,
-                                            from_account_name,
-                                            sell_quantity,
-                                            limit_price,
-                                            base_symbol,
-                                            quote_symbol,
-                                            false
-                                           );
+               builder->submit_ask(
+                   from_account,
+                   ugly_sell_qty,
+                   *limit_price);
 		   }
 	   }
 	   return;
