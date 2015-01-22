@@ -782,7 +782,13 @@ transaction_builder& transaction_builder::finalize( bool pay_fee )
       address deposit_address = order_key_for_account(outstanding_balance.first.first, account_name);
 
       if( balance.amount == 0 ) continue;
-      else if( balance.amount > 0 ) trx.deposit(deposit_address, balance, slate_id);
+      else if( balance.amount > 0 )
+      {
+          if( balance.asset_id == 0 )
+              trx.deposit(deposit_address, balance, slate_id);
+          else
+              trx.deposit(deposit_address, balance, 0);
+      }
       else _wimpl->withdraw_to_transaction(-balance, account_name, trx, required_signatures);
    }
 

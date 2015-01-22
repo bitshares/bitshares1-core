@@ -33,6 +33,15 @@ light_wallet::~light_wallet()
    }
 }
 
+void light_wallet::fetch_welcome_package()
+{
+   auto welcome_package = _rpc.fetch_welcome_package();
+   _chain_cache->set_chain_id(welcome_package["chain_id"].as<digest_type>());
+   _relay_fee_collector = welcome_package["relay_fee_collector"].as<oaccount_record>();
+   _relay_fee = asset(welcome_package["relay_fee_amount"].as<share_type>());
+   _network_fee = asset(welcome_package["network_fee_amount"].as<share_type>());
+}
+
 void light_wallet::connect( const string& host, const string& user, const string& pass, uint16_t port )
 {
    string last_error;
@@ -45,6 +54,9 @@ void light_wallet::connect( const string& host, const string& user, const string
          _rpc.connect_to( item );
          if( user != "any" && pass != "none" )
             _rpc.login( user, pass );
+
+         fetch_welcome_package();
+
          return;
       }
       catch ( const fc::exception& e )
@@ -93,13 +105,18 @@ void light_wallet::open( const fc::path& wallet_json )
 
 void light_wallet::save()
 {
-   fc::path tmp = _wallet_file.generic_string() + ".tmp";
-   fc::path bak = _wallet_file.generic_string() + ".bak";
+   if( fc::exists(_wallet_file) )
+   {
+      fc::path tmp = _wallet_file.generic_string() + ".tmp";
+      fc::path bak = _wallet_file.generic_string() + ".bak";
 
-   fc::rename(_wallet_file, bak);
-   fc::json::save_to_file(_data, tmp, false);
-   fc::rename(tmp, _wallet_file);
-   fc::remove(bak);
+      fc::rename(_wallet_file, bak);
+      fc::json::save_to_file(_data, tmp, false);
+      fc::rename(tmp, _wallet_file);
+      fc::remove(bak);
+   } else {
+      fc::json::save_to_file(_data, _wallet_file, false);
+   }
 }
 
 void light_wallet::close()
@@ -210,10 +227,10 @@ account_record& light_wallet::fetch_account()
    return _data->user_account;
 } FC_CAPTURE_AND_RETHROW( ) }
 
-fc::variant_object light_wallet::transfer( const string& amount,
-                                           const string& symbol,
-                                           const string& to_account_name,
-                                           const string& memo )
+fc::variant_object light_wallet::prepare_transfer( const string& amount,
+                                                   const string& symbol,
+                                                   const string& to_account_name,
+                                                   const string& memo )
 { try {
    FC_ASSERT( is_unlocked() );
 
@@ -235,6 +252,13 @@ fc::variant_object light_wallet::transfer( const string& amount,
    creator.withdraw(transfer_asset);
    creator.deposit(transfer_asset, to_account->active_key(), 0, create_one_time_key(expiration.sec_since_epoch()),
                    memo, _private_key);
+
+   if( _relay_fee_collector )
+   {
+      asset relay_fee = fee - get_network_fee(symbol);
+      creator.deposit(relay_fee, _relay_fee_collector->active_key(), 0);
+   }
+
    creator.pay_fee(fee);
 
    creator.trx.expiration = expiration;
@@ -251,6 +275,34 @@ fc::variant_object light_wallet::transfer( const string& amount,
    result["timestamp"] = fc::time_point_sec(fc::time_point::now());
    return result;
 } FC_CAPTURE_AND_RETHROW( (amount)(symbol)(to_account_name)(memo) ) }
+
+bool light_wallet::complete_transfer(const string& password, const fc::variant_object& transaction_bundle )
+{
+   try {
+      if( !is_unlocked() )
+      {
+         unlock(password);
+      } else {
+         auto pass_key = fc::sha512::hash( password );
+         auto key_secret_data = fc::aes_decrypt( pass_key, _data->encrypted_private_key );
+         if( fc::raw::unpack<fc::ecc::private_key>( key_secret_data ) != *_private_key )
+            return false;
+      }
+   } catch(...) {
+      return false;
+   }
+
+   signed_transaction trx = transaction_bundle["trx"].as<transaction_record>().trx;
+   trx.sign(*_private_key, _chain_cache->get_chain_id());
+   try {
+      _rpc.blockchain_broadcast_transaction(trx);
+   } catch (const fc::exception& e) {
+      if( e.to_detail_string().find("charity") != string::npos )
+         FC_THROW("Unable to complete transaction. Please try again later.");
+   }
+
+   return true;
+}
 
 oprice light_wallet::get_median_feed_price( const string& symbol )
 {
@@ -291,16 +343,16 @@ asset light_wallet::get_fee( const string& symbol )
    {
       oprice median_feed = get_median_feed_price( symbol );
       if( median_feed )
-         return asset( 2*BTS_LIGHT_WALLET_DEFAULT_FEE, 0 ) * *median_feed;
+         return (_network_fee + _relay_fee) * *median_feed;
    }
-   return asset( BTS_LIGHT_WALLET_DEFAULT_FEE, 0 );
-   } FC_CAPTURE_AND_RETHROW( (symbol) ) }
+   return _network_fee + _relay_fee;
+} FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
 map<string, double> light_wallet::balance() const
 {
    FC_ASSERT(is_open());
 
-   map<string, double> balances = {{BTS_BLOCKCHAIN_SYMBOL, 0},{"USD", 5},{"GLD", 0.7}};
+   map<string, double> balances = {{BTS_BLOCKCHAIN_SYMBOL, 0}};
    for( auto balance : _data->balance_record_cache ) {
       asset_record record = _data->asset_record_cache.at(balance.second.asset_id());
       balances[record.symbol] += balance.second.balance / double(record.precision);
@@ -487,7 +539,16 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const fc::variant_
                raw_delta_amounts[summary.delta_labels[i]][asset_id] += deposit.amount;
             } else {
                //It's from me.
+               //Is it a light relay fee?
+               if( _relay_fee_collector && condition.owner == _relay_fee_collector->active_address() && !condition.memo )
+               {
+                  //Tally it up as fees, and don't show it in ledger
+                  record.balance[deposit.condition.asset_id] += deposit.amount;
+                  continue;
+               }
+
                summary.delta_labels[i] = string(condition.owner);
+
                auto account = get_account_record(string(condition.owner));
                if( account ) summary.delta_labels[i] = _data->user_account.name + ">" + account->name;
                else summary.delta_labels[i] = _data->user_account.name + ">" + "Unknown";
@@ -527,5 +588,17 @@ fc::ecc::private_key light_wallet::create_one_time_key(uint64_t sequence_number)
    fc::raw::pack(enc, sequence_number);
    return fc::ecc::private_key::regenerate(enc.result());
 }
+
+asset light_wallet::get_network_fee(const string& symbol)
+{ try {
+   auto symbol_asset = get_asset_record(symbol);
+   if( symbol_asset.valid() && symbol_asset->id != 0 )
+   {
+      oprice median_feed = get_median_feed_price( symbol );
+      if( median_feed )
+         return _network_fee * *median_feed;
+   }
+   return _network_fee;
+} FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
 } } // bts::light_wallet

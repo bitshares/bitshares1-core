@@ -5,6 +5,7 @@ import QtQuick.Layouts 1.1
 import Material 0.1
 
 Page {
+   id: historyPage
    title: assetSymbol + " " + qsTr("Transactions")
 
    property real minimumWidth: 30
@@ -33,6 +34,7 @@ Page {
             width: parent.width - visuals.margins * 2
             anchors.horizontalCenter: parent.horizontalCenter
             trx: model.modelData
+            accountName: historyPage.accountName
          }
 
          footer: View {

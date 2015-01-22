@@ -443,16 +443,19 @@ namespace detail {
    {
 	   // TODO:  allow_stupid
 	   oasset_record sell_arec = _blockchain->get_asset_record( sell_quantity_symbol );
-	   oasset_record price_arec = _blockchain->get_asset_record( price_symbol );	   
+	   oasset_record price_arec = _blockchain->get_asset_record( price_symbol );
 
        // TODO: Add symbol to error messages, use exception ID instead of assert
 	   FC_ASSERT( sell_arec.valid(), "could not find record for asset being sold" );
 	   FC_ASSERT( price_arec.valid(), "could not find record for asset being bought" );
 
-       if( sell_arec->id == price_arec->id )
+	   const asset_id_type sell_id = sell_arec->id;
+	   const asset_id_type price_id = price_arec->id;
+
+       if( sell_id == price_id )
           FC_CAPTURE_AND_THROW( invalid_market, (sell_quantity_symbol)(price_symbol) );
 
-       const bool is_bid = (sell_arec->id > price_arec->id);
+       const bool is_bid = (sell_id > price_id);
        if( is_bid )
        {
 		   // n.b. bid base/quote is opposite of ask
@@ -464,8 +467,8 @@ namespace detail {
    	       price relative_price = str_to_relative_price(
    	           relative_price_str, base_symbol, quote_symbol );
 
-	       price limit_price = _blockchain->to_ugly_price(
-               price_limit, base_symbol, quote_symbol, true);
+           price limit_price = _blockchain->to_ugly_asset( price_limit, price_symbol )
+                             / _blockchain->to_ugly_asset( "1", sell_quantity_symbol );
 
 		   if( relative_price.ratio > 0 )
 		   {
@@ -479,19 +482,25 @@ namespace detail {
 			                                relative_price,
 			                                base_symbol,
 			                                quote_symbol,
+			                                false,
 			                                limit_price
 			                               );
 		   }
 		   else
 		   {
+               asset desired_quantity = _blockchain->to_ugly_asset(
+                   sell_quantity, sell_quantity_symbol ) * limit_price;
+               string desired_quantity_str = _blockchain->to_pretty_asset( desired_quantity );
+
 			   // absolute bid.
                this->apply_order_to_builder(bid_order,
                                             builder,
                                             from_account_name,
-                                            sell_quantity,
+                                            desired_quantity_str,
                                             limit_price,
                                             base_symbol,
-                                            quote_symbol
+                                            quote_symbol,
+                                            false
                                            );
 		   }
 	   }
@@ -506,8 +515,8 @@ namespace detail {
    	       price relative_price = str_to_relative_price(
    	           relative_price_str, base_symbol, quote_symbol );
 		   
-	       price limit_price = _blockchain->to_ugly_price(
-               price_limit, base_symbol, quote_symbol, true);
+           price limit_price = _blockchain->to_ugly_asset( price_limit, price_symbol )
+                             / _blockchain->to_ugly_asset( "1", sell_quantity_symbol );
 
 		   if( relative_price.ratio > 0 )
 		   {
@@ -522,6 +531,7 @@ namespace detail {
                                             relative_price,
                                             base_symbol,
                                             quote_symbol,
+                                            false,
                                             limit_price
                                            );
 		   }
@@ -534,7 +544,8 @@ namespace detail {
                                             sell_quantity,
                                             limit_price,
                                             base_symbol,
-                                            quote_symbol
+                                            quote_symbol,
+                                            false
                                            );
 		   }
 	   }
@@ -548,7 +559,9 @@ namespace detail {
                                             const string& order_price,
                                             const string& base_symbol,
                                             const string& quote_symbol,
-                                            const string& limit)
+                                            bool needs_satoshi_conversion,
+                                            const string& limit
+                                            )
    {
 	  // description of "balance" parameter:
 	  // in the case of ask, relative ask, relative bid, "balance" is an existing balance to be sold
@@ -606,8 +619,6 @@ namespace detail {
       //    does not get converted, but the limit price is a price,
       //    which does.
       
-      const bool needs_satoshi_conversion = is_ba;
-
       price price_arg = _blockchain->to_ugly_price(order_price,
                                                    base_symbol,
                                                    quote_symbol,
@@ -3631,6 +3642,7 @@ namespace detail {
             FC_ASSERT(args.size() > 4, "Incorrect number of arguments.");
             my->apply_order_to_builder(order_description.first, builder,
                                        args[0], args[1], args[3], args[2], args[4],
+                                       true,
                                        //For shorts:
                                        args.size() > 5? args[5] : string()
                                        );
@@ -3665,7 +3677,9 @@ namespace detail {
                                  real_quantity,
                                  quote_price,
                                  quantity_symbol,
-                                 quote_symbol);
+                                 quote_symbol,
+                                 true
+                                 );
       builder->finalize();
 
       if( sign )
@@ -3736,6 +3750,7 @@ namespace detail {
                                  relative_quote_price,
                                  quantity_symbol,
                                  quote_symbol,
+                                 true,
                                  limit_price);
       builder->finalize();
 
@@ -3765,7 +3780,8 @@ namespace detail {
                                  real_quantity,
                                  quote_price,
                                  quantity_symbol,
-                                 quote_symbol);
+                                 quote_symbol,
+                                 true);
       builder->finalize();
 
       if( sign )
@@ -3795,6 +3811,7 @@ namespace detail {
                                  apr,
                                  collateral_symbol,
                                  quote_symbol,
+                                 false,
                                  price_limit);
       builder->finalize();
 

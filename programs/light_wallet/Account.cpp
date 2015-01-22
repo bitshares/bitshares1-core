@@ -115,6 +115,7 @@ QList<QObject*> Account::transactionHistory(QString asset_symbol)
       return a.timestamp < b.timestamp;
    });
 
+   int position = 0;
    for( bts::wallet::transaction_ledger_entry trx : raw_transactions )
    {
       if( std::find_if(transactionList.begin(), transactionList.end(), [&trx] (QObject* o) -> bool {
@@ -122,7 +123,7 @@ QList<QObject*> Account::transactionHistory(QString asset_symbol)
       }) != transactionList.end() )
          continue;
 
-      transactionList.append(buildSummary(std::move(trx)));
+      transactionList.insert(position++, buildSummary(std::move(trx)));
    }
 
    return transactionList;
@@ -131,7 +132,7 @@ QList<QObject*> Account::transactionHistory(QString asset_symbol)
 TransactionSummary* Account::beginTransfer(QString recipient, QString amount, QString symbol, QString memo)
 {
    try {
-      pending_transaction = m_wallet->transfer(convert(amount), convert(symbol), convert(recipient), convert(memo));
+      pending_transaction = m_wallet->prepare_transfer(convert(amount), convert(symbol), convert(recipient), convert(memo));
    } catch (const fc::exception& e) {
       qDebug() << "Failed to transfer:" << e.to_detail_string().c_str();
       return nullptr;
@@ -144,4 +145,19 @@ TransactionSummary* Account::beginTransfer(QString recipient, QString amount, QS
       qDebug() << "Summary cleaned";
    });
    return summary;
+}
+
+bool Account::completeTransfer(QString password)
+{
+   try {
+      return m_wallet->complete_transfer(convert(password), pending_transaction);
+   } catch( const fc::exception& e ) {
+      if( e.get_log().size() )
+         Q_EMIT error(convert(e.get_log().front().get_message()));
+      else
+         Q_EMIT error(QStringLiteral("Unknown error occurred."));
+
+      pending_transaction = fc::variant_object();
+   }
+   return false;
 }

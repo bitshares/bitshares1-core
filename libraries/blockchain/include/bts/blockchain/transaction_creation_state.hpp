@@ -34,12 +34,12 @@ namespace bts { namespace blockchain {
          void withdraw( const asset& amount );
 
 
-         public_key_type deposit( const asset&                      amount, 
-                                  const public_key_type&            to, 
+         public_key_type deposit( const asset&                      amount,
+                                  const public_key_type&            to,
                                   slate_id_type                     slate   = 0,
-                                  const optional<private_key_type>& one_time_key = nullptr,
-                                  const string&                     memo    = string(), 
-                                  const optional<private_key_type>& from    = nullptr,
+                                  const optional<private_key_type>& one_time_key = optional<private_key_type>(),
+                                  const string&                     memo    = string(),
+                                  const optional<private_key_type>& from    = optional<private_key_type>(),
                                   bool                              stealth = false );
 
 

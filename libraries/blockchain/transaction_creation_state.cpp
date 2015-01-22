@@ -19,7 +19,8 @@ namespace bts { namespace blockchain {
           if( item.second.asset_id() == amount_to_withdraw.asset_id )
           {
              auto owner = item.second.owner();
-             if( owner && eval_state.signed_keys.find(*owner) != eval_state.signed_keys.end() )
+             if( owner && eval_state.signed_keys.find(*owner) != eval_state.signed_keys.end() &&
+                 item.second.balance > 0 )
              {
                 auto withdraw_from_balance = std::min<share_type>( item.second.balance, left_to_withdraw );
                 left_to_withdraw    -= withdraw_from_balance;
@@ -68,7 +69,8 @@ namespace bts { namespace blockchain {
                                                       from ? *from
                                                            : fc::ecc::private_key(),
                                                       memo,
-                                                      one_time_key->get_public_key(),
+                                                      from ? from->get_public_key()
+                                                           : one_time_key->get_public_key(),
                                                       to_memo,
                                                       stealth );
 

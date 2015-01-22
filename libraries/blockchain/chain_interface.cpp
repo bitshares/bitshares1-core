@@ -17,7 +17,7 @@ namespace bts { namespace blockchain {
       return optional<string>();
    }
 
-   bool chain_interface::is_valid_account_name( const string& name )const
+   bool chain_interface::is_valid_account_name( const string& name )
    { try {
       if( name.size() < BTS_BLOCKCHAIN_MIN_NAME_SIZE ) return false;
       if( name.size() > BTS_BLOCKCHAIN_MAX_NAME_SIZE ) return false;

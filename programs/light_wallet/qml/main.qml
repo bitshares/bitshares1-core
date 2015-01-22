@@ -22,7 +22,8 @@ ApplicationWindow {
          wallet.connectToServer("localhost", 6691, "user", "pass")
    }
    function showError(error) {
-      errorText.text = qsTr("Error: ") + error
+      snack.text = error
+      snack.open()
       return d.currentError = d.errorSerial++
    }
    function clearError(errorId) {
@@ -54,7 +55,7 @@ ApplicationWindow {
    QtObject {
       id: visuals
 
-      property real margins: 20
+      property real margins: units.dp(16)
    }
    Timer {
       id: refreshPoller
@@ -83,6 +84,7 @@ ApplicationWindow {
             clearError(errorId)
          })
       }
+      onAccountChanged: if( account ) account.error.connect(showError)
    }
 
    WelcomeLayout {
@@ -137,11 +139,21 @@ ApplicationWindow {
       id: transferUi
 
       TransferLayout {
+//         onTransferComplete: window.pageStack.push({item: historyUi,
+//                                                    properties:{"accountName": wallet.account.name,
+//                                                               "assetSymbol": assetSymbol},
+//                                                    replace: true})
+         onTransferComplete: window.pageStack.pop()
       }
    }
    Loader {
       id: onboardLoader
       anchors.fill: parent
       z: 20
+   }
+   Snackbar {
+      id: snack
+      duration: 5000
+      z: 21
    }
 }

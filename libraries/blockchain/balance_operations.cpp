@@ -323,6 +323,9 @@ namespace bts { namespace blockchain {
 
    void burn_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
+      if( this->amount.amount < 0 )
+         FC_CAPTURE_AND_THROW( negative_deposit, (amount) );
+
       if( message.size() )
           FC_ASSERT( amount.asset_id == 0 );
 
@@ -361,6 +364,12 @@ namespace bts { namespace blockchain {
 
       auto escrow_balance_record = eval_state._current_state->get_balance_record( this->escrow_id );
       FC_ASSERT( escrow_balance_record.valid() );
+
+      if( this->amount_to_receiver < 0 )
+         FC_CAPTURE_AND_THROW( negative_withdraw, (amount_to_receiver) );
+
+      if( this->amount_to_sender < 0 )
+         FC_CAPTURE_AND_THROW( negative_withdraw, (amount_to_sender) );
 
       if( !eval_state.check_signature( this->released_by ) )
          FC_ASSERT( false, "transaction not signed by releasor" );

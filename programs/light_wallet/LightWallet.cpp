@@ -11,8 +11,10 @@
 #include <QEventLoop>
 
 #define IN_THREAD \
+   m_walletThread.async([=] {
+#define IN_WAIT_THREAD \
    QEventLoop _THREAD_WAIT_LOOP_; \
-   m_walletThread.async([=, &_THREAD_WAIT_LOOP_] {
+   m_walletThread.async([&] {
 #define END_THREAD }, __FUNCTION__);
 #define END_WAIT_THREAD \
       QEventLoopLocker _THREAD_LOCKER_(&_THREAD_WAIT_LOOP_); \
@@ -35,7 +37,7 @@ Balance* LightWallet::getFee(QString assetSymbol)
    // QML takes ownership of these objects, and will delete them.
    Balance* fee = new Balance(assetSymbol, -1);
 
-   IN_THREAD
+   IN_WAIT_THREAD
       try {
          auto rawFee = m_wallet.get_fee(convert(assetSymbol));
          auto feeAsset = m_wallet.get_asset_record(rawFee.asset_id);
@@ -46,7 +48,18 @@ Balance* LightWallet::getFee(QString assetSymbol)
       }
    END_WAIT_THREAD
 
-   return fee;
+         return fee;
+}
+
+bool LightWallet::accountExists(QString name)
+{
+   bool exists;
+
+   IN_WAIT_THREAD
+      exists = m_wallet.get_account_record(convert(name)).valid();
+   END_WAIT_THREAD
+
+   return exists;
 }
 
 void LightWallet::connectToServer(QString host, quint16 port, QString user, QString password)
