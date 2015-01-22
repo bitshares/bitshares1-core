@@ -27,6 +27,7 @@ class LightWallet : public QObject
    Q_PROPERTY(QString brainKey READ brainKey NOTIFY brainKeyChanged)
 
    Q_PROPERTY(qint16 maxMemoSize READ maxMemoSize CONSTANT)
+   Q_PROPERTY(QString baseAssetSymbol READ baseAssetSymbol CONSTANT)
 
 public:
    LightWallet()
@@ -83,6 +84,11 @@ public:
 
    Q_INVOKABLE Balance* getFee(QString assetSymbol);
    Q_INVOKABLE bool accountExists(QString name);
+
+   QString baseAssetSymbol() const
+   {
+      return QStringLiteral(BTS_BLOCKCHAIN_SYMBOL);
+   }
 
 public Q_SLOTS:
    void connectToServer( QString host, quint16 port,

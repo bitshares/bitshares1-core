@@ -219,8 +219,7 @@ Page {
             if( !amountField.canProceed() )
                return amountShaker.shake()
             if( !amountField.canPayFee() )
-               //TODO: descriptive error
-               return amountShaker.shake()
+               return badFeeDialog.visible = true
             if( memoField.characterCount > memoField.characterLimit )
                return memoShaker.shake()
 
@@ -229,6 +228,32 @@ Page {
             transferPage.state = "confirmation"
             confirmPassword.forceActiveFocus()
          }
+      }
+   }
+
+   MouseArea {
+      anchors.fill: parent
+      onClicked: badFeeDialog.visible = false
+      enabled: badFeeDialog.visible
+   }
+   Dialog {
+      id: badFeeDialog
+      title: qsTr("Cannot pay fee")
+      height: units.dp(200)
+      negativeBtnVisible: false
+      positiveBtnText: qsTr("OK")
+      visible: false
+
+      onPositiveBtnClicked: visible = false
+
+      Label {
+         id: dialogContentLabel
+         style: "body1"
+         text: qsTr("The BitShares network does not accept fees in " + assetSymbol.text + ", so the transaction fee " +
+                    "must be paid in " + wallet.baseAssetSymbol + ". You do not currently have enough " +
+                    wallet.baseAssetSymbol + " to pay the fee.")
+         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+         width: parent.width
       }
    }
 
