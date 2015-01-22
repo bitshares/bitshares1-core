@@ -82,6 +82,7 @@ public:
    }
 
    Q_INVOKABLE Balance* getFee(QString assetSymbol);
+   Q_INVOKABLE bool accountExists(QString name);
 
 public Q_SLOTS:
    void connectToServer( QString host, quint16 port,
