@@ -107,7 +107,7 @@ namespace bts { namespace blockchain { namespace detail {
                 // Skip shorts that are over the price limit.
                 if( _current_bid->state.limit_price.valid() )
                 {
-                  if( *_current_bid->state.limit_price < mtrx.ask_price )
+                  if( *_current_bid->state.limit_price < mtrx.bid_price )
                   {
                       _current_bid.reset(); continue;
                   }

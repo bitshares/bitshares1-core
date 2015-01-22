@@ -108,7 +108,7 @@ namespace bts { namespace blockchain { namespace detail {
                 if( !median_feed_price.valid() ) { _current_bid.reset(); continue; }
                 if( _current_bid->state.limit_price.valid() )
                 {
-                  if( *_current_bid->state.limit_price < mtrx.ask_price )
+                  if( *_current_bid->state.limit_price < mtrx.bid_price )
                   {
                       _current_bid.reset(); continue; // skip shorts that are over the price limit.
                   }
