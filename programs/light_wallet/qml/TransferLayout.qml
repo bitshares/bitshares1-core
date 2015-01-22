@@ -100,7 +100,7 @@ Page {
             Ink {
                anchors.fill: parent
                enabled: !assetMenu.opened
-               onClicked: assetMenu.open(assetSymbol.text, 0, 0)
+               onClicked: assetMenu.open(assetSymbol.text, assetSymbol.inputRect.x, assetSymbol.inputRect.y)
             }
             Menu {
                id: assetMenu
