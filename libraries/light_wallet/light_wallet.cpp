@@ -354,8 +354,9 @@ map<string, double> light_wallet::balance() const
 
    map<string, double> balances = {{BTS_BLOCKCHAIN_SYMBOL, 0}};
    for( auto balance : _chain_cache->_balance_id_to_record ) {
-      asset_record record = _data->asset_record_cache.at(balance.second.asset_id());
-      balances[record.symbol] += balance.second.balance / double(record.precision);
+      oasset_record record = get_asset_record(balance.second.asset_id());
+      if( record )
+         balances[record->symbol] += balance.second.balance / double(record->precision);
    }
    return balances;
 }
@@ -423,10 +424,7 @@ void light_wallet::sync_balance( bool resync_all )
 
    auto asset_records = _rpc.batch("blockchain_get_asset", batch_args);
    for( int i = 0; i < asset_records.size(); ++i )
-   {
       _chain_cache->store_asset_record(asset_records[i].as<asset_record>());
-      _data->asset_record_cache[batch_args[i][0].as<asset_id_type>()] = asset_records[i].as<asset_record>();
-   }
 
    _data->last_balance_sync_time = sync_time;
    save();
@@ -456,37 +454,31 @@ void light_wallet::sync_transactions()
    _data->last_transaction_sync_block = sync_block;
 }
 
-optional<asset_record> light_wallet::get_asset_record( const string& symbol )
+optional<asset_record> light_wallet::get_asset_record( const string& symbol )const
 { try {
    if( is_open() )
    {
-      for( auto item : _data->asset_record_cache )
+      for( auto item : _chain_cache->_asset_id_to_record)
          if( item.second.symbol == symbol )
             return item.second;
    }
    auto result = _rpc.blockchain_get_asset( symbol );
    if( result )
-   {
       _chain_cache->store(*result);
-      _data->asset_record_cache[result->id] = *result;
-   }
    return result;
 } FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
-optional<asset_record> light_wallet::get_asset_record(const asset_id_type& id)
+optional<asset_record> light_wallet::get_asset_record(const asset_id_type& id)const
 { try {
    if( is_open() )
    {
-      for( auto item : _data->asset_record_cache )
+      for( auto item : _chain_cache->_asset_id_to_record)
          if( item.second.id == id )
             return item.second;
    }
    auto result = _rpc.blockchain_get_asset( fc::variant(id).as_string() );
    if( result )
-   {
       _chain_cache->store(*result);
-      _data->asset_record_cache[result->id] = *result;
-   }
    return result;
    } FC_CAPTURE_AND_RETHROW( (id) ) }
 
