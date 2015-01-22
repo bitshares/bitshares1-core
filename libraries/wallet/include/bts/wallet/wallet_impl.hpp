@@ -174,6 +174,7 @@ class wallet_impl : public chain_observer
                                   const string& order_price,
                                   const string& base_symbol,
                                   const string& quote_symbol,
+                                  bool needs_satoshi_conversion,
                                   const string& short_price_limit = string()
                                  );
       

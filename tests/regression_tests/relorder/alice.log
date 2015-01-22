@@ -24,14 +24,39 @@
 >>> debug_wait_for_block_by_number 1 rlast
 >>> blockchain_market_order_book USD XTS
 >>> balance alice
->>> wallet_market_submit_ask alice 10000 XTS .0205 USD
->>> wallet_market_submit_bid alice 10000 XTS .0195 USD true
->>> wallet_market_submit_relative_ask alice 10000 XTS 1.01 USD
->>> wallet_market_submit_relative_bid alice 10000 XTS 0.99 USD
+>>> wallet_market_sell alice 10000 XTS .0205 USD
+>>> balance alice
 >>> debug_advance_time 1 block
 >>> debug_wait_for_block_by_number 1 rlast
 >>> blockchain_market_order_book USD XTS
 >>> balance alice
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+>>> balance alice
+>>> wallet_market_sell alice 100 USD 51.25 XTS
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+>>> balance alice
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+>>> balance alice
+>>> wallet_market_sell alice 10000 XTS 0 USD 1.05
+>>> balance alice
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+>>> balance alice
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+>>> wallet_market_sell alice 100 USD 0 XTS 1.05
+>>> balance alice
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
 >>> debug_advance_time 1 block
 >>> debug_wait_for_block_by_number 1 rlast
 >>> blockchain_market_order_book USD XTS
