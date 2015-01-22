@@ -104,10 +104,10 @@ namespace bts { namespace blockchain { namespace detail {
                 // Always execute shorts at the feed price
                 mtrx.bid_price = *_feed_price;
 
-                // Skip shorts that are over the price limit.
+                // Skip shorts that are under the feed or over the price limit
                 if( _current_bid->state.limit_price.valid() )
                 {
-                  if( *_current_bid->state.limit_price < mtrx.ask_price )
+                  if( *_current_bid->state.limit_price < *_feed_price || *_current_bid->state.limit_price < mtrx.ask_price )
                   {
                       _current_bid.reset(); continue;
                   }
@@ -658,7 +658,7 @@ namespace bts { namespace blockchain { namespace detail {
                bid = short_bid;
         }
       }
-      
+
       if( bid )
       {
           _current_bid = bid;
@@ -678,7 +678,7 @@ namespace bts { namespace blockchain { namespace detail {
                   ;
           }
       }
-      
+
       return _current_bid.valid();
   } FC_CAPTURE_AND_RETHROW() }
 
