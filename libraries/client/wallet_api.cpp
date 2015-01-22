@@ -165,8 +165,25 @@ void detail::client_impl::wallet_import_keys_from_json( const fc::path& json_fil
     ilog("@n Read keys: ${keys}", ("keys", keys));
     for( auto key : keys )
     {
-        _wallet->import_private_key( key, account, false );
-        ilog("@n imported key: ${key}", ("key", key));
+        auto addr = address( key.get_public_key() );
+        owallet_account_record account_record = _wallet->get_account_for_address( addr );
+        if( account_record.valid() && account_record->name != account )
+        {
+            // We already have this key and import_private_key would fail if we tried. Do nothing.
+        }
+        else
+        {
+            const oaccount_record blockchain_account_record = _chain_db->get_account_record( addr );
+            if( blockchain_account_record.valid() && blockchain_account_record->name != account )
+            { // This key exists on the blockchain and I don't have it - don't associate it with a name when you import it
+                _wallet->import_private_key( key, optional<string>(), false );
+            }
+            else
+            {
+                _wallet->import_private_key( key, account, false );
+            }
+            ilog("@n imported key: ${key}", ("key", key));
+        }
     }
     ulog( "No errors were encountered, but there is currently no way to check if keys were decrypted using the correct password." );
 } FC_CAPTURE_AND_RETHROW( (json_filename) ) }
