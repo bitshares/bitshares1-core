@@ -34,7 +34,7 @@ Page {
       anchors.top: hashBar.bottom
       style: "display1"
       color: "red"
-      text: Number(amountField.text) + " " + assetSymbol.text
+      text: amountField.amount() + " " + assetSymbol.text
    }
 
    Rectangle {
@@ -63,6 +63,22 @@ Page {
          floatingLabel: true
          font.pixelSize: units.dp(20)
          focus: true
+         onEditingFinished: canProceed()
+         transform: ShakeAnimation { id: recipientShaker }
+         showHelperText: true
+
+         function canProceed() {
+            if( !wallet.accountExists(text) )
+            {
+               displayError = true
+               helperText = qsTr("This account does not exist")
+            } else {
+               displayError = false
+               helperText = ""
+            }
+
+            return !displayError
+         }
       }
       RowLayout {
          id: amountRow
@@ -70,6 +86,7 @@ Page {
          anchors.top: toNameField.bottom
          anchors.topMargin: units.dp(3)
          width: parent.width
+         transform: ShakeAnimation { id: amountShaker }
 
          TextField {
             id: amountField
@@ -79,17 +96,45 @@ Page {
             floatingLabel: true
             font.pixelSize: units.dp(20)
             validator: DoubleValidator {bottom: 0; notation: DoubleValidator.StandardNotation}
+            helperText: {
+               var fee = wallet.getFee(assetSymbol.text)
+               return qsTr("Available balance: ") + wallet.account.balance(assetSymbol.text) + " " + assetSymbol.text +
+                     "\n" + qsTr("Transaction fee: ") + fee.amount + " " + fee.symbol
+            }
+            onEditingFinished: canProceed()
+
+            function amount() {
+               return Number(text)? Number(text) : 0
+            }
+            function canProceed() {
+               var fee = wallet.getFee(assetSymbol.text)
+               var total = amount()
+               if( fee.symbol === assetSymbol.text ) {
+                  total += fee.amount
+               }
+
+               displayError = total > wallet.account.balance(assetSymbol.text)
+               return !displayError && amount() > 0
+            }
+            function canPayFee() {
+               var fee = wallet.getFee(assetSymbol.text)
+               if( fee.symbol === assetSymbol.text )
+                  return canProceed()
+               return fee.amount <= wallet.account.balance(fee.symbol)
+            }
          }
          TextField {
             id: assetSymbol
             y: amountField.y
             Layout.preferredWidth: units.dp(100)
             readOnly: true
-            text: "XTS"
+            //Hack to make RowLayout place this field vertically level with amountField
+            helperText: "\n "
+            text: wallet.account.availableAssets.length ? wallet.account.availableAssets[0]
+                                                        : ":("
             placeholderText: qsTr("Asset")
             floatingLabel: true
             font.pixelSize: units.dp(20)
-            cursorPosition: 0
 
             Icon {
                anchors.verticalCenter: parent.verticalCenter
@@ -100,7 +145,7 @@ Page {
             Ink {
                anchors.fill: parent
                enabled: !assetMenu.opened
-               onClicked: assetMenu.open(assetSymbol.text, 0, 0)
+               onClicked: assetMenu.open(assetSymbol.text, assetSymbol.inputRect.x, assetSymbol.inputRect.y)
             }
             Menu {
                id: assetMenu
@@ -111,25 +156,16 @@ Page {
             }
          }
       }
-      Label {
-         font.pixelSize: units.dp(12)
-         anchors.top: amountRow.bottom
-         anchors.right: amountRow.right
-         text: {
-            var fee = wallet.getFee(assetSymbol.text)
-            return qsTr("Available balance: ") + wallet.account.balance(assetSymbol.text) + " " + assetSymbol.text +
-                  "\n" + qsTr("Transaction fee: ") + fee.amount + " " + fee.symbol
-         }
-      }
       TextField {
          id: memoField
          width: parent.width
-         maximumLength: wallet.maxMemoSize
+         characterLimit: wallet.maxMemoSize
          placeholderText: qsTr("Memo")
          floatingLabel: true
          font.pixelSize: units.dp(20)
          anchors.top: amountRow.bottom
          anchors.margins: units.dp(3)
+         transform: ShakeAnimation { id: memoShaker }
       }
    }
    Item {
@@ -178,11 +214,46 @@ Page {
          id: continueButton
          text: qsTr("Send")
          onClicked: {
+            if( !toNameField.canProceed() )
+               return recipientShaker.shake()
+            if( !amountField.canProceed() )
+               return amountShaker.shake()
+            if( !amountField.canPayFee() )
+               return badFeeDialog.visible = true
+            if( memoField.characterCount > memoField.characterLimit )
+               return memoShaker.shake()
+
             transactionPreview.trx = wallet.account.beginTransfer(toNameField.text, amountField.text,
                                                                   assetSymbol.text, memoField.text);
             transferPage.state = "confirmation"
             confirmPassword.forceActiveFocus()
          }
+      }
+   }
+
+   MouseArea {
+      anchors.fill: parent
+      onClicked: badFeeDialog.visible = false
+      enabled: badFeeDialog.visible
+   }
+   Dialog {
+      id: badFeeDialog
+      title: qsTr("Cannot pay fee")
+      height: units.dp(200)
+      negativeBtnVisible: false
+      positiveBtnText: qsTr("OK")
+      visible: false
+
+      onPositiveBtnClicked: visible = false
+
+      Label {
+         id: dialogContentLabel
+         style: "body1"
+         text: qsTr("The BitShares network does not accept fees in " + assetSymbol.text + ", so the transaction fee " +
+                    "must be paid in " + wallet.baseAssetSymbol + ". You do not currently have enough " +
+                    wallet.baseAssetSymbol + " to pay the fee.")
+         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+         width: parent.width
       }
    }
 
