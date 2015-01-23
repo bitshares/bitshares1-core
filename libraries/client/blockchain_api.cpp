@@ -629,13 +629,13 @@ std::map<uint32_t, vector<fork_record>> client_impl::blockchain_list_forks()cons
    return _chain_db->get_forks_list();
 }
 
-vector<slot_record> client_impl::blockchain_get_delegate_slot_records( const string& delegate_name, uint32_t count )const
-{
-    FC_ASSERT( count > 0 );
+vector<slot_record> client_impl::blockchain_get_delegate_slot_records( const string& delegate_name, uint32_t limit )const
+{ try {
+    FC_ASSERT( limit > 0 );
     const oaccount_record delegate_record = _chain_db->get_account_record( delegate_name );
     FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate(), "${n} is not a delegate!", ("n",delegate_name) );
-    return _chain_db->get_delegate_slot_records( delegate_record->id, count );
-}
+    return _chain_db->get_delegate_slot_records( delegate_record->id, limit );
+} FC_CAPTURE_AND_RETHROW( (delegate_name)(limit) ) }
 
 string client_impl::blockchain_get_block_signee( const string& block )const
 {

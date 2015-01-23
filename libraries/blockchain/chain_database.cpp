@@ -2281,12 +2281,12 @@ namespace bts { namespace blockchain {
         return fork_blocks;
     }
 
-    vector<slot_record> chain_database::get_delegate_slot_records( const account_id_type delegate_id, uint32_t count )const
+    vector<slot_record> chain_database::get_delegate_slot_records( const account_id_type delegate_id, uint32_t limit )const
     { try {
-        FC_ASSERT( count > 0 );
+        FC_ASSERT( limit > 0 );
 
         vector<slot_record> slot_records;
-        slot_records.reserve( std::min( count, get_head_block_num() ) );
+        slot_records.reserve( std::min( limit, get_head_block_num() ) );
 
         const slot_index key = slot_index( delegate_id, my->_head_block_header.timestamp );
         for( auto iter = my->_slot_index_to_record.lower_bound( key ); iter.valid(); ++iter )
@@ -2294,11 +2294,11 @@ namespace bts { namespace blockchain {
             const slot_record& record = iter.value();
             if( record.index.delegate_id != delegate_id ) break;
             slot_records.push_back( record );
-            if( slot_records.size() >= count ) break;
+            if( slot_records.size() >= limit ) break;
         }
 
         return slot_records;
-    } FC_CAPTURE_AND_RETHROW( (delegate_id)(count) ) }
+    } FC_CAPTURE_AND_RETHROW( (delegate_id)(limit) ) }
 
    optional<variant> chain_database::get_property( const chain_property_enum property_id )const
    { try {
