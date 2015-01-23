@@ -1210,8 +1210,6 @@ namespace bts { namespace blockchain {
                  my->_balance_id_to_record.toggle_leveldb( enabled );
 
                  my->_slate_db.toggle_leveldb( enabled );
-
-                 my->_market_transactions_db.toggle_leveldb( enabled );
              };
 
              const auto set_db_cache_write_through = [ this ]( bool write_through )
@@ -1227,6 +1225,7 @@ namespace bts { namespace blockchain {
                  my->_short_db.set_write_through( write_through );
                  my->_collateral_db.set_write_through( write_through );
 
+                 my->_market_transactions_db.set_write_through( write_through );
                  my->_market_status_db.set_write_through( write_through );
                  my->_market_history_db.set_write_through( write_through );
              };
@@ -3055,8 +3054,8 @@ namespace bts { namespace blockchain {
 
    vector<market_transaction> chain_database::get_market_transactions( const uint32_t block_num )const
    { try {
-       const auto iter = my->_market_transactions_db.unordered_find( block_num );
-       if( iter != my->_market_transactions_db.unordered_end() ) return iter->second;
+       const auto oresult = my->_market_transactions_db.fetch_optional( block_num );
+       if( oresult.valid() ) return *oresult;
        return vector<market_transaction>();
    } FC_CAPTURE_AND_RETHROW( (block_num) ) }
 
@@ -3071,9 +3070,9 @@ namespace bts { namespace blockchain {
       uint32_t current_block_num = get_head_block_num();
       const auto get_transactions_from_prior_block = [&]() -> vector<market_transaction>
       {
-          auto itr = my->_market_transactions_db.ordered_lower_bound(current_block_num);
-          if (current_block_num == get_head_block_num())
-              itr = my->_market_transactions_db.ordered_last();
+          auto itr = my->_market_transactions_db.lower_bound( current_block_num );
+          if( current_block_num == get_head_block_num() )
+              itr = my->_market_transactions_db.last();
 
           if (itr.valid()) --itr;
           if (itr.valid())
