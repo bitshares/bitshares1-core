@@ -483,6 +483,11 @@ namespace detail {
                                             const string& limit
                                             )
    {
+      FC_ASSERT( (order_type != relative_ask_order)
+              && (order_type != relative_bid_order),
+              "relative orders not supported by apply_order_to_builder"
+              );
+
 	  // description of "balance" parameter:
 	  // in the case of ask, relative ask, relative bid, "balance" is an existing balance to be sold
 	  // in the case of bid, "balance" is desired quantity to buy
@@ -553,10 +558,6 @@ namespace detail {
          builder->submit_bid(self->get_account(account_name), quantity, price_arg);
       else if( order_type == ask_order )
          builder->submit_ask(self->get_account(account_name), quantity, price_arg);
-      else if( order_type == relative_bid_order )
-         builder->submit_relative_bid(self->get_account(account_name), quantity, price_arg, price_limit);
-      else if( order_type == relative_ask_order )
-         builder->submit_relative_ask(self->get_account(account_name), quantity, price_arg, price_limit);
       else if( order_type == short_order )
       {
 		 static fc::uint128 max_apr = fc::uint128( 1000, 0 );
@@ -3662,16 +3663,37 @@ namespace detail {
       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
 
+      oasset_record quantity_arec = my->_blockchain->get_asset_record( quantity_symbol );
+      oasset_record quote_arec = my->_blockchain->get_asset_record( quote_symbol );
+
+      // TODO: Add symbol to error messages, use exception ID instead of assert
+	  FC_ASSERT( quantity_arec.valid(), "could not find record for asset being sold" );
+	  FC_ASSERT( quote_arec.valid(), "could not find record for asset being bought" );
+
+	  const asset_id_type quantity_id = quantity_arec->id;
+	  const asset_id_type quote_id = quote_arec->id;
+	   
+      if( quantity_id == quote_id )
+          FC_CAPTURE_AND_THROW( invalid_market, (quantity_symbol)(quote_symbol) );
+
+      const bool is_bid = (quantity_id > quote_id);
+      if( is_bid )
+          FC_CAPTURE_AND_THROW( invalid_market, (quantity_symbol)(quote_symbol) );
+
       transaction_builder_ptr builder = create_transaction_builder();
-      my->apply_order_to_builder(relative_ask_order,
-                                 builder,
-                                 from_account_name,
-                                 real_quantity,
-                                 relative_quote_price,
-                                 quantity_symbol,
-                                 quote_symbol,
-                                 true,
-                                 limit_price);
+
+      // go through sell order, but yell if asset ID mismatch
+      my->apply_sell_order_to_builder(
+          builder,
+          from_account_name,
+          real_quantity,
+          quantity_symbol,
+          limit_price,
+          quote_symbol,
+          relative_quote_price,
+          true
+          );
+
       builder->finalize();
 
       if( sign )
