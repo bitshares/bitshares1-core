@@ -194,6 +194,7 @@ Page {
          anchors.horizontalCenter: parent.horizontalCenter
          anchors.top: transactionPreview.bottom
          anchors.topMargin: visuals.margins
+         onAccepted: continueButton.clicked()
       }
    }
 

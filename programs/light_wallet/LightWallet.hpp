@@ -94,6 +94,8 @@ public:
       return QStringLiteral(BTS_BLOCKCHAIN_SYMBOL);
    }
 
+   Q_INVOKABLE bool verifyBrainKey(QString key) const;
+
 public Q_SLOTS:
    void connectToServer( QString host, quint16 port,
                          QString user = QString("any"),
@@ -112,6 +114,7 @@ public Q_SLOTS:
    void clearBrainKey();
 
    void sync();
+   void syncAllBalances();
 
 Q_SIGNALS:
    void walletExistsChanged(bool exists);
@@ -126,6 +129,8 @@ Q_SIGNALS:
    void accountChanged(Account* arg);
 
    void synced();
+
+   void notification(QString message);
 
 private:
    fc::thread m_walletThread;

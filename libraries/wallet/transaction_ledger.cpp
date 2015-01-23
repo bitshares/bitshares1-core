@@ -1384,10 +1384,10 @@ vector<wallet_transaction_record> wallet::get_transactions( const string& transa
 
 void wallet_impl::sign_transaction( signed_transaction& transaction, const unordered_set<address>& required_signatures )const
 { try {
-   const auto chain_id = _blockchain->get_chain_id();
-   for( const auto& addr : required_signatures )
-       transaction.sign( self->get_private_key( addr ), chain_id );
-} FC_CAPTURE_AND_RETHROW() }
+    const auto chain_id = _blockchain->get_chain_id();
+    for( const auto& addr : required_signatures )
+        transaction.sign( self->get_private_key( addr ), chain_id );
+} FC_CAPTURE_AND_RETHROW( (transaction)(required_signatures) ) }
 
 void wallet::cache_transaction( wallet_transaction_record& transaction_record )
 { try {

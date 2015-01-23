@@ -355,10 +355,10 @@ wallet_transaction_record detail::client_impl::wallet_transfer(
         const string& from_account_name,
         const string& to_account_name,
         const string& memo_message,
-        const vote_selection_method& selection_method )
+        const vote_strategy& strategy )
 {
     return wallet_transfer_from(amount_to_transfer, asset_symbol, from_account_name, from_account_name,
-                                to_account_name, memo_message, selection_method);
+                                to_account_name, memo_message, strategy);
 }
 
 wallet_transaction_record detail::client_impl::wallet_transfer_to_public_account(
@@ -367,7 +367,7 @@ wallet_transaction_record detail::client_impl::wallet_transfer_to_public_account
         const string& from_account_name,
         const string& to_account_name,
         const string& memo_message,
-        const vote_selection_method& selection_method )
+        const vote_strategy& strategy )
 {
     const oaccount_record account_record = _chain_db->get_account_record( to_account_name );
     FC_ASSERT( account_record.valid() && !account_record->is_retracted() );
@@ -376,7 +376,7 @@ wallet_transaction_record detail::client_impl::wallet_transfer_to_public_account
                                                      from_account_name,
                                                      account_record->active_address(),
                                                      memo_message,
-                                                     selection_method,
+                                                     strategy,
                                                      true );
     _wallet->cache_transaction( record );
     network_broadcast_transaction( record.trx );
@@ -421,14 +421,14 @@ wallet_transaction_record detail::client_impl::wallet_transfer_to_legacy_address
         const string& from_account_name,
         const pts_address& to_address,
         const string& memo_message,
-        const vote_selection_method& selection_method )
+        const vote_strategy& strategy )
 {
     auto record =  _wallet->transfer_asset_to_address( amount_to_transfer,
                                                        asset_symbol,
                                                        from_account_name,
                                                        address( to_address ),
                                                        memo_message,
-                                                       selection_method,
+                                                       strategy,
                                                        true );
     _wallet->cache_transaction( record );
     network_broadcast_transaction( record.trx );
@@ -444,7 +444,7 @@ wallet_transaction_record detail::client_impl::wallet_transfer_to_address(
         const string& from_account_name,
         const string& to_address,
         const string& memo_message,
-        const vote_selection_method& selection_method )
+        const vote_strategy& strategy )
 {
     address effective_address;
     if( address::is_valid( to_address ) )
@@ -456,7 +456,7 @@ wallet_transaction_record detail::client_impl::wallet_transfer_to_address(
                                                        from_account_name,
                                                        effective_address,
                                                        memo_message,
-                                                       selection_method,
+                                                       strategy,
                                                        true );
     _wallet->cache_transaction( record );
     network_broadcast_transaction( record.trx );
@@ -471,15 +471,15 @@ wallet_transaction_record detail::client_impl::wallet_transfer_from(
         const string& from_account_name,
         const string& to_account_name,
         const string& memo_message,
-        const vote_selection_method& selection_method )
+        const vote_strategy& strategy )
 {
     asset amount = _chain_db->to_ugly_asset(amount_to_transfer, asset_symbol);
     auto payer = _wallet->get_account(paying_account_name);
     auto recipient = _wallet->get_account(to_account_name);
     transaction_builder_ptr builder = _wallet->create_transaction_builder();
     auto record = builder->deposit_asset(payer, recipient, amount,
-                                         memo_message, selection_method, from_account_name)
-                          .finalize()
+                                         memo_message, from_account_name)
+                          .finalize( true, strategy )
                           .sign();
 
     _wallet->cache_transaction( record );
@@ -508,12 +508,12 @@ wallet_transaction_record detail::client_impl::wallet_multisig_deposit(
                                                     const string& from_name,
                                                     uint32_t m,
                                                     const vector<address>& addresses,
-                                                    const vote_selection_method& vote_method )
+                                                    const vote_strategy& strategy )
 {
     asset ugly_asset = _chain_db->to_ugly_asset(amount, symbol);
     auto builder = _wallet->create_transaction_builder();
-    builder->deposit_asset_to_multisig( ugly_asset, from_name, m, addresses, vote_method );
-    auto record = builder->finalize().sign();
+    builder->deposit_asset_to_multisig( ugly_asset, from_name, m, addresses );
+    auto record = builder->finalize( true, strategy ).sign();
     _wallet->cache_transaction( record );
     network_broadcast_transaction( record.trx );
     return record;
@@ -524,7 +524,7 @@ transaction_builder detail::client_impl::wallet_withdraw_from_address(
                                                     const string& symbol,
                                                     const address& from_address,
                                                     const string& to,
-                                                    const vote_selection_method& vote_method,
+                                                    const vote_strategy& strategy,
                                                     bool sign,
                                                     const string& builder_path )
 {
@@ -539,8 +539,8 @@ transaction_builder detail::client_impl::wallet_withdraw_from_address(
     auto builder = _wallet->create_transaction_builder();
     auto fee = _wallet->get_transaction_fee();
     builder->withdraw_from_balance( from_address, ugly_asset.amount + fee.amount );
-    builder->deposit_to_balance( to_address, ugly_asset, vote_method );
-    builder->finalize( false );
+    builder->deposit_to_balance( to_address, ugly_asset );
+    builder->finalize( false, strategy );
     if( sign )
     {
         builder->sign();
@@ -550,14 +550,12 @@ transaction_builder detail::client_impl::wallet_withdraw_from_address(
     return *builder;
 }
 
-
-
 transaction_builder detail::client_impl::wallet_withdraw_from_legacy_address(
                                                     const string& amount,
                                                     const string& symbol,
                                                     const pts_address& from_address,
                                                     const string& to,
-                                                    const vote_selection_method& vote_method,
+                                                    const vote_strategy& strategy,
                                                     bool sign,
                                                     const string& builder_path )const
 {
@@ -572,33 +570,30 @@ transaction_builder detail::client_impl::wallet_withdraw_from_legacy_address(
     auto builder = _wallet->create_transaction_builder();
     auto fee = _wallet->get_transaction_fee();
     builder->withdraw_from_balance( from_address, ugly_asset.amount + fee.amount );
-    builder->deposit_to_balance( to_address, ugly_asset, vote_method );
-    builder->finalize( false );
+    builder->deposit_to_balance( to_address, ugly_asset );
+    builder->finalize( false, strategy );
     if( sign )
         builder->sign();
     _wallet->write_latest_builder( *builder, builder_path );
     return *builder;
 }
 
-
-
 transaction_builder detail::client_impl::wallet_multisig_withdraw_start(
                                                     const string& amount,
                                                     const string& symbol,
                                                     const balance_id_type& from,
                                                     const address& to_address,
-                                                    const vote_selection_method& vote_method,
+                                                    const vote_strategy& strategy,
                                                     const string& builder_path )const
 {
     asset ugly_asset = _chain_db->to_ugly_asset(amount, symbol);
     auto builder = _wallet->create_transaction_builder();
     auto fee = _wallet->get_transaction_fee();
     builder->withdraw_from_balance( from, ugly_asset.amount + fee.amount );
-    builder->deposit_to_balance( to_address, ugly_asset, vote_method );
+    builder->deposit_to_balance( to_address, ugly_asset );
     _wallet->write_latest_builder( *builder, builder_path );
     return *builder;
 }
-
 
 transaction_builder detail::client_impl::wallet_builder_add_signature(
                                             const transaction_builder& builder,
@@ -622,7 +617,6 @@ transaction_builder detail::client_impl::wallet_builder_add_signature(
     _wallet->write_latest_builder( *b2, path );
     return *b2;
 } FC_CAPTURE_AND_RETHROW( (builder)(broadcast) ) }
-
 
 transaction_builder detail::client_impl::wallet_builder_file_add_signature(
                                             bool broadcast,
@@ -814,7 +808,7 @@ wallet_transaction_record detail::client_impl::wallet_transfer_from_with_escrow(
         const string& escrow_account_name,
         const digest_type&   agreement,
         const string& memo_message,
-        const vote_selection_method& selection_method )
+        const vote_strategy& strategy )
 {
     asset amount = _chain_db->to_ugly_asset(amount_to_transfer, asset_symbol);
     auto sender = _wallet->get_account(from_account_name);
@@ -824,9 +818,8 @@ wallet_transaction_record detail::client_impl::wallet_transfer_from_with_escrow(
     transaction_builder_ptr builder = _wallet->create_transaction_builder();
 
     auto record = builder->deposit_asset_with_escrow(payer, recipient, escrow_account, agreement,
-                                                     amount, memo_message, selection_method,
-                                                     sender.owner_key)
-                          .finalize()
+                                                     amount, memo_message, sender.owner_key)
+                          .finalize( true, strategy )
                           .sign();
 
     _wallet->cache_transaction( record );
@@ -1437,13 +1430,16 @@ wallet_transaction_record client_impl::wallet_market_submit_bid(
        const string& quote_symbol,
        bool allow_stupid_bid )
 {
+  wdump((quote_symbol)(quantity_symbol));
   vector<market_order> lowest_ask = blockchain_market_order_book(quote_symbol, quantity_symbol, 1).second;
+  wdump((lowest_ask));
 
   if (!allow_stupid_bid && lowest_ask.size()
       && fc::variant(quote_price).as_double() > _chain_db->to_pretty_price_double(lowest_ask.front().get_price()) * 1.05)
     FC_THROW_EXCEPTION(stupid_order, "You are attempting to bid at more than 5% above the buy price. "
                                      "This bid is based on economically unsound principles, and is ill-advised. "
-                                     "If you're sure you want to do this, place your bid again and set allow_stupid_bid to true.");
+                                     "If you're sure you want to do this, place your bid again and set allow_stupid_bid to true. ${lowest_ask}", 
+                                     ("lowest_ask",lowest_ask.front()));
 
   auto record = _wallet->submit_bid( from_account, quantity, quantity_symbol, quote_price, quote_symbol, true );
   _wallet->cache_transaction( record );
@@ -1656,7 +1652,7 @@ fc::variant client_impl::wallet_login_finish(const public_key_type &server_key,
 
 transaction_builder client_impl::wallet_balance_set_vote_info(const balance_id_type& balance_id,
                                                               const string& voter_address,
-                                                              const vote_selection_method& selection_method,
+                                                              const vote_strategy& strategy,
                                                               bool sign_and_broadcast,
                                                               const string& builder_path )
 {
@@ -1673,7 +1669,7 @@ transaction_builder client_impl::wallet_balance_set_vote_info(const balance_id_t
     {
         new_voter = address( voter_address );
     }
-    auto builder = _wallet->create_transaction_builder( _wallet->set_vote_info( balance_id, new_voter, selection_method ) );
+    auto builder = _wallet->create_transaction_builder( _wallet->set_vote_info( balance_id, new_voter, strategy ) );
     if( sign_and_broadcast )
     {
         auto record = builder->sign();

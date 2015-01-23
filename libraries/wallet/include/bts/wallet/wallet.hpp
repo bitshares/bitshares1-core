@@ -34,6 +34,13 @@ namespace bts { namespace wallet {
        inactive_delegate_status = 1 << 3
    };
 
+   enum account_key_type
+   {
+       owner_key    = 0,
+       active_key   = 1,
+       signing_key  = 2
+   };
+
    class wallet
    {
       public:
@@ -294,7 +301,7 @@ namespace bts { namespace wallet {
                  const string& from_account_name,
                  const address& to_address,
                  const string& memo_message,
-                 vote_selection_method selection_method,
+                 vote_strategy selection_method,
                  bool sign
                  );
          /*
@@ -304,7 +311,7 @@ namespace bts { namespace wallet {
                  const string& from_account_name,
                  const address& to_address,
                  const string& memo_message,
-                 vote_selection_method selection_method
+                 vote_strategy selection_method
                  );
          */
 
@@ -390,7 +397,7 @@ namespace bts { namespace wallet {
          transaction_builder set_vote_info(
                  const balance_id_type& balance_id,
                  const address& voter_address,
-                 vote_selection_method selection_method
+                 vote_strategy selection_method
                  );
          wallet_transaction_record publish_slate(
                  const string& account_to_publish_under,
@@ -619,3 +626,9 @@ namespace bts { namespace wallet {
    typedef std::weak_ptr<wallet> wallet_weak_ptr;
 
 } } // bts::wallet
+
+FC_REFLECT_ENUM( bts::wallet::account_key_type,
+        (owner_key)
+        (active_key)
+        (signing_key)
+        )

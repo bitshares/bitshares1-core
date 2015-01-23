@@ -959,7 +959,10 @@ string pretty_order_list( const vector<std::pair<order_id_type, market_order>>& 
 
         out << std::setw( 20 ) << variant( order.type ).as_string();
         out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_quantity( feed_price ) );
-        out << std::setw( 30 ) << client->get_chain()->to_pretty_price( order.get_price( feed_price ) );
+        if( order.type == relative_ask_order || order.type == relative_bid_order )
+           out << std::setw( 30 ) << (client->get_chain()->to_pretty_price( feed_price ) + "*" + order.get_price().ratio_string());
+        else
+           out << std::setw( 30 ) << client->get_chain()->to_pretty_price( order.get_price( feed_price ) );
         out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_balance() );
         out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_quantity( feed_price ) * order.get_price( feed_price ) );
         if( order.type != cover_order )

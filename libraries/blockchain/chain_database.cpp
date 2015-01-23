@@ -1289,8 +1289,6 @@ namespace bts { namespace blockchain {
                  my->_balance_id_to_record.toggle_leveldb( enabled );
 
                  my->_slate_db.toggle_leveldb( enabled );
-
-                 my->_market_transactions_db.toggle_leveldb( enabled );
              };
 
              const auto set_db_cache_write_through = [ this ]( bool write_through )
@@ -1306,6 +1304,7 @@ namespace bts { namespace blockchain {
                  my->_short_db.set_write_through( write_through );
                  my->_collateral_db.set_write_through( write_through );
 
+                 my->_market_transactions_db.set_write_through( write_through );
                  my->_market_status_db.set_write_through( write_through );
                  my->_market_history_db.set_write_through( write_through );
              };
@@ -2362,12 +2361,12 @@ namespace bts { namespace blockchain {
         return fork_blocks;
     }
 
-    vector<slot_record> chain_database::get_delegate_slot_records( const account_id_type delegate_id, uint32_t count )const
+    vector<slot_record> chain_database::get_delegate_slot_records( const account_id_type delegate_id, uint32_t limit )const
     { try {
-        FC_ASSERT( count > 0 );
+        FC_ASSERT( limit > 0 );
 
         vector<slot_record> slot_records;
-        slot_records.reserve( std::min( count, get_head_block_num() ) );
+        slot_records.reserve( std::min( limit, get_head_block_num() ) );
 
         const slot_index key = slot_index( delegate_id, my->_head_block_header.timestamp );
         for( auto iter = my->_slot_index_to_record.lower_bound( key ); iter.valid(); ++iter )
@@ -2375,11 +2374,11 @@ namespace bts { namespace blockchain {
             const slot_record& record = iter.value();
             if( record.index.delegate_id != delegate_id ) break;
             slot_records.push_back( record );
-            if( slot_records.size() >= count ) break;
+            if( slot_records.size() >= limit ) break;
         }
 
         return slot_records;
-    } FC_CAPTURE_AND_RETHROW( (delegate_id)(count) ) }
+    } FC_CAPTURE_AND_RETHROW( (delegate_id)(limit) ) }
 
    optional<variant> chain_database::get_property( const chain_property_enum property_id )const
    { try {
@@ -2752,10 +2751,14 @@ namespace bts { namespace blockchain {
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(limit) ) }
 
-   vector<market_order> chain_database::get_market_covers( const string& quote_symbol, uint32_t limit )
+   vector<market_order> chain_database::get_market_covers( const string& quote_symbol, 
+                                                           const string& base_symbol, uint32_t limit )
    { try {
        asset_id_type quote_asset_id = get_asset_id( quote_symbol );
-       asset_id_type base_asset_id  = 0;
+       asset_id_type base_asset_id = get_asset_id( base_symbol );
+       if( base_asset_id != 0 )
+          return vector<market_order>();
+       
        if( base_asset_id >= quote_asset_id )
           FC_CAPTURE_AND_THROW( invalid_market, (quote_asset_id)(base_asset_id) );
 
@@ -2832,8 +2835,12 @@ namespace bts { namespace blockchain {
 
    } FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
-   vector<market_order> chain_database::get_market_asks( const string& quote_symbol, const string& base_symbol, uint32_t limit )
+   vector<market_order> chain_database::get_market_asks( const string& quote_symbol, 
+                                                         const string& base_symbol, 
+                                                         uint32_t limit )
+
    { try {
+       wdump( (quote_symbol)(base_symbol) );
        auto quote_asset_id = get_asset_id( quote_symbol );
        auto base_asset_id  = get_asset_id( base_symbol );
        if( base_asset_id >= quote_asset_id )
@@ -2882,6 +2889,7 @@ namespace bts { namespace blockchain {
              ++market_itr;
           }
        }
+       wdump((results));
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol)(limit) ) }
 
@@ -3126,8 +3134,8 @@ namespace bts { namespace blockchain {
 
    vector<market_transaction> chain_database::get_market_transactions( const uint32_t block_num )const
    { try {
-       const auto iter = my->_market_transactions_db.unordered_find( block_num );
-       if( iter != my->_market_transactions_db.unordered_end() ) return iter->second;
+       const auto oresult = my->_market_transactions_db.fetch_optional( block_num );
+       if( oresult.valid() ) return *oresult;
        return vector<market_transaction>();
    } FC_CAPTURE_AND_RETHROW( (block_num) ) }
 
@@ -3142,9 +3150,9 @@ namespace bts { namespace blockchain {
       uint32_t current_block_num = get_head_block_num();
       const auto get_transactions_from_prior_block = [&]() -> vector<market_transaction>
       {
-          auto itr = my->_market_transactions_db.ordered_lower_bound(current_block_num);
-          if (current_block_num == get_head_block_num())
-              itr = my->_market_transactions_db.ordered_last();
+          auto itr = my->_market_transactions_db.lower_bound( current_block_num );
+          if( current_block_num == get_head_block_num() )
+              itr = my->_market_transactions_db.last();
 
           if (itr.valid()) --itr;
           if (itr.valid())

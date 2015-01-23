@@ -59,7 +59,7 @@ namespace bts { namespace blockchain {
        public_key_type receive_key = to;
        if( !one_time_key )
        {
-          trx.deposit( to, amount, slate );
+          trx.deposit( to, amount );
        }
        else
        {
