@@ -21,8 +21,16 @@ ApplicationWindow {
       if( !wallet.connected )
          wallet.connectToServer("localhost", 6691, "user", "pass")
    }
-   function showError(error) {
+   function showError(error, buttonName, buttonCallback) {
       snack.text = error
+      if( buttonName && buttonCallback ) {
+         snack.buttonText = buttonName
+         snack.onClick.connect(buttonCallback)
+         snack.onDissapear.connect(function() {
+            snack.onClick.disconnect(buttonCallback)
+         })
+      } else
+         snack.buttonText = ""
       snack.open()
       return d.currentError = d.errorSerial++
    }
@@ -85,6 +93,7 @@ ApplicationWindow {
          })
       }
       onAccountChanged: if( account ) account.error.connect(showError)
+      onNotification: showError(message)
    }
 
    WelcomeLayout {
@@ -130,7 +139,8 @@ ApplicationWindow {
             if( wallet.account.availableAssets.length )
                window.pageStack.push(transferUi)
             else
-               showError(qsTr("You don't have any assets, so you cannot make a transfer."))
+               showError(qsTr("You don't have any assets, so you cannot make a transfer."), qsTr("Refresh Balances"),
+                         wallet.syncAllBalances)
          }
       }
    }
@@ -159,6 +169,8 @@ ApplicationWindow {
    Snackbar {
       id: snack
       duration: 5000
+      enabled: opened
+      onClick: opened = false
       z: 21
    }
 }

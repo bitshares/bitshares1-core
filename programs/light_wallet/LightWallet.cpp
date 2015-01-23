@@ -232,6 +232,18 @@ void LightWallet::sync()
    END_THREAD
 }
 
+void LightWallet::syncAllBalances()
+{
+   IN_THREAD
+   QStringList currentAssets;
+   if( account() )
+      currentAssets = account()->availableAssets();
+   m_wallet.sync_balance(true);
+   if( account() && currentAssets.empty() && account()->availableAssets().empty() )
+      Q_EMIT notification(tr("No new balances were found."));
+   END_THREAD
+}
+
 void LightWallet::generateBrainKey()
 {
    FC_ASSERT( &fc::thread::current() == &m_walletThread );

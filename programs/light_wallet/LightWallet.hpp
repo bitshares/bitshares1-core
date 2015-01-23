@@ -112,6 +112,7 @@ public Q_SLOTS:
    void clearBrainKey();
 
    void sync();
+   void syncAllBalances();
 
 Q_SIGNALS:
    void walletExistsChanged(bool exists);
@@ -126,6 +127,8 @@ Q_SIGNALS:
    void accountChanged(Account* arg);
 
    void synced();
+
+   void notification(QString message);
 
 private:
    fc::thread m_walletThread;
