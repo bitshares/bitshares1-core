@@ -1437,13 +1437,16 @@ wallet_transaction_record client_impl::wallet_market_submit_bid(
        const string& quote_symbol,
        bool allow_stupid_bid )
 {
+  wdump((quote_symbol)(quantity_symbol));
   vector<market_order> lowest_ask = blockchain_market_order_book(quote_symbol, quantity_symbol, 1).second;
+  wdump((lowest_ask));
 
   if (!allow_stupid_bid && lowest_ask.size()
       && fc::variant(quote_price).as_double() > _chain_db->to_pretty_price_double(lowest_ask.front().get_price()) * 1.05)
     FC_THROW_EXCEPTION(stupid_order, "You are attempting to bid at more than 5% above the buy price. "
                                      "This bid is based on economically unsound principles, and is ill-advised. "
-                                     "If you're sure you want to do this, place your bid again and set allow_stupid_bid to true.");
+                                     "If you're sure you want to do this, place your bid again and set allow_stupid_bid to true. ${lowest_ask}", 
+                                     ("lowest_ask",lowest_ask.front()));
 
   auto record = _wallet->submit_bid( from_account, quantity, quantity_symbol, quote_price, quote_symbol, true );
   _wallet->cache_transaction( record );
