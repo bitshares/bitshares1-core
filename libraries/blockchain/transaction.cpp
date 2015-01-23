@@ -36,7 +36,7 @@ namespace bts { namespace blockchain {
 
    void signed_transaction::sign( const fc::ecc::private_key& signer, const digest_type& chain_id )
    {
-      signatures.push_back( signer.sign_compact( digest(chain_id) ) );
+      signatures.push_back( signer.sign_compact( digest( chain_id ) ) );
    }
 
    public_key_type signed_transaction::get_signing_key( const size_t sig_index, const digest_type& chain_id )const
@@ -54,11 +54,10 @@ namespace bts { namespace blockchain {
       operations.emplace_back( set_edge_operation( edge ) );
    }
 
-
-   void transaction::define_delegate_slate( delegate_slate s )
+   void transaction::define_delegate_slate( const delegate_slate& s )
    {
       FC_ASSERT( s.supported_delegates.size() > 0 );
-      operations.emplace_back( define_delegate_slate_operation( std::move(s) ) );
+      operations.emplace_back( define_delegate_slate_operation( s ) );
    }
 
    void transaction::burn( const asset& quantity, account_id_type for_or_against, const string& message, const optional<signature_type>& sig )
@@ -136,32 +135,29 @@ namespace bts { namespace blockchain {
                                share_type             amount )
    { try {
       FC_ASSERT( amount > 0, "amount: ${amount}", ("amount",amount) );
-      operations.push_back( withdraw_operation( account, amount ) );
+      operations.emplace_back( withdraw_operation( account, amount ) );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account",account)("amount",amount) ) }
 
    void transaction::withdraw_pay( const account_id_type account,
                                    share_type             amount )
    {
       FC_ASSERT( amount > 0, "amount: ${amount}", ("amount",amount) );
-      operations.push_back( withdraw_pay_operation( amount, account ) );
+      operations.emplace_back( withdraw_pay_operation( amount, account ) );
    }
 
-   void transaction::deposit( const address&  owner,
-                              const asset&    amount,
-                              slate_id_type   slate_id )
+   void transaction::deposit( const address& owner, const asset& amount )
    {
       FC_ASSERT( amount.amount > 0, "amount: ${amount}", ("amount",amount) );
-      operations.push_back( deposit_operation( owner, amount, slate_id ) );
+      operations.emplace_back( deposit_operation( owner, amount ) );
    }
-   void transaction::deposit_multisig( const multisig_meta_info& multsig_info,
-                              const asset&    amount,
-                              slate_id_type   slate_id )
+
+   void transaction::deposit_multisig( const multisig_meta_info& multsig_info, const asset& amount )
    {
       FC_ASSERT( amount.amount > 0, "amount: ${amount}", ("amount",amount) );
       deposit_operation op;
       op.amount = amount.amount;
-      op.condition = withdraw_condition( withdraw_with_multisig{multsig_info.required,multsig_info.owners}, amount.asset_id, slate_id );
-      operations.push_back( op );
+      op.condition = withdraw_condition( withdraw_with_multisig{multsig_info.required,multsig_info.owners}, amount.asset_id );
+      operations.emplace_back( std::move( op ) );
    }
 
 
@@ -169,7 +165,6 @@ namespace bts { namespace blockchain {
                                                     asset amount,
                                                     fc::ecc::private_key from_key,
                                                     const std::string& memo_message,
-                                                    slate_id_type slate_id,
                                                     const fc::ecc::public_key& memo_pub_key,
                                                     fc::ecc::private_key one_time_private_key,
                                                     memo_flags_enum memo_type,
@@ -186,9 +181,8 @@ namespace bts { namespace blockchain {
 
       deposit_operation op;
       op.amount = amount.amount;
-      op.condition = withdraw_condition( by_account, amount.asset_id, slate_id );
-
-      operations.push_back( op );
+      op.condition = withdraw_condition( by_account, amount.asset_id );
+      operations.emplace_back( std::move( op ) );
       return receiver_address_key;
    }
    void transaction::release_escrow( const address& escrow_account,
@@ -201,17 +195,16 @@ namespace bts { namespace blockchain {
        op.released_by        = released_by;
        op.amount_to_receiver = amount_to_receiver;
        op.amount_to_sender   = amount_to_sender;
-       operations.push_back(op);
+       operations.emplace_back( std::move( op ) );
    }
 
-   public_key_type transaction::deposit_to_escrow( 
+   public_key_type transaction::deposit_to_escrow(
                                         fc::ecc::public_key receiver_key,
                                         fc::ecc::public_key escrow_key,
                                         digest_type agreement,
                                         asset amount,
                                         fc::ecc::private_key from_key,
                                         const std::string& memo_message,
-                                        slate_id_type slate_id,
                                         const fc::ecc::public_key& memo_pub_key,
                                         fc::ecc::private_key one_time_private_key,
                                         memo_flags_enum memo_type
@@ -229,9 +222,9 @@ namespace bts { namespace blockchain {
 
       deposit_operation op;
       op.amount = amount.amount;
-      op.condition = withdraw_condition( by_escrow, amount.asset_id, slate_id );
+      op.condition = withdraw_condition( by_escrow, amount.asset_id );
 
-      operations.push_back( op );
+      operations.emplace_back( std::move( op ) );
       return receiver_pub_key;
    }
 
@@ -245,7 +238,7 @@ namespace bts { namespace blockchain {
    {
       register_account_operation op( name, public_data, master, active, pay_rate );
       op.meta_data = info;
-      operations.push_back( op );
+      operations.emplace_back( std::move( op ) );
    }
 
    void transaction::update_account( account_id_type account_id,
@@ -258,7 +251,7 @@ namespace bts { namespace blockchain {
       op.public_data = public_data;
       op.active_key = active;
       op.delegate_pay_rate = delegate_pay_rate;
-      operations.push_back( op );
+      operations.emplace_back( std::move( op ) );
    }
 
    void transaction::create_asset( const std::string& symbol,
@@ -279,7 +272,7 @@ namespace bts { namespace blockchain {
       op.issuer_account_id = issuer_id;
       op.maximum_share_supply = max_share_supply;
       op.precision = precision;
-      operations.push_back( op );
+      operations.emplace_back( std::move( op ) );
    }
 
    void transaction::update_asset( const asset_id_type asset_id,
@@ -289,7 +282,7 @@ namespace bts { namespace blockchain {
                                    const optional<double>& maximum_share_supply,
                                    const optional<uint64_t>& precision )
    {
-       operations.push_back( update_asset_operation{ asset_id, name, description, public_data, maximum_share_supply, precision } );
+       operations.emplace_back( update_asset_operation{ asset_id, name, description, public_data, maximum_share_supply, precision } );
    }
    void transaction::update_asset_ext( const asset_id_type asset_id,
                                    const optional<string>& name,
@@ -302,7 +295,7 @@ namespace bts { namespace blockchain {
                                    uint32_t issuer_permissions,
                                    account_id_type issuer_account_id,
                                    uint32_t required_sigs,
-                                   const vector<address>& authority 
+                                   const vector<address>& authority
                                    )
    {
        multisig_meta_info auth_info;
@@ -314,36 +307,72 @@ namespace bts { namespace blockchain {
        op.issuer_account_id = issuer_account_id;
        op.transaction_fee = issuer_fee,
        op.authority = auth_info;
-       operations.push_back( op );
+       operations.emplace_back( std::move( op ) );
    }
 
    void transaction::issue( const asset& amount_to_issue )
    {
-      operations.push_back( issue_asset_operation( amount_to_issue ) );
+      operations.emplace_back( issue_asset_operation( amount_to_issue ) );
    }
 
    void transaction::cover( const asset& cover_amount,
                             const market_index_key& order_idx )
    {
-      operations.push_back( cover_operation(cover_amount.amount, order_idx) );
+      operations.emplace_back( cover_operation( cover_amount.amount, order_idx ) );
    }
 
-   void transaction::add_collateral( share_type collateral_amount,
-                                     const market_index_key& order_idx )
+   void transaction::add_collateral( share_type collateral_amount, const market_index_key& order_idx )
    {
-      operations.push_back( add_collateral_operation(collateral_amount, order_idx) );
+      operations.emplace_back( add_collateral_operation( collateral_amount, order_idx ) );
    }
 
    void transaction::publish_feed( asset_id_type feed_id,
                                    account_id_type delegate_id,
                                    fc::variant value )
    {
-      operations.push_back( update_feed_operation{ feed_index{feed_id,delegate_id}, value } );
+      operations.emplace_back( update_feed_operation{ feed_index{ feed_id, delegate_id }, value } );
    }
 
    void transaction::update_signing_key( const account_id_type account_id, const public_key_type& signing_key )
    {
-       operations.push_back( update_signing_key_operation{ account_id, signing_key } );
+       operations.emplace_back( update_signing_key_operation{ account_id, signing_key } );
+   }
+
+   void transaction::update_balance_vote( const balance_id_type& balance_id, const optional<address>& new_restricted_owner )
+   {
+       operations.emplace_back( update_balance_vote_operation{ balance_id, new_restricted_owner } );
+   }
+
+   void transaction::set_delegate_slates( const slate_id_type slate_id )
+   {
+       for( size_t i = 0; i < operations.size(); ++i )
+       {
+           const operation& op = operations.at( i );
+           switch( operation_type_enum( op.type ) )
+           {
+               case deposit_op_type:
+               {
+                   deposit_operation deposit_op = op.as<deposit_operation>();
+                   if( deposit_op.condition.asset_id == 0 )
+                   {
+                       deposit_op.condition.slate_id = slate_id;
+                       operations[ i ] = deposit_op;
+                   }
+                   break;
+               }
+               case update_balance_vote_op_type:
+               {
+                   update_balance_vote_operation update_balance_vote_op = op.as<update_balance_vote_operation>();
+                   update_balance_vote_op.new_slate = slate_id;
+                   operations[ i ] = update_balance_vote_op;
+                   break;
+               }
+               default:
+               {
+                   break;
+               }
+           }
+       }
    }
 
    bool transaction::is_cancel()const
@@ -367,13 +396,14 @@ namespace bts { namespace blockchain {
       }
       return false;
    }
+
     void transaction::authorize_key( asset_id_type asset_id, const address& owner, object_id_type meta )
     {
        authorize_operation op;
        op.asset_id = asset_id;
        op.owner = owner;
        op.meta_id = meta;
-       operations.push_back( op );
+       operations.emplace_back( std::move( op ) );
     }
 
 } } // bts::blockchain

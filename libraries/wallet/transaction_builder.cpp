@@ -175,7 +175,6 @@ transaction_builder& transaction_builder::deposit_asset(const bts::wallet::walle
                                                         const bts::blockchain::account_record& recipient,
                                                         const asset& amount,
                                                         const string& memo,
-                                                        vote_selection_method vote_method,
                                                         fc::optional<string> memo_sender)
 { try {
    if( recipient.is_retracted() )
@@ -202,7 +201,6 @@ transaction_builder& transaction_builder::deposit_asset(const bts::wallet::walle
    auto one_time_key = _wimpl->get_new_private_key(payer.name);
    titan_one_time_key = one_time_key.get_public_key();
    trx.deposit_to_account(recipient.active_key(), amount, _wimpl->self->get_private_key(memo_key), memo,
-                          _wimpl->select_slate(trx, amount.asset_id, vote_method),
                           memo_key, one_time_key, from_memo, !recipient.is_public_account());
 
    deduct_balance(payer.owner_key, amount);
@@ -229,13 +227,12 @@ transaction_builder& transaction_builder::deposit_asset(const bts::wallet::walle
 transaction_builder& transaction_builder::deposit_asset_to_address(const wallet_account_record& payer,
                                                                    const address& to_addr,
                                                                    const asset& amount,
-                                                                   const string& memo,
-                                                                   vote_selection_method vote_method )
+                                                                   const string& memo )
 { try {
    if( amount.amount <= 0 )
        FC_THROW_EXCEPTION( invalid_asset_amount, "Cannot deposit a negative amount!" );
 
-   trx.deposit(to_addr, amount, _wimpl->select_slate(trx, amount.asset_id, vote_method));
+   trx.deposit(to_addr, amount );
    deduct_balance(payer.owner_key, amount);
 
    ledger_entry entry;
@@ -251,8 +248,7 @@ transaction_builder& transaction_builder::deposit_asset_to_multisig(
                                                     const asset& amount,
                                                     const string& from_name,
                                                     uint32_t m,
-                                                    const vector<address>& addresses,
-                                                    const vote_selection_method& vote_method )
+                                                    const vector<address>& addresses )
 { try {
    if( amount.amount <= 0 )
       FC_THROW_EXCEPTION( invalid_asset_amount, "Cannot deposit a negative amount!" );
@@ -263,7 +259,7 @@ transaction_builder& transaction_builder::deposit_asset_to_multisig(
    multisig_meta_info info;
    info.required = m;
    info.owners = set<address>(addresses.begin(), addresses.end());
-   trx.deposit_multisig(info, amount, _wimpl->select_slate(trx, amount.asset_id, vote_method));
+   trx.deposit_multisig(info, amount );
 
    deduct_balance(payer->owner_key, amount + fee);
 
@@ -312,7 +308,7 @@ transaction_builder& transaction_builder::deposit_asset_with_escrow(const bts::w
                                                         const bts::blockchain::account_record& escrow_agent,
                                                         digest_type agreement,
                                                         const asset& amount,
-                                                        const string& memo, vote_selection_method vote_method,
+                                                        const string& memo,
                                                         fc::optional<public_key_type> memo_sender)
 { try {
    if( recipient.is_retracted() )
@@ -345,7 +341,6 @@ transaction_builder& transaction_builder::deposit_asset_with_escrow(const bts::w
                              amount,
                              _wimpl->self->get_private_key(*memo_sender),
                              memo,
-                             _wimpl->select_slate(trx, amount.asset_id, vote_method),
                              *memo_sender,
                              one_time_key,
                              from_memo);
@@ -767,16 +762,9 @@ transaction_builder& transaction_builder::update_asset( const string& symbol,
     return *this;
 } FC_CAPTURE_AND_RETHROW( (symbol)(name)(description)(public_data)(maximum_share_supply)(precision) ) }
 
-transaction_builder& transaction_builder::finalize( bool pay_fee )
+transaction_builder& transaction_builder::finalize( const bool pay_fee, const vote_strategy strategy )
 { try {
    FC_ASSERT( !trx.operations.empty(), "Cannot finalize empty transaction" );
-
-   auto slate = _wimpl->select_delegate_vote(vote_recommended);
-   auto slate_id = slate.id();
-   if( slate.supported_delegates.size() > 0 && !_wimpl->_blockchain->get_delegate_slate(slate_id) )
-      trx.define_delegate_slate(slate);
-   else
-      slate_id = 0;
 
    if( pay_fee )
        this->pay_fee();
@@ -786,21 +774,22 @@ transaction_builder& transaction_builder::finalize( bool pay_fee )
    {
       asset balance(outstanding_balance.second, outstanding_balance.first.second);
       string account_name = _wimpl->_wallet_db.lookup_account(outstanding_balance.first.first)->name;
-      address deposit_address = order_key_for_account(outstanding_balance.first.first, account_name);
 
-      if( balance.amount == 0 ) continue;
-      else if( balance.amount > 0 )
+      if( balance.amount > 0 )
       {
-          if( balance.asset_id == 0 )
-              trx.deposit(deposit_address, balance, slate_id);
-          else
-              trx.deposit(deposit_address, balance, 0);
+          const address deposit_address = order_key_for_account(outstanding_balance.first.first, account_name);
+          trx.deposit( deposit_address, balance );
       }
-      else _wimpl->withdraw_to_transaction(-balance, account_name, trx, required_signatures);
+      else if( balance.amount < 0 )
+      {
+          _wimpl->withdraw_to_transaction(-balance, account_name, trx, required_signatures);
+      }
    }
 
    if( trx.expiration == time_point_sec() )
        trx.expiration = blockchain::now() + _wimpl->self->get_transaction_expiration();
+
+   _wimpl->set_delegate_slate( trx, strategy );
 
    transaction_record.record_id = trx.id();
    transaction_record.created_time = blockchain::now();
@@ -909,11 +898,10 @@ transaction_builder& transaction_builder::withdraw_from_balance(const balance_id
 } FC_CAPTURE_AND_RETHROW( (from)(amount) ) }
 
 transaction_builder& transaction_builder::deposit_to_balance(const balance_id_type& to,
-                                                             const asset& amount,
-                                                             const vote_selection_method& vote_method )
+                                                             const asset& amount )
 {
     // TODO ledger entries
-    trx.deposit( to, amount, vote_method );
+    trx.deposit( to, amount );
     return *this;
 }
 
