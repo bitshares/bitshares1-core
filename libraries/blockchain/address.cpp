@@ -12,6 +12,7 @@ namespace bts {
    {
       FC_ASSERT( is_valid( base58str ) );
       std::string prefix( BTS_ADDRESS_PREFIX );
+      if( is_valid( base58str, "BTSX" ) ) prefix = std::string( "BTSX" );
       std::vector<char> v = fc::from_base58( base58str.substr( prefix.size() ) );
       memcpy( (char*)addr._hash, v.data(), std::min<size_t>( v.size()-4, sizeof( addr ) ) );
    }
