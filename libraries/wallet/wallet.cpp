@@ -395,7 +395,7 @@ namespace detail {
            {
                 limit_price = _blockchain->to_ugly_asset( price_limit, price_symbol )
                              / _blockchain->to_ugly_asset( "1", sell_quantity_symbol );
-                if( (limit_price->ratio == 0) || (limit_price->is_infinite()) )
+                if((limit_price->ratio == fc::uint128_t(0)) || (limit_price->is_infinite()))
                     limit_price.reset();
            }
            
@@ -442,7 +442,7 @@ namespace detail {
            {
                limit_price = _blockchain->to_ugly_asset( price_limit, price_symbol )
                            / _blockchain->to_ugly_asset( "1", sell_quantity_symbol );
-                if( (limit_price->ratio == 0) || (limit_price->is_infinite()) )
+               if((limit_price->ratio == fc::uint128_t(0)) || (limit_price->is_infinite()))
                     limit_price.reset();
            }
 
