@@ -73,18 +73,25 @@ OK
 >>> wallet_market_order_list USD XTS -1 scott
 >>> balance dan
 >>> balance scott
->>> wallet_market_submit_bid scott .01 USD .001 GLD 
->>> wallet_market_submit_ask dan .01 USD .001 GLD
+>>> wallet_market_submit_bid scott .25 USD .001 GLD 
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4
 OK
+>>> wallet_market_submit_ask dan .003 USD .001 GLD 
 >>> blockchain_market_order_book GLD USD
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4
 OK
 >>> blockchain_market_order_book GLD USD
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 4
+OK
+>>> blockchain_market_order_book GLD USD
+>>> history dan
+>>> history scott
 >>> quit
 
 
