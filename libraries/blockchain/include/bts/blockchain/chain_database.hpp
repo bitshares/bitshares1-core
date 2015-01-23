@@ -244,6 +244,7 @@ namespace bts { namespace blockchain {
          vector<market_order>               get_market_shorts( const string& quote_symbol,
                                                                uint32_t limit = uint32_t(-1) );
          vector<market_order>               get_market_covers( const string& quote_symbol,
+                                                               const string& base_symbol = BTS_BLOCKCHAIN_SYMBOL,
                                                                uint32_t limit = uint32_t(-1) );
 
          share_type                         get_asset_collateral( const string& symbol );

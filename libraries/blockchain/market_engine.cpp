@@ -107,7 +107,7 @@ namespace bts { namespace blockchain { namespace detail {
                 // Skip shorts that are over the price limit.
                 if( _current_bid->state.limit_price.valid() )
                 {
-                  if( *_current_bid->state.limit_price < mtrx.bid_price )
+                  if( *_current_bid->state.limit_price < mtrx.ask_price )
                   {
                       _current_bid.reset(); continue;
                   }
@@ -759,8 +759,13 @@ namespace bts { namespace blockchain { namespace detail {
       if( _feed_price && _relative_ask_itr.valid() )
       {
          ask = market_order( relative_ask_order, _relative_ask_itr.key(), _relative_ask_itr.value() );
+         if( ask->get_price().quote_asset_id != _feed_price->quote_asset_id )
+         {
+            ask.reset();
+            _relative_ask_itr.reset();
+         }
          // in case of overflow, underflow, or undefined, the result will be price(), which will fail the following check.
-         if( (ask->get_price(*_feed_price).quote_asset_id != _quote_id || ask->get_price(*_feed_price).base_asset_id != _base_id) )
+         else if((ask->get_price(*_feed_price).quote_asset_id != _quote_id || ask->get_price(*_feed_price).base_asset_id != _base_id) )
             ask.reset();
       }
 

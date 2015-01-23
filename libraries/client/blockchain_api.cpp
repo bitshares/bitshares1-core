@@ -553,9 +553,10 @@ vector<market_order>    client_impl::blockchain_market_list_shorts( const string
    return _chain_db->get_market_shorts( quote_symbol, limit );
 }
 vector<market_order>    client_impl::blockchain_market_list_covers( const string& quote_symbol,
+                                                                    const string& base_symbol,
                                                                     uint32_t limit  )
 {
-   return _chain_db->get_market_covers( quote_symbol, limit );
+   return _chain_db->get_market_covers( quote_symbol, base_symbol, limit );
 }
 
 share_type              client_impl::blockchain_market_get_asset_collateral( const string& symbol )
@@ -569,7 +570,7 @@ std::pair<vector<market_order>,vector<market_order>> client_impl::blockchain_mar
 {
    auto bids = blockchain_market_list_bids(quote_symbol, base_symbol, limit);
    auto asks = blockchain_market_list_asks(quote_symbol, base_symbol, limit);
-   auto covers = blockchain_market_list_covers(quote_symbol,limit);
+   auto covers = blockchain_market_list_covers(quote_symbol, base_symbol, limit);
    asks.insert( asks.end(), covers.begin(), covers.end() );
 
    std::sort(bids.rbegin(), bids.rend(), [](const market_order& a, const market_order& b) -> bool {

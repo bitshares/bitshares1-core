@@ -2672,10 +2672,14 @@ namespace bts { namespace blockchain {
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(limit) ) }
 
-   vector<market_order> chain_database::get_market_covers( const string& quote_symbol, uint32_t limit )
+   vector<market_order> chain_database::get_market_covers( const string& quote_symbol, 
+                                                           const string& base_symbol, uint32_t limit )
    { try {
        asset_id_type quote_asset_id = get_asset_id( quote_symbol );
-       asset_id_type base_asset_id  = 0;
+       asset_id_type base_asset_id = get_asset_id( base_symbol );
+       if( base_asset_id != 0 )
+          return vector<market_order>();
+       
        if( base_asset_id >= quote_asset_id )
           FC_CAPTURE_AND_THROW( invalid_market, (quote_asset_id)(base_asset_id) );
 
@@ -2752,8 +2756,12 @@ namespace bts { namespace blockchain {
 
    } FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
-   vector<market_order> chain_database::get_market_asks( const string& quote_symbol, const string& base_symbol, uint32_t limit )
+   vector<market_order> chain_database::get_market_asks( const string& quote_symbol, 
+                                                         const string& base_symbol, 
+                                                         uint32_t limit )
+
    { try {
+       wdump( (quote_symbol)(base_symbol) );
        auto quote_asset_id = get_asset_id( quote_symbol );
        auto base_asset_id  = get_asset_id( base_symbol );
        if( base_asset_id >= quote_asset_id )
@@ -2802,6 +2810,7 @@ namespace bts { namespace blockchain {
              ++market_itr;
           }
        }
+       wdump((results));
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol)(limit) ) }
 

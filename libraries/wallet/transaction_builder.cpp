@@ -444,6 +444,7 @@ transaction_builder& transaction_builder::submit_bid(const wallet_account_record
 
    asset cost = real_quantity * quote_price;
    FC_ASSERT(cost.asset_id == quote_price.quote_asset_id);
+   wdump((cost));
 
    auto order_key = order_key_for_account(from_account.owner_address(), from_account.name);
 
@@ -499,6 +500,8 @@ transaction_builder& transaction_builder::submit_ask(const wallet_account_record
 { try {
    validate_market(quote_price.quote_asset_id, quote_price.base_asset_id);
    FC_ASSERT(cost.asset_id == quote_price.base_asset_id);
+
+   wdump((cost));
 
    auto order_key = order_key_for_account(from_account.owner_address(), from_account.name);
 

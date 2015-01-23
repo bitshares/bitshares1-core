@@ -1,0 +1,159 @@
+default (unlocked) >>> balance delegate0
+default (unlocked) >>> wallet_account_create dan
+default (unlocked) >>> wallet_account_create scott
+default (unlocked) >>> wallet_account_register dan delegate0 
+default (unlocked) >>> wallet_account_register scott delegate0 
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 4
+OK
+default (unlocked) >>> wallet_transfer 200000 XTS delegate0 dan
+default (unlocked) >>> wallet_transfer 200000 XTS delegate0 scott
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 4
+OK
+default (unlocked) >>> balance dan
+default (unlocked) >>> balance scott
+
+default (unlocked) >>> wallet_asset_create USD Dollar delegate0 "CREATING AN BITASSET" 500    100000 null true
+default (unlocked) >>> wallet_asset_create GLD Gold delegate0 "CREATING AN GOLD BITASSET" 500 100000 null true
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 4
+OK
+>>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 4
+OK
+>>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"]]
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 4
+OK
+>>> blockchain_market_order_book USD XTS
+default (unlocked) >>> wallet_market_submit_ask dan 100 XTS 4 USD
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 4
+OK
+>>> blockchain_market_order_book USD XTS
+>>> blockchain_market_status USD XTS
+>> balance dan
+>> balance scott
+default (unlocked) >>> help wallet_market_submit_relative_ask
+>>> wallet_market_submit_relative_ask scott 1000 XTS 1 GLD 
+>>> wallet_market_submit_relative_ask dan 60 XTS 1.2 USD 
+>>> wallet_market_submit_relative_ask dan 60 XTS .99 USD 
+>>> wallet_market_submit_relative_ask dan 50 XTS 1.1  USD .05
+>>> wallet_market_submit_short dan 1000 XTS .001 GLD 
+>>> wallet_market_submit_short scott 50 XTS .1 USD .8
+>>> wallet_market_submit_short scott 50 XTS .1 USD 
+>>> wallet_market_submit_short scott 100 XTS .1 USD .003
+>>> wallet_market_submit_relative_ask dan 40 XTS 1.11 USD .0041
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 4
+OK
+>> balance dan
+>> balance scott
+>>> blockchain_market_order_book USD XTS
+>>> blockchain_market_order_book GLD XTS
+>>> history dan
+>>> wallet_market_order_list USD XTS -1 dan
+>>> wallet_market_order_list USD XTS -1 scott
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 4
+OK
+>>> blockchain_market_order_book USD XTS
+>>> blockchain_market_order_book GLD XTS
+>>> wallet_market_order_list USD XTS -1 dan
+>>> wallet_market_order_list USD XTS -1 scott
+>>> balance dan
+>>> balance scott
+>>> wallet_market_submit_bid scott .01 USD .001 GLD 
+>>> wallet_market_submit_ask dan .01 USD .001 GLD
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 4
+OK
+>>> blockchain_market_order_book GLD USD
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 4
+OK
+>>> blockchain_market_order_book GLD USD
+>>> quit
+
+
+>>> wallet_market_submit_short scott 1000 XTS 0 USD
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 4
+OK
+>>> blockchain_market_order_book USD XTS
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 4
+OK
+>>> blockchain_market_order_book USD XTS
+>>> wallet_market_order_list USD XTS -1 dan
+>>> wallet_market_order_list USD XTS -1 scott
+>>> balance dan 
+>>> balance scott 
+>>> wallet_market_submit_bid dan 50 XTS .023 USD 
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 4
+OK
+>>> blockchain_market_order_book USD XTS
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 4
+OK
+>>> blockchain_market_order_book USD XTS
+>>> wallet_market_order_list USD XTS -1 dan
+>>> wallet_market_order_list USD XTS -1 scott
+>>> blockchain_market_order_book USD XTS
+default (unlocked) >>> balance dan
+default (unlocked) >>> balance scott
+>>> blockchain_market_order_book GLD USD 
+>>> blockchain_market_order_book GLD XTS 
+>>> quit
+
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_list_feed_prices
+>>> balance alice
+>>> wallet_market_submit_short alice 100000 XTS 0 USD
+>>> wallet_market_submit_ask alice 50000 XTS 0.02 USD
+>>> blockchain_market_order_book USD XTS
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+>>> balance alice
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+>>> balance alice
+>>> wallet_market_submit_bid alice 1000 XTS 0.01975 USD true
+>>> wallet_market_submit_short alice 1000 XTS 0 USD 0.01950
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+>>> wallet_market_submit_ask alice 1000 XTS .01950 USD true
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> quit
+
