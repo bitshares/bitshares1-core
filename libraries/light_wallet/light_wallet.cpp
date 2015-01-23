@@ -355,7 +355,7 @@ map<string, double> light_wallet::balance() const
    map<string, double> balances = {{BTS_BLOCKCHAIN_SYMBOL, 0}};
    for( auto balance : _chain_cache->_balance_id_to_record ) {
       oasset_record record = get_asset_record(balance.second.asset_id());
-      if( record )
+      if( record && balance.second.owner() == _data->user_account.active_key() )
          balances[record->symbol] += balance.second.balance / double(record->precision);
    }
    return balances;

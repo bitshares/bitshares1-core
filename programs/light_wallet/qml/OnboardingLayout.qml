@@ -58,7 +58,6 @@ MainView {
 
    Component.onCompleted: nameField.forceActiveFocus()
 
-
    Rectangle {
       anchors.fill: parent
       color: Theme.backgroundColor
