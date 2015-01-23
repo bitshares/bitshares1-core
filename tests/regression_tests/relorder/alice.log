@@ -1,154 +1,1447 @@
->>> debug_advance_time 1 second
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> debug_deterministic_private_keys 0 5 angel true angel true true
->>> debug_deterministic_private_keys 0 3 alice true alice true true
->>> debug_deterministic_private_keys 0 3 bob true bob true true
->>> balance angel
->>> wallet_market_submit_ask angel 1250000 XTS 0.02 USD
->>> wallet_market_submit_short angel 2500000 XTS 0 USD
->>> blockchain_market_order_book USD XTS
->>> balance angel
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> balance angel
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> debug_enable_output false
+default (unlocked) >>> debug_advance_time 1 second
+OK
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> debug_deterministic_private_keys 0 5 angel true angel true true
+[
+  "5J3SQvvxRK4RfzFDcWZR5sLRkjrMvTn1FKXnzNGvWLgWdctLDQm",
+  "5K2gVsmk7Kh5zDQfvEzn7Xf8L1aYtUEvy2vTTrqJdhtoN241hR7",
+  "5K7q5syPmLeLQQSHdXikaQzu5hYoHMGD2EPppKNLxF719T1PHTB",
+  "5JzDAUDmAhX62M6Pb9wmQd5znXFmPMiwA4EQzXCEio83dAWHQVt",
+  "5JvwWVinSwYFM6zETx28Q4yaupRaWVyLnCp2VSWACueKzYD2hzx"
+]
+default (unlocked) >>> debug_deterministic_private_keys 0 3 alice true alice true true
+[
+  "5HpUwrtzSztqQpJxVHLsrZkVzVjVv9nUXeauYeeSxguzcmpgRcK",
+  "5JuNNRpMexdnkHMn5RocYnKePjmHB8HHoaEuYWFHxC8eH4ELWi7",
+  "5KgGWyx1aXqT2EQFiipCCfyG3CZhNbEUwYmNDFBa7YWrT9thvXn"
+]
+default (unlocked) >>> debug_deterministic_private_keys 0 3 bob true bob true true
+[
+  "5JBYhWpCEr7vE4bVqkUsDuEE2V3xAV6ABhueZEnKRAxi89ZE6Ad",
+  "5JmdXaRirZ2N4Tt374pBHsLmcvbR4MNLznQ3DWT1m857LoTKmEG",
+  "5JEwtPbA1yimJDsrnLAt3J3tzcBYpok9tCuoKabB9bs29Bo3ZCX"
+]
+default (unlocked) >>> balance angel
+ACCOUNT                         BALANCE                     
+============================================================
+angel                           100,000,000.00000 XTS       
+default (unlocked) >>> wallet_market_submit_ask angel 1250000 XTS 0.02 USD
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:40:41</d-ign>PENDING   angel               angel               1,250,000.00000 XTS     sell XTS @ 0.02 USD / XTS                   0.50000 XTS         <d-ign> 8edb9de5</d-ign>
+default (unlocked) >>> wallet_market_submit_short angel 2500000 XTS 0 USD
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:40:41</d-ign>PENDING   angel               angel               2,500,000.00000 XTS     short USD @ 0.% APR                         0.50000 XTS         <d-ign> 27234d6a</d-ign>
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+No Orders
+default (unlocked) >>> balance angel
+ACCOUNT                         BALANCE                     
+============================================================
+angel                           96,249,999.00000 XTS        
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0.0000 USD                1,250,000.00000 XTS             0.000000000000 USD*| 0.020000000000 USD                1,250,000.00000 XTS           25,000.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+N/A                       1,250,000.00000 XTS                     0.000000 % | 
+default (unlocked) >>> balance angel
+ACCOUNT                         BALANCE                     
+============================================================
+angel                           96,249,999.00000 XTS        
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0.0000 USD                1,250,000.00000 XTS             0.000000000000 USD*| 0.020000000000 USD                1,250,000.00000 XTS           25,000.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+N/A                       1,250,000.00000 XTS                     0.000000 % | 
+Maximum Short Price: 0. USD / XTS     Last Error:  insufficient feeds (37006)
+
+
+Details:
+37006 insufficient_feeds: insufficient feeds
+
+    {"quote_id":1,"base_id":0}
+    th_a  market_engine.cpp:66 execute
+default (unlocked) >>> debug_enable_output false
 >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
 >>> debug_enable_output true
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> balance angel
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> balance angel
->>> wallet_transfer 10000 USD angel alice usd_funding
->>> wallet_transfer 10000 USD angel bob usd_funding
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> balance angel
->>> balance alice
->>> balance bob
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> balance alice
->>> balance bob
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> balance alice
->>> balance bob
->>> wallet_market_sell alice 10000 XTS .0205 USD
->>> balance alice
->>> balance bob
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> balance alice
->>> balance bob
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> balance alice
->>> balance bob
->>> wallet_market_sell bob 100 USD 51.25 XTS
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> balance alice
->>> balance bob
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> balance alice
->>> balance bob
->>> wallet_market_sell alice 10000 XTS 0 USD 1.05
->>> balance alice
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> balance alice
->>> balance bob
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> wallet_market_sell alice 1000 XTS 0 USD 1.01
->>> balance alice
->>> balance bob
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> balance alice
->>> balance bob
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> wallet_market_sell bob 350 USD 0 XTS 1.05
->>> balance alice
->>> balance bob
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> balance alice
->>> balance bob
->>> wallet_market_sell alice 10000 XTS 0 USD 1.05
->>> wallet_market_sell alice 10000 XTS .0205 USD
->>> wallet_market_sell alice 1000 XTS 0 USD 1.01
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> balance alice
->>> balance bob
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> balance alice
->>> balance bob
->>> wallet_market_sell bob 100 USD 0 XTS 0.95
->>> wallet_market_sell bob 100 USD 0 XTS 0.99
->>> wallet_market_sell bob 300 USD 0 XTS 1.04
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> balance alice
->>> balance bob
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> balance alice
->>> balance bob
->>> wallet_market_sell alice 1000 XTS 0.0210 USD
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> balance alice
->>> balance bob
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> balance alice
->>> balance bob
->>> debug_enable_output false
+OK
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0.0000 USD                1,250,000.00000 XTS             0.000000000000 USD*| 0.020000000000 USD                1,250,000.00000 XTS           25,000.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+N/A                       1,250,000.00000 XTS                     0.000000 % | 
+Maximum Short Price: 0. USD / XTS     Last Error:  insufficient feeds (37006)
+
+
+Details:
+37006 insufficient_feeds: insufficient feeds
+
+    {"quote_id":1,"base_id":0}
+    th_a  market_engine.cpp:66 execute
+default (unlocked) >>> balance angel
+ACCOUNT                         BALANCE                     
+============================================================
+angel                           96,249,999.00000 XTS        
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             |
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> balance angel
+ACCOUNT                         BALANCE                     
+============================================================
+angel                           96,249,999.00000 XTS        
+                                25,000.0000 USD             
+default (unlocked) >>> wallet_transfer 10000 USD angel alice usd_funding
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:41:21</d-ign>PENDING   angel               alice               10,000.0000 USD         usd_funding                                 0.50000 XTS         <d-ign> 30264b61</d-ign>
+default (unlocked) >>> wallet_transfer 10000 USD angel bob usd_funding
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:41:21</d-ign>PENDING   angel               bob                 10,000.0000 USD         usd_funding                                 0.50000 XTS         <d-ign> 27c1bf4b</d-ign>
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             |
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> balance angel
+ACCOUNT                         BALANCE                     
+============================================================
+angel                           96,249,998.00000 XTS        
+                                5,000.0000 USD              
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           300,000.00000 XTS           
+default (unlocked) >>> balance bob
+ACCOUNT                         BALANCE                     
+============================================================
+bob                             300,000.00000 XTS           
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             |
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           300,000.00000 XTS           
+                                10,000.0000 USD             
+default (unlocked) >>> balance bob
+ACCOUNT                         BALANCE                     
+============================================================
+bob                             300,000.00000 XTS           
+                                10,000.0000 USD             
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             |
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           300,000.00000 XTS           
+                                10,000.0000 USD             
+default (unlocked) >>> balance bob
+ACCOUNT                         BALANCE                     
+============================================================
+bob                             300,000.00000 XTS           
+                                10,000.0000 USD             
+default (unlocked) >>> wallet_market_sell alice 10000 XTS .0205 USD
+{
+  "index": 0,
+  "record_id": "9cb34df087e70fb84b4703e9c869791e6bbb666e",
+  "block_num": 0,
+  "is_virtual": false,
+  "is_confirmed": false,
+  "is_market": true,
+  "trx": {
+    "expiration": "2014-06-20T15:41:51",
+    "slate_id": null,
+    "operations": [{
+        "type": "ask_op_type",
+        "data": {
+          "amount": 1000000000,
+          "ask_index": {
+            "order_price": {
+              "ratio": "0.00205",
+              "quote_asset_id": 1,
+              "base_asset_id": 0
+            },
+            "owner": "XTS2kkRDv1kR94v3yjbdDpMxsDBgzKDqodUN"
+          }
+        }
+      },{
+        "type": "withdraw_op_type",
+        "data": {
+          "balance_id": "XTSG6U5gPHmDYeMbrX7JxfH3jPNYQNvnCv9M",
+          "amount": 1000050000,
+          "claim_input_data": ""
+        }
+      }
+    ],
+    "signatures": [
+      "207596dd37f06ceaed4733c4474b17a60a98d633f7345acf3631d5799c5f705a3a354c6993aeeb23bda8ba23eb9e2a963d5fa810af489d553e5fb77eb2f185ad93",
+      "1f46c29ca2fece0013b02c6c46725b0348a4e7f3a5a49cf8710c27a718090384fd7056c10cdeedd6652857c9fa0feb7b2906096c189fc1894ef41b13491ccd9eb4"
+    ]
+  },
+  "ledger_entries": [{
+      "from_account": "XTS6MztcCwGPciDNLrodkGdXf33S6raovWDfVieYdNTg92eC45PDf",
+      "to_account": "XTS8QkYM7q4sfGrZoZKFvt1emKh9NafQ5gwbet3K7MZU6bBMVHx6e",
+      "amount": {
+        "amount": 1000000000,
+        "asset_id": 0
+      },
+      "memo": "sell XTS @ 0.0205 USD / XTS",
+      "memo_from_account": null
+    }
+  ],
+  "fee": {
+    "amount": 50000,
+    "asset_id": 0
+  },
+  "created_time": "2014-06-20T14:41:51",
+  "received_time": "2014-06-20T14:41:51",
+  "extra_addresses": []
+}
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           289,999.50000 XTS           
+                                10,000.0000 USD             
+default (unlocked) >>> balance bob
+ACCOUNT                         BALANCE                     
+============================================================
+bob                             300,000.00000 XTS           
+                                10,000.0000 USD             
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.020500000000 USD                   10,000.00000 XTS              205.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           289,999.50000 XTS           
+                                10,000.0000 USD             
+default (unlocked) >>> balance bob
+ACCOUNT                         BALANCE                     
+============================================================
+bob                             300,000.00000 XTS           
+                                10,000.0000 USD             
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.020500000000 USD                   10,000.00000 XTS              205.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           289,999.50000 XTS           
+                                10,000.0000 USD             
+default (unlocked) >>> balance bob
+ACCOUNT                         BALANCE                     
+============================================================
+bob                             300,000.00000 XTS           
+                                10,000.0000 USD             
+default (unlocked) >>> wallet_market_sell bob 100 USD 51.25 XTS
+{
+  "index": 0,
+  "record_id": "6a28fbe440918f6c312b0a128fb02a2971f2e2d4",
+  "block_num": 0,
+  "is_virtual": false,
+  "is_confirmed": false,
+  "is_market": true,
+  "trx": {
+    "expiration": "2014-06-20T15:42:11",
+    "slate_id": null,
+    "operations": [{
+        "type": "bid_op_type",
+        "data": {
+          "amount": 1000000,
+          "bid_index": {
+            "order_price": {
+              "ratio": "0.001951219512195121",
+              "quote_asset_id": 1,
+              "base_asset_id": 0
+            },
+            "owner": "XTS9gPMSerxV5GtsqwzWcHwZFvamQ8NdkJuU"
+          }
+        }
+      },{
+        "type": "withdraw_op_type",
+        "data": {
+          "balance_id": "XTS4BJPr9fkMVsv5XA4ZZHoSaUK7pojawZry",
+          "amount": 50000,
+          "claim_input_data": ""
+        }
+      },{
+        "type": "withdraw_op_type",
+        "data": {
+          "balance_id": "XTSKUpHmHAREaH8LJ1hsJLq6Gzx2dbzwCutr",
+          "amount": 1000000,
+          "claim_input_data": ""
+        }
+      }
+    ],
+    "signatures": [
+      "1f2d70537de7ad4b784b014bb22c555b21bf6d4b0bf2a16450637058319743ba85190b8269314fa1dc1611a1bb300eec94fcb99aceabc36e5fc83f67c0b8a6e720",
+      "1f0dee54b069ca4da5de86a661dcbb8d7da85f61d64d38a333f19dfd8f903e618375cb0da259d32f320e75987620b7fcd6fbf002e30eaca0ffdd319f69808ab1a7",
+      "1f0e748ee85d1512085add1edc6d0201ae96271a85e829ef008a590de9a639f34530e3b2322b1c5934294724c055f68714575f3fc8882627e77b8891a692caa8cf"
+    ]
+  },
+  "ledger_entries": [{
+      "from_account": "XTS8PaZZwoDtnGH8wEvCYvqTsqnYdRcEwkQ7jPd24P8N7WLDn3ssL",
+      "to_account": "XTS5E1KgN3A4HonyvbeZcxKuDKJAsL5FZoSVLTKVMZ2n6y8UY7ha2",
+      "amount": {
+        "amount": 1000000,
+        "asset_id": 1
+      },
+      "memo": "buy XTS @ 0.01951219512195121 USD / XTS",
+      "memo_from_account": null
+    }
+  ],
+  "fee": {
+    "amount": 50000,
+    "asset_id": 0
+  },
+  "created_time": "2014-06-20T14:42:11",
+  "received_time": "2014-06-20T14:42:11",
+  "extra_addresses": []
+}
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+100.0000 USD              5,125.00000 XTS                 0.019512195122 USD | 0.020500000000 USD                   10,000.00000 XTS              205.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           289,999.50000 XTS           
+                                10,000.0000 USD             
+default (unlocked) >>> balance bob
+ACCOUNT                         BALANCE                     
+============================================================
+bob                             299,999.50000 XTS           
+                                9,900.0000 USD              
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+100.0000 USD              5,125.00000 XTS                 0.019512195122 USD | 0.020500000000 USD                   10,000.00000 XTS              205.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           289,999.50000 XTS           
+                                10,000.0000 USD             
+default (unlocked) >>> balance bob
+ACCOUNT                         BALANCE                     
+============================================================
+bob                             299,999.50000 XTS           
+                                9,900.0000 USD              
+default (unlocked) >>> wallet_market_sell alice 10000 XTS 0 USD 1.05
+{
+  "index": 0,
+  "record_id": "42044601c7483b92ef3fbcbde602d0215a018006",
+  "block_num": 0,
+  "is_virtual": false,
+  "is_confirmed": false,
+  "is_market": true,
+  "trx": {
+    "expiration": "2014-06-20T15:42:31",
+    "slate_id": null,
+    "operations": [{
+        "type": "relative_ask_op_type",
+        "data": {
+          "amount": 1000000000,
+          "ask_index": {
+            "order_price": {
+              "ratio": "1.05",
+              "quote_asset_id": 1,
+              "base_asset_id": 0
+            },
+            "owner": "XTSEmzHWn4av3PivK5x23Rqr1mpzFp9yPua9"
+          },
+          "limit_price": null
+        }
+      },{
+        "type": "withdraw_op_type",
+        "data": {
+          "balance_id": "XTSG6U5gPHmDYeMbrX7JxfH3jPNYQNvnCv9M",
+          "amount": 1000050000,
+          "claim_input_data": ""
+        }
+      }
+    ],
+    "signatures": [
+      "20789549f16875fd12927ae24ecf4827cb4d7a8519d033ced0a896fdeab41b7cff724381cbea3cf46f834ac79ed6b53ab2a56e6c6e834d674ce29d850d41442aac",
+      "1f0c5d940a729394a11a0f39f22ca6fd5cd8954bc4aa4feae189d72e6de4143f953d7635c3b628ef35d887d4324991f0d4108b0d96a239671a3220284c59db8bc1"
+    ]
+  },
+  "ledger_entries": [{
+      "from_account": "XTS6MztcCwGPciDNLrodkGdXf33S6raovWDfVieYdNTg92eC45PDf",
+      "to_account": "XTS6RZ6w1tMMvzoUe1Mk2H999oTZeFy1ygBboH1Y5kxs8mpbGHLBb",
+      "amount": {
+        "amount": 1000000000,
+        "asset_id": 0
+      },
+      "memo": "relative sell XTS @ delta 10.5 USD / XTS",
+      "memo_from_account": null
+    }
+  ],
+  "fee": {
+    "amount": 50000,
+    "asset_id": 0
+  },
+  "created_time": "2014-06-20T14:42:31",
+  "received_time": "2014-06-20T14:42:31",
+  "extra_addresses": []
+}
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           279,999.00000 XTS           
+                                10,000.0000 USD             
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+100.0000 USD              5,125.00000 XTS                 0.019512195122 USD | 0.020500000000 USD                   10,000.00000 XTS              205.0000 USD
+                                                                             |+0.021000000000 USD                   10,000.00000 XTS              210.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           279,999.00000 XTS           
+                                10,000.0000 USD             
+default (unlocked) >>> balance bob
+ACCOUNT                         BALANCE                     
+============================================================
+bob                             299,999.50000 XTS           
+                                9,900.0000 USD              
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+100.0000 USD              5,125.00000 XTS                 0.019512195122 USD | 0.020500000000 USD                   10,000.00000 XTS              205.0000 USD
+                                                                             |+0.021000000000 USD                   10,000.00000 XTS              210.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> wallet_market_sell alice 1000 XTS 0 USD 1.01
+{
+  "index": 0,
+  "record_id": "6083f7072a472e2162be132319a467fdf86f3853",
+  "block_num": 0,
+  "is_virtual": false,
+  "is_confirmed": false,
+  "is_market": true,
+  "trx": {
+    "expiration": "2014-06-20T15:42:51",
+    "slate_id": null,
+    "operations": [{
+        "type": "relative_ask_op_type",
+        "data": {
+          "amount": 100000000,
+          "ask_index": {
+            "order_price": {
+              "ratio": "1.01",
+              "quote_asset_id": 1,
+              "base_asset_id": 0
+            },
+            "owner": "XTS83jwuqo2RmMadAv8x4eQGwUFRDhFG2xFT"
+          },
+          "limit_price": null
+        }
+      },{
+        "type": "withdraw_op_type",
+        "data": {
+          "balance_id": "XTSG6U5gPHmDYeMbrX7JxfH3jPNYQNvnCv9M",
+          "amount": 100050000,
+          "claim_input_data": ""
+        }
+      }
+    ],
+    "signatures": [
+      "1f10665bf90df3db87aeecfd5945ba1bc4c1da80aeaa74266e8070e2aedb8232023af241115b0eb0a2cf01bea3cd5d2a9a8a4fe6d51dbc6e1beabe31df2a4723f4",
+      "1f00c1a4581a5e783fd36770f63250f1d257d1d1e2cedc398148b4561bbddb1c0525ba79aed3be898e306095c95c163c751f3e71a1a95396ea29404b7604689ec7"
+    ]
+  },
+  "ledger_entries": [{
+      "from_account": "XTS6MztcCwGPciDNLrodkGdXf33S6raovWDfVieYdNTg92eC45PDf",
+      "to_account": "XTS4u6D9zMg7cZQBCr92SmNi9PLvwPNXGcvCRhbk9WJ9nNijd2Ror",
+      "amount": {
+        "amount": 100000000,
+        "asset_id": 0
+      },
+      "memo": "relative sell XTS @ delta 10.1 USD / XTS",
+      "memo_from_account": null
+    }
+  ],
+  "fee": {
+    "amount": 50000,
+    "asset_id": 0
+  },
+  "created_time": "2014-06-20T14:42:51",
+  "received_time": "2014-06-20T14:42:51",
+  "extra_addresses": []
+}
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           278,998.50000 XTS           
+                                10,000.0000 USD             
+default (unlocked) >>> balance bob
+ACCOUNT                         BALANCE                     
+============================================================
+bob                             299,999.50000 XTS           
+                                9,900.0000 USD              
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+100.0000 USD              5,125.00000 XTS                 0.019512195122 USD |+0.020200000000 USD                    1,000.00000 XTS               20.2000 USD
+                                                                             | 0.020500000000 USD                   10,000.00000 XTS              205.0000 USD
+                                                                             |+0.021000000000 USD                   10,000.00000 XTS              210.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           278,998.50000 XTS           
+                                10,000.0000 USD             
+default (unlocked) >>> balance bob
+ACCOUNT                         BALANCE                     
+============================================================
+bob                             299,999.50000 XTS           
+                                9,900.0000 USD              
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+100.0000 USD              5,125.00000 XTS                 0.019512195122 USD |+0.020200000000 USD                    1,000.00000 XTS               20.2000 USD
+                                                                             | 0.020500000000 USD                   10,000.00000 XTS              205.0000 USD
+                                                                             |+0.021000000000 USD                   10,000.00000 XTS              210.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> wallet_market_sell bob 350 USD 0 XTS 1.05
+{
+  "index": 0,
+  "record_id": "bcd3823e6fdcc5cd2d51e7841b5a3d053a28250f",
+  "block_num": 0,
+  "is_virtual": false,
+  "is_confirmed": false,
+  "is_market": true,
+  "trx": {
+    "expiration": "2014-06-20T15:43:11",
+    "slate_id": null,
+    "operations": [{
+        "type": "relative_bid_op_type",
+        "data": {
+          "amount": 3500000,
+          "bid_index": {
+            "order_price": {
+              "ratio": "1.05",
+              "quote_asset_id": 1,
+              "base_asset_id": 0
+            },
+            "owner": "XTS8Ecw1mXEQryBe9XtBP5gYgzYxr7rigYGZ"
+          },
+          "limit_price": null
+        }
+      },{
+        "type": "withdraw_op_type",
+        "data": {
+          "balance_id": "XTS4BJPr9fkMVsv5XA4ZZHoSaUK7pojawZry",
+          "amount": 50000,
+          "claim_input_data": ""
+        }
+      },{
+        "type": "withdraw_op_type",
+        "data": {
+          "balance_id": "XTSKUpHmHAREaH8LJ1hsJLq6Gzx2dbzwCutr",
+          "amount": 3500000,
+          "claim_input_data": ""
+        }
+      }
+    ],
+    "signatures": [
+      "201434e4a13f301f1307df2e771e4bdd1ec34334b8e756e88030f03527de6b00a96e3672ced74b9ed5082e5dbbe400cffb427e90a2699ea4118d9f84a545aa6d6d",
+      "201fa46574a9740626a310a02d92340e8dadf6bab233c01da74a5d8c884f0e19d3383ed7bd4f97c0a077fa23c27e86c66bb819c2ba77f1ab7733763fcb928dab45",
+      "1f11ac374271bef99644fbca08b42015f9ec020895c34564ce2fea539b921deb842537c75bbee1be03c5eab22a4b66b2b4f090e541355a08b36c14b52fe3af93a9"
+    ]
+  },
+  "ledger_entries": [{
+      "from_account": "XTS8PaZZwoDtnGH8wEvCYvqTsqnYdRcEwkQ7jPd24P8N7WLDn3ssL",
+      "to_account": "XTS5Ww17mQrTDRgXewb25Yo1J8kGHhLadG7Vt2e47GHovnLecnKFJ",
+      "amount": {
+        "amount": 3500000,
+        "asset_id": 1
+      },
+      "memo": "relative buy XTS @ delta 10.5 USD / XTS",
+      "memo_from_account": null
+    }
+  ],
+  "fee": {
+    "amount": 50000,
+    "asset_id": 0
+  },
+  "created_time": "2014-06-20T14:43:11",
+  "received_time": "2014-06-20T14:43:11",
+  "extra_addresses": []
+}
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           278,998.50000 XTS           
+                                10,000.0000 USD             
+default (unlocked) >>> balance bob
+ACCOUNT                         BALANCE                     
+============================================================
+bob                             299,999.00000 XTS           
+                                9,550.0000 USD              
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+350.0000 USD              16,666.66666 XTS                0.021000000000 USD+|+0.020200000000 USD                    1,000.00000 XTS               20.2000 USD
+100.0000 USD              5,125.00000 XTS                 0.019512195122 USD | 0.020500000000 USD                   10,000.00000 XTS              205.0000 USD
+                                                                             |+0.021000000000 USD                   10,000.00000 XTS              210.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+100.0000 USD              5,125.00000 XTS                 0.019512195122 USD |+0.021000000000 USD                    4,333.33334 XTS               91.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           278,998.50000 XTS           
+                                10,344.1999 USD             
+default (unlocked) >>> balance bob
+ACCOUNT                         BALANCE                     
+============================================================
+bob                             316,665.66666 XTS           
+                                9,550.0000 USD              
+default (unlocked) >>> wallet_market_sell alice 10000 XTS 0 USD 1.05
+{
+  "index": 0,
+  "record_id": "6305bae68bb5618afb286d2c6b9dc7c582f49c70",
+  "block_num": 0,
+  "is_virtual": false,
+  "is_confirmed": false,
+  "is_market": true,
+  "trx": {
+    "expiration": "2014-06-20T15:43:31",
+    "slate_id": null,
+    "operations": [{
+        "type": "relative_ask_op_type",
+        "data": {
+          "amount": 1000000000,
+          "ask_index": {
+            "order_price": {
+              "ratio": "1.05",
+              "quote_asset_id": 1,
+              "base_asset_id": 0
+            },
+            "owner": "XTSGXvfzcoJSzv8D8xWiKsNutvU9PZfHVuZE"
+          },
+          "limit_price": null
+        }
+      },{
+        "type": "withdraw_op_type",
+        "data": {
+          "balance_id": "XTSEcYEoYMYm3YUaTaVPadnuu2Wts4YuSaL8",
+          "amount": 1000050000,
+          "claim_input_data": ""
+        }
+      }
+    ],
+    "signatures": [
+      "20444cddaad3057e0b05da53866d00aba65c1c54761a2fa2fe813ab068d9a85ba61f9f1235ca33e636ac1571e16ee9ebe6a1d5a495702f240dc5ac415b5a57883b",
+      "2012e1701b0abee832e1758d128fa58ab3ad79d50004aa8d6982aa654c280bbf5448addaccca08094ced0acb0a200a99016c495042dddc82dadf6be816536c7866"
+    ]
+  },
+  "ledger_entries": [{
+      "from_account": "XTS6MztcCwGPciDNLrodkGdXf33S6raovWDfVieYdNTg92eC45PDf",
+      "to_account": "XTS79wHHqmXkTr8rkoSLvr6PDm2cdoeq9dQiU27SNFayJGFhyi9F2",
+      "amount": {
+        "amount": 1000000000,
+        "asset_id": 0
+      },
+      "memo": "relative sell XTS @ delta 10.5 USD / XTS",
+      "memo_from_account": null
+    }
+  ],
+  "fee": {
+    "amount": 50000,
+    "asset_id": 0
+  },
+  "created_time": "2014-06-20T14:43:31",
+  "received_time": "2014-06-20T14:43:31",
+  "extra_addresses": []
+}
+default (unlocked) >>> wallet_market_sell alice 10000 XTS .0205 USD
+{
+  "index": 0,
+  "record_id": "97654f1c23aaf55e3785b8ed5c180bb680f9232a",
+  "block_num": 0,
+  "is_virtual": false,
+  "is_confirmed": false,
+  "is_market": true,
+  "trx": {
+    "expiration": "2014-06-20T15:43:31",
+    "slate_id": null,
+    "operations": [{
+        "type": "ask_op_type",
+        "data": {
+          "amount": 1000000000,
+          "ask_index": {
+            "order_price": {
+              "ratio": "0.00205",
+              "quote_asset_id": 1,
+              "base_asset_id": 0
+            },
+            "owner": "XTSGyLgp8AbCn75TfXbJYvPsBq2JCNMDsi5V"
+          }
+        }
+      },{
+        "type": "withdraw_op_type",
+        "data": {
+          "balance_id": "XTSEcYEoYMYm3YUaTaVPadnuu2Wts4YuSaL8",
+          "amount": 1000050000,
+          "claim_input_data": ""
+        }
+      }
+    ],
+    "signatures": [
+      "207c72fea355237ec91d6798b7065bd11e69fd60c47e44ec041bc49d1a8bc1976e2ecd0efcffba7e472a45ad3a7a6b78acddaa3032ec8cf430c74551a606a1442f",
+      "2071e1dba60acd7f84ec30e99cd0d329bce5b29692e490efc59b160cfefa41479c79d1e6536e310a84f1bcf2e073e34752a7f4661f5251d106ae9c28c9db12a3b0"
+    ]
+  },
+  "ledger_entries": [{
+      "from_account": "XTS6MztcCwGPciDNLrodkGdXf33S6raovWDfVieYdNTg92eC45PDf",
+      "to_account": "XTS6hWEGgxqZqi9ydATdME7DbpVHFJ5FHmryjDGAj7HpepQuJZ5jN",
+      "amount": {
+        "amount": 1000000000,
+        "asset_id": 0
+      },
+      "memo": "sell XTS @ 0.0205 USD / XTS",
+      "memo_from_account": null
+    }
+  ],
+  "fee": {
+    "amount": 50000,
+    "asset_id": 0
+  },
+  "created_time": "2014-06-20T14:43:31",
+  "received_time": "2014-06-20T14:43:31",
+  "extra_addresses": []
+}
+default (unlocked) >>> wallet_market_sell alice 1000 XTS 0 USD 1.01
+{
+  "index": 0,
+  "record_id": "7a85dc43ce46dc77e422b71423933bce8d40d92f",
+  "block_num": 0,
+  "is_virtual": false,
+  "is_confirmed": false,
+  "is_market": true,
+  "trx": {
+    "expiration": "2014-06-20T15:43:31",
+    "slate_id": null,
+    "operations": [{
+        "type": "relative_ask_op_type",
+        "data": {
+          "amount": 100000000,
+          "ask_index": {
+            "order_price": {
+              "ratio": "1.01",
+              "quote_asset_id": 1,
+              "base_asset_id": 0
+            },
+            "owner": "XTSNtqYoNW5CJtxcuf6CJx8bcApR1NkUxzGm"
+          },
+          "limit_price": null
+        }
+      },{
+        "type": "withdraw_op_type",
+        "data": {
+          "balance_id": "XTSEcYEoYMYm3YUaTaVPadnuu2Wts4YuSaL8",
+          "amount": 100050000,
+          "claim_input_data": ""
+        }
+      }
+    ],
+    "signatures": [
+      "207a8868f2581c4740bb80eb7e6fb2f52ae445320c73dd2bafd5052a69237c7afc48fafe08cc2322a7f7bcc76cd53e9a199f4c8038a627c93cc1c73a3b1490c224",
+      "205edb14290d5ffa3f8ddba552bb6af1f67856dc9a3350de1bd2acbbc8dbea71d46daef16f6ea93f1ac576d70ddc2113b924b1832efbdf28da621454d07efd8587"
+    ]
+  },
+  "ledger_entries": [{
+      "from_account": "XTS6MztcCwGPciDNLrodkGdXf33S6raovWDfVieYdNTg92eC45PDf",
+      "to_account": "XTS8AUBxKUssxvVr5pV1QrMJXqoFBNHYLzRnHJ1Cp8RcP9KFxf6EQ",
+      "amount": {
+        "amount": 100000000,
+        "asset_id": 0
+      },
+      "memo": "relative sell XTS @ delta 10.1 USD / XTS",
+      "memo_from_account": null
+    }
+  ],
+  "fee": {
+    "amount": 50000,
+    "asset_id": 0
+  },
+  "created_time": "2014-06-20T14:43:31",
+  "received_time": "2014-06-20T14:43:31",
+  "extra_addresses": []
+}
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+100.0000 USD              5,125.00000 XTS                 0.019512195122 USD |+0.020200000000 USD                    1,000.00000 XTS               20.2000 USD
+                                                                             | 0.020500000000 USD                   10,000.00000 XTS              205.0000 USD
+                                                                             |+0.021000000000 USD                    4,333.33334 XTS               91.0000 USD
+                                                                             |+0.021000000000 USD                   10,000.00000 XTS              210.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           257,997.00000 XTS           
+                                10,344.1999 USD             
+default (unlocked) >>> balance bob
+ACCOUNT                         BALANCE                     
+============================================================
+bob                             316,665.66666 XTS           
+                                9,550.0000 USD              
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+100.0000 USD              5,125.00000 XTS                 0.019512195122 USD |+0.020200000000 USD                    1,000.00000 XTS               20.2000 USD
+                                                                             | 0.020500000000 USD                   10,000.00000 XTS              205.0000 USD
+                                                                             |+0.021000000000 USD                    4,333.33334 XTS               91.0000 USD
+                                                                             |+0.021000000000 USD                   10,000.00000 XTS              210.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           257,997.00000 XTS           
+                                10,344.1999 USD             
+default (unlocked) >>> balance bob
+ACCOUNT                         BALANCE                     
+============================================================
+bob                             316,665.66666 XTS           
+                                9,550.0000 USD              
+default (unlocked) >>> wallet_market_sell bob 100 USD 0 XTS 0.95
+{
+  "index": 0,
+  "record_id": "aad174c9a05e162fe898513d982010763b13d7cb",
+  "block_num": 0,
+  "is_virtual": false,
+  "is_confirmed": false,
+  "is_market": true,
+  "trx": {
+    "expiration": "2014-06-20T15:43:51",
+    "slate_id": null,
+    "operations": [{
+        "type": "relative_bid_op_type",
+        "data": {
+          "amount": 1000000,
+          "bid_index": {
+            "order_price": {
+              "ratio": "0.95",
+              "quote_asset_id": 1,
+              "base_asset_id": 0
+            },
+            "owner": "XTSJ1zCzh99QA5rCgdgXaMYf4WoYCaSVRHvy"
+          },
+          "limit_price": null
+        }
+      },{
+        "type": "withdraw_op_type",
+        "data": {
+          "balance_id": "XTS4BJPr9fkMVsv5XA4ZZHoSaUK7pojawZry",
+          "amount": 50000,
+          "claim_input_data": ""
+        }
+      },{
+        "type": "withdraw_op_type",
+        "data": {
+          "balance_id": "XTSKUpHmHAREaH8LJ1hsJLq6Gzx2dbzwCutr",
+          "amount": 1000000,
+          "claim_input_data": ""
+        }
+      }
+    ],
+    "signatures": [
+      "1f0fbf249903281a4f69f7586d6ab95cf3d5a15a21c7f5be497dcc7c8f43eacf85020803032b7b5aa93857c2e6c34730b351654cd9ef9fb2874e5ed85c00d76ccf",
+      "205f3b9cf86b7b27346f0de653a43f850b0070e0416d29104e97daf17560e8a6bb6ae99888d79d121d8b54e11df55805f4e7f38ab7fd932e97c7b4be6ef1b53771",
+      "1f27bbc0434b9033752779e1453a89fb32c93e48486851b662895af48ec633743009eac4b898104d453649a318bb9ec02bc91723aedf4001d19e59777ee0c06c89"
+    ]
+  },
+  "ledger_entries": [{
+      "from_account": "XTS8PaZZwoDtnGH8wEvCYvqTsqnYdRcEwkQ7jPd24P8N7WLDn3ssL",
+      "to_account": "XTS5wYCAAqbN7AN2fVMSpyrpChvFVL9FjVxJsAcWs3MhDgkjUXK4p",
+      "amount": {
+        "amount": 1000000,
+        "asset_id": 1
+      },
+      "memo": "relative buy XTS @ delta 9.5 USD / XTS",
+      "memo_from_account": null
+    }
+  ],
+  "fee": {
+    "amount": 50000,
+    "asset_id": 0
+  },
+  "created_time": "2014-06-20T14:43:51",
+  "received_time": "2014-06-20T14:43:51",
+  "extra_addresses": []
+}
+default (unlocked) >>> wallet_market_sell bob 100 USD 0 XTS 0.99
+{
+  "index": 0,
+  "record_id": "e479d4b89e74244f4c35fbc4032d3da8b0289248",
+  "block_num": 0,
+  "is_virtual": false,
+  "is_confirmed": false,
+  "is_market": true,
+  "trx": {
+    "expiration": "2014-06-20T15:43:51",
+    "slate_id": null,
+    "operations": [{
+        "type": "relative_bid_op_type",
+        "data": {
+          "amount": 1000000,
+          "bid_index": {
+            "order_price": {
+              "ratio": "0.99",
+              "quote_asset_id": 1,
+              "base_asset_id": 0
+            },
+            "owner": "XTSGpjmJhy4fjPDpRVQxKizZttfKU76J4veC"
+          },
+          "limit_price": null
+        }
+      },{
+        "type": "withdraw_op_type",
+        "data": {
+          "balance_id": "XTS4BJPr9fkMVsv5XA4ZZHoSaUK7pojawZry",
+          "amount": 50000,
+          "claim_input_data": ""
+        }
+      },{
+        "type": "withdraw_op_type",
+        "data": {
+          "balance_id": "XTSKUpHmHAREaH8LJ1hsJLq6Gzx2dbzwCutr",
+          "amount": 1000000,
+          "claim_input_data": ""
+        }
+      }
+    ],
+    "signatures": [
+      "1f35cca6e7063098134977be050c08d0752f467e311f041399f0f80b09796aad9072e8e3aca8e48dfe422d9e739e54aef2da24cd1752d70a00cac764cb4c29083b",
+      "2074757753ff3c147afac27739b92590b6205cc66e4fd122719bdba5cb4453be032f2498c14e7ed5a97d0b55d1ff8f71d181a6699db2af3a184bf45eccb4286044",
+      "2070d861f34c6d377aeacb8535544159595ecdc1aae5512f3d1bb7858ae3469e991c130005535bcae2e82ef5d1d7a35ae3795c54af588271b75713dddbf73edde8"
+    ]
+  },
+  "ledger_entries": [{
+      "from_account": "XTS8PaZZwoDtnGH8wEvCYvqTsqnYdRcEwkQ7jPd24P8N7WLDn3ssL",
+      "to_account": "XTS7ytVwUF5fkSNztC2EeLnJkLLahUgUBW2eiQMZ6vvCkDJGodBeq",
+      "amount": {
+        "amount": 1000000,
+        "asset_id": 1
+      },
+      "memo": "relative buy XTS @ delta 9.9 USD / XTS",
+      "memo_from_account": null
+    }
+  ],
+  "fee": {
+    "amount": 50000,
+    "asset_id": 0
+  },
+  "created_time": "2014-06-20T14:43:51",
+  "received_time": "2014-06-20T14:43:51",
+  "extra_addresses": []
+}
+default (unlocked) >>> wallet_market_sell bob 300 USD 0 XTS 1.04
+{
+  "index": 0,
+  "record_id": "6db64d4d90eb1a35263220f0b309c28ac40ef89c",
+  "block_num": 0,
+  "is_virtual": false,
+  "is_confirmed": false,
+  "is_market": true,
+  "trx": {
+    "expiration": "2014-06-20T15:43:51",
+    "slate_id": null,
+    "operations": [{
+        "type": "relative_bid_op_type",
+        "data": {
+          "amount": 3000000,
+          "bid_index": {
+            "order_price": {
+              "ratio": "1.04",
+              "quote_asset_id": 1,
+              "base_asset_id": 0
+            },
+            "owner": "XTSJoyrXGmG8PX8H1hMcaxEdTF6WVY8f9DDE"
+          },
+          "limit_price": null
+        }
+      },{
+        "type": "withdraw_op_type",
+        "data": {
+          "balance_id": "XTS4BJPr9fkMVsv5XA4ZZHoSaUK7pojawZry",
+          "amount": 50000,
+          "claim_input_data": ""
+        }
+      },{
+        "type": "withdraw_op_type",
+        "data": {
+          "balance_id": "XTSKUpHmHAREaH8LJ1hsJLq6Gzx2dbzwCutr",
+          "amount": 3000000,
+          "claim_input_data": ""
+        }
+      }
+    ],
+    "signatures": [
+      "207c3b91b5b8e2327a1822862c8268e72a515f59b36e787faa498e8236439201a555a3cc5900934896e49c63cf8250e34527a4b802737699bce3fd696cfcdf4f25",
+      "201c66422f5e8d89b7950b85d95a6044291dce6004248fb72fd29c53ea81686b8a67a41b1c77a4eff7062ca2b98082d8edb017fab44fe9b48e6b53bf05c45aed5a",
+      "2017e8c7d6e46813dabd3b321a3ac2ecbaa243bfbcbc6459f779427969ce3275d2265e64dea1e45ec90de23841802afe517a986b016f9fad38f0a8bafdd45e9340"
+    ]
+  },
+  "ledger_entries": [{
+      "from_account": "XTS8PaZZwoDtnGH8wEvCYvqTsqnYdRcEwkQ7jPd24P8N7WLDn3ssL",
+      "to_account": "XTS6sxMbKj1hnzvKazJaBm2fK5VnZBbDWeK5Pku88Xjdon8kbDRcV",
+      "amount": {
+        "amount": 3000000,
+        "asset_id": 1
+      },
+      "memo": "relative buy XTS @ delta 10.4 USD / XTS",
+      "memo_from_account": null
+    }
+  ],
+  "fee": {
+    "amount": 50000,
+    "asset_id": 0
+  },
+  "created_time": "2014-06-20T14:43:51",
+  "received_time": "2014-06-20T14:43:51",
+  "extra_addresses": []
+}
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+300.0000 USD              14,423.07692 XTS                0.020800000000 USD+|+0.020200000000 USD                    1,000.00000 XTS               20.2000 USD
+100.0000 USD              5,050.50505 XTS                 0.019800000000 USD+| 0.020500000000 USD                   10,000.00000 XTS              205.0000 USD
+100.0000 USD              5,125.00000 XTS                 0.019512195122 USD |+0.021000000000 USD                    4,333.33334 XTS               91.0000 USD
+100.0000 USD              5,263.15789 XTS                 0.019000000000 USD+|+0.021000000000 USD                   10,000.00000 XTS              210.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           257,997.00000 XTS           
+                                10,344.1999 USD             
+default (unlocked) >>> balance bob
+ACCOUNT                         BALANCE                     
+============================================================
+bob                             316,664.16666 XTS           
+                                9,050.0000 USD              
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+71.2000 USD               3,423.07692 XTS                 0.020800000000 USD+|+0.021000000000 USD                    4,333.33334 XTS               91.0000 USD
+100.0000 USD              5,050.50505 XTS                 0.019800000000 USD+|+0.021000000000 USD                   10,000.00000 XTS              210.0000 USD
+100.0000 USD              5,125.00000 XTS                 0.019512195122 USD |
+100.0000 USD              5,263.15789 XTS                 0.019000000000 USD+|
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           257,997.00000 XTS           
+                                10,569.3999 USD             
+default (unlocked) >>> balance bob
+ACCOUNT                         BALANCE                     
+============================================================
+bob                             327,664.16666 XTS           
+                                9,050.0000 USD              
+default (unlocked) >>> wallet_market_sell alice 1000 XTS 0.0210 USD
+{
+  "index": 0,
+  "record_id": "816ee017c93ed12d4eeb0e187ba4f4d4efb9ecfa",
+  "block_num": 0,
+  "is_virtual": false,
+  "is_confirmed": false,
+  "is_market": true,
+  "trx": {
+    "expiration": "2014-06-20T15:44:11",
+    "slate_id": null,
+    "operations": [{
+        "type": "ask_op_type",
+        "data": {
+          "amount": 100000000,
+          "ask_index": {
+            "order_price": {
+              "ratio": "0.0021",
+              "quote_asset_id": 1,
+              "base_asset_id": 0
+            },
+            "owner": "XTS5V751YaXSW514BfSznQCKj5JTZM3bst2Z"
+          }
+        }
+      },{
+        "type": "withdraw_op_type",
+        "data": {
+          "balance_id": "XTSEcYEoYMYm3YUaTaVPadnuu2Wts4YuSaL8",
+          "amount": 100050000,
+          "claim_input_data": ""
+        }
+      }
+    ],
+    "signatures": [
+      "1f56eeb83f5e67edbc1c39d3eaf426e566f2d6a4c7d8b313296daf9336e419b4856042be4fe099762220cc18961656cf301c41563ee6bd33af99617f00fcda7b1e",
+      "1f278b6bf97f3d082109da371523e8911931e5ec30886bb665907ee9ed3bde6f2739e2e9134bcd268b5adff28690ba1533c04cf24fce8cef80c7ebc991f0b23d68"
+    ]
+  },
+  "ledger_entries": [{
+      "from_account": "XTS6MztcCwGPciDNLrodkGdXf33S6raovWDfVieYdNTg92eC45PDf",
+      "to_account": "XTS5Cq9go6tiRYKUe7yB7QRFNvYWbNuCAStY3cnfcC9SRU5aXDaqp",
+      "amount": {
+        "amount": 100000000,
+        "asset_id": 0
+      },
+      "memo": "sell XTS @ 0.021 USD / XTS",
+      "memo_from_account": null
+    }
+  ],
+  "fee": {
+    "amount": 50000,
+    "asset_id": 0
+  },
+  "created_time": "2014-06-20T14:44:11",
+  "received_time": "2014-06-20T14:44:11",
+  "extra_addresses": []
+}
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+71.2000 USD               3,423.07692 XTS                 0.020800000000 USD+| 0.021000000000 USD                    1,000.00000 XTS               21.0000 USD
+100.0000 USD              5,050.50505 XTS                 0.019800000000 USD+|+0.021000000000 USD                    4,333.33334 XTS               91.0000 USD
+100.0000 USD              5,125.00000 XTS                 0.019512195122 USD |+0.021000000000 USD                   10,000.00000 XTS              210.0000 USD
+100.0000 USD              5,263.15789 XTS                 0.019000000000 USD+|
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           256,996.50000 XTS           
+                                10,569.3999 USD             
+default (unlocked) >>> balance bob
+ACCOUNT                         BALANCE                     
+============================================================
+bob                             327,664.16666 XTS           
+                                9,050.0000 USD              
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+71.2000 USD               3,423.07692 XTS                 0.020800000000 USD+| 0.021000000000 USD                    1,000.00000 XTS               21.0000 USD
+100.0000 USD              5,050.50505 XTS                 0.019800000000 USD+|+0.021000000000 USD                    4,333.33334 XTS               91.0000 USD
+100.0000 USD              5,125.00000 XTS                 0.019512195122 USD |+0.021000000000 USD                   10,000.00000 XTS              210.0000 USD
+100.0000 USD              5,263.15789 XTS                 0.019000000000 USD+|
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           256,996.50000 XTS           
+                                10,569.3999 USD             
+default (unlocked) >>> balance bob
+ACCOUNT                         BALANCE                     
+============================================================
+bob                             327,664.16666 XTS           
+                                9,050.0000 USD              
+default (unlocked) >>> debug_enable_output false
 >>> wallet_publish_feeds_multi_experimental [["USD", "0.0202"]]
 >>> debug_enable_output true
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> balance alice
->>> balance bob
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> balance alice
->>> balance bob
->>> quit
+OK
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+71.2000 USD               3,423.07692 XTS                 0.020800000000 USD+| 0.021000000000 USD                    1,000.00000 XTS               21.0000 USD
+100.0000 USD              5,050.50505 XTS                 0.019800000000 USD+|+0.021000000000 USD                    4,333.33334 XTS               91.0000 USD
+100.0000 USD              5,125.00000 XTS                 0.019512195122 USD |+0.021000000000 USD                   10,000.00000 XTS              210.0000 USD
+100.0000 USD              5,263.15789 XTS                 0.019000000000 USD+|
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           256,996.50000 XTS           
+                                10,569.3999 USD             
+default (unlocked) >>> balance bob
+ACCOUNT                         BALANCE                     
+============================================================
+bob                             327,664.16666 XTS           
+                                9,050.0000 USD              
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+50.1920 USD               2,389.18507 XTS                 0.021008000000 USD+|+0.021210000000 USD                    4,333.33334 XTS               91.9100 USD
+100.0000 USD              5,000.50005 XTS                 0.019998000000 USD+|+0.021210000000 USD                   10,000.00000 XTS              212.1000 USD
+100.0000 USD              5,125.00000 XTS                 0.019512195122 USD |
+100.0000 USD              5,211.04742 XTS                 0.019190000000 USD+|
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+Maximum Short Price: 0.0202 USD / XTS     
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           256,996.50000 XTS           
+                                10,590.3999 USD             
+default (unlocked) >>> balance bob
+ACCOUNT                         BALANCE                     
+============================================================
+bob                             328,664.16666 XTS           
+                                9,050.0000 USD              
+default (unlocked) >>> quit
