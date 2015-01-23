@@ -1,6 +1,7 @@
 import QtQuick 2.4
 import QtQuick.Window 2.2
 import QtQuick.Layouts 1.1
+import QtQuick.Controls 1.3
 
 import "utils.js" as Utils
 import org.BitShares.Types 1.0
@@ -13,6 +14,8 @@ ApplicationWindow {
    width: 540
    height: 960
    initialPage: mainPage
+   pageStack.visible: !onboardLoader.sourceComponent
+   toolBar.visible: !onboardLoader.sourceComponent
 
    readonly property int orientation: window.width < window.height? Qt.PortraitOrientation : Qt.LandscapeOrientation
    property bool needsOnboarding: !( wallet.account && wallet.account.isRegistered )
@@ -37,6 +40,18 @@ ApplicationWindow {
    function clearError(errorId) {
       if( d.currentError === errorId )
          errorText.text = ""
+   }
+   function deviceType() {
+      switch(Device.type) {
+      case Device.phone:
+      case Device.phablet:
+         return "phone"
+      case Device.tablet:
+         return "tablet"
+      case Device.desktop:
+      default:
+         return "computer"
+      }
    }
 
    Component.onCompleted: {
@@ -96,6 +111,64 @@ ApplicationWindow {
       onNotification: showError(message)
    }
 
+   View {
+      id: criticalNotificationArea
+      backgroundColor: "#F44336"
+      height: units.dp(100)
+      width: parent.width
+      enabled: false
+      z: -1
+
+      //Show iff brain key is set, the main page is not active or transitioning out, and we're not already in an onboarding UI
+      property bool active: wallet.brainKey.length > 0 &&
+                            [Stack.Deactivating, Stack.Active].indexOf(mainPage.Stack.status) < 0 &&
+                            !onboardLoader.sourceComponent
+
+      Label {
+         anchors.verticalCenter: parent.verticalCenter
+         anchors.left:  parent.left
+         anchors.right: criticalNotificationButton.left
+         anchors.margins: visuals.margins
+         text: qsTr("Your wallet has not been backed up. You should back it up as soon as possible.")
+         color: "white"
+         style: "subheading"
+         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+      }
+      Button {
+         id: criticalNotificationButton
+         anchors.right: parent.right
+         anchors.rightMargin: visuals.margins
+         anchors.verticalCenter: parent.verticalCenter
+         text: qsTr("Back Up Wallet")
+         textColor: "white"
+
+         onClicked: onboardLoader.sourceComponent = backupUi
+      }
+
+      states: [
+         State {
+            name: "active"
+            when: criticalNotificationArea.active
+            PropertyChanges {
+               target: criticalNotificationArea
+               enabled: true
+            }
+            PropertyChanges {
+               target: pageStack
+               anchors.topMargin: criticalNotificationArea.height
+            }
+         }
+      ]
+      transitions: [
+         Transition {
+            from: ""
+            to: "active"
+            reversible: true
+            PropertyAnimation { target: pageStack; property: "anchors.topMargin"; easing.type: Easing.InOutQuad }
+         }
+      ]
+   }
+
    WelcomeLayout {
       id: mainPage
       title: qsTr("Welcome to BitShares")
@@ -115,6 +188,8 @@ ApplicationWindow {
          clearPassword()
          window.pageStack.push(assetsUi)
       }
+
+      Stack.onStatusChanged: if( Stack.status === Stack.Active ) wallet.lockWallet()
    }
    Component {
       id: onboardingUi
@@ -122,8 +197,15 @@ ApplicationWindow {
       OnboardingLayout {
          onFinished: {
             pageStack.push(assetsUi)
-            onboardLoader.sourceComponent = null
+            onboardLoader.sourceComponent = undefined
          }
+      }
+   }
+   Component {
+      id: backupUi
+
+      BackupLayout {
+         onFinished: onboardLoader.sourceComponent = undefined
       }
    }
    Component {
@@ -154,17 +236,12 @@ ApplicationWindow {
       id: transferUi
 
       TransferLayout {
-//         onTransferComplete: window.pageStack.push({item: historyUi,
-//                                                    properties:{"accountName": wallet.account.name,
-//                                                               "assetSymbol": assetSymbol},
-//                                                    replace: true})
          onTransferComplete: window.pageStack.pop()
       }
    }
    Loader {
       id: onboardLoader
       anchors.fill: parent
-      z: 20
    }
    Snackbar {
       id: snack

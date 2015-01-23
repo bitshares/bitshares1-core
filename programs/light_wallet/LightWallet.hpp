@@ -94,6 +94,8 @@ public:
       return QStringLiteral(BTS_BLOCKCHAIN_SYMBOL);
    }
 
+   Q_INVOKABLE bool verifyBrainKey(QString key) const;
+
 public Q_SLOTS:
    void connectToServer( QString host, quint16 port,
                          QString user = QString("any"),

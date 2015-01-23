@@ -59,7 +59,12 @@ bool LightWallet::accountExists(QString name)
       exists = m_wallet.get_account_record(convert(name)).valid();
    END_WAIT_THREAD
 
-   return exists;
+         return exists;
+}
+
+bool LightWallet::verifyBrainKey(QString key) const
+{
+   return !m_brainKey.isEmpty() && normalize(key) == normalize(m_brainKey);
 }
 
 void LightWallet::connectToServer(QString host, quint16 port, QString user, QString password)
@@ -97,7 +102,6 @@ void LightWallet::createWallet(QString accountName, QString password)
    std::string salt(bts::blockchain::address(fc::ecc::private_key::generate().get_public_key()));
    salt.erase(0, strlen(BTS_ADDRESS_PREFIX));
 
-   qDebug() << "Creating wallet:" << password << m_brainKey << salt.c_str();
    qDebug() << "Wallet path:" << m_walletPath.generic_string().c_str();
 
    try {
@@ -156,13 +160,17 @@ void LightWallet::unlockWallet(QString password)
       if( isUnlocked() )
       {
          qDebug() << "Unlocked wallet; active address is" << std::string(m_wallet.account().active_address()).c_str();
-         auto ciphertext = QSettings().value(QStringLiteral("brainKey"), QString()).toByteArray();
-         fc::sha512 key = fc::sha512::hash(convert(password));
-         auto plaintext = fc::aes_decrypt(key, std::vector<char>(ciphertext.data(),
-                                                                 ciphertext.data() + ciphertext.size()));
-         m_brainKey = convert(std::string(plaintext.begin(), plaintext.end()));
-         if( !m_brainKey.isEmpty() )
+
+         if( QSettings().contains("brainKey") )
+         {
+            auto ciphertext = QSettings().value(QStringLiteral("brainKey"), QString()).toByteArray();
+            fc::sha512 key = fc::sha512::hash(convert(password));
+            auto plaintext = fc::aes_decrypt(key, std::vector<char>(ciphertext.data(),
+                                                                    ciphertext.data() + ciphertext.size()));
+            m_brainKey = QString::fromLocal8Bit(plaintext.data());
             Q_EMIT brainKeyChanged(m_brainKey);
+            qDebug() << m_brainKey;
+         }
       }
    } catch (fc::exception e) {
       qDebug() << "Error during unlock:" << e.to_detail_string().c_str();
@@ -180,6 +188,12 @@ void LightWallet::lockWallet()
    m_wallet.lock();
    qDebug() << "Locked wallet.";
    Q_EMIT unlockedChanged(isUnlocked());
+
+   if( !m_brainKey.isEmpty() )
+   {
+      m_brainKey.clear();
+      Q_EMIT brainKeyChanged(m_brainKey);
+   }
    END_THREAD
 }
 
