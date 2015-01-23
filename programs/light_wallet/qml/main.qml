@@ -126,7 +126,12 @@ ApplicationWindow {
             uiStack.pop()
          }
          onOpenHistory: window.pageStack.push(historyUi, {"accountName": account, "assetSymbol": symbol})
-         onOpenTransfer: window.pageStack.push(transferUi)
+         onOpenTransfer: {
+            if( wallet.account.availableAssets.length )
+               window.pageStack.push(transferUi)
+            else
+               showError(qsTr("You don't have any assets, so you cannot make a transfer."))
+         }
       }
    }
    Component {

@@ -98,6 +98,7 @@ MainView {
             helperText: defaultHelperText
             characterLimit: 64
             onEditingFinished: nameAvailable()
+            transform: ShakeAnimation { id: nameShaker }
 
             property string defaultHelperText: qsTr("May contain letters, numbers and hyphens.\n" +
                                                     "Must start with a letter and end with a letter or number.")
@@ -139,7 +140,7 @@ MainView {
                   wallet.account.name = nameField.text
 
                if( !nameField.nameAvailable() )
-                  return
+                  return nameShaker.shake()
 
                if( passwordField.password.length < 1 ) {
                   passwordField.shake()
