@@ -619,10 +619,7 @@ namespace bts { namespace blockchain {
 
    void pay_fee_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-#ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_4_28_FORK_BLOCK_NUM has passed
-#endif
-      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_28_FORK_BLOCK_NUM );
+      FC_ASSERT( !"This operation is not enabled yet!" );
 
       eval_state._max_fee[this->amount.asset_id] += this->amount.amount;
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
