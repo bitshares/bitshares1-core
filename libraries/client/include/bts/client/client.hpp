@@ -2,6 +2,7 @@
 
 #include <bts/api/common_api.hpp>
 #include <bts/blockchain/chain_database.hpp>
+#include <bts/client/seed_nodes.hpp>
 #include <bts/net/node.hpp>
 #include <bts/rpc/rpc_client_api.hpp>
 #include <bts/rpc_stubs/common_api_client.hpp>
@@ -23,11 +24,6 @@ namespace bts { namespace cli {
 } };
 
 namespace bts { namespace client {
-
-    static const auto SEED_NODES = std::vector<std::string>
-    {
-        std::string( BTS_NET_TEST_SEED_IP ) + ":" + std::to_string( BTS_NET_TEST_P2P_PORT + BTS_TEST_NETWORK_VERSION )
-    };
 
     using namespace bts::blockchain;
     using namespace bts::wallet;
