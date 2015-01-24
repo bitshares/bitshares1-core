@@ -2378,7 +2378,7 @@ namespace bts { namespace blockchain {
    omarket_order chain_database::get_lowest_ask_record( const asset_id_type quote_id, const asset_id_type base_id )
    {
       omarket_order result;
-      auto itr = my->_ask_db.lower_bound( market_index_key( price(0,quote_id,base_id) ) );
+      auto itr = my->_ask_db.lower_bound( market_index_key{ price( 0, quote_id, base_id ) } );
       if( itr.valid() )
       {
          auto market_index = itr.key();
@@ -2577,7 +2577,7 @@ namespace bts { namespace blockchain {
        //We dance around like this because the _bid_db sorts the bids backwards, so we must iterate it backwards.
        { // absolute bids
           const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );
-          auto market_itr = my->_bid_db.lower_bound( market_index_key( next_pair ) );
+          auto market_itr = my->_bid_db.lower_bound( market_index_key{ next_pair } );
           if( market_itr.valid() )   --market_itr;
           else market_itr = my->_bid_db.last();
 
@@ -2600,7 +2600,7 @@ namespace bts { namespace blockchain {
        }
        { // relative bids
           const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );
-          auto market_itr = my->_relative_bid_db.lower_bound( market_index_key( next_pair ) );
+          auto market_itr = my->_relative_bid_db.lower_bound( market_index_key{ next_pair } );
           if( market_itr.valid() )   --market_itr;
           else market_itr = my->_relative_bid_db.last();
 
@@ -2645,7 +2645,7 @@ namespace bts { namespace blockchain {
        vector<market_order> results;
        //We dance around like this because the database sorts the shorts backwards, so we must iterate it backwards.
        const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );
-       auto market_itr = my->_short_db.lower_bound( market_index_key( next_pair ) );
+       auto market_itr = my->_short_db.lower_bound( market_index_key{ next_pair } );
        if( market_itr.valid() )   --market_itr;
        else market_itr = my->_short_db.last();
 
@@ -2684,7 +2684,7 @@ namespace bts { namespace blockchain {
 
        vector<market_order> results;
 
-       auto market_itr  = my->_collateral_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
+       auto market_itr  = my->_collateral_db.lower_bound( market_index_key{ price( 0, quote_asset_id, base_asset_id ) } );
        while( market_itr.valid() )
        {
           auto key = market_itr.key();
@@ -2728,14 +2728,13 @@ namespace bts { namespace blockchain {
        return optional<market_order>();
    } FC_CAPTURE_AND_RETHROW( (key) ) }
 
-
-   share_type           chain_database::get_asset_collateral( const string& symbol )
+   share_type chain_database::get_asset_collateral( const string& symbol )
    { try {
-       asset_id_type quote_asset_id = get_asset_id( symbol);
+       asset_id_type quote_asset_id = get_asset_id( symbol );
        asset_id_type base_asset_id = 0;
-       auto total = share_type(0);
+       auto total = share_type( 0 );
 
-       auto market_itr = my->_collateral_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
+       auto market_itr = my->_collateral_db.lower_bound( market_index_key{ price( 0, quote_asset_id, base_asset_id ) } );
        while( market_itr.valid() )
        {
            auto key = market_itr.key();
@@ -2768,7 +2767,7 @@ namespace bts { namespace blockchain {
 
        vector<market_order> results;
        { // absolute asks
-          auto market_itr  = my->_ask_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
+          auto market_itr  = my->_ask_db.lower_bound( market_index_key{ price( 0, quote_asset_id, base_asset_id ) } );
           while( market_itr.valid() )
           {
              auto key = market_itr.key();
@@ -2789,7 +2788,7 @@ namespace bts { namespace blockchain {
           }
        }
        { // relative asks
-          auto market_itr  = my->_relative_ask_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
+          auto market_itr  = my->_relative_ask_db.lower_bound( market_index_key{ price( 0, quote_asset_id, base_asset_id ) } );
           while( market_itr.valid() )
           {
              auto key = market_itr.key();
@@ -2993,7 +2992,7 @@ namespace bts { namespace blockchain {
                                                                    market_history_key::time_granularity_enum granularity)
    {
       time_point_sec end_time = start_time + duration;
-      auto record_itr = my->_market_history_db.lower_bound( market_history_key(quote_id, base_id, granularity, start_time) );
+      auto record_itr = my->_market_history_db.lower_bound( market_history_key{ quote_id, base_id, granularity, start_time } );
       market_history_points history;
       auto base = get_asset_record(base_id);
       auto quote = get_asset_record(quote_id);
@@ -3006,14 +3005,16 @@ namespace bts { namespace blockchain {
              && record_itr.key().granularity == granularity
              && record_itr.key().timestamp <= end_time )
       {
-        history.push_back( {
-                             record_itr.key().timestamp,
-                             fc::variant(string(record_itr.value().highest_bid.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
-                             fc::variant(string(record_itr.value().lowest_ask.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
-                             fc::variant(string(record_itr.value().opening_price.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
-                             fc::variant(string(record_itr.value().closing_price.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
-                             record_itr.value().volume
-                           } );
+        const market_history_point point
+        {
+            record_itr.key().timestamp,
+            fc::variant(string(record_itr.value().highest_bid.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
+            fc::variant(string(record_itr.value().lowest_ask.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
+            fc::variant(string(record_itr.value().opening_price.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
+            fc::variant(string(record_itr.value().closing_price.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
+            record_itr.value().volume
+        };
+        history.push_back( std::move( point ) );
         ++record_itr;
       }
 

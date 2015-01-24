@@ -29,14 +29,15 @@ namespace bts { namespace blockchain { namespace detail {
           // The order book is sorted from low to high price. So to get the last item (highest bid),
           // we need to go to the first item in the next market class and then back up one
           const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );
-          _bid_itr           = _db_impl._bid_db.lower_bound( market_index_key( next_pair ) );
-          _ask_itr           = _db_impl._ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
-          _relative_bid_itr  = _db_impl._relative_bid_db.lower_bound( market_index_key( next_pair ) );
-          _relative_ask_itr  = _db_impl._relative_ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
-          _short_itr         = _db_impl._short_db.lower_bound( market_index_key( next_pair ) );
-          _collateral_itr    = _db_impl._collateral_db.lower_bound( market_index_key( next_pair ) );
+          _bid_itr           = _db_impl._bid_db.lower_bound( market_index_key{ next_pair } );
+          _ask_itr           = _db_impl._ask_db.lower_bound( market_index_key{ price( 0, quote_id, base_id ) } );
+          _relative_bid_itr  = _db_impl._relative_bid_db.lower_bound( market_index_key{ next_pair } );
+          _relative_ask_itr  = _db_impl._relative_ask_db.lower_bound( market_index_key{ price( 0, quote_id, base_id ) } );
+          _short_itr         = _db_impl._short_db.lower_bound( market_index_key{ next_pair } );
+          _collateral_itr    = _db_impl._collateral_db.lower_bound( market_index_key{ next_pair } );
 
-          _collateral_expiration_itr  = _db_impl._collateral_expiration_index.lower_bound( { quote_id, time_point(), market_index_key( price(0,quote_id,base_id) ) } );
+          const expiration_index exp_index{ quote_id, time_point_sec(), market_index_key{ price( 0, quote_id, base_id ) } };
+          _collateral_expiration_itr  = _db_impl._collateral_expiration_index.lower_bound( exp_index );
 
           int last_orders_filled = -1;
           asset trading_volume(0, base_id);
@@ -419,7 +420,7 @@ namespace bts { namespace blockchain { namespace detail {
       call_collateral.amount /= 4;
       auto cover_price = mtrx.bid_paid / call_collateral;
 
-      market_index_key cover_index( cover_price, _current_bid->get_owner() );
+      const market_index_key cover_index{ cover_price, _current_bid->get_owner() };
       auto ocover_record = _pending_state->get_collateral_record( cover_index );
 
       if( NOT ocover_record ) ocover_record = collateral_record();
@@ -809,12 +810,13 @@ namespace bts { namespace blockchain { namespace detail {
   {
           if( trading_volume.amount > 0 && get_next_bid() && get_next_ask() )
           {
-            market_history_key key(_quote_id, _base_id, market_history_key::each_block, _db_impl._head_block_header.timestamp);
-            market_history_record new_record(_current_bid->get_price(),
-                                            _current_ask->get_price(),
-                                            opening_price,
-                                            closing_price,
-                                            trading_volume.amount);
+            const market_history_key key{ _quote_id, _base_id, market_history_key::each_block, timestamp };
+
+            const market_history_record new_record{ _current_bid->get_price(),
+                                                    _current_ask->get_price(),
+                                                    opening_price,
+                                                    closing_price,
+                                                    trading_volume.amount };
 
             //LevelDB iterators are dumb and don't support proper past-the-end semantics.
             auto last_key_itr = _db_impl._market_history_db.lower_bound(key);
@@ -822,8 +824,6 @@ namespace bts { namespace blockchain { namespace detail {
               last_key_itr = _db_impl._market_history_db.last();
             else
               --last_key_itr;
-
-            key.timestamp = timestamp;
 
             //Unless the previous record for this market is the same as ours...
             if( (!(last_key_itr.valid()
@@ -837,8 +837,8 @@ namespace bts { namespace blockchain { namespace detail {
             }
 
             fc::time_point_sec start_of_this_hour = timestamp - (timestamp.sec_since_epoch() % (60*60));
-            market_history_key old_key(_quote_id, _base_id, market_history_key::each_hour, start_of_this_hour);
-            if( auto opt = _db_impl._market_history_db.fetch_optional(old_key) )
+            market_history_key old_key{ _quote_id, _base_id, market_history_key::each_hour, start_of_this_hour };
+            if( auto opt = _db_impl._market_history_db.fetch_optional( old_key ) )
             {
               auto old_record = *opt;
               old_record.volume += new_record.volume;
@@ -854,7 +854,7 @@ namespace bts { namespace blockchain { namespace detail {
               _pending_state->market_history[old_key] = new_record;
 
             fc::time_point_sec start_of_this_day = timestamp - (timestamp.sec_since_epoch() % (60*60*24));
-            old_key = market_history_key(_quote_id, _base_id, market_history_key::each_day, start_of_this_day);
+            old_key = market_history_key{ _quote_id, _base_id, market_history_key::each_day, start_of_this_day };
             if( auto opt = _db_impl._market_history_db.fetch_optional(old_key) )
             {
               auto old_record = *opt;

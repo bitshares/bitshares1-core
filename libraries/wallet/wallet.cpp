@@ -1987,7 +1987,6 @@ namespace detail {
            const string& account_to_publish_under,
            double amount_per_xts,
            const string& amount_asset_symbol,
-           bool force_settle,
            bool sign )
    { try {
       FC_ASSERT( is_open() );
@@ -2014,11 +2013,8 @@ namespace detail {
       FC_ASSERT( base_asset_record.valid() );
       FC_ASSERT( quote_asset_record.valid() );
 
-      feed_price quote_price_shares;
       const double ratio = (amount_per_xts * quote_asset_record->precision) / base_asset_record->precision;
-      price& standard_price = quote_price_shares;
-      standard_price = price( ratio, quote_asset_record->id, base_asset_record->id );
-      quote_price_shares.force_settle = force_settle;
+      const price quote_price_shares( ratio, quote_asset_record->id, base_asset_record->id );
 
       idump( (quote_price_shares) );
       if( amount_per_xts > 0 )

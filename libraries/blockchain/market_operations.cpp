@@ -359,15 +359,15 @@ namespace bts { namespace blockchain {
 
       if( current_cover->payoff_balance > 0 )
       {
-         const auto new_call_price = asset( current_cover->payoff_balance, delta_amount.asset_id)
-                                     / asset( (current_cover->collateral_balance*3)/4, cover_index.order_price.base_asset_id );
+         const price new_call_price = asset( current_cover->payoff_balance, delta_amount.asset_id)
+                                      / asset( (current_cover->collateral_balance*3)/4,
+                                      cover_index.order_price.base_asset_id );
 
-         if( this->new_cover_price && (*this->new_cover_price > new_call_price) )
-            eval_state._current_state->store_collateral_record( market_index_key( *this->new_cover_price, this->cover_index.owner ),
-                                                                *current_cover );
-         else
-            eval_state._current_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner ),
-                                                                *current_cover );
+         market_index_key index{ new_call_price, this->cover_index.owner };
+         if( this->new_cover_price.valid() && *this->new_cover_price > new_call_price )
+             index.order_price = *this->new_cover_price;
+
+         eval_state._current_state->store_collateral_record( index, *current_cover );
       }
       else // withdraw the collateral to the transaction to be deposited at owners discretion / cover fees
       {
@@ -403,8 +403,9 @@ namespace bts { namespace blockchain {
       const auto new_call_price = asset( current_cover->payoff_balance, cover_index.order_price.quote_asset_id )
                                   / asset( (current_cover->collateral_balance*2)/3, cover_index.order_price.base_asset_id );
 
-      eval_state._current_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
-                                                          *current_cover );
+      const market_index_key index{ new_call_price, this->cover_index.owner };
+
+      eval_state._current_state->store_collateral_record( index, *current_cover );
    }
 
 } } // bts::blockchain
