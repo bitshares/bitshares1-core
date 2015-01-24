@@ -159,7 +159,7 @@ namespace bts { namespace blockchain {
             bts::db::cached_level_map<market_index_key, collateral_record>              _collateral_db;
             set<expiration_index>                                                       _collateral_expiration_index;
 
-            bts::db::fast_level_map<uint32_t, std::vector<market_transaction>>          _market_transactions_db;
+            bts::db::cached_level_map<uint32_t, std::vector<market_transaction>>        _market_transactions_db;
             bts::db::cached_level_map<std::pair<asset_id_type,asset_id_type>, market_status> _market_status_db;
             bts::db::cached_level_map<market_history_key, market_history_record>        _market_history_db;
 

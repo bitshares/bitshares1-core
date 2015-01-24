@@ -2,6 +2,7 @@
 
 #include <bts/api/common_api.hpp>
 #include <bts/blockchain/chain_database.hpp>
+#include <bts/client/seed_nodes.hpp>
 #include <bts/net/node.hpp>
 #include <bts/rpc/rpc_client_api.hpp>
 #include <bts/rpc_stubs/common_api_client.hpp>
@@ -23,27 +24,6 @@ namespace bts { namespace cli {
 } };
 
 namespace bts { namespace client {
-
-    static const auto SEED_NODES = std::vector<std::string>
-    {
-        "46.226.109.66:1776",
-        "54.77.51.177:1776",
-        "54.79.27.224:1776",
-        "61.129.33.213:1776",
-        "84.238.140.192:42577",
-        "85.214.53.224:1776",
-        "95.85.33.16:8764",
-        "104.131.35.149:1776",
-        "106.185.26.162:1776",
-        "178.62.50.61:1776",
-        "178.62.50.61:1777",
-        "178.62.50.61:1778",
-        "178.62.50.61:1779",
-        "178.62.157.161:1776",
-        "180.153.142.120:1777",
-        "185.25.22.21:1776",
-        "188.226.195.137:60696"
-    };
 
     using namespace bts::blockchain;
     using namespace bts::wallet;

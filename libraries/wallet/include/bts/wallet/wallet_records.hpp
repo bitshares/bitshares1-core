@@ -16,25 +16,6 @@
 namespace bts { namespace wallet {
    using namespace bts::blockchain;
 
-   enum account_key_type
-   {
-       owner_key    = 0,
-       active_key   = 1,
-       signing_key  = 2
-   };
-
-   /**
-    *  The vote selection method helps enhance user privacy by
-    *  not tying their accounts together.
-    */
-   enum vote_selection_method
-   {
-      vote_none         = 0,
-      vote_all          = 1,
-      vote_random       = 2,
-      vote_recommended  = 3
-   };
-
    enum wallet_record_type_enum
    {
       master_key_record_type     = 0,
@@ -271,17 +252,6 @@ namespace bts { namespace wallet {
 
 } } // bts::wallet
 
-FC_REFLECT_ENUM( bts::wallet::account_key_type,
-        (owner_key)
-        (active_key)
-        (signing_key)
-        )
-FC_REFLECT_ENUM( bts::wallet::vote_selection_method,
-        (vote_none)
-        (vote_all)
-        (vote_random)
-        (vote_recommended)
-        )
 FC_REFLECT( bts::wallet::escrow_summary,
             (creating_transaction_id)
             (balance_id)
