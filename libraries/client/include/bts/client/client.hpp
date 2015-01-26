@@ -48,6 +48,7 @@ namespace bts { namespace client {
       : enable(false),
         rpc_endpoint(fc::ip::endpoint::from_string("127.0.0.1:0")),
         httpd_endpoint(fc::ip::endpoint::from_string("127.0.0.1:0")),
+        encrypted_rpc_endpoint(fc::ip::endpoint::from_string("127.0.0.1:0")),
         htdocs("./htdocs")
       {}
 
@@ -56,6 +57,8 @@ namespace bts { namespace client {
       std::string      rpc_password;
       fc::ip::endpoint rpc_endpoint;
       fc::ip::endpoint httpd_endpoint;
+      fc::ip::endpoint encrypted_rpc_endpoint;
+      std::string      encrypted_rpc_wif_key;
       fc::path         htdocs;
 
       bool is_valid() const; /* Currently just checks if rpc port is set */
@@ -199,7 +202,8 @@ namespace bts { namespace client {
 extern const std::string BTS_MESSAGE_MAGIC;
 
 FC_REFLECT(bts::client::client_notification, (timestamp)(message)(signature) )
-FC_REFLECT( bts::client::rpc_server_config, (enable)(rpc_user)(rpc_password)(rpc_endpoint)(httpd_endpoint)(htdocs) )
+FC_REFLECT( bts::client::rpc_server_config, (enable)(rpc_user)(rpc_password)(rpc_endpoint)(httpd_endpoint)
+            (encrypted_rpc_endpoint)(encrypted_rpc_wif_key)(htdocs) )
 FC_REFLECT( bts::client::chain_server_config, (enabled)(listen_port) )
 FC_REFLECT( bts::client::config,
         (logging)

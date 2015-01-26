@@ -111,6 +111,9 @@ Given(/^I am a Light Wallet Server named (\w+)$/) do |name|
   config = @current_actor.node.get_config
   config['rpc']['enable'] = true
   config['faucet_account_name'] = name
+  config['relay_account_name'] = name
+  config['rpc']['encrypted_rpc_endpoint'] = "127.0.0.1:5656"
+  config['rpc']['encrypted_rpc_wif_key'] = "5K9kAzDG3YPGQwD1GLHjuw3NaUQQLeJFiZ4GCVBWd3HKpb29UJi"
   config['light_relay_fee'] = 25000
   @current_actor.node.stop
   @current_actor.node.save_config(config)

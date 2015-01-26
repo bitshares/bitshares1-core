@@ -4,6 +4,9 @@
 #include <bts/rpc/exceptions.hpp>
 #include <bts/rpc/rpc_server.hpp>
 #include <bts/utilities/git_revision.hpp>
+#include <bts/utilities/key_conversion.hpp>
+#include <bts/utilities/padding_ostream.hpp>
+#include <bts/net/stcp_socket.hpp>
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/trim.hpp>
@@ -14,6 +17,7 @@
 #include <fc/io/json.hpp>
 #include <fc/network/http/server.hpp>
 #include <fc/network/tcp_socket.hpp>
+#include <fc/crypto/digest.hpp>
 #include <fc/reflect/variant.hpp>
 #include <fc/rpc/json_connection.hpp>
 #include <fc/thread/thread.hpp>
@@ -41,7 +45,9 @@ namespace bts { namespace rpc {
          bts::client::client*                              _client;
          std::shared_ptr<fc::http::server>                 _httpd;
          std::shared_ptr<fc::tcp_server>                   _tcp_serv;
+         std::shared_ptr<fc::tcp_server>                   _stcp_serv;
          fc::future<void>                                  _accept_loop_complete;
+         fc::future<void>                                  _encrypted_accept_loop_complete;
          rpc_server*                                       _self;
          fc::shared_ptr<fc::promise<void>>                 _on_quit_promise;
          fc::thread*                                       _thread;
@@ -414,6 +420,49 @@ namespace bts { namespace rpc {
            }
          }
 
+         void encrypted_accept_loop(const bts::blockchain::private_key_type& server_key)
+         {
+           while( !_encrypted_accept_loop_complete.canceled() )
+           {
+              net::stcp_socket_ptr sock = std::make_shared<net::stcp_socket>();
+              try
+              {
+                _stcp_serv->accept( sock->get_socket() );
+                sock->accept();
+                auto signature = server_key.sign_compact(fc::digest(sock->get_shared_secret()));
+                auto padded_signature = fc::raw::pack(signature);
+                while( padded_signature.size() % 16 )
+                   padded_signature.push_back(0);
+                sock->write(padded_signature.data(), padded_signature.size());
+              }
+              catch (const fc::canceled_exception&)
+              {
+                throw;
+              }
+              catch ( const fc::exception& e )
+              {
+                elog( "fatal: error opening socket for rpc connection: ${e}", ("e", e.to_detail_string() ) );
+                continue;
+              }
+
+              auto buf_istream = std::make_shared<fc::buffered_istream>( sock );
+              auto buf_ostream = std::make_shared<utilities::padding_ostream<>>( sock );
+
+              auto json_con = std::make_shared<fc::rpc::json_connection>( std::move(buf_istream),
+                                                                          std::move(buf_ostream) );
+              register_methods( json_con );
+              auto receipt = _open_json_connections.insert(json_con);
+
+              json_con->exec().on_complete([this,receipt,sock](fc::exception_ptr e){
+                  ilog("json_con exited");
+                  sock->close();
+                  _open_json_connections.erase(receipt.first);
+                  if( e )
+                    elog("Connection exited with error: ${error}", ("error", e->what()));
+              });
+           }
+         }
+
          void register_methods( fc::rpc::json_connection_ptr con )
          {
             ilog( "login!" );
@@ -731,6 +780,55 @@ namespace bts { namespace rpc {
       my->_httpd->on_request([m](const fc::http::request& r, const fc::http::server::response& s){ m->handle_request(r, s); });
       return true;
     } FC_RETHROW_EXCEPTIONS(warn, "attempting to configure rpc server ${port}", ("port", cfg.rpc_endpoint)("config", cfg));
+  }
+
+  bool rpc_server::configure_encrypted_rpc(const rpc_server_config& cfg)
+  {
+    if (!cfg.is_valid())
+      return false;
+    if(cfg.encrypted_rpc_wif_key.empty())
+    {
+       std::cerr << ("No WIF");
+       return false;
+    }
+    auto server_key = utilities::wif_to_key(cfg.encrypted_rpc_wif_key);
+    if(!server_key.valid())
+    {
+       std::cerr << ("Invalid WIF");
+       return false;
+    }
+
+    try
+    {
+       my->_config = cfg;
+       my->_stcp_serv = std::make_shared<fc::tcp_server>();
+       int attempts = 0;
+       bool success = false;
+
+       while (!success) {
+          try
+          {
+             my->_stcp_serv->listen( cfg.encrypted_rpc_endpoint );
+             success = true;
+          }
+          catch (fc::exception& e)
+          {
+             FC_ASSERT(++attempts < 30, "Unable to bind encrypted RPC port; refusing to continue.");
+             ulog("Failed to bind encrypted RPC port ${endpoint}; waiting 10 seconds and retrying (attempt ${attempt}/30)",
+                  ("endpoint", cfg.encrypted_rpc_endpoint)("attempt", attempts));
+             elog("Failed to bind encrypted RPC port ${endpoint} with error ${e}", ("endpoint", cfg.encrypted_rpc_endpoint)("e", e.to_detail_string()));
+          }
+          if (!success)
+             fc::usleep(fc::seconds(10));
+       }
+
+       ilog( "listening for encrypted json rpc connections on port ${port}", ("port",my->_stcp_serv->get_port()) );
+
+       my->_encrypted_accept_loop_complete = fc::async( [=]{ my->encrypted_accept_loop(*server_key); }, "rpc_server accept_loop" );
+
+       return true;
+    } FC_RETHROW_EXCEPTIONS( warn, "attempting to configure rpc server ${port}", ("port",cfg.encrypted_rpc_endpoint)("config",cfg) );
+
   }
 
   fc::variant rpc_server::direct_invoke_method(const std::string& method_name, const fc::variants& arguments)
