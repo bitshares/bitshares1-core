@@ -58,7 +58,7 @@ default (unlocked) >>> wallet_transfer_from_with_escrow  1000 XTS sender sender 
   "is_market": false,
   "trx": {
     "expiration": "2014-06-20T15:41:00",
-    "slate_id": null,
+    "reserved": null,
     "operations": [{
         "type": "deposit_op_type",
         "data": {
@@ -157,7 +157,7 @@ default (unlocked) >>> wallet_release_escrow sender XTSKrhkPnQToEZfF4JXDztmKbFUR
   "is_market": false,
   "trx": {
     "expiration": "2014-06-20T15:41:10",
-    "slate_id": null,
+    "reserved": null,
     "operations": [{
         "type": "withdraw_op_type",
         "data": {
@@ -239,7 +239,7 @@ default (unlocked) >>> wallet_release_escrow receiver XTSKrhkPnQToEZfF4JXDztmKbF
   "is_market": false,
   "trx": {
     "expiration": "2014-06-20T15:41:20",
-    "slate_id": null,
+    "reserved": null,
     "operations": [{
         "type": "withdraw_op_type",
         "data": {
@@ -320,7 +320,7 @@ default (unlocked) >>> wallet_release_escrow delegate0 XTSKrhkPnQToEZfF4JXDztmKb
   "is_market": false,
   "trx": {
     "expiration": "2014-06-20T15:41:30",
-    "slate_id": null,
+    "reserved": null,
     "operations": [{
         "type": "withdraw_op_type",
         "data": {
