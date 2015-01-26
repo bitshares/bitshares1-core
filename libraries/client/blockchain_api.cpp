@@ -1,5 +1,6 @@
 #include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/account_operations.hpp>
+#include <bts/blockchain/balance_operations.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/client/client.hpp>
 #include <bts/client/client_impl.hpp>
@@ -425,6 +426,39 @@ asset client_impl::blockchain_calculate_debt( const string& asset, bool include_
       asset_id = _chain_db->get_asset_id( asset );
 
    return _chain_db->calculate_debt( asset_id, include_interest );
+}
+
+int32_t client_impl::stats_unique_account_registrars()const
+{
+    map<balance_id_type, int32_t> counts;
+    const auto scan_trx = [&]( const transaction_record& rec )
+    {
+        auto registrations = 0;
+        auto withdrawals = 0;
+        for( auto op : rec.trx.operations)
+        {
+            if( op.type == register_account_op_type )
+                registrations++;
+        }
+        if( registrations > 0 )
+        {
+            for( auto op : rec.trx.operations)
+            {
+                if( op.type == withdraw_op_type )
+                {
+                    auto withdraw_op = op.as<withdraw_operation>();
+                    if( counts.find( withdraw_op.balance_id ) != counts.end() )
+                        counts[withdraw_op.balance_id] = registrations;
+                    else
+                        counts[withdraw_op.balance_id]++;
+                    break;
+                }
+            }
+        }
+    };
+
+    _chain_db->scan_transactions( scan_trx );
+    return counts.size();
 }
 
 bts::blockchain::blockchain_security_state client_impl::blockchain_get_security_state()const

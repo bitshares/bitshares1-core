@@ -43,13 +43,13 @@
       },
       {
         "method_name": "blockchain_calculate_debt",
-        "description": "Calculate the total amount of a market-issued asset that is owed to the network by open short positions",
+        "description": "calculate the total amount of a market-issued asset that is owed to the network by open short positions",
         "return_type": "asset",
         "parameters" : [
             {
               "name" : "asset",
               "type" : "string",
-              "description" : "asset ticker symbol or ID to calculate debt for"
+              "description" : "asset ticker symbol or id to calculate debt for"
             },
             {
               "name" : "include_interest",
@@ -62,6 +62,17 @@
         "prerequisites" : ["no_prerequisites"],
         "aliases" : ["debt", "calculate_debt"]
       },
+      {
+        "method_name": "stats_unique_account_registrars",
+        "description": "count the number of unique balances that have created accounts",
+        "return_type": "int32_t",
+        "parameters" : [
+        ],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
+      },
+
       {
         "method_name": "blockchain_is_synced",
         "description": "Returns true if the local blockchain is synced with the network; false otherwise",

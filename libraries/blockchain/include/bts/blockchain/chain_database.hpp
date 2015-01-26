@@ -279,6 +279,7 @@ namespace bts { namespace blockchain {
          void                               scan_balances( function<void( const balance_record& )> callback,
                                                            bool include_empty )const;
          void                               scan_objects( function<void( const object_record& )> callback )const;
+         void                               scan_transactions( const function<void( const transaction_record& )> callback )const;
 
          virtual optional<variant>          get_property( chain_property_enum property_id )const override;
          virtual void                       set_property( chain_property_enum property_id,
