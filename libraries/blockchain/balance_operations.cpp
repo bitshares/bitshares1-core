@@ -88,6 +88,15 @@ namespace bts { namespace blockchain {
       const odelegate_slate current_slate = eval_state._current_state->get_delegate_slate( slate_id );
       if( NOT current_slate.valid() )
       {
+#ifndef WIN32
+#warning [SOFTFORK] Remove this check after BTS_V0_6_2_FORK_BLOCK_NUM has passed
+#endif
+          if( eval_state._current_state->get_head_block_num() < BTS_V0_6_2_FORK_BLOCK_NUM )
+          {
+              for( const signed_int& delegate_id : this->slate.supported_delegates )
+                  eval_state.verify_delegate_id( abs( delegate_id ) );
+          }
+
          eval_state._current_state->store_delegate_slate( slate_id, slate );
       }
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
