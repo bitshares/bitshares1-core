@@ -161,15 +161,7 @@ namespace bts { namespace blockchain {
 
        if( eval_state._current_state->get_head_block_num() >= BTS_V0_6_0_FORK_BLOCK_NUM )
        {
-           if( asset_rec->is_user_issued() )
-           {
-               const string& symbol = asset_rec->symbol;
-               if( symbol.size() > 3 && symbol.find( "BIT" ) == 0 )
-               {
-                   const oasset_record victim_record = eval_state._current_state->get_asset_record( symbol.substr( 3 ) );
-                   FC_ASSERT( !victim_record.valid() || !victim_record->is_market_issued() );
-               }
-           }
+           FC_ASSERT( !eval_state._current_state->is_fraudulent_asset( *asset_rec ) );
        }
 
        if( eval_state._current_state->get_head_block_num() >= BTS_V0_5_0_FORK_BLOCK_NUM )

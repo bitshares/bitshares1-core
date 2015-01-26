@@ -52,4 +52,15 @@ share_type chain_interface::get_delegate_pay_rate_v1()const
     return base_record->collected_fees / (BTS_BLOCKCHAIN_BLOCKS_PER_DAY * 14);
 }
 
+bool chain_interface::is_fraudulent_asset( const asset_record& suspect_record )const
+{ try {
+    if( !suspect_record.is_user_issued() ) return false;
+
+    const string& symbol = suspect_record.symbol;
+    if( symbol.size() <= 3 || symbol.find( "BIT" ) != 0 ) return false;
+
+    const oasset_record victim_record = get_asset_record( symbol.substr( 3 ) );
+    return victim_record.valid() && victim_record->is_market_issued();
+} FC_CAPTURE_AND_RETHROW( (suspect_record) ) }
+
 } } // bts::blockchain
