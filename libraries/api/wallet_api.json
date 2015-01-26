@@ -792,8 +792,8 @@
               "default_value" : ""
             },
             {
-              "name" : "vote_method",
-              "type" : "vote_selection_method",
+              "name" : "strategy",
+              "type" : "vote_strategy",
               "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
               "default_value" : "vote_recommended"
             }
@@ -832,8 +832,8 @@
               "default_value" : ""
             },
             {
-              "name" : "vote_method",
-              "type" : "vote_selection_method",
+              "name" : "strategy",
+              "type" : "vote_strategy",
               "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
               "default_value" : "vote_recommended"
             }
@@ -873,8 +873,8 @@
               "default_value" : ""
             },
             {
-              "name" : "vote_method",
-              "type" : "vote_selection_method",
+              "name" : "strategy",
+              "type" : "vote_strategy",
               "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
               "default_value" : "vote_recommended"
             }
@@ -915,8 +915,8 @@
               "default_value" : ""
             },
             {
-              "name" : "vote_method",
-              "type" : "vote_selection_method",
+              "name" : "strategy",
+              "type" : "vote_strategy",
               "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
               "default_value" : "vote_recommended"
             }
@@ -982,8 +982,8 @@
               "description": "List of possible addresses for signatures"
             },
             {
-              "name" : "vote_method",
-              "type" : "vote_selection_method",
+              "name" : "strategy",
+              "type" : "vote_strategy",
               "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
               "default_value" : "vote_none"
             }
@@ -1019,8 +1019,8 @@
               "description": "address or account to receive funds"
             },
             {
-              "name" : "vote_method",
-              "type" : "vote_selection_method",
+              "name" : "strategy",
+              "type" : "vote_strategy",
               "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
               "default_value" : "vote_none"
             },
@@ -1069,8 +1069,8 @@
               "description": "address or account to receive funds"
             },
             {
-              "name" : "vote_method",
-              "type" : "vote_selection_method",
+              "name" : "strategy",
+              "type" : "vote_strategy",
               "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
               "default_value" : "vote_none"
             },
@@ -1121,8 +1121,8 @@
               "description": "address to receive funds"
             },
             {
-              "name" : "vote_method",
-              "type" : "vote_selection_method",
+              "name" : "strategy",
+              "type" : "vote_strategy",
               "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
               "default_value" : "vote_none"
             },
@@ -1273,8 +1273,8 @@
               "default_value" : ""
             },
             {
-              "name" : "vote_method",
-              "type" : "vote_selection_method",
+              "name" : "strategy",
+              "type" : "vote_strategy",
               "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
               "default_value" : "vote_recommended"
             }
@@ -1319,8 +1319,8 @@
               "default_value" : ""
             },
             {
-              "name" : "vote_method",
-              "type" : "vote_selection_method",
+              "name" : "strategy",
+              "type" : "vote_strategy",
               "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
               "default_value" : "vote_recommended"
             }
@@ -2567,8 +2567,8 @@
                   "default_value": ""
                },
                {
-                 "name" : "vote_method",
-                 "type" : "vote_selection_method",
+                 "name" : "strategy",
+                 "type" : "vote_strategy",
                  "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
                  "default_value" : "vote_all"
                },
