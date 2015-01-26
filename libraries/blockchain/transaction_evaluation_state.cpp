@@ -107,10 +107,11 @@ namespace bts { namespace blockchain {
       for( const auto& del_vote : net_delegate_votes )
       {
          auto del_rec = _current_state->get_account_record( del_vote.first );
-         FC_ASSERT( !!del_rec );
-         del_rec->adjust_votes_for( del_vote.second );
-
-         _current_state->store_account_record( *del_rec );
+         if( !!del_rec )
+         {
+             del_rec->adjust_votes_for( del_vote.second );
+             _current_state->store_account_record( *del_rec );
+         }
       }
    } FC_CAPTURE_AND_RETHROW() }
 
