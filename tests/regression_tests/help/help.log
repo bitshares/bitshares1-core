@@ -30,7 +30,7 @@ blockchain_get_block_count
 blockchain_get_block_hash <block_number>                                                            
 blockchain_get_block_signee <block>                                                                 
 blockchain_get_block_transactions <block>                                                           
-blockchain_get_delegate_slot_records <delegate_name> [count]                                        
+blockchain_get_delegate_slot_records <delegate_name> [limit]                                        
 blockchain_get_edges <from> [to] [name]                                                             
 blockchain_get_feeds_for_asset <asset>                                                              
 blockchain_get_feeds_from_delegate <delegate_name>                                                  
@@ -60,7 +60,7 @@ blockchain_list_recently_updated_accounts
 blockchain_market_get_asset_collateral <symbol>                                                     
 blockchain_market_list_asks <quote_symbol> <base_symbol> [limit]                                    
 blockchain_market_list_bids <quote_symbol> <base_symbol> [limit]                                    
-blockchain_market_list_covers <quote_symbol> [limit]                                                
+blockchain_market_list_covers <quote_symbol> [base_symbol] [limit]                                  
 blockchain_market_list_shorts <quote_symbol> [limit]                                                
 blockchain_market_order_book <quote_symbol> <base_symbol> [limit]                                   
 blockchain_market_order_history <quote_symbol> <base_symbol> [skip_count] [limit] [owner]           
@@ -169,7 +169,7 @@ wallet_asset_issue <amount> <symbol> <to_account_name> [memo_message]
 wallet_asset_update <symbol> [name] [description] [public_data] [maximum_share_supply] [precision] [issuer_transaction_fee] [flags] [issuer_permissions] [issuer_account_name] [required_sigs] [authority] 
 wallet_backup_create <json_filename>                                                                
 wallet_backup_restore <json_filename> <wallet_name> <imported_wallet_passphrase>                    
-wallet_balance_set_vote_info <balance_id> [voter_address] [vote_method] [sign_and_broadcast] [builder_path] 
+wallet_balance_set_vote_info <balance_id> [voter_address] [strategy] [sign_and_broadcast] [builder_path] 
 wallet_builder_add_signature <builder> [broadcast] [builder_path]                                   
 wallet_builder_file_add_signature [broadcast] [builder_path]                                        
 wallet_burn <amount_to_burn> <asset_symbol> <from_account_name> <for_or_against> <to_account_name> [public_message] [anonymous] 
@@ -223,9 +223,9 @@ wallet_market_submit_ask <from_account_name> <sell_quantity> <sell_quantity_symb
 wallet_market_submit_bid <from_account_name> <quantity> <quantity_symbol> <base_price> <base_symbol> [allow_stupid_bid] 
 wallet_market_submit_relative_ask <from_account_name> <sell_quantity> <sell_quantity_symbol> <relative_ask_price> <ask_price_symbol> [limit_ask_price] 
 wallet_market_submit_short <from_account_name> <short_collateral> <collateral_symbol> <interest_rate> <quote_symbol> [short_price_limit] 
-wallet_multisig_deposit <amount> <symbol> <from_name> <m> <addresses> [vote_method]                 
+wallet_multisig_deposit <amount> <symbol> <from_name> <m> <addresses> [strategy]                    
 wallet_multisig_get_balance_id <symbol> <m> <addresses>                                             
-wallet_multisig_withdraw_start <amount> <symbol> <from> <to_address> [vote_method] [builder_path]   
+wallet_multisig_withdraw_start <amount> <symbol> <from> <to_address> [strategy] [builder_path]      
 wallet_object_create <account> [user_data] [m] [owners]                                             
 wallet_object_list <account>                                                                        
 wallet_object_transfer <paying_account_name> <object_id> <m> <owners> [sign_and_broadcast]          
@@ -256,14 +256,14 @@ wallet_set_transaction_fee <fee>
 wallet_set_transaction_scanning <enabled>                                                           
 wallet_sign_hash <signer> <hash>                                                                    
 wallet_transaction_history_experimental [account_name]                                              
-wallet_transfer <amount_to_transfer> <asset_symbol> <from_account_name> <to_account_name> [memo_message] [vote_method] 
-wallet_transfer_from <amount_to_transfer> <asset_symbol> <paying_account_name> <from_account_name> <to_account_name> [memo_message] [vote_method] 
-wallet_transfer_from_with_escrow <amount_to_transfer> <asset_symbol> <paying_account_name> <from_account_name> <to_account_name> <escrow_account_name> [agreement] [memo_message] [vote_method] 
-wallet_transfer_to_address <amount_to_transfer> <asset_symbol> <from_account_name> <to_address> [memo_message] [vote_method] 
-wallet_transfer_to_legacy_address <amount_to_transfer> <asset_symbol> <from_account_name> <to_address> [memo_message] [vote_method] 
-wallet_transfer_to_public_account <amount_to_transfer> <asset_symbol> <from_account_name> <to_account_name> [memo_message] [vote_method] 
+wallet_transfer <amount_to_transfer> <asset_symbol> <from_account_name> <to_account_name> [memo_message] [strategy] 
+wallet_transfer_from <amount_to_transfer> <asset_symbol> <paying_account_name> <from_account_name> <to_account_name> [memo_message] [strategy] 
+wallet_transfer_from_with_escrow <amount_to_transfer> <asset_symbol> <paying_account_name> <from_account_name> <to_account_name> <escrow_account_name> [agreement] [memo_message] [strategy] 
+wallet_transfer_to_address <amount_to_transfer> <asset_symbol> <from_account_name> <to_address> [memo_message] [strategy] 
+wallet_transfer_to_legacy_address <amount_to_transfer> <asset_symbol> <from_account_name> <to_address> [memo_message] [strategy] 
+wallet_transfer_to_public_account <amount_to_transfer> <asset_symbol> <from_account_name> <to_account_name> [memo_message] [strategy] 
 wallet_unlock <timeout> <passphrase>                                                                
 wallet_verify_titan_deposit <transaction_id_prefix>                                                 
-wallet_withdraw_from_address <amount> <symbol> <from_address> <to> [vote_method] [sign_and_broadcast] [builder_path] 
-wallet_withdraw_from_legacy_address <amount> <symbol> <from_address> <to> [vote_method] [sign_and_broadcast] [builder_path]
+wallet_withdraw_from_address <amount> <symbol> <from_address> <to> [strategy] [sign_and_broadcast] [builder_path] 
+wallet_withdraw_from_legacy_address <amount> <symbol> <from_address> <to> [strategy] [sign_and_broadcast] [builder_path]
 (wallet closed) >>> quit
