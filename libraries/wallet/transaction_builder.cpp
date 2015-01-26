@@ -1,3 +1,4 @@
+#include <bts/wallet/config.hpp>
 #include <bts/wallet/exceptions.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/wallet/wallet_impl.hpp>
@@ -451,6 +452,9 @@ transaction_builder& transaction_builder::submit_bid(const wallet_account_record
    deduct_balance(from_account.owner_address(), cost);
    trx.bid(cost, quote_price, order_key);
 
+   if( trx.expiration == time_point_sec() )
+       trx.expiration = blockchain::now() + WALLET_DEFAULT_MARKET_TRANSACTION_EXPIRATION_SEC;
+
    auto entry = ledger_entry();
    entry.from_account = from_account.owner_key;
    entry.to_account = order_key;
@@ -478,6 +482,9 @@ transaction_builder& transaction_builder::submit_relative_bid(const wallet_accou
    //Charge this account for the bid
    deduct_balance(from_account.owner_address(), sell_quantity);
    trx.relative_bid(sell_quantity, quote_price, limit, order_key);
+
+   if( trx.expiration == time_point_sec() )
+       trx.expiration = blockchain::now() + WALLET_DEFAULT_MARKET_TRANSACTION_EXPIRATION_SEC;
 
    auto entry = ledger_entry();
    entry.from_account = from_account.owner_key;
@@ -507,6 +514,9 @@ transaction_builder& transaction_builder::submit_ask(const wallet_account_record
    //Charge this account for the ask
    deduct_balance(from_account.owner_address(), cost);
    trx.ask(cost, quote_price, order_key);
+
+   if( trx.expiration == time_point_sec() )
+       trx.expiration = blockchain::now() + WALLET_DEFAULT_MARKET_TRANSACTION_EXPIRATION_SEC;
 
    auto entry = ledger_entry();
    entry.from_account = from_account.owner_key;
@@ -539,6 +549,9 @@ transaction_builder& transaction_builder::submit_relative_ask(const wallet_accou
    //Charge this account for the ask
    deduct_balance(from_account.owner_address(), cost);
    trx.relative_ask(cost, quote_price, limit, order_key);
+
+   if( trx.expiration == time_point_sec() )
+       trx.expiration = blockchain::now() + WALLET_DEFAULT_MARKET_TRANSACTION_EXPIRATION_SEC;
 
    auto entry = ledger_entry();
    entry.from_account = from_account.owner_key;
@@ -574,6 +587,9 @@ transaction_builder& transaction_builder::submit_short(const wallet_account_reco
 
    deduct_balance(from_account.owner_address(), cost);
    trx.short_sell(cost, interest_rate, order_key, price_limit);
+
+   if( trx.expiration == time_point_sec() )
+       trx.expiration = blockchain::now() + WALLET_DEFAULT_MARKET_TRANSACTION_EXPIRATION_SEC;
 
    auto entry = ledger_entry();
    entry.from_account = from_account.owner_key;
@@ -678,6 +694,9 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
    //Commit the cover to transaction and charge the account.
    deduct_balance(from_account.owner_address(), cover_amount);
    trx.cover(cover_amount, order->market_index);
+
+   if( trx.expiration == time_point_sec() )
+       trx.expiration = blockchain::now() + WALLET_DEFAULT_MARKET_TRANSACTION_EXPIRATION_SEC;
 
    auto entry = ledger_entry();
    entry.from_account = from_account.owner_key;
