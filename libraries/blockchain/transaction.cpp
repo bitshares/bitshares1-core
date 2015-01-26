@@ -57,7 +57,7 @@ namespace bts { namespace blockchain {
    void transaction::define_delegate_slate( const delegate_slate& s )
    {
       FC_ASSERT( s.supported_delegates.size() > 0 );
-      operations.emplace_back( define_delegate_slate_operation( s ) );
+      operations.insert( operations.begin(), define_delegate_slate_operation( s ) );
    }
 
    void transaction::burn( const asset& quantity, account_id_type for_or_against, const string& message, const optional<signature_type>& sig )
