@@ -319,8 +319,11 @@ bool test_file::compare_files_2()
   std::string l_line;
   std::string r_line;
 
+  uint32_t lineno = 0;
+
   while(!lhs.eof() || !rhs.eof())
   {
+    lineno++;
     std::getline(lhs, l_line);
     std::getline(rhs, r_line);
 
@@ -328,7 +331,13 @@ bool test_file::compare_files_2()
     prepare_string(r_line);
 
     if(l_line.compare(r_line) != 0)
+    {
+      std::cout << "\nfailed on line " << lineno << "\n"
+      << "expect: " << lineno << ": " << r_line << "\n"
+      << "actual: " << lineno << ": " << l_line << "\n"
+      ;
       return false;
+    }
   }
 
   return true;

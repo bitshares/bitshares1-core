@@ -1,8 +1,10 @@
 default (unlocked) >>> wallet_account_create test
 "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
-default (unlocked) >>> debug_advance_time 1 blocks
+default (unlocked) >>> debug_advance_time 1 second
 OK
-default (unlocked) >>> debug_wait 2 
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
 OK
 default (unlocked) >>> blockchain_list_blocks
 HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME  RAND           
@@ -41,7 +43,7 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 <d-ign></d-ign>PENDING   delegate43          test                30.00000 XTS            withdraw pay                                0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait 3
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
 OK
 default (unlocked) >>> balance delegate43
 ACCOUNT                         BALANCE                     
