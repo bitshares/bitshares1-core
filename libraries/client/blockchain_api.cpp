@@ -139,10 +139,11 @@ oaccount_record detail::client_impl::blockchain_get_account( const string& accou
       if( std::all_of( account.begin(), account.end(), ::isdigit) )
          return _chain_db->get_account_record( std::stoi( account ) );
       else if( account.substr( 0, string( BTS_ADDRESS_PREFIX ).size() ) == BTS_ADDRESS_PREFIX ) {
-         if( auto result = _chain_db->get_account_record( address( public_key_type( account ) ) ) )
-            return result;
+         //Magic number 39 is hopefully longer than the longest address and shorter than the shortest key. Hopefully.
+         if( account.length() < 39 )
+            return _chain_db->get_account_record( address( account ) );
          else
-            return _chain_db->get_account_record( address( account) );
+            return _chain_db->get_account_record( address( blockchain::public_key_type( account ) ) );
       } else
          return _chain_db->get_account_record( account );
    }
@@ -629,13 +630,13 @@ std::map<uint32_t, vector<fork_record>> client_impl::blockchain_list_forks()cons
    return _chain_db->get_forks_list();
 }
 
-vector<slot_record> client_impl::blockchain_get_delegate_slot_records( const string& delegate_name, uint32_t count )const
-{
-    FC_ASSERT( count > 0 );
+vector<slot_record> client_impl::blockchain_get_delegate_slot_records( const string& delegate_name, uint32_t limit )const
+{ try {
+    FC_ASSERT( limit > 0 );
     const oaccount_record delegate_record = _chain_db->get_account_record( delegate_name );
     FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate(), "${n} is not a delegate!", ("n",delegate_name) );
-    return _chain_db->get_delegate_slot_records( delegate_record->id, count );
-}
+    return _chain_db->get_delegate_slot_records( delegate_record->id, limit );
+} FC_CAPTURE_AND_RETHROW( (delegate_name)(limit) ) }
 
 string client_impl::blockchain_get_block_signee( const string& block )const
 {

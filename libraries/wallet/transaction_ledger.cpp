@@ -1236,6 +1236,7 @@ bool wallet_impl::scan_deposit( const deposit_operation& op, wallet_transaction_
              const auto okey_rec = _wallet_db.lookup_key( deposit.owner );
              if( okey_rec && okey_rec->has_private_key() )
              {
+                 bool new_entry = true;
                  cache_deposit = true;
                  for( auto& entry : trx_rec.ledger_entries )
                  {
@@ -1256,7 +1257,16 @@ bool wallet_impl::scan_deposit( const deposit_operation& op, wallet_transaction_
                          if( amount.asset_id == total_fee.asset_id )
                              total_fee += amount;
                      }
+                     new_entry = false;
                      break;
+                 }
+                 if( new_entry )
+                 {
+                     auto entry = ledger_entry();
+                     //entry.from_account = okey_rec->public_key;
+                     entry.to_account = okey_rec->public_key;
+                     entry.amount = amount;
+                     trx_rec.ledger_entries.push_back( entry );
                  }
              }
           }
@@ -1316,10 +1326,10 @@ vector<wallet_transaction_record> wallet::get_transactions( const string& transa
 
 void wallet_impl::sign_transaction( signed_transaction& transaction, const unordered_set<address>& required_signatures )const
 { try {
-   const auto chain_id = _blockchain->get_chain_id();
-   for( const auto& addr : required_signatures )
-       transaction.sign( self->get_private_key( addr ), chain_id );
-} FC_CAPTURE_AND_RETHROW() }
+    const auto chain_id = _blockchain->get_chain_id();
+    for( const auto& addr : required_signatures )
+        transaction.sign( self->get_private_key( addr ), chain_id );
+} FC_CAPTURE_AND_RETHROW( (transaction)(required_signatures) ) }
 
 void wallet::cache_transaction( wallet_transaction_record& transaction_record )
 { try {

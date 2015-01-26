@@ -693,8 +693,8 @@
         "contained_type": "market_status"
       },
       {
-        "type_name" : "vote_selection_method",
-        "cpp_return_type" : "bts::wallet::vote_selection_method"
+        "type_name" : "vote_strategy",
+        "cpp_return_type" : "bts::wallet::vote_strategy"
       },
       {
         "type_name" : "account_key_type",

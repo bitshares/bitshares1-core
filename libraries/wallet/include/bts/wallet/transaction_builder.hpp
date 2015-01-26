@@ -11,6 +11,14 @@
 namespace bts { namespace wallet {
    namespace detail { class wallet_impl; }
 
+   enum vote_strategy
+   {
+      vote_none         = 0,
+      vote_all          = 1,
+      vote_random       = 2,
+      vote_recommended  = 3
+   };
+
    /**
     * @brief The transaction_builder struct simplifies the process of creating arbitrarily complex transactions.
     *
@@ -154,7 +162,6 @@ namespace bts { namespace wallet {
        * @param recipient The account to credit
        * @param amount The amount to credit
        * @param memo The memo to attach to the transaction notification. May be arbitrarily long
-       * @param vote_method The method with which to select the delegate vote for the deposited asset
        * @param memo_sender If valid, the recipient will see the transaction as being from this sender instead of the
        * payer.
        *
@@ -170,7 +177,6 @@ namespace bts { namespace wallet {
                                          const account_record& recipient,
                                          const asset& amount,
                                          const string& memo,
-                                         vote_selection_method vote_method = vote_recommended,
                                          fc::optional<string> memo_sender = fc::optional<string>());
 
       /**
@@ -179,7 +185,6 @@ namespace bts { namespace wallet {
        * @param to_addr The raw address to credit
        * @param amount The amount to credit
        * @param memo A memo for your records
-       * @param vote_method The method with which to select the delegate vote for the deposited asset
        *
        * This method will create a transaction notice message, which will be completed after sign() is called.
        * TODO can we send notices to raw addresses yet?
@@ -187,10 +192,7 @@ namespace bts { namespace wallet {
       transaction_builder& deposit_asset_to_address(const wallet_account_record& payer,
                                                     const address& to_addr,
                                                     const asset& amount,
-                                                    const string& memo,
-                                                    vote_selection_method vote_method = vote_recommended );
-
-
+                                                    const string& memo );
 
       transaction_builder& deposit_asset_with_escrow(const wallet_account_record& payer,
                                          const account_record& recipient,
@@ -198,21 +200,18 @@ namespace bts { namespace wallet {
                                          digest_type agreement,
                                          const asset& amount,
                                          const string& memo,
-                                         vote_selection_method vote_method = vote_recommended,
                                          fc::optional<public_key_type> memo_sender = fc::optional<public_key_type>());
 
       transaction_builder& release_escrow( const account_record& payer,
                                            const address& escrow_account,
                                            const address& released_by_address,
-                                           share_type     amount_to_sender,
-                                           share_type     amount_to_receiver );
-
+                                           share_type amount_to_sender,
+                                           share_type amount_to_receiver );
 
       transaction_builder& deposit_asset_to_multisig(const asset& amount,
                                                      const string& from_name,
                                                      uint32_t m,
-                                                     const vector<address>& addresses,
-                                                     const vote_selection_method& vote_method = vote_none );
+                                                     const vector<address>& addresses );
 
       transaction_builder& set_object(const string& payer_name,
                                       const object_record& obj,
@@ -221,16 +220,11 @@ namespace bts { namespace wallet {
       transaction_builder& set_edge(const string& payer_name,
                                     const edge_record& obj );
 
-
-
       transaction_builder& withdraw_from_balance(const balance_id_type& from,
                                                  const share_type amount);
+
       transaction_builder& deposit_to_balance(const balance_id_type& to,
-                                              const asset& amount,
-                                              const vote_selection_method& vote_method = vote_none );
-
-
-
+                                              const asset& amount );
 
       /**
        * @brief Cancel a single order
@@ -333,7 +327,7 @@ namespace bts { namespace wallet {
        * This function should be called only once, at the end of the builder function calls. Calling it multiple times
        * may cause attempts to over-withdraw balances.
        */
-      transaction_builder& finalize( bool pay_fee = true );
+      transaction_builder& finalize( const bool pay_fee = true, const vote_strategy strategy = vote_none );
       /// @}
 
       /**
@@ -384,4 +378,10 @@ namespace bts { namespace wallet {
    typedef std::shared_ptr<transaction_builder> transaction_builder_ptr;
 } } //namespace bts::wallet
 
+FC_REFLECT_ENUM( bts::wallet::vote_strategy,
+        (vote_none)
+        (vote_all)
+        (vote_random)
+        (vote_recommended)
+        )
 FC_REFLECT( bts::wallet::transaction_builder, (transaction_record)(required_signatures)(outstanding_balances)(notices) )

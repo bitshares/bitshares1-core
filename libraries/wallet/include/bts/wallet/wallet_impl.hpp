@@ -152,8 +152,8 @@ class wallet_impl : public chain_observer
       void upgrade_version();
       void upgrade_version_unlocked();
 
-      delegate_slate select_delegate_vote( vote_selection_method selection = vote_random );
-      slate_id_type select_slate( signed_transaction& transaction, const asset_id_type deposit_asset_id = asset_id_type( 0 ), vote_selection_method = vote_random );
+      slate_id_type set_delegate_slate( signed_transaction& transaction, const vote_strategy strategy )const;
+      delegate_slate get_delegate_slate( const vote_strategy strategy )const;
 
       bool is_receive_account( const string& account_name )const;
       bool is_valid_account( const string& account_name )const;
@@ -177,7 +177,7 @@ class wallet_impl : public chain_observer
                                   bool needs_satoshi_conversion,
                                   const string& short_price_limit = string()
                                  );
-      
+
       void apply_sell_order_to_builder(
                                        transaction_builder_ptr builder,
                                        const string& from_account_name,

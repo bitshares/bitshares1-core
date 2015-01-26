@@ -2,6 +2,7 @@
 
 #include <bts/api/common_api.hpp>
 #include <bts/blockchain/chain_database.hpp>
+#include <bts/client/seed_nodes.hpp>
 #include <bts/net/node.hpp>
 #include <bts/rpc/rpc_client_api.hpp>
 #include <bts/rpc_stubs/common_api_client.hpp>
@@ -24,11 +25,6 @@ namespace bts { namespace cli {
 
 namespace bts { namespace client {
 
-    static const auto SEED_NODES = std::vector<std::string>
-    {
-        std::string( BTS_NET_TEST_SEED_IP ) + ":" + std::to_string( BTS_NET_TEST_P2P_PORT + BTS_TEST_NETWORK_VERSION )
-    };
-
     using namespace bts::blockchain;
     using namespace bts::wallet;
     using bts::mail::mail_client_ptr;
@@ -48,6 +44,7 @@ namespace bts { namespace client {
       : enable(false),
         rpc_endpoint(fc::ip::endpoint::from_string("127.0.0.1:0")),
         httpd_endpoint(fc::ip::endpoint::from_string("127.0.0.1:0")),
+        encrypted_rpc_endpoint(fc::ip::endpoint::from_string("127.0.0.1:0")),
         htdocs("./htdocs")
       {}
 
@@ -56,6 +53,8 @@ namespace bts { namespace client {
       std::string      rpc_password;
       fc::ip::endpoint rpc_endpoint;
       fc::ip::endpoint httpd_endpoint;
+      fc::ip::endpoint encrypted_rpc_endpoint;
+      std::string      encrypted_rpc_wif_key;
       fc::path         htdocs;
 
       bool is_valid() const; /* Currently just checks if rpc port is set */
@@ -199,7 +198,8 @@ namespace bts { namespace client {
 extern const std::string BTS_MESSAGE_MAGIC;
 
 FC_REFLECT(bts::client::client_notification, (timestamp)(message)(signature) )
-FC_REFLECT( bts::client::rpc_server_config, (enable)(rpc_user)(rpc_password)(rpc_endpoint)(httpd_endpoint)(htdocs) )
+FC_REFLECT( bts::client::rpc_server_config, (enable)(rpc_user)(rpc_password)(rpc_endpoint)(httpd_endpoint)
+            (encrypted_rpc_endpoint)(encrypted_rpc_wif_key)(htdocs) )
 FC_REFLECT( bts::client::chain_server_config, (enabled)(listen_port) )
 FC_REFLECT( bts::client::config,
         (logging)

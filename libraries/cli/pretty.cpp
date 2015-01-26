@@ -912,7 +912,7 @@ string pretty_vote_summary( const account_vote_summary_type& votes, cptr client 
 
         out << std::setw( 32 ) << pretty_shorten( delegate_name, 31 );
         out << std::setw( 24 ) << client->get_chain()->to_pretty_asset( asset( votes_for ) );
-        out << std::setw(  8 ) << client->get_wallet()->get_account_approval( delegate_name );
+        out << std::setw(  8 ) << std::to_string( client->get_wallet()->get_account_approval( delegate_name ) );
 
         out << "\n";
     }
