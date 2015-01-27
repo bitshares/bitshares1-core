@@ -314,7 +314,7 @@ namespace bts { namespace rpc {
                    method_name = rpc_call["method"].as_string();
                    auto params = rpc_call["params"].get_array();
 
-                   auto request_key = method_name + "=" + rpc_call["params"].as_string();
+                   auto request_key = method_name + "=" + fc::json::to_string(rpc_call["params"]);
 
 
                    if( fc::time_point(bts::blockchain::now()) - _last_cache_clear_time  > fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) )
