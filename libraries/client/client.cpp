@@ -1329,24 +1329,7 @@ void client::open( const path& data_dir, const fc::optional<fc::path>& genesis_f
     // re-register the _user_appender which was overwritten by configure_logging()
     fc::logger::get( "user" ).add_appender( my->_user_appender );
 
-    try
-    {
-       my->_exception_db.open( data_dir / "exceptions", true );
-    }
-    catch( const db::level_map_open_failure& e )
-    {
-       if( e.to_string().find("Corruption") != string::npos )
-       {
-          elog("Exception database corrupted. Deleting it and attempting to recover.");
-          ulog("Exception database corrupted. Deleting it and attempting to recover.");
-          fc::remove_all( data_dir / "exceptions" );
-          my->_exception_db.open( data_dir / "exceptions", true );
-       }
-       else
-       {
-           throw;
-       }
-    }
+    my->_exception_db.open( data_dir / "exceptions" );
 
     load_checkpoints( data_dir );
 
@@ -1385,8 +1368,12 @@ void client::open( const path& data_dir, const fc::optional<fc::path>& genesis_f
        my->_mail_server = std::make_shared<bts::mail::server>();
        my->_mail_server->open( data_dir / "mail" );
     }
-    my->_mail_client = std::make_shared<bts::mail::client>(my->_wallet, my->_chain_db);
-    my->_mail_client->open( data_dir / "mail_client" );
+
+    if (my->_config.mail_client_enabled)
+    {
+        my->_mail_client = std::make_shared<bts::mail::client>(my->_wallet, my->_chain_db);
+        my->_mail_client->open( data_dir / "mail_client" );
+    }
 
     //if we are using a simulated network, _p2p_node will already be set by client's constructor
     if (!my->_p2p_node)
