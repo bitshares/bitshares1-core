@@ -38,14 +38,6 @@ delegate_blacklist_add_operation <id>
 delegate_blacklist_add_transaction <id>                                                             
 delegate_blacklist_remove_operation <id>                                                            
 delegate_blacklist_remove_transaction <id>                                                          
-delegate_get_config                                                                                 
-delegate_set_block_max_production_time <time>                                                       
-delegate_set_block_max_size <size>                                                                  
-delegate_set_block_max_transaction_count <count>                                                    
-delegate_set_network_min_connection_count <count>                                                   
-delegate_set_transaction_canonical_signatures_required <required>                                   
-delegate_set_transaction_max_size <size>                                                            
-delegate_set_transaction_min_fee <fee>                                                              
 disk_usage                                                                                          
 execute_command_line <input>                                                                        
 execute_script <script>                                                                             
@@ -153,6 +145,14 @@ wallet_withdraw_from_address <amount> <symbol> <from_address> <to> [vote_method]
 wallet_withdraw_from_legacy_address <amount> <symbol> <from_address> <to> [vote_method] [sign_and_broadcast] [builder_path]
 
 		COMMANDS WITH NEW TESTS
+delegate_get_config                                                                                 
+delegate_set_block_max_production_time <time>                                                       
+delegate_set_block_max_size <size>                                                                  
+delegate_set_transaction_max_size <size>                                                            
+delegate_set_block_max_transaction_count <count>                                                    
+delegate_set_network_min_connection_count <count>                                                   
+delegate_set_transaction_canonical_signatures_required <required>                                   
+delegate_set_transaction_min_fee <fee>                                                              
 
 
 		DIFFICULT TO TEST COMMANDS
