@@ -7,6 +7,7 @@ import Material 0.1
 Page {
    id: transferPage
    title: "Transfer"
+   actions: [lockAction]
 
    signal transferComplete(string assetSymbol)
    
