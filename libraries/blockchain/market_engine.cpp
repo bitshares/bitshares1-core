@@ -556,19 +556,6 @@ namespace bts { namespace blockchain { namespace detail {
 
             auto left_over_collateral = (*_current_ask->collateral);
 
-            if( _current_collat_record.expiration > _pending_state->now() )
-            {
-               /** charge 5% fee for having a margin call */
-               auto fee = (left_over_collateral * 5000 )/100000;
-               left_over_collateral -= fee;
-               // when executing a cover order, it always takes the exact price of the
-               // highest bid, so there should be no fees paid *except* this.
-               FC_ASSERT( mtrx.fees_collected.amount == 0 );
-
-               // these go to the network... as dividends..
-               mtrx.fees_collected += asset( fee, _base_id );
-            }
-
             ask_payout->balance += left_over_collateral;
             ask_payout->last_update = _pending_state->now();
             ask_payout->deposit_date = _pending_state->now();

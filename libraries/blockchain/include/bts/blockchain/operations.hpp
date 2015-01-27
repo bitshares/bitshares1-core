@@ -102,7 +102,8 @@ namespace bts { namespace blockchain {
       redeem_lsmr_share             = 43
       */
 
-      pay_fee_op_type               = 44  
+      pay_fee_op_type               = 44,
+      update_call_price_op_type     = 45  
 
    };
 
@@ -197,6 +198,7 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (make_sale_op_type)
                  (buy_sale_op_type)
                  (pay_fee_op_type)
+                 (update_call_price_op_type)
                  )
 
 FC_REFLECT( bts::blockchain::operation, (type)(data) )

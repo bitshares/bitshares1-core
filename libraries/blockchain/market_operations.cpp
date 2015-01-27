@@ -396,13 +396,44 @@ namespace bts { namespace blockchain {
 
       current_cover->collateral_balance += delta_amount.amount;
 
+      const auto min_call_price = asset( current_cover->payoff_balance, cover_index.order_price.quote_asset_id )
+                                  / asset( (current_cover->collateral_balance*3)/4, cover_index.order_price.base_asset_id );
+      const auto new_call_price = std::min( min_call_price, cover_index.order_price );
+
       // changing the payoff balance changes the call price... so we need to remove the old record
       // and insert a new one.
       eval_state._current_state->store_collateral_record( this->cover_index, collateral_record() );
 
-      const auto new_call_price = asset( current_cover->payoff_balance, cover_index.order_price.quote_asset_id )
-                                  / asset( (current_cover->collateral_balance*2)/3, cover_index.order_price.base_asset_id );
 
+      eval_state._current_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
+                                                          *current_cover );
+   }
+
+   void update_call_price_operation::evaluate( transaction_evaluation_state& eval_state )
+   {
+      if( this->cover_index.order_price == price() )
+         FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );
+
+      if( this->new_call_price == price() )
+         FC_CAPTURE_AND_THROW( zero_price, (new_call_price) );
+
+      FC_ASSERT( this->new_call_price.quote_asset_id == cover_index.order_price.quote_asset_id );
+      FC_ASSERT( this->new_call_price.base_asset_id == cover_index.order_price.base_asset_id );
+
+      // update collateral and call price
+      auto current_cover = eval_state._current_state->get_collateral_record( this->cover_index );
+      if( NOT current_cover )
+         FC_CAPTURE_AND_THROW( unknown_market_order, (cover_index) );
+
+      const auto min_call_price = asset( current_cover->payoff_balance, cover_index.order_price.quote_asset_id )
+                                  / asset( (current_cover->collateral_balance*3)/4, cover_index.order_price.base_asset_id );
+
+      FC_ASSERT( new_call_price >= min_call_price );
+
+
+      // changing the payoff balance changes the call price... so we need to remove the old record
+      // and insert a new one.
+      eval_state._current_state->store_collateral_record( this->cover_index, collateral_record() );
       eval_state._current_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
                                                           *current_cover );
    }
