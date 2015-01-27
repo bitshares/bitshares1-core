@@ -375,6 +375,9 @@ namespace bts { namespace blockchain {
       }
    }
 
+#ifndef WIN32
+#warning [VIKRAM] Handle hardfork
+#endif
    void add_collateral_operation::evaluate( transaction_evaluation_state& eval_state )
    {
       if( this->cover_index.order_price == price() )
@@ -409,6 +412,9 @@ namespace bts { namespace blockchain {
                                                           *current_cover );
    }
 
+#ifndef WIN32
+#warning [VIKRAM] Handle softfork
+#endif
    void update_call_price_operation::evaluate( transaction_evaluation_state& eval_state )
    {
       if( this->cover_index.order_price == price() )

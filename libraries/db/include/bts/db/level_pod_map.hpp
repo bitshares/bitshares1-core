@@ -60,7 +60,8 @@ namespace bts { namespace db {
            const auto ntrxstat = ldb::DB::Open( opts, ldbPath.c_str(), &ndb );
            if( !ntrxstat.ok() )
            {
-               FC_THROW_EXCEPTION( level_map_open_failure, "Failure opening database: ${db}\nStatus: ${msg}",
+               elog( "Failure opening database: ${db}\nStatus: ${msg}", ("db",dir)("msg",ntrxstat.ToString()) );
+               FC_THROW_EXCEPTION( level_pod_map_open_failure, "Failure opening database: ${db}\nStatus: ${msg}",
                                    ("db",dir)("msg",ntrxstat.ToString()) );
            }
            _db.reset( ndb );
@@ -101,7 +102,7 @@ namespace bts { namespace db {
            }
            if( !status.ok() )
            {
-               FC_THROW_EXCEPTION( level_map_failure, "database error: ${msg}", ("msg", status.ToString() ) );
+               FC_THROW_EXCEPTION( level_pod_map_failure, "database error: ${msg}", ("msg", status.ToString() ) );
            }
            fc::datastream<const char*> datastream(value.c_str(), value.size());
            Value tmp;
@@ -155,7 +156,7 @@ namespace bts { namespace db {
            }
            if( !itr._it->status().ok() )
            {
-               FC_THROW_EXCEPTION( level_map_failure, "database error: ${msg}", ("msg", itr._it->status().ToString() ) );
+               FC_THROW_EXCEPTION( level_pod_map_failure, "database error: ${msg}", ("msg", itr._it->status().ToString() ) );
            }
 
            if( itr.valid() )
@@ -239,7 +240,7 @@ namespace bts { namespace db {
            auto status = _db->Put( sync ? _sync_options : _write_options, ks, vs );
            if( !status.ok() )
            {
-               FC_THROW_EXCEPTION( level_map_failure, "database error: ${msg}", ("msg", status.ToString() ) );
+               FC_THROW_EXCEPTION( level_pod_map_failure, "database error: ${msg}", ("msg", status.ToString() ) );
            }
         } FC_RETHROW_EXCEPTIONS( warn, "error storing ${key} = ${value}", ("key",k)("value",v) ); }
 
@@ -255,7 +256,7 @@ namespace bts { namespace db {
            }
            if( !status.ok() )
            {
-               FC_THROW_EXCEPTION( level_map_failure, "database error: ${msg}", ("msg", status.ToString() ) );
+               FC_THROW_EXCEPTION( level_pod_map_failure, "database error: ${msg}", ("msg", status.ToString() ) );
            }
         } FC_RETHROW_EXCEPTIONS( warn, "error removing ${key}", ("key",k) ); }
 

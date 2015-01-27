@@ -63,6 +63,7 @@ namespace bts { namespace db {
            const auto ntrxstat = ldb::DB::Open( opts, ldbPath.c_str(), &ndb );
            if( !ntrxstat.ok() )
            {
+               elog( "Failure opening database: ${db}\nStatus: ${msg}", ("db",dir)("msg",ntrxstat.ToString()) );
                FC_THROW_EXCEPTION( level_map_open_failure, "Failure opening database: ${db}\nStatus: ${msg}",
                                    ("db",dir)("msg",ntrxstat.ToString()) );
            }
