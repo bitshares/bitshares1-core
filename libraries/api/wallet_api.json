@@ -1745,6 +1745,12 @@
                   "default_value" : 0
                },
                {
+                  "name" : "issuer_market_fee",
+                  "type" : "real_amount",
+                  "description" : "an additional fee (denominated in percent) charged by the issuer on every order that is matched",
+                  "default_value" : -1 
+               },
+               {
                   "name" : "flags",
                   "type" : "asset_permission_array",
                   "description" : "a set of flags set by the issuer (if they have permission to set them)",

@@ -110,6 +110,7 @@ namespace bts { namespace client {
         optional<string>    growl_password;
         optional<string>    growl_bitshares_client_identifier;
 
+        bool                mail_client_enabled = false;
         bool                mail_server_enabled = false;
     };
 
@@ -223,6 +224,7 @@ FC_REFLECT( bts::client::config,
         (growl_notify_endpoint)
         (growl_password)
         (growl_bitshares_client_identifier)
+        (mail_client_enabled)
         (mail_server_enabled)
         (rpc)
     )

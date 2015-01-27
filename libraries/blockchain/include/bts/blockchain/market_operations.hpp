@@ -87,6 +87,10 @@ namespace bts { namespace blockchain {
         void evaluate( transaction_evaluation_state& eval_state );
    };
 
+   /**
+    *  Increases the collateral and lowers call price *if* the
+    *  new minimal call price is higher than the old call price.
+    */
    struct add_collateral_operation
    {
         static const operation_type_enum type;
@@ -100,6 +104,25 @@ namespace bts { namespace blockchain {
         void evaluate( transaction_evaluation_state& eval_state );
    };
 
+   /**
+    *  The call price can be set to any price above the minimum call
+    *  price which is defined as 50% of the collateral being required
+    *  to cover 100% of the debt.  
+    *
+    *  This can be used to protect the short as a "stop loss" and to
+    *  allow the short to exit their position without having to keep
+    *  extra BTS on the side to buy USD to cover the order.
+    */
+   struct update_call_price_operation
+   {
+      static const operation_type_enum type;
+
+      market_index_key cover_index;
+      price            new_call_price;
+
+      void evaluate( transaction_evaluation_state& eval_state );
+   };
+
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::bid_operation,               (amount)(bid_index))
@@ -109,3 +132,4 @@ FC_REFLECT( bts::blockchain::relative_ask_operation,      (amount)(ask_index)(li
 FC_REFLECT( bts::blockchain::short_operation,             (amount)(short_index)(limit_price) )
 FC_REFLECT( bts::blockchain::cover_operation,             (amount)(cover_index)(new_cover_price) )
 FC_REFLECT( bts::blockchain::add_collateral_operation,    (amount)(cover_index))
+FC_REFLECT( bts::blockchain::update_call_price_operation, (cover_index)(new_call_price))

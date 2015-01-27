@@ -92,7 +92,16 @@ namespace bts { namespace net {
 
     void peer_database_impl::open(const fc::path& databaseFilename)
     {
-      _leveldb.open(databaseFilename, true);
+      try
+      {
+        _leveldb.open(databaseFilename);
+      }
+      catch (const bts::db::level_pod_map_open_failure&) 
+      {
+        fc::remove_all(databaseFilename);
+        _leveldb.open(databaseFilename);
+      }
+
       _potential_peer_set.clear();
 
       for (auto iter = _leveldb.begin(); iter.valid(); ++iter)

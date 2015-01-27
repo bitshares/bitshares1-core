@@ -42,7 +42,8 @@ void light_wallet::fetch_welcome_package()
    _network_fee = asset(welcome_package["network_fee_amount"].as<share_type>());
 }
 
-void light_wallet::connect( const string& host, const string& user, const string& pass, uint16_t port )
+void light_wallet::connect(const string& host, const string& user, const string& pass, uint16_t port,
+                            const public_key_type& server_key)
 {
    string last_error;
    auto resolved = fc::resolve( host, port ? port : BTS_LIGHT_WALLET_PORT );
@@ -51,7 +52,7 @@ void light_wallet::connect( const string& host, const string& user, const string
    for( auto item : resolved )
    {
       try {
-         _rpc.connect_to( item );
+         _rpc.connect_to( item, blockchain::public_key_type(server_key) );
          if( user != "any" && pass != "none" )
             _rpc.login( user, pass );
 

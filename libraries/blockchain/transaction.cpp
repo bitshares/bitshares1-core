@@ -291,6 +291,7 @@ namespace bts { namespace blockchain {
                                    const optional<double>& maximum_share_supply,
                                    const optional<uint64_t>& precision,
                                    const share_type issuer_fee,
+                                   uint16_t market_fee,
                                    uint32_t  flags,
                                    uint32_t issuer_permissions,
                                    account_id_type issuer_account_id,
@@ -306,6 +307,7 @@ namespace bts { namespace blockchain {
        op.issuer_permissions = issuer_permissions;
        op.issuer_account_id = issuer_account_id;
        op.transaction_fee = issuer_fee,
+       op.market_fee = market_fee;
        op.authority = auth_info;
        operations.emplace_back( std::move( op ) );
    }

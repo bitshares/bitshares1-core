@@ -14,7 +14,7 @@ RowLayout {
    property alias placeholderText: passwordText.placeholderText
    property alias floatingLabel: passwordText.floatingLabel
    property alias password: passwordText.text
-   property alias fontPixelSize: passwordText.font.pixelSize
+   property alias fontPixelSize: passwordInput.font.pixelSize
 
    onFocusChanged: if( focus ) passwordText.focus = true
 
@@ -28,10 +28,14 @@ RowLayout {
       id: passwordText
       Layout.fillWidth: true
       Layout.preferredHeight: implicitHeight
-      echoMode: button.pressed? TextInput.Normal : TextInput.Password
-      inputMethodHints: Qt.ImhSensitiveData | Qt.ImhHiddenText
-      readOnly: button.pressed
       floatingLabel: true
+      input {
+         id: passwordInput
+         color: "black"
+         echoMode: button.pressed? TextInput.Normal : TextInput.Password
+         inputMethodHints: Qt.ImhSensitiveData | Qt.ImhHiddenText
+         readOnly: button.pressed
+      }
 
       onAccepted: passwordForm.accepted()
 
