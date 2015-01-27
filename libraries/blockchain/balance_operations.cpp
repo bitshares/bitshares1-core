@@ -82,6 +82,16 @@ namespace bts { namespace blockchain {
       if( this->slate.supported_delegates.size() > BTS_BLOCKCHAIN_MAX_SLATE_SIZE )
          FC_CAPTURE_AND_THROW( too_may_delegates_in_slate, (slate.supported_delegates.size()) );
 
+#ifndef WIN32
+#warning [VIKRAM] Handle hardfork
+#endif
+      // verify slates are sorted
+      FC_ASSERT( slate.supported_delegates.size() > 0 );
+      for( uint32_t i = 1; i < slate.supported_delegates.size(); ++i )
+      {
+         FC_ASSERT( slate.supported_delegates[i-1] < slate.supported_delegates[i] );
+      }
+
       const slate_id_type slate_id = this->slate.id();
       const odelegate_slate current_slate = eval_state._current_state->get_delegate_slate( slate_id );
       if( NOT current_slate.valid() )
@@ -322,10 +332,11 @@ namespace bts { namespace blockchain {
          FC_ASSERT( false, "transaction not signed by releasor" );
 
       auto escrow_condition = escrow_balance_record->condition.as<withdraw_with_escrow>();
-      auto total_released = amount_to_sender + amount_to_receiver;
+      auto total_released = uint64_t(amount_to_sender) + uint64_t(amount_to_receiver);
 
       FC_ASSERT( total_released <= escrow_balance_record->balance );
       FC_ASSERT( total_released >= amount_to_sender ); // check for addition overflow
+      FC_ASSERT( total_released >= amount_to_receiver ); // check for addition overflow
 
       escrow_balance_record->balance -= total_released;
       auto asset_rec = eval_state._current_state->get_asset_record( escrow_balance_record->condition.asset_id );

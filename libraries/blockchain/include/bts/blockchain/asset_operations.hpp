@@ -48,6 +48,7 @@ namespace bts { namespace blockchain {
        share_type       maximum_share_supply = 0;
 
        uint64_t         precision = 0;
+       uint16_t         market_fee = BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE;
 
        void evaluate( transaction_evaluation_state& eval_state );
    };
@@ -97,6 +98,7 @@ namespace bts { namespace blockchain {
        uint32_t           flags = 0;
        uint32_t           issuer_permissions = -1;
        account_id_type    issuer_account_id;
+       uint16_t           market_fee = 0;
        
        /**
         *  The issuer can specify a transaction fee (of the asset type) 
@@ -175,6 +177,7 @@ FC_REFLECT_DERIVED( bts::blockchain::update_asset_ext_operation,
                     (issuer_permissions)
                     (issuer_account_id)
                     (transaction_fee)
+                    (market_fee)
                     (authority) )
 
 FC_REFLECT( bts::blockchain::create_asset_proposal, (asset_id)(info) );

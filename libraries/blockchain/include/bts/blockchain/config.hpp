@@ -11,7 +11,7 @@
  *  @brief Defines global constants that determine blockchain behavior
  */
 #define BTS_BLOCKCHAIN_VERSION                              109
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     187
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     188
 
 /**
  *  The address prepended to string representation of
@@ -25,6 +25,7 @@
 #define BTS_BLOCKCHAIN_DESCRIPTION                          "BitShares Test Network"
 #define BTS_BLOCKCHAIN_PRECISION                            100000
 
+#define BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE                   10000
 #define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC                   int64_t(10)
 #define BTS_BLOCKCHAIN_BLOCKS_PER_HOUR                      ((60*60)/BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)
 #define BTS_BLOCKCHAIN_BLOCKS_PER_DAY                       (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR*int64_t(24))
