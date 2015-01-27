@@ -48,7 +48,6 @@ namespace bts { namespace blockchain {
        share_type       maximum_share_supply = 0;
 
        uint64_t         precision = 0;
-       uint16_t         market_fee = BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE;
 
        void evaluate( transaction_evaluation_state& eval_state );
    };
