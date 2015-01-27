@@ -22,7 +22,8 @@ ApplicationWindow {
 
    function connectToServer() {
       if( !wallet.connected )
-         wallet.connectToServer("localhost", 6691, "user", "pass")
+         wallet.connectToServer("localhost", 5656, "XTS7pq7tZnghnrnYvQg8aktrSCLVHE5SGyHFeYJBRdcFVvNCBBDjd",
+                                "user", "pass")
    }
    function showError(error, buttonName, buttonCallback) {
       snack.text = error

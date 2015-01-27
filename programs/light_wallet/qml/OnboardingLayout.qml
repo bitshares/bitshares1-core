@@ -97,7 +97,7 @@ MainView {
             text: wallet.account? wallet.account.name : ""
             helperText: defaultHelperText
             characterLimit: 64
-            onEditingFinished: nameAvailable()
+            onEditingFinished: if( wallet.connected ) nameAvailable()
             transform: ShakeAnimation { id: nameShaker }
 
             property string defaultHelperText: qsTr("May contain letters, numbers and hyphens.\n" +
@@ -138,6 +138,11 @@ MainView {
             onClicked: {
                if( wallet.account )
                   wallet.account.name = nameField.text
+
+               if( !wallet.connected ) {
+                  showError("Unable to connect to server.", "Try Again", connectToServer)
+                  return
+               }
 
                if( !nameField.nameAvailable() )
                   return nameShaker.shake()

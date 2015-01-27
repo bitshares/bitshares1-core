@@ -97,9 +97,10 @@ public:
    Q_INVOKABLE bool verifyBrainKey(QString key) const;
 
 public Q_SLOTS:
-   void connectToServer( QString host, quint16 port,
-                         QString user = QString("any"),
-                         QString password = QString("none") );
+   void connectToServer(QString host, quint16 port,
+                        QString serverKey = QString(),
+                        QString user = QString("any"),
+                        QString password = QString("none"));
    void disconnectFromServer();
 
    void createWallet(QString accountName, QString password);

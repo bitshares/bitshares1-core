@@ -34,7 +34,8 @@ namespace bts { namespace light_wallet {
          light_wallet(const fc::path& data_dir);
          ~light_wallet();
 
-         void connect( const string& host, const string& user = "any", const string& pass = "none", uint16_t port = 0 );
+         void connect( const string& host, const string& user = "any", const string& pass = "none", uint16_t port = 0,
+                       const public_key_type& server_key = public_key_type() );
          bool is_connected()const;
          void disconnect();
 
