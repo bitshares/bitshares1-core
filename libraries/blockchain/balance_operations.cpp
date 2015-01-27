@@ -329,10 +329,11 @@ namespace bts { namespace blockchain {
          FC_ASSERT( false, "transaction not signed by releasor" );
 
       auto escrow_condition = escrow_balance_record->condition.as<withdraw_with_escrow>();
-      auto total_released = amount_to_sender + amount_to_receiver;
+      auto total_released = uint64_t(amount_to_sender) + uint64_t(amount_to_receiver);
 
       FC_ASSERT( total_released <= escrow_balance_record->balance );
       FC_ASSERT( total_released >= amount_to_sender ); // check for addition overflow
+      FC_ASSERT( total_released >= amount_to_receiver ); // check for addition overflow
 
       escrow_balance_record->balance -= total_released;
       auto asset_rec = eval_state._current_state->get_asset_record( escrow_balance_record->condition.asset_id );
