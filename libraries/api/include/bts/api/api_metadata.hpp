@@ -72,7 +72,7 @@ namespace bts { namespace api {
     uint32_t                    prerequisites;
     std::string                 detailed_description;
     std::vector<std::string>    aliases;
-    bool                        cached = false;
+    bool                        cached;
   };
 
 } } // end namespace bts::api

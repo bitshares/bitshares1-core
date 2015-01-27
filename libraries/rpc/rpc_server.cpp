@@ -217,6 +217,12 @@ namespace bts { namespace rpc {
                   //  dlog( "RPC ${r}", ("r",r.path) );
                     status = handle_http_rpc( r, s );
                 }
+                else if( fc::path(r.path).parent_path() == fc::path("/safebot") )
+                {
+                   // WARNING: logging RPC calls can capture passwords and private keys
+                  //  dlog( "RPC ${r}", ("r",r.path) );
+                    status = handle_http_rpc( r, s );
+                }
                 else if( _http_file_callback )
                 {
                    _http_file_callback( path, s );
