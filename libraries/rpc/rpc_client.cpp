@@ -43,16 +43,11 @@ namespace bts { namespace rpc {
           try
           {
              socket->connect_to(remote_endpoint);
-             elog("Connected");
           }
           catch ( const fc::exception& e )
           {
              elog( "fatal: error opening RPC socket to endpoint ${endpoint}: ${e}", ("endpoint", remote_endpoint)("e", e.to_detail_string() ) );
              throw;
-          }
-          catch ( ... )
-          {
-             elog("idk wth just happened");
           }
 
           fc::ecc::compact_signature signature;

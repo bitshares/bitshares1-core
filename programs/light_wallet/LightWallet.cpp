@@ -56,10 +56,11 @@ bool LightWallet::accountExists(QString name)
    bool exists;
 
    IN_WAIT_THREAD
-      exists = m_wallet.get_account_record(convert(name)).valid();
+   auto account = m_wallet.get_account_record(convert(name));
+   exists = account.valid() && account->name == convert(name);
    END_WAIT_THREAD
 
-         return exists;
+   return exists;
 }
 
 bool LightWallet::verifyBrainKey(QString key) const
@@ -67,18 +68,21 @@ bool LightWallet::verifyBrainKey(QString key) const
    return !m_brainKey.isEmpty() && normalize(key) == normalize(m_brainKey);
 }
 
-void LightWallet::connectToServer(QString host, quint16 port, QString user, QString password)
+void LightWallet::connectToServer(QString host, quint16 port, QString serverKey, QString user, QString password)
 {
    IN_THREAD
    qDebug() << "Connecting to" << host << ':' << port << "as" << user << ':' << password;
    try {
-      m_wallet.connect(convert(host), convert(user), convert(password), port);
+      if( serverKey.isEmpty() )
+         m_wallet.connect(convert(host), convert(user), convert(password), port);
+      else
+         m_wallet.connect(convert(host), convert(user), convert(password), port,
+                          bts::blockchain::public_key_type(convert(serverKey)));
       Q_EMIT connectedChanged(isConnected());
    } catch (fc::exception e) {
       m_connectionError = convert(e.get_log().begin()->get_message()).replace("\n", " ");
       Q_EMIT errorConnecting(m_connectionError);
    }
-
    END_THREAD
 }
 

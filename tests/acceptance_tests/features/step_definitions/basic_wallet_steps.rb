@@ -1,3 +1,16 @@
+Given(/^exec: (\w+)$/) do |cmd|
+    @current_actor.node.exec cmd
+end
+Given(/^exec: (\w+) (\w+)$/) do |cmd, arg1|
+    @current_actor.node.exec cmd, arg1
+end
+Given(/^exec: (\w+) (\w+) (\w+)$/) do |cmd, arg1, arg2|
+    @current_actor.node.exec cmd, arg1, arg2
+end
+Given(/^exec: (\w+) (\w+) (\w+) (\w+)$/) do |cmd, arg1, arg2, arg3|
+    @current_actor.node.exec cmd, arg1, arg2, arg3
+end
+
 Given(/^I'm (\w+)$/) do |name|
   @current_actor = get_actor(name)
 end

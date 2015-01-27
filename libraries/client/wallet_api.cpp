@@ -97,14 +97,14 @@ void read_keys( const fc::variant& vo, vector<private_key_type>& keys, const str
     }
     catch (...)
     {
-        ulog("error, setting skip_me=true");
+        ilog("error, setting skip_me=true");
         //ilog("@n I couldn't parse that as a byte array: ${vo}", ("vo", vo));
         skip_me = true;
 
     }
     if( NOT skip_me )
     {
-        ulog("not skipping");
+        ilog("not skipping");
         try {
             plain_text = fc::aes_decrypt( password_bytes, bytes );
             keys.push_back( fc::raw::unpack<private_key_type>( plain_text ) );
@@ -484,11 +484,15 @@ wallet_transaction_record detail::client_impl::wallet_transfer_from(
 
     _wallet->cache_transaction( record );
     network_broadcast_transaction( record.trx );
-    for( auto&& notice : builder->encrypted_notifications() )
-        _mail_client->send_encrypted_message(std::move(notice),
-                                             from_account_name,
-                                             to_account_name,
-                                             recipient.owner_key);
+
+    if( _mail_client )
+    {
+        for( auto&& notice : builder->encrypted_notifications() )
+            _mail_client->send_encrypted_message(std::move(notice),
+                                                 from_account_name,
+                                                 to_account_name,
+                                                 recipient.owner_key);
+    }
 
     return record;
 }
@@ -788,14 +792,18 @@ wallet_transaction_record detail::client_impl::wallet_release_escrow( const stri
     _wallet->cache_transaction( record );
     network_broadcast_transaction( record.trx );
 
-    /* TODO: notify other parties of the transaction.
-    for( auto&& notice : builder->encrypted_notifications() )
-        _mail_client->send_encrypted_message(std::move(notice),
-                                             from_account_name,
-                                             to_account_name,
-                                             recipient.owner_key);
+    if( _mail_client )
+    {
+        /* TODO: notify other parties of the transaction.
+        for( auto&& notice : builder->encrypted_notifications() )
+            _mail_client->send_encrypted_message(std::move(notice),
+                                                 from_account_name,
+                                                 to_account_name,
+                                                 recipient.owner_key);
 
-    */
+        */
+    }
+
     return record;
 }
 
@@ -824,11 +832,15 @@ wallet_transaction_record detail::client_impl::wallet_transfer_from_with_escrow(
 
     _wallet->cache_transaction( record );
     network_broadcast_transaction( record.trx );
-    for( auto&& notice : builder->encrypted_notifications() )
-        _mail_client->send_encrypted_message(std::move(notice),
-                                             from_account_name,
-                                             to_account_name,
-                                             recipient.owner_key);
+
+    if( _mail_client )
+    {
+        for( auto&& notice : builder->encrypted_notifications() )
+            _mail_client->send_encrypted_message(std::move(notice),
+                                                 from_account_name,
+                                                 to_account_name,
+                                                 recipient.owner_key);
+    }
 
     return record;
 }
@@ -858,6 +870,7 @@ wallet_transaction_record detail::client_impl::wallet_asset_update(
         const optional<double>& maximum_share_supply,
         const optional<uint64_t>& precision,
         const share_type& issuer_fee,
+        double issuer_market_fee,
         const vector<asset_permissions>& flags,
         const vector<asset_permissions>& issuer_permissions,
         const string& issuer_account_name,
@@ -870,7 +883,8 @@ wallet_transaction_record detail::client_impl::wallet_asset_update(
    for( auto item : flags ) flags_int |= item;
    for( auto item : issuer_permissions ) issuer_perms_int |= item;
    auto record = _wallet->update_asset( symbol, name, description, public_data, maximum_share_supply,
-                                        precision, issuer_fee, flags_int, issuer_perms_int, issuer_account_name,
+                                        precision, issuer_fee, issuer_market_fee, flags_int,
+                                        issuer_perms_int, issuer_account_name,
                                         required_sigs, authority, true );
 
    _wallet->cache_transaction( record );
@@ -1438,7 +1452,7 @@ wallet_transaction_record client_impl::wallet_market_submit_bid(
       && fc::variant(quote_price).as_double() > _chain_db->to_pretty_price_double(lowest_ask.front().get_price()) * 1.05)
     FC_THROW_EXCEPTION(stupid_order, "You are attempting to bid at more than 5% above the buy price. "
                                      "This bid is based on economically unsound principles, and is ill-advised. "
-                                     "If you're sure you want to do this, place your bid again and set allow_stupid_bid to true. ${lowest_ask}", 
+                                     "If you're sure you want to do this, place your bid again and set allow_stupid_bid to true. ${lowest_ask}",
                                      ("lowest_ask",lowest_ask.front()));
 
   auto record = _wallet->submit_bid( from_account, quantity, quantity_symbol, quote_price, quote_symbol, true );

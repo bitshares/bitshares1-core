@@ -1751,6 +1751,12 @@
                   "default_value" : 0
                },
                {
+                  "name" : "issuer_market_fee",
+                  "type" : "real_amount",
+                  "description" : "an additional fee (denominated in percent) charged by the issuer on every order that is matched",
+                  "default_value" : -1 
+               },
+               {
                   "name" : "flags",
                   "type" : "asset_permission_array",
                   "description" : "a set of flags set by the issuer (if they have permission to set them)",
@@ -1816,6 +1822,7 @@
       {
          "method_name"    : "wallet_escrow_summary",
          "description"    : "Lists the total asset balances for all open escrows",
+         "cached"         : true,
          "return_type"    : "escrow_summary_array",
          "parameters"     : [
          {
@@ -1832,6 +1839,7 @@
       {
          "method_name"    : "wallet_account_balance",
          "description"    : "Lists the total asset balances for the specified account",
+         "cached"         : true,
          "return_type"    : "account_balance_summary_type",
          "parameters"     : [
          {
@@ -1848,6 +1856,7 @@
       {
          "method_name"    : "wallet_account_balance_extended",
          "description"    : "Lists the total asset balances across all withdraw condition types for the specified account",
+         "cached"         : true,
          "return_type"    : "account_extended_balance_type",
          "parameters"     : [
          {
@@ -1864,6 +1873,7 @@
       {
          "method_name"    : "wallet_account_vesting_balances",
          "description"    : "List the vesting balances available to the specified account",
+         "cached"         : true,
          "return_type"    : "account_vesting_balance_summary_type",
          "parameters"     : [
          {
@@ -1880,6 +1890,7 @@
       {
          "method_name"    : "wallet_account_yield",
          "description"    : "Lists the total accumulated yield for asset balances",
+         "cached"         : true,
          "return_type"    : "account_balance_summary_type",
          "parameters"     : [
          {
@@ -1896,6 +1907,7 @@
       {
          "method_name" : "wallet_account_list_public_keys",
          "description" : "Lists all public keys in this account",
+         "cached"      : true,
          "return_type" : "public_key_summary_array",
          "parameters"  : [
            {
@@ -1948,6 +1960,7 @@
       {
          "method_name"  : "wallet_get_transaction_fee",
          "description"  : "Returns ",
+         "cached"       : true,
          "return_type"  : "asset",
          "parameters"   : [
          {

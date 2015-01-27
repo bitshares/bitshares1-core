@@ -157,6 +157,7 @@ struct method_description
   bool is_const;
   bts::api::method_prerequisites prerequisites; // actually, a bitmask of method_prerequisites
   std::vector<std::string> aliases;
+  bool cached;
 };
 typedef std::list<method_description> method_description_list;
 
@@ -405,6 +406,8 @@ void api_generator::load_method_descriptions(const fc::variants& method_descript
 
       method.is_const = json_method_description.contains("is_const") && 
                                json_method_description["is_const"].as_bool();
+      method.cached = json_method_description.contains("cached") && 
+                               json_method_description["cached"].as_bool();
 
       FC_ASSERT(json_method_description.contains("prerequisites"), "method entry missing \"prerequisites\"");
       method.prerequisites = load_prerequisites(json_method_description["prerequisites"]);
@@ -907,7 +910,7 @@ void api_generator::generate_rpc_server_files(const fc::path& rpc_server_output_
         server_cpp_file << "\"" << alias << "\"";
       }
     }
-    server_cpp_file << "}};\n";
+    server_cpp_file << "}, " << (method.cached ? "true" : "false")<<"};\n";
       
     server_cpp_file << "    store_method_metadata(" << method.name << "_method_metadata);\n";
     server_cpp_file << "  }\n\n";

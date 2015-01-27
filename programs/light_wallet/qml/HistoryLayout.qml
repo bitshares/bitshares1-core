@@ -7,9 +7,8 @@ import Material 0.1
 Page {
    id: historyPage
    title: assetSymbol + " " + qsTr("Transactions")
+   actions: [lockAction]
 
-   property real minimumWidth: 30
-   property real minimumHeight: units.dp(80)
    property string accountName
    property string assetSymbol
 

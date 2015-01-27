@@ -248,6 +248,8 @@ namespace bts { namespace blockchain {
           current_asset_record->flags               = this->flags;
 
           current_asset_record->transaction_fee     = this->transaction_fee;
+          if( this->market_fee <= BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE )
+             current_asset_record->market_fee          = this->market_fee;
           current_asset_record->authority           = this->authority;
       }
 

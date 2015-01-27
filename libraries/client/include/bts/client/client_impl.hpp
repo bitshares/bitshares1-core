@@ -38,9 +38,17 @@ public:
 private:
    exception_leveldb_type _db;
 public:
-   void open(const fc::path& filename, bool create = true)
+   void open(const fc::path& filename)
    {
-      _db.open(filename, create);
+      try
+      {
+          _db.open(filename);
+      }
+      catch (const bts::db::level_map_open_failure&)
+      {
+          fc::remove_all(filename);
+          _db.open(filename);
+      }
    }
    void store(const fc::exception& e)
    {

@@ -310,6 +310,7 @@ namespace bts { namespace wallet {
                                          const optional<double>& maximum_share_supply,
                                          const optional<uint64_t>& precision,
                                          const share_type issuer_fee,
+                                         double market_fee,
                                          uint32_t flags,
                                          uint32_t issuer_perms,
                                          const optional<account_id_type> issuer_account_id,

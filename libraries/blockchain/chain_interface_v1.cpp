@@ -36,6 +36,7 @@ bool chain_interface::is_valid_symbol_name_v1( const string& symbol )const
 
 share_type chain_interface::get_delegate_registration_fee_v1( uint8_t pay_rate )const
 {
+   if( pay_rate == 0 ) return 0;
    const share_type unscaled_fee = (get_delegate_pay_rate_v1() * BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE)/BTS_BLOCKCHAIN_NUM_DELEGATES;
    return (unscaled_fee * pay_rate) / 100;
 }

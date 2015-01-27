@@ -1,29 +1,31 @@
 import QtQuick 2.4
 import QtQuick.Window 2.2
 import QtQuick.Layouts 1.1
-import QtQuick.Controls 1.3
+import QtGraphicalEffects 1.0
 
 import "utils.js" as Utils
 import org.BitShares.Types 1.0
 
 import Material 0.1
 
-ApplicationWindow {
+Window {
    id: window
    visible: true
    width: 540
    height: 960
-   initialPage: mainPage
-   pageStack.visible: !onboardLoader.sourceComponent
-   toolBar.visible: !onboardLoader.sourceComponent
 
-   readonly property int orientation: window.width < window.height? Qt.PortraitOrientation : Qt.LandscapeOrientation
-   property bool needsOnboarding: !( wallet.account && wallet.account.isRegistered )
+   property alias pageStack: __pageStack
+   property alias lockAction: __lockAction
 
-   function connectToServer() {
-      if( !wallet.connected )
-         wallet.connectToServer("localhost", 6691, "user", "pass")
+   Component.onCompleted: {
+      if( wallet.walletExists )
+         wallet.openWallet()
+      if( !( wallet.account && wallet.account.isRegistered ) )
+         onboardLoader.sourceComponent = onboardingUi
+
+      window.connectToServer()
    }
+
    function showError(error, buttonName, buttonCallback) {
       snack.text = error
       if( buttonName && buttonCallback ) {
@@ -53,23 +55,24 @@ ApplicationWindow {
          return "computer"
       }
    }
-
-   Component.onCompleted: {
-      if( wallet.walletExists )
-         wallet.openWallet()
-      if( needsOnboarding )
-         onboardLoader.sourceComponent = onboardingUi
-
-      connectToServer()
+   function connectToServer() {
+      if( !wallet.connected )
+         wallet.connectToServer("localhost", 5656, "XTS7pq7tZnghnrnYvQg8aktrSCLVHE5SGyHFeYJBRdcFVvNCBBDjd",
+                                "user", "pass")
    }
-   pageStack.onPopped: if( pageStack.count === 1 ) wallet.lockWallet()
 
-   theme {
+   AppTheme {
+      id: theme
       primaryColor: "#2196F3"
       backgroundColor: "#BBDEFB"
       accentColor: "#80D8FF"
    }
-
+   Action {
+      id: __lockAction
+      name: qsTr("Lock Wallet")
+      iconName: "action/lock"
+      onTriggered: wallet.lockWallet()
+   }
    QtObject {
       id: d
       property int errorSerial: 0
@@ -111,92 +114,191 @@ ApplicationWindow {
       onNotification: showError(message)
    }
 
-   View {
-      id: criticalNotificationArea
-      backgroundColor: "#F44336"
-      height: units.dp(100)
-      width: parent.width
-      enabled: false
-      z: -1
+   WelcomeLayout {
+      id: lockScreen
+      width: window.width
+      height: window.height
+      backgroundColor: Theme.backgroundColor
+      z: 1
+      onPasswordEntered: {
+         if( wallet.unlocked )
+            return proceedIfUnlocked()
 
-      //Show iff brain key is set, the main page is not active or transitioning out, and we're not already in an onboarding UI
-      property bool active: wallet.brainKey.length > 0 &&
-                            [Stack.Deactivating, Stack.Active].indexOf(mainPage.Stack.status) < 0 &&
-                            !onboardLoader.sourceComponent
-
-      Label {
-         anchors.verticalCenter: parent.verticalCenter
-         anchors.left:  parent.left
-         anchors.right: criticalNotificationButton.left
-         anchors.margins: visuals.margins
-         text: qsTr("Your wallet has not been backed up. You should back it up as soon as possible.")
-         color: "white"
-         style: "subheading"
-         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
-      }
-      Button {
-         id: criticalNotificationButton
-         anchors.right: parent.right
-         anchors.rightMargin: visuals.margins
-         anchors.verticalCenter: parent.verticalCenter
-         text: qsTr("Back Up Wallet")
-         textColor: "white"
-
-         onClicked: onboardLoader.sourceComponent = backupUi
+         wallet.unlockWallet(password)
       }
 
       states: [
          State {
-            name: "active"
-            when: criticalNotificationArea.active
+            name: "locked"
+            when: !wallet.unlocked
             PropertyChanges {
-               target: criticalNotificationArea
-               enabled: true
+               target: lockScreen
+               x: 0
             }
+         },
+         State {
+            name: "unlocked"
+            when: wallet.unlocked
             PropertyChanges {
-               target: pageStack
-               anchors.topMargin: criticalNotificationArea.height
+               target: lockScreen
+               x: window.width
             }
          }
       ]
       transitions: [
          Transition {
-            from: ""
-            to: "active"
-            reversible: true
-            PropertyAnimation { target: pageStack; property: "anchors.topMargin"; easing.type: Easing.InOutQuad }
+            from: "unlocked"
+            to: "locked"
+            SequentialAnimation {
+               PropertyAnimation {
+                  target: lockScreen
+                  duration: 500
+                  property: "x"
+                  easing.type: Easing.OutBounce
+               }
+               ScriptAction { script: lockScreen.focus() }
+            }
+         },
+         Transition {
+            from: "locked"
+            to: "unlocked"
+            SequentialAnimation {
+               PropertyAnimation {
+                  target: lockScreen
+                  duration: 500
+                  property: "x"
+                  easing.type: Easing.InQuad
+               }
+               ScriptAction { script: lockScreen.clearPassword() }
+            }
          }
       ]
    }
 
-   WelcomeLayout {
-      id: mainPage
-      title: qsTr("Welcome to BitShares")
-      onPasswordEntered: {
-         if( wallet.unlocked )
-            return proceedIfUnlocked()
-
-         Utils.connectOnce(wallet.onUnlockedChanged, proceedIfUnlocked)
-         wallet.unlockWallet(password)
+   Item {
+      id: applicationArea
+      anchors.fill: parent
+      enabled: wallet.unlocked && !onboardLoader.sourceComponent
+      Toolbar {
+         id: toolbar
+         width: parent.width
+         backgroundColor: Theme.primaryColor
       }
+      View {
+         id: criticalNotificationArea
+         y: toolbar.height
+         backgroundColor: "#F44336"
+         height: units.dp(100)
+         width: parent.width
+         enabled: false
+         z: -1
 
-      function proceedIfUnlocked() {
-         if( !wallet.unlocked )
-            return
+         //Show iff brain key is set, the main page is not active or transitioning out, and we're not already in an onboarding UI
+         property bool active: wallet.brainKey.length > 0 &&
+                               !onboardLoader.sourceComponent
 
-         console.log("Finished welcome screen.")
-         clearPassword()
-         window.pageStack.push(assetsUi)
+         Label {
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.left:  parent.left
+            anchors.right: criticalNotificationButton.left
+            anchors.margins: visuals.margins
+            text: qsTr("Your wallet has not been backed up. You should back it up as soon as possible.")
+            color: "white"
+            style: "subheading"
+            wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+         }
+         Button {
+            id: criticalNotificationButton
+            anchors.right: parent.right
+            anchors.rightMargin: visuals.margins
+            anchors.verticalCenter: parent.verticalCenter
+            text: qsTr("Back Up Wallet")
+            textColor: "white"
+
+            onClicked: onboardLoader.sourceComponent = backupUi
+         }
+
+         states: [
+            State {
+               name: "active"
+               when: criticalNotificationArea.active
+               PropertyChanges {
+                  target: criticalNotificationArea
+                  enabled: true
+               }
+               PropertyChanges {
+                  target: pageStack
+                  anchors.topMargin: criticalNotificationArea.height
+               }
+            }
+         ]
+         transitions: [
+            Transition {
+               from: ""
+               to: "active"
+               reversible: true
+               PropertyAnimation { target: pageStack; property: "anchors.topMargin"; easing.type: Easing.InOutQuad }
+            }
+         ]
       }
+      PageStack {
+         id: __pageStack
+         anchors {
+            left: parent.left
+            right: parent.right
+            top: toolbar.bottom
+            bottom: parent.bottom
+         }
+         initialItem: assetsUi
 
-      Stack.onStatusChanged: if( Stack.status === Stack.Active ) wallet.lockWallet()
+         onPushed: toolbar.push(page)
+         onPopped: toolbar.pop()
+
+         Component {
+            id: assetsUi
+
+            AssetsLayout {
+               onLockRequested: {
+                  wallet.lockWallet()
+                  uiStack.pop()
+               }
+               onOpenHistory: window.pageStack.push(historyUi, {"accountName": account, "assetSymbol": symbol})
+               onOpenTransfer: {
+                  if( wallet.account.availableAssets.length )
+                     window.pageStack.push(transferUi)
+                  else
+                     showError(qsTr("You don't have any assets, so you cannot make a transfer."), qsTr("Refresh Balances"),
+                               wallet.syncAllBalances)
+               }
+            }
+         }
+         Component {
+            id: historyUi
+
+            HistoryLayout {
+            }
+         }
+         Component {
+            id: transferUi
+
+            TransferLayout {
+               onTransferComplete: window.pageStack.pop()
+            }
+         }
+         Snackbar {
+            id: snack
+            duration: 5000
+            enabled: opened
+            onClick: opened = false
+            z: 21
+         }
+      }
    }
    Component {
       id: onboardingUi
 
       OnboardingLayout {
          onFinished: {
-            pageStack.push(assetsUi)
             onboardLoader.sourceComponent = undefined
          }
       }
@@ -208,46 +310,9 @@ ApplicationWindow {
          onFinished: onboardLoader.sourceComponent = undefined
       }
    }
-   Component {
-      id: assetsUi
-
-      AssetsLayout {
-         onLockRequested: {
-            wallet.lockWallet()
-            uiStack.pop()
-         }
-         onOpenHistory: window.pageStack.push(historyUi, {"accountName": account, "assetSymbol": symbol})
-         onOpenTransfer: {
-            if( wallet.account.availableAssets.length )
-               window.pageStack.push(transferUi)
-            else
-               showError(qsTr("You don't have any assets, so you cannot make a transfer."), qsTr("Refresh Balances"),
-                         wallet.syncAllBalances)
-         }
-      }
-   }
-   Component {
-      id: historyUi
-
-      HistoryLayout {
-      }
-   }
-   Component {
-      id: transferUi
-
-      TransferLayout {
-         onTransferComplete: window.pageStack.pop()
-      }
-   }
    Loader {
       id: onboardLoader
+      z: 2
       anchors.fill: parent
-   }
-   Snackbar {
-      id: snack
-      duration: 5000
-      enabled: opened
-      onClick: opened = false
-      z: 21
    }
 }

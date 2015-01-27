@@ -1,0 +1,143 @@
+default (unlocked) >>> help delegate_get_config
+Usage:
+delegate_get_config                                                                                   Returns current settings used during local block production
+Returns current settings used during local block production
+
+Parameters:
+  (none)
+
+Returns:
+  variant
+default (unlocked) >>> delegate_get_config
+{
+  "network_min_connection_count": 0,
+  "block_max_transaction_count": 4294967295,
+  "block_max_size": 51200,
+  "block_max_production_time": 3000000,
+  "transaction_max_size": 51200,
+  "transaction_canonical_signatures_required": false,
+  "transaction_min_fee": 10000,
+  "transaction_blacklist": [],
+  "operation_blacklist": []
+}
+default (unlocked) >>> help delegate_set_block_max_production_time
+Usage:
+delegate_set_block_max_production_time <time>                                                         Set maximum time spent producing a block
+Set maximum time spent producing a block
+
+Parameters:
+  time (uint64_t, required): maximum production time in microseconds
+
+Returns:
+  void
+default (unlocked) >>> delegate_set_block_max_production_time 1000000
+OK
+default (unlocked) >>> help delegate_set_block_max_size
+Usage:
+delegate_set_block_max_size <size>                                                                    Set maximum block size allowed
+Set maximum block size allowed
+
+Parameters:
+  size (uint32_t, required): maximum block size in bytes
+
+Returns:
+  void
+default (unlocked) >>> delegate_set_block_max_size 102400
+Command failed with exception: Assert Exception (10)
+block_max_size <= BTS_BLOCKCHAIN_MAX_BLOCK_SIZE: 
+
+
+
+
+
+default (unlocked) >>> delegate_set_block_max_size 25600
+Command failed with exception: Assert Exception (10)
+transaction_max_size <= block_max_size: 
+
+
+
+
+
+default (unlocked) >>> help delegate_set_transaction_max_size
+Usage:
+delegate_set_transaction_max_size <size>                                                              Set maximum transaction size allowed
+Set maximum transaction size allowed
+
+Parameters:
+  size (uint32_t, required): maximum transaction size in bytes
+
+Returns:
+  void
+default (unlocked) >>> delegate_set_transaction_max_size 102400
+Command failed with exception: Assert Exception (10)
+transaction_max_size <= block_max_size: 
+
+
+
+
+
+default (unlocked) >>> delegate_set_transaction_max_size 12800
+OK
+default (unlocked) >>> delegate_set_block_max_size 25600
+OK
+default (unlocked) >>> help delegate_set_block_max_transaction_count
+Usage:
+delegate_set_block_max_transaction_count <count>                                                      Set maximum number of transactions allowed in a block
+Set maximum number of transactions allowed in a block
+
+Parameters:
+  count (uint32_t, required): maximum transaction count
+
+Returns:
+  void
+default (unlocked) >>> delegate_set_block_max_transaction_count 268435455
+OK
+default (unlocked) >>> help delegate_set_network_min_connection_count
+Usage:
+delegate_set_network_min_connection_count <count>                                                     Set minimum network connection count required for block production
+Set minimum network connection count required for block production
+
+Parameters:
+  count (uint32_t, required): minimum network connection count
+
+Returns:
+  void
+default (unlocked) >>> delegate_set_network_min_connection_count 1
+OK
+default (unlocked) >>> help delegate_set_transaction_canonical_signatures_required
+Usage:
+delegate_set_transaction_canonical_signatures_required <required>                                     Set whether canonical signatures are required
+Set whether canonical signatures are required
+
+Parameters:
+  required (bool, required): whether canonical signatures are required
+
+Returns:
+  void
+default (unlocked) >>> delegate_set_transaction_canonical_signatures_required true
+OK
+default (unlocked) >>> help delegate_set_transaction_min_fee
+Usage:
+delegate_set_transaction_min_fee <fee>                                                                Set minimum transaction fee allowed
+Set minimum transaction fee allowed
+
+Parameters:
+  fee (uint64_t, required): minimum transaction fee in shares
+
+Returns:
+  void
+default (unlocked) >>> delegate_set_transaction_min_fee 50000
+OK
+default (unlocked) >>> delegate_get_config
+{
+  "network_min_connection_count": 1,
+  "block_max_transaction_count": 268435455,
+  "block_max_size": 25600,
+  "block_max_production_time": 1000000,
+  "transaction_max_size": 12800,
+  "transaction_canonical_signatures_required": true,
+  "transaction_min_fee": 50000,
+  "transaction_blacklist": [],
+  "operation_blacklist": []
+}
+default (unlocked) >>> quit

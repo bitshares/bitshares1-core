@@ -49,6 +49,7 @@ namespace bts { namespace client {
       {}
 
       bool             enable;
+      bool             enable_cache = true;
       std::string      rpc_user;
       std::string      rpc_password;
       fc::ip::endpoint rpc_endpoint;
@@ -109,6 +110,7 @@ namespace bts { namespace client {
         optional<string>    growl_password;
         optional<string>    growl_bitshares_client_identifier;
 
+        bool                mail_client_enabled = false;
         bool                mail_server_enabled = false;
     };
 
@@ -198,7 +200,7 @@ namespace bts { namespace client {
 extern const std::string BTS_MESSAGE_MAGIC;
 
 FC_REFLECT(bts::client::client_notification, (timestamp)(message)(signature) )
-FC_REFLECT( bts::client::rpc_server_config, (enable)(rpc_user)(rpc_password)(rpc_endpoint)(httpd_endpoint)
+FC_REFLECT( bts::client::rpc_server_config, (enable)(enable_cache)(rpc_user)(rpc_password)(rpc_endpoint)(httpd_endpoint)
             (encrypted_rpc_endpoint)(encrypted_rpc_wif_key)(htdocs) )
 FC_REFLECT( bts::client::chain_server_config, (enabled)(listen_port) )
 FC_REFLECT( bts::client::config,
@@ -222,6 +224,7 @@ FC_REFLECT( bts::client::config,
         (growl_notify_endpoint)
         (growl_password)
         (growl_bitshares_client_identifier)
+        (mail_client_enabled)
         (mail_server_enabled)
         (rpc)
     )

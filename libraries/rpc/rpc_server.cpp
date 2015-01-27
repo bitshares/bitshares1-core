@@ -3,6 +3,8 @@
 #include <bts/wallet/exceptions.hpp>
 #include <bts/rpc/exceptions.hpp>
 #include <bts/rpc/rpc_server.hpp>
+#include <bts/blockchain/config.hpp>
+#include <bts/blockchain/time.hpp>
 #include <bts/utilities/git_revision.hpp>
 #include <bts/utilities/key_conversion.hpp>
 #include <bts/utilities/padding_ostream.hpp>
@@ -54,6 +56,10 @@ namespace bts { namespace rpc {
          http_callback_type                                _http_file_callback;
          std::unordered_set<fc::rpc::json_connection_ptr>  _open_json_connections;
          fc::mutex                                         _rpc_mutex; // locked to prevent executing two rpc calls at once
+
+         bool                                              _cache_enabled = true;
+         fc::time_point                                    _last_cache_clear_time;
+         std::unordered_map<string,string>                 _call_cache;
 
          typedef std::map<std::string, bts::api::method_data> method_map_type;
          method_map_type _method_map;
@@ -211,6 +217,12 @@ namespace bts { namespace rpc {
                   //  dlog( "RPC ${r}", ("r",r.path) );
                     status = handle_http_rpc( r, s );
                 }
+                else if( fc::path(r.path).parent_path() == fc::path("/safebot") )
+                {
+                   // WARNING: logging RPC calls can capture passwords and private keys
+                  //  dlog( "RPC ${r}", ("r",r.path) );
+                    status = handle_http_rpc( r, s );
+                }
                 else if( _http_file_callback )
                 {
                    _http_file_callback( path, s );
@@ -301,6 +313,33 @@ namespace bts { namespace rpc {
                    auto rpc_call = fc::json::from_string( str ).get_object();
                    method_name = rpc_call["method"].as_string();
                    auto params = rpc_call["params"].get_array();
+
+                   auto request_key = method_name + "=" + fc::json::to_string(rpc_call["params"]);
+
+
+                   if( fc::time_point(bts::blockchain::now()) - _last_cache_clear_time  > fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) )
+                   {
+                      _last_cache_clear_time = bts::blockchain::now();
+                      _call_cache.clear();
+                   }
+                   else if( _cache_enabled )
+                   {
+                      auto cache_itr = _call_cache.find(request_key);
+                      if( cache_itr != _call_cache.end() )
+                      {
+                         status = fc::http::reply::OK;
+                         s.set_status( status );
+
+                         auto reply = cache_itr->second;
+                         s.set_length( reply.size() );
+                         s.write( reply.c_str(), reply.size() );
+                         auto reply_log = reply.size() > 253 ? reply.substr(0,253) + ".." :  reply;
+                         fc_ilog( fc::logger::get("rpc"), "Result ${path} ${method}: ${reply}", ("path",r.path)("method",method_name)("reply",reply_log));
+                         return status;
+                      }
+                   }
+
+
                    auto params_log = fc::json::to_string(rpc_call["params"]);
                    if(method_name.find("wallet") != std::string::npos || method_name.find("priv") != std::string::npos)
                        params_log = "***";
@@ -314,7 +353,7 @@ namespace bts { namespace rpc {
                       try
                       {
                          result["result"] = dispatch_authenticated_method(_method_map[call_itr->second], params);
-                         auto reply = fc::json::to_string( result );
+                      //   auto reply = fc::json::to_string( result );
                          status = fc::http::reply::OK;
                          s.set_status( status );
                       }
@@ -334,6 +373,10 @@ namespace bts { namespace rpc {
                       s.write( reply.c_str(), reply.size() );
                       auto reply_log = reply.size() > 253 ? reply.substr(0,253) + ".." :  reply;
                       fc_ilog( fc::logger::get("rpc"), "Result ${path} ${method}: ${reply}", ("path",r.path)("method",method_name)("reply",reply_log));
+
+                      if( _method_map[method_name].cached )
+                         _call_cache[request_key] = reply;
+
                       return status;
                    }
                    else
@@ -715,6 +758,7 @@ namespace bts { namespace rpc {
   {
     if (!cfg.is_valid())
       return false;
+    my->_cache_enabled = cfg.enable_cache;
 
     try
     {
@@ -752,6 +796,9 @@ namespace bts { namespace rpc {
   {
     if(!cfg.is_valid())
       return false;
+
+    my->_cache_enabled = cfg.enable_cache;
+
     try
     {
       my->_config = cfg;
@@ -786,6 +833,7 @@ namespace bts { namespace rpc {
   {
     if (!cfg.is_valid())
       return false;
+    my->_cache_enabled = cfg.enable_cache;
     if(cfg.encrypted_rpc_wif_key.empty())
     {
        std::cerr << ("No WIF");

@@ -5,6 +5,7 @@
       {
         "method_name": "blockchain_get_info",
         "description": "Returns current blockchain information and parameters",
+        "cached"      : true,
         "return_type": "json_object",
         "parameters" : [],
         "is_const"   : true,
@@ -29,6 +30,7 @@
       {
         "method_name": "blockchain_calculate_supply",
         "description": "Calculate the total supply of an asset from the current blockchain database state",
+        "cached"      : true,
         "return_type": "asset",
         "parameters" : [
             {
@@ -44,6 +46,7 @@
       {
         "method_name": "blockchain_calculate_debt",
         "description": "Calculate the total amount of a market-issued asset that is owed to the network by open short positions",
+        "cached"   : true,
         "return_type": "asset",
         "parameters" : [
             {
@@ -75,6 +78,7 @@
         "method_name": "blockchain_get_block_hash",
         "description": "Returns hash of block in best-block-chain at index provided",
         "return_type": "block_id_type",
+        "cached"   : true,
         "parameters" :
           [
             {
@@ -92,6 +96,7 @@
         "method_name": "blockchain_get_block_count",
         "description": "Returns the number of blocks in the longest block chain",
         "return_type": "uint32_t",
+        "cached"   : true,
         "parameters" : [],
         "is_const" : true,
         "prerequisites" : ["no_prerequisites"],
@@ -101,6 +106,7 @@
         "method_name": "blockchain_get_security_state",
         "description": "Returns information about blockchain security level",
         "return_type": "blockchain_security_state",
+        "cached"   : true,
         "parameters" : [],
         "is_const" : true,
         "prerequisites" : ["no_prerequisites"],
@@ -110,6 +116,7 @@
         "method_name": "blockchain_list_accounts",
         "description": "Returns registered accounts starting with a given name upto a the limit provided",
         "return_type": "account_record_array",
+        "cached"   : true,
         "parameters" : [
             {
               "name" : "first_account_name",
@@ -130,6 +137,7 @@
       {
         "method_name": "blockchain_list_recently_updated_accounts",
         "description": "Returns a list of recently updated accounts",
+        "cached"   : true,
         "return_type": "account_record_array",
         "parameters" : [],
         "is_const" : true,
@@ -138,6 +146,7 @@
       {
         "method_name": "blockchain_list_recently_registered_accounts",
         "description": "Returns a list of recently registered accounts",
+        "cached"   : true,
         "return_type": "account_record_array",
         "parameters" : [],
         "is_const" : true,
@@ -146,6 +155,7 @@
       {
         "method_name": "blockchain_list_assets",
         "description": "Returns registered assets starting with a given name upto a the limit provided",
+        "cached"   : true,
         "return_type": "asset_record_array",
         "parameters" : [
             {
@@ -167,6 +177,7 @@
       {
         "method_name": "blockchain_list_feed_prices",
         "description": "Returns a list of all currently valid feed prices",
+        "cached"   : true,
         "return_type": "price_map",
         "parameters" : [],
         "is_const" : true,
@@ -175,6 +186,7 @@
       {
         "method_name": "blockchain_get_account_wall",
         "description": "returns all burn records associated with an account",
+        "cached"   : true,
         "return_type": "burn_records",
         "parameters" : [
             {
@@ -200,6 +212,7 @@
       {
         "method_name": "blockchain_get_transaction",
         "description": "Get detailed information about an in-wallet transaction",
+        "cached"   : true,
         "return_type": "transaction_record_pair",
         "parameters" : [
             {
@@ -220,6 +233,7 @@
       {
         "method_name": "blockchain_get_block",
         "description": "Retrieves the block record for the given block number or ID",
+        "cached"   : true,
         "return_type": "oblock_record",
         "parameters" : [
             {
@@ -235,6 +249,7 @@
       {
         "method_name": "blockchain_get_block_transactions",
         "description": "Retrieves the detailed transaction information for a block",
+        "cached"   : true,
         "return_type": "transaction_record_map",
         "parameters" : [
             {
@@ -249,6 +264,7 @@
       {
         "method_name": "blockchain_get_account",
         "description": "Retrieves the record for the given account name or ID",
+        "cached"   : true,
         "return_type": "optional_account_record",
         "parameters" : [
             {
@@ -264,6 +280,7 @@
       {
         "method_name": "blockchain_get_slate",
         "description": "Retrieves a map of delegate IDs and names defined by the given slate ID or recommending account",
+        "cached"   : true,
         "return_type": "map<account_id_type, string>",
         "parameters" : [
             {
@@ -279,6 +296,7 @@
       {
         "method_name": "blockchain_get_balance",
         "description": "Retrieves the balance record for the given address",
+        "cached"   : true,
         "return_type": "balance_record",
         "parameters" : [
             {
@@ -294,6 +312,7 @@
       {
         "method_name": "blockchain_list_balances",
         "description": "Lists balance records starting at the given balance ID",
+        "cached"   : true,
         "return_type": "balance_record_map",
         "parameters" : [
             {
@@ -316,6 +335,7 @@
       {
         "method_name": "blockchain_list_address_balances",
         "description": "Lists balance records which are the balance IDs or which can be claimed by signature for this address",
+        "cached"   : true,
         "return_type": "balance_record_map",
         "parameters" : [
             {
@@ -337,6 +357,7 @@
       {
         "method_name": "blockchain_list_address_transactions",
         "description": "Lists all transactions that involve the provided address after the specified time",
+        "cached"   : true,
         "return_type": "timestamped_transaction_record_map",
         "parameters" : [
             {
@@ -358,6 +379,7 @@
       {
          "method_name" : "blockchain_get_account_public_balance",
          "description" : "Get the account record for a given name",
+        "cached"   : true,
          "return_type" : "account_balance_summary_type",
          "parameters"  : [
                {
@@ -372,6 +394,7 @@
       {
          "method_name" : "blockchain_median_feed_price",
          "description" : "Get the account record for a given name",
+         "cached"   : true,
          "return_type" : "real_amount",
          "parameters"  : [
                {
@@ -386,6 +409,7 @@
       {
         "method_name": "blockchain_list_key_balances",
         "description": "Lists balance records which can be claimed by signature for this key",
+        "cached"   : true,
         "return_type": "balance_record_map",
         "parameters" : [
             {
@@ -401,6 +425,7 @@
       {
         "method_name": "blockchain_get_asset",
         "description": "Retrieves the record for the given asset ticker symbol or ID",
+        "cached"   : true,
         "return_type": "optional_asset_record",
         "parameters" : [
             {
@@ -416,6 +441,7 @@
       {
         "method_name": "blockchain_get_feeds_for_asset",
         "description": "Retrieves all current feeds for the given asset",
+        "cached"   : true,
         "return_type": "feed_entry_list",
         "parameters" : [
             {
@@ -430,6 +456,7 @@
       {
         "method_name": "blockchain_get_feeds_from_delegate",
         "description": "Retrieves all current feeds published by the given delegate",
+        "cached"   : true,
         "return_type": "feed_entry_list",
         "parameters" : [
             {
@@ -444,6 +471,7 @@
       {
         "method_name" : "blockchain_market_list_bids",
         "description" : "Returns the bid side of the order book for a given market",
+        "cached"      : true,
         "return_type" : "market_order_array",
         "parameters"  : [
            {
@@ -469,6 +497,7 @@
       {
         "method_name" : "blockchain_market_list_asks",
         "description" : "Returns the ask side of the order book for a given market",
+        "cached"      : true,
         "return_type" : "market_order_array",
         "parameters"  : [
            {
@@ -494,6 +523,7 @@
       {
         "method_name" : "blockchain_market_list_shorts",
         "description" : "Returns the short side of the order book for a given market",
+        "cached"      : true,
         "return_type" : "market_order_array",
         "parameters"  : [
            {
@@ -515,6 +545,7 @@
       {
         "method_name" : "blockchain_market_list_covers",
         "description" : "Returns the covers side of the order book for a given market",
+        "cached"      : true,
         "return_type" : "market_order_array",
         "parameters"  : [
            {
@@ -541,6 +572,7 @@
       {
         "method_name" : "blockchain_market_get_asset_collateral",
         "description" : "Returns the total collateral for an asset of a given type",
+        "cached"      : true,
         "return_type" : "share_type",
         "parameters"  : [
            {
@@ -555,6 +587,7 @@
       {
         "method_name" : "blockchain_market_order_book",
         "description" : "Returns the long and short sides of the order book for a given market",
+        "cached"      : true,
         "return_type" : "pair<market_order_array,market_order_array>",
         "parameters"  : [
            {
@@ -580,6 +613,7 @@
       {
         "method_name": "blockchain_market_order_history",
         "description": "Returns a list of recently filled orders in a given market, in reverse order of execution.",
+        "cached"     : true,
         "return_type": "order_history_record_array",
         "parameters" : [
            {
@@ -617,6 +651,7 @@
       {
         "method_name": "blockchain_market_price_history",
         "description": "Returns a list of price spreads in the given timeframe for the specified market.",
+        "cached"     : true,
         "return_type": "market_history_points",
         "parameters" : [
            {
@@ -652,6 +687,7 @@
       {
          "method_name" : "blockchain_list_active_delegates",
          "description" : "Returns a list of the current round's active delegates in signing order",
+         "cached"      : true,
          "return_type" : "account_record_array",
          "parameters" : [
              {
@@ -674,6 +710,7 @@
       {
         "method_name": "blockchain_list_delegates",
         "description": "Returns a list of all the delegates sorted by vote",
+         "cached"      : true,
         "return_type": "account_record_array",
         "parameters" : [
             {
@@ -696,6 +733,7 @@
       {
          "method_name" : "blockchain_list_blocks",
          "description" : "Returns the block headers for blocks in a range",
+         "cached"      : true,
          "return_type" : "block_record_array",
          "parameters"  : [
             {
@@ -717,6 +755,7 @@
       {
          "method_name" : "blockchain_list_missing_block_delegates",
          "description" : "Returns any delegates who were supposed to produce a given block number but didn't",
+         "cached"      : true,
          "return_type" : "account_name_array",
          "parameters"  : [
             {
@@ -758,6 +797,7 @@
       {
          "method_name" : "blockchain_list_forks",
          "description" : "returns a list of all blocks for which there is a fork off of the main chain",
+         "cached"      : true,
          "return_type" : "map<uint32_t, vector<fork_record>>",
          "parameters"  : [],
          "is_const" : true,
@@ -767,6 +807,7 @@
       {
         "method_name": "blockchain_get_delegate_slot_records",
         "description": "Query the most recent block production slot records for the specified delegate",
+         "cached"      : true,
         "return_type": "slot_records_list",
         "parameters" : [
             {
@@ -788,6 +829,7 @@
       {
         "method_name": "blockchain_get_block_signee",
         "description": "Get the delegate that signed a given block",
+         "cached"      : true,
         "return_type": "string",
         "parameters" : [
             {
@@ -802,6 +844,7 @@
       {
         "method_name": "blockchain_list_markets",
         "description": "Returns a list of active markets",
+         "cached"      : true,
         "return_type": "market_status_array",
         "parameters" : [],
         "is_const" : true,
@@ -810,6 +853,7 @@
       {
         "method_name": "blockchain_list_market_transactions",
         "description": "Returns a list of market transactions executed on a given block.",
+         "cached"      : true,
         "return_type": "market_transaction_array",
         "parameters" : [
             {
@@ -824,6 +868,7 @@
       {
         "method_name": "blockchain_market_status",
         "description": "Returns the status of a particular market, including any trading errors.",
+         "cached"      : true,
         "return_type": "market_status",
         "parameters" : [
             {
@@ -843,6 +888,7 @@
       {
         "method_name": "blockchain_unclaimed_genesis",
         "description": "Returns the total shares in the genesis block which have never been fully or partially claimed.",
+         "cached"      : true,
         "return_type": "asset",
         "parameters" : [],
         "is_const" : true,
@@ -851,6 +897,7 @@
       {
         "method_name": "blockchain_verify_signature",
         "description": "Verify that the given signature proves the given hash was signed by the given account.",
+         "cached"      : true,
         "return_type": "bool",
         "parameters" : [
             {
@@ -876,6 +923,7 @@
       {
         "method_name": "blockchain_dump_state",
         "description": "TODO",
+         "cached"      : true,
         "return_type": "void",
         "parameters"  : [
            {
@@ -890,6 +938,7 @@
       {
         "method_name": "blockchain_broadcast_transaction",
         "description": "Takes a signed transaction and broadcasts it to the network.",
+         "cached"      : true,
         "return_type": "void",
         "parameters"  : [
            {
@@ -904,6 +953,7 @@
       {
         "method_name": "blockchain_get_object",
         "description": "Get a particular object with a known ID",
+         "cached"      : true,
         "return_type": "object_record",
         "parameters" :
           [
@@ -920,6 +970,7 @@
       {
         "method_name": "blockchain_get_edges",
         "description": "Get all edges with given properties",
+         "cached"      : true,
         "return_type": "edge_array",
         "parameters" :
           [
