@@ -41,6 +41,7 @@ namespace bts { namespace blockchain { namespace detail {
         min_ask.ratio /= 10;
         return min_ask;
     }
+   void handle_liquidation( const price& liqudation_price );
 
     /**
       *  This method should not affect market execution or validation and
