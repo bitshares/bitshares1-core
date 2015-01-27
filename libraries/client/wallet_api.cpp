@@ -858,6 +858,7 @@ wallet_transaction_record detail::client_impl::wallet_asset_update(
         const optional<double>& maximum_share_supply,
         const optional<uint64_t>& precision,
         const share_type& issuer_fee,
+        double issuer_market_fee,
         const vector<asset_permissions>& flags,
         const vector<asset_permissions>& issuer_permissions,
         const string& issuer_account_name,
@@ -870,7 +871,8 @@ wallet_transaction_record detail::client_impl::wallet_asset_update(
    for( auto item : flags ) flags_int |= item;
    for( auto item : issuer_permissions ) issuer_perms_int |= item;
    auto record = _wallet->update_asset( symbol, name, description, public_data, maximum_share_supply,
-                                        precision, issuer_fee, flags_int, issuer_perms_int, issuer_account_name,
+                                        precision, issuer_fee, issuer_market_fee, flags_int, 
+                                        issuer_perms_int, issuer_account_name,
                                         required_sigs, authority, true );
 
    _wallet->cache_transaction( record );
