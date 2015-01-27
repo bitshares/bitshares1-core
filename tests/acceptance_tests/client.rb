@@ -21,7 +21,6 @@ class BitSharesNode
     @command << " --data-dir #{options[:data_dir]}"
     @command << " --genesis-config #{options[:genesis]}"
     @command << " --min-delegate-connection-count=0"
-    @command << " --statistics-enabled"
     @command << " --server"
     @command << " --rpcuser=user"
     @command << " --rpcpassword=pass"

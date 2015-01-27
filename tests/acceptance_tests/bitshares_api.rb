@@ -76,7 +76,14 @@ module BitShares
         Net::HTTP.start(@uri.hostname, @uri.port) do |http|
           @req.body = { method: method, params: params, id: 0 }.to_json
           response = http.request(@req)
+          begin
           result = JSON.parse(response.body)
+          rescue JSON::ParserError
+            msg = "cannot parse json '#{response.body}' returned from server in response of '#{method} #{params ? params.join(' ') : ''}'"
+            log msg
+            STDERR.puts
+            raise(Error,msg) unless @ignore_errors
+          end
           if result['error']
             log "error: #{result['error']}"
             unless @ignore_errors
