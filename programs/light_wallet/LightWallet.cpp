@@ -56,10 +56,11 @@ bool LightWallet::accountExists(QString name)
    bool exists;
 
    IN_WAIT_THREAD
-      exists = m_wallet.get_account_record(convert(name)).valid();
+   auto account = m_wallet.get_account_record(convert(name));
+   exists = account.valid() && account->name == convert(name);
    END_WAIT_THREAD
 
-         return exists;
+   return exists;
 }
 
 bool LightWallet::verifyBrainKey(QString key) const
