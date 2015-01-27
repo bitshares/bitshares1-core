@@ -84,7 +84,7 @@ Details:
 37006 insufficient_feeds: insufficient feeds
 
     {"quote_id":1,"base_id":0}
-    th_a  market_engine.cpp:66 execute
+    th_a  market_engine.cpp:66 bts::blockchain::detail::market_engine::execute
 default (unlocked) >>> debug_enable_output false
 >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
 >>> debug_enable_output true
@@ -110,7 +110,7 @@ Details:
 37006 insufficient_feeds: insufficient feeds
 
     {"quote_id":1,"base_id":0}
-    th_a  market_engine.cpp:66 execute
+    th_a  market_engine.cpp:66 bts::blockchain::detail::market_engine::execute
 default (unlocked) >>> balance angel
 ACCOUNT                         BALANCE                     
 ============================================================
@@ -128,7 +128,7 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              32 weeks ago   3,750,000.00000 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> balance angel
 ACCOUNT                         BALANCE                     
@@ -156,7 +156,7 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              32 weeks ago   3,750,000.00000 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> balance angel
 ACCOUNT                         BALANCE                     
@@ -184,7 +184,7 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              32 weeks ago   3,750,000.00000 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> balance alice
 ACCOUNT                         BALANCE                     
@@ -209,7 +209,7 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              32 weeks ago   3,750,000.00000 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> balance alice
 ACCOUNT                         BALANCE                     
@@ -231,7 +231,7 @@ default (unlocked) >>> wallet_market_sell alice 10000 XTS .0205 USD
   "is_market": true,
   "trx": {
     "expiration": "2014-06-20T15:41:51",
-    "slate_id": null,
+    "reserved": null,
     "operations": [{
         "type": "ask_op_type",
         "data": {
@@ -301,7 +301,7 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              32 weeks ago   3,750,000.00000 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> balance alice
 ACCOUNT                         BALANCE                     
@@ -326,7 +326,7 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              32 weeks ago   3,750,000.00000 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> balance alice
 ACCOUNT                         BALANCE                     
@@ -348,7 +348,7 @@ default (unlocked) >>> wallet_market_sell bob 100 USD 51.25 XTS
   "is_market": true,
   "trx": {
     "expiration": "2014-06-20T15:42:11",
-    "slate_id": null,
+    "reserved": null,
     "operations": [{
         "type": "bid_op_type",
         "data": {
@@ -416,7 +416,7 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              32 weeks ago   3,750,000.00000 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> balance alice
 ACCOUNT                         BALANCE                     
@@ -441,7 +441,7 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              32 weeks ago   3,750,000.00000 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> balance alice
 ACCOUNT                         BALANCE                     
@@ -463,7 +463,7 @@ default (unlocked) >>> wallet_market_sell alice 10000 XTS 0 USD 1.05
   "is_market": true,
   "trx": {
     "expiration": "2014-06-20T15:42:31",
-    "slate_id": null,
+    "reserved": null,
     "operations": [{
         "type": "relative_ask_op_type",
         "data": {
@@ -530,7 +530,7 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              32 weeks ago   3,750,000.00000 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> balance alice
 ACCOUNT                         BALANCE                     
@@ -556,7 +556,7 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              32 weeks ago   3,750,000.00000 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> wallet_market_sell alice 1000 XTS 0 USD 1.01
 {
@@ -568,7 +568,7 @@ default (unlocked) >>> wallet_market_sell alice 1000 XTS 0 USD 1.01
   "is_market": true,
   "trx": {
     "expiration": "2014-06-20T15:42:51",
-    "slate_id": null,
+    "reserved": null,
     "operations": [{
         "type": "relative_ask_op_type",
         "data": {
@@ -641,7 +641,7 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              32 weeks ago   3,750,000.00000 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> balance alice
 ACCOUNT                         BALANCE                     
@@ -668,7 +668,7 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              32 weeks ago   3,750,000.00000 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> wallet_market_sell bob 350 USD 0 XTS 1.05
 {
@@ -680,7 +680,7 @@ default (unlocked) >>> wallet_market_sell bob 350 USD 0 XTS 1.05
   "is_market": true,
   "trx": {
     "expiration": "2014-06-20T15:43:11",
-    "slate_id": null,
+    "reserved": null,
     "operations": [{
         "type": "relative_bid_op_type",
         "data": {
@@ -761,7 +761,7 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              32 weeks ago   3,750,000.00000 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> debug_advance_time 1 block
 OK
@@ -776,7 +776,7 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              32 weeks ago   3,750,000.00000 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> balance alice
 ACCOUNT                         BALANCE                     
@@ -798,7 +798,7 @@ default (unlocked) >>> wallet_market_sell alice 10000 XTS 0 USD 1.05
   "is_market": true,
   "trx": {
     "expiration": "2014-06-20T15:43:31",
-    "slate_id": null,
+    "reserved": null,
     "operations": [{
         "type": "relative_ask_op_type",
         "data": {
@@ -856,7 +856,7 @@ default (unlocked) >>> wallet_market_sell alice 10000 XTS .0205 USD
   "is_market": true,
   "trx": {
     "expiration": "2014-06-20T15:43:31",
-    "slate_id": null,
+    "reserved": null,
     "operations": [{
         "type": "ask_op_type",
         "data": {
@@ -913,7 +913,7 @@ default (unlocked) >>> wallet_market_sell alice 1000 XTS 0 USD 1.01
   "is_market": true,
   "trx": {
     "expiration": "2014-06-20T15:43:31",
-    "slate_id": null,
+    "reserved": null,
     "operations": [{
         "type": "relative_ask_op_type",
         "data": {
@@ -977,7 +977,7 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              32 weeks ago   3,750,000.00000 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> balance alice
 ACCOUNT                         BALANCE                     
@@ -1005,7 +1005,7 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              32 weeks ago   3,750,000.00000 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> balance alice
 ACCOUNT                         BALANCE                     
@@ -1027,7 +1027,7 @@ default (unlocked) >>> wallet_market_sell bob 100 USD 0 XTS 0.95
   "is_market": true,
   "trx": {
     "expiration": "2014-06-20T15:43:51",
-    "slate_id": null,
+    "reserved": null,
     "operations": [{
         "type": "relative_bid_op_type",
         "data": {
@@ -1093,7 +1093,7 @@ default (unlocked) >>> wallet_market_sell bob 100 USD 0 XTS 0.99
   "is_market": true,
   "trx": {
     "expiration": "2014-06-20T15:43:51",
-    "slate_id": null,
+    "reserved": null,
     "operations": [{
         "type": "relative_bid_op_type",
         "data": {
@@ -1159,7 +1159,7 @@ default (unlocked) >>> wallet_market_sell bob 300 USD 0 XTS 1.04
   "is_market": true,
   "trx": {
     "expiration": "2014-06-20T15:43:51",
-    "slate_id": null,
+    "reserved": null,
     "operations": [{
         "type": "relative_bid_op_type",
         "data": {
@@ -1231,7 +1231,7 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              32 weeks ago   3,750,000.00000 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> balance alice
 ACCOUNT                         BALANCE                     
@@ -1259,7 +1259,7 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              32 weeks ago   3,750,000.00000 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> balance alice
 ACCOUNT                         BALANCE                     
@@ -1344,7 +1344,7 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              32 weeks ago   3,750,000.00000 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> balance alice
 ACCOUNT                         BALANCE                     
@@ -1372,7 +1372,7 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              32 weeks ago   3,750,000.00000 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> balance alice
 ACCOUNT                         BALANCE                     
@@ -1404,7 +1404,7 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              32 weeks ago   3,750,000.00000 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> balance alice
 ACCOUNT                         BALANCE                     
@@ -1432,7 +1432,7 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              31 weeks ago   3,750,000.00000 XTS
+                                                                             | 0.008888888889 USD                2,812,500.00000 XTS           25,000.0000 USD              32 weeks ago   3,750,000.00000 XTS
 Maximum Short Price: 0.0202 USD / XTS     
 default (unlocked) >>> balance alice
 ACCOUNT                         BALANCE                     

@@ -120,9 +120,9 @@ namespace bts { namespace blockchain {
                     erase_from_address_map( prev_record->active_address() );
                 if( prev_record->is_delegate() )
                 {
-                    if( !record.is_delegate() || prev_record->signing_address() != record.signing_address() )
+                    if( record.is_retracted() || !record.is_delegate() || prev_record->signing_address() != record.signing_address() )
                         erase_from_address_map( prev_record->signing_address() );
-                    if( !record.is_delegate() || prev_record->net_votes() != record.net_votes() )
+                    if( record.is_retracted() || !record.is_delegate() || prev_record->net_votes() != record.net_votes() )
                         erase_from_vote_set( vote_del( prev_record->net_votes(), prev_record->id ) );
                 }
             }

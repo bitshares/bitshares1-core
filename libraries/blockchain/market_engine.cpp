@@ -173,6 +173,15 @@ namespace bts { namespace blockchain { namespace detail {
                 const asset cover_debt               = get_current_cover_debt();
                 const asset usd_for_short_sale       = _current_bid->get_balance() * collateral_rate; //_current_bid->get_quote_quantity();
 
+                const price liquidation_price = cover_debt / cover_collateral;
+
+                if( liquidation_price > *_feed_price )
+                {
+                    handle_liquidation( liquidation_price );
+                    break;
+                }
+
+
                 //Actual quote to purchase is the minimum of what's for sale, what can I possibly buy, and what I owe
                 const asset usd_exchanged = std::min( {usd_for_short_sale, max_usd_cover_can_afford, cover_debt} );
 
@@ -205,6 +214,15 @@ namespace bts { namespace blockchain { namespace detail {
                 const asset max_usd_cover_can_afford  = cover_collateral * mtrx.bid_price;
                 const asset cover_debt                = get_current_cover_debt();
                 const asset usd_for_sale              = _current_bid->get_balance();
+
+                const price liquidation_price = cover_debt / cover_collateral;
+
+                if( liquidation_price > *_feed_price )
+                {
+                    handle_liquidation( liquidation_price );
+                    break;
+                }
+
 
                 asset usd_exchanged = std::min( {usd_for_sale, max_usd_cover_can_afford, cover_debt} );
 
@@ -927,6 +945,18 @@ namespace bts { namespace blockchain { namespace detail {
       return get_interest_owed( _current_ask->get_balance(),
                                 _current_collat_record.interest_rate,
                                 get_current_cover_age() ) + _current_ask->get_balance();
+  }
+
+  void market_engine::handle_liquidation( const price& liqudation_price )
+  {
+     FC_ASSERT( !"Black Swan Detected - Liquidate Market Now" );
+     // Drop / Cancel all market orders that have executed so far
+     // for each USD cover order, subtract liquidation_price*(debt+interest) from collateral and refund balance
+     //    - pay interest to yield fund
+     // calculate the yield per USD owed on all USD balances
+     // for each USD balance record, set to 0 and issue (balance * yield_per_usd) * liquidation_price to owner
+     //   - for escrow transactions convert escrow balance to USD
+     // for each USD pending sell, cancel and issue balance * yield_per_usd * liquidation_price to owner
   }
 
   void market_engine::cancel_all_shorts()
