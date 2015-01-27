@@ -89,9 +89,9 @@ MainView {
 
          TextField {
             id: nameField
-            inputMethodHints: Qt.ImhLowercaseOnly | Qt.ImhLatinOnly
+            input.inputMethodHints: Qt.ImhLowercaseOnly | Qt.ImhLatinOnly
+            input.font.pixelSize: units.dp(20)
             placeholderText: qsTr("Pick a Username")
-            font.pixelSize: units.dp(20)
             Layout.fillWidth: true
             Layout.preferredHeight: implicitHeight
             text: wallet.account? wallet.account.name : ""

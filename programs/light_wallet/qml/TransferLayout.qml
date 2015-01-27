@@ -58,14 +58,16 @@ Page {
       TextField {
          id: toNameField
          width: parent.width
-         inputMethodHints: Qt.ImhLowercaseOnly | Qt.ImhLatinOnly
          placeholderText: qsTr("Recipient")
          floatingLabel: true
-         font.pixelSize: units.dp(20)
          focus: true
          onEditingFinished: canProceed()
          transform: ShakeAnimation { id: recipientShaker }
          showHelperText: true
+         input {
+            inputMethodHints: Qt.ImhLowercaseOnly | Qt.ImhLatinOnly
+            font.pixelSize: units.dp(20)
+         }
 
          function canProceed() {
             if( !wallet.accountExists(text) )
@@ -91,11 +93,13 @@ Page {
          TextField {
             id: amountField
             Layout.fillWidth: true
-            inputMethodHints: Qt.ImhDigitsOnly
             placeholderText: qsTr("Amount")
             floatingLabel: true
-            font.pixelSize: units.dp(20)
-            validator: DoubleValidator {bottom: 0; notation: DoubleValidator.StandardNotation}
+            input {
+               inputMethodHints: Qt.ImhDigitsOnly
+               font.pixelSize: units.dp(20)
+               validator: DoubleValidator {bottom: 0; notation: DoubleValidator.StandardNotation}
+            }
             helperText: {
                var fee = wallet.getFee(assetSymbol.text)
                return qsTr("Available balance: ") + wallet.account.balance(assetSymbol.text) + " " + assetSymbol.text +
@@ -127,14 +131,14 @@ Page {
             id: assetSymbol
             y: amountField.y
             Layout.preferredWidth: units.dp(100)
-            readOnly: true
+            input.readOnly: true
+            input.font.pixelSize: units.dp(20)
             //Hack to make RowLayout place this field vertically level with amountField
             helperText: "\n "
             text: wallet.account.availableAssets.length ? wallet.account.availableAssets[0]
                                                         : ":("
             placeholderText: qsTr("Asset")
             floatingLabel: true
-            font.pixelSize: units.dp(20)
 
             Icon {
                anchors.verticalCenter: parent.verticalCenter
@@ -162,7 +166,7 @@ Page {
          characterLimit: wallet.maxMemoSize
          placeholderText: qsTr("Memo")
          floatingLabel: true
-         font.pixelSize: units.dp(20)
+         input.font.pixelSize: units.dp(20)
          anchors.top: amountRow.bottom
          anchors.margins: units.dp(3)
          transform: ShakeAnimation { id: memoShaker }
