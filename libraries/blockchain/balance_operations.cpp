@@ -82,6 +82,13 @@ namespace bts { namespace blockchain {
       if( this->slate.supported_delegates.size() > BTS_BLOCKCHAIN_MAX_SLATE_SIZE )
          FC_CAPTURE_AND_THROW( too_may_delegates_in_slate, (slate.supported_delegates.size()) );
 
+      // verify slates are sorted
+      FC_ASSERT( slate.supported_delegates.size() > 0 );
+      for( uint32_t i = 1; i < slate.supported_delegates.size(); ++i )
+      {
+         FC_ASSERT( slate.supported_delegates[i-1] < slate.supported_delegates[i] );
+      }
+
       const slate_id_type slate_id = this->slate.id();
       const odelegate_slate current_slate = eval_state._current_state->get_delegate_slate( slate_id );
       if( NOT current_slate.valid() )
