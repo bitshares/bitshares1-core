@@ -461,6 +461,34 @@ int32_t client_impl::stats_unique_account_registrars()const
     return counts.size();
 }
 
+int32_t client_impl::stats_slate_summary()const
+{
+    map<slate_id_type, share_type> slates;
+    const auto scan_balance = [&]( const balance_record& rec )
+    {
+        auto id = rec.condition.slate_id;
+        if( slates.find(id) != slates.end() )
+            slates[id] = rec.balance;
+        else
+            slates[id] += rec.balance;
+    };
+    _chain_db->scan_balances( scan_balance, false );
+    for(share_type min = 1000000; min < 10000000000000000; min *= 1.1)
+    {
+        auto count = 0;
+        for( auto pair : slates )
+        {
+            if( pair.second > min)
+                count++;
+        }
+        ilog("${n} slates have more than ${b}", ("n", count)("b", min / 100000));
+        elog("${n} slates have more than ${b}", ("n", count)("b", min / 100000));
+        ulog("${n} slates have more than ${b}", ("n", count)("b", min / 100000));
+
+    }
+    return 0;
+}
+
 bts::blockchain::blockchain_security_state client_impl::blockchain_get_security_state()const
 {
    blockchain_security_state state;
