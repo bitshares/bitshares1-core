@@ -597,46 +597,45 @@ transaction_builder detail::client_impl::wallet_multisig_withdraw_start(
 
 transaction_builder detail::client_impl::wallet_builder_add_signature(
                                             const transaction_builder& builder,
-                                            bool broadcast,
-                                            const string& builder_path )
+                                            bool broadcast )
 { try {
-    auto path = builder_path;
-    auto b2 = _wallet->create_transaction_builder( builder );
-    if( b2->transaction_record.trx.signatures.empty() )
-        b2->finalize( false );
-    b2->sign();
+    auto new_builder = _wallet->create_transaction_builder( builder );
+    if( new_builder->transaction_record.trx.signatures.empty() )
+        new_builder->finalize( false );
+    new_builder->sign();
     if( broadcast )
     {
         try {
-            network_broadcast_transaction( b2->transaction_record.trx );
+            network_broadcast_transaction( new_builder->transaction_record.trx );
         }
         catch(...) {
-            ulog("Transaction was invalid!");
+            ulog("I tried to broadcast the transaction but it was not valid.");
         }
     }
-    _wallet->write_latest_builder( *b2, path );
-    return *b2;
+    _wallet->write_latest_builder( *new_builder, "" );
+    return *new_builder;
 } FC_CAPTURE_AND_RETHROW( (builder)(broadcast) ) }
 
 transaction_builder detail::client_impl::wallet_builder_file_add_signature(
-                                            bool broadcast,
-                                            const string& builder_path )
+                                            const string& builder_path,
+                                            bool broadcast )
 { try {
-    auto b2 = _wallet->create_transaction_builder_from_file( builder_path );
-    if( b2->transaction_record.trx.signatures.empty() )
-        b2->finalize( false );
-    b2->sign();
+    auto new_builder = _wallet->create_transaction_builder_from_file( builder_path );
+    if( new_builder->transaction_record.trx.signatures.empty() )
+        new_builder->finalize( false );
+    new_builder->sign();
     if( broadcast )
     {
         try {
-            network_broadcast_transaction( b2->transaction_record.trx );
+            network_broadcast_transaction( new_builder->transaction_record.trx );
         }
         catch(...) {
-            ulog("Transaction was invalid!");
+            ulog("I tried to broadcast the transaction but it was not valid.");
         }
     }
-    _wallet->write_latest_builder( *b2, builder_path );
-    return *b2;
+    _wallet->write_latest_builder( *new_builder, builder_path );
+    _wallet->write_latest_builder( *new_builder, "" ); // always write to "latest"
+    return *new_builder;
 } FC_CAPTURE_AND_RETHROW( (broadcast)(builder_path) ) }
 
 

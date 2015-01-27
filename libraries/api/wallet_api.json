@@ -1154,12 +1154,6 @@
                 "description": "Try to broadcast this transaction?",
                 "default_value": false
             },
-            {
-              "name" : "builder_path",
-              "type" : "string",
-              "description" : "If specified, will write builder here instead of to DATA_DIR/transactions/latest.trx",
-              "default_value" : ""
-            }
         ],
         "prerequisites": ["json_authenticated"],
         "aliases": ["add_signature"]
@@ -1171,16 +1165,16 @@
         "parameters":
         [
             {
-                "name": "broadcast",
-                "type": "bool",
-                "description": "Try to broadcast this transaction?",
-                "default_value": false
-            },
-            {
               "name" : "builder_path",
               "type" : "string",
               "description" : "If specified, will write builder here instead of to DATA_DIR/transactions/latest.trx",
               "default_value" : ""
+            },
+            {
+                "name": "broadcast",
+                "type": "bool",
+                "description": "Try to broadcast this transaction?",
+                "default_value": false
             }
         ],
         "prerequisites": ["json_authenticated"],
