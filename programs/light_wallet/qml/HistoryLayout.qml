@@ -6,8 +6,8 @@ import Material 0.1
 
 Page {
    id: historyPage
-   title: assetSymbol + " " + qsTr("Transactions")
-   actions: [lockAction]
+   title: accountName + "'s " + assetSymbol + " " + qsTr("Transactions")
+   actions: [payAction, lockAction]
 
    property string accountName
    property string assetSymbol
@@ -15,18 +15,19 @@ Page {
    ScrollView {
       id: historyScroller
       anchors.fill: parent
+      anchors.topMargin: visuals.margins
       flickableItem.interactive: true
       // @disable-check M16
       verticalScrollBarPolicy: Qt.platform.os in ["android", "ios"]? Qt.ScrollBarAsNeeded : Qt.ScrollBarAlwaysOff
 
       ListView {
          id: historyList
-         model: wallet.account.transactionHistory(assetSymbol)
+         model: wallet.accounts[accountName].transactionHistory(assetSymbol)
          spacing: visuals.margins / 2
 
          Connections {
             target: wallet
-            onSynced: historyList.model = wallet.account.transactionHistory(assetSymbol)
+            onSynced: historyList.model = wallet.accounts[accountName].transactionHistory(assetSymbol)
          }
 
          delegate: Transaction {
@@ -57,13 +58,13 @@ Page {
                anchors.verticalCenter: parent.verticalCenter
                anchors.right: parent.right
                anchors.rightMargin: visuals.margins
-               text: wallet.account.balance(assetSymbol) + " " + assetSymbol
+               text: wallet.accounts[accountName].balance(assetSymbol) + " " + assetSymbol
                color: "white"
                font.pixelSize: units.dp(24)
 
                Connections {
                   target: wallet
-                  onSynced: balanceLabel.text = wallet.account.balance(assetSymbol) + " " + assetSymbol
+                  onSynced: balanceLabel.text = wallet.accounts[accountName].balance(assetSymbol) + " " + assetSymbol
                }
             }
          }

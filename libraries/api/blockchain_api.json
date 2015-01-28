@@ -358,7 +358,7 @@
         "method_name": "blockchain_list_address_transactions",
         "description": "Lists all transactions that involve the provided address after the specified time",
         "cached"   : true,
-        "return_type": "timestamped_transaction_record_map",
+        "return_type": "variant_object",
         "parameters" : [
             {
               "name" : "addr",

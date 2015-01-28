@@ -18,19 +18,19 @@ MainView {
 
    function registerAccount() {
       onboarder.state = "REGISTERING"
-      Utils.connectOnce(wallet.account.isRegisteredChanged, finished,
-                        function() { return wallet.account.isRegistered })
+      Utils.connectOnce(wallet.accounts[username].isRegisteredChanged, finished,
+                        function() { return wallet.accounts[username].isRegistered })
       Utils.connectOnce(wallet.onErrorRegistering, function(reason) {
          //FIXME: Do something much, much better here...
          console.log("Can't register: " + reason)
       })
 
       if( wallet.connected ) {
-         wallet.registerAccount()
+         wallet.registerAccount(username)
       } else {
          // Not connected. Schedule for when we reconnect.
          wallet.runWhenConnected(function() {
-            wallet.registerAccount()
+            wallet.registerAccount(username)
          })
       }
    }
@@ -47,7 +47,7 @@ MainView {
             }
          })
          wallet.createWallet(username, password)
-      } else if ( !wallet.account.isRegistered ) {
+      } else if ( !wallet.accounts[username].isRegistered ) {
          //Wallet is created, so the account exists, but it's not registered yet. Take care of that now.
          registerAccount()
       }
@@ -94,17 +94,19 @@ MainView {
             placeholderText: qsTr("Pick a Username")
             Layout.fillWidth: true
             Layout.preferredHeight: implicitHeight
-            text: wallet.account? wallet.account.name : ""
+            text: wallet.accountNames.length? wallet.accountNames[0] : ""
             helperText: defaultHelperText
             characterLimit: 64
             onEditingFinished: if( wallet.connected ) nameAvailable()
             transform: ShakeAnimation { id: nameShaker }
 
-            property string defaultHelperText: qsTr("May contain letters, numbers and hyphens.\n" +
-                                                    "Must start with a letter and end with a letter or number.")
+            property string defaultHelperText: qsTr("May contain letters, numbers and hyphens.")
 
             function nameAvailable() {
-               if( wallet.accountExists(text) ) {
+               if( text.length === 0 ) {
+                  helperText = defaultHelperText
+                  displayError = false
+               } else if( !wallet.isValidAccountName(text) || text.indexOf('.') >= 0 || wallet.accountExists(text) ) {
                   helperText = qsTr("That username is already taken")
                   displayError = true
                } else if( characterCount > characterLimit ) {
@@ -112,8 +114,9 @@ MainView {
                   displayError = true
                } else {
                   helperText = defaultHelperText
-                  displayError = !wallet.isValidAccountName(text)
+                  displayError = false
                }
+
                return !displayError
             }
          }
@@ -136,8 +139,8 @@ MainView {
             Layout.preferredHeight: passwordField.height
 
             onClicked: {
-               if( wallet.account )
-                  wallet.account.name = nameField.text
+               if( wallet.accountNames.length )
+                  wallet.accounts[wallet.accountNames[0]].name = nameField.text
 
                if( !wallet.connected ) {
                   showError("Unable to connect to server.", "Try Again", connectToServer)
