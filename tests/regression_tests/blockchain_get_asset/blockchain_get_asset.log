@@ -27,6 +27,7 @@ aliases: get_asset
   "flags": 0,
   "issuer_permissions": 0,
   "transaction_fee": 0,
+  "market_fee": 10000,
   "authority": {
     "required": 0,
     "owners": []
@@ -50,6 +51,7 @@ aliases: get_asset
   "flags": 0,
   "issuer_permissions": 0,
   "transaction_fee": 0,
+  "market_fee": 10000,
   "authority": {
     "required": 0,
     "owners": []
