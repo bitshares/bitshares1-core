@@ -8,13 +8,13 @@ import "utils.js" as Utils
 
 Page {
    title: wallet.accounts[accountName].name + qsTr("'s Balances")
-   actions: [lockAction]
+   actions: [payAction, lockAction]
+
 
    property string accountName
 
    signal lockRequested
    signal openHistory(string account, string symbol)
-   signal openTransfer()
 
    ColumnLayout {
       id: assetsLayout
@@ -71,10 +71,5 @@ Page {
             }
          }
       }
-   }
-
-   FloatingActionButton {
-      iconName: "content/add"
-      onTriggered: openTransfer()
    }
 }

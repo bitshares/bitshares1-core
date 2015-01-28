@@ -6,8 +6,8 @@ import Material 0.1
 
 Page {
    id: historyPage
-   title: assetSymbol + " " + qsTr("Transactions")
-   actions: [lockAction]
+   title: accountName + "'s " + assetSymbol + " " + qsTr("Transactions")
+   actions: [payAction, lockAction]
 
    property string accountName
    property string assetSymbol
@@ -15,6 +15,7 @@ Page {
    ScrollView {
       id: historyScroller
       anchors.fill: parent
+      anchors.topMargin: visuals.margins
       flickableItem.interactive: true
       // @disable-check M16
       verticalScrollBarPolicy: Qt.platform.os in ["android", "ios"]? Qt.ScrollBarAsNeeded : Qt.ScrollBarAlwaysOff

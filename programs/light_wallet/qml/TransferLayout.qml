@@ -6,7 +6,7 @@ import Material 0.1
 
 Page {
    id: transferPage
-   title: "Transfer"
+   title: qsTr("Send Payment")
    actions: [lockAction]
 
    property string accountName
