@@ -76,7 +76,13 @@
         "method_name": "stats_slate_summary",
         "description": "summarize statistics about voting balances"
         "return_type": "int32_t",
-        "parameters" : [],
+        "parameters" : [
+            {
+              "name" : "filename",
+              "type" : "string",
+              "description" : "where to save the slate vote count"
+            }
+        ],
         "is_const" : true,
         "prerequisites" : ["no_prerequisites"],
         "aliases" : []

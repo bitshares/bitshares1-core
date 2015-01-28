@@ -461,7 +461,7 @@ int32_t client_impl::stats_unique_account_registrars()const
     return counts.size();
 }
 
-int32_t client_impl::stats_slate_summary()const
+int32_t client_impl::stats_slate_summary( const string& filename )const
 {
     map<slate_id_type, share_type> slates;
     const auto scan_balance = [&]( const balance_record& rec )
@@ -486,6 +486,7 @@ int32_t client_impl::stats_slate_summary()const
         ulog("${n} slates have more than ${b}", ("n", count)("b", min / 100000));
 
     }
+    fc::json::save_to_file( slates, filename );
     return 0;
 }
 
