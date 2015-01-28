@@ -396,9 +396,6 @@ namespace bts { namespace blockchain {
       }
    }
 
-#ifndef WIN32
-#warning [VIKRAM] Handle hardfork
-#endif
    void add_collateral_operation::evaluate( transaction_evaluation_state& eval_state )
    {
       if( eval_state._current_state->get_head_block_num() < BTS_V0_4_21_FORK_BLOCK_NUM )
@@ -425,7 +422,13 @@ namespace bts { namespace blockchain {
 
       const auto min_call_price = asset( current_cover->payoff_balance, cover_index.order_price.quote_asset_id )
                                   / asset( (current_cover->collateral_balance*3)/4, cover_index.order_price.base_asset_id );
-      const auto new_call_price = std::min( min_call_price, cover_index.order_price );
+      auto new_call_price = std::min( min_call_price, cover_index.order_price );
+
+      if( eval_state._current_state->get_head_block_num() < BTS_V0_7_0_FORK_BLOCK_NUM )
+      {
+          new_call_price = asset( current_cover->payoff_balance, cover_index.order_price.quote_asset_id )
+                                  / asset( (current_cover->collateral_balance*2)/3, cover_index.order_price.base_asset_id );
+      }
 
       // changing the payoff balance changes the call price... so we need to remove the old record
       // and insert a new one.
@@ -436,11 +439,13 @@ namespace bts { namespace blockchain {
                                                           *current_cover );
    }
 
-#ifndef WIN32
-#warning [VIKRAM] Handle softfork
-#endif
    void update_call_price_operation::evaluate( transaction_evaluation_state& eval_state )
    {
+#ifndef WIN32
+#warning [SOFTFORK] Remove this check after BTS_V0_7_0_FORK_BLOCK_NUM has passed
+#endif
+      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM );
+
       if( this->cover_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );
 
