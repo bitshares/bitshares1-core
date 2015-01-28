@@ -337,7 +337,7 @@ map<balance_id_type, balance_record> detail::client_impl::blockchain_list_addres
     auto result =  _chain_db->get_balances_for_address( addr );
     for( auto itr = result.begin(); itr != result.end(); )
     {
-       if( fc::time_point(itr->second.last_update) < after )
+       if( fc::time_point(itr->second.last_update) <= after )
           itr = result.erase(itr);
        else
           ++itr;

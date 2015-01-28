@@ -1,4 +1,4 @@
-#include <bts/light_wallet/light_wallet.hpp>
+#include </Users/nathan/bitshares/libraries/light_wallet/include/bts/light_wallet/light_wallet.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/blockchain/balance_operations.hpp>
 #include <bts/blockchain/transaction_creation_state.hpp>
@@ -434,7 +434,7 @@ void light_wallet::sync_balance( bool resync_all )
    if( _data->last_balance_sync_time + fc::seconds(10) > fc::time_point::now() )
       return; // too fast
 
-   fc::time_point_sec sync_time = fc::time_point_sec();
+   fc::time_point_sec sync_time = _data->last_balance_sync_time;
    vector<string> account_names;
 
    auto batch_results = batch_active_addresses("blockchain_list_address_balances", fc::variant(sync_time), account_names);
@@ -452,6 +452,7 @@ void light_wallet::sync_balance( bool resync_all )
    auto asset_records = _rpc.batch("blockchain_get_asset", batch_args);
    for( int i = 0; i < asset_records.size(); ++i )
       _chain_cache->store_asset_record(asset_records[i].as<asset_record>());
+   wdump((sync_time));
 
    _data->last_balance_sync_time = sync_time;
    save();
