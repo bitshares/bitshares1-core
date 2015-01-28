@@ -152,6 +152,20 @@ namespace bts { namespace blockchain { namespace detail {
                 {
                    _current_ask.reset(); continue;
                 }
+                /**
+                 *  Protect expired cover orders from over-paying to exit their position.  If there are no bids at
+                 *  or above the price feed then the expired cover creates a buy wall at the price feed.  No
+                 *  need to punish them.
+                 */
+                if( _current_collat_record.expiration < _pending_state->now() && mtrx.bid_price < *_feed_price )
+                {
+                   /** make sure that expired *AND* margin called orders don't get skipped */
+                  
+                   // if the call price < feed price then no margin call has occurred yet
+                   // so we can skip it.
+                   if( _current_ask->get_price() < *_feed_price )
+                      _current_ask.reset(); continue;
+                }
                 //This is a forced cover. He's gonna sell at whatever price a buyer wants. No choice.
                 mtrx.ask_price = mtrx.bid_price;
             }
