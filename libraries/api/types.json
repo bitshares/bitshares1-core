@@ -282,10 +282,6 @@
         "cpp_return_type" : "std::map<bts::blockchain::transaction_id_type, bts::blockchain::transaction_record>"
       },
       {
-        "type_name" : "timestamped_transaction_record_map",
-        "cpp_return_type" : "std::map<bts::blockchain::transaction_id_type, std::pair<fc::time_point_sec, bts::blockchain::transaction_record>>"
-      },
-      {
         "type_name" : "transaction_record_pair",
         "cpp_return_type" : "std::pair<bts::blockchain::transaction_id_type, bts::blockchain::transaction_record>"
       },

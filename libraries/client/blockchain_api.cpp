@@ -337,17 +337,17 @@ map<balance_id_type, balance_record> detail::client_impl::blockchain_list_addres
     auto result =  _chain_db->get_balances_for_address( addr );
     for( auto itr = result.begin(); itr != result.end(); )
     {
-       if( fc::time_point(itr->second.last_update) < after )
+       if( fc::time_point(itr->second.last_update) <= after )
           itr = result.erase(itr);
        else
           ++itr;
     }
     return result;
 }
-map<transaction_id_type, pair<fc::time_point_sec, transaction_record>> detail::client_impl::blockchain_list_address_transactions( const string& raw_addr,
-                                                                                                                                  uint32_t after_block )const
+fc::variant_object detail::client_impl::blockchain_list_address_transactions( const string& raw_addr,
+                                                                              uint32_t after_block )const
 {
-   map<transaction_id_type,pair<fc::time_point_sec, transaction_record>> results;
+   fc::mutable_variant_object results;
 
    address addr;
    try {
@@ -366,7 +366,11 @@ map<transaction_id_type, pair<fc::time_point_sec, transaction_record>> detail::c
    ilog("Found ${num} transactions after block ${after_block}", ("num", transactions.size())("after_block", after_block));
 
    for( const auto& trx : transactions )
-      results[trx.trx.id()] = std::make_pair(_chain_db->get_block(trx.chain_location.block_num).timestamp, trx);
+   {
+      fc::mutable_variant_object bundle("timestamp", _chain_db->get_block(trx.chain_location.block_num).timestamp);
+      bundle["trx"] = trx;
+      results[string(trx.trx.id())] = bundle;
+   }
 
    return results;
 }

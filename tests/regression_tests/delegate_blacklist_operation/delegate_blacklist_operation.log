@@ -1,0 +1,92 @@
+default (unlocked) >>> delegate_get_config
+{
+  "network_min_connection_count": 0,
+  "block_max_transaction_count": 4294967295,
+  "block_max_size": 51200,
+  "block_max_production_time": 3000000,
+  "transaction_max_size": 51200,
+  "transaction_canonical_signatures_required": false,
+  "transaction_min_fee": 10000,
+  "transaction_blacklist": [],
+  "operation_blacklist": []
+}
+default (unlocked) >>> help delegate_blacklist_add_operation
+Usage:
+delegate_blacklist_add_operation <id>                                                                 Add specified operation to blacklist
+Add specified operation to blacklist
+
+Parameters:
+  id (operation_type, required): operation to add to blacklist
+
+Returns:
+  void
+default (unlocked) >>> delegate_blacklist_add_operation bid_op_type
+OK
+default (unlocked) >>> delegate_blacklist_add_operation ask_op_type
+OK
+default (unlocked) >>> delegate_blacklist_add_operation withdraw_op_type
+OK
+default (unlocked) >>> delegate_get_config
+{
+  "network_min_connection_count": 0,
+  "block_max_transaction_count": 4294967295,
+  "block_max_size": 51200,
+  "block_max_production_time": 3000000,
+  "transaction_max_size": 51200,
+  "transaction_canonical_signatures_required": false,
+  "transaction_min_fee": 10000,
+  "transaction_blacklist": [],
+  "operation_blacklist": [
+    "withdraw_op_type",
+    "bid_op_type",
+    "ask_op_type"
+  ]
+}
+default (unlocked) >>> help delegate_blacklist_remove_operation
+Usage:
+delegate_blacklist_remove_operation <id>                                                              Remove specified operation from blacklist
+Remove specified operation from blacklist
+
+Parameters:
+  id (operation_type, required): operation to remove from blacklist
+
+Returns:
+  void
+default (unlocked) >>> delegate_blacklist_remove_operation bid_op_type
+OK
+default (unlocked) >>> help delegate_blacklist_add_transaction
+Usage:
+delegate_blacklist_add_transaction <id>                                                               Add specified transaction to blacklist
+Add specified transaction to blacklist
+
+Parameters:
+  id (transaction_id, required): transaction to add to blacklist
+
+Returns:
+  void
+default (unlocked) >>> help delegate_blacklist_remove_transaction
+Usage:
+delegate_blacklist_remove_transaction <id>                                                            Remove specified transaction from blacklist
+Remove specified transaction from blacklist
+
+Parameters:
+  id (transaction_id, required): transaction to remove from blacklist
+
+Returns:
+  void
+default (unlocked) >>> delegate_get_config
+{
+  "network_min_connection_count": 0,
+  "block_max_transaction_count": 4294967295,
+  "block_max_size": 51200,
+  "block_max_production_time": 3000000,
+  "transaction_max_size": 51200,
+  "transaction_canonical_signatures_required": false,
+  "transaction_min_fee": 10000,
+  "transaction_blacklist": [],
+  "operation_blacklist": [
+    "withdraw_op_type",
+    "ask_op_type"
+  ]
+}
+default (unlocked) >>> quit
