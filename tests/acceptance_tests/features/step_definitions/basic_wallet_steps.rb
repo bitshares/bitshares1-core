@@ -4,6 +4,9 @@ end
 Given(/^exec: (\w+) (\w+)$/) do |cmd, arg1|
     @current_actor.node.exec cmd, arg1
 end
+Given(/^(\w+) <- exec: (\w+) (\w+)$/) do |var, cmd, arg1|
+    @env[var] = @current_actor.node.exec cmd, arg1
+end
 Given(/^exec: (\w+) (\w+) (\w+)$/) do |cmd, arg1, arg2|
     @current_actor.node.exec cmd, arg1, arg2
 end
@@ -13,6 +16,7 @@ end
 
 Given(/^I'm (\w+)$/) do |name|
   @current_actor = get_actor(name)
+  @env ||= {}
 end
 
 Given(/I made a wallet (\w+)$/) do |name|
