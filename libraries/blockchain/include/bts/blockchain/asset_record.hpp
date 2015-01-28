@@ -54,15 +54,23 @@ namespace bts { namespace blockchain {
       share_type          collected_fees = 0;
       uint32_t            flags = 0;
       uint32_t            issuer_permissions = -1;
+
       /**
        *  The issuer can specify a transaction fee (of the asset type)
        *  that will be paid to the issuer with every transaction that
        *  references this asset type.
        */
       share_type          transaction_fee = 0;
+      /**
+       * 0 for no fee, 10000 for 10% fee.
+       * This is used for gateways that want to continue earning market trading fees
+       * when their assets are used.
+       */
+      uint16_t            market_fee = BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE; 
       multisig_meta_info  authority;
 
       proposal_id_type    last_proposal_id = 0;
+
 
       /** reserved for future extensions */
       vector<char>        reserved;
@@ -142,6 +150,7 @@ FC_REFLECT( bts::blockchain::asset_record,
         (flags)
         (issuer_permissions)
         (transaction_fee)
+        (market_fee)
         (authority)
         (last_proposal_id)
         )

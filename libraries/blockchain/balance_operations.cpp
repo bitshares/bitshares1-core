@@ -84,12 +84,28 @@ namespace bts { namespace blockchain {
       if( this->slate.supported_delegates.size() > BTS_BLOCKCHAIN_MAX_SLATE_SIZE )
          FC_CAPTURE_AND_THROW( too_may_delegates_in_slate, (slate.supported_delegates.size()) );
 
+      if( eval_state._current_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM )
+      {
+          // verify slates are sorted
+          FC_ASSERT( slate.supported_delegates.size() > 0 );
+          for( uint32_t i = 1; i < slate.supported_delegates.size(); ++i )
+          {
+             FC_ASSERT( slate.supported_delegates[i-1] < slate.supported_delegates[i] );
+          }
+      }
+
       const slate_id_type slate_id = this->slate.id();
       const odelegate_slate current_slate = eval_state._current_state->get_delegate_slate( slate_id );
       if( NOT current_slate.valid() )
       {
-         for( const signed_int& delegate_id : this->slate.supported_delegates )
-            eval_state.verify_delegate_id( abs( delegate_id ) );
+#ifndef WIN32
+#warning [SOFTFORK] Remove this check after BTS_V0_6_2_FORK_BLOCK_NUM has passed
+#endif
+          if( eval_state._current_state->get_head_block_num() < BTS_V0_6_2_FORK_BLOCK_NUM )
+          {
+              for( const signed_int& delegate_id : this->slate.supported_delegates )
+                  eval_state.verify_delegate_id( abs( delegate_id ) );
+          }
 
          eval_state._current_state->store_delegate_slate( slate_id, slate );
       }
@@ -155,15 +171,7 @@ namespace bts { namespace blockchain {
 
        if( eval_state._current_state->get_head_block_num() >= BTS_V0_6_0_FORK_BLOCK_NUM )
        {
-           if( asset_rec->is_user_issued() )
-           {
-               const string& symbol = asset_rec->symbol;
-               if( symbol.size() > 3 && symbol.find( "BIT" ) == 0 )
-               {
-                   const oasset_record victim_record = eval_state._current_state->get_asset_record( symbol.substr( 3 ) );
-                   FC_ASSERT( !victim_record.valid() || !victim_record->is_market_issued() );
-               }
-           }
+           FC_ASSERT( !eval_state._current_state->is_fraudulent_asset( *asset_rec ) );
        }
 
        if( eval_state._current_state->get_head_block_num() >= BTS_V0_5_0_FORK_BLOCK_NUM )
@@ -375,10 +383,11 @@ namespace bts { namespace blockchain {
          FC_ASSERT( false, "transaction not signed by releasor" );
 
       auto escrow_condition = escrow_balance_record->condition.as<withdraw_with_escrow>();
-      auto total_released = amount_to_sender + amount_to_receiver;
+      auto total_released = uint64_t(amount_to_sender) + uint64_t(amount_to_receiver);
 
       FC_ASSERT( total_released <= escrow_balance_record->balance );
       FC_ASSERT( total_released >= amount_to_sender ); // check for addition overflow
+      FC_ASSERT( total_released >= amount_to_receiver ); // check for addition overflow
 
       escrow_balance_record->balance -= total_released;
       auto asset_rec = eval_state._current_state->get_asset_record( escrow_balance_record->condition.asset_id );

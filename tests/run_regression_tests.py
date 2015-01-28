@@ -4,6 +4,13 @@
 # using Python for cross platform to run with the same script on all platforms
 # (currently .sh for Linux, .bat for Windows, ??? for Mac)
 
+# currently it runs 64 (!) regression tests at a time
+# apparently each test does not use much memory, I/O or CPU
+# -- they appear to be purely bound by sleep()
+
+# on Linux, it is recommended to put output directory on tmpfs, e.g.
+# mount -t tmpfs tmpfs ../regression_tests_without_network
+
 import os
 import queue
 import subprocess
@@ -61,7 +68,7 @@ class TestRunner(object):
             self.q_test_result.put((test_name, result))
         return
 
-    def run_parallel_regression_tests(self, test_list, parallel_jobs=8):
+    def run_parallel_regression_tests(self, test_list, parallel_jobs=64):
         worker_threads = []
         for test_name in test_list:
             print("adding test:", test_name)

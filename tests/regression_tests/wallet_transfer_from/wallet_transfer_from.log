@@ -12,7 +12,7 @@ default (unlocked) >>> wallet_account_balance test
 No balances found.
 default (unlocked) >>> help wallet_transfer_from
 Usage:
-wallet_transfer_from <amount_to_transfer> <asset_symbol> <paying_account_name> <from_account_name> <to_account_name> [memo_message] [vote_method]   Sends given amount to the given name, with the from field set to a different account than the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.
+wallet_transfer_from <amount_to_transfer> <asset_symbol> <paying_account_name> <from_account_name> <to_account_name> [memo_message] [strategy]   Sends given amount to the given name, with the from field set to a different account than the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.
 Sends given amount to the given name, with the from field set to a different account than the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.
 
 Parameters:
@@ -22,7 +22,7 @@ Parameters:
   from_account_name (sending_account_name, required): the account to show the recipient as being the sender (requires account's private key to be in wallet).
   to_account_name (receive_account_name, required): the account to transfer the shares to
   memo_message (string, optional, defaults to ""): a memo to store with the transaction
-  vote_method (vote_selection_method, optional, defaults to "vote_recommended"): enumeration [vote_none | vote_all | vote_random | vote_recommended] 
+  strategy (vote_strategy, optional, defaults to "vote_recommended"): enumeration [vote_none | vote_all | vote_random | vote_recommended] 
 
 Returns:
   transaction_record

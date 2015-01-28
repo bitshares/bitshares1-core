@@ -72,6 +72,7 @@ namespace bts { namespace api {
     uint32_t                    prerequisites;
     std::string                 detailed_description;
     std::vector<std::string>    aliases;
+    bool                        cached;
   };
 
 } } // end namespace bts::api
@@ -79,4 +80,4 @@ namespace bts { namespace api {
 FC_REFLECT_ENUM(bts::api::method_prerequisites, (no_prerequisites)(json_authenticated)(wallet_open)(wallet_unlocked)(connected_to_network))
 FC_REFLECT_ENUM( bts::api::parameter_classification, (required_positional)(required_positional_hidden)(optional_positional)(optional_named) )
 FC_REFLECT( bts::api::parameter_data, (name)(type)(classification)(default_value) )
-FC_REFLECT( bts::api::method_data, (name)(description)(return_type)(parameters)(prerequisites)(detailed_description)(aliases) )
+FC_REFLECT( bts::api::method_data, (name)(description)(return_type)(parameters)(prerequisites)(detailed_description)(aliases)(cached) )

@@ -145,6 +145,7 @@ namespace bts { namespace blockchain {
        if( get_head_block_num() < BTS_V0_4_24_FORK_BLOCK_NUM )
            return get_delegate_registration_fee_v1( pay_rate );
 
+       if( pay_rate == 0 ) return 0;
        static const uint32_t blocks_per_two_weeks = 14 * BTS_BLOCKCHAIN_BLOCKS_PER_DAY;
        const share_type max_total_pay_per_two_weeks = blocks_per_two_weeks * get_max_delegate_pay_issued_per_block();
        const share_type max_pay_per_two_weeks = max_total_pay_per_two_weeks / BTS_BLOCKCHAIN_NUM_DELEGATES;

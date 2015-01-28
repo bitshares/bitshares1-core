@@ -69,6 +69,8 @@ namespace bts { namespace blockchain {
          bool                               is_valid_symbol_name( const string& symbol )const;
          bool                               is_valid_symbol_name_v1( const string& symbol )const;
 
+         bool                               is_fraudulent_asset( const asset_record& suspect_record )const;
+
          time_point_sec                     get_genesis_timestamp()const;
 
          share_type                         get_max_delegate_pay_issued_per_block()const;

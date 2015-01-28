@@ -1,13 +1,14 @@
 default (unlocked) >>> wallet_account_create test
 "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
-default (unlocked) >>> debug_advance_time 1 blocks
+default (unlocked) >>> debug_advance_time 1 second
 OK
-default (unlocked) >>> debug_wait 2 
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
 OK
 default (unlocked) >>> blockchain_list_blocks
 HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME  RAND           
 ====================================================================================================================
-2       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign></d-ign><d-ign></d-ign><d-ign></d-ign>
 1       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign></d-ign><d-ign></d-ign><d-ign></d-ign>
 default (unlocked) >>> blockchain_get_account delegate42
 Name: delegate42
@@ -22,44 +23,31 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 43    delegate42                      0.00000250 %   1        0        100.00 %      100 %    50.00000 XTS        1                       
 
 Block Signing Key: XTS6rPKwuYBhyU2wtqC4AuxQp1EGGP5To3uVz5qTj2S4w59mQViDv
-default (unlocked) >>> blockchain_get_account delegate43 
-Name: delegate43
-Registered: Genesis (Keyhotee Founder)
-Last Updated: <d-ign></d-ign>
-Owner Key: XTS5bDtcH3tnLrcWPFdcjpEWaTZBiJLPRtvBVu5oKS6gHhh6tzd5F
-Active Key History:
-- XTS5bDtcH3tnLrcWPFdcjpEWaTZBiJLPRtvBVu5oKS6gHhh6tzd5F, last used <d-ign></d-ign>
-
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
-==========================================================================================================================================
-44    delegate43                      0.00000250 %   1        0        100.00 %      100 %    50.00000 XTS        2                       
-
-Block Signing Key: XTS5bDtcH3tnLrcWPFdcjpEWaTZBiJLPRtvBVu5oKS6gHhh6tzd5F
-default (unlocked) >>> wallet_delegate_withdraw_pay delegate43 test 30 "withdraw"
+default (unlocked) >>> wallet_delegate_withdraw_pay delegate42 test 30 "withdraw"
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate43          test                30.00000 XTS            withdraw pay                                0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>PENDING   delegate42          test                30.00000 XTS            withdraw pay                                0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait 3
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
 OK
-default (unlocked) >>> balance delegate43
+default (unlocked) >>> balance delegate42
 ACCOUNT                         BALANCE                     
 ============================================================
-delegate43                      19,801,980.19801 XTS        
-default (unlocked) >>> blockchain_get_account delegate43
-Name: delegate43
+delegate42                      19,801,980.19801 XTS        
+default (unlocked) >>> blockchain_get_account delegate42
+Name: delegate42
 Registered: Genesis (Keyhotee Founder)
 Last Updated: <d-ign></d-ign>
-Owner Key: XTS5bDtcH3tnLrcWPFdcjpEWaTZBiJLPRtvBVu5oKS6gHhh6tzd5F
+Owner Key: XTS6rPKwuYBhyU2wtqC4AuxQp1EGGP5To3uVz5qTj2S4w59mQViDv
 Active Key History:
-- XTS5bDtcH3tnLrcWPFdcjpEWaTZBiJLPRtvBVu5oKS6gHhh6tzd5F, last used <d-ign></d-ign>
+- XTS6rPKwuYBhyU2wtqC4AuxQp1EGGP5To3uVz5qTj2S4w59mQViDv, last used <d-ign></d-ign>
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
 ==========================================================================================================================================
-44    delegate43                      0.00000097 %   1        0        100.00 %      100 %    19.50000 XTS        2                       
+43    delegate42                      0.00000097 %   1        0        100.00 %      100 %    19.50000 XTS        1                       
 
-Block Signing Key: XTS5bDtcH3tnLrcWPFdcjpEWaTZBiJLPRtvBVu5oKS6gHhh6tzd5F
+Block Signing Key: XTS6rPKwuYBhyU2wtqC4AuxQp1EGGP5To3uVz5qTj2S4w59mQViDv
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     
 ============================================================

@@ -1,3 +1,4 @@
+#include <bts/wallet/config.hpp>
 #include <bts/wallet/exceptions.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/wallet/wallet_impl.hpp>
@@ -451,6 +452,9 @@ transaction_builder& transaction_builder::submit_bid(const wallet_account_record
    deduct_balance(from_account.owner_address(), cost);
    trx.bid(cost, quote_price, order_key);
 
+   if( trx.expiration == time_point_sec() )
+       trx.expiration = blockchain::now() + WALLET_DEFAULT_MARKET_TRANSACTION_EXPIRATION_SEC;
+
    auto entry = ledger_entry();
    entry.from_account = from_account.owner_key;
    entry.to_account = order_key;
@@ -478,6 +482,9 @@ transaction_builder& transaction_builder::submit_relative_bid(const wallet_accou
    //Charge this account for the bid
    deduct_balance(from_account.owner_address(), sell_quantity);
    trx.relative_bid(sell_quantity, quote_price, limit, order_key);
+
+   if( trx.expiration == time_point_sec() )
+       trx.expiration = blockchain::now() + WALLET_DEFAULT_MARKET_TRANSACTION_EXPIRATION_SEC;
 
    auto entry = ledger_entry();
    entry.from_account = from_account.owner_key;
@@ -507,6 +514,9 @@ transaction_builder& transaction_builder::submit_ask(const wallet_account_record
    //Charge this account for the ask
    deduct_balance(from_account.owner_address(), cost);
    trx.ask(cost, quote_price, order_key);
+
+   if( trx.expiration == time_point_sec() )
+       trx.expiration = blockchain::now() + WALLET_DEFAULT_MARKET_TRANSACTION_EXPIRATION_SEC;
 
    auto entry = ledger_entry();
    entry.from_account = from_account.owner_key;
@@ -539,6 +549,9 @@ transaction_builder& transaction_builder::submit_relative_ask(const wallet_accou
    //Charge this account for the ask
    deduct_balance(from_account.owner_address(), cost);
    trx.relative_ask(cost, quote_price, limit, order_key);
+
+   if( trx.expiration == time_point_sec() )
+       trx.expiration = blockchain::now() + WALLET_DEFAULT_MARKET_TRANSACTION_EXPIRATION_SEC;
 
    auto entry = ledger_entry();
    entry.from_account = from_account.owner_key;
@@ -574,6 +587,9 @@ transaction_builder& transaction_builder::submit_short(const wallet_account_reco
 
    deduct_balance(from_account.owner_address(), cost);
    trx.short_sell(cost, interest_rate, order_key, price_limit);
+
+   if( trx.expiration == time_point_sec() )
+       trx.expiration = blockchain::now() + WALLET_DEFAULT_MARKET_TRANSACTION_EXPIRATION_SEC;
 
    auto entry = ledger_entry();
    entry.from_account = from_account.owner_key;
@@ -679,6 +695,9 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
    deduct_balance(from_account.owner_address(), cover_amount);
    trx.cover(cover_amount, order->market_index);
 
+   if( trx.expiration == time_point_sec() )
+       trx.expiration = blockchain::now() + WALLET_DEFAULT_MARKET_TRANSACTION_EXPIRATION_SEC;
+
    auto entry = ledger_entry();
    entry.from_account = from_account.owner_key;
    entry.to_account = owner_key_record->public_key;
@@ -725,6 +744,7 @@ transaction_builder& transaction_builder::update_asset( const string& symbol,
                                                         const optional<double>& maximum_share_supply,
                                                         const optional<uint64_t>& precision,
                                                         const share_type issuer_fee,
+                                                        double market_fee,
                                                         uint32_t flags,
                                                         uint32_t issuer_perms,
                                                         const optional<account_id_type> issuer_account_id,
@@ -745,8 +765,12 @@ transaction_builder& transaction_builder::update_asset( const string& symbol,
     else
         new_issuer_account_id = asset_record->issuer_account_id;
 
+    uint16_t actual_market_fee = uint16_t(-1);
+    if( market_fee >= 0 || market_fee <= BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE )
+       actual_market_fee = BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE * market_fee;
+
     trx.update_asset_ext( asset_record->id, name, description, public_data, maximum_share_supply, precision,
-                          issuer_fee, flags, issuer_perms, new_issuer_account_id, required_sigs, authority );
+                          issuer_fee, actual_market_fee, flags, issuer_perms, new_issuer_account_id, required_sigs, authority );
     deduct_balance( issuer_account_record->active_key(), asset() );
 
     ledger_entry entry;

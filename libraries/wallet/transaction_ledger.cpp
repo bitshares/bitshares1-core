@@ -1304,6 +1304,7 @@ bool wallet_impl::scan_deposit( const deposit_operation& op, wallet_transaction_
              const auto okey_rec = _wallet_db.lookup_key( deposit.owner );
              if( okey_rec && okey_rec->has_private_key() )
              {
+                 bool new_entry = true;
                  cache_deposit = true;
                  for( auto& entry : trx_rec.ledger_entries )
                  {
@@ -1324,7 +1325,16 @@ bool wallet_impl::scan_deposit( const deposit_operation& op, wallet_transaction_
                          if( amount.asset_id == total_fee.asset_id )
                              total_fee += amount;
                      }
+                     new_entry = false;
                      break;
+                 }
+                 if( new_entry )
+                 {
+                     auto entry = ledger_entry();
+                     //entry.from_account = okey_rec->public_key;
+                     entry.to_account = okey_rec->public_key;
+                     entry.amount = amount;
+                     trx_rec.ledger_entries.push_back( entry );
                  }
              }
           }

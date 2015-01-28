@@ -1,5 +1,22 @@
+Given(/^exec: (\w+)$/) do |cmd|
+    @current_actor.node.exec cmd
+end
+Given(/^exec: (\w+) (\w+)$/) do |cmd, arg1|
+    @current_actor.node.exec cmd, arg1
+end
+Given(/^(\w+) <- exec: (\w+) (\w+)$/) do |var, cmd, arg1|
+    @env[var] = @current_actor.node.exec cmd, arg1
+end
+Given(/^exec: (\w+) (\w+) (\w+)$/) do |cmd, arg1, arg2|
+    @current_actor.node.exec cmd, arg1, arg2
+end
+Given(/^exec: (\w+) (\w+) (\w+) (\w+)$/) do |cmd, arg1, arg2, arg3|
+    @current_actor.node.exec cmd, arg1, arg2, arg3
+end
+
 Given(/^I'm (\w+)$/) do |name|
   @current_actor = get_actor(name)
+  @env ||= {}
 end
 
 Given(/I made a wallet (\w+)$/) do |name|
@@ -111,6 +128,9 @@ Given(/^I am a Light Wallet Server named (\w+)$/) do |name|
   config = @current_actor.node.get_config
   config['rpc']['enable'] = true
   config['faucet_account_name'] = name
+  config['relay_account_name'] = name
+  config['rpc']['encrypted_rpc_endpoint'] = "127.0.0.1:5656"
+  config['rpc']['encrypted_rpc_wif_key'] = "5K9kAzDG3YPGQwD1GLHjuw3NaUQQLeJFiZ4GCVBWd3HKpb29UJi"
   config['light_relay_fee'] = 25000
   @current_actor.node.stop
   @current_actor.node.save_config(config)

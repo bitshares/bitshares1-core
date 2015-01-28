@@ -1,13 +1,16 @@
 #include <bts/rpc/rpc_client.hpp>
+#include <bts/net/stcp_socket.hpp>
 #include <bts/blockchain/address.hpp>
 #include <bts/blockchain/transaction.hpp>
 #include <bts/blockchain/block.hpp>
 #include <bts/utilities/key_conversion.hpp>
+#include <bts/utilities/padding_ostream.hpp>
 #include <fc/reflect/variant.hpp>
 #include <fc/network/tcp_socket.hpp>
 #include <fc/rpc/json_connection.hpp>
 #include <fc/thread/thread.hpp>
 #include <fc/crypto/base58.hpp>
+#include <fc/crypto/digest.hpp>
 #include <fc/thread/future.hpp>
 
 #include <bts/rpc_stubs/common_api_rpc_client.hpp>
@@ -23,29 +26,59 @@ namespace bts { namespace rpc {
       fc::future<void> _json_exec_loop_complete;
 
       virtual fc::rpc::json_connection_ptr get_json_connection() const override { return _json_connection; }
-      void connect_to(const fc::ip::endpoint& remote_endpoint);
+      void connect_to(const fc::ip::endpoint& remote_endpoint, const blockchain::public_key_type& remote_public_key);
       bool login(const std::string& username, const std::string& password);
     };
 
-    void rpc_client_impl::connect_to(const fc::ip::endpoint& remote_endpoint)
+    void rpc_client_impl::connect_to(const fc::ip::endpoint& remote_endpoint,
+                                     const bts::blockchain::public_key_type& remote_public_key)
     {
-      fc::tcp_socket_ptr socket = std::make_shared<fc::tcp_socket>();
-      try 
-      {
-        socket->connect_to(remote_endpoint);
-      }
-      catch ( const fc::exception& e )
-      {
-        elog( "fatal: error opening RPC socket to endpoint ${endpoint}: ${e}", ("endpoint", remote_endpoint)("e", e.to_detail_string() ) );
-        throw;
-      }
+       fc::buffered_istream_ptr buffered_istream;
+       fc::buffered_ostream_ptr buffered_ostream;
 
-      fc::buffered_istream_ptr buffered_istream = std::make_shared<fc::buffered_istream>(socket);
-      fc::buffered_ostream_ptr buffered_ostream = std::make_shared<fc::buffered_ostream>(socket);
+       if( remote_public_key != bts::blockchain::public_key_type() )
+       {
+          net::stcp_socket_ptr socket = std::make_shared<bts::net::stcp_socket>();
 
-      _json_connection = std::make_shared<fc::rpc::json_connection>(std::move(buffered_istream), 
-                                                                    std::move(buffered_ostream));
-      _json_exec_loop_complete = fc::async([=](){ _json_connection->exec(); }, "json exec loop");
+          try
+          {
+             socket->connect_to(remote_endpoint);
+          }
+          catch ( const fc::exception& e )
+          {
+             elog( "fatal: error opening RPC socket to endpoint ${endpoint}: ${e}", ("endpoint", remote_endpoint)("e", e.to_detail_string() ) );
+             throw;
+          }
+
+          fc::ecc::compact_signature signature;
+          fc::raw::unpack(*socket, signature);
+          wdump((signature));
+          FC_ASSERT(blockchain::public_key_type(fc::ecc::public_key(signature, fc::digest(socket->get_shared_secret())))
+                    == remote_public_key,
+                    "Unable to establish secure connection with server.");
+
+          buffered_istream = std::make_shared<fc::buffered_istream>(socket);
+          buffered_ostream = std::make_shared<utilities::padding_ostream<>>(socket);
+       } else {
+          fc::tcp_socket_ptr socket = std::make_shared<fc::tcp_socket>();
+
+          try
+          {
+             socket->connect_to(remote_endpoint);
+          }
+          catch ( const fc::exception& e )
+          {
+             elog( "fatal: error opening RPC socket to endpoint ${endpoint}: ${e}", ("endpoint", remote_endpoint)("e", e.to_detail_string() ) );
+             throw;
+          }
+
+          buffered_istream = std::make_shared<fc::buffered_istream>(socket);
+          buffered_ostream = std::make_shared<fc::buffered_ostream>(socket);
+       }
+
+       _json_connection = std::make_shared<fc::rpc::json_connection>(std::move(buffered_istream),
+                                                                     std::move(buffered_ostream));
+       _json_exec_loop_complete = fc::async([=](){ _json_connection->exec(); }, "json exec loop");
     }
     bool rpc_client_impl::login(const std::string& username, const std::string& password)
     {
@@ -64,9 +97,10 @@ namespace bts { namespace rpc {
   {
   }
 
-  void rpc_client::connect_to(const fc::ip::endpoint& remote_endpoint)
+  void rpc_client::connect_to(const fc::ip::endpoint& remote_endpoint,
+                              const bts::blockchain::public_key_type& remote_public_key)
   {
-    my->connect_to(remote_endpoint);
+    my->connect_to(remote_endpoint, remote_public_key);
   }
 
   bool rpc_client::login(const std::string& username, const std::string& password)

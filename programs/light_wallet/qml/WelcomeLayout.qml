@@ -4,15 +4,14 @@ import QtQuick.Layouts 1.1
 
 import Material 0.1
 
-Page {
-   showBackButton: false
-   property real minimumWidth: layout.Layout.minimumWidth + visuals.margins * 2
-   property real minimumHeight: layout.Layout.minimumHeight + visuals.margins * 2
-
+View {
    signal passwordEntered(string password)
 
    function clearPassword() {
       passwordField.password = ""
+   }
+   function focus() {
+      passwordField.forceActiveFocus()
    }
 
    Column {

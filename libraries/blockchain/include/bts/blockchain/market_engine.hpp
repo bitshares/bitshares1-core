@@ -20,9 +20,13 @@ namespace bts { namespace blockchain { namespace detail {
     void pay_current_short( market_transaction& mtrx,
                             asset_record& quote_asset,
                             asset_record& base_asset );
-    void pay_current_bid( const market_transaction& mtrx, asset_record& quote_asset );
+    void pay_current_bid( const market_transaction& mtrx, 
+                          asset_record& base, 
+                          asset_record& quote_asset );
     void pay_current_cover( market_transaction& mtrx, asset_record& quote_asset );
-    void pay_current_ask( const market_transaction& mtrx, asset_record& base_asset );
+    void pay_current_ask( const market_transaction& mtrx, 
+                          asset_record& base, 
+                          asset_record& quote_asset );
 
     bool get_next_bid();
     bool get_next_ask();
@@ -41,12 +45,15 @@ namespace bts { namespace blockchain { namespace detail {
         min_ask.ratio /= 10;
         return min_ask;
     }
+   void handle_liquidation( const price& liqudation_price );
 
     /**
       *  This method should not affect market execution or validation and
       *  is for historical purposes only.
       */
     void update_market_history( const asset& trading_volume,
+                                const price& highest_price,
+                                const price& lowest_price,
                                 const price& opening_price,
                                 const price& closing_price,
                                 const fc::time_point_sec timestamp );

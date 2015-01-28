@@ -7,9 +7,8 @@ import Material 0.1
 import "utils.js" as Utils
 
 Page {
-   property real minimumWidth: assetsLayout.Layout.minimumWidth + visuals.margins * 2
-   property real minimumHeight: assetsLayout.Layout.minimumHeight + visuals.margins * 2
    title: wallet.account.name + qsTr("'s Balances")
+   actions: [lockAction]
 
    signal lockRequested
    signal openHistory(string account, string symbol)
