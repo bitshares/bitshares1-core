@@ -100,11 +100,13 @@ MainView {
             onEditingFinished: if( wallet.connected ) nameAvailable()
             transform: ShakeAnimation { id: nameShaker }
 
-            property string defaultHelperText: qsTr("May contain letters, numbers and hyphens.\n" +
-                                                    "Must start with a letter and end with a letter or number.")
+            property string defaultHelperText: qsTr("May contain letters, numbers and hyphens.")
 
             function nameAvailable() {
-               if( wallet.accountExists(text) ) {
+               if( text.length === 0 ) {
+                  helperText = defaultHelperText
+                  displayError = false
+               } else if( !wallet.isValidAccountName(text) || text.indexOf('.') >= 0 || wallet.accountExists(text) ) {
                   helperText = qsTr("That username is already taken")
                   displayError = true
                } else if( characterCount > characterLimit ) {
@@ -112,8 +114,9 @@ MainView {
                   displayError = true
                } else {
                   helperText = defaultHelperText
-                  displayError = !wallet.isValidAccountName(text)
+                  displayError = false
                }
+
                return !displayError
             }
          }
