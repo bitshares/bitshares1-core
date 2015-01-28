@@ -22,9 +22,10 @@
    fc::yield(); \
    _THREAD_WAIT_LOOP_.exec();
 
-inline static QString normalize(const QString& key)
+inline static QString normalize(QString key)
 {
-   return key.toUpper().remove(QRegExp("[^A-Z]"));
+   key = key.simplified();
+   return key.toUpper().remove(QRegExp("[^A-Z] "));
 }
 
 bool LightWallet::walletExists() const
