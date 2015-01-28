@@ -35,22 +35,8 @@ MainView {
       }
    }
    function passwordEntered(password) {
-      // First time through; there's no wallet, no account, not registered. First, create the wallet.
-      if( !wallet.walletExists ) {
-         Utils.connectOnce(wallet.walletExistsChanged, function(walletWasCreated) {
-            if( walletWasCreated ) {
-               registerAccount()
-            } else {
-               //TODO: failed to create wallet. What now?
-               window.showError("Unable to create wallet. Cannot continue.")
-               onboarder.state = ""
-            }
-         })
-         wallet.createWallet(username, password)
-      } else if ( !wallet.accounts[username].isRegistered ) {
-         //Wallet is created, so the account exists, but it's not registered yet. Take care of that now.
-         registerAccount()
-      }
+      wallet.createWallet(username, password)
+      registerAccount()
    }
    function clearPassword() {
       passwordField.password = ""
@@ -184,7 +170,7 @@ MainView {
          PropertyChanges {
             target: statusText
             text: errorMessage
-            color: visuals.errorGlowColor
+            color: "red"
          }
       }
    ]
