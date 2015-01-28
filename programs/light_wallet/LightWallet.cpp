@@ -97,20 +97,15 @@ void LightWallet::disconnectFromServer()
 
 void LightWallet::createWallet(QString accountName, QString password)
 {
-   if( walletExists() ) {
-      qDebug() << "Ignoring request to create wallet when wallet already exists!";
-      return;
-   }
-
-   IN_THREAD
+   IN_WAIT_THREAD
+   if( m_wallet.is_open() )
+      m_wallet.close();
    generateBrainKey();
-   std::string salt(bts::blockchain::address(fc::ecc::private_key::generate().get_public_key()));
-   salt.erase(0, strlen(BTS_ADDRESS_PREFIX));
 
    qDebug() << "Wallet path:" << m_walletPath.generic_string().c_str();
 
    try {
-      m_wallet.create(m_walletPath, convert(accountName), convert(password), convert(normalize(m_brainKey)), salt);
+      m_wallet.create(m_walletPath, convert(accountName), convert(password), convert(normalize(m_brainKey)));
    } catch (fc::exception e) {
       qDebug() << "Exception when creating wallet:" << e.to_detail_string().c_str();
    }
@@ -124,7 +119,7 @@ void LightWallet::createWallet(QString accountName, QString password)
    auto ciphertext = fc::aes_encrypt(key, plaintext);
    QSettings().setValue(QStringLiteral("brainKey"), QByteArray::fromRawData(ciphertext.data(), ciphertext.size()));
 
-   END_THREAD
+   END_WAIT_THREAD
 }
 
 void LightWallet::openWallet()
@@ -161,7 +156,7 @@ void LightWallet::unlockWallet(QString password)
    if( !isOpen() )
       openWallet();
 
-   IN_THREAD
+   IN_WAIT_THREAD
    try {
       m_wallet.unlock(convert(password));
       if( isUnlocked() )
@@ -174,7 +169,6 @@ void LightWallet::unlockWallet(QString password)
                                                                     ciphertext.data() + ciphertext.size()));
             m_brainKey = QString::fromLocal8Bit(plaintext.data());
             Q_EMIT brainKeyChanged(m_brainKey);
-            qDebug() << m_brainKey;
          }
       }
    } catch (fc::exception e) {
@@ -184,7 +178,7 @@ void LightWallet::unlockWallet(QString password)
    }
 
    Q_EMIT unlockedChanged(isUnlocked());
-   END_THREAD
+   END_WAIT_THREAD
 }
 
 void LightWallet::lockWallet()
@@ -215,15 +209,15 @@ void LightWallet::registerAccount(QString accountName)
             fc::usleep(fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC / 2));
          }
          if( m_wallet.account(stdAccountName).registration_date == fc::time_point_sec() )
-            Q_EMIT errorRegistering(QStringLiteral("Registration is taking longer than usual. Please try again later."));
+            Q_EMIT errorRegistering(tr("Registration is taking longer than usual. Please try again later."));
       } else
-         Q_EMIT errorRegistering(QStringLiteral("Server did not register account. Please try again later."));
+         Q_EMIT errorRegistering(tr("Server could not register account. Please try again later."));
    } catch( const bts::light_wallet::account_already_registered& e ) {
       //If light_wallet throws account_already_registered, it's because someone snagged the name already.
       qDebug() << "Account registered out from under us: " << e.to_detail_string().c_str();
       Q_EMIT errorRegistering(QStringLiteral("Oops! Someone just registered that name. Please pick another one."));
    } catch (const fc::exception& e) {
-      const static QString message = QStringLiteral("Failed to register account: %1");
+      const static QString message = tr("Failed to register account: %1");
       if( e.get_log().empty() || e.get_log()[0].get_format().empty() )
          Q_EMIT errorRegistering(message.arg(e.what()));
       else
@@ -235,6 +229,11 @@ void LightWallet::registerAccount(QString accountName)
 
 void LightWallet::clearBrainKey()
 {
+   fc::sha512 key;
+   m_brainKey.replace(0, m_brainKey.size(), ' ');
+   auto plaintext = std::vector<char>(m_brainKey.toStdString().begin(), m_brainKey.toStdString().end());
+   auto ciphertext = fc::aes_encrypt(key, plaintext);
+   QSettings().setValue(QStringLiteral("brainKey"), QByteArray::fromRawData(ciphertext.data(), ciphertext.size()));
    QSettings().remove(QStringLiteral("brainKey"));
    m_brainKey.clear();
    Q_EMIT brainKeyChanged(m_brainKey);

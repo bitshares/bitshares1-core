@@ -1,4 +1,4 @@
-#include </Users/nathan/bitshares/libraries/light_wallet/include/bts/light_wallet/light_wallet.hpp>
+#include <bts/light_wallet/light_wallet.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/blockchain/balance_operations.hpp>
 #include <bts/blockchain/transaction_creation_state.hpp>
@@ -131,7 +131,21 @@ void light_wallet::unlock( const string& password )
 { try {
    FC_ASSERT( is_open() );
    if( !_wallet_key )
-       _wallet_key = fc::sha512::hash( password );
+   {
+      auto key = fc::sha512::hash( password );
+      //How do I verify this if there are no accounts?
+      if( !_data->accounts.empty() )
+      {
+         _wallet_key = key;
+         //Should throw if decryption fails
+         try {
+            private_key(_data->accounts.begin()->first);
+         } catch(...) {
+            _wallet_key.reset();
+            throw;
+         }
+      }
+   }
 } FC_CAPTURE_AND_RETHROW() }
 
 bool light_wallet::is_unlocked()const { return _wallet_key.valid(); }
@@ -160,8 +174,7 @@ void light_wallet::lock()
 void light_wallet::create( const fc::path& wallet_json,
                            const string& account_name,
                            const string& password,
-                           const string& brain_seed,
-                           const string& salt )
+                           const string& brain_seed )
 {
    // initialize the wallet data
    _wallet_file = wallet_json;
@@ -172,7 +185,7 @@ void light_wallet::create( const fc::path& wallet_json,
    // derive the brain wallet key
    fc::sha256::encoder enc;
    fc::raw::pack( enc, brain_seed );
-   fc::raw::pack( enc, salt );
+   fc::raw::pack( enc, account_name );
    fc::ecc::private_key owner_key = fc::ecc::private_key::regenerate( enc.result() );
    new_account.owner_key = owner_key.get_public_key();
 
@@ -191,7 +204,6 @@ void light_wallet::create( const fc::path& wallet_json,
    _wallet_key = fc::sha512::hash( password );
    _data->accounts[account_name].encrypted_private_key = fc::aes_encrypt( *_wallet_key, fc::raw::pack( active_key ) );
    new_account.name = account_name;
-   new_account.public_data = mutable_variant_object( "salt", salt );
    new_account.meta_data = account_meta_info( public_account );
    save();
 }
@@ -206,7 +218,7 @@ bool light_wallet::request_register_account(const string& account_name)
       if( e.code() == account_already_registered().code() &&
           _rpc.blockchain_get_account(_data->accounts[account_name].user_account.name)->active_key() != _data->accounts[account_name].user_account.active_key() )
          throw;
-      return true;
+      return false;
    }
 } FC_CAPTURE_AND_RETHROW( ) }
 
@@ -452,7 +464,6 @@ void light_wallet::sync_balance( bool resync_all )
    auto asset_records = _rpc.batch("blockchain_get_asset", batch_args);
    for( int i = 0; i < asset_records.size(); ++i )
       _chain_cache->store_asset_record(asset_records[i].as<asset_record>());
-   wdump((sync_time));
 
    _data->last_balance_sync_time = sync_time;
    save();
