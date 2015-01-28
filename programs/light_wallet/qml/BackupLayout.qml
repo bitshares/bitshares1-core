@@ -71,6 +71,7 @@ Dialog {
             title: qsTr("Is it secret? Is it safe?")
             onNegativeBtnClicked: backupLayout.state = ""
             positiveBtnText: qsTr("Verify")
+            negativeBtnText: qsTr("Back")
          }
          PropertyChanges {
             target: detailLabel
@@ -81,7 +82,7 @@ Dialog {
          PropertyChanges {
             target: brainKeyField
             text: ""
-            readOnly: false
+            input.readOnly: false
             helperText: qsTr("Enter your password now. Spaces and case do not matter")
             onAccepted: backupLayout.positiveBtnClicked()
          }

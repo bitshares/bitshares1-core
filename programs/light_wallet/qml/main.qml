@@ -20,8 +20,10 @@ Window {
    Component.onCompleted: {
       if( wallet.walletExists )
          wallet.openWallet()
-      if( !( wallet.account && wallet.account.isRegistered ) )
+      if( !( wallet.accountNames.length && wallet.accounts[wallet.accountNames[0]].isRegistered ) )
          onboardLoader.sourceComponent = onboardingUi
+      else
+         pageStack.push({item: assetsUi, properties: {accountName: wallet.accountNames[0]}})
 
       window.connectToServer()
    }
@@ -110,7 +112,6 @@ Window {
             clearError(errorId)
          })
       }
-      onAccountChanged: if( account ) account.error.connect(showError)
       onNotification: showError(message)
    }
 
@@ -249,7 +250,6 @@ Window {
             top: toolbar.bottom
             bottom: parent.bottom
          }
-         initialItem: assetsUi
 
          onPushed: toolbar.push(page)
          onPopped: toolbar.pop()
@@ -264,8 +264,8 @@ Window {
                }
                onOpenHistory: window.pageStack.push(historyUi, {"accountName": account, "assetSymbol": symbol})
                onOpenTransfer: {
-                  if( wallet.account.availableAssets.length )
-                     window.pageStack.push(transferUi)
+                  if( wallet.accounts[accountName].availableAssets.length )
+                     window.pageStack.push({item: transferUi, properties: {accountName: accountName}})
                   else
                      showError(qsTr("You don't have any assets, so you cannot make a transfer."), qsTr("Refresh Balances"),
                                wallet.syncAllBalances)
@@ -299,6 +299,7 @@ Window {
 
       OnboardingLayout {
          onFinished: {
+            pageStack.push({item: assetsUi, properties: {accountName: wallet.accountNames[0]}, immediate: true})
             onboardLoader.sourceComponent = undefined
          }
       }

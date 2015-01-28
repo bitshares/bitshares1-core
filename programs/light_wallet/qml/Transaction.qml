@@ -8,7 +8,7 @@ Rectangle {
    height: transactionSummary.height
    radius: units.dp(5)
 
-   property var trx
+   property var trx: {"timestamp": "Invalid", "ledger": [], "feeAmount": 0}
    property string accountName
    
    ColumnLayout {

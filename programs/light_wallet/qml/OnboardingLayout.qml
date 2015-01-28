@@ -18,19 +18,19 @@ MainView {
 
    function registerAccount() {
       onboarder.state = "REGISTERING"
-      Utils.connectOnce(wallet.account.isRegisteredChanged, finished,
-                        function() { return wallet.account.isRegistered })
+      Utils.connectOnce(wallet.accounts[username].isRegisteredChanged, finished,
+                        function() { return wallet.accounts[username].isRegistered })
       Utils.connectOnce(wallet.onErrorRegistering, function(reason) {
          //FIXME: Do something much, much better here...
          console.log("Can't register: " + reason)
       })
 
       if( wallet.connected ) {
-         wallet.registerAccount()
+         wallet.registerAccount(username)
       } else {
          // Not connected. Schedule for when we reconnect.
          wallet.runWhenConnected(function() {
-            wallet.registerAccount()
+            wallet.registerAccount(username)
          })
       }
    }
@@ -47,7 +47,7 @@ MainView {
             }
          })
          wallet.createWallet(username, password)
-      } else if ( !wallet.account.isRegistered ) {
+      } else if ( !wallet.accounts[username].isRegistered ) {
          //Wallet is created, so the account exists, but it's not registered yet. Take care of that now.
          registerAccount()
       }
@@ -94,7 +94,7 @@ MainView {
             placeholderText: qsTr("Pick a Username")
             Layout.fillWidth: true
             Layout.preferredHeight: implicitHeight
-            text: wallet.account? wallet.account.name : ""
+            text: wallet.accountNames.length? wallet.accountNames[0] : ""
             helperText: defaultHelperText
             characterLimit: 64
             onEditingFinished: if( wallet.connected ) nameAvailable()
@@ -139,8 +139,8 @@ MainView {
             Layout.preferredHeight: passwordField.height
 
             onClicked: {
-               if( wallet.account )
-                  wallet.account.name = nameField.text
+               if( wallet.accountNames.length )
+                  wallet.accounts[wallet.accountNames[0]].name = nameField.text
 
                if( !wallet.connected ) {
                   showError("Unable to connect to server.", "Try Again", connectToServer)

@@ -87,20 +87,20 @@ QQmlListProperty<Balance> Account::balances()
 
    while( !balanceList.empty() )
       balanceList.takeFirst()->deleteLater();
-   for( auto balance : m_wallet->balance() )
+   for( auto balance : m_wallet->balance(convert(m_name)) )
       balanceList.append(new Balance(convert(balance.first), balance.second, this));
    return QQmlListProperty<Balance>(this, &balanceList, count, at);
 }
 
 qreal Account::balance(QString symbol)
 {
-   return m_wallet->balance()[convert(symbol)];
+   return m_wallet->balance(convert(m_name))[convert(symbol)];
 }
 
 QStringList Account::availableAssets()
 {
    QStringList assets;
-   for( auto balance : m_wallet->balance() )
+   for( auto balance : m_wallet->balance(convert(m_name)) )
       if( balance.second > 0 )
          assets.append(convert(balance.first));
    return assets;
@@ -108,7 +108,7 @@ QStringList Account::availableAssets()
 
 QList<QObject*> Account::transactionHistory(QString asset_symbol)
 {
-   auto raw_transactions = m_wallet->transactions(convert(asset_symbol));
+   auto raw_transactions = m_wallet->transactions(convert(m_name), convert(asset_symbol));
    std::sort(raw_transactions.rbegin(), raw_transactions.rend(),
              [](const bts::wallet::transaction_ledger_entry& a,
                 const bts::wallet::transaction_ledger_entry& b) {
@@ -132,13 +132,14 @@ QList<QObject*> Account::transactionHistory(QString asset_symbol)
 TransactionSummary* Account::beginTransfer(QString recipient, QString amount, QString symbol, QString memo)
 {
    try {
-      pending_transaction = m_wallet->prepare_transfer(convert(amount), convert(symbol), convert(recipient), convert(memo));
+      pending_transaction = m_wallet->prepare_transfer(convert(amount), convert(symbol), convert(m_name),
+                                                       convert(recipient), convert(memo));
    } catch (const fc::exception& e) {
       qDebug() << "Failed to transfer:" << e.to_detail_string().c_str();
       return nullptr;
    }
 
-   auto summary = buildSummary(m_wallet->summarize(pending_transaction));
+   auto summary = buildSummary(m_wallet->summarize(convert(m_name), pending_transaction));
    summary->setParent(nullptr);
    summary->setProperty("timestamp", QStringLiteral("Pending"));
    connect(summary, &QObject::destroyed, [] {
@@ -150,7 +151,7 @@ TransactionSummary* Account::beginTransfer(QString recipient, QString amount, QS
 bool Account::completeTransfer(QString password)
 {
    try {
-      return m_wallet->complete_transfer(convert(password), pending_transaction);
+      return m_wallet->complete_transfer(convert(m_name), convert(password), pending_transaction);
    } catch( const fc::exception& e ) {
       if( e.get_log().size() )
          Q_EMIT error(convert(e.get_log().front().get_message()));

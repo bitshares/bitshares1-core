@@ -20,7 +20,8 @@ class LightWallet : public QObject
    Q_PROPERTY(bool connected READ isConnected NOTIFY connectedChanged)
    Q_PROPERTY(bool open READ isOpen NOTIFY openChanged)
    Q_PROPERTY(bool unlocked READ isUnlocked NOTIFY unlockedChanged)
-   Q_PROPERTY(Account* account READ account NOTIFY accountChanged)
+   Q_PROPERTY(QStringList accountNames READ accountNames NOTIFY accountsChanged)
+   Q_PROPERTY(QVariantMap accounts READ accounts NOTIFY accountsChanged)
    Q_PROPERTY(QString connectionError READ connectionError NOTIFY errorConnecting)
    Q_PROPERTY(QString openError READ openError NOTIFY errorOpening)
    Q_PROPERTY(QString unlockError READ unlockError NOTIFY errorUnlocking)
@@ -73,10 +74,6 @@ public:
    {
       return m_brainKey;
    }
-   Account* account() const
-   {
-      return m_account;
-   }
    qint16 maxMemoSize() const
    {
       return BTS_BLOCKCHAIN_MAX_EXTENDED_MEMO_SIZE;
@@ -96,6 +93,20 @@ public:
 
    Q_INVOKABLE bool verifyBrainKey(QString key) const;
 
+   QStringList accountNames()
+   {
+      QStringList results;
+      if( !isOpen() )
+         return results;
+      for( auto account : m_wallet.account_records() )
+         results.append(convert(account->name));
+      return results;
+   }
+   QVariantMap accounts() const
+   {
+      return m_accounts;
+   }
+
 public Q_SLOTS:
    void connectToServer(QString host, quint16 port,
                         QString serverKey = QString(),
@@ -110,7 +121,7 @@ public Q_SLOTS:
    void unlockWallet(QString password);
    void lockWallet();
 
-   void registerAccount();
+   void registerAccount(QString accountName);
 
    void clearBrainKey();
 
@@ -127,11 +138,12 @@ Q_SIGNALS:
    void openChanged(bool open);
    void unlockedChanged(bool unlocked);
    void brainKeyChanged(QString key);
-   void accountChanged(Account* arg);
 
    void synced();
 
    void notification(QString message);
+
+   void accountsChanged(QVariantMap arg);
 
 private:
    fc::thread m_walletThread;
@@ -143,7 +155,7 @@ private:
    QString m_openError;
    QString m_unlockError;
    QString m_brainKey;
-   Account* m_account = nullptr;
+   QVariantMap m_accounts;
 
    void generateBrainKey();
    void updateAccount(const bts::light_wallet::account_record& account);

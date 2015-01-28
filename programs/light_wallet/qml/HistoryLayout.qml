@@ -21,12 +21,12 @@ Page {
 
       ListView {
          id: historyList
-         model: wallet.account.transactionHistory(assetSymbol)
+         model: wallet.accounts[accountName].transactionHistory(assetSymbol)
          spacing: visuals.margins / 2
 
          Connections {
             target: wallet
-            onSynced: historyList.model = wallet.account.transactionHistory(assetSymbol)
+            onSynced: historyList.model = wallet.accounts[accountName].transactionHistory(assetSymbol)
          }
 
          delegate: Transaction {
@@ -57,13 +57,13 @@ Page {
                anchors.verticalCenter: parent.verticalCenter
                anchors.right: parent.right
                anchors.rightMargin: visuals.margins
-               text: wallet.account.balance(assetSymbol) + " " + assetSymbol
+               text: wallet.accounts[accountName].balance(assetSymbol) + " " + assetSymbol
                color: "white"
                font.pixelSize: units.dp(24)
 
                Connections {
                   target: wallet
-                  onSynced: balanceLabel.text = wallet.account.balance(assetSymbol) + " " + assetSymbol
+                  onSynced: balanceLabel.text = wallet.accounts[accountName].balance(assetSymbol) + " " + assetSymbol
                }
             }
          }

@@ -7,8 +7,10 @@ import Material 0.1
 import "utils.js" as Utils
 
 Page {
-   title: wallet.account.name + qsTr("'s Balances")
+   title: wallet.accounts[accountName].name + qsTr("'s Balances")
    actions: [lockAction]
+
+   property string accountName
 
    signal lockRequested
    signal openHistory(string account, string symbol)
@@ -30,7 +32,7 @@ Page {
          verticalScrollBarPolicy: Qt.platform.os in ["android", "ios"]? Qt.ScrollBarAsNeeded : Qt.ScrollBarAlwaysOff
 
          ListView {
-            model: wallet.account.balances
+            model: wallet.accounts[accountName].balances
             delegate: Rectangle {
                width: parent.width
                height: assetRow.height + visuals.margins
@@ -62,8 +64,8 @@ Page {
                Ink {
                   anchors.fill: parent
                   onClicked: {
-                     openHistory(wallet.account.name, symbol)
-                     console.log("Open trx history for " + wallet.account.name + "/" + symbol)
+                     openHistory(accountName, symbol)
+                     console.log("Open trx history for " + accountName + "/" + symbol)
                   }
                }
             }
