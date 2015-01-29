@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
       cache->setCacheDirectory(QStandardPaths::writableLocation(QStandardPaths::DataLocation) + "/cache");
       nam->setCache(cache);
    }
-   engine.load(QUrl(QStringLiteral("qml/main.qml")));
+   engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
 
    return app.exec();
 }
