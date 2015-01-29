@@ -16,7 +16,7 @@ Window {
 
    property alias pageStack: __pageStack
    property alias lockAction: __lockAction
-   property alias payAction: __paymentAction
+   property alias payAction: __payAction
 
    Component.onCompleted: {
       if( wallet.walletExists )
@@ -64,6 +64,7 @@ Window {
                                 "user", "pass")
    }
    function openTransferPage() {
+      //TODO: Add arguments which prefill items in transfer page
       if( wallet.accounts[wallet.accountNames[0]].availableAssets.length )
          window.pageStack.push({item: transferUi, properties: {accountName: wallet.accountNames[0]}})
       else
@@ -85,7 +86,7 @@ Window {
       onTriggered: wallet.lockWallet()
    }
    Action {
-      id: __paymentAction
+      id: __payAction
       name: qsTr("Send Payment")
       iconName: "action/payment"
       onTriggered: openTransferPage()
