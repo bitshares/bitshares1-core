@@ -126,7 +126,7 @@ namespace bts { namespace blockchain {
       op.amount = quantity.amount;
       op.short_index.order_price = interest_rate;
       op.short_index.owner = owner;
-      op.short_index.limit_price = limit_price;
+      op.limit_price = limit_price;
 
       operations.emplace_back(op);
    }

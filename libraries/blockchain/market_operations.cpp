@@ -281,7 +281,7 @@ namespace bts { namespace blockchain {
           // sub the delta amount from the eval state that we deposited to the short
           eval_state.sub_balance( balance_id_type(), delta_amount );
       }
-      current_short->limit_price = this->short_index.limit_price;
+      current_short->limit_price = this->limit_price;
       current_short->last_update = eval_state._current_state->now();
       current_short->balance     += this->amount;
       FC_ASSERT( current_short->balance >= 0 );
