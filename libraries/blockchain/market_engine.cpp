@@ -33,7 +33,7 @@ namespace bts { namespace blockchain { namespace detail {
           _ask_itr           = _db_impl._ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
           _relative_bid_itr  = _db_impl._relative_bid_db.lower_bound( market_index_key( next_pair ) );
           _relative_ask_itr  = _db_impl._relative_ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
-          _short_itr         = _db_impl._short_db.lower_bound( market_index_key( next_pair ) );
+          _short_itr         = _db_impl._short_db.lower_bound( market_index_key_ext( next_pair ) );
           _collateral_itr    = _db_impl._collateral_db.lower_bound( market_index_key( next_pair ) );
 
           _collateral_expiration_itr  = _db_impl._collateral_expiration_index.lower_bound( { quote_id, time_point(), market_index_key( price(0,quote_id,base_id) ) } );
@@ -637,6 +637,13 @@ namespace bts { namespace blockchain { namespace detail {
 
   } FC_CAPTURE_AND_RETHROW( (mtrx) )  } // pay_current_ask
 
+  /**
+   *  if there are bids or relative bids above feed price, take the max of the two
+   *  if there are shorts at the feed take the next short
+   *  if there are bids with prices above the limit of the current short they should take priority
+   *       - shorts need to be ordered by limit first, then interest rate *WHEN* the limit is
+   *         lower than the feed price.   
+   */
   bool market_engine::get_next_bid()
   { try {
       if( _current_bid && _current_bid->get_quantity().amount > 0 )
