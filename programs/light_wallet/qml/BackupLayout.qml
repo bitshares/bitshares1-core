@@ -57,7 +57,6 @@ Dialog {
             backupLayout.state = ""
             backupLayout.finished()
          }
-
       } else {
          state = "verifying"
       }
