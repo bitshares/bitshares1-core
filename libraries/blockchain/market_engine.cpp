@@ -352,6 +352,10 @@ namespace bts { namespace blockchain { namespace detail {
           {
               omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
               if( !market_stat.valid() ) market_stat = market_status( _quote_id, _base_id );
+              if( !(_feed_price == market_stat->current_feed_price) )
+              {
+                 // TODO: update shorts at feed 
+              }
               market_stat->update_feed_price( _feed_price );
               market_stat->last_error.reset();
               _pending_state->store_market_status( *market_stat );
@@ -371,6 +375,10 @@ namespace bts { namespace blockchain { namespace detail {
         wlog( "error executing market ${quote} / ${base}\n ${e}", ("quote",quote_id)("base",base_id)("e",e.to_detail_string()) );
         omarket_status market_stat = _prior_state->get_market_status( _quote_id, _base_id );
         if( !market_stat.valid() ) market_stat = market_status( _quote_id, _base_id );
+        if( !(_feed_price == market_stat->current_feed_price) )
+        {
+           // TODO: update shorts at feed 
+        }
         market_stat->update_feed_price( _feed_price );
         market_stat->last_error = e;
         _prior_state->store_market_status( *market_stat );

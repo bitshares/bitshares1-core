@@ -182,12 +182,20 @@ namespace bts { namespace blockchain {
               const expiration_index index{ key.order_price.quote_asset_id, record.expiration, key };
               _collateral_expiration_index.insert( index );
           }
-
-#ifndef WIN32
-// TODO: initialize short price index when loading the chain database
-#warning short_price_index has not been initialized on load
-#endif
-
+          for( auto iter = _short_db.begin(); iter.valid(); ++iter )
+          {
+              const market_index_key& key = iter.key();
+              const order_record& order = iter.value();
+              if( !order.limit_price )
+                 _shorts_at_feed.insert( key );
+              else 
+              {
+                  auto status = self->get_market_status( key.order_price.quote_asset_id, key.order_price.base_asset_id );
+                  if( status && status->current_feed_price && *status->current_feed_price <= *order.limit_price )
+                     _shorts_at_feed.insert( key );
+                 _short_limit_index.insert( std::make_pair( *order.limit_price, key ) );
+              }
+          }
       } FC_CAPTURE_AND_RETHROW() }
 
       void chain_database_impl::clear_invalidation_of_future_blocks()
@@ -2450,11 +2458,28 @@ namespace bts { namespace blockchain {
    {
       if( order.is_null() )
       {
-         my->_short_db.remove( key );
+         auto existing = my->_short_db.fetch_optional( key );
+         if( existing )
+         {
+            my->_short_db.remove( key );
+            my->_shorts_at_feed.erase( key );
+            if( existing->limit_price )
+               my->_short_limit_index.erase( std::make_pair( *existing->limit_price, key ) );
+         }
       }
       else
       {
          my->_short_db.store( key, order );
+         if( !order.limit_price )
+            my->_shorts_at_feed.insert( key );
+         else 
+         {
+            auto status = get_market_status( key.order_price.quote_asset_id, key.order_price.base_asset_id );
+            if( status && status->current_feed_price && *status->current_feed_price <= *order.limit_price )
+               my->_shorts_at_feed.insert( key );
+            // get feed and if feed insert into shorts at feed
+            my->_short_limit_index.insert( std::make_pair( *order.limit_price, key ) );
+         }
       }
    }
 
