@@ -293,13 +293,6 @@ Window {
                onTransferComplete: window.pageStack.pop()
             }
          }
-         Snackbar {
-            id: snack
-            duration: 5000
-            enabled: opened
-            onClick: opened = false
-            z: 21
-         }
       }
    }
    Component {
@@ -323,5 +316,12 @@ Window {
       id: onboardLoader
       z: 2
       anchors.fill: parent
+   }
+   Snackbar {
+      id: snack
+      duration: 5000
+      enabled: opened
+      onClick: opened = false
+      z: 21
    }
 }
