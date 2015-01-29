@@ -458,8 +458,8 @@ namespace bts { namespace blockchain { namespace detail {
       }
 
       auto call_collateral = collateral;
-      call_collateral.amount *= 3;
-      call_collateral.amount /= 4;
+      call_collateral.amount *= BTS_BLOCKCHAIN_MCALL_D2C_NUMERATOR;
+      call_collateral.amount /= BTS_BLOCKCHAIN_MCALL_D2C_DENOMINATOR;
       auto cover_price = mtrx.bid_paid / call_collateral;
 
       market_index_key cover_index( cover_price, _current_bid->get_owner() );

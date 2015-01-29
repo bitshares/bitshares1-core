@@ -130,7 +130,7 @@ asset market_order::get_quantity( const price& relative )const
      }
      case cover_order:
      {
-        return asset( (*collateral * 3)/4 );
+        return asset( (*collateral * BTS_BLOCKCHAIN_MCALL_D2C_NUMERATOR) / BTS_BLOCKCHAIN_MCALL_D2C_DENOMINATOR );
      }
      default:
         FC_ASSERT( false, "Not Implemented" );
