@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
 {
    QGuiApplication app(argc, argv);
    app.setApplicationName(QStringLiteral("BitShares Light Wallet"));
-   app.setOrganizationName("BitShares");
+   app.setOrganizationName(BTS_BLOCKCHAIN_NAME);
    app.setOrganizationDomain("bitshares.org");
 
    //Fire up the NTP system

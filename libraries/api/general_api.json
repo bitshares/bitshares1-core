@@ -93,7 +93,7 @@
       },
       {
          "method_name": "batch",
-         "description": "Takes any command and an array of its arguments and returns an array of results. Example: batch blockchain_get_blockhash [[1], [2]]",
+         "description": "Takes any no_prerequisites command and an array of its arguments and returns an array of results. Example: batch blockchain_get_blockhash [[1], [2]]",
          "return_type": "variants",
          "parameters" :
          [
@@ -109,7 +109,7 @@
          }
          ],
          "is_const"   : true,
-         "prerequisites" : ["json_authenticated"]
+         "prerequisites" : ["no_prerequisites"]
       },
       {
          "method_name": "builder_finalize_and_sign",

@@ -3945,16 +3945,14 @@ namespace detail {
       if( desired_fee_asset_id != 0 )
       {
          const auto asset_rec = my->_blockchain->get_asset_record( desired_fee_asset_id );
-         FC_ASSERT( asset_rec.valid() );
-         if( asset_rec->is_market_issued() )
+         if( asset_rec.valid() && asset_rec->is_market_issued() )
          {
              const auto median_price = my->_blockchain->get_active_feed_price( desired_fee_asset_id );
-             if( median_price )
+             if( median_price.valid() )
              {
-                xts_fee += xts_fee + xts_fee;
                 // fees paid in something other than XTS are discounted 50%
-                auto alt_fees_paid = xts_fee * *median_price;
-                return alt_fees_paid;
+                xts_fee += xts_fee + xts_fee;
+                return xts_fee * *median_price;
              }
          }
       }

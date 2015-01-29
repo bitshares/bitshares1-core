@@ -14,12 +14,11 @@
    m_walletThread.async([=] {
 #define IN_WAIT_THREAD \
    QEventLoop _THREAD_WAIT_LOOP_; \
-   m_walletThread.async([&] {
+   m_walletThread.async([&] { \
+      QEventLoopLocker _THREAD_LOCKER_(&_THREAD_WAIT_LOOP_);
 #define END_THREAD }, __FUNCTION__);
 #define END_WAIT_THREAD \
-      QEventLoopLocker _THREAD_LOCKER_(&_THREAD_WAIT_LOOP_); \
    END_THREAD \
-   fc::yield(); \
    _THREAD_WAIT_LOOP_.exec();
 
 inline static QString normalize(QString key)
@@ -49,7 +48,7 @@ Balance* LightWallet::getFee(QString assetSymbol)
       }
    END_WAIT_THREAD
 
-         return fee;
+   return fee;
 }
 
 bool LightWallet::accountExists(QString name)
@@ -110,15 +109,17 @@ void LightWallet::createWallet(QString accountName, QString password)
       qDebug() << "Exception when creating wallet:" << e.to_detail_string().c_str();
    }
 
+   qDebug() << "Created wallet.";
+
    Q_EMIT walletExistsChanged(walletExists());
    Q_EMIT openChanged(isOpen());
    Q_EMIT unlockedChanged(isUnlocked());
    updateAccount(m_wallet.account(convert(accountName)));
    fc::sha512 key = fc::sha512::hash(convert(password));
-   auto plaintext = std::vector<char>(m_brainKey.toStdString().begin(), m_brainKey.toStdString().end());
+   auto brainKey = convert(m_brainKey);
+   auto plaintext = std::vector<char>(brainKey.begin(), brainKey.end());
    auto ciphertext = fc::aes_encrypt(key, plaintext);
    QSettings().setValue(QStringLiteral("brainKey"), QByteArray::fromRawData(ciphertext.data(), ciphertext.size()));
-
    END_WAIT_THREAD
 }
 
@@ -230,8 +231,9 @@ void LightWallet::registerAccount(QString accountName)
 void LightWallet::clearBrainKey()
 {
    fc::sha512 key;
-   m_brainKey.replace(0, m_brainKey.size(), ' ');
-   auto plaintext = std::vector<char>(m_brainKey.toStdString().begin(), m_brainKey.toStdString().end());
+   m_brainKey.replace(QRegExp("."), " ");
+   auto brainKey = convert(m_brainKey);
+   auto plaintext = std::vector<char>(brainKey.begin(), brainKey.end());
    auto ciphertext = fc::aes_encrypt(key, plaintext);
    QSettings().setValue(QStringLiteral("brainKey"), QByteArray::fromRawData(ciphertext.data(), ciphertext.size()));
    QSettings().remove(QStringLiteral("brainKey"));

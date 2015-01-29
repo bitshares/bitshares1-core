@@ -151,6 +151,7 @@ namespace bts { namespace blockchain {
 
           _revalidatable_future_blocks_db.open( data_dir / "index/future_blocks_db" );
           clear_invalidation_of_future_blocks();
+
       } FC_CAPTURE_AND_RETHROW( (data_dir) ) }
 
       void chain_database_impl::populate_indexes()
@@ -183,7 +184,20 @@ namespace bts { namespace blockchain {
               const expiration_index index{ key.order_price.quote_asset_id, record.expiration, key };
               _collateral_expiration_index.insert( index );
           }
-
+          for( auto iter = _short_db.begin(); iter.valid(); ++iter )
+          {
+              const market_index_key& key = iter.key();
+              const order_record& order = iter.value();
+              if( !order.limit_price )
+                 _shorts_at_feed.insert( key );
+              else 
+              {
+                  auto status = self->get_market_status( key.order_price.quote_asset_id, key.order_price.base_asset_id );
+                  if( status && status->current_feed_price && *status->current_feed_price <= *order.limit_price )
+                     _shorts_at_feed.insert( key );
+                 _short_limit_index.insert( std::make_pair( *order.limit_price, key ) );
+              }
+          }
       } FC_CAPTURE_AND_RETHROW() }
 
       void chain_database_impl::clear_invalidation_of_future_blocks()
@@ -1545,7 +1559,7 @@ namespace bts { namespace blockchain {
       transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>( pend_state.get() );
 
       trx_eval_state->evaluate( trx, false );
-      auto fees = trx_eval_state->get_fees() + trx_eval_state->alt_fees_paid.amount;
+      const share_type fees = trx_eval_state->get_fees() + trx_eval_state->alt_fees_paid.amount;
       if( fees < required_fees )
       {
           wlog("Transaction ${id} needed relay fee ${required_fees} but only had ${fees}", ("id", trx.id())("required_fees",required_fees)("fees",fees));
@@ -1565,7 +1579,7 @@ namespace bts { namespace blockchain {
           transaction_evaluation_state_ptr eval_state = std::make_shared<transaction_evaluation_state>( pending_state.get() );
 
           eval_state->evaluate( transaction, false );
-          auto fees = eval_state->get_fees();
+          const share_type fees = eval_state->get_fees() + eval_state->alt_fees_paid.amount;
           if( fees < min_fee )
              FC_CAPTURE_AND_THROW( insufficient_relay_fee, (fees)(min_fee) );
        }
@@ -1995,7 +2009,7 @@ namespace bts { namespace blockchain {
       }
 
       transaction_evaluation_state_ptr eval_state = evaluate_transaction( trx, relay_fee );
-      share_type fees = eval_state->get_fees();
+      const share_type fees = eval_state->get_fees() + eval_state->alt_fees_paid.amount;
 
       //if( fees < my->_relay_fee )
       //   FC_CAPTURE_AND_THROW( insufficient_relay_fee, (fees)(my->_relay_fee) );
@@ -2523,9 +2537,30 @@ namespace bts { namespace blockchain {
    void chain_database::store_short_record( const market_index_key& key, const order_record& order )
    {
       if( order.is_null() )
-         my->_short_db.remove( key );
+      {
+         auto existing = my->_short_db.fetch_optional( key );
+         if( existing )
+         {
+            my->_short_db.remove( key );
+            my->_shorts_at_feed.erase( key );
+            if( existing->limit_price )
+               my->_short_limit_index.erase( std::make_pair( *existing->limit_price, key ) );
+         }
+      }
       else
+      {
          my->_short_db.store( key, order );
+         if( !order.limit_price )
+            my->_shorts_at_feed.insert( key );
+         else 
+         {
+            auto status = get_market_status( key.order_price.quote_asset_id, key.order_price.base_asset_id );
+            if( status && status->current_feed_price && *status->current_feed_price <= *order.limit_price )
+               my->_shorts_at_feed.insert( key );
+            // get feed and if feed insert into shorts at feed
+            my->_short_limit_index.insert( std::make_pair( *order.limit_price, key ) );
+         }
+      }
    }
 
    void chain_database::store_collateral_record( const market_index_key& key, const collateral_record& collateral )
@@ -2751,14 +2786,14 @@ namespace bts { namespace blockchain {
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(limit) ) }
 
-   vector<market_order> chain_database::get_market_covers( const string& quote_symbol, 
+   vector<market_order> chain_database::get_market_covers( const string& quote_symbol,
                                                            const string& base_symbol, uint32_t limit )
    { try {
        asset_id_type quote_asset_id = get_asset_id( quote_symbol );
        asset_id_type base_asset_id = get_asset_id( base_symbol );
        if( base_asset_id != 0 )
           return vector<market_order>();
-       
+
        if( base_asset_id >= quote_asset_id )
           FC_CAPTURE_AND_THROW( invalid_market, (quote_asset_id)(base_asset_id) );
 
@@ -2835,8 +2870,8 @@ namespace bts { namespace blockchain {
 
    } FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
-   vector<market_order> chain_database::get_market_asks( const string& quote_symbol, 
-                                                         const string& base_symbol, 
+   vector<market_order> chain_database::get_market_asks( const string& quote_symbol,
+                                                         const string& base_symbol,
                                                          uint32_t limit )
 
    { try {
