@@ -174,11 +174,17 @@ namespace bts { namespace blockchain {
          if( median_price.valid() )
          {
 #ifndef WIN32
-#warning [HARDFORK]
+#warning [SOFTFORK] Remove this check after BTS_V0_6_3_FORK_BLOCK_NUM has passed
 #endif
-            // fees paid in something other than XTS are discounted 50%
-            //alt_fees_paid += asset( (fee.second*2)/3, fee.first ) * *median_price;
-            alt_fees_paid += (asset( fee.second * 2, fee.first ) * *median_price) / 3;
+            if( _current_state->get_head_block_num() >= BTS_V0_6_3_FORK_BLOCK_NUM )
+            {
+                // fees paid in something other than XTS are discounted 50%
+                alt_fees_paid += (asset( fee.second * 2, fee.first ) * *median_price) / 3;
+            }
+            else
+            {
+                alt_fees_paid += asset( (fee.second*2)/3, fee.first ) * *median_price;
+            }
 
             auto max_fee_itr = _max_fee.find( fee.first );
             if( max_fee_itr != _max_fee.end() )
