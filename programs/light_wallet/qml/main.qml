@@ -60,8 +60,7 @@ Window {
    }
    function connectToServer() {
       if( !wallet.connected )
-         wallet.connectToServer("nathanhourt.com", 5656, "BTS5LyQycuMEdo6Dxx1XqYp24KV3fVoFKuXJMXTj3x7xJsis3C3EZ",
-                                "user", "pass")
+         wallet.connectToServer("nathanhourt.com", 5656, "BTS5LyQycuMEdo6Dxx1XqYp24KV3fVoFKuXJMXTj3x7xJsis3C3EZ")
    }
    function openTransferPage() {
       if( wallet.accounts[wallet.accountNames[0]].availableAssets.length )
