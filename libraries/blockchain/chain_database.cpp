@@ -2448,23 +2448,13 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_short_record( const market_index_key& key, const order_record& order )
    {
-      auto feed_price = get_active_feed_price( key.order_price.quote_asset_id, key.order_price.base_asset_id );
-      FC_ASSERT( feed_price );
-
-      auto index =  market_index_key_ext(key,order.limit_price);
-      price pindex = index.limit_price ? std::min( *feed_price, *index.limit_price ) : *feed_price;
-
       if( order.is_null() )
       {
-         my->_short_db.remove( index );
-         // TODO: order.limit_limit price may not have been properly set when attempting to remove
-         // a short record... this would lead to a memory leak
-         my->_short_price_index.erase( short_price_index_key{ pindex, index} );
+         my->_short_db.remove( key );
       }
       else
       {
-         my->_short_db.store( index, order );
-         my->_short_price_index.insert( short_price_index_key{ pindex, index} );
+         my->_short_db.store( key, order );
       }
    }
 

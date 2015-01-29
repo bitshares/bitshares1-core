@@ -147,9 +147,7 @@ namespace bts { namespace blockchain {
             bts::db::cached_level_map<market_index_key, order_record>                   _relative_ask_db;
             bts::db::cached_level_map<market_index_key, order_record>                   _relative_bid_db;
 
-            bts::db::cached_level_map<market_index_key_ext, order_record>               _short_db;          // interest,limit,owner => order 
-            /** must be updated every time median feed price changes */
-            set<short_price_index_key>                                                  _short_price_index; // price == min(feed,limit),owner,interest => interest,owner
+            bts::db::cached_level_map<market_index_key, order_record>                   _short_db;          // interest,limit,owner => order 
 
             bts::db::cached_level_map<market_index_key, collateral_record>              _collateral_db;     // expiration date == latest expiration 
             set<expiration_index>                                                       _collateral_expiration_index;

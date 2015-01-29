@@ -82,7 +82,7 @@ namespace bts { namespace blockchain { namespace detail {
     bts::db::cached_level_map< market_index_key, order_record >::iterator         _ask_itr;
     bts::db::cached_level_map< market_index_key, order_record >::iterator         _relative_bid_itr;
     bts::db::cached_level_map< market_index_key, order_record >::iterator         _relative_ask_itr;
-    bts::db::cached_level_map< market_index_key_ext, order_record >::iterator     _short_itr;
+    bts::db::cached_level_map< market_index_key, order_record >::iterator         _short_itr;
     bts::db::cached_level_map< market_index_key, collateral_record >::iterator    _collateral_itr;
     std::set< expiration_index >::iterator                   _collateral_expiration_itr;
   };
