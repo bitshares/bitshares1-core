@@ -70,6 +70,29 @@ MainView {
          style: "subheading"
          wrapMode: Text.WrapAtWordBoundaryOrAnywhere
       }
+      ProgressBar {
+         id: registrationProgress
+         anchors.horizontalCenter: parent.horizontalCenter
+         width: units.dp(400)
+         progress: 0
+
+         property var startTime
+
+         Timer {
+            id: registrationProgressTimer
+            repeat: true
+            interval: 100
+            running: onboarder.state === "REGISTERING"
+            onRunningChanged: {
+               if( running ){
+                  registrationProgress.startTime = Date.now()
+               }
+            }
+            onTriggered: {
+               registrationProgress.progress = Math.min((Date.now() - registrationProgress.startTime) / 15000, 1)
+            }
+         }
+      }
       ColumnLayout {
          width: parent.width
 
@@ -91,19 +114,19 @@ MainView {
             function nameAvailable() {
                if( text.length === 0 ) {
                   helperText = defaultHelperText
-                  displayError = false
+                  hasError = false
                } else if( !wallet.isValidAccountName(text) || text.indexOf('.') >= 0 || wallet.accountExists(text) ) {
                   helperText = qsTr("That username is already taken")
-                  displayError = true
+                  hasError = true
                } else if( characterCount > characterLimit ) {
                   helperText = qsTr("Name is too long")
-                  displayError = true
+                  hasError = true
                } else {
                   helperText = defaultHelperText
-                  displayError = false
+                  hasError = false
                }
 
-               return !displayError
+               return !hasError
             }
          }
          PasswordField {
@@ -125,9 +148,6 @@ MainView {
             Layout.preferredHeight: passwordField.height
 
             onClicked: {
-               if( wallet.accountNames.length )
-                  wallet.accounts[wallet.accountNames[0]].name = nameField.text
-
                if( !wallet.connected ) {
                   showError("Unable to connect to server.", "Try Again", connectToServer)
                   return

@@ -95,6 +95,12 @@ namespace bts { namespace rpc {
 
   rpc_client::~rpc_client()
   {
+     try
+     {
+        my->_json_exec_loop_complete.cancel_and_wait("~rpc_client()");
+     } catch (const fc::exception& e) {
+        wlog("Caught exception ${e} while canceling json_connection exec loop", ("e", e));
+     }
   }
 
   void rpc_client::connect_to(const fc::ip::endpoint& remote_endpoint,

@@ -66,7 +66,7 @@ Page {
          focus: true
          onEditingFinished: canProceed()
          transform: ShakeAnimation { id: recipientShaker }
-         showHelperText: true
+         helperText: " "
          input {
             inputMethodHints: Qt.ImhLowercaseOnly | Qt.ImhLatinOnly
             font.pixelSize: units.dp(20)
@@ -75,14 +75,14 @@ Page {
          function canProceed() {
             if( !wallet.accountExists(text) )
             {
-               displayError = true
+               hasError = true
                helperText = qsTr("This account does not exist")
             } else {
-               displayError = false
+               hasError = false
                helperText = ""
             }
 
-            return !displayError
+            return !hasError
          }
       }
       RowLayout {
@@ -120,8 +120,8 @@ Page {
                   total += fee.amount
                }
 
-               displayError = total > wallet.accounts[accountName].balance(assetSymbol.text)
-               return !displayError && amount() > 0
+               hasError = total > wallet.accounts[accountName].balance(assetSymbol.text)
+               return !hasError && amount() > 0
             }
             function canPayFee() {
                var fee = wallet.getFee(assetSymbol.text)
@@ -227,7 +227,7 @@ Page {
             if( !amountField.canProceed() )
                return amountShaker.shake()
             if( !amountField.canPayFee() )
-               return badFeeDialog.visible = true
+               return badFeeDialog.open()
             if( memoField.characterCount > memoField.characterLimit )
                return memoShaker.shake()
 
@@ -241,18 +241,18 @@ Page {
 
    MouseArea {
       anchors.fill: parent
-      onClicked: badFeeDialog.visible = false
+      onClicked: badFeeDialog.close()
       enabled: badFeeDialog.visible
    }
    Dialog {
       id: badFeeDialog
       title: qsTr("Cannot pay fee")
       height: units.dp(200)
-      negativeBtnVisible: false
+      negativeBtnText: ""
       positiveBtnText: qsTr("OK")
       visible: false
 
-      onPositiveBtnClicked: visible = false
+      onAccepted: close()
 
       Label {
          id: dialogContentLabel

@@ -183,6 +183,9 @@ fc::variants client_impl::batch( const std::string& method_name,
                                  const std::vector<fc::variants>& parameters_list) const
 {
    fc::variants result;
+   FC_ASSERT( _self->get_rpc_server()->get_method_data(method_name).prerequisites == bts::api::no_prerequisites,
+              "${method_name}", ("method_name", method_name) );
+
    for ( auto parameters : parameters_list )
    {
       result.push_back( _self->get_rpc_server()->direct_invoke_method( method_name, parameters) );

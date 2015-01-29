@@ -47,8 +47,8 @@ Dialog {
       Component.onCompleted: forceActiveFocus()
    }
    
-   onNegativeBtnClicked: finished()
-   onPositiveBtnClicked: {
+   onRejected: finished()
+   onAccepted: {
       if( state === "verifying" ) {
          if( !wallet.verifyBrainKey(brainKeyField.text) ) {
             brainShaker.shake()
@@ -57,7 +57,6 @@ Dialog {
             backupLayout.state = ""
             backupLayout.finished()
          }
-
       } else {
          state = "verifying"
       }
@@ -69,7 +68,7 @@ Dialog {
          PropertyChanges {
             target: backupLayout
             title: qsTr("Is it secret? Is it safe?")
-            onNegativeBtnClicked: backupLayout.state = ""
+            onRejected: backupLayout.state = ""
             positiveBtnText: qsTr("Verify")
             negativeBtnText: qsTr("Back")
          }
@@ -84,7 +83,7 @@ Dialog {
             text: ""
             input.readOnly: false
             helperText: qsTr("Enter your password now. Spaces and case do not matter")
-            onAccepted: backupLayout.positiveBtnClicked()
+            onAccepted: backupLayout.accepted()
          }
       }
    ]

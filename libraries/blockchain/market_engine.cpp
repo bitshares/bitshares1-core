@@ -36,7 +36,7 @@ namespace bts { namespace blockchain { namespace detail {
           _ask_itr           = _db_impl._ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
           _relative_bid_itr  = _db_impl._relative_bid_db.lower_bound( market_index_key( next_pair ) );
           _relative_ask_itr  = _db_impl._relative_ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
-          _short_itr         = _db_impl._short_db.lower_bound( market_index_key( next_pair ) );
+          _short_itr         = _db_impl._short_db.lower_bound( market_index_key_ext( next_pair ) );
           _collateral_itr    = _db_impl._collateral_db.lower_bound( market_index_key( next_pair ) );
 
           _collateral_expiration_itr  = _db_impl._collateral_expiration_index.lower_bound( { quote_id, time_point(), market_index_key( price(0,quote_id,base_id) ) } );
@@ -355,6 +355,10 @@ namespace bts { namespace blockchain { namespace detail {
           {
               omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
               if( !market_stat.valid() ) market_stat = market_status( _quote_id, _base_id );
+              if( !(_feed_price == market_stat->current_feed_price) )
+              {
+                 // TODO: update shorts at feed 
+              }
               market_stat->update_feed_price( _feed_price );
               market_stat->last_error.reset();
               _pending_state->store_market_status( *market_stat );
@@ -374,6 +378,10 @@ namespace bts { namespace blockchain { namespace detail {
         wlog( "error executing market ${quote} / ${base}\n ${e}", ("quote",quote_id)("base",base_id)("e",e.to_detail_string()) );
         omarket_status market_stat = _prior_state->get_market_status( _quote_id, _base_id );
         if( !market_stat.valid() ) market_stat = market_status( _quote_id, _base_id );
+        if( !(_feed_price == market_stat->current_feed_price) )
+        {
+           // TODO: update shorts at feed 
+        }
         market_stat->update_feed_price( _feed_price );
         market_stat->last_error = e;
         _prior_state->store_market_status( *market_stat );
@@ -640,6 +648,13 @@ namespace bts { namespace blockchain { namespace detail {
 
   } FC_CAPTURE_AND_RETHROW( (mtrx) )  } // pay_current_ask
 
+  /**
+   *  if there are bids or relative bids above feed price, take the max of the two
+   *  if there are shorts at the feed take the next short
+   *  if there are bids with prices above the limit of the current short they should take priority
+   *       - shorts need to be ordered by limit first, then interest rate *WHEN* the limit is
+   *         lower than the feed price.   
+   */
   bool market_engine::get_next_bid()
   { try {
       if( _current_bid && _current_bid->get_quantity().amount > 0 )
