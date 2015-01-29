@@ -14,12 +14,11 @@
    m_walletThread.async([=] {
 #define IN_WAIT_THREAD \
    QEventLoop _THREAD_WAIT_LOOP_; \
-   m_walletThread.async([&] {
+   m_walletThread.async([&] { \
+      QEventLoopLocker _THREAD_LOCKER_(&_THREAD_WAIT_LOOP_);
 #define END_THREAD }, __FUNCTION__);
 #define END_WAIT_THREAD \
-      QEventLoopLocker _THREAD_LOCKER_(&_THREAD_WAIT_LOOP_); \
    END_THREAD \
-   fc::yield(); \
    _THREAD_WAIT_LOOP_.exec();
 
 inline static QString normalize(QString key)
@@ -49,7 +48,7 @@ Balance* LightWallet::getFee(QString assetSymbol)
       }
    END_WAIT_THREAD
 
-         return fee;
+   return fee;
 }
 
 bool LightWallet::accountExists(QString name)
@@ -110,6 +109,8 @@ void LightWallet::createWallet(QString accountName, QString password)
       qDebug() << "Exception when creating wallet:" << e.to_detail_string().c_str();
    }
 
+   qDebug() << "Created wallet.";
+
    Q_EMIT walletExistsChanged(walletExists());
    Q_EMIT openChanged(isOpen());
    Q_EMIT unlockedChanged(isUnlocked());
@@ -118,7 +119,6 @@ void LightWallet::createWallet(QString accountName, QString password)
    auto plaintext = std::vector<char>(m_brainKey.toStdString().begin(), m_brainKey.toStdString().end());
    auto ciphertext = fc::aes_encrypt(key, plaintext);
    QSettings().setValue(QStringLiteral("brainKey"), QByteArray::fromRawData(ciphertext.data(), ciphertext.size()));
-
    END_WAIT_THREAD
 }
 
