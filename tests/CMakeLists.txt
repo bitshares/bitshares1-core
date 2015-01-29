@@ -122,4 +122,4 @@ endif (false )
 
 add_subdirectory( bitcoin )
 add_subdirectory( drltc_tests )
-#add_subdirectory( client_rpc_tests )
+
