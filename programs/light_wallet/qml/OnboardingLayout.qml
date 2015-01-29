@@ -91,19 +91,19 @@ MainView {
             function nameAvailable() {
                if( text.length === 0 ) {
                   helperText = defaultHelperText
-                  displayError = false
+                  hasError = false
                } else if( !wallet.isValidAccountName(text) || text.indexOf('.') >= 0 || wallet.accountExists(text) ) {
                   helperText = qsTr("That username is already taken")
-                  displayError = true
+                  hasError = true
                } else if( characterCount > characterLimit ) {
                   helperText = qsTr("Name is too long")
-                  displayError = true
+                  hasError = true
                } else {
                   helperText = defaultHelperText
-                  displayError = false
+                  hasError = false
                }
 
-               return !displayError
+               return !hasError
             }
          }
          PasswordField {
