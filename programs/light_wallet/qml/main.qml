@@ -40,11 +40,6 @@ Window {
       } else
          snack.buttonText = ""
       snack.open()
-      return d.currentError = d.errorSerial++
-   }
-   function clearError(errorId) {
-      if( d.currentError === errorId )
-         errorText.text = ""
    }
    function deviceType() {
       switch(Device.type) {
@@ -92,13 +87,7 @@ Window {
       onTriggered: openTransferPage()
    }
    QtObject {
-      id: d
-      property int errorSerial: 0
-      property int currentError: -1
-   }
-   QtObject {
       id: visuals
-
       property real margins: units.dp(16)
    }
    Timer {
@@ -122,11 +111,7 @@ Window {
       }
 
       onErrorConnecting: {
-         var errorId = showError(error)
-
-         runWhenConnected(function() {
-            clearError(errorId)
-         })
+         showError(error)
       }
       onNotification: showError(message)
    }
