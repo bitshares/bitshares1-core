@@ -293,7 +293,7 @@ namespace bts { namespace blockchain {
           // sub the delta amount from the eval state that we deposited to the short
           eval_state.sub_balance( balance_id_type(), delta_amount );
       }
-      current_short->limit_price = this->limit_price;
+      current_short->limit_price = this->short_index.limit_price;
       current_short->last_update = eval_state._current_state->now();
       current_short->balance     += this->amount;
       FC_ASSERT( current_short->balance >= 0 );
@@ -377,7 +377,9 @@ namespace bts { namespace blockchain {
       if( current_cover->payoff_balance > 0 )
       {
          auto new_call_price = asset( current_cover->payoff_balance, delta_amount.asset_id)
-                                     / asset( (current_cover->collateral_balance*3)/4, cover_index.order_price.base_asset_id );
+                                     / asset( (current_cover->collateral_balance * BTS_BLOCKCHAIN_MCALL_D2C_NUMERATOR)
+                                            / BTS_BLOCKCHAIN_MCALL_D2C_DENOMINATOR,
+                                            cover_index.order_price.base_asset_id );
 
          if( eval_state._current_state->get_head_block_num() < BTS_V0_7_0_FORK_BLOCK_NUM )
          {
@@ -423,7 +425,9 @@ namespace bts { namespace blockchain {
       current_cover->collateral_balance += delta_amount.amount;
 
       const auto min_call_price = asset( current_cover->payoff_balance, cover_index.order_price.quote_asset_id )
-                                  / asset( (current_cover->collateral_balance*3)/4, cover_index.order_price.base_asset_id );
+                                  / asset( (current_cover->collateral_balance * BTS_BLOCKCHAIN_MCALL_D2C_NUMERATOR)
+                                  / BTS_BLOCKCHAIN_MCALL_D2C_DENOMINATOR,
+                                  cover_index.order_price.base_asset_id );
       auto new_call_price = std::min( min_call_price, cover_index.order_price );
 
       if( eval_state._current_state->get_head_block_num() < BTS_V0_7_0_FORK_BLOCK_NUM )
@@ -463,7 +467,8 @@ namespace bts { namespace blockchain {
          FC_CAPTURE_AND_THROW( unknown_market_order, (cover_index) );
 
       const auto min_call_price = asset( current_cover->payoff_balance, cover_index.order_price.quote_asset_id )
-                                  / asset( (current_cover->collateral_balance*3)/4, cover_index.order_price.base_asset_id );
+                                  / asset( (current_cover->collateral_balance * BTS_BLOCKCHAIN_MCALL_D2C_NUMERATOR)
+                                  / BTS_BLOCKCHAIN_MCALL_D2C_DENOMINATOR, cover_index.order_price.base_asset_id );
 
       FC_ASSERT( new_call_price >= min_call_price );
 

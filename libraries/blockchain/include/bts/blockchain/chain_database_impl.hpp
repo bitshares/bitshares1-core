@@ -155,12 +155,20 @@ namespace bts { namespace blockchain {
             bts::db::cached_level_map<market_index_key, order_record>                   _bid_db;
             bts::db::cached_level_map<market_index_key, order_record>                   _relative_ask_db;
             bts::db::cached_level_map<market_index_key, order_record>                   _relative_bid_db;
-            bts::db::cached_level_map<market_index_key, order_record>                   _short_db;
-            bts::db::cached_level_map<market_index_key, collateral_record>              _collateral_db;
+
+            bts::db::cached_level_map<market_index_key, order_record>                   _short_db; // interest,owner => order 
+
+            /** maintains a subset of _short_db that is currently at the price feed, sorted by interest rate, then owner */
+            set<market_index_key>                                                       _shorts_at_feed;  // cache all shorts currently at the feed
+
+            /** maintains a sorted index of all shorts with a price limit by price limit, then interest, then owner */
+            set< pair<price,market_index_key> >                                         _short_limit_index;
+
+            bts::db::cached_level_map<market_index_key, collateral_record>              _collateral_db;     // expiration date == latest expiration 
             set<expiration_index>                                                       _collateral_expiration_index;
 
-            bts::db::cached_level_map<uint32_t, std::vector<market_transaction>>        _market_transactions_db;
-            bts::db::cached_level_map<std::pair<asset_id_type,asset_id_type>, market_status> _market_status_db;
+            bts::db::cached_level_map<uint32_t, vector<market_transaction>>             _market_transactions_db;
+            bts::db::cached_level_map<pair<asset_id_type,asset_id_type>, market_status> _market_status_db;
             bts::db::cached_level_map<market_history_key, market_history_record>        _market_history_db;
 
             bts::db::level_map<slot_index, slot_record>                                 _slot_index_to_record;
