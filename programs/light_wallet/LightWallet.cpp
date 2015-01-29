@@ -116,7 +116,8 @@ void LightWallet::createWallet(QString accountName, QString password)
    Q_EMIT unlockedChanged(isUnlocked());
    updateAccount(m_wallet.account(convert(accountName)));
    fc::sha512 key = fc::sha512::hash(convert(password));
-   auto plaintext = std::vector<char>(m_brainKey.toStdString().begin(), m_brainKey.toStdString().end());
+   auto brainKey = convert(m_brainKey);
+   auto plaintext = std::vector<char>(brainKey.begin(), brainKey.end());
    auto ciphertext = fc::aes_encrypt(key, plaintext);
    QSettings().setValue(QStringLiteral("brainKey"), QByteArray::fromRawData(ciphertext.data(), ciphertext.size()));
    END_WAIT_THREAD
@@ -230,8 +231,9 @@ void LightWallet::registerAccount(QString accountName)
 void LightWallet::clearBrainKey()
 {
    fc::sha512 key;
-   m_brainKey.replace(0, m_brainKey.size(), ' ');
-   auto plaintext = std::vector<char>(m_brainKey.toStdString().begin(), m_brainKey.toStdString().end());
+   m_brainKey.replace(QRegExp("."), " ");
+   auto brainKey = convert(m_brainKey);
+   auto plaintext = std::vector<char>(brainKey.begin(), brainKey.end());
    auto ciphertext = fc::aes_encrypt(key, plaintext);
    QSettings().setValue(QStringLiteral("brainKey"), QByteArray::fromRawData(ciphertext.data(), ciphertext.size()));
    QSettings().remove(QStringLiteral("brainKey"));
