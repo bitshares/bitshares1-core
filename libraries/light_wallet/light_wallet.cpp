@@ -2,6 +2,7 @@
 #include <bts/blockchain/time.hpp>
 #include <bts/blockchain/balance_operations.hpp>
 #include <bts/blockchain/transaction_creation_state.hpp>
+#include <bts/utilities/key_conversion.hpp>
 
 #include <fc/network/resolve.hpp>
 #include <fc/crypto/aes.hpp>
@@ -139,7 +140,7 @@ void light_wallet::unlock( const string& password )
          _wallet_key = key;
          //Should throw if decryption fails
          try {
-            private_key(_data->accounts.begin()->first);
+            active_key(_data->accounts.begin()->first);
          } catch(...) {
             _wallet_key.reset();
             throw;
@@ -158,7 +159,7 @@ void light_wallet::change_password( const string& new_password )
    auto pass_key = fc::sha512::hash( new_password );
 
    for( auto& account_pair : _data->accounts )
-      account_pair.second.encrypted_private_key = fc::aes_encrypt(pass_key, fc::raw::pack(private_key(account_pair.first)));
+      account_pair.second.encrypted_private_key = fc::aes_encrypt(pass_key, fc::raw::pack(active_key(account_pair.first)));
 
    _wallet_key = pass_key;
    save();
@@ -182,22 +183,15 @@ void light_wallet::create( const fc::path& wallet_json,
       _data = light_wallet_data();
    account_record& new_account = _data->accounts[account_name].user_account;
 
-   // derive the brain wallet key
-   fc::sha256::encoder enc;
-   fc::raw::pack( enc, brain_seed );
-   fc::raw::pack( enc, account_name );
-   fc::ecc::private_key owner_key = fc::ecc::private_key::regenerate( enc.result() );
-   new_account.owner_key = owner_key.get_public_key();
-
    // Don't actually store the owner key; it can be recovered via brain key and salt.
    // Locally, we'll only keep a deterministically derived child key so if that key is compromised,
    // the owner key remains safe.
-   enc.reset();
-   fc::raw::pack( enc, owner_key );
-   // Active key is hash(owner_key | n) where n = number of previous active keys
+   fc::ecc::private_key owner_key = fc::ecc::private_key::regenerate(fc::sha256::hash(fc::sha512::hash(brain_seed + " " + account_name)));
+   new_account.owner_key = owner_key.get_public_key();
+
+   // Active key is hash(wif_owner_key + " " + n) where n = number of previous active keys
    // i.e. first active key has n=0, second has n=1, etc
-   fc::raw::pack( enc, new_account.active_key_history.size() );
-   fc::ecc::private_key active_key = fc::ecc::private_key::regenerate( enc.result() );
+   fc::ecc::private_key active_key = fc::ecc::private_key::regenerate(fc::sha256::hash(fc::sha512::hash(utilities::key_to_wif(owner_key) + " 0")));
    new_account.active_key_history[fc::time_point::now()] = active_key.get_public_key();
 
    // set the password
@@ -284,8 +278,8 @@ fc::variant_object light_wallet::prepare_transfer(const string& amount,
    creator.withdraw(fee);
    creator.withdraw(transfer_asset);
    creator.deposit(transfer_asset, to_account->active_key(), 0,
-                   create_one_time_key(from_account_name, expiration.sec_since_epoch()),
-                   memo, private_key(from_account_name));
+                   create_one_time_key(from_account_name, fc::to_string(expiration.sec_since_epoch())),
+                   memo, active_key(from_account_name));
 
    if( _relay_fee_collector )
    {
@@ -328,7 +322,7 @@ bool light_wallet::complete_transfer(const string& account_name,
    }
 
    signed_transaction trx = transaction_bundle["trx"].as<transaction_record>().trx;
-   trx.sign(private_key(account_name), _chain_cache->get_chain_id());
+   trx.sign(active_key(account_name), _chain_cache->get_chain_id());
    try {
       _rpc.blockchain_broadcast_transaction(trx);
    } catch (const fc::exception& e) {
@@ -526,7 +520,7 @@ fc::variants light_wallet::batch_active_addresses(const char* call_name, fc::var
    return batch_results;
 }
 
-fc::ecc::private_key light_wallet::private_key(const string& account_name)
+fc::ecc::private_key light_wallet::active_key(const string& account_name)
 {
    FC_ASSERT(is_open());
    FC_ASSERT(is_unlocked());
@@ -614,7 +608,7 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const string& acco
                summary.delta_labels[i] = "Unknown>";
                if( condition.memo )
                {
-                  omemo_status status = condition.decrypt_memo_data(private_key(account_name), true);
+                  omemo_status status = condition.decrypt_memo_data(active_key(account_name), true);
                   if( status )
                   {
                      summary.operation_notes[i] = status->get_message();
@@ -646,7 +640,7 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const string& acco
 
                if( account && condition.memo )
                {
-                  auto one_time_key = create_one_time_key(account_name, record.trx.expiration.sec_since_epoch());
+                  auto one_time_key = create_one_time_key(account_name, fc::to_string(record.trx.expiration.sec_since_epoch()));
                   try {
                      memo_data data = condition.decrypt_memo_data(one_time_key.get_shared_secret(account->active_key()));
                      summary.operation_notes[i] = data.get_message();
@@ -671,13 +665,14 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const string& acco
    return summary;
 } FC_CAPTURE_AND_RETHROW( (transaction_bundle) ) }
 
-fc::ecc::private_key light_wallet::create_one_time_key(const string& account_name, uint64_t sequence_number)
+fc::ecc::private_key light_wallet::create_one_time_key(const string& account_name, const string& key_id)
 {
    FC_ASSERT(is_unlocked());
-   fc::sha256::encoder enc;
-   fc::raw::pack(enc, private_key(account_name));
-   fc::raw::pack(enc, sequence_number);
-   return fc::ecc::private_key::regenerate(enc.result());
+   //One time keys are hash(wif_active_key + " " + id) for some string ID.
+   //A transaction OTK ID is its expiration time in seconds since epoch
+   return fc::ecc::private_key::regenerate(fc::sha256::hash(
+                                              fc::sha512::hash(
+                                                 utilities::key_to_wif(active_key(account_name)) + " " + key_id)));
 }
 
 asset light_wallet::get_network_fee(const string& symbol)

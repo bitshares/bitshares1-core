@@ -53,8 +53,8 @@ namespace bts { namespace light_wallet {
          void change_password( const string& new_password );
 
          void create(const fc::path& wallet_json, const std::string& account_name,
-                      const string& password,
-                      const string& brain_seed);
+                     const string& password,
+                     const string& brain_seed);
 
          bool request_register_account(const std::string& account_name);
          account_record& account(const string& account_name);
@@ -97,10 +97,10 @@ namespace bts { namespace light_wallet {
 
          void fetch_welcome_package();
    private:
-         fc::ecc::private_key create_one_time_key(const std::string& account_name, uint64_t sequence_number);
+         fc::ecc::private_key create_one_time_key(const std::string& account_name, const std::string& key_id);
          asset get_network_fee( const string& symbol );
          fc::variants batch_active_addresses(const char* call_name, fc::variant last_sync, vector<std::string>& account_records);
-         fc::ecc::private_key private_key(const string& account_name);
+         fc::ecc::private_key active_key(const string& account_name);
 
          map<string, account_record> _account_cache;
    };
