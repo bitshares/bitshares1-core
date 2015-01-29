@@ -45,11 +45,16 @@ namespace bts { namespace blockchain {
 
       friend bool operator == ( const market_index_key_ext& a, const market_index_key_ext& b )
       {
-        return std::tie(a.order_price, a.owner, a.limit_price) == std::tie(b.order_price, b.owner, b.limit_price);
+          if( a.limit_price.valid() != b.limit_price.valid() ) return false;
+          if( !a.limit_price.valid() ) return market_index_key( a ) == market_index_key( b );
+          return std::tie( a.order_price, a.owner, *a.limit_price ) == std::tie( b.order_price, b.owner, *b.limit_price );
       }
+
       friend bool operator < ( const market_index_key_ext& a, const market_index_key_ext& b )
       {
-        return std::tie(a.order_price, a.owner, a.limit_price) < std::tie(b.order_price, b.owner, b.limit_price);
+          FC_ASSERT( a.limit_price.valid() == b.limit_price.valid() );
+          if( !a.limit_price.valid() ) return market_index_key( a ) < market_index_key( b );
+          return std::tie( a.order_price, a.owner, *a.limit_price ) < std::tie( b.order_price, b.owner, *b.limit_price );
       }
    };
 

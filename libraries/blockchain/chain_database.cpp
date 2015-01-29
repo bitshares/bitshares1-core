@@ -183,8 +183,10 @@ namespace bts { namespace blockchain {
               _collateral_expiration_index.insert( index );
           }
 
+#ifndef WIN32
 // TODO: initialize short price index when loading the chain database
 #warning short_price_index has not been initialized on load
+#endif
 
       } FC_CAPTURE_AND_RETHROW() }
 
@@ -2689,14 +2691,14 @@ namespace bts { namespace blockchain {
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(limit) ) }
 
-   vector<market_order> chain_database::get_market_covers( const string& quote_symbol, 
+   vector<market_order> chain_database::get_market_covers( const string& quote_symbol,
                                                            const string& base_symbol, uint32_t limit )
    { try {
        asset_id_type quote_asset_id = get_asset_id( quote_symbol );
        asset_id_type base_asset_id = get_asset_id( base_symbol );
        if( base_asset_id != 0 )
           return vector<market_order>();
-       
+
        if( base_asset_id >= quote_asset_id )
           FC_CAPTURE_AND_THROW( invalid_market, (quote_asset_id)(base_asset_id) );
 
@@ -2773,8 +2775,8 @@ namespace bts { namespace blockchain {
 
    } FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
-   vector<market_order> chain_database::get_market_asks( const string& quote_symbol, 
-                                                         const string& base_symbol, 
+   vector<market_order> chain_database::get_market_asks( const string& quote_symbol,
+                                                         const string& base_symbol,
                                                          uint32_t limit )
 
    { try {
