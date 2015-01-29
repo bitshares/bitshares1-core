@@ -2486,9 +2486,11 @@ namespace bts { namespace blockchain {
    void chain_database::store_feed_record( const feed_record& record )
    {
       chain_interface::store_feed_record(record);
-      auto  new_feed                   = get_active_feed_price( record.value.quote_asset_id, record.value.base_asset_id );
-      omarket_status market_stat = get_market_status( record.value.quote_asset_id, record.value.base_asset_id );
-      if( !market_stat ) market_stat = market_status( record.value.quote_asset_id, record.value.base_asset_id );
+      auto quote_id = record.value.quote_asset_id;
+      auto base_id  = record.value.base_asset_id;
+      auto  new_feed                   = get_active_feed_price( quote_id, base_id );
+      omarket_status market_stat = get_market_status( quote_id, base_id );
+      if( !market_stat ) market_stat = market_status( quote_id, base_id );
       auto  old_feed =  market_stat->current_feed_price;
       market_stat->current_feed_price = new_feed;
       if( old_feed == new_feed )
@@ -2499,21 +2501,90 @@ namespace bts { namespace blockchain {
       if( !new_feed )
       {
          // remove all shorts with limit
-         return;
+         const price next_pair = (base_id+1 == quote_id)   ? 
+                                 price( 0, quote_id+1, 0 ) : 
+                                 price( 0, quote_id, base_id+1 );
+
+         auto market_itr = my->_short_db.lower_bound( market_index_key( next_pair ) );
+         if( market_itr.valid() )   --market_itr;
+         else market_itr = my->_short_db.last();
+
+         while( market_itr.valid() )
+         {
+            auto key = market_itr.key();
+            if( key.order_price.quote_asset_id == quote_id &&
+                key.order_price.base_asset_id == base_id  )
+            {
+               const order_record& value = market_itr.value();
+               if( value.limit_price )
+                  my->_shorts_at_feed.erase( market_itr.key() );
+            }
+            else
+            {
+               break;
+            }
+            --market_itr;
+         }
       }
       if( !old_feed ) 
       {
          // insert all shorts with limit >= feed
+         const price next_pair = (base_id+1 == quote_id)   ? 
+                                 price( 0, quote_id+1, 0 ) : 
+                                 price( 0, quote_id, base_id+1 );
+
+         auto market_itr = my->_short_db.lower_bound( market_index_key( next_pair ) );
+         if( market_itr.valid() )   --market_itr;
+         else market_itr = my->_short_db.last();
+
+         while( market_itr.valid() )
+         {
+            auto key = market_itr.key();
+            if( key.order_price.quote_asset_id == quote_id &&
+                key.order_price.base_asset_id == base_id  )
+            {
+               const order_record& value = market_itr.value();
+               if( !value.limit_price || *value.limit_price >  *new_feed )
+                  my->_shorts_at_feed.insert( market_itr.key() );
+            }
+            else
+            {
+               break;
+            }
+            --market_itr;
+         }
          return;
       }
       if( *old_feed < *new_feed )
       {
          // add all shorts with limit less than old feed price and greater than new feed price
+         // iterate from old feed price -> new feed price and add items
+         auto itr = my->_short_limit_index.lower_bound( std::make_pair(*old_feed, market_index_key()) );
+         while( itr != my->_short_limit_index.end() )
+         {
+            if( itr->first.quote_asset_id != quote_id ) break;
+            if( itr->first.base_asset_id != base_id ) break;
+            if( itr->first <= *new_feed )
+               my->_shorts_at_feed.insert( itr->second );
+            else
+               break;
+            ++itr;
+         };
          return;
       }
       if (*old_feed > *new_feed )
       {
-         // remove all shorts with limit greater than feed price and less than old feed price
+         // iterate from new_feed price to old feed price and remove items
+         auto itr = my->_short_limit_index.lower_bound( std::make_pair(*new_feed, market_index_key()) );
+         while( itr != my->_short_limit_index.end() )
+         {
+            if( itr->first.quote_asset_id != quote_id ) break;
+            if( itr->first.base_asset_id != base_id ) break;
+            if( itr->first > *new_feed )
+               my->_shorts_at_feed.erase( itr->second );
+            else break;
+            ++itr;
+         };
          return;
       }
    }
