@@ -2483,6 +2483,41 @@ namespace bts { namespace blockchain {
       }
    }
 
+   void chain_database::store_feed_record( const feed_record& record )
+   {
+      chain_interface::store_feed_record(record);
+      auto  new_feed                   = get_active_feed_price( record.value.quote_asset_id, record.value.base_asset_id );
+      omarket_status market_stat = get_market_status( record.value.quote_asset_id, record.value.base_asset_id );
+      if( !market_stat ) market_stat = market_status( record.value.quote_asset_id, record.value.base_asset_id );
+      auto  old_feed =  market_stat->current_feed_price;
+      market_stat->current_feed_price = new_feed;
+      if( old_feed == new_feed )
+         return;
+
+      store_market_status( *market_stat );
+
+      if( !new_feed )
+      {
+         // remove all shorts with limit
+         return;
+      }
+      if( !old_feed ) 
+      {
+         // insert all shorts with limit >= feed
+         return;
+      }
+      if( *old_feed < *new_feed )
+      {
+         // add all shorts with limit less than old feed price and greater than new feed price
+         return;
+      }
+      if (*old_feed > *new_feed )
+      {
+         // remove all shorts with limit greater than feed price and less than old feed price
+         return;
+      }
+   }
+
    void chain_database::store_collateral_record( const market_index_key& key, const collateral_record& collateral )
    {
       if( collateral.is_null() )

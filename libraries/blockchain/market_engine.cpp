@@ -60,7 +60,7 @@ namespace bts { namespace blockchain { namespace detail {
           // Market issued assets cannot match until the first time there is a median feed; assume feed price base id 0
           if( quote_asset->is_market_issued() && base_asset->id == 0 )
           {
-              _feed_price = _db_impl.self->get_active_feed_price( _quote_id );
+              _feed_price = _db_impl.self->get_active_feed_price( _quote_id, _base_id );
               const omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
               if( (!market_stat.valid() || !market_stat->last_valid_feed_price.valid()) && !_feed_price.valid() )
                   FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id)(base_id) );
@@ -352,10 +352,6 @@ namespace bts { namespace blockchain { namespace detail {
           {
               omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
               if( !market_stat.valid() ) market_stat = market_status( _quote_id, _base_id );
-              if( !(_feed_price == market_stat->current_feed_price) )
-              {
-                 // TODO: update shorts at feed 
-              }
               market_stat->update_feed_price( _feed_price );
               market_stat->last_error.reset();
               _pending_state->store_market_status( *market_stat );
