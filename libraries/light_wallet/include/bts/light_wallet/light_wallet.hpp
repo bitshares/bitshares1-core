@@ -54,7 +54,7 @@ namespace bts { namespace light_wallet {
 
          void create(const fc::path& wallet_json, const std::string& account_name,
                       const string& password,
-                      const string& brain_seed, const string& salt = string() );
+                      const string& brain_seed);
 
          bool request_register_account(const std::string& account_name);
          account_record& account(const string& account_name);
