@@ -8,6 +8,7 @@ Page {
    id: historyPage
    title: accountName + "'s " + assetSymbol + " " + qsTr("Transactions")
    actions: [payAction, lockAction]
+   clip: true
 
    property string accountName
    property string assetSymbol
@@ -19,6 +20,7 @@ Page {
       flickableItem.interactive: true
       // @disable-check M16
       verticalScrollBarPolicy: Qt.platform.os in ["android", "ios"]? Qt.ScrollBarAsNeeded : Qt.ScrollBarAlwaysOff
+      viewport.clip: false
 
       ListView {
          id: historyList
@@ -42,7 +44,6 @@ Page {
             width: parent.width - visuals.margins*2
             x: visuals.margins
             backgroundColor: Theme.primaryColor
-            z: 2
             elevation: 2
             elevationInverted: true
 
