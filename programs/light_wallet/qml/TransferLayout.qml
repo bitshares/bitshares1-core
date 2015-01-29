@@ -6,8 +6,10 @@ import Material 0.1
 
 Page {
    id: transferPage
-   title: "Transfer"
+   title: qsTr("Send Payment")
    actions: [lockAction]
+
+   property string accountName
 
    signal transferComplete(string assetSymbol)
    
@@ -19,7 +21,7 @@ Page {
       anchors.margins: visuals.margins
 
       RoboHash {
-         name: wallet.account.name
+         name: wallet.accounts[accountName].name
          x: visuals.margins
          Layout.fillWidth: true
       }
@@ -103,8 +105,8 @@ Page {
             }
             helperText: {
                var fee = wallet.getFee(assetSymbol.text)
-               return qsTr("Available balance: ") + wallet.account.balance(assetSymbol.text) + " " + assetSymbol.text +
-                     "\n" + qsTr("Transaction fee: ") + fee.amount + " " + fee.symbol
+               return qsTr("Available balance: ") + wallet.accounts[accountName].balance(assetSymbol.text) +
+                     " " + assetSymbol.text + "\n" + qsTr("Transaction fee: ") + fee.amount + " " + fee.symbol
             }
             onEditingFinished: canProceed()
 
@@ -118,14 +120,14 @@ Page {
                   total += fee.amount
                }
 
-               displayError = total > wallet.account.balance(assetSymbol.text)
+               displayError = total > wallet.accounts[accountName].balance(assetSymbol.text)
                return !displayError && amount() > 0
             }
             function canPayFee() {
                var fee = wallet.getFee(assetSymbol.text)
                if( fee.symbol === assetSymbol.text )
                   return canProceed()
-               return fee.amount <= wallet.account.balance(fee.symbol)
+               return fee.amount <= wallet.accounts[accountName].balance(fee.symbol)
             }
          }
          TextField {
@@ -136,7 +138,7 @@ Page {
             input.font.pixelSize: units.dp(20)
             //Hack to make RowLayout place this field vertically level with amountField
             helperText: "\n "
-            text: wallet.account.availableAssets.length ? wallet.account.availableAssets[0]
+            text: wallet.accounts[accountName].availableAssets.length ? wallet.accounts[accountName].availableAssets[0]
                                                         : ":("
             placeholderText: qsTr("Asset")
             floatingLabel: true
@@ -155,7 +157,7 @@ Page {
             Menu {
                id: assetMenu
                width: parent.width * 1.1
-               model: wallet.account.availableAssets
+               model: wallet.accounts[accountName].availableAssets
                owner: assetSymbol
                onElementSelected: assetSymbol.text = elementData
             }
@@ -188,7 +190,7 @@ Page {
          id: transactionPreview
          width: parent.width
          anchors.horizontalCenter: parent.horizontalCenter
-         accountName: wallet.account.name
+         accountName: accountName
       }
 
       PasswordField {
@@ -229,8 +231,8 @@ Page {
             if( memoField.characterCount > memoField.characterLimit )
                return memoShaker.shake()
 
-            transactionPreview.trx = wallet.account.beginTransfer(toNameField.text, amountField.text,
-                                                                  assetSymbol.text, memoField.text);
+            transactionPreview.trx = wallet.accounts[accountName].beginTransfer(toNameField.text, amountField.text,
+                                                                                assetSymbol.text, memoField.text);
             transferPage.state = "confirmation"
             confirmPassword.forceActiveFocus()
          }
@@ -282,7 +284,7 @@ Page {
             target: continueButton
             text: qsTr("Confirm")
             onClicked: {
-               if( wallet.account.completeTransfer(confirmPassword.password) )
+               if( wallet.accounts[accountName].completeTransfer(confirmPassword.password) )
                   transferComplete(assetSymbol.text)
                else
                   confirmPassword.shake()

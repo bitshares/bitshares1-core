@@ -6,6 +6,8 @@ import Material 0.1
 
 Column {
    property alias name: robotName.text
+   property alias elideMode: robotName.elide
+   spacing: units.dp(5)
 
    function __imageSource() {
       if( name.toLowerCase() === name )

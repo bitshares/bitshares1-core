@@ -77,6 +77,9 @@
 #define BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC                 (30*24*60*60) // 1 month
 #endif
 
+#define BTS_BLOCKCHAIN_MCALL_D2C_NUMERATOR                  1
+#define BTS_BLOCKCHAIN_MCALL_D2C_DENOMINATOR                2
+
 // TODO: This stuff only matters for propagation throttling; should go somewhere else
 #define BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE                    10000 // XTS
 #define BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND                   1  // (10)
