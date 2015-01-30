@@ -20,7 +20,7 @@ namespace bts { namespace blockchain {
       fc::uint128 current_supply( share_supply - yield_pool );
       fc::uint128 fee_fund( yield_pool );
 
-      auto yield = (amount_withdrawn * fee_fund) / current_supply;
+      fc::uint128 yield = (amount_withdrawn * fee_fund) / current_supply;
 
       /**
        *  If less than 1 year, the 80% of yield are scaled linearly with time and 20% scaled by time^2,
@@ -29,12 +29,12 @@ namespace bts { namespace blockchain {
        */
       if( elapsed_time < fc::seconds( BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC ) )
       {
-         auto original_yield = yield;
+         fc::uint128 original_yield = yield;
          // discount the yield by 80%
          yield *= 8;
          yield /= 10;
 
-         auto delta_yield = original_yield - yield;
+         fc::uint128 delta_yield = original_yield - yield;
 
          // yield == amount withdrawn / total usd  *  fee fund * fraction_of_year
          yield *= elapsed_time.to_seconds();
@@ -50,7 +50,7 @@ namespace bts { namespace blockchain {
       }
 
       yield /= 1000000;
-      auto yield_amount = yield.to_uint64();
+      uint64_t yield_amount = yield.to_uint64();
 
       if( yield_amount > 0 && yield_amount < yield_pool )
       {
