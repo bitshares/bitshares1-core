@@ -60,6 +60,7 @@ Rectangle {
             font.pixelSize: units.dp(10)
             font.weight: Font.Light
             font.italic: true
+            visible: trx.feeAmount
             text: qsTr("Fee: ") + trx.feeAmount + " " + trx.feeSymbol
          }
          Item { Layout.preferredWidth: visuals.margins }

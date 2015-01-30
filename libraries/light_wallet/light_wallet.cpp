@@ -591,6 +591,8 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const string& acco
    summary.block_num = record.chain_location.block_num;
    summary.id = record.trx.id();
 
+   bool tally_fees = false;
+
    for( int i = 0; i < record.trx.operations.size(); ++i )
    {
       auto op = record.trx.operations[i];
@@ -624,6 +626,7 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const string& acco
                raw_delta_amounts[summary.delta_labels[i]][asset_id] += deposit.amount;
             } else {
                //It's from me.
+               tally_fees = true;
                //Is it a light relay fee?
                if( _relay_fee_collector && condition.owner == _relay_fee_collector->active_address() && !condition.memo )
                {
@@ -659,8 +662,10 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const string& acco
    for( auto delta : raw_delta_amounts )
       for( auto asset : delta.second )
          summary.delta_amounts[delta.first].emplace_back(asset.second, asset.first);
-   for( auto fee : record.balance )
-      summary.delta_amounts["Fee"].emplace_back(fee.second, fee.first);
+   if( tally_fees )
+      for( auto fee : record.balance )
+         if( fee.second )
+            summary.delta_amounts["Fee"].emplace_back(fee.second, fee.first);
 
    return summary;
 } FC_CAPTURE_AND_RETHROW( (transaction_bundle) ) }
