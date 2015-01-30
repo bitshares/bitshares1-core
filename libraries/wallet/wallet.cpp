@@ -2352,15 +2352,15 @@ namespace detail {
           total_balance += balance;
       }
 
-       trx.deposit_to_account( account_record->active_key(),
-                               total_balance - get_transaction_fee(),
-                               get_private_key( account_record->active_key() ),
-                               "",
-                               account_record->active_key(),
-                               my->get_new_private_key( account_name ),
-                               from_memo
-                               );
-
+      trx.deposit_to_account( account_record->active_key(),
+                              total_balance - get_transaction_fee(),
+                              get_private_key( account_record->active_key() ),
+                              memo_message,
+                              account_record->active_key(),
+                              my->get_new_private_key( account_name ),
+                              from_memo,
+                              !account_record->is_public_account()
+                              );
 
       auto entry = ledger_entry();
       entry.from_account = account_record->owner_key;
@@ -2822,26 +2822,26 @@ namespace detail {
        owallet_key_record delegate_key = my->_wallet_db.lookup_key( delegate_account_record->active_key() );
        FC_ASSERT( delegate_key && delegate_key->has_private_key() );
        const auto delegate_private_key = delegate_key->decrypt_private_key( my->_wallet_password );
-       required_signatures.insert( delegate_private_key.get_public_key() );
-
        const auto delegate_public_key = delegate_private_key.get_public_key();
-       public_key_type receiver_public_key = get_active_public_key( withdraw_to_account_name );
+       required_signatures.insert( delegate_public_key );
 
+       const wallet_account_record receiver_account = get_account( withdraw_to_account_name );
        const string memo_message = "withdraw pay";
 
        trx.withdraw_pay( delegate_account_record->id, amount_to_withdraw + required_fees.amount );
-       trx.deposit_to_account( receiver_public_key,
-                               asset(amount_to_withdraw,0),
+       trx.deposit_to_account( receiver_account.active_key(),
+                               asset( amount_to_withdraw, 0 ),
                                delegate_private_key,
                                memo_message,
                                delegate_public_key,
                                my->get_new_private_key( delegate_name ),
-                               from_memo
+                               from_memo,
+                               !receiver_account.is_public_account()
                                );
 
        auto entry = ledger_entry();
        entry.from_account = delegate_public_key;
-       entry.to_account = receiver_public_key;
+       entry.to_account = receiver_account.active_key(),
        entry.amount = asset( amount_to_withdraw );
        entry.memo = memo_message;
 
@@ -3420,21 +3420,8 @@ namespace detail {
       FC_ASSERT( is_unlocked() );
       FC_ASSERT( my->_blockchain->is_valid_symbol( symbol ) );
 
-      public_key_type receiver_public_key;
-      try
-      {
-        receiver_public_key = public_key_type(to_account_name);
-      }
-      catch (const fc::exception&)
-      {
-        if( !my->_blockchain->is_valid_account_name( to_account_name ) )
-          FC_THROW_EXCEPTION( invalid_name, "${to_account_name} is not a valid account name or public key!", ("to_account_name",to_account_name) );
-        receiver_public_key = get_owner_public_key( to_account_name );
-      }
-
       signed_transaction         trx;
       unordered_set<address>     required_signatures;
-
       trx.expiration = blockchain::now() + get_transaction_expiration();
 
       auto required_fees = get_transaction_fee();
@@ -3454,26 +3441,28 @@ namespace detail {
       trx.issue( shares_to_issue );
       for( auto owner : authority.owners )
           required_signatures.insert( owner );
-//      required_signatures.insert( issuer_account->active_key() );
 
       owallet_account_record issuer = my->_wallet_db.lookup_account( asset_record->issuer_account_id );
       FC_ASSERT( issuer.valid() );
-      owallet_key_record  issuer_key = my->_wallet_db.lookup_key( issuer->owner_address() );
+      owallet_key_record issuer_key = my->_wallet_db.lookup_key( issuer->active_address() );
       FC_ASSERT( issuer_key && issuer_key->has_private_key() );
       auto sender_private_key = issuer_key->decrypt_private_key( my->_wallet_password );
 
-      trx.deposit_to_account( receiver_public_key,
+      const wallet_account_record receiver_account = get_account( to_account_name );
+
+      trx.deposit_to_account( receiver_account.active_key(),
                               shares_to_issue,
                               sender_private_key,
                               memo_message,
-                              sender_private_key.get_public_key(),
+                              issuer->active_key(),
                               my->get_new_private_key( issuer_account->name ),
-                              from_memo
+                              from_memo,
+                              !receiver_account.is_public_account()
                               );
 
       auto entry = ledger_entry();
       entry.from_account = issuer->active_key();
-      entry.to_account = receiver_public_key;
+      entry.to_account = receiver_account.active_key();
       entry.amount = shares_to_issue;
       entry.memo = "issue " + my->_blockchain->to_pretty_asset( shares_to_issue );
 
@@ -3487,6 +3476,70 @@ namespace detail {
       record.trx = trx;
       return record;
    } FC_CAPTURE_AND_RETHROW() }
+
+
+   wallet_transaction_record wallet::issue_asset_to_addresses(
+           const string& symbol,
+           const map<string, share_type>& addresses )
+   { try {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+      FC_ASSERT( my->_blockchain->is_valid_symbol( symbol ) );
+
+      signed_transaction         trx;
+      unordered_set<address>     required_signatures;
+
+      trx.expiration = blockchain::now() + get_transaction_expiration();
+
+      auto required_fees = get_transaction_fee();
+
+      auto asset_record = my->_blockchain->get_asset_record( symbol );
+      FC_ASSERT(asset_record.valid(), "no such asset record");
+      auto issuer_account = my->_blockchain->get_account_record( asset_record->issuer_account_id );
+      FC_ASSERT(issuer_account, "uh oh! no account for valid asset");
+      auto authority = asset_record->authority;
+
+      asset shares_to_issue( 0, asset_record->id );
+
+      for( auto pair : addresses )
+      {
+          auto addr = address( pair.first );
+          auto amount = asset( pair.second, asset_record->id );
+          trx.deposit( addr, amount );
+          shares_to_issue += amount;
+      }
+      my->withdraw_to_transaction( required_fees,
+                                   issuer_account->name,
+                                   trx,
+                                   required_signatures );
+      trx.issue( shares_to_issue );
+      for( auto owner : authority.owners )
+          required_signatures.insert( owner );
+//      required_signatures.insert( issuer_account->active_key() );
+
+      owallet_account_record issuer = my->_wallet_db.lookup_account( asset_record->issuer_account_id );
+      FC_ASSERT( issuer.valid() );
+      owallet_key_record  issuer_key = my->_wallet_db.lookup_key( issuer->owner_address() );
+      FC_ASSERT( issuer_key && issuer_key->has_private_key() );
+
+      auto entry = ledger_entry();
+      entry.from_account = issuer->active_key();
+      entry.amount = shares_to_issue;
+      entry.memo = "issue to many addresses";
+
+      auto record = wallet_transaction_record();
+      record.ledger_entries.push_back( entry );
+      record.fee = required_fees;
+
+  //    if( sign )
+      my->sign_transaction( trx, required_signatures );
+
+      record.trx = trx;
+      return record;
+   } FC_CAPTURE_AND_RETHROW() }
+
+
+
 
    void wallet::update_account_private_data( const string& account_to_update,
                                              const variant& private_data )
@@ -4434,6 +4487,30 @@ namespace detail {
        return balances;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
+   account_balance_id_summary_type wallet::get_account_balance_ids( const string& account_name )const
+   { try {
+       map<string, unordered_set<balance_id_type>> balances;
+
+       const auto scan_balance = [&]( const balance_id_type& id, const balance_record& record )
+       {
+           const set<address>& owners = record.owners();
+           for( const address& owner : owners )
+           {
+               const owallet_key_record key_record = my->_wallet_db.lookup_key( owner );
+               if( !key_record.valid() || !key_record->has_private_key() ) continue;
+
+               const owallet_account_record account_record = my->_wallet_db.lookup_account( key_record->account_address );
+               const string name = account_record.valid() ? account_record->name : string( key_record->public_key );
+               if( !account_name.empty() && name != account_name ) continue;
+
+               balances[ name ].insert( id );
+           }
+       };
+
+       scan_balances( scan_balance );
+       return balances;
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
+
    account_vesting_balance_summary_type wallet::get_account_vesting_balances( const string& account_name )const
    { try {
        map<string, vector<pretty_vesting_balance>> balances;
@@ -4727,6 +4804,7 @@ namespace detail {
          return builder->sign();
       return builder->transaction_record;
    }
+
    void wallet::initialize_transaction_creator( transaction_creation_state& c, const string& account_name )
    {
       c.pending_state._balance_id_to_record = my->_balance_records;

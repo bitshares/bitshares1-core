@@ -55,7 +55,7 @@ end
 
 
 When(/^I add signature and broadcast$/) do
-    @current_actor.node.exec 'wallet_builder_file_add_signature', true
+    @current_actor.node.exec 'wallet_builder_file_add_signature', "", true
 end
 
 

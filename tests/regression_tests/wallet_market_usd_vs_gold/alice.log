@@ -25,7 +25,7 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 default (unlocked) >>> wallet_transfer 200000 XTS delegate0 scott
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate0           scott               200,000.00000 XTS                                                   0.50000 XTS         <d-ign> 27d1f28f</d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate0           scott               200,000.00000 XTS                                                   0.50000 XTS         <d-ign> 0a0def17</d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4
@@ -61,7 +61,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -118,7 +118,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -175,7 +175,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -232,7 +232,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -289,7 +289,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -346,7 +346,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -403,7 +403,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -460,7 +460,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -517,7 +517,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -574,7 +574,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -631,7 +631,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -688,7 +688,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -745,7 +745,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -802,7 +802,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -859,7 +859,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -916,7 +916,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -973,7 +973,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -1030,7 +1030,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -1087,7 +1087,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -1144,7 +1144,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -1201,7 +1201,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -1258,7 +1258,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -1315,7 +1315,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -1372,7 +1372,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -1429,7 +1429,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -1486,7 +1486,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -1543,7 +1543,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -1600,7 +1600,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -1657,7 +1657,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -1714,7 +1714,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -1771,7 +1771,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -1828,7 +1828,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -1885,7 +1885,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -1942,7 +1942,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -1999,7 +1999,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -2056,7 +2056,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -2113,7 +2113,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -2170,7 +2170,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -2227,7 +2227,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -2282,7 +2282,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -2337,7 +2337,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -2392,7 +2392,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -2447,7 +2447,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -2504,7 +2504,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -2561,7 +2561,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -2618,7 +2618,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -2675,7 +2675,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -2732,7 +2732,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -2789,7 +2789,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -2846,7 +2846,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -2903,7 +2903,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -2960,7 +2960,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -3017,7 +3017,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -3074,7 +3074,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -3131,7 +3131,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -3188,7 +3188,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -3245,7 +3245,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -3302,7 +3302,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -3359,7 +3359,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -3416,7 +3416,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -3473,7 +3473,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -3530,7 +3530,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -3587,7 +3587,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -3644,7 +3644,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -3701,7 +3701,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -3758,7 +3758,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -3815,7 +3815,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -3872,7 +3872,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -3929,7 +3929,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -3986,7 +3986,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -4043,7 +4043,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -4100,7 +4100,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -4157,7 +4157,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -4214,7 +4214,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -4271,7 +4271,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -4328,7 +4328,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -4385,7 +4385,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -4442,7 +4442,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -4499,7 +4499,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -4556,7 +4556,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -4613,7 +4613,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -4670,7 +4670,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -4727,7 +4727,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -4784,7 +4784,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -4841,7 +4841,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -4898,7 +4898,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -4955,7 +4955,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -5012,7 +5012,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -5069,7 +5069,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -5126,7 +5126,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -5183,7 +5183,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -5240,7 +5240,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -5297,7 +5297,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -5354,7 +5354,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -5411,7 +5411,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -5468,7 +5468,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -5525,7 +5525,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -5582,7 +5582,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -5639,7 +5639,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -5696,7 +5696,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -5753,7 +5753,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:00",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -5817,7 +5817,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -5874,7 +5874,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -5931,7 +5931,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -5988,7 +5988,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -6045,7 +6045,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -6102,7 +6102,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -6159,7 +6159,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -6216,7 +6216,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -6273,7 +6273,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -6330,7 +6330,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -6387,7 +6387,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -6444,7 +6444,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -6501,7 +6501,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -6558,7 +6558,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -6615,7 +6615,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -6672,7 +6672,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -6729,7 +6729,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -6786,7 +6786,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -6843,7 +6843,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -6900,7 +6900,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -6957,7 +6957,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -7014,7 +7014,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -7071,7 +7071,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -7128,7 +7128,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -7185,7 +7185,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -7242,7 +7242,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -7299,7 +7299,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -7356,7 +7356,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -7413,7 +7413,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -7470,7 +7470,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -7527,7 +7527,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -7584,7 +7584,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -7641,7 +7641,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -7698,7 +7698,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -7755,7 +7755,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -7812,7 +7812,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -7869,7 +7869,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -7926,7 +7926,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -7983,7 +7983,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -8038,7 +8038,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -8093,7 +8093,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -8148,7 +8148,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -8203,7 +8203,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -8258,7 +8258,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -8315,7 +8315,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -8372,7 +8372,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -8429,7 +8429,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -8486,7 +8486,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -8543,7 +8543,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -8600,7 +8600,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -8657,7 +8657,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -8714,7 +8714,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -8771,7 +8771,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -8828,7 +8828,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -8885,7 +8885,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -8942,7 +8942,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -8999,7 +8999,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -9056,7 +9056,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -9113,7 +9113,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -9170,7 +9170,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -9227,7 +9227,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -9284,7 +9284,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -9341,7 +9341,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -9398,7 +9398,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -9455,7 +9455,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -9512,7 +9512,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -9569,7 +9569,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -9626,7 +9626,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -9683,7 +9683,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -9740,7 +9740,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -9797,7 +9797,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -9854,7 +9854,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -9911,7 +9911,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -9968,7 +9968,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -10025,7 +10025,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -10082,7 +10082,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -10139,7 +10139,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -10196,7 +10196,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -10253,7 +10253,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -10310,7 +10310,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -10367,7 +10367,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -10424,7 +10424,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -10481,7 +10481,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -10538,7 +10538,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -10595,7 +10595,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -10652,7 +10652,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -10709,7 +10709,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -10766,7 +10766,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -10823,7 +10823,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -10880,7 +10880,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -10937,7 +10937,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -10994,7 +10994,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -11051,7 +11051,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -11108,7 +11108,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -11165,7 +11165,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -11222,7 +11222,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -11279,7 +11279,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -11336,7 +11336,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -11393,7 +11393,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -11450,7 +11450,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -11507,7 +11507,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
       "is_market": false,
       "trx": {
         "expiration": "2014-06-20T15:41:10",
-        "slate_id": null,
+        "reserved": null,
         "operations": [{
             "type": "update_feed_op_type",
             "data": {
@@ -11568,7 +11568,7 @@ No Orders
 default (unlocked) >>> wallet_market_submit_ask dan 100 XTS 4 USD
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:41:20</d-ign>PENDING   dan                 dan                 100.00000 XTS           sell XTS @ 4. USD / XTS                     0.50000 XTS         <d-ign> a92786ea</d-ign>
+<d-ign>2014-06-20T14:41:20</d-ign>PENDING   dan                 dan                 100.00000 XTS           sell XTS @ 4. USD / XTS                     0.50000 XTS         <d-ign> 3b3e8ab1</d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4
@@ -11612,14 +11612,14 @@ aliases: relative_ask
 default (unlocked) >>> wallet_market_submit_relative_ask scott 1000 XTS 1 GLD 
 {
   "index": 0,
-  "record_id": "39f5e3e594e8b044dbd7d58797f958bb7cfba4de",
+  "record_id": "3847864aba1e501f81a4d9ea601ae97fcab94f32",
   "block_num": 0,
   "is_virtual": false,
   "is_confirmed": false,
   "is_market": true,
   "trx": {
-    "expiration": "2014-06-20T15:41:30",
-    "slate_id": null,
+    "expiration": "2014-06-20T14:51:30",
+    "reserved": null,
     "operations": [{
         "type": "relative_ask_op_type",
         "data": {
@@ -11637,15 +11637,15 @@ default (unlocked) >>> wallet_market_submit_relative_ask scott 1000 XTS 1 GLD
       },{
         "type": "withdraw_op_type",
         "data": {
-          "balance_id": "XTS5N4qZxy6m8xvbp1Ap6G2UDMj5a2w42yiZ",
+          "balance_id": "XTSKSVkCHrQRmyjsNousv89K1aQX2tDrUMVj",
           "amount": 100050000,
           "claim_input_data": ""
         }
       }
     ],
     "signatures": [
-      "20578c72048d244aa4675fbb0ca28b77a375b1efd767ae38f573e70af6247247c52360ede8854fde035df5fe882e64e612ab7a94fcbe702f746f0322530e1b4eeb",
-      "2042dd681e87b6a011860be0ecc25a8b913673bcbbac7557f4ed438a5bbfcc1b4b64e5b86809ee75016971caccdae2d2ef86f432330a7d244a776508f4e7f31e55"
+      "2042dd681e87b6a011860be0ecc25a8b913673bcbbac7557f4ed438a5bbfcc1b4b7b988725cc9d4f08ae5529698afc9388ff1c5811d291e401d07e37b9f923482a",
+      "1f56271f0bb5f99887ac27097abe4dc9c53d0d1ec9ba5b8f1352a483500c49a99061a53420cceaa981fa71c4a2901ce8fdb54c412b197cc4068c9150b99874e6a9"
     ]
   },
   "ledger_entries": [{
@@ -11670,14 +11670,14 @@ default (unlocked) >>> wallet_market_submit_relative_ask scott 1000 XTS 1 GLD
 default (unlocked) >>> wallet_market_submit_relative_ask dan 60 XTS 1.2 USD 
 {
   "index": 0,
-  "record_id": "38ac0394b5f73885f62270f325b0e987410a6f8a",
+  "record_id": "e20fd39418bcb06b9179460bdee75e3218bb15ee",
   "block_num": 0,
   "is_virtual": false,
   "is_confirmed": false,
   "is_market": true,
   "trx": {
-    "expiration": "2014-06-20T15:41:30",
-    "slate_id": null,
+    "expiration": "2014-06-20T14:51:30",
+    "reserved": null,
     "operations": [{
         "type": "relative_ask_op_type",
         "data": {
@@ -11702,8 +11702,8 @@ default (unlocked) >>> wallet_market_submit_relative_ask dan 60 XTS 1.2 USD
       }
     ],
     "signatures": [
-      "1f6f3c29b4548f89359eec874e16ff9a61d9b8f5c6163a59845bf485d052b8ca050810686479cb46b3e07200de9a4a0c7550055ceff796e11e0fa6e4ef22f306e9",
-      "1f1e5480b449fd4a10a105e5a89f7edf1f79a322f2f971c92882636be36563262c4765ad62736909fab4219d9b07c7570f82e96e8a3fec56d933a447b64c05eefb"
+      "1f7d9582845d040d7d60538a21eae39cf147033c9aa48a566f7f2fa05a45847b8d124503485a3f52cc5adf6b4b28342855415a0ee334a7fc48ecd031e88946191f",
+      "1f15ab90430e7afb55603cc424201a64083bb28c27ffda7d6dcc74ada66645c5647f0861c0607f5645041f46518612859cf82db405dc8b52cc92d9715a8feac4e0"
     ]
   },
   "ledger_entries": [{
@@ -11728,14 +11728,14 @@ default (unlocked) >>> wallet_market_submit_relative_ask dan 60 XTS 1.2 USD
 default (unlocked) >>> wallet_market_submit_relative_ask dan 60 XTS .99 USD 
 {
   "index": 0,
-  "record_id": "17646f17777790fe6d25c0fd00231fa0f94098a5",
+  "record_id": "5f9e46d9a0bc4df30a7ab4d28e85a67e1470a568",
   "block_num": 0,
   "is_virtual": false,
   "is_confirmed": false,
   "is_market": true,
   "trx": {
-    "expiration": "2014-06-20T15:41:30",
-    "slate_id": null,
+    "expiration": "2014-06-20T14:51:30",
+    "reserved": null,
     "operations": [{
         "type": "relative_ask_op_type",
         "data": {
@@ -11760,8 +11760,8 @@ default (unlocked) >>> wallet_market_submit_relative_ask dan 60 XTS .99 USD
       }
     ],
     "signatures": [
-      "2037349f94dfaedf6b22b451f0488f447cd8f5459dfd5d14dad6272a1bf03e9f353dd02bdaf70ac0ff09d0ec344fd81587d3dd93642197e718caf6c7ba48f439b6",
-      "1f15ab90430e7afb55603cc424201a64083bb28c27ffda7d6dcc74ada66645c564426d88679730ffb8570513502497d03d6c6ac3e5cf86d17f6f696891fb7b5b04"
+      "20197504ccc94b8b763b1ed1cff629691bb10118153f7eaff462f175a7479352b34be0e6cf56bc33498c5500e7c782028967e3baa4dd3eee4a39e649e2a5d05c11",
+      "202472e1f48365dd6ccd7eff6cdc2a42daec8a9c7b520fbd1094211b0fac53219b0da1eb7567c4e7110eaf0b04d05309272b9d6fb9f4bbf07e3c02f98348e8e9c8"
     ]
   },
   "ledger_entries": [{
@@ -11786,14 +11786,14 @@ default (unlocked) >>> wallet_market_submit_relative_ask dan 60 XTS .99 USD
 default (unlocked) >>> wallet_market_submit_relative_ask dan 50 XTS 1.1  USD .05
 {
   "index": 0,
-  "record_id": "7d7b1ccc19b8ded32d8dad7cc2e4b2ce231e0b73",
+  "record_id": "aabe2b546c92bb9d7210990c5bb4a9054b623b3d",
   "block_num": 0,
   "is_virtual": false,
   "is_confirmed": false,
   "is_market": true,
   "trx": {
-    "expiration": "2014-06-20T15:41:30",
-    "slate_id": null,
+    "expiration": "2014-06-20T14:51:30",
+    "reserved": null,
     "operations": [{
         "type": "relative_ask_op_type",
         "data": {
@@ -11822,8 +11822,8 @@ default (unlocked) >>> wallet_market_submit_relative_ask dan 50 XTS 1.1  USD .05
       }
     ],
     "signatures": [
-      "20197504ccc94b8b763b1ed1cff629691bb10118153f7eaff462f175a7479352b32fabc07119349b85c940fe413627b3061bae05117944c4cd05617f4f16bf4a75",
-      "200ac3bf03849727f75af33fb975fd9470728bcc731bcdfabe13a502115a2f07ff45771efe340631d3d9de9d1b60fd7503e690238b18fe249a41b2b552220378ff"
+      "200ac3bf03849727f75af33fb975fd9470728bcc731bcdfabe13a502115a2f07ff53dd93e3c893c23b31d84d3b8d9da97e2ad4f637a4b98f7e3bb88489b613b2bc",
+      "1f5bab40fe2e8012216c046a885884d4eba9e5dafd944fbfa85297929b73ed231d423bc6ebaf553645a5ae0d25a0c98855a12e3db90dc69dedaa8f92a308d1304f"
     ]
   },
   "ledger_entries": [{
@@ -11848,30 +11848,30 @@ default (unlocked) >>> wallet_market_submit_relative_ask dan 50 XTS 1.1  USD .05
 default (unlocked) >>> wallet_market_submit_short dan 1000 XTS .001 GLD 
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:41:30</d-ign>PENDING   dan                 dan                 1,000.00000 XTS         short GLD @ 0.001% APR                      0.50000 XTS         <d-ign> f8cb4caf</d-ign>
+<d-ign>2014-06-20T14:41:30</d-ign>PENDING   dan                 dan                 1,000.00000 XTS         short GLD @ 0.001% APR                      0.50000 XTS         <d-ign> 8f1dabae</d-ign>
 default (unlocked) >>> wallet_market_submit_short scott 50 XTS .1 USD .8
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:41:30</d-ign>PENDING   scott               scott               50.00000 XTS            short USD @ 0.1% APR                        0.50000 XTS         <d-ign> 82d5e43c</d-ign>
+<d-ign>2014-06-20T14:41:30</d-ign>PENDING   scott               scott               50.00000 XTS            short USD @ 0.1% APR                        0.50000 XTS         <d-ign> 43d8a916</d-ign>
 default (unlocked) >>> wallet_market_submit_short scott 50 XTS .1 USD 
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:41:30</d-ign>PENDING   scott               scott               50.00000 XTS            short USD @ 0.1% APR                        0.50000 XTS         <d-ign> 2be5b248</d-ign>
+<d-ign>2014-06-20T14:41:30</d-ign>PENDING   scott               scott               50.00000 XTS            short USD @ 0.1% APR                        0.50000 XTS         <d-ign> ead5e901</d-ign>
 default (unlocked) >>> wallet_market_submit_short scott 100 XTS .1 USD .003
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:41:30</d-ign>PENDING   scott               scott               100.00000 XTS           short USD @ 0.1% APR                        0.50000 XTS         <d-ign> fc80d450</d-ign>
+<d-ign>2014-06-20T14:41:30</d-ign>PENDING   scott               scott               100.00000 XTS           short USD @ 0.1% APR                        0.50000 XTS         <d-ign> 05f80515</d-ign>
 default (unlocked) >>> wallet_market_submit_relative_ask dan 40 XTS 1.11 USD .0041
 {
   "index": 0,
-  "record_id": "8ff12310869edbf4c8f87f01ad0bd075285ec327",
+  "record_id": "5d6f7a37a050c75c0567a627d3efd7c3f5881c8b",
   "block_num": 0,
   "is_virtual": false,
   "is_confirmed": false,
   "is_market": true,
   "trx": {
-    "expiration": "2014-06-20T15:41:30",
-    "slate_id": null,
+    "expiration": "2014-06-20T14:51:30",
+    "reserved": null,
     "operations": [{
         "type": "relative_ask_op_type",
         "data": {
@@ -11900,8 +11900,8 @@ default (unlocked) >>> wallet_market_submit_relative_ask dan 40 XTS 1.11 USD .00
       }
     ],
     "signatures": [
-      "1f75134bf766ac6f824aa056fa75d77a3d45702f527b693b869d2879a502c2dabf487a861c802f6015928cf1e4be5cd02352a1cbc7b3f653274d62a5309fdb4d66",
-      "2035a7b96f16b3384b7838b62a3ea9b8ff14ed2c8d7e43c1cd7ecdb445738aeae52cb466724d4c8e9fd2e21596be476ee7f97a9101c69ab540fa8eb1ad80b3b97a"
+      "1f1902635e0c9baafc182c9cb3118343fb7cf2cf8406f3533edddbe7be79d27b0c34e5af49198f52bd710c54c61fbc3e7a60c081c3e8795d1bd90a4094167fe870",
+      "2017aa9e2782313aa1b0a1319690a04bfc8276bb7762d71837615693c19cf2c127209936dcd96e82680e985bf13e1fc8ac8145c3e10cd812601032e44696fdfd87"
     ]
   },
   "ledger_entries": [{
@@ -11959,12 +11959,12 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 ==============================================================================================================================================================================================
 <d-ign>2014-06-20T14:40:30</d-ign>2         delegate0           dan                 0.00000 XTS             register dan                                0.00000 XTS             0.00000 XTS         <d-ign> 1e8f51e2</d-ign>
 <d-ign>2014-06-20T14:40:40</d-ign>3         delegate0           dan                 200,000.00000 XTS                                                   200,000.00000 XTS       0.00000 XTS         <d-ign> 0d4c90c8</d-ign>
-<d-ign>2014-06-20T14:41:20</d-ign>7         dan                 ASK-05db7896        100.00000 XTS           sell XTS @ 4. USD / XTS                     199,899.50000 XTS       0.50000 XTS         <d-ign> a92786ea</d-ign>
-<d-ign>2014-06-20T14:41:30</d-ign>8         dan                 RELATIVE-81ef7826   60.00000 XTS            relative sell XTS @ delta 0.99 USD / XTS    199,839.00000 XTS       0.50000 XTS         <d-ign> 17646f17</d-ign>
-<d-ign>2014-06-20T14:41:30</d-ign>8         dan                 RELATIVE-8ab5c002   60.00000 XTS            relative sell XTS @ delta 1.2 USD / XTS     199,778.50000 XTS       0.50000 XTS         <d-ign> 38ac0394</d-ign>
-<d-ign>2014-06-20T14:41:30</d-ign>8         dan                 RELATIVE-ef15557a   50.00000 XTS            relative sell XTS @ delta 1.1 USD / XTS     199,728.00000 XTS       0.50000 XTS         <d-ign> 7d7b1ccc</d-ign>
-<d-ign>2014-06-20T14:41:30</d-ign>8         dan                 RELATIVE-d7832810   40.00000 XTS            relative sell XTS @ delta 1.11 USD / XTS    199,687.50000 XTS       0.50000 XTS         <d-ign> 8ff12310</d-ign>
-<d-ign>2014-06-20T14:41:30</d-ign>8         dan                 SHORT-cdfc7e25      1,000.00000 XTS         short GLD @ 0.001% APR                      198,687.00000 XTS       0.50000 XTS         <d-ign> f8cb4caf</d-ign>
+<d-ign>2014-06-20T14:41:20</d-ign>7         dan                 ASK-05db7896        100.00000 XTS           sell XTS @ 4. USD / XTS                     199,899.50000 XTS       0.50000 XTS         <d-ign> 3b3e8ab1</d-ign>
+<d-ign>2014-06-20T14:41:30</d-ign>8         dan                 RELATIVE-d7832810   40.00000 XTS            relative sell XTS @ delta 1.11 USD / XTS    199,859.00000 XTS       0.50000 XTS         <d-ign> 5d6f7a37</d-ign>
+<d-ign>2014-06-20T14:41:30</d-ign>8         dan                 RELATIVE-81ef7826   60.00000 XTS            relative sell XTS @ delta 0.99 USD / XTS    199,798.50000 XTS       0.50000 XTS         <d-ign> 5f9e46d9</d-ign>
+<d-ign>2014-06-20T14:41:30</d-ign>8         dan                 SHORT-cdfc7e25      1,000.00000 XTS         short GLD @ 0.001% APR                      198,798.00000 XTS       0.50000 XTS         <d-ign> 8f1dabae</d-ign>
+<d-ign>2014-06-20T14:41:30</d-ign>8         dan                 RELATIVE-ef15557a   50.00000 XTS            relative sell XTS @ delta 1.1 USD / XTS     198,747.50000 XTS       0.50000 XTS         <d-ign> aabe2b54</d-ign>
+<d-ign>2014-06-20T14:41:30</d-ign>8         dan                 RELATIVE-8ab5c002   60.00000 XTS            relative sell XTS @ delta 1.2 USD / XTS     198,687.00000 XTS       0.50000 XTS         <d-ign> e20fd394</d-ign>
 default (unlocked) >>> wallet_market_order_list USD XTS -1 dan
 TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
@@ -11996,8 +11996,8 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.008859061021 USD                       56.43939 XTS               0.50000 USD              31 weeks ago   75.25252 XTS
-                                                                             | 0.008859061021 USD                       56.43939 XTS               0.50000 USD              31 weeks ago   75.25252 XTS
+                                                                             | 0.013288591532 USD                       37.62626 XTS               0.50000 USD              32 weeks ago   75.25252 XTS
+                                                                             | 0.013288591532 USD                       37.62626 XTS               0.50000 USD              32 weeks ago   75.25252 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> blockchain_market_order_book GLD XTS
      BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
@@ -12008,8 +12008,8 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.000044444444 GLD                       56.25000 XTS               0.00250 GLD              31 weeks ago   75.00000 XTS
-                                                                             | 0.000044444444 GLD                    1,125.00000 XTS               0.05000 GLD              31 weeks ago   1,500.00000 XTS
+                                                                             | 0.000066666667 GLD                       37.50000 XTS               0.00250 GLD              32 weeks ago   75.00000 XTS
+                                                                             | 0.000066666667 GLD                      750.00000 XTS               0.05000 GLD              32 weeks ago   1,500.00000 XTS
 Maximum Short Price: 0.0001 GLD / XTS     
 default (unlocked) >>> wallet_market_order_list USD XTS -1 dan
 TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
@@ -12022,9 +12022,9 @@ relative_ask_order  50.00000 XTS        0.02 USD / XTS*1.1            50.00000 X
 default (unlocked) >>> wallet_market_order_list USD XTS -1 scott
 TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
-cover_order         56.43939 XTS        0.008859061021035131 USD / XTS0.50000 USD         0.49999 USD         75.25252 XTS        NONE                267f8ff8c9687b8ab726cbdf465f6cc105780247   XTS2Jnp9pLARLLSpikWgXijUUkfGbmYRtFbJ
+cover_order         37.62626 XTS        0.013288591531552697 USD / XTS0.50000 USD         0.49999 USD         75.25252 XTS        NONE                750d3b5073949b6f2d0d157ecdd5865c29d7593c   XTS2Jnp9pLARLLSpikWgXijUUkfGbmYRtFbJ
 short_order         100.00000 XTS       0.003 USD / XTS               100.00000 XTS       0.30000 USD         N/A                 0.003 USD / XTS     7809ac958cb8aca549e4a32dcb9753996508b62d   XTS23rYmTv4jkaf7UooXPdGzY8DGxtw5tmv1
-cover_order         56.43939 XTS        0.008859061021035131 USD / XTS0.50000 USD         0.49999 USD         75.25252 XTS        NONE                8b91d28b20f4bb454123cb463cb64c62c7fbd009   XTSPwNVpo6HmayVNBjraRTJ8GeZEkz8fCyPt
+cover_order         37.62626 XTS        0.013288591531552697 USD / XTS0.50000 USD         0.49999 USD         75.25252 XTS        NONE                902508fac92bc3bea0ec980a5b85f155281ae922   XTSPwNVpo6HmayVNBjraRTJ8GeZEkz8fCyPt
 default (unlocked) >>> balance dan
 ACCOUNT                         BALANCE                     
 ============================================================
@@ -12038,7 +12038,7 @@ scott                           198,798.00000 XTS
 default (unlocked) >>> wallet_market_submit_bid scott .25 USD .001 GLD 
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:41:50</d-ign>PENDING   scott               scott               0.00025 GLD             buy USD @ 0.001 GLD / USD                   0.50000 XTS         <d-ign> 6631f2d9</d-ign>
+<d-ign>2014-06-20T14:41:50</d-ign>PENDING   scott               scott               0.00025 GLD             buy USD @ 0.001 GLD / USD                   0.50000 XTS         <d-ign> cadaeaf7</d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4
@@ -12046,7 +12046,7 @@ OK
 default (unlocked) >>> wallet_market_submit_ask dan .003 USD .001 GLD 
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:42:00</d-ign>PENDING   dan                 dan                 0.00300 USD             sell USD @ 0.001 GLD / USD                  0.50000 XTS         <d-ign> 4f459d6d</d-ign>
+<d-ign>2014-06-20T14:42:00</d-ign>PENDING   dan                 dan                 0.00300 USD             sell USD @ 0.001 GLD / USD                  0.50000 XTS         <d-ign> 0bb635aa</d-ign>
 default (unlocked) >>> blockchain_market_order_book GLD USD
      BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
@@ -12075,12 +12075,12 @@ default (unlocked) >>> history dan
 ================================================================================================================================================================================================
  <d-ign>2014-06-20T14:40:30</d-ign>2         delegate0           dan                 0.00000 XTS             register dan                                0.00000 XTS             0.00000 XTS         <d-ign> 1e8f51e2</d-ign>
  <d-ign>2014-06-20T14:40:40</d-ign>3         delegate0           dan                 200,000.00000 XTS                                                   200,000.00000 XTS       0.00000 XTS         <d-ign> 0d4c90c8</d-ign>
- <d-ign>2014-06-20T14:41:20</d-ign>7         dan                 ASK-05db7896        100.00000 XTS           sell XTS @ 4. USD / XTS                     199,899.50000 XTS       0.50000 XTS         <d-ign> a92786ea</d-ign>
- <d-ign>2014-06-20T14:41:30</d-ign>8         dan                 RELATIVE-81ef7826   60.00000 XTS            relative sell XTS @ delta 0.99 USD / XTS    199,839.00000 XTS       0.50000 XTS         <d-ign> 17646f17</d-ign>
- <d-ign>2014-06-20T14:41:30</d-ign>8         dan                 RELATIVE-8ab5c002   60.00000 XTS            relative sell XTS @ delta 1.2 USD / XTS     199,778.50000 XTS       0.50000 XTS         <d-ign> 38ac0394</d-ign>
- <d-ign>2014-06-20T14:41:30</d-ign>8         dan                 RELATIVE-ef15557a   50.00000 XTS            relative sell XTS @ delta 1.1 USD / XTS     199,728.00000 XTS       0.50000 XTS         <d-ign> 7d7b1ccc</d-ign>
- <d-ign>2014-06-20T14:41:30</d-ign>8         dan                 RELATIVE-d7832810   40.00000 XTS            relative sell XTS @ delta 1.11 USD / XTS    199,687.50000 XTS       0.50000 XTS         <d-ign> 8ff12310</d-ign>
- <d-ign>2014-06-20T14:41:30</d-ign>8         dan                 SHORT-cdfc7e25      1,000.00000 XTS         short GLD @ 0.001% APR                      198,687.00000 XTS       0.50000 XTS         <d-ign> f8cb4caf</d-ign>
+ <d-ign>2014-06-20T14:41:20</d-ign>7         dan                 ASK-05db7896        100.00000 XTS           sell XTS @ 4. USD / XTS                     199,899.50000 XTS       0.50000 XTS         <d-ign> 3b3e8ab1</d-ign>
+ <d-ign>2014-06-20T14:41:30</d-ign>8         dan                 RELATIVE-d7832810   40.00000 XTS            relative sell XTS @ delta 1.11 USD / XTS    199,859.00000 XTS       0.50000 XTS         <d-ign> 5d6f7a37</d-ign>
+ <d-ign>2014-06-20T14:41:30</d-ign>8         dan                 RELATIVE-81ef7826   60.00000 XTS            relative sell XTS @ delta 0.99 USD / XTS    199,798.50000 XTS       0.50000 XTS         <d-ign> 5f9e46d9</d-ign>
+ <d-ign>2014-06-20T14:41:30</d-ign>8         dan                 SHORT-cdfc7e25      1,000.00000 XTS         short GLD @ 0.001% APR                      198,798.00000 XTS       0.50000 XTS         <d-ign> 8f1dabae</d-ign>
+ <d-ign>2014-06-20T14:41:30</d-ign>8         dan                 RELATIVE-ef15557a   50.00000 XTS            relative sell XTS @ delta 1.1 USD / XTS     198,747.50000 XTS       0.50000 XTS         <d-ign> aabe2b54</d-ign>
+ <d-ign>2014-06-20T14:41:30</d-ign>8         dan                 RELATIVE-8ab5c002   60.00000 XTS            relative sell XTS @ delta 1.2 USD / XTS     198,687.00000 XTS       0.50000 XTS         <d-ign> e20fd394</d-ign>
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 |<d-ign>2014-06-20T14:41:50</d-ign>9         SHORT-cdfc7e25      MARGIN-cdfc7e25     1,000.00000 XTS         add collateral                              198,687.00000 XTS       0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
 |                              MARKET              MARGIN-cdfc7e25     500.00000 XTS           add collateral                              198,687.00000 XTS                                   |
@@ -12092,7 +12092,7 @@ default (unlocked) >>> history dan
 |<d-ign>2014-06-20T14:41:50</d-ign>9         RELATIVE-81ef7826   MARKET              25.25252 XTS            sell collateral @ 0.0198 USD / XTS          198,687.00000 XTS       0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
 |                              MARKET              RELATIVE-81ef7826   0.50000 USD             payoff debt @ 0.0198 USD / XTS              0.00000 USD                                         |
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- <d-ign>2014-06-20T14:42:00</d-ign>11        dan                 ASK-0dee23e8        0.00300 USD             sell USD @ 0.001 GLD / USD                  0.00000 USD             0.50000 XTS         <d-ign> 4f459d6d</d-ign>
+ <d-ign>2014-06-20T14:42:00</d-ign>11        dan                 ASK-0dee23e8        0.00300 USD             sell USD @ 0.001 GLD / USD                  0.00000 USD             0.50000 XTS         <d-ign> 0bb635aa</d-ign>
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 |<d-ign>2014-06-20T14:42:20</d-ign>12        ASK-0dee23e8        MARKET              0.00300 USD             fill ask @ 0.001 GLD / USD                  0.00000 USD             0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
 |                              ASK-0dee23e8        dan                 0.00000 GLD             ask proceeds @ 0.001 GLD / USD              0.00000 GLD                                         |
@@ -12101,11 +12101,11 @@ default (unlocked) >>> history scott
  TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
 ================================================================================================================================================================================================
  <d-ign>2014-06-20T14:40:30</d-ign>2         delegate0           scott               0.00000 XTS             register scott                              0.00000 XTS             0.00000 XTS         <d-ign> 17fd72ab</d-ign>
- <d-ign>2014-06-20T14:40:40</d-ign>3         delegate0           scott               200,000.00000 XTS                                                   200,000.00000 XTS       0.00000 XTS         <d-ign> 27d1f28f</d-ign>
- <d-ign>2014-06-20T14:41:30</d-ign>8         scott               SHORT-d23037e4      50.00000 XTS            short USD @ 0.1% APR                        199,949.50000 XTS       0.50000 XTS         <d-ign> 2be5b248</d-ign>
- <d-ign>2014-06-20T14:41:30</d-ign>8         scott               RELATIVE-b7b9d8d9   1,000.00000 XTS         relative sell XTS @ delta 1. GLD / XTS      198,949.00000 XTS       0.50000 XTS         <d-ign> 39f5e3e5</d-ign>
- <d-ign>2014-06-20T14:41:30</d-ign>8         scott               SHORT-b2587651      50.00000 XTS            short USD @ 0.1% APR                        198,898.50000 XTS       0.50000 XTS         <d-ign> 82d5e43c</d-ign>
- <d-ign>2014-06-20T14:41:30</d-ign>8         scott               SHORT-7809ac95      100.00000 XTS           short USD @ 0.1% APR                        198,798.00000 XTS       0.50000 XTS         <d-ign> fc80d450</d-ign>
+ <d-ign>2014-06-20T14:40:40</d-ign>3         delegate0           scott               200,000.00000 XTS                                                   200,000.00000 XTS       0.00000 XTS         <d-ign> 0a0def17</d-ign>
+ <d-ign>2014-06-20T14:41:30</d-ign>8         scott               SHORT-7809ac95      100.00000 XTS           short USD @ 0.1% APR                        199,899.50000 XTS       0.50000 XTS         <d-ign> 05f80515</d-ign>
+ <d-ign>2014-06-20T14:41:30</d-ign>8         scott               RELATIVE-b7b9d8d9   1,000.00000 XTS         relative sell XTS @ delta 1. GLD / XTS      198,899.00000 XTS       0.50000 XTS         <d-ign> 3847864a</d-ign>
+ <d-ign>2014-06-20T14:41:30</d-ign>8         scott               SHORT-b2587651      50.00000 XTS            short USD @ 0.1% APR                        198,848.50000 XTS       0.50000 XTS         <d-ign> 43d8a916</d-ign>
+ <d-ign>2014-06-20T14:41:30</d-ign>8         scott               SHORT-d23037e4      50.00000 XTS            short USD @ 0.1% APR                        198,798.00000 XTS       0.50000 XTS         <d-ign> ead5e901</d-ign>
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 |<d-ign>2014-06-20T14:41:50</d-ign>9         SHORT-b2587651      MARGIN-b2587651     50.00000 XTS            add collateral                              198,798.00000 XTS       0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
 |                              MARKET              MARGIN-b2587651     25.25252 XTS            add collateral                              198,798.00000 XTS                                   |
@@ -12125,7 +12125,7 @@ default (unlocked) >>> history scott
 |                              MARKET              MARGIN-d23037e4     25.00000 XTS            add collateral                              198,798.00000 XTS                                   |
 |                              MARGIN-d23037e4     MARKET              0.00250 GLD             short proceeds @ 0.0001 GLD / XTS           0.00000 GLD                                         |
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- <d-ign>2014-06-20T14:41:50</d-ign>10        scott               BID-c7ba8e19        0.00025 GLD             buy USD @ 0.001 GLD / USD                   0.00000 GLD             0.50000 XTS         <d-ign> 6631f2d9</d-ign>
+ <d-ign>2014-06-20T14:41:50</d-ign>10        scott               BID-c7ba8e19        0.00025 GLD             buy USD @ 0.001 GLD / USD                   0.00000 GLD             0.50000 XTS         <d-ign> cadaeaf7</d-ign>
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 |<d-ign>2014-06-20T14:42:20</d-ign>12        BID-c7ba8e19        MARKET              0.00000 GLD             pay bid @ 0.001 GLD / USD                   0.00000 GLD             0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
 |                              BID-c7ba8e19        scott               0.00300 USD             bid proceeds @ 0.001 GLD / USD              0.00300 USD                                         |

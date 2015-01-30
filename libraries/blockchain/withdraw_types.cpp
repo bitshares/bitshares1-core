@@ -130,7 +130,7 @@ namespace bts { namespace blockchain {
 
          return memo_status( memo, has_valid_signature, secret_private_key );
       }
-      catch ( const fc::aes_exception& e )
+      catch( const fc::aes_exception& e )
       {
          return omemo_status();
       }

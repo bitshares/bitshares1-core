@@ -246,18 +246,17 @@ void LightWallet::sync()
    IN_THREAD
    if( !isConnected() ) return;
 
-   m_wallet.sync_balance();
-   m_wallet.sync_transactions();
+   if( m_wallet.sync_balance() || m_wallet.sync_transactions() )
+      Q_EMIT synced();
 
-   Q_EMIT synced();
    END_THREAD
 }
 
 void LightWallet::syncAllBalances()
 {
    IN_THREAD
-   QStringList currentAssets;
-   m_wallet.sync_balance(true);
+   if( m_wallet.sync_balance(true) )
+         Q_EMIT synced();
    END_THREAD
 }
 
