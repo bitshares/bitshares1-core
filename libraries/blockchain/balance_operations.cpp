@@ -27,7 +27,7 @@ namespace bts { namespace blockchain {
        *  this should produce a yield curve that is "80% simple interest" and 20% simulating compound
        *  interest.
        */
-      if( elapsed_time < fc::seconds( BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC ) )
+      if( elapsed_time < fc::seconds( BTS_BLOCKCHAIN_MAX_YIELD_PERIOD_SEC ) )
       {
          fc::uint128 original_yield = yield;
          // discount the yield by 80%
@@ -38,13 +38,13 @@ namespace bts { namespace blockchain {
 
          // yield == amount withdrawn / total usd  *  fee fund * fraction_of_year
          yield *= elapsed_time.to_seconds();
-         yield /= (BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+         yield /= BTS_BLOCKCHAIN_MAX_YIELD_PERIOD_SEC;
 
          delta_yield *= elapsed_time.to_seconds();
-         delta_yield /= (BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+         delta_yield /= BTS_BLOCKCHAIN_MAX_YIELD_PERIOD_SEC;
 
          delta_yield *= elapsed_time.to_seconds();
-         delta_yield /= (BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+         delta_yield /= BTS_BLOCKCHAIN_MAX_YIELD_PERIOD_SEC;
 
          yield += delta_yield;
       }
