@@ -62,7 +62,7 @@
 #define BTS_BLOCKCHAIN_MIN_BURN_FEE                         BTS_BLOCKCHAIN_PRECISION * 1 // 1 XTS
 
 #ifdef BTS_TEST_NETWORK
-#define BTS_BLOCKCHAIN_VOTE_UPDATE_PERIOD_SEC               40
+#define BTS_BLOCKCHAIN_VOTE_UPDATE_PERIOD_SEC               10
 #else
 #define BTS_BLOCKCHAIN_VOTE_UPDATE_PERIOD_SEC               (60*60) // 1 hour
 #endif

@@ -462,6 +462,10 @@ namespace bts { namespace wallet {
                  const string& memo_message,
                  bool sign
                  );
+         wallet_transaction_record issue_asset_to_addresses(
+               const string& symbol,
+               const map<string, share_type>& addresses );
+
          /**
           *  ie: submit_bid( 10 BTC at 600.34 USD per BTC )
           *

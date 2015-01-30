@@ -903,6 +903,17 @@ wallet_transaction_record detail::client_impl::wallet_asset_issue(
   return record;
 }
 
+wallet_transaction_record detail::client_impl::wallet_asset_issue_to_addresses(
+        const string& symbol,
+        const map<string, share_type>& addresses )
+{
+  auto record = _wallet->issue_asset_to_addresses( symbol, addresses );
+  _wallet->cache_transaction( record );
+  network_broadcast_transaction( record.trx );
+  return record;
+}
+
+
 vector<string> detail::client_impl::wallet_list() const
 {
   return _wallet->list();

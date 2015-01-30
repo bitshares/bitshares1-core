@@ -1760,7 +1760,7 @@
                   "name" : "issuer_permissions",
                   "type" : "asset_permission_array",
                   "description" : "a set of permissions an issuer retains",
-                  "default_value" : ["retractable","market_halt","balance_halt","supply_limit"]
+                  "default_value" : ["restricted", "retractable","market_halt","balance_halt","supply_limit"]
                },
                {
                   "name" : "issuer_account_name",
@@ -1811,6 +1811,25 @@
                }
             ],
          "detailed_description" : "The asset being issued must have been created via wallet_asset_create in a previous block.",
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_asset_issue_to_addresses",
+         "description" : "Issues new UIA shares to specific addresses.",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+               {
+                  "name" : "symbol",
+                  "type" : "asset_symbol",
+                  "description" : "the ticker symbol for asset"
+               },
+               {
+                  "name" : "addresses",
+                  "type" : "snapshot_map",
+                  "description" : "A map of addresses-to-amounts to transfer the new shares to",
+               }
+            ],
+         "detailed_description" : "This is intended to be used with a helper script to break up snapshots. It will not do any magic for you.",
          "prerequisites" : ["wallet_unlocked"]
       },
       {
