@@ -16,12 +16,15 @@ Window {
 
    property alias pageStack: __pageStack
    property alias lockAction: __lockAction
+   property alias payAction: __payAction
 
    Component.onCompleted: {
       if( wallet.walletExists )
          wallet.openWallet()
-      if( !( wallet.account && wallet.account.isRegistered ) )
+      if( !( wallet.accountNames.length && wallet.accounts[wallet.accountNames[0]].isRegistered ) )
          onboardLoader.sourceComponent = onboardingUi
+      else
+         pageStack.push({item: assetsUi, properties: {accountName: wallet.accountNames[0]}})
 
       window.connectToServer()
    }
@@ -37,11 +40,6 @@ Window {
       } else
          snack.buttonText = ""
       snack.open()
-      return d.currentError = d.errorSerial++
-   }
-   function clearError(errorId) {
-      if( d.currentError === errorId )
-         errorText.text = ""
    }
    function deviceType() {
       switch(Device.type) {
@@ -60,6 +58,15 @@ Window {
          wallet.connectToServer("localhost", 5656, "XTS7pq7tZnghnrnYvQg8aktrSCLVHE5SGyHFeYJBRdcFVvNCBBDjd",
                                 "user", "pass")
    }
+   function openTransferPage() {
+      //TODO: Add arguments which prefill items in transfer page
+      if( wallet.accounts[wallet.accountNames[0]].availableAssets.length )
+         window.pageStack.push({item: transferUi, properties: {accountName: wallet.accountNames[0]}})
+      else
+         showError(qsTr("You don't have any assets, so you cannot make a transfer."), qsTr("Refresh Balances"),
+                   wallet.syncAllBalances)
+   }
+
 
    AppTheme {
       id: theme
@@ -73,14 +80,14 @@ Window {
       iconName: "action/lock"
       onTriggered: wallet.lockWallet()
    }
-   QtObject {
-      id: d
-      property int errorSerial: 0
-      property int currentError: -1
+   Action {
+      id: __payAction
+      name: qsTr("Send Payment")
+      iconName: "action/payment"
+      onTriggered: openTransferPage()
    }
    QtObject {
       id: visuals
-
       property real margins: units.dp(16)
    }
    Timer {
@@ -104,13 +111,8 @@ Window {
       }
 
       onErrorConnecting: {
-         var errorId = showError(error)
-
-         runWhenConnected(function() {
-            clearError(errorId)
-         })
+         showError(error)
       }
-      onAccountChanged: if( account ) account.error.connect(showError)
       onNotification: showError(message)
    }
 
@@ -249,7 +251,6 @@ Window {
             top: toolbar.bottom
             bottom: parent.bottom
          }
-         initialItem: assetsUi
 
          onPushed: toolbar.push(page)
          onPopped: toolbar.pop()
@@ -263,13 +264,6 @@ Window {
                   uiStack.pop()
                }
                onOpenHistory: window.pageStack.push(historyUi, {"accountName": account, "assetSymbol": symbol})
-               onOpenTransfer: {
-                  if( wallet.account.availableAssets.length )
-                     window.pageStack.push(transferUi)
-                  else
-                     showError(qsTr("You don't have any assets, so you cannot make a transfer."), qsTr("Refresh Balances"),
-                               wallet.syncAllBalances)
-               }
             }
          }
          Component {
@@ -285,13 +279,6 @@ Window {
                onTransferComplete: window.pageStack.pop()
             }
          }
-         Snackbar {
-            id: snack
-            duration: 5000
-            enabled: opened
-            onClick: opened = false
-            z: 21
-         }
       }
    }
    Component {
@@ -299,6 +286,7 @@ Window {
 
       OnboardingLayout {
          onFinished: {
+            pageStack.push({item: assetsUi, properties: {accountName: wallet.accountNames[0]}, immediate: true})
             onboardLoader.sourceComponent = undefined
          }
       }
@@ -314,5 +302,12 @@ Window {
       id: onboardLoader
       z: 2
       anchors.fill: parent
+   }
+   Snackbar {
+      id: snack
+      duration: 5000
+      enabled: opened
+      onClick: opened = false
+      z: 21
    }
 }

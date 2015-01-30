@@ -33,7 +33,7 @@ namespace bts { namespace blockchain { namespace detail {
           _ask_itr           = _db_impl._ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
           _relative_bid_itr  = _db_impl._relative_bid_db.lower_bound( market_index_key( next_pair ) );
           _relative_ask_itr  = _db_impl._relative_ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
-          _short_itr         = _db_impl._short_db.lower_bound( market_index_key( next_pair ) );
+          _short_itr         = _db_impl._short_db.lower_bound( market_index_key_ext( next_pair ) );
           _collateral_itr    = _db_impl._collateral_db.lower_bound( market_index_key( next_pair ) );
 
           _collateral_expiration_itr  = _db_impl._collateral_expiration_index.lower_bound( { quote_id, time_point(), market_index_key( price(0,quote_id,base_id) ) } );
@@ -60,7 +60,7 @@ namespace bts { namespace blockchain { namespace detail {
           // Market issued assets cannot match until the first time there is a median feed; assume feed price base id 0
           if( quote_asset->is_market_issued() && base_asset->id == 0 )
           {
-              _feed_price = _db_impl.self->get_active_feed_price( _quote_id );
+              _feed_price = _db_impl.self->get_active_feed_price( _quote_id, _base_id );
               const omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
               if( (!market_stat.valid() || !market_stat->last_valid_feed_price.valid()) && !_feed_price.valid() )
                   FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id)(base_id) );
@@ -120,6 +120,8 @@ namespace bts { namespace blockchain { namespace detail {
                 {
                   if( *_current_bid->state.limit_price <= mtrx.ask_price )
                   {
+                      cancel_current_relative_bid( mtrx );
+                      push_market_transaction( mtrx );
                       _current_bid.reset(); continue;
                   }
                 }
@@ -130,7 +132,8 @@ namespace bts { namespace blockchain { namespace detail {
                 {
                   if( *_current_ask->state.limit_price >= mtrx.ask_price )
                   {
-                     wlog( "skip relative ask due to limit > ask_price" );
+                      cancel_current_relative_ask( mtrx );
+                      push_market_transaction( mtrx );
                       _current_ask.reset(); continue;
                   }
                 }
@@ -151,6 +154,20 @@ namespace bts { namespace blockchain { namespace detail {
                     mtrx.bid_price < minimum_ask() )
                 {
                    _current_ask.reset(); continue;
+                }
+                /**
+                 *  Protect expired cover orders from over-paying to exit their position.  If there are no bids at
+                 *  or above the price feed then the expired cover creates a buy wall at the price feed.  No
+                 *  need to punish them.
+                 */
+                if( _current_collat_record.expiration < _pending_state->now() && mtrx.bid_price < *_feed_price )
+                {
+                   /** make sure that expired *AND* margin called orders don't get skipped */
+                  
+                   // if the call price < feed price then no margin call has occurred yet
+                   // so we can skip it.
+                   if( _current_ask->get_price() < *_feed_price )
+                      _current_ask.reset(); continue;
                 }
                 //This is a forced cover. He's gonna sell at whatever price a buyer wants. No choice.
                 mtrx.ask_price = mtrx.bid_price;
@@ -357,6 +374,10 @@ namespace bts { namespace blockchain { namespace detail {
         wlog( "error executing market ${quote} / ${base}\n ${e}", ("quote",quote_id)("base",base_id)("e",e.to_detail_string()) );
         omarket_status market_stat = _prior_state->get_market_status( _quote_id, _base_id );
         if( !market_stat.valid() ) market_stat = market_status( _quote_id, _base_id );
+        if( !(_feed_price == market_stat->current_feed_price) )
+        {
+           // TODO: update shorts at feed 
+        }
         market_stat->update_feed_price( _feed_price );
         market_stat->last_error = e;
         _prior_state->store_market_status( *market_stat );
@@ -384,6 +405,56 @@ namespace bts { namespace blockchain { namespace detail {
       wlog( "${trx}", ("trx", fc::json::to_pretty_string( mtrx ) ) );
 
       _market_transactions.push_back(mtrx);
+  } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
+
+  void market_engine::cancel_current_relative_bid( market_transaction& mtrx )
+  { try {
+     FC_ASSERT( _current_bid->type == relative_bid_order );
+     FC_ASSERT( mtrx.bid_type == relative_bid_order );
+     mtrx.ask_received = asset();
+     mtrx.ask_paid = asset();
+     mtrx.ask_owner = address();
+     mtrx.bid_received = _current_bid->get_balance();
+     mtrx.bid_paid = mtrx.bid_received;
+
+     const balance_id_type id = withdraw_condition( withdraw_with_signature( mtrx.bid_owner ), mtrx.bid_received.asset_id ).get_address();
+     obalance_record bid_payout = _pending_state->get_balance_record( id );
+     if( !bid_payout.valid() )
+       bid_payout = balance_record( mtrx.bid_owner, asset(0,mtrx.bid_received.asset_id), 0 );
+
+     bid_payout->balance += mtrx.bid_received.amount;
+     bid_payout->last_update = _pending_state->now();
+     bid_payout->deposit_date = _pending_state->now();
+     _pending_state->store_balance_record( *bid_payout );
+
+     _current_bid->state.balance = 0;
+     _pending_state->store_relative_bid_record( _current_bid->market_index, _current_bid->state );
+
+  } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
+
+  void market_engine::cancel_current_relative_ask( market_transaction& mtrx )
+  { try {
+     FC_ASSERT( _current_ask->type == relative_ask_order );
+     FC_ASSERT( mtrx.ask_type == relative_ask_order );
+     mtrx.bid_received = asset();
+     mtrx.bid_paid = asset();
+     mtrx.bid_owner = address();
+     mtrx.ask_received = _current_ask->get_balance();
+     mtrx.ask_paid = mtrx.ask_received;
+
+     const balance_id_type id = withdraw_condition( withdraw_with_signature( mtrx.ask_owner ), mtrx.ask_received.asset_id ).get_address();
+     obalance_record ask_payout = _pending_state->get_balance_record( id );
+     if( !ask_payout.valid() )
+       ask_payout = balance_record( mtrx.ask_owner, asset(0,mtrx.ask_received.asset_id), 0 );
+
+     ask_payout->balance += mtrx.ask_received.amount;
+     ask_payout->last_update = _pending_state->now();
+     ask_payout->deposit_date = _pending_state->now();
+     _pending_state->store_balance_record( *ask_payout );
+
+     _current_ask->state.balance = 0;
+     _pending_state->store_relative_ask_record( _current_ask->market_index, _current_ask->state );
+
   } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
 
   void market_engine::cancel_current_short( market_transaction& mtrx, const asset_id_type quote_asset_id )
@@ -441,8 +512,8 @@ namespace bts { namespace blockchain { namespace detail {
       }
 
       auto call_collateral = collateral;
-      call_collateral.amount *= 3;
-      call_collateral.amount /= 4;
+      call_collateral.amount *= BTS_BLOCKCHAIN_MCALL_D2C_NUMERATOR;
+      call_collateral.amount /= BTS_BLOCKCHAIN_MCALL_D2C_DENOMINATOR;
       auto cover_price = mtrx.bid_paid / call_collateral;
 
       market_index_key cover_index( cover_price, _current_bid->get_owner() );
@@ -623,6 +694,13 @@ namespace bts { namespace blockchain { namespace detail {
 
   } FC_CAPTURE_AND_RETHROW( (mtrx) )  } // pay_current_ask
 
+  /**
+   *  if there are bids or relative bids above feed price, take the max of the two
+   *  if there are shorts at the feed take the next short
+   *  if there are bids with prices above the limit of the current short they should take priority
+   *       - shorts need to be ordered by limit first, then interest rate *WHEN* the limit is
+   *         lower than the feed price.   
+   */
   bool market_engine::get_next_bid()
   { try {
       if( _current_bid && _current_bid->get_quantity().amount > 0 )

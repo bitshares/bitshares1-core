@@ -8,7 +8,7 @@ Rectangle {
    height: transactionSummary.height
    radius: units.dp(5)
 
-   property var trx
+   property var trx: {"timestamp": "Invalid", "ledger": [], "feeAmount": 0}
    property string accountName
    
    ColumnLayout {
@@ -27,39 +27,47 @@ Rectangle {
             Item { Layout.preferredWidth: visuals.margins }
             RoboHash {
                name: incoming? sender : receiver
+               elideMode: Text.ElideNone
                Layout.preferredWidth: units.dp(100)
             }
-            Column {
+            Label {
                Layout.fillWidth: true
-               Label {
-                  text: memo? memo : "No memo provided"
-                  font.italic: !memo
-                  font.pixelSize: units.dp(16)
-               }
-               Item { width: 1; height: units.dp(8) }
-               Label {
-                  text: (index === 0)? (transactionSummary.timestamp) : ""
-                  font.pixelSize: units.dp(12)
-               }
+               anchors.top: parent.top
+               text: memo? memo : "No memo provided"
+               font.italic: !memo
+               font.pixelSize: units.dp(20)
             }
             Label {
                text: amount + " " + symbol
-               color: incoming? "green" : "red"
-               font.pixelSize: units.dp(16)
+               color: incoming? (sender === accountName? "black"
+                                                        : "green")
+                              : "red"
+               font.pixelSize: units.dp(32)
             }
             Item { Layout.preferredWidth: visuals.margins }
          }
       }
-      Label {
-         font.pixelSize: units.dp(10)
-         font.weight: Font.Light
-         font.italic: true
-         anchors.right: parent.right
-         anchors.rightMargin: visuals.margins
-         text: qsTr("Fee: ") + trx.feeAmount + " " + trx.feeSymbol
-      }
 
-      Item { Layout.preferredHeight: visuals.margins }
+      Item { Layout.preferredHeight: visuals.margins/4 }
+      RowLayout {
+         Layout.fillWidth: true
+
+         Item { Layout.preferredWidth: visuals.margins }
+         Label {
+            text: trx.timestamp
+            font.pixelSize: units.dp(12)
+         }
+         Item { Layout.fillWidth: true }
+         Label {
+            font.pixelSize: units.dp(10)
+            font.weight: Font.Light
+            font.italic: true
+            visible: trx.feeAmount
+            text: qsTr("Fee: ") + trx.feeAmount + " " + trx.feeSymbol
+         }
+         Item { Layout.preferredWidth: visuals.margins }
+      }
+      Item { Layout.preferredHeight: units.dp(3) }
    }
    Ink { anchors.fill: parent }
 }

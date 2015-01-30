@@ -18,39 +18,25 @@ MainView {
 
    function registerAccount() {
       onboarder.state = "REGISTERING"
-      Utils.connectOnce(wallet.account.isRegisteredChanged, finished,
-                        function() { return wallet.account.isRegistered })
+      Utils.connectOnce(wallet.accounts[username].isRegisteredChanged, finished,
+                        function() { return wallet.accounts[username].isRegistered })
       Utils.connectOnce(wallet.onErrorRegistering, function(reason) {
          //FIXME: Do something much, much better here...
          console.log("Can't register: " + reason)
       })
 
       if( wallet.connected ) {
-         wallet.registerAccount()
+         wallet.registerAccount(username)
       } else {
          // Not connected. Schedule for when we reconnect.
          wallet.runWhenConnected(function() {
-            wallet.registerAccount()
+            wallet.registerAccount(username)
          })
       }
    }
    function passwordEntered(password) {
-      // First time through; there's no wallet, no account, not registered. First, create the wallet.
-      if( !wallet.walletExists ) {
-         Utils.connectOnce(wallet.walletExistsChanged, function(walletWasCreated) {
-            if( walletWasCreated ) {
-               registerAccount()
-            } else {
-               //TODO: failed to create wallet. What now?
-               window.showError("Unable to create wallet. Cannot continue.")
-               onboarder.state = ""
-            }
-         })
-         wallet.createWallet(username, password)
-      } else if ( !wallet.account.isRegistered ) {
-         //Wallet is created, so the account exists, but it's not registered yet. Take care of that now.
-         registerAccount()
-      }
+      wallet.createWallet(username, password)
+      registerAccount()
    }
    function clearPassword() {
       passwordField.password = ""
@@ -84,6 +70,29 @@ MainView {
          style: "subheading"
          wrapMode: Text.WrapAtWordBoundaryOrAnywhere
       }
+      ProgressBar {
+         id: registrationProgress
+         anchors.horizontalCenter: parent.horizontalCenter
+         width: units.dp(400)
+         progress: 0
+
+         property var startTime
+
+         Timer {
+            id: registrationProgressTimer
+            repeat: true
+            interval: 100
+            running: onboarder.state === "REGISTERING"
+            onRunningChanged: {
+               if( running ){
+                  registrationProgress.startTime = Date.now()
+               }
+            }
+            onTriggered: {
+               registrationProgress.progress = Math.min((Date.now() - registrationProgress.startTime) / 15000, 1)
+            }
+         }
+      }
       ColumnLayout {
          width: parent.width
 
@@ -94,27 +103,30 @@ MainView {
             placeholderText: qsTr("Pick a Username")
             Layout.fillWidth: true
             Layout.preferredHeight: implicitHeight
-            text: wallet.account? wallet.account.name : ""
+            text: wallet.accountNames.length? wallet.accountNames[0] : ""
             helperText: defaultHelperText
             characterLimit: 64
             onEditingFinished: if( wallet.connected ) nameAvailable()
             transform: ShakeAnimation { id: nameShaker }
 
-            property string defaultHelperText: qsTr("May contain letters, numbers and hyphens.\n" +
-                                                    "Must start with a letter and end with a letter or number.")
+            property string defaultHelperText: qsTr("May contain letters, numbers and hyphens.")
 
             function nameAvailable() {
-               if( wallet.accountExists(text) ) {
+               if( text.length === 0 ) {
+                  helperText = defaultHelperText
+                  hasError = false
+               } else if( !wallet.isValidAccountName(text) || text.indexOf('.') >= 0 || wallet.accountExists(text) ) {
                   helperText = qsTr("That username is already taken")
-                  displayError = true
+                  hasError = true
                } else if( characterCount > characterLimit ) {
                   helperText = qsTr("Name is too long")
-                  displayError = true
+                  hasError = true
                } else {
                   helperText = defaultHelperText
-                  displayError = !wallet.isValidAccountName(text)
+                  hasError = false
                }
-               return !displayError
+
+               return !hasError
             }
          }
          PasswordField {
@@ -136,9 +148,6 @@ MainView {
             Layout.preferredHeight: passwordField.height
 
             onClicked: {
-               if( wallet.account )
-                  wallet.account.name = nameField.text
-
                if( !wallet.connected ) {
                   showError("Unable to connect to server.", "Try Again", connectToServer)
                   return
@@ -181,7 +190,7 @@ MainView {
          PropertyChanges {
             target: statusText
             text: errorMessage
-            color: visuals.errorGlowColor
+            color: "red"
          }
       }
    ]

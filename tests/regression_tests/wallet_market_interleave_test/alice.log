@@ -84,38 +84,3 @@ OK
 >>> wallet_market_order_list USD XTS -1 scott
 >>> quit
 
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_list_feed_prices
->>> balance alice
->>> wallet_market_submit_short alice 100000 XTS 0 USD
->>> wallet_market_submit_ask alice 50000 XTS 0.02 USD
->>> blockchain_market_order_book USD XTS
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> balance alice
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> balance alice
->>> wallet_market_submit_bid alice 1000 XTS 0.01975 USD true
->>> wallet_market_submit_short alice 1000 XTS 0 USD 0.01950
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> wallet_market_submit_ask alice 1000 XTS .01950 USD true
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> quit
-

@@ -14,17 +14,17 @@
    m_walletThread.async([=] {
 #define IN_WAIT_THREAD \
    QEventLoop _THREAD_WAIT_LOOP_; \
-   m_walletThread.async([&] {
+   m_walletThread.async([&] { \
+      QEventLoopLocker _THREAD_LOCKER_(&_THREAD_WAIT_LOOP_);
 #define END_THREAD }, __FUNCTION__);
 #define END_WAIT_THREAD \
-      QEventLoopLocker _THREAD_LOCKER_(&_THREAD_WAIT_LOOP_); \
    END_THREAD \
-   fc::yield(); \
    _THREAD_WAIT_LOOP_.exec();
 
-inline static QString normalize(const QString& key)
+inline static QString normalize(QString key)
 {
-   return key.toUpper().remove(QRegExp("[^A-Z]"));
+   key = key.simplified();
+   return key.toUpper().remove(QRegExp("[^A-Z] "));
 }
 
 bool LightWallet::walletExists() const
@@ -48,7 +48,7 @@ Balance* LightWallet::getFee(QString assetSymbol)
       }
    END_WAIT_THREAD
 
-         return fee;
+   return fee;
 }
 
 bool LightWallet::accountExists(QString name)
@@ -96,34 +96,31 @@ void LightWallet::disconnectFromServer()
 
 void LightWallet::createWallet(QString accountName, QString password)
 {
-   if( walletExists() ) {
-      qDebug() << "Ignoring request to create wallet when wallet already exists!";
-      return;
-   }
-
-   IN_THREAD
+   IN_WAIT_THREAD
+   if( m_wallet.is_open() )
+      m_wallet.close();
    generateBrainKey();
-   std::string salt(bts::blockchain::address(fc::ecc::private_key::generate().get_public_key()));
-   salt.erase(0, strlen(BTS_ADDRESS_PREFIX));
 
    qDebug() << "Wallet path:" << m_walletPath.generic_string().c_str();
 
    try {
-      m_wallet.create(m_walletPath, convert(accountName), convert(password), convert(normalize(m_brainKey)), salt);
+      m_wallet.create(m_walletPath, convert(accountName), convert(password), convert(normalize(m_brainKey)));
    } catch (fc::exception e) {
       qDebug() << "Exception when creating wallet:" << e.to_detail_string().c_str();
    }
 
+   qDebug() << "Created wallet.";
+
    Q_EMIT walletExistsChanged(walletExists());
    Q_EMIT openChanged(isOpen());
    Q_EMIT unlockedChanged(isUnlocked());
-   updateAccount(m_wallet.account());
+   updateAccount(m_wallet.account(convert(accountName)));
    fc::sha512 key = fc::sha512::hash(convert(password));
-   auto plaintext = std::vector<char>(m_brainKey.toStdString().begin(), m_brainKey.toStdString().end());
+   auto brainKey = convert(m_brainKey);
+   auto plaintext = std::vector<char>(brainKey.begin(), brainKey.end());
    auto ciphertext = fc::aes_encrypt(key, plaintext);
    QSettings().setValue(QStringLiteral("brainKey"), QByteArray::fromRawData(ciphertext.data(), ciphertext.size()));
-
-   END_THREAD
+   END_WAIT_THREAD
 }
 
 void LightWallet::openWallet()
@@ -140,8 +137,10 @@ void LightWallet::openWallet()
 
    if( !isOpen() ) return;
 
-   updateAccount(m_wallet.account());
-   qDebug() << "Opened wallet belonging to" << m_account->name();
+   for( auto account : m_wallet.account_records() )
+      updateAccount(*account);
+
+   qDebug() << "Opened wallet with" << m_accounts.size() << "accounts";
 }
 
 void LightWallet::closeWallet()
@@ -158,13 +157,11 @@ void LightWallet::unlockWallet(QString password)
    if( !isOpen() )
       openWallet();
 
-   IN_THREAD
+   IN_WAIT_THREAD
    try {
       m_wallet.unlock(convert(password));
       if( isUnlocked() )
       {
-         qDebug() << "Unlocked wallet; active address is" << std::string(m_wallet.account().active_address()).c_str();
-
          if( QSettings().contains("brainKey") )
          {
             auto ciphertext = QSettings().value(QStringLiteral("brainKey"), QString()).toByteArray();
@@ -173,7 +170,6 @@ void LightWallet::unlockWallet(QString password)
                                                                     ciphertext.data() + ciphertext.size()));
             m_brainKey = QString::fromLocal8Bit(plaintext.data());
             Q_EMIT brainKeyChanged(m_brainKey);
-            qDebug() << m_brainKey;
          }
       }
    } catch (fc::exception e) {
@@ -183,7 +179,7 @@ void LightWallet::unlockWallet(QString password)
    }
 
    Q_EMIT unlockedChanged(isUnlocked());
-   END_THREAD
+   END_WAIT_THREAD
 }
 
 void LightWallet::lockWallet()
@@ -201,27 +197,28 @@ void LightWallet::lockWallet()
    END_THREAD
 }
 
-void LightWallet::registerAccount()
+void LightWallet::registerAccount(QString accountName)
 {
    IN_THREAD
    try {
-      if( m_wallet.request_register_account() ) {
+      std::string stdAccountName = convert(accountName);
+      if( m_wallet.request_register_account(stdAccountName) ) {
          for( int i = 0; i < 5; ++i ) {
-            updateAccount(m_wallet.fetch_account());
-            if( m_wallet.account().registration_date != fc::time_point_sec() )
+            updateAccount(m_wallet.fetch_account(stdAccountName));
+            if( m_wallet.account(stdAccountName).registration_date != fc::time_point_sec() )
                break;
             fc::usleep(fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC / 2));
          }
-         if( m_wallet.account().registration_date == fc::time_point_sec() )
-            Q_EMIT errorRegistering(QStringLiteral("Registration is taking longer than usual. Please try again later."));
+         if( m_wallet.account(stdAccountName).registration_date == fc::time_point_sec() )
+            Q_EMIT errorRegistering(tr("Registration is taking longer than usual. Please try again later."));
       } else
-         Q_EMIT errorRegistering(QStringLiteral("Server did not register account. Please try again later."));
+         Q_EMIT errorRegistering(tr("Server could not register account. Please try again later."));
    } catch( const bts::light_wallet::account_already_registered& e ) {
       //If light_wallet throws account_already_registered, it's because someone snagged the name already.
       qDebug() << "Account registered out from under us: " << e.to_detail_string().c_str();
       Q_EMIT errorRegistering(QStringLiteral("Oops! Someone just registered that name. Please pick another one."));
    } catch (const fc::exception& e) {
-      const static QString message = QStringLiteral("Failed to register account: %1");
+      const static QString message = tr("Failed to register account: %1");
       if( e.get_log().empty() || e.get_log()[0].get_format().empty() )
          Q_EMIT errorRegistering(message.arg(e.what()));
       else
@@ -233,6 +230,12 @@ void LightWallet::registerAccount()
 
 void LightWallet::clearBrainKey()
 {
+   fc::sha512 key;
+   m_brainKey.replace(QRegExp("."), " ");
+   auto brainKey = convert(m_brainKey);
+   auto plaintext = std::vector<char>(brainKey.begin(), brainKey.end());
+   auto ciphertext = fc::aes_encrypt(key, plaintext);
+   QSettings().setValue(QStringLiteral("brainKey"), QByteArray::fromRawData(ciphertext.data(), ciphertext.size()));
    QSettings().remove(QStringLiteral("brainKey"));
    m_brainKey.clear();
    Q_EMIT brainKeyChanged(m_brainKey);
@@ -243,10 +246,9 @@ void LightWallet::sync()
    IN_THREAD
    if( !isConnected() ) return;
 
-   m_wallet.sync_balance();
-   m_wallet.sync_transactions();
+   if( m_wallet.sync_balance() || m_wallet.sync_transactions() )
+      Q_EMIT synced();
 
-   Q_EMIT synced();
    END_THREAD
 }
 
@@ -254,11 +256,7 @@ void LightWallet::syncAllBalances()
 {
    IN_THREAD
    QStringList currentAssets;
-   if( account() )
-      currentAssets = account()->availableAssets();
    m_wallet.sync_balance(true);
-   if( account() && currentAssets.empty() && account()->availableAssets().empty() )
-      Q_EMIT notification(tr("No new balances were found."));
    END_THREAD
 }
 
@@ -281,23 +279,21 @@ void LightWallet::generateBrainKey()
 
 void LightWallet::updateAccount(const bts::blockchain::account_record& account)
 {
-   if( !m_account )
+   QString accountName = convert(account.name);
+   if( m_accounts.contains(accountName) )
+      *qvariant_cast<Account*>(m_accounts[accountName]) = account;
+   else
    {
       //Tricky threading. We're probably running in the bitshares thread, but we want Account to belong to the UI thread
       //so it can be a child of LightWallet (this).
       //Create it in this thread, then move it to the UI thread, then set its parent.
-      m_account = new Account(&m_wallet, account);
-      m_account->moveToThread(thread());
-      m_account->setParent(this);
-      connect(this, &LightWallet::synced, m_account, &Account::balancesChanged);
-      Q_EMIT accountChanged(m_account);
+      Account* newAccount;
+      newAccount = new Account(&m_wallet, account);
+      newAccount->moveToThread(thread());
+      newAccount->setParent(this);
+      connect(this, &LightWallet::synced, newAccount, &Account::balancesChanged);
 
-      connect(m_account, &Account::nameChanged, [this](QString name) {
-         if( m_wallet.account().registration_date == fc::time_point_sec() )
-            m_wallet.account().name = convert(name);
-         else
-            m_account->setName(convert(m_wallet.account().name));
-      });
-   } else
-      *m_account = account;
+      m_accounts.insert(accountName, QVariant::fromValue(newAccount));
+   }
+   Q_EMIT accountsChanged(m_accounts);
 }

@@ -3,6 +3,8 @@
 #include <bts/blockchain/market_operations.hpp>
 #include <bts/blockchain/pending_chain_state.hpp>
 
+#include <algorithm>
+
 namespace bts { namespace blockchain {
 
    /**
@@ -279,7 +281,7 @@ namespace bts { namespace blockchain {
           // sub the delta amount from the eval state that we deposited to the short
           eval_state.sub_balance( balance_id_type(), delta_amount );
       }
-      current_short->limit_price = this->limit_price;
+      current_short->limit_price = this->short_index.limit_price;
       current_short->last_update = eval_state._current_state->now();
       current_short->balance     += this->amount;
       FC_ASSERT( current_short->balance >= 0 );
@@ -360,7 +362,9 @@ namespace bts { namespace blockchain {
       if( current_cover->payoff_balance > 0 )
       {
          const auto new_call_price = asset( current_cover->payoff_balance, delta_amount.asset_id)
-                                     / asset( (current_cover->collateral_balance*3)/4, cover_index.order_price.base_asset_id );
+                                     / asset( (current_cover->collateral_balance * BTS_BLOCKCHAIN_MCALL_D2C_NUMERATOR)
+                                            / BTS_BLOCKCHAIN_MCALL_D2C_DENOMINATOR,
+                                            cover_index.order_price.base_asset_id );
 
          if( this->new_cover_price && (*this->new_cover_price > new_call_price) )
             eval_state._current_state->store_collateral_record( market_index_key( *this->new_cover_price, this->cover_index.owner ),
@@ -375,9 +379,6 @@ namespace bts { namespace blockchain {
       }
    }
 
-#ifndef WIN32
-#warning [VIKRAM] Handle hardfork
-#endif
    void add_collateral_operation::evaluate( transaction_evaluation_state& eval_state )
    {
       if( this->cover_index.order_price == price() )
@@ -400,7 +401,9 @@ namespace bts { namespace blockchain {
       current_cover->collateral_balance += delta_amount.amount;
 
       const auto min_call_price = asset( current_cover->payoff_balance, cover_index.order_price.quote_asset_id )
-                                  / asset( (current_cover->collateral_balance*3)/4, cover_index.order_price.base_asset_id );
+                                  / asset( (current_cover->collateral_balance * BTS_BLOCKCHAIN_MCALL_D2C_NUMERATOR)
+                                  / BTS_BLOCKCHAIN_MCALL_D2C_DENOMINATOR,
+                                  cover_index.order_price.base_asset_id );
       const auto new_call_price = std::min( min_call_price, cover_index.order_price );
 
       // changing the payoff balance changes the call price... so we need to remove the old record
@@ -412,9 +415,6 @@ namespace bts { namespace blockchain {
                                                           *current_cover );
    }
 
-#ifndef WIN32
-#warning [VIKRAM] Handle softfork
-#endif
    void update_call_price_operation::evaluate( transaction_evaluation_state& eval_state )
    {
       if( this->cover_index.order_price == price() )
@@ -432,7 +432,8 @@ namespace bts { namespace blockchain {
          FC_CAPTURE_AND_THROW( unknown_market_order, (cover_index) );
 
       const auto min_call_price = asset( current_cover->payoff_balance, cover_index.order_price.quote_asset_id )
-                                  / asset( (current_cover->collateral_balance*3)/4, cover_index.order_price.base_asset_id );
+                                  / asset( (current_cover->collateral_balance * BTS_BLOCKCHAIN_MCALL_D2C_NUMERATOR)
+                                  / BTS_BLOCKCHAIN_MCALL_D2C_DENOMINATOR, cover_index.order_price.base_asset_id );
 
       FC_ASSERT( new_call_price >= min_call_price );
 
