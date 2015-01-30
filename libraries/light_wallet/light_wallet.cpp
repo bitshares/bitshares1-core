@@ -355,8 +355,8 @@ oprice light_wallet::get_median_feed_price( const string& symbol )
       auto quote_rec = get_asset_record( symbol );
       FC_ASSERT( base_rec && quote_rec );
 
-      opt = price( price_ratio * (quote_rec->precision / base_rec->precision),
-                   base_rec->id, quote_rec->id );
+      opt = price( price_ratio * (double(quote_rec->precision) / base_rec->precision),
+                   quote_rec->id, base_rec->id );
    }
 
    if( opt && is_open() )
