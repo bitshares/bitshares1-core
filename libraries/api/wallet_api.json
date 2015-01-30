@@ -1848,6 +1848,22 @@
          "aliases" : ["balance", "getbalance"]
       },
       {
+         "method_name"    : "wallet_account_balance_ids",
+         "description"    : "Lists the balance IDs for the specified account",
+         "return_type"    : "account_balance_id_summary_type",
+         "parameters"     : [
+         {
+            "name" : "account_name",
+            "type" : "account_name",
+            "description" : "the account to get a balance IDs for, or leave empty for all accounts",
+            "default_value" : ""
+         }
+         ],
+         "is_const" : true,
+         "prerequisites" : ["wallet_open"],
+         "aliases" : []
+      },
+      {
          "method_name"    : "wallet_account_balance_extended",
          "description"    : "Lists the total asset balances across all withdraw condition types for the specified account",
          "cached"         : true,
