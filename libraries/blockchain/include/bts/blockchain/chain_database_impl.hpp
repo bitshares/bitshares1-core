@@ -149,7 +149,9 @@ namespace bts { namespace blockchain {
 
             bts::db::cached_level_map<market_index_key, order_record>                   _short_db; // interest,owner => order 
 
-            /** maintains a subset of _short_db that is currently at the price feed, sorted by interest rate, then owner */
+            /** maintains a subset of _short_db that is currently at the price feed, sorted by interest rate, then owner 
+             *  Note: this index is read only outside of chain db
+             **/
             set<market_index_key>                                                       _shorts_at_feed;  // cache all shorts currently at the feed
 
             /** maintains a sorted index of all shorts with a price limit by price limit, then interest, then owner */

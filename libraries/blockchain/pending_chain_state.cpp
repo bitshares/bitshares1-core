@@ -73,7 +73,6 @@ namespace bts { namespace blockchain {
       apply_records( prev_state, _asset_id_to_record, _asset_id_remove );
       apply_records( prev_state, _balance_id_to_record, _balance_id_remove );
       apply_records( prev_state, _transaction_id_to_record, _transaction_id_remove );
-      apply_records( prev_state, _feed_index_to_record, _feed_index_remove );
       apply_records( prev_state, _slot_index_to_record, _slot_index_remove );
 
       for( const auto& item : properties )      prev_state->set_property( (chain_property_enum)item.first, item.second );
@@ -90,6 +89,14 @@ namespace bts { namespace blockchain {
       for( const auto& item : asset_proposals ) prev_state->store_asset_proposal( item.second );
       for( const auto& item : burns ) prev_state->store_burn_record( burn_record(item.first,item.second) );
       for( const auto& item : objects ) prev_state->store_object_record( item.second );
+
+      /** do this last because it could have side effects on other records while
+       * we manage the short index 
+       */
+      //apply_records( prev_state, _feed_index_to_record, _feed_index_remove );
+      for( auto item : _feed_index_to_record )
+         prev_state->store_feed_record( item.second );
+      for( const auto& item : _feed_index_remove ) prev_state->remove<feed_record>( item );
 
       prev_state->set_market_transactions( market_transactions );
       prev_state->set_dirty_markets( _dirty_markets );

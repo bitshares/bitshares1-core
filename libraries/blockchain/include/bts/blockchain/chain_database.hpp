@@ -141,6 +141,7 @@ namespace bts { namespace blockchain {
 
          fc::ripemd160               get_current_random_seed()const override;
 
+
          account_record              get_delegate_record_for_signee( const public_key_type& block_signee )const;
          account_record              get_block_signee( const block_id_type& block_id )const;
          account_record              get_block_signee( uint32_t block_num )const;
@@ -190,6 +191,8 @@ namespace bts { namespace blockchain {
          virtual void                store_burn_record( const burn_record& br ) override;
          virtual oburn_record        fetch_burn_record( const burn_record_key& key )const override;
          vector<burn_record>         fetch_burn_records( const string& account_name )const;
+
+         virtual void                       store_feed_record( const feed_record& r ) override;
 
          virtual void                       store_asset_proposal( const proposal_record& r ) override;
          virtual optional<proposal_record>  fetch_asset_proposal( asset_id_type asset_id, proposal_id_type proposal_id )const override;
