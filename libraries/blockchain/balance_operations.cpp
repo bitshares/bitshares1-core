@@ -50,12 +50,9 @@ namespace bts { namespace blockchain {
       }
 
       yield /= 1000000;
-      uint64_t yield_amount = yield.to_uint64();
 
-      if( yield_amount > 0 && yield_amount < yield_pool )
-      {
-         return asset( yield_amount, condition.asset_id );
-      }
+      if( (yield > 0) && (yield < yield_pool) )
+         return asset( yield.to_uint64(), condition.asset_id );
       return asset( 0, condition.asset_id );
    }
 
