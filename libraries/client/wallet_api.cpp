@@ -73,53 +73,38 @@ void detail::client_impl::wallet_backup_restore( const fc::path& json_filename,
     reschedule_delegate_loop();
 }
 
-// This should be able to get an encrypted private key or WIF key out of any reasonable JSON object.
+// This should be able to get an encrypted private key or WIF key out of any reasonable JSON object
 void read_keys( const fc::variant& vo, vector<private_key_type>& keys, const string& password )
 {
     ilog("@n read_keys");
-    //ilog("@n ${o}", ("o", vo));
-    try {
-      auto wif_key = vo.as_string();
-      auto key = bts::utilities::wif_to_key( wif_key );
-      if( key.valid() )
-          keys.push_back(*key);
+    try
+    {
+      const auto wif_key = vo.as_string();
+      const auto key = bts::utilities::wif_to_key( wif_key );
+      if( key.valid() ) keys.push_back(*key);
     }
-    catch (...) {
+    catch( ... )
+    {
         //ilog("@n I couldn't parse that as a wif key: ${vo}", ("vo", vo));
     }
-    vector<char> bytes;
-    vector<char> plain_text;
-    fc::sha512 password_bytes;
-    bool skip_me = false;
-    try {
-        auto bytes = vo.as<vector<char>>();
-        password_bytes = fc::sha512::hash( password.c_str(), password.size() );
-    }
-    catch (...)
+
+    try
     {
-        ilog("error, setting skip_me=true");
+        const auto key_bytes = vo.as<vector<char>>();
+        const auto password_bytes = fc::sha512::hash( password.c_str(), password.size() );
+        const auto key_plain_text = fc::aes_decrypt( password_bytes, key_bytes );
+        keys.push_back( fc::raw::unpack<private_key_type>( key_plain_text ) );
+    }
+    catch( ... )
+    {
         //ilog("@n I couldn't parse that as a byte array: ${vo}", ("vo", vo));
-        skip_me = true;
 
     }
-    if( NOT skip_me )
+
+    try
     {
-        ilog("not skipping");
-        try {
-            plain_text = fc::aes_decrypt( password_bytes, bytes );
-            keys.push_back( fc::raw::unpack<private_key_type>( plain_text ) );
-        } catch (...)
-        {
-            //FC_CAPTURE_AND_THROW( bts::wallet::invalid_password, () );
-            //
-            // Actually, we can't tell the difference between a failed decryption due to a bad password
-            // and failed decrypt due to junk.
-        }
-    }
-    try {
-        auto obj = vo.get_object();
-        //ilog("@n it's an object ${o}", ("o", obj));
-        for( auto kv : obj )
+        const auto obj = vo.get_object();
+        for( const auto& kv : obj )
         {
             read_keys( kv.value(), keys, password );
         }
@@ -128,30 +113,34 @@ void read_keys( const fc::variant& vo, vector<private_key_type>& keys, const str
     {
         throw;
     }
-    catch (...) {
+    catch( ... )
+    {
         //ilog("@n I couldn't parse that as an object: ${o}", ("o", vo));
     }
-    try {
-        auto arr = vo.as<vector<variant>>();
-        for( auto obj : arr )
+
+    try
+    {
+        const auto arr = vo.as<vector<variant>>();
+        for( const auto& obj : arr )
         {
             read_keys( obj, keys, password );
         }
-        //ilog("@n it's an object ${o}", ("o", vo));
     }
     catch( const bts::wallet::invalid_password& e )
     {
         throw;
     }
-    catch (...) {
+    catch( ... )
+    {
         //ilog("@n I couldn't parse that as an array: ${o}", ("o", vo));
     }
+
     //ilog("@n I couldn't parse that as anything!: ${o}", ("o", vo));
 }
 
-void detail::client_impl::wallet_import_keys_from_json( const fc::path& json_filename,
-                                                        const string& imported_wallet_passphrase,
-                                                        const string& account )
+uint32_t detail::client_impl::wallet_import_keys_from_json( const fc::path& json_filename,
+                                                            const string& imported_wallet_passphrase,
+                                                            const string& account )
 { try {
     FC_ASSERT( fc::exists( json_filename ) );
     FC_ASSERT( _wallet->is_open() );
@@ -162,6 +151,7 @@ void detail::client_impl::wallet_import_keys_from_json( const fc::path& json_fil
     vector<private_key_type> keys;
     read_keys( object, keys, imported_wallet_passphrase );
 
+    uint32_t count = 0;
     for( const auto& key : keys )
     {
         const auto addr = address( key.get_public_key() );
@@ -184,8 +174,12 @@ void detail::client_impl::wallet_import_keys_from_json( const fc::path& json_fil
         {
             _wallet->import_private_key( key, account, false );
         }
+
+        ++count;
     }
-    ulog( "No errors were encountered, but there is currently no way to check if keys were decrypted using the correct password." );
+
+    ulog( "Successfully imported ${n} new private keys into account ${name}", ("n",count)("name",account) );
+    return count;
 } FC_CAPTURE_AND_RETHROW( (json_filename) ) }
 
 bool detail::client_impl::wallet_set_automatic_backups( bool enabled )
