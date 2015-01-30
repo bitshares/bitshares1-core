@@ -118,15 +118,15 @@ QList<QObject*> Account::transactionHistory(QString asset_symbol)
    int position = 0;
    for( bts::wallet::transaction_ledger_entry trx : raw_transactions )
    {
-      if( std::find_if(transactionList.begin(), transactionList.end(), [&trx] (QObject* o) -> bool {
+      if( std::find_if(transactionList[asset_symbol].begin(), transactionList[asset_symbol].end(), [&trx] (QObject* o) -> bool {
                        return o->property("id").toString() == convert(string(trx.id));
-      }) != transactionList.end() )
+      }) != transactionList[asset_symbol].end() )
          continue;
 
-      transactionList.insert(position++, buildSummary(std::move(trx)));
+      transactionList[asset_symbol].insert(position++, buildSummary(std::move(trx)));
    }
 
-   return transactionList;
+   return transactionList[asset_symbol];
 }
 
 TransactionSummary* Account::beginTransfer(QString recipient, QString amount, QString symbol, QString memo)

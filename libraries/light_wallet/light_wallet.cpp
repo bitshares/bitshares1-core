@@ -408,7 +408,7 @@ vector<bts::wallet::transaction_ledger_entry> light_wallet::transactions(const s
 }
 
 
-void light_wallet::sync_balance( bool resync_all )
+bool light_wallet::sync_balance( bool resync_all )
 { try {
    FC_ASSERT( is_open() );
    static bool first_time = true;
@@ -438,12 +438,15 @@ void light_wallet::sync_balance( bool resync_all )
    }
 
    if( _data->last_balance_sync_time + fc::seconds(10) > fc::time_point::now() )
-      return; // too fast
+      return false; // too fast
 
    fc::time_point_sec sync_time = _data->last_balance_sync_time;
    vector<string> account_names;
 
    auto batch_results = batch_active_addresses("blockchain_list_address_balances", fc::variant(sync_time), account_names);
+
+   if( batch_results.empty() || batch_results.begin()->as<map<balance_id_type, balance_record>>().empty() )
+      return false;
 
    batch_args.clear();
    for( const auto& new_balances : batch_results )
@@ -461,9 +464,10 @@ void light_wallet::sync_balance( bool resync_all )
 
    _data->last_balance_sync_time = sync_time;
    save();
+   return true;
 } FC_CAPTURE_AND_RETHROW() }
 
-void light_wallet::sync_transactions()
+bool light_wallet::sync_transactions()
 {
    FC_ASSERT( is_open() );
 
@@ -471,6 +475,9 @@ void light_wallet::sync_transactions()
    vector<string> account_names;
 
    auto batch_results = batch_active_addresses("blockchain_list_address_transactions", sync_block, account_names);
+
+   if( batch_results.empty() )
+      return false;
 
    for( int i = 0; i < batch_results.size(); ++i )
    {
@@ -486,22 +493,24 @@ void light_wallet::sync_transactions()
 
          sync_block = std::max(record.chain_location.block_num, sync_block);
 
-         for( const auto& delta : record.deltas )
-            for( const auto& balance : delta.second )
+         wallet::transaction_ledger_entry scanned_trx = summarize(account_name, bundle);
+         for( const auto& delta : scanned_trx.delta_amounts )
+            for( const asset& balance : delta.second )
             {
                auto& index = _data->accounts[account_name].transaction_index;
                //if this <asset id, trx id> pair is not already in the transaction_index, add it.
                if( std::find_if(index.begin(), index.end(),
                                 [balance, id](const std::pair<asset_id_type, transaction_id_type>& entry) -> bool {
-                                   return entry.first == balance.first && entry.second == id;
+                                   return entry.first == balance.asset_id && entry.second == id;
                    })
                    == index.end() )
-                  index.insert({balance.first, id});
+                  index.insert({balance.asset_id, id});
             }
       }
    }
    _data->last_transaction_sync_block = sync_block;
    save();
+   return true;
 }
 
 fc::variants light_wallet::batch_active_addresses(const char* call_name, fc::variant last_sync, vector<string>& account_names)
@@ -582,14 +591,22 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const string& acco
    FC_ASSERT( is_open() );
    FC_ASSERT( is_unlocked() );
 
-   ilog("Summarizing ${t}", ("t", transaction_bundle));
-
    map<string, map<asset_id_type, share_type>> raw_delta_amounts;
    bts::wallet::transaction_ledger_entry summary;
    transaction_record record = transaction_bundle["trx"].as<transaction_record>();
    summary.timestamp = transaction_bundle["timestamp"].as<fc::time_point_sec>();
    summary.block_num = record.chain_location.block_num;
    summary.id = record.trx.id();
+   auto& cache = _data->accounts[account_name].scan_cache;
+
+   auto itr = cache.find(summary.id);
+   if( itr != cache.end() )
+   {
+      ilog("Using cached summary: ${s}", ("s", itr->second));
+      return itr->second;
+   }
+
+   ilog("Summarizing ${t}", ("t", transaction_bundle));
 
    bool tally_fees = false;
 
@@ -667,7 +684,7 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const string& acco
          if( fee.second )
             summary.delta_amounts["Fee"].emplace_back(fee.second, fee.first);
 
-   return summary;
+   return cache[summary.id] = summary;
 } FC_CAPTURE_AND_RETHROW( (transaction_bundle) ) }
 
 fc::ecc::private_key light_wallet::create_one_time_key(const string& account_name, const string& key_id)

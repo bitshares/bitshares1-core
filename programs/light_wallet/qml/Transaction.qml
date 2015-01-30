@@ -39,7 +39,9 @@ Rectangle {
             }
             Label {
                text: amount + " " + symbol
-               color: incoming? "green" : "red"
+               color: incoming? (sender === accountName? "black"
+                                                        : "green")
+                              : "red"
                font.pixelSize: units.dp(32)
             }
             Item { Layout.preferredWidth: visuals.margins }
