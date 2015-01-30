@@ -15,7 +15,7 @@ namespace bts { namespace wallet {
    namespace detail { class wallet_impl; }
 
    typedef map<string, vector<balance_record>> account_balance_record_summary_type;
-   typedef map<string, vector<balance_id_type>> account_balance_id_summary_type;
+   typedef map<string, unordered_set<balance_id_type>> account_balance_id_summary_type;
    typedef map<string, map<asset_id_type, share_type>> account_balance_summary_type;
    typedef map<string, map<string, vector<asset>>> account_extended_balance_type;
 
@@ -572,6 +572,8 @@ namespace bts { namespace wallet {
 
          account_balance_record_summary_type get_spendable_account_balance_records( const string& account_name = "" )const;
          account_balance_summary_type       get_spendable_account_balances( const string& account_name = "" )const;
+
+         account_balance_id_summary_type    get_account_balance_ids( const string& account_name = "" )const;
 
          account_vesting_balance_summary_type get_account_vesting_balances( const string& account_name = "" )const;
 

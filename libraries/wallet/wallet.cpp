@@ -4346,6 +4346,30 @@ namespace detail {
        return balances;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
+   account_balance_id_summary_type wallet::get_account_balance_ids( const string& account_name )const
+   { try {
+       map<string, unordered_set<balance_id_type>> balances;
+
+       const auto scan_balance = [&]( const balance_id_type& id, const balance_record& record )
+       {
+           const set<address>& owners = record.owners();
+           for( const address& owner : owners )
+           {
+               const owallet_key_record key_record = my->_wallet_db.lookup_key( owner );
+               if( !key_record.valid() || !key_record->has_private_key() ) continue;
+
+               const owallet_account_record account_record = my->_wallet_db.lookup_account( key_record->account_address );
+               const string name = account_record.valid() ? account_record->name : string( key_record->public_key );
+               if( !account_name.empty() && name != account_name ) continue;
+
+               balances[ name ].insert( id );
+           }
+       };
+
+       scan_balances( scan_balance );
+       return balances;
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
+
    account_vesting_balance_summary_type wallet::get_account_vesting_balances( const string& account_name )const
    { try {
        map<string, vector<pretty_vesting_balance>> balances;
@@ -4639,6 +4663,7 @@ namespace detail {
          return builder->sign();
       return builder->transaction_record;
    }
+
    void wallet::initialize_transaction_creator( transaction_creation_state& c, const string& account_name )
    {
       c.pending_state._balance_id_to_record = my->_balance_records;
