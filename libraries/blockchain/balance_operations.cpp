@@ -20,6 +20,11 @@ namespace bts { namespace blockchain {
       fc::uint128 current_supply( share_supply - yield_pool );
       fc::uint128 fee_fund( yield_pool );
 
+      //
+      // numerator in the following expression is at most
+      // BTS_BLOCKCHAIN_MAX_SHARES * 1000000 * BTS_BLOCKCHAIN_MAX_SHARES
+      // thus it cannot overflow
+      //
       fc::uint128 yield = (amount_withdrawn * fee_fund) / current_supply;
 
       /**
@@ -33,6 +38,11 @@ namespace bts { namespace blockchain {
          // discount the yield by 80%
          yield *= 8;
          yield /= 10;
+         //
+         // yield largest value in preceding multiplication is at most
+         // BTS_BLOCKCHAIN_MAX_SHARES * 1000000 * BTS_BLOCKCHAIN_MAX_SHARES * 8
+         // thus it cannot overflow
+         //
 
          fc::uint128 delta_yield = original_yield - yield;
 
