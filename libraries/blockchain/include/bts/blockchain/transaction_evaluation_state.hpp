@@ -110,6 +110,7 @@ namespace bts { namespace blockchain {
          // Not serialized
          chain_interface*                               _current_state = nullptr;
          bool                                           _skip_signature_check = false;
+         bool                                           _skip_vote_adjustment = false;
          unordered_map<asset_id_type, share_type>       _max_fee;
          uint32_t                                       current_op_index = 0;
    };

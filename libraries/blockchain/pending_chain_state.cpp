@@ -38,7 +38,7 @@ namespace bts { namespace blockchain {
    uint32_t pending_chain_state::get_head_block_num()const
    {
       const chain_interface_ptr prev_state = _prev_state.lock();
-      FC_ASSERT( prev_state );
+      if( !prev_state ) return 1;
       return prev_state->get_head_block_num();
    }
 
