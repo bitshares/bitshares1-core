@@ -120,6 +120,8 @@ namespace bts { namespace blockchain { namespace detail {
                 {
                   if( *_current_bid->state.limit_price <= mtrx.ask_price )
                   {
+                      cancel_current_relative_bid( mtrx );
+                      push_market_transaction( mtrx );
                       _current_bid.reset(); continue;
                   }
                 }
@@ -130,7 +132,8 @@ namespace bts { namespace blockchain { namespace detail {
                 {
                   if( *_current_ask->state.limit_price >= mtrx.ask_price )
                   {
-                     wlog( "skip relative ask due to limit > ask_price" );
+                      cancel_current_relative_ask( mtrx );
+                      push_market_transaction( mtrx );
                       _current_ask.reset(); continue;
                   }
                 }
@@ -402,6 +405,56 @@ namespace bts { namespace blockchain { namespace detail {
       wlog( "${trx}", ("trx", fc::json::to_pretty_string( mtrx ) ) );
 
       _market_transactions.push_back(mtrx);
+  } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
+
+  void market_engine::cancel_current_relative_bid( market_transaction& mtrx )
+  { try {
+     FC_ASSERT( _current_bid->type == relative_bid_order );
+     FC_ASSERT( mtrx.bid_type == relative_bid_order );
+     mtrx.ask_received = asset();
+     mtrx.ask_paid = asset();
+     mtrx.ask_owner = address();
+     mtrx.bid_received = _current_bid->get_balance();
+     mtrx.bid_paid = mtrx.bid_received;
+
+     const balance_id_type id = withdraw_condition( withdraw_with_signature( mtrx.bid_owner ), mtrx.bid_received.asset_id ).get_address();
+     obalance_record bid_payout = _pending_state->get_balance_record( id );
+     if( !bid_payout.valid() )
+       bid_payout = balance_record( mtrx.bid_owner, asset(0,mtrx.bid_received.asset_id), 0 );
+
+     bid_payout->balance += mtrx.bid_received.amount;
+     bid_payout->last_update = _pending_state->now();
+     bid_payout->deposit_date = _pending_state->now();
+     _pending_state->store_balance_record( *bid_payout );
+
+     _current_bid->state.balance = 0;
+     _pending_state->store_relative_bid_record( _current_bid->market_index, _current_bid->state );
+
+  } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
+
+  void market_engine::cancel_current_relative_ask( market_transaction& mtrx )
+  { try {
+     FC_ASSERT( _current_ask->type == relative_ask_order );
+     FC_ASSERT( mtrx.ask_type == relative_ask_order );
+     mtrx.bid_received = asset();
+     mtrx.bid_paid = asset();
+     mtrx.bid_owner = address();
+     mtrx.ask_received = _current_ask->get_balance();
+     mtrx.ask_paid = mtrx.ask_received;
+
+     const balance_id_type id = withdraw_condition( withdraw_with_signature( mtrx.ask_owner ), mtrx.ask_received.asset_id ).get_address();
+     obalance_record ask_payout = _pending_state->get_balance_record( id );
+     if( !ask_payout.valid() )
+       ask_payout = balance_record( mtrx.ask_owner, asset(0,mtrx.ask_received.asset_id), 0 );
+
+     ask_payout->balance += mtrx.ask_received.amount;
+     ask_payout->last_update = _pending_state->now();
+     ask_payout->deposit_date = _pending_state->now();
+     _pending_state->store_balance_record( *ask_payout );
+
+     _current_ask->state.balance = 0;
+     _pending_state->store_relative_ask_record( _current_ask->market_index, _current_ask->state );
+
   } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
 
   void market_engine::cancel_current_short( market_transaction& mtrx, const asset_id_type quote_asset_id )

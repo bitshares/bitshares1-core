@@ -59,6 +59,8 @@ namespace bts { namespace blockchain { namespace detail {
                                 const fc::time_point_sec timestamp );
 
     void cancel_current_short( market_transaction& mtrx, const asset_id_type quote_asset_id );
+    void cancel_current_relative_bid( market_transaction& mtrx );
+    void cancel_current_relative_ask( market_transaction& mtrx );
 
     pending_chain_state_ptr       _pending_state;
     pending_chain_state_ptr       _prior_state;
