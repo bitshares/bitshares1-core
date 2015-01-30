@@ -14,11 +14,13 @@ namespace bts { namespace blockchain {
       if( elapsed_time <= fc::seconds( BTS_BLOCKCHAIN_MIN_YIELD_PERIOD_SEC ) )
           return asset(0, condition.asset_id);
 
+      fc::uint128 current_supply( share_supply - yield_pool );
+      if( current_supply <= 0)
+          return asset(0, condition.asset_id);
+
+      fc::uint128 fee_fund( yield_pool );
       fc::uint128 amount_withdrawn( amount );
       amount_withdrawn *= 1000000;
-
-      fc::uint128 current_supply( share_supply - yield_pool );
-      fc::uint128 fee_fund( yield_pool );
 
       //
       // numerator in the following expression is at most
