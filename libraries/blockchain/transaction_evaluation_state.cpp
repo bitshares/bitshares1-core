@@ -129,7 +129,6 @@ namespace bts { namespace blockchain {
 
       xts_fees += alt_fees_paid;
 
-
       if( required_fees > xts_fees )
       {
          FC_CAPTURE_AND_THROW( insufficient_fee, (required_fees)(alt_fees_paid)(xts_fees)  );
