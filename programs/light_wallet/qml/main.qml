@@ -11,8 +11,6 @@ import Material 0.1
 Window {
    id: window
    visible: true
-   width: 540
-   height: 960
 
    property alias pageStack: __pageStack
    property alias lockAction: __lockAction

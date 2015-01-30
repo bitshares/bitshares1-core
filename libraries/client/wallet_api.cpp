@@ -1322,14 +1322,19 @@ vector<public_key_summary> client_impl::wallet_account_list_public_keys( const s
 }
 
 vector<bts::wallet::escrow_summary> client_impl::wallet_escrow_summary( const string& account_name ) const
-{
+{ try {
    return _wallet->get_escrow_balances( account_name );
-}
+} FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
 account_balance_summary_type client_impl::wallet_account_balance( const string& account_name )const
-{
+{ try {
     return _wallet->get_spendable_account_balances( account_name );
-}
+} FC_CAPTURE_AND_RETHROW( (account_name) ) }
+
+account_balance_id_summary_type client_impl::wallet_account_balance_ids( const string& account_name )const
+{ try {
+    return _wallet->get_account_balance_ids( account_name );
+} FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
 account_extended_balance_type client_impl::wallet_account_balance_extended( const string& account_name )const
 {
