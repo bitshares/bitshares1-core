@@ -60,8 +60,7 @@ Window {
    }
    function connectToServer() {
       if( !wallet.connected )
-         wallet.connectToServer("localhost", 5656, "XTS7pq7tZnghnrnYvQg8aktrSCLVHE5SGyHFeYJBRdcFVvNCBBDjd",
-                                "user", "pass")
+         wallet.connectToServer("localhost", 5657, "DVS8GV6nP15gBZQbuEGamH95gYR5EioxkUbEYjpDHMjPEeRWsvR63")
    }
    function openTransferPage() {
       if( wallet.accounts[wallet.accountNames[0]].availableAssets.length )
