@@ -53,7 +53,7 @@ Window {
    }
    function connectToServer() {
       if( !wallet.connected )
-         wallet.connectToServer("localhost", 5657, "DVS8GV6nP15gBZQbuEGamH95gYR5EioxkUbEYjpDHMjPEeRWsvR63")
+         wallet.connectToServer("nathanhourt.com", 5657, "DVS8GV6nP15gBZQbuEGamH95gYR5EioxkUbEYjpDHMjPEeRWsvR63")
    }
    function openTransferPage() {
       //TODO: Add arguments which prefill items in transfer page
