@@ -3,7 +3,7 @@
 #include <bts/blockchain/pending_chain_state.hpp>
 
 namespace bts { namespace blockchain {
-
+   
    asset balance_record::calculate_yield( fc::time_point_sec now, share_type amount, share_type yield_pool, share_type share_supply )const
    {
       if( amount <= 0 )       return asset(0,condition.asset_id);
@@ -62,20 +62,6 @@ namespace bts { namespace blockchain {
       return asset( 0, condition.asset_id );
    }
 
-   balance_id_type deposit_operation::balance_id()const
-   {
-      return condition.get_address();
-   }
-
-   deposit_operation::deposit_operation( const address& owner,
-                                         const asset& amnt,
-                                         slate_id_type slate_id )
-   {
-      FC_ASSERT( amnt.amount > 0 );
-      amount = amnt.amount;
-      condition = withdraw_condition( withdraw_with_signature( owner ),
-                                      amnt.asset_id, slate_id );
-   }
 
    void define_delegate_slate_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
@@ -97,11 +83,34 @@ namespace bts { namespace blockchain {
       }
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
+
+   //=================================================================
+   //   deposit_operation
+   //=================================================================
+
+   deposit_operation::deposit_operation( const address& owner,
+                                         const asset& amnt,
+                                         slate_id_type slate_id )
+   {
+      FC_ASSERT( amnt.amount > 0 );
+      amount = amnt.amount;
+      condition = withdraw_condition( withdraw_with_signature( owner ),
+                                      amnt.asset_id, slate_id );
+   }
+
+   balance_id_type deposit_operation::balance_id()const
+   {
+      return condition.get_address();
+   }
+
+
    void deposit_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
        if( this->amount <= 0 )
           FC_CAPTURE_AND_THROW( negative_deposit, (amount) );
 
+       const balance_id_type deposit_balance_id = this->balance_id();
+       obalance_record cur_record = eval_state._current_state->get_balance_record( deposit_balance_id );
        switch( withdraw_condition_types( this->condition.type ) )
        {
           case withdraw_signature_type:
@@ -109,13 +118,38 @@ namespace bts { namespace blockchain {
           case withdraw_multisig_type:
           case withdraw_escrow_type:
              break;
+          case withdraw_on_bingo_type:
+          {
+             FC_ASSERT( !cur_record );
+             FC_ASSERT( this->condition.slate_id == 0 );
+
+             withdraw_on_bingo bingo = condition.as<withdraw_on_bingo>();
+             FC_ASSERT( bingo.first_block > eval_state._current_state->get_head_block_num() + 51 );
+             // check unique board
+             for( uint32_t i = 0; i < 25; ++i )
+                for( uint32_t x = i+1; x < 25; ++x )
+                   FC_ASSERT( bingo.board.at(i) != bingo.board.at(x) );
+             FC_ASSERT( bingo.max_balls > 0 && (bingo.max_balls % 25 == 0) && bingo.max_balls <= 150 );
+
+             auto wager_asset_rec = eval_state._current_state->get_asset_record( bingo.wager.asset_id );
+             FC_ASSERT( wager_asset_rec && wager_asset_rec->is_market_issued() );
+             FC_ASSERT( this->amount == bingo.wager.amount );
+             eval_state.sub_balance( deposit_balance_id, bingo.wager );
+             wager_asset_rec->collected_fees += bingo.wager.amount;
+
+             balance_record bingo_record( this->condition );
+             bingo_record.balance = bingo.wager.amount;
+             bingo_record.deposit_date = eval_state._current_state->now();
+             bingo_record.last_update  = eval_state._current_state->now();
+
+             eval_state._current_state->store_balance_record( bingo_record );
+             eval_state._current_state->store_asset_record( *wager_asset_rec );
+             break;
+          }
           default:
              FC_CAPTURE_AND_THROW( invalid_withdraw_condition, (*this) );
        }
 
-       const balance_id_type deposit_balance_id = this->balance_id();
-
-       obalance_record cur_record = eval_state._current_state->get_balance_record( deposit_balance_id );
        if( !cur_record.valid() )
        {
           cur_record = balance_record( this->condition );
@@ -162,6 +196,50 @@ namespace bts { namespace blockchain {
        eval_state._current_state->store_balance_record( *cur_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
+   void withdraw_operation::evaluate_bingo( transaction_evaluation_state& eval_state )
+   { try {
+      obalance_record current_balance_record = eval_state._current_state->get_balance_record( this->balance_id );
+      auto asset_rec = eval_state._current_state->get_asset_record( current_balance_record->condition.asset_id );
+
+      auto bingo   = current_balance_record->condition.as<withdraw_on_bingo>();
+      auto jackpot = eval_state._current_state->get_bingo_jackpot( bingo );
+
+      if( !eval_state.check_signature( bingo.owner ) )
+           FC_CAPTURE_AND_THROW( missing_signature, (bingo.owner) );
+
+      FC_ASSERT( jackpot.amount > 0 );
+
+      if( this->amount > jackpot.amount )
+         FC_CAPTURE_AND_THROW( insufficient_funds, (current_balance_record)(amount) );
+
+      // LIMIT the jackpot to half of funds actually collected
+      if( asset_rec->collected_fees/2 < jackpot.amount )
+         jackpot.amount = asset_rec->collected_fees/2;
+
+      auto yield_amount = jackpot;
+      yield_amount.amount -= this->amount;
+
+      // WITHDRAW FROM COLLECTED FEES
+      asset_rec->collected_fees    -= jackpot.amount;
+      current_balance_record->balance = 0;
+      eval_state._current_state->store_asset_record( *asset_rec );
+
+      // note the amount sent to yield
+      eval_state.yield[jackpot.asset_id] += yield_amount.amount;
+      // WITHDRAW TO TRX
+      eval_state.add_balance( asset(this->amount, jackpot.asset_id) );
+
+      withdraw_condition new_condition( withdraw_with_signature( bingo.owner ), jackpot.asset_id, 0 );
+      balance_record new_balance_record( new_condition );
+      auto old_balance_record = eval_state._current_state->get_balance_record( new_balance_record.id() );
+      if( !old_balance_record.valid() ) old_balance_record = new_balance_record;
+      old_balance_record->balance      += yield_amount.amount;
+      old_balance_record->last_update = eval_state._current_state->now();
+      // STORE YIELD
+      eval_state._current_state->store_balance_record( *old_balance_record );
+
+   } FC_CAPTURE_AND_RETHROW() }
+
    void withdraw_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
        if( this->amount <= 0 )
@@ -171,11 +249,18 @@ namespace bts { namespace blockchain {
       if( !current_balance_record.valid() )
          FC_CAPTURE_AND_THROW( unknown_balance_record, (balance_id) );
 
+      auto asset_rec = eval_state._current_state->get_asset_record( current_balance_record->condition.asset_id );
+      FC_ASSERT( asset_rec.valid() );
+
+      if( current_balance_record->condition.type == withdraw_on_bingo_type )
+      {
+         evaluate_bingo( eval_state );
+         return;
+      }
+
       if( this->amount > current_balance_record->get_spendable_balance( eval_state._current_state->now() ).amount )
          FC_CAPTURE_AND_THROW( insufficient_funds, (current_balance_record)(amount) );
 
-      auto asset_rec = eval_state._current_state->get_asset_record( current_balance_record->condition.asset_id );
-      FC_ASSERT( asset_rec.valid() );
       bool issuer_override = asset_rec->is_retractable() && eval_state.verify_authority( asset_rec->authority );
 
 

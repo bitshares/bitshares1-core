@@ -13,6 +13,7 @@ namespace bts { namespace blockchain {
    const uint8_t withdraw_with_multisig::type     = withdraw_multisig_type;
    const uint8_t withdraw_with_escrow::type       = withdraw_escrow_type;
    const uint8_t withdraw_with_password::type     = withdraw_password_type;
+   const uint8_t withdraw_on_bingo::type          = withdraw_on_bingo_type;
 
    memo_status::memo_status( const memo_data& memo,
                    bool valid_signature,
@@ -69,6 +70,8 @@ namespace bts { namespace blockchain {
                return set<address>{ this->as<withdraw_vesting>().owner };
            case withdraw_multisig_type:
                return this->as<withdraw_with_multisig>().owners;
+           case withdraw_on_bingo_type:
+               return {this->as<withdraw_on_bingo>().owner};
            case withdraw_escrow_type:
            {
                const auto escrow = this->as<withdraw_with_escrow>();
@@ -87,6 +90,8 @@ namespace bts { namespace blockchain {
                return this->as<withdraw_with_signature>().owner;
            case withdraw_vesting_type:
                return this->as<withdraw_vesting>().owner;
+           case withdraw_on_bingo_type:
+               return {this->as<withdraw_on_bingo>().owner};
            default:
                return optional<address>();
        }
@@ -312,6 +317,9 @@ namespace fc {
          case withdraw_escrow_type:
             obj["data"] = fc::raw::unpack<withdraw_with_escrow>( var.data );
             break;
+         case withdraw_on_bingo_type:
+            obj["data"] = fc::raw::unpack<withdraw_on_bingo>( var.data );
+            break;
          // No default to force compiler warning
       }
       vo = std::move( obj );
@@ -345,6 +353,9 @@ namespace fc {
             return;
          case withdraw_escrow_type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_with_escrow>() );
+            return;
+         case withdraw_on_bingo_type:
+            vo.data = fc::raw::pack( obj["data"].as<withdraw_on_bingo>() );
             return;
          // No default to force compiler warning
       }

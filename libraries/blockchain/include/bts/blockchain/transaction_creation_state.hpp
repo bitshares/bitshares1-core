@@ -33,6 +33,7 @@ namespace bts { namespace blockchain {
           */
          void withdraw( const asset& amount );
 
+         void buy_bingo_card( const withdraw_on_bingo& card );
 
          public_key_type deposit( const asset&                      amount,
                                   const public_key_type&            to,

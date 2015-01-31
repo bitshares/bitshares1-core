@@ -344,4 +344,5 @@ namespace bts { namespace blockchain {
        }
    } FC_CAPTURE_AND_RETHROW() }
 
+
 } } // bts::blockchain

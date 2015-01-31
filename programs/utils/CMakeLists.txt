@@ -4,6 +4,9 @@ endif()
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../libraries/bitcoin/include )
 
+add_executable( bingo_sim  bingo_sim.cpp )
+target_link_libraries( bingo_sim  fc bts_blockchain bts_utilities )
+
 add_executable( btc_wallet_dump bitcoin_recovery.cpp )
 target_link_libraries( btc_wallet_dump fc bts_blockchain bts_utilities bitcoin )
 

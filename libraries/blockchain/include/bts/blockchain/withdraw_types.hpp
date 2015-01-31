@@ -17,7 +17,8 @@ namespace bts { namespace blockchain {
       withdraw_multisig_type    = 3,
       withdraw_password_type    = 4,
       withdraw_reserved_type    = 5,
-      withdraw_escrow_type      = 6
+      withdraw_escrow_type      = 6,
+      withdraw_on_bingo_type    = 7
    };
 
    /**
@@ -145,6 +146,30 @@ namespace bts { namespace blockchain {
       optional<titan_memo>    memo;
    };
 
+   struct withdraw_on_bingo
+   {
+       static const uint8_t type;
+
+       address              owner;
+       asset                wager;
+       fc::array<char,25>   board;
+       uint32_t             first_block = 0;
+       uint8_t              max_balls = 0;
+       static uint32_t      multiplier( uint8_t max_balls )
+       {
+          switch( max_balls )
+          {
+             case 25: return 70000;
+             case 50: return 575;
+             case 75: return 86;
+             case 100: return 25;
+             case 125: return 10;
+             case 150: return 5;
+             default: return 0;
+          }
+       }
+   };
+
    struct withdraw_vesting
    {
        static const uint8_t type;
@@ -229,6 +254,7 @@ FC_REFLECT_ENUM( bts::blockchain::withdraw_condition_types,
         (withdraw_password_type)
         (withdraw_reserved_type)
         (withdraw_escrow_type)
+        (withdraw_on_bingo_type)
         )
 FC_REFLECT( bts::blockchain::withdraw_condition,
         (asset_id)
@@ -292,3 +318,6 @@ FC_REFLECT( bts::blockchain::withdraw_with_password,
         (password_hash)
         (memo)
         )
+
+FC_REFLECT( bts::blockchain::withdraw_on_bingo,
+                 (owner)(wager)(board)(first_block)(max_balls) )

@@ -64,6 +64,8 @@ namespace bts { namespace blockchain {
          chain_interface( const chain_interface& ){} 
          chain_interface& operator=(const chain_interface&){ return *this; }; 
 
+         asset get_bingo_jackpot( const withdraw_on_bingo& )const;
+
          optional<string>                   get_parent_account_name( const string& account_name )const;
          static bool                        is_valid_account_name( const string& name );
          bool                               is_valid_symbol_name( const string& symbol )const;
@@ -113,7 +115,7 @@ namespace bts { namespace blockchain {
                                                               const asset_id_type base_id )                = 0;
 
          virtual fc::ripemd160              get_current_random_seed()const                                  = 0;
-
+         virtual vector<fc::ripemd160>      fetch_random_seeds( uint32_t from_block_num, uint32_t last_block_num )const = 0; 
          virtual odelegate_slate            get_delegate_slate( slate_id_type id )const                     = 0;
          virtual void                       store_delegate_slate( slate_id_type id,
                                                                   const delegate_slate& slate )             = 0;

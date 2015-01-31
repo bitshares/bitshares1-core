@@ -571,7 +571,9 @@ namespace bts { namespace wallet {
                                                                                 const balance_record& )> callback )const;
 
          account_balance_record_summary_type get_spendable_account_balance_records( const string& account_name = "" )const;
-         account_balance_summary_type       get_spendable_account_balances( const string& account_name = "" )const;
+         account_balance_summary_type        get_spendable_account_balances( const string& account_name = "" )const;
+
+         map<balance_id_type,balance_record> get_bingo_cards( const string& account_name = "", bool filter_lost = true )const;
 
          account_vesting_balance_summary_type get_account_vesting_balances( const string& account_name = "" )const;
 

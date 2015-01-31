@@ -18,6 +18,7 @@ namespace bts { namespace blockchain {
          void                           set_prev_state( chain_interface_ptr prev_state );
 
          fc::ripemd160                  get_current_random_seed()const override;
+         vector<fc::ripemd160>          fetch_random_seeds( uint32_t from_block_num, uint32_t last_block_num )const override;
 
          void                           authorize( asset_id_type asset_id, const address& owner, object_id_type oid = 0 ) override;
          optional<object_id_type>       get_authorization( asset_id_type asset_id, const address& owner )const override;

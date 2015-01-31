@@ -1,0 +1,83 @@
+{
+   "category": "Bingo Methods",
+   "methods" : [
+      {
+         "method_name" : "bingo_fetch_balls",
+         "description" : "Return all balls drawn for a given range of blocks",
+         "return_type" : "bingo_balls",
+         "parameters"  : [
+            {
+               "name" : "first_block",
+               "type" : "uint32_t",
+               "description" : "the first block to grab the ball for"
+            },
+            {
+               "name" : "num_balls",
+               "type" : "uint32_t",
+               "description" : "the number of balls to grab",
+               "default_value" : 150 
+            }
+         ],
+         "prerequisites" : ["no_prerequisites"]
+      },
+      {
+         "method_name" : "wallet_bingo_buy_card",
+         "description" : "Buys a new bingo card",
+         "return_type" : "transaction_record",
+         "parameters" : [
+            {
+               "name" : "account",
+               "type" : "account_name",
+               "description" : "the account that will fund the transaction"
+            },
+            {
+               "name" : "max_balls",
+               "type" : "uint32_t",
+               "description" : "the maximum number of balls to try"
+            },
+            {
+               "name" : "wager_amount",
+               "type" : "share_type",
+               "description" : "the amount to wager on hitting bingo"
+            },
+            {
+               "name" : "wager_symbol",
+               "type" : "asset_symbol",
+               "description" : "the type of asset to wager"
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_bingo_claim",
+         "description" : "claims a winning bingo card's price",
+         "return_type" : "transaction_record",
+         "parameters" : [
+               {
+                  "name" : "card_balance_id",
+                  "type" : "address",
+                  "description" : "The balance record of the card to be claimed"
+               }
+            ],
+         "prerequisites" :["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_bingo_cards",
+         "description" : "returns a list of bingo card balance records for the specified account",
+         "return_type" : "balance_record_map",
+         "parameters" : [
+               {
+                  "name" : "account",
+                  "type" : "account_name",
+                  "description" : "The name of the account to fetch cards for"
+               },
+               {
+                  "name" : "filter_lost",
+                  "type" : "bool",
+                  "description" : "Exclude balance records for lost games"
+               }
+            ],
+         "prerequisites" :["wallet_open"]
+      }
+   ]
+}

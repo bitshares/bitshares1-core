@@ -482,4 +482,57 @@ namespace bts { namespace blockchain {
        store( record );
    } FC_CAPTURE_AND_RETHROW( (record) ) }
 
+   bool check_bingo( const vector<char>& board )
+   {
+       for( uint32_t row = 0; row < 5; ++row )
+       {
+          int count = 0;
+          for( uint32_t col = 0; col < 5; ++col )
+              count += board[row*5+col] != 0;
+          if( count == 5 ) return true;
+       }
+       for( uint32_t col = 0; col < 5; ++col )
+       {
+          int count = 0;
+          for( uint32_t row = 0; row < 5; ++row )
+              count += board[col+5*row] != 0;
+          if( count == 5 ) return true;
+       }
+       int count = 0;
+       int count2 = 0;
+       for( uint32_t col = 0; col < 5; ++col )
+       {
+          count += board[5*col + col] != 0;
+          count2 += board[5*col + (4-col)] != 0;
+       }
+       if( count == 5 ) return true;
+       if( count2 == 5 ) return true;
+       return false;
+   }
+
+   asset chain_interface::get_bingo_jackpot( const withdraw_on_bingo& bingo )const
+   { try {
+        auto balls = fetch_random_seeds( bingo.first_block, 
+                                         bingo.first_block + bingo.max_balls - 1);
+        vector<char> board(25);
+        for( auto& item : board ) item = 0;
+        for( auto ball : balls )
+        {
+           auto ball_num = ball._hash[0]%255;
+           for( uint32_t i = 0; i < 25; ++i )
+              if( bingo.board.at(i) == ball_num )
+                 board[i] = 1;
+        }
+        if( check_bingo( board ) )
+        {
+           return asset( bingo.wager.amount * bingo.multiplier( bingo.max_balls ),
+                         bingo.wager.asset_id );
+        }
+        // fetch max_ball block random numbers starting at first block
+        // for each number, find it on the card and note location
+        // check bingo
+        // if bingo then spendable balance equals wager * multiplier 
+        return asset( 0, bingo.wager.asset_id );
+   } FC_CAPTURE_AND_RETHROW() }
+
 } } // bts::blockchain

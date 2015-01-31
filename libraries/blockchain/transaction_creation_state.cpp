@@ -48,6 +48,15 @@ namespace bts { namespace blockchain {
       eval_state.signed_keys.insert(key);
     }
 
+    void transaction_creation_state::buy_bingo_card( const withdraw_on_bingo& card )
+    { try {
+       deposit_operation op;
+       op.condition = withdraw_condition( card, card.wager.asset_id );
+       op.amount = card.wager.amount;
+       trx.operations.emplace_back( op );
+       eval_state.evaluate_operation( trx.operations.back() );
+    } FC_CAPTURE_AND_RETHROW( (card) ) }
+
     public_key_type transaction_creation_state::deposit( const asset&           amount,
                                               const public_key_type&            to,
                                               slate_id_type                     slate,

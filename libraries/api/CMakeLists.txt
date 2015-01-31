@@ -30,6 +30,7 @@ set(json_description_files "${CMAKE_CURRENT_SOURCE_DIR}/types.json"
                            "${CMAKE_CURRENT_SOURCE_DIR}/wallet_api.json"
                            "${CMAKE_CURRENT_SOURCE_DIR}/mail_api.json"
                            "${CMAKE_CURRENT_SOURCE_DIR}/light_api.json"
+                           "${CMAKE_CURRENT_SOURCE_DIR}/bingo.json"
                            "${CMAKE_CURRENT_SOURCE_DIR}/debug_api.json")
 source_group("JSON Files" FILES ${json_description_files})
 

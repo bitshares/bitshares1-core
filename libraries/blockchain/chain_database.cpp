@@ -102,6 +102,7 @@ namespace bts { namespace blockchain {
 
           _block_id_to_block_record_db.open( data_dir / "index/block_id_to_block_record_db" );
           _block_num_to_id_db.open( data_dir / "raw_chain/block_num_to_id_db" );
+          _random_history.open( data_dir / "index/random_history_db" );
           _block_id_to_block_data_db.open( data_dir / "raw_chain/block_id_to_block_data_db" );
 
           _account_id_to_record.open( data_dir / "index/account_id_to_record" );
@@ -903,6 +904,7 @@ namespace bts { namespace blockchain {
          fc::raw::pack( enc, current_seed );
          const auto& new_seed = fc::ripemd160::hash( enc.result() );
          pending_state->set_property( last_random_seed_id, variant( new_seed ) );
+         _random_history.store( _head_block_header.block_num+1, new_seed );
          if( record.valid() ) record->random_seed = new_seed;
       } FC_CAPTURE_AND_RETHROW( (new_secret) ) }
 
@@ -1366,6 +1368,7 @@ namespace bts { namespace blockchain {
 
    void chain_database::close()
    { try {
+      my->_random_history.close();
       my->_block_num_to_id_db.close();
       my->_block_id_to_block_record_db.close();
       my->_block_id_to_block_data_db.close();
@@ -2372,6 +2375,20 @@ namespace bts { namespace blockchain {
       return discrepancies;
    }
 
+
+   vector<fc::ripemd160>  chain_database::fetch_random_seeds( uint32_t from_block_num, uint32_t last_block_num )const
+   { try {
+      FC_ASSERT( from_block_num <= last_block_num );
+      vector<fc::ripemd160> result;
+      result.reserve( last_block_num - from_block_num + 1 );
+      auto itr = my->_random_history.find(from_block_num);
+      while( itr.valid() && itr.key() <= last_block_num )
+      {
+         result.push_back( itr.value() );
+         ++itr;
+      }
+      return result;
+   } FC_CAPTURE_AND_RETHROW( (from_block_num)(last_block_num) ) }
    fc::ripemd160 chain_database::get_current_random_seed()const
    { try {
       const optional<variant> result = get_property( last_random_seed_id );

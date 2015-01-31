@@ -108,6 +108,7 @@ namespace bts { namespace blockchain {
 
             // blocks in the current 'official' chain.
             bts::db::level_map<uint32_t,block_id_type>                                  _block_num_to_id_db;
+            bts::db::level_map<uint32_t,fc::ripemd160>                                  _random_history;
             // all blocks from any fork..
             bts::db::level_map<block_id_type,block_record>                              _block_id_to_block_record_db;
 

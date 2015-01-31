@@ -64,6 +64,7 @@ namespace bts { namespace blockchain {
        /** any data required by the claim_condition */
        std::vector<char>  claim_input_data;
 
+       void evaluate_bingo( transaction_evaluation_state& eval_state );
        void evaluate( transaction_evaluation_state& eval_state );
    };
 

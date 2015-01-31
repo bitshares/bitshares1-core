@@ -49,6 +49,13 @@ namespace bts { namespace blockchain {
       return prev_state->now();
    }
 
+   vector<fc::ripemd160>   pending_chain_state::fetch_random_seeds( uint32_t from_block_num, uint32_t last_block_num )const 
+   {
+      const chain_interface_ptr prev_state = _prev_state.lock();
+      FC_ASSERT( prev_state );
+      return prev_state->fetch_random_seeds(from_block_num, last_block_num);
+   }
+
    fc::ripemd160 pending_chain_state::get_current_random_seed()const
    {
       const chain_interface_ptr prev_state = _prev_state.lock();

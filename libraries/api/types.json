@@ -205,6 +205,10 @@
          "cpp_return_type" : "fc::variants"
       },
       {
+         "type_name" : "bingo_balls",
+         "cpp_return_type" : "std::vector<uint8_t>"
+      },
+      {
          "type_name" : "parameters_list",
          "cpp_return_type" : "std::vector<fc::variants>"
       },

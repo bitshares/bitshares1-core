@@ -140,6 +140,7 @@ namespace bts { namespace blockchain {
          bool                        is_included_block( const block_id_type& id )const;
 
          fc::ripemd160               get_current_random_seed()const override;
+         vector<fc::ripemd160>       fetch_random_seeds( uint32_t from_block_num, uint32_t last_block_num )const override;
 
 
          account_record              get_delegate_record_for_signee( const public_key_type& block_signee )const;

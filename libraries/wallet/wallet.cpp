@@ -4297,6 +4297,50 @@ namespace detail {
            callback( item.first, item.second );
    }
 
+   map<balance_id_type, balance_record> wallet::get_bingo_cards( const string& account_name, bool filter_lost )const
+   { try {
+      map<balance_id_type, balance_record> cards;
+       const time_point_sec now = my->_blockchain->get_pending_state()->now();
+
+       const auto scan_balance = [&]( const balance_id_type& id, const balance_record& record )
+       {
+           if( record.condition.type != withdraw_signature_type ) return;
+
+           const asset balance = record.get_spendable_balance( now );
+           if( balance.amount == 0 ) return;
+
+           const optional<address> owner = record.owner();
+           if( !owner.valid() ) return;
+
+           const owallet_key_record key_record = my->_wallet_db.lookup_key( *owner );
+           if( !key_record.valid() || !key_record->has_private_key() ) return;
+
+           const owallet_account_record account_record = my->_wallet_db.lookup_account( key_record->account_address );
+           const string name = account_record.valid() ? account_record->name : string( key_record->public_key );
+           if( !account_name.empty() && name != account_name ) return;
+
+           if( record.condition.type != withdraw_on_bingo_type ) return;
+
+           if( filter_lost )
+           {
+              auto bingo = record.condition.as<withdraw_on_bingo>();
+              if( bingo.first_block + bingo.max_balls <  my->_blockchain->get_head_block_num() )
+              {
+                 // we may have lost, lets see...
+                 if( my->_blockchain->get_bingo_jackpot( bingo ).amount == 0 )
+                    return;
+              }
+           }
+
+           cards[ record.id() ] =  record;
+       };
+
+       scan_balances( scan_balance );
+       return cards;
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
+
+
+
    account_balance_record_summary_type wallet::get_spendable_account_balance_records( const string& account_name )const
    { try {
        map<string, vector<balance_record>> balances;

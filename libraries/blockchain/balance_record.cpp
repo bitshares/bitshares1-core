@@ -48,6 +48,7 @@ namespace bts { namespace blockchain {
            {
                return asset( balance, condition.asset_id );
            }
+           case withdraw_on_bingo_type: return asset();
            case withdraw_vesting_type:
            {
                const withdraw_vesting vesting_condition = condition.as<withdraw_vesting>();
