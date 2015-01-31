@@ -24,7 +24,7 @@ class Account : public QObject
    bool m_isRegistered;
    QDateTime m_registrationDate;
    QList<Balance*> balanceList;
-   QObjectList transactionList;
+   QMap<QString,QObjectList> transactionList;
 
    fc::variant_object pending_transaction;
 

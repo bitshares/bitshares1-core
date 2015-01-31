@@ -11,12 +11,10 @@ import Material 0.1
 Window {
    id: window
    visible: true
-   width: 540
-   height: 960
 
    property alias pageStack: __pageStack
    property alias lockAction: __lockAction
-   property alias payAction: __paymentAction
+   property alias payAction: __payAction
 
    Component.onCompleted: {
       if( wallet.walletExists )
@@ -40,11 +38,6 @@ Window {
       } else
          snack.buttonText = ""
       snack.open()
-      return d.currentError = d.errorSerial++
-   }
-   function clearError(errorId) {
-      if( d.currentError === errorId )
-         errorText.text = ""
    }
    function deviceType() {
       switch(Device.type) {
@@ -63,6 +56,7 @@ Window {
          wallet.connectToServer("nathanhourt.com", 5656, "BTS5LyQycuMEdo6Dxx1XqYp24KV3fVoFKuXJMXTj3x7xJsis3C3EZ")
    }
    function openTransferPage() {
+      //TODO: Add arguments which prefill items in transfer page
       if( wallet.accounts[wallet.accountNames[0]].availableAssets.length )
          window.pageStack.push({item: transferUi, properties: {accountName: wallet.accountNames[0]}})
       else
@@ -84,19 +78,13 @@ Window {
       onTriggered: wallet.lockWallet()
    }
    Action {
-      id: __paymentAction
+      id: __payAction
       name: qsTr("Send Payment")
       iconName: "action/payment"
       onTriggered: openTransferPage()
    }
    QtObject {
-      id: d
-      property int errorSerial: 0
-      property int currentError: -1
-   }
-   QtObject {
       id: visuals
-
       property real margins: units.dp(16)
    }
    Timer {
@@ -120,11 +108,7 @@ Window {
       }
 
       onErrorConnecting: {
-         var errorId = showError(error)
-
-         runWhenConnected(function() {
-            clearError(errorId)
-         })
+         showError(error)
       }
       onNotification: showError(message)
    }

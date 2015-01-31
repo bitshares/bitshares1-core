@@ -12,7 +12,7 @@
 int main(int argc, char *argv[])
 {
    QGuiApplication app(argc, argv);
-   app.setApplicationName(QStringLiteral("BitShares Light Wallet"));
+   app.setApplicationName(QStringLiteral("BitShares %1 Light Wallet").arg(BTS_BLOCKCHAIN_SYMBOL));
    app.setOrganizationName(BTS_BLOCKCHAIN_NAME);
    app.setOrganizationDomain("bitshares.org");
 

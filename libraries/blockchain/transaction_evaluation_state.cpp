@@ -131,7 +131,6 @@ namespace bts { namespace blockchain {
 
       xts_fees += alt_fees_paid;
 
-
       if( required_fees > xts_fees )
       {
          FC_CAPTURE_AND_THROW( insufficient_fee, (required_fees)(alt_fees_paid)(xts_fees)  );
@@ -270,7 +269,7 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::adjust_vote( slate_id_type slate_id, share_type amount )
    { try {
-      if( slate_id )
+      if( slate_id && !_skip_vote_adjustment )
       {
          auto slate = _current_state->get_delegate_slate( slate_id );
          if( !slate ) FC_CAPTURE_AND_THROW( unknown_delegate_slate, (slate_id) );

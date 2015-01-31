@@ -17,11 +17,11 @@ namespace bts { namespace light_wallet {
 
    struct account_data
    {
-       vector<char>                                      encrypted_private_key;
-       account_record                                    user_account;
-       map<transaction_id_type, fc::variant_object>      transaction_record_cache;
-       std::multimap<asset_id_type,transaction_id_type>  transaction_index;
-       map<balance_id_type,memo_status>                  memos;
+       vector<char>                                                           encrypted_private_key;
+       account_record                                                         user_account;
+       map<transaction_id_type, fc::variant_object>                           transaction_record_cache;
+       std::multimap<asset_id_type,transaction_id_type>                       transaction_index;
+       unordered_map<transaction_id_type,wallet::transaction_ledger_entry>    scan_cache;
    };
    struct light_wallet_data
    {
@@ -70,8 +70,8 @@ namespace bts { namespace light_wallet {
                                 const string& password,
                                 const fc::variant_object& transaction_bundle);
 
-         void sync_balance( bool resync_all = false);
-         void sync_transactions();
+         bool sync_balance( bool resync_all = false);
+         bool sync_transactions();
 
          oprice get_median_feed_price( const string& symbol );
          asset  get_fee( const string& symbol );
@@ -111,7 +111,7 @@ FC_REFLECT( bts::light_wallet::account_data,
             (user_account)
             (transaction_record_cache)
             (transaction_index)
-            (memos) );
+            (scan_cache) );
 FC_REFLECT( bts::light_wallet::light_wallet_data,
             (last_balance_sync_time)
             (last_transaction_sync_block)
