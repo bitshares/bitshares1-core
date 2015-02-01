@@ -35,9 +35,6 @@ namespace bts { namespace blockchain {
          virtual oprice                 get_active_feed_price( const asset_id_type quote_id,
                                                                const asset_id_type base_id = 0 )const override;
 
-         virtual odelegate_slate        get_delegate_slate( slate_id_type id )const override;
-         virtual void                   store_delegate_slate( slate_id_type id, const delegate_slate& slate ) override;
-
          virtual bool                   is_known_transaction( const transaction& trx )const override;
          virtual otransaction_record    get_transaction( const transaction_id_type& trx_id, bool exact = true )const override;
 
@@ -97,25 +94,27 @@ namespace bts { namespace blockchain {
          void populate_undo_state( const chain_interface_ptr& undo_state, const chain_interface_ptr& prev_state,
                                    const T& store_map, const U& remove_set )const
          {
-             using R = typename T::mapped_type;
+             using V = typename T::mapped_type;
+             for( const auto& key : remove_set )
+             {
+                 const auto prev_record = prev_state->lookup<V>( key );
+                 if( prev_record.valid() ) undo_state->store( key, *prev_record );
+             }
              for( const auto& item : store_map )
              {
-                 const auto prev_record = prev_state->lookup<R>( item.first );
-                 if( prev_record.valid() ) undo_state->store( *prev_record );
-                 else undo_state->remove<R>( item.first );
-             }
-             for( const auto& item : remove_set )
-             {
-                 const auto prev_record = prev_state->lookup<R>( item );
-                 if( prev_record.valid() ) undo_state->store( *prev_record );
+                 const auto& key = item.first;
+                 const auto prev_record = prev_state->lookup<V>( key );
+                 if( prev_record.valid() ) undo_state->store( key, *prev_record );
+                 else undo_state->remove<V>( key );
              }
          }
 
          template<typename T, typename U>
          void apply_records( const chain_interface_ptr& prev_state, const T& store_map, const U& remove_set )const
          {
-             for( const auto& item : remove_set ) prev_state->remove<typename T::mapped_type>( item );
-             for( const auto& item : store_map ) prev_state->store( item.second );
+             using V = typename T::mapped_type;
+             for( const auto& key : remove_set ) prev_state->remove<V>( key );
+             for( const auto& item : store_map ) prev_state->store( item.first, item.second );
          }
 
          /** load the state from a variant */
@@ -145,14 +144,15 @@ namespace bts { namespace blockchain {
          unordered_set<transaction_id_type>                                 _transaction_id_remove;
          unordered_set<digest_type>                                         _transaction_digests;
 
+         unordered_map<slate_id_type, slate_record>                         _slate_id_to_record;
+         unordered_set<slate_id_type>                                       _slate_id_remove;
+
          map<feed_index, feed_record>                                       _feed_index_to_record;
          set<feed_index>                                                    _feed_index_remove;
 
          map<slot_index, slot_record>                                       _slot_index_to_record;
          set<slot_index>                                                    _slot_index_remove;
          map<time_point_sec, account_id_type>                               _slot_timestamp_to_delegate;
-
-         unordered_map< slate_id_type, delegate_slate>                      slates;
 
          map<burn_record_key,burn_record_value>                             burns;
 
@@ -186,6 +186,7 @@ namespace bts { namespace blockchain {
          virtual void init_asset_db_interface()override;
          virtual void init_balance_db_interface()override;
          virtual void init_transaction_db_interface()override;
+         virtual void init_slate_db_interface()override;
          virtual void init_feed_db_interface()override;
          virtual void init_slot_db_interface()override;
    };
@@ -207,12 +208,13 @@ FC_REFLECT( bts::blockchain::pending_chain_state,
         (_transaction_id_to_record)
         (_transaction_id_remove)
         (_transaction_digests)
+        (_slate_id_to_record)
+        (_slate_id_remove)
         (_feed_index_to_record)
         (_feed_index_remove)
         (_slot_index_to_record)
         (_slot_index_remove)
         (_slot_timestamp_to_delegate)
-        (slates)
         (burns)
         (asks)
         (bids)

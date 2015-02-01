@@ -177,10 +177,6 @@ namespace bts { namespace blockchain {
          vector<feed_record>         get_feeds_for_asset( const asset_id_type quote_id, const asset_id_type base_id )const;
          vector<feed_record>         get_feeds_from_delegate( const account_id_type delegate_id )const;
 
-         virtual odelegate_slate     get_delegate_slate( slate_id_type id )const override;
-         virtual void                store_delegate_slate( slate_id_type id,
-                                                            const delegate_slate& slate ) override;
-
          virtual otransaction_record get_transaction( const transaction_id_type& trx_id,
                                                       bool exact = true )const override;
 
@@ -359,6 +355,7 @@ namespace bts { namespace blockchain {
          virtual void init_asset_db_interface()override;
          virtual void init_balance_db_interface()override;
          virtual void init_transaction_db_interface()override;
+         virtual void init_slate_db_interface()override;
          virtual void init_feed_db_interface()override;
          virtual void init_slot_db_interface()override;
    };

@@ -442,7 +442,7 @@ namespace bts { namespace blockchain {
 
    void chain_interface::store_account_record( const account_record& record )
    { try {
-       store( record );
+       store( record.id, record );
    } FC_CAPTURE_AND_RETHROW( (record) ) }
 
    oasset_record chain_interface::get_asset_record( const asset_id_type id )const
@@ -457,7 +457,7 @@ namespace bts { namespace blockchain {
 
    void chain_interface::store_asset_record( const asset_record& record )
    { try {
-       store( record );
+       store( record.id, record );
    } FC_CAPTURE_AND_RETHROW( (record) ) }
 
    obalance_record chain_interface::get_balance_record( const balance_id_type& id )const
@@ -467,7 +467,17 @@ namespace bts { namespace blockchain {
 
    void chain_interface::store_balance_record( const balance_record& record )
    { try {
-       store( record );
+       store( record.id(), record );
+   } FC_CAPTURE_AND_RETHROW( (record) ) }
+
+   oslate_record chain_interface::get_slate_record( const slate_id_type id )const
+   { try {
+       return lookup<slate_record>( id );
+   } FC_CAPTURE_AND_RETHROW( (id) ) }
+
+   void chain_interface::store_slate_record( const slate_record& record )
+   { try {
+       store( record.id(), record );
    } FC_CAPTURE_AND_RETHROW( (record) ) }
 
    ofeed_record chain_interface::get_feed_record( const feed_index index )const
@@ -477,7 +487,7 @@ namespace bts { namespace blockchain {
 
    void chain_interface::store_feed_record( const feed_record& record )
    { try {
-       store( record );
+       store( record.index, record );
    } FC_CAPTURE_AND_RETHROW( (record) ) }
 
    oslot_record chain_interface::get_slot_record( const slot_index index )const
@@ -492,7 +502,7 @@ namespace bts { namespace blockchain {
 
    void chain_interface::store_slot_record( const slot_record& record )
    { try {
-       store( record );
+       store( record.index, record );
    } FC_CAPTURE_AND_RETHROW( (record) ) }
 
 } } // bts::blockchain

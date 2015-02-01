@@ -14,11 +14,11 @@ namespace bts { namespace blockchain {
         return lookup_by_id( id );
     } FC_CAPTURE_AND_RETHROW( (id) ) }
 
-    void transaction_db_interface::store( const transaction_record& record )const
+    void transaction_db_interface::store( const transaction_id_type& id, const transaction_record& record )const
     { try {
-        insert_into_id_map( record.trx.id(), record );
+        insert_into_id_map( id, record );
         insert_into_unique_set( record.trx );
-    } FC_CAPTURE_AND_RETHROW( (record) ) }
+    } FC_CAPTURE_AND_RETHROW( (id)(record) ) }
 
     void transaction_db_interface::remove( const transaction_id_type& id )const
     { try {

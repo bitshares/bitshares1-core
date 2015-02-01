@@ -20,7 +20,7 @@ namespace bts { namespace blockchain {
         return delegate_info->votes_for;
     }
 
-    void account_record::adjust_votes_for( share_type delta )
+    void account_record::adjust_votes_for( const share_type delta )
     {
         FC_ASSERT( is_delegate() );
         delegate_info->votes_for += delta;
@@ -105,9 +105,9 @@ namespace bts { namespace blockchain {
         return lookup_by_address( addr );
     } FC_CAPTURE_AND_RETHROW( (addr) ) }
 
-    void account_db_interface::store( const account_record& record )const
+    void account_db_interface::store( const account_id_type id, const account_record& record )const
     { try {
-        const oaccount_record prev_record = lookup( record.id );
+        const oaccount_record prev_record = lookup( id );
         if( prev_record.valid() )
         {
             if( prev_record->name != record.name )
@@ -128,19 +128,19 @@ namespace bts { namespace blockchain {
             }
         }
 
-        insert_into_id_map( record.id, record );
-        insert_into_name_map( record.name, record.id );
-        insert_into_address_map( record.owner_address(), record.id );
+        insert_into_id_map( id, record );
+        insert_into_name_map( record.name, id );
+        insert_into_address_map( record.owner_address(), id );
         if( !record.is_retracted() )
         {
-            insert_into_address_map( record.active_address(), record.id );
+            insert_into_address_map( record.active_address(), id );
             if( record.is_delegate() )
             {
-                insert_into_address_map( record.signing_address(), record.id );
-                insert_into_vote_set( vote_del( record.net_votes(), record.id ) );
+                insert_into_address_map( record.signing_address(), id );
+                insert_into_vote_set( vote_del( record.net_votes(), id ) );
             }
         }
-    } FC_CAPTURE_AND_RETHROW( (record) ) }
+    } FC_CAPTURE_AND_RETHROW( (id)(record) ) }
 
     void account_db_interface::remove( const account_id_type id )const
     { try {

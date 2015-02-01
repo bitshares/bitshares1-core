@@ -22,6 +22,7 @@ namespace bts { namespace blockchain {
       init_asset_db_interface();
       init_balance_db_interface();
       init_transaction_db_interface();
+      init_slate_db_interface();
       init_feed_db_interface();
       init_slot_db_interface();
    }
@@ -73,6 +74,7 @@ namespace bts { namespace blockchain {
       apply_records( prev_state, _asset_id_to_record, _asset_id_remove );
       apply_records( prev_state, _balance_id_to_record, _balance_id_remove );
       apply_records( prev_state, _transaction_id_to_record, _transaction_id_remove );
+      apply_records( prev_state, _slate_id_to_record, _slate_id_remove );
       apply_records( prev_state, _slot_index_to_record, _slot_index_remove );
 
       for( const auto& item : properties )      prev_state->set_property( (chain_property_enum)item.first, item.second );
@@ -83,7 +85,6 @@ namespace bts { namespace blockchain {
       for( const auto& item : relative_asks )   prev_state->store_relative_ask_record( item.first, item.second );
       for( const auto& item : shorts )          prev_state->store_short_record( item.first, item.second );
       for( const auto& item : collateral )      prev_state->store_collateral_record( item.first, item.second );
-      for( const auto& item : slates )          prev_state->store_delegate_slate( item.first, item.second );
       for( const auto& item : market_history )  prev_state->store_market_history_record( item.first, item.second );
       for( const auto& item : market_statuses ) prev_state->store_market_status( item.second );
       for( const auto& item : asset_proposals ) prev_state->store_asset_proposal( item.second );
@@ -117,7 +118,7 @@ namespace bts { namespace blockchain {
 
    void pending_chain_state::store_transaction( const transaction_id_type& id, const transaction_record& rec )
    {
-       store( rec );
+       store( id, rec );
    }
 
    void pending_chain_state::get_undo_state( const chain_interface_ptr& undo_state_arg )const
@@ -130,6 +131,7 @@ namespace bts { namespace blockchain {
       populate_undo_state( undo_state, prev_state, _asset_id_to_record, _asset_id_remove );
       populate_undo_state( undo_state, prev_state, _balance_id_to_record, _balance_id_remove );
       populate_undo_state( undo_state, prev_state, _transaction_id_to_record, _transaction_id_remove );
+      populate_undo_state( undo_state, prev_state, _slate_id_to_record, _slate_id_remove );
       populate_undo_state( undo_state, prev_state, _feed_index_to_record, _feed_index_remove );
       populate_undo_state( undo_state, prev_state, _slot_index_to_record, _slot_index_remove );
 
@@ -138,12 +140,6 @@ namespace bts { namespace blockchain {
          auto prev_value = prev_state->get_property( (chain_property_enum)item.first );
          if( !!prev_value ) undo_state->set_property( (chain_property_enum)item.first, *prev_value );
          else undo_state->set_property( (chain_property_enum)item.first, variant() );
-      }
-      for( const auto& item : slates )
-      {
-         auto prev_value = prev_state->get_delegate_slate( item.first );
-         if( prev_value ) undo_state->store_delegate_slate( item.first, *prev_value );
-         else undo_state->store_delegate_slate( item.first, delegate_slate() );
       }
       for( const auto& item : asset_proposals )
       {
@@ -227,20 +223,6 @@ namespace bts { namespace blockchain {
       fc::variant v;
       fc::to_variant( *this, v );
       return v;
-   }
-
-   odelegate_slate pending_chain_state::get_delegate_slate( slate_id_type id )const
-   {
-      chain_interface_ptr prev_state = _prev_state.lock();
-      auto itr = slates.find(id);
-      if( itr != slates.end() ) return itr->second;
-      if( prev_state ) return prev_state->get_delegate_slate( id );
-      return odelegate_slate();
-   }
-
-   void pending_chain_state::store_delegate_slate( slate_id_type id, const delegate_slate& slate )
-   {
-      slates[id] = slate;
    }
 
    oobject_record pending_chain_state::get_object_record(const object_id_type id)const
@@ -746,6 +728,33 @@ namespace bts { namespace blockchain {
        interface.erase_from_unique_set = [ this ]( const transaction& trx )
        {
            _transaction_digests.erase( trx.digest( get_chain_id() ) );
+       };
+   }
+
+   void pending_chain_state::init_slate_db_interface()
+   {
+       slate_db_interface& interface = _slate_db_interface;
+
+       interface.lookup_by_id = [ this ]( const slate_id_type id ) -> oslate_record
+       {
+           const auto iter = _slate_id_to_record.find( id );
+           if( iter != _slate_id_to_record.end() ) return iter->second;
+           if( _slate_id_remove.count( id ) > 0 ) return oslate_record();
+           const chain_interface_ptr prev_state = _prev_state.lock();
+           if( !prev_state ) return oslate_record();
+           return prev_state->lookup<slate_record>( id );
+       };
+
+       interface.insert_into_id_map = [ this ]( const slate_id_type id, const slate_record& record )
+       {
+           _slate_id_remove.erase( id );
+           _slate_id_to_record[ id ] = record;
+       };
+
+       interface.erase_from_id_map = [ this ]( const slate_id_type id )
+       {
+           _slate_id_to_record.erase( id );
+           _slate_id_remove.insert( id );
        };
    }
 
