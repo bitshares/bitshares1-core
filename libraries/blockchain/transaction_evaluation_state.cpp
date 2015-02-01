@@ -278,8 +278,16 @@ namespace bts { namespace blockchain {
        if( !slate_record.valid() )
            FC_CAPTURE_AND_THROW( unknown_delegate_slate, (slate_id) );
 
-       for( const account_id_type id : slate_record->slate )
-           delta_votes[ id ] += amount;
+       if( slate_record->duplicate_slate.empty() )
+       {
+           for( const account_id_type id : slate_record->slate )
+               delta_votes[ id ] += amount;
+       }
+       else
+       {
+           for( const account_id_type id : slate_record->duplicate_slate )
+               delta_votes[ id ] += amount;
+       }
    } FC_CAPTURE_AND_RETHROW( (slate_id)(amount) ) }
 
    share_type transaction_evaluation_state::get_fees( asset_id_type id )const
