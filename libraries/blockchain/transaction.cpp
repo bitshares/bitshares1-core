@@ -1,10 +1,11 @@
 #include <bts/blockchain/account_operations.hpp>
 #include <bts/blockchain/asset_operations.hpp>
 #include <bts/blockchain/balance_operations.hpp>
-#include <bts/blockchain/market_operations.hpp>
-#include <bts/blockchain/feed_operations.hpp>
-#include <bts/blockchain/object_operations.hpp>
 #include <bts/blockchain/edge_operations.hpp>
+#include <bts/blockchain/feed_operations.hpp>
+#include <bts/blockchain/market_operations.hpp>
+#include <bts/blockchain/object_operations.hpp>
+#include <bts/blockchain/slate_operations.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/blockchain/transaction.hpp>
 
@@ -54,11 +55,13 @@ namespace bts { namespace blockchain {
       operations.emplace_back( set_edge_operation( edge ) );
    }
 
-   void transaction::define_delegate_slate( const delegate_slate& s )
-   {
-      FC_ASSERT( s.supported_delegates.size() > 0 );
-      operations.insert( operations.begin(), define_delegate_slate_operation( s ) );
-   }
+   void transaction::define_slate( const set<account_id_type>& slate )
+   { try {
+       define_slate_operation op;
+       for( const account_id_type id : slate ) op.slate.push_back( id );
+       // Insert at head because subsequent evaluation may depend on the pending slate record
+       operations.insert( operations.begin(), std::move( op ) );
+   } FC_CAPTURE_AND_RETHROW( (slate) ) }
 
    void transaction::burn( const asset& quantity, account_id_type for_or_against, const string& message, const optional<signature_type>& sig )
    {
@@ -75,7 +78,7 @@ namespace bts { namespace blockchain {
       op.bid_index.order_price = price_per_unit;
       op.bid_index.owner = owner;
 
-      operations.emplace_back(op);
+      operations.emplace_back( std::move( op ) );
    }
 
    void transaction::ask( const asset& quantity,
@@ -87,7 +90,7 @@ namespace bts { namespace blockchain {
       op.ask_index.order_price = price_per_unit;
       op.ask_index.owner = owner;
 
-      operations.emplace_back(op);
+      operations.emplace_back( std::move( op ) );
    }
    void transaction::relative_bid( const asset& quantity,
                           const price& delta_price_per_unit,
@@ -100,7 +103,7 @@ namespace bts { namespace blockchain {
       op.bid_index.owner = owner;
       op.limit_price = limit;
 
-      operations.emplace_back(op);
+      operations.emplace_back( std::move( op ) );
    }
 
    void transaction::relative_ask( const asset& quantity,
@@ -114,7 +117,7 @@ namespace bts { namespace blockchain {
       op.ask_index.owner = owner;
       op.limit_price = limit;
 
-      operations.emplace_back(op);
+      operations.emplace_back( std::move( op ) );
    }
 
    void transaction::short_sell( const asset& quantity,
@@ -128,7 +131,7 @@ namespace bts { namespace blockchain {
       op.short_index.owner = owner;
       op.short_index.limit_price = limit_price;
 
-      operations.emplace_back(op);
+      operations.emplace_back( std::move( op ) );
    }
 
    void transaction::withdraw( const balance_id_type& account,
@@ -328,9 +331,7 @@ namespace bts { namespace blockchain {
       operations.emplace_back( add_collateral_operation( collateral_amount, order_idx ) );
    }
 
-   void transaction::publish_feed( asset_id_type feed_id,
-                                   account_id_type delegate_id,
-                                   fc::variant value )
+   void transaction::publish_feed( asset_id_type feed_id, account_id_type delegate_id, fc::variant value )
    {
       operations.emplace_back( update_feed_operation{ feed_index{ feed_id, delegate_id }, value } );
    }
@@ -345,7 +346,7 @@ namespace bts { namespace blockchain {
        operations.emplace_back( update_balance_vote_operation{ balance_id, new_restricted_owner } );
    }
 
-   void transaction::set_delegate_slates( const slate_id_type slate_id )
+   void transaction::set_slates( const slate_id_type slate_id )
    {
        for( size_t i = 0; i < operations.size(); ++i )
        {

@@ -95,7 +95,7 @@ namespace bts { namespace blockchain {
 
        oasset_record lookup( const asset_id_type )const;
        oasset_record lookup( const string& )const;
-       void store( const asset_record& )const;
+       void store( const asset_id_type, const asset_record& )const;
        void remove( const asset_id_type )const;
    };
 

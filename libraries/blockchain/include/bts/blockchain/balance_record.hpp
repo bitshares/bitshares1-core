@@ -61,7 +61,7 @@ namespace bts { namespace blockchain {
        std::function<void( const balance_id_type& )>                        erase_from_id_map;
 
        obalance_record lookup( const balance_id_type& )const;
-       void store( const balance_record& )const;
+       void store( const balance_id_type&, const balance_record& )const;
        void remove( const balance_id_type& )const;
    };
 

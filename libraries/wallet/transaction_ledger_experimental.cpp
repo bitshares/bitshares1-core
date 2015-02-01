@@ -594,7 +594,7 @@ void detail::wallet_impl::scan_transaction_experimental( const transaction_evalu
             case add_collateral_op_type:
                 relevant_to_me |= scan_add_collateral( op.as<add_collateral_operation>() );
                 break;
-            case define_delegate_slate_op_type:
+            case define_slate_op_type:
                 // Don't care; do nothing
                 break;
             case update_feed_op_type:

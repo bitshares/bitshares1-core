@@ -116,6 +116,9 @@ namespace bts { namespace blockchain {
             signed_block_header                                                         _head_block_header;
             block_id_type                                                               _head_block_id;
 
+            bts::db::level_map<transaction_id_type, signed_transaction>                 _pending_transaction_db;
+            map<fee_index, transaction_evaluation_state_ptr>                            _pending_fee_index;
+
             bts::db::fast_level_map<uint32_t, fc::variant>                              _property_db;
 
             bts::db::fast_level_map<account_id_type, account_record>                    _account_id_to_record;
@@ -132,15 +135,12 @@ namespace bts { namespace blockchain {
             bts::db::level_map<transaction_id_type,transaction_record>                  _id_to_transaction_record_db;
             set<unique_transaction_key>                                                 _unique_transactions;
 
-            bts::db::level_map<transaction_id_type, signed_transaction>                 _pending_transaction_db;
-            map<fee_index, transaction_evaluation_state_ptr>                            _pending_fee_index;
-
-            bts::db::fast_level_map<slate_id_type, delegate_slate>                      _slate_db;
-
-            bts::db::cached_level_map<burn_record_key, burn_record_value>               _burn_db;
+            bts::db::fast_level_map<slate_id_type, slate_record>                        _slate_id_to_record;
 
             bts::db::cached_level_map<feed_index, feed_record>                          _feed_index_to_record;
             unordered_map<asset_id_type, unordered_map<account_id_type, feed_record>>   _nested_feed_map;
+
+            bts::db::cached_level_map<burn_record_key, burn_record_value>               _burn_db;
 
             bts::db::cached_level_map<market_index_key, order_record>                   _ask_db;
             bts::db::cached_level_map<market_index_key, order_record>                   _bid_db;

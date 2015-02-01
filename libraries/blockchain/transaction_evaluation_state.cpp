@@ -104,14 +104,16 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::update_delegate_votes()
    { try {
-      for( const auto& del_vote : net_delegate_votes )
+      for( const auto& item : delta_votes )
       {
-         auto del_rec = _current_state->get_account_record( del_vote.first );
-         if( !!del_rec )
-         {
-             del_rec->adjust_votes_for( del_vote.second );
-             _current_state->store_account_record( *del_rec );
-         }
+          const account_id_type id = item.first;
+          oaccount_record delegate_record = _current_state->get_account_record( id );
+          if( !delegate_record.valid() || !delegate_record->is_delegate() )
+              continue;
+
+          const share_type amount = item.second;
+          delegate_record->adjust_votes_for( amount );
+          _current_state->store_account_record( *delegate_record );
       }
    } FC_CAPTURE_AND_RETHROW() }
 
@@ -249,17 +251,17 @@ namespace bts { namespace blockchain {
       operation_factory::instance().evaluate( *this, op );
    } FC_CAPTURE_AND_RETHROW( (op) ) }
 
-   void transaction_evaluation_state::adjust_vote( slate_id_type slate_id, share_type amount )
+   void transaction_evaluation_state::adjust_vote( const slate_id_type slate_id, const share_type amount )
    { try {
-      if( slate_id && !_skip_vote_adjustment )
-      {
-         auto slate = _current_state->get_delegate_slate( slate_id );
-         if( !slate ) FC_CAPTURE_AND_THROW( unknown_delegate_slate, (slate_id) );
-         for( const auto& delegate_id : slate->supported_delegates )
-         {
-            net_delegate_votes[ abs( delegate_id ) ] += amount;
-         }
-      }
+       if( slate_id == 0 || _skip_vote_adjustment )
+           return;
+
+       const oslate_record slate_record = _current_state->get_slate_record( slate_id );
+       if( !slate_record.valid() )
+           FC_CAPTURE_AND_THROW( unknown_delegate_slate, (slate_id) );
+
+       for( const account_id_type id : slate_record->slate )
+           delta_votes[ id ] += amount;
    } FC_CAPTURE_AND_RETHROW( (slate_id)(amount) ) }
 
    share_type transaction_evaluation_state::get_fees( asset_id_type id )const

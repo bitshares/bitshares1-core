@@ -40,7 +40,7 @@ namespace bts { namespace blockchain {
         std::function<void( const feed_index )>                     erase_from_index_map;
     
         ofeed_record lookup( const feed_index )const;
-        void store( const feed_record& )const;
+        void store( const feed_index, const feed_record& )const;
         void remove( const feed_index )const;
     };
     

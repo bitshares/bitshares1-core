@@ -48,7 +48,7 @@ namespace bts { namespace blockchain {
 
       reserved_op_3_type            = 17,
 
-      define_delegate_slate_op_type = 18,
+      define_slate_op_type          = 18,
 
       update_feed_op_type           = 19,
 
@@ -176,7 +176,7 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (cover_op_type)
                  (add_collateral_op_type)
                  (reserved_op_3_type)
-                 (define_delegate_slate_op_type)
+                 (define_slate_op_type)
                  (update_feed_op_type)
                  (burn_op_type)
                  (reserved_op_4_type)

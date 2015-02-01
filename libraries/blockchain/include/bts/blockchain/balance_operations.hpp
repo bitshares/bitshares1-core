@@ -1,49 +1,10 @@
 #pragma once
 
 #include <bts/blockchain/asset.hpp>
-#include <bts/blockchain/delegate_slate.hpp>
 #include <bts/blockchain/operations.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
 
 namespace bts { namespace blockchain {
-
-   /**
-    *  Declares a set of delegates to vote for or against
-    */
-   struct define_delegate_slate_operation
-   {
-      static const operation_type_enum type;
-
-      define_delegate_slate_operation(){}
-      define_delegate_slate_operation( delegate_slate s )
-      :slate( std::move(s) ){}
-
-      delegate_slate slate;
-
-      void evaluate( transaction_evaluation_state& eval_state );
-   };
-
-   /**
-    *  This operation enforces the expected fee for a
-    *  transaction.  If the transaction evaluation shows
-    *  that more than the expected fee would be paid then
-    *  it fails.   
-    *
-    *  The purpose of this is to handle cases where the
-    *  fee is not entirely deterministic from the withdraws
-    *  and deposits. This happens if there is interest,
-    *  yield, or market operations that effect the
-    *  result.  It is also a way for the creator of a
-    *  transaction to protect against malformed transactions
-    *  that pay excessively high fees.
-    */
-   struct pay_fee_operation
-   {
-      static const operation_type_enum type;
-      asset amount;
-
-      void evaluate( transaction_evaluation_state& eval_state );
-   };
 
    /** withdraws funds and moves them into the transaction
     * balance making them available for deposit
@@ -143,9 +104,30 @@ namespace bts { namespace blockchain {
       void evaluate( transaction_evaluation_state& eval_state );
    };
 
+   /**
+    *  This operation enforces the expected fee for a
+    *  transaction.  If the transaction evaluation shows
+    *  that more than the expected fee would be paid then
+    *  it fails.   
+    *
+    *  The purpose of this is to handle cases where the
+    *  fee is not entirely deterministic from the withdraws
+    *  and deposits. This happens if there is interest,
+    *  yield, or market operations that effect the
+    *  result.  It is also a way for the creator of a
+    *  transaction to protect against malformed transactions
+    *  that pay excessively high fees.
+    */
+   struct pay_fee_operation
+   {
+      static const operation_type_enum type;
+      asset amount;
+
+      void evaluate( transaction_evaluation_state& eval_state );
+   };
+
 } } // bts::blockchain
 
-FC_REFLECT( bts::blockchain::define_delegate_slate_operation, (slate) )
 FC_REFLECT( bts::blockchain::withdraw_operation, (balance_id)(amount)(claim_input_data) )
 FC_REFLECT( bts::blockchain::deposit_operation, (amount)(condition) )
 FC_REFLECT( bts::blockchain::burn_operation, (amount)(account_id)(message)(message_signature) )

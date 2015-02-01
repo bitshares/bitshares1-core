@@ -702,12 +702,12 @@ namespace detail {
        slate_id_type slate_id = 0;
        if( strategy == vote_none ) return slate_id;
 
-       const delegate_slate slate = get_delegate_slate( strategy );
-       slate_id = slate.id();
+       const slate_record record = get_delegate_slate( strategy );
+       slate_id = record.id();
        if( slate_id == 0 ) return slate_id;
 
-       if( !_blockchain->get_delegate_slate( slate_id ).valid() ) transaction.define_delegate_slate( slate );
-       transaction.set_delegate_slates( slate_id );
+       if( !_blockchain->get_slate_record( slate_id ).valid() ) transaction.define_slate( record.slate );
+       transaction.set_slates( slate_id );
        return slate_id;
    } FC_CAPTURE_AND_RETHROW( (transaction)(strategy) ) }
 
@@ -773,10 +773,10 @@ namespace detail {
     *  strategy as vote_none, vote_all, or vote_random. The slate
     *  returned will contain no more than BTS_BLOCKCHAIN_MAX_SLATE_SIZE delegates.
     */
-   delegate_slate wallet_impl::get_delegate_slate( const vote_strategy strategy )const
+   slate_record wallet_impl::get_delegate_slate( const vote_strategy strategy )const
    {
       if( strategy == vote_none )
-         return delegate_slate();
+         return slate_record();
 
       vector<account_id_type> for_candidates;
 
@@ -805,7 +805,7 @@ namespace detail {
           unordered_map<account_id_type, int> recommended_candidate_ranks;
 
           //Tally up the recommendation count for all delegates recommended by delegates I approve of
-          for( const auto& approved_candidate : for_candidates )
+          for( const auto approved_candidate : for_candidates )
           {
             oaccount_record candidate_record = _blockchain->get_account_record(approved_candidate);
             if( !candidate_record.valid() ) continue;
@@ -822,15 +822,15 @@ namespace detail {
               continue;
             }
 
-            odelegate_slate recomendations = _blockchain->get_delegate_slate(candidate_record->public_data.get_object()["slate_id"].as<slate_id_type>());
-            if( !recomendations.valid() )
+            oslate_record recommendations = _blockchain->get_slate_record(candidate_record->public_data.get_object()["slate_id"].as<slate_id_type>());
+            if( !recommendations.valid() )
             {
               //Delegate is doing something non-kosher with their slate_id. Disapprove of them.
               self->set_account_approval( candidate_record->name, -1 );
               continue;
             }
 
-            for( const auto& recommended_candidate : recomendations->supported_delegates )
+            for( const auto recommended_candidate : recommendations->slate )
               ++recommended_candidate_ranks[recommended_candidate];
           }
 
@@ -840,13 +840,13 @@ namespace detail {
                 recommended_candidate_ranks.erase(acct_rec.second.id);
 
           //Remove from rankings candidates I already approve of
-          for( const auto& approved_id : for_candidates )
+          for( const auto approved_id : for_candidates )
             if( recommended_candidate_ranks.find(approved_id) != recommended_candidate_ranks.end() )
               recommended_candidate_ranks.erase(approved_id);
 
           //Remove non-delegates from for_candidates
           vector<account_id_type> delegates;
-          for( const auto& id : for_candidates )
+          for( const auto id : for_candidates )
           {
               const oaccount_record record = _blockchain->get_account_record( id );
               if( !record.valid() ) continue;
@@ -877,13 +877,11 @@ namespace detail {
           slate_size = for_candidates.size();
       }
 
-      auto slate = delegate_slate();
-      slate.supported_delegates = for_candidates;
-      slate.supported_delegates.resize( slate_size );
+      slate_record record;
+      for( const account_id_type id : for_candidates ) record.slate.insert( id );
+      FC_ASSERT( record.slate.size() <= BTS_BLOCKCHAIN_MAX_SLATE_SIZE );
 
-      FC_ASSERT( slate.supported_delegates.size() <= BTS_BLOCKCHAIN_MAX_SLATE_SIZE );
-      std::sort( slate.supported_delegates.begin(), slate.supported_delegates.end() );
-      return slate;
+      return record;
    }
 
    price wallet_impl::str_to_relative_price( const string& str, const string& base_symbol, const string& quote_symbol )
@@ -1672,9 +1670,9 @@ namespace detail {
                    continue;
                if( record.slate_id() != my_slate.id() && record.balance > 1 * BTS_BLOCKCHAIN_PRECISION ) // ignore dust
                    summary.up_to_date_with_recommendation = false;
-               auto oslate = my->_blockchain->get_delegate_slate( record.slate_id() );
+               auto oslate = my->_blockchain->get_slate_record( record.slate_id() );
                if( oslate.valid() )
-                   total += record.get_spendable_balance( my->_blockchain->now() ).amount * oslate->supported_delegates.size();
+                   total += record.get_spendable_balance( my->_blockchain->now() ).amount * oslate->slate.size();
                total_possible += record.get_spendable_balance( my->_blockchain->now() ).amount * BTS_BLOCKCHAIN_MAX_SLATE_SIZE;
            }
        }
@@ -4519,10 +4517,10 @@ namespace detail {
               const auto slate_id = obalance->slate_id();
               if( slate_id == 0 ) continue;
 
-              const auto slate = pending_state->get_delegate_slate( slate_id );
-              if( !slate.valid() ) FC_THROW_EXCEPTION( unknown_slate, "Unknown slate!" );
+              const auto slate_record = pending_state->get_slate_record( slate_id );
+              if( !slate_record.valid() ) FC_THROW_EXCEPTION( unknown_slate, "Unknown slate!" );
 
-              for( const auto& delegate_id : slate->supported_delegates )
+              for( const account_id_type delegate_id : slate_record->slate )
               {
                   if( raw_votes.count( delegate_id ) <= 0 ) raw_votes[ delegate_id ] = balance.amount;
                   else raw_votes[ delegate_id ] += balance.amount;

@@ -115,7 +115,8 @@ namespace bts { namespace blockchain {
 
           _id_to_transaction_record_db.open( data_dir / "index/id_to_transaction_record_db" );
 
-          _slate_db.open( data_dir / "index/slate_db" );
+          _slate_id_to_record.open( data_dir / "index/slate_id_to_record" );
+
           _market_transactions_db.open( data_dir / "index/market_transactions_db" );
 
           _pending_transaction_db.open( data_dir / "index/pending_transaction_db" );
@@ -1122,6 +1123,7 @@ namespace bts { namespace blockchain {
       init_asset_db_interface();
       init_balance_db_interface();
       init_transaction_db_interface();
+      init_slate_db_interface();
       init_feed_db_interface();
       init_slot_db_interface();
    }
@@ -1223,7 +1225,7 @@ namespace bts { namespace blockchain {
 
                  my->_balance_id_to_record.toggle_leveldb( enabled );
 
-                 my->_slate_db.toggle_leveldb( enabled );
+                 my->_slate_id_to_record.toggle_leveldb( enabled );
              };
 
              const auto set_db_cache_write_through = [ this ]( bool write_through )
@@ -1390,7 +1392,8 @@ namespace bts { namespace blockchain {
       my->_id_to_transaction_record_db.close();
       my->_address_to_trx_index.close();
 
-      my->_slate_db.close();
+      my->_slate_id_to_record.close();
+
       my->_burn_db.close();
 
       my->_feed_index_to_record.close();
@@ -1850,7 +1853,7 @@ namespace bts { namespace blockchain {
    void chain_database::store_transaction( const transaction_id_type& record_id,
                                            const transaction_record& record_to_store )
    { try {
-       store( record_to_store );
+       store( record_id, record_to_store );
    } FC_CAPTURE_AND_RETHROW( (record_id)(record_to_store) ) }
 
    void chain_database::scan_balances( const function<void( const balance_record& )> callback )const
@@ -2341,10 +2344,10 @@ namespace bts { namespace blockchain {
           continue;
         if (balance.asset_id() == 0)
         {
-          odelegate_slate slate = get_delegate_slate(balance.slate_id());
-          FC_ASSERT(slate.valid(), "Unknown slate ID found in balance.");
+          oslate_record slate_record = get_slate_record( balance.slate_id() );
+          FC_ASSERT(slate_record.valid(), "Unknown slate ID found in balance.");
 
-          for (account_id_type delegate : slate->supported_delegates)
+          for (account_id_type delegate : slate_record->slate)
             calculated_balances[delegate] += balance.balance;
         }
       }
@@ -3074,21 +3077,6 @@ namespace bts { namespace blockchain {
       return my->_pending_trx_state;
    }
 
-   odelegate_slate chain_database::get_delegate_slate( const slate_id_type id )const
-   { try {
-       const auto iter = my->_slate_db.unordered_find( id );
-       if( iter != my->_slate_db.unordered_end() ) return iter->second;
-       return odelegate_slate();
-   } FC_CAPTURE_AND_RETHROW( (id) ) }
-
-   void chain_database::store_delegate_slate( slate_id_type id, const delegate_slate& slate )
-   {
-      if( slate.supported_delegates.size() == 0 )
-         my->_slate_db.remove( id );
-      else
-         my->_slate_db.store( id, slate );
-   }
-
    void chain_database::store_market_history_record(const market_history_key& key, const market_history_record& record)
    {
      if( record.volume == 0 )
@@ -3751,7 +3739,8 @@ namespace bts { namespace blockchain {
                            (_asset_id_to_record)(_asset_symbol_to_id) \
                            (_balance_id_to_record) \
                            (_id_to_transaction_record_db)(_pending_transaction_db)(_pending_fee_index) \
-                           (_slate_db)(_burn_db) \
+                           (_slate_id_to_record) \
+                           (_burn_db) \
                            (_feed_index_to_record) \
                            (_ask_db)(_bid_db)(_short_db)(_collateral_db) \
                            (_market_transactions_db)(_market_status_db)(_market_history_db) \
@@ -3988,6 +3977,28 @@ namespace bts { namespace blockchain {
        interface.erase_from_unique_set = [ this ]( const transaction& trx )
        {
            my->_unique_transactions.erase( unique_transaction_key( trx, get_chain_id() ) );
+       };
+   }
+
+   void chain_database::init_slate_db_interface()
+   {
+       slate_db_interface& interface = _slate_db_interface;
+
+       interface.lookup_by_id = [ this ]( const slate_id_type id ) -> oslate_record
+       {
+           const auto iter = my->_slate_id_to_record.unordered_find( id );
+           if( iter != my->_slate_id_to_record.unordered_end() ) return iter->second;
+           return oslate_record();
+       };
+
+       interface.insert_into_id_map = [ this ]( const slate_id_type id, const slate_record& record )
+       {
+           my->_slate_id_to_record.store( id, record );
+       };
+
+       interface.erase_from_id_map = [ this ]( const slate_id_type id )
+       {
+           my->_slate_id_to_record.remove( id );
        };
    }
 

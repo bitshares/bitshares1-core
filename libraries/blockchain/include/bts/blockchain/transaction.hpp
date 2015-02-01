@@ -1,10 +1,10 @@
 #pragma once
 
 #include <bts/blockchain/account_record.hpp>
-#include <bts/blockchain/delegate_slate.hpp>
 #include <bts/blockchain/edge_record.hpp>
 #include <bts/blockchain/object_record.hpp>
 #include <bts/blockchain/operations.hpp>
+#include <bts/blockchain/slate_record.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
 
 #include <fc/reflect/variant.hpp>
@@ -26,7 +26,7 @@ namespace bts { namespace blockchain {
       void set_object( const object_record& obj );
       void set_edge( const edge_record& edge );
 
-      void define_delegate_slate( const delegate_slate& s );
+      void define_slate( const set<account_id_type>& slate );
 
       void withdraw( const balance_id_type& account, share_type amount );
 
@@ -147,7 +147,7 @@ namespace bts { namespace blockchain {
 
       void update_balance_vote( const balance_id_type& balance_id, const optional<address>& new_restricted_owner );
 
-      void set_delegate_slates( const slate_id_type slate_id );
+      void set_slates( const slate_id_type slate_id );
 
       bool is_cancel()const;
    }; // transaction

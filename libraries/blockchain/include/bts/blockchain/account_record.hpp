@@ -93,7 +93,7 @@ namespace bts { namespace blockchain {
 
       bool              is_delegate()const;
       uint8_t           delegate_pay_rate()const;
-      void              adjust_votes_for( share_type delta );
+      void              adjust_votes_for( const share_type delta );
       share_type        net_votes()const;
       share_type        delegate_pay_balance()const;
 
@@ -136,7 +136,7 @@ namespace bts { namespace blockchain {
        oaccount_record lookup( const account_id_type )const;
        oaccount_record lookup( const string& )const;
        oaccount_record lookup( const address& )const;
-       void store( const account_record& )const;
+       void store( const account_id_type, const account_record& )const;
        void remove( const account_id_type )const;
    };
 

@@ -153,7 +153,7 @@ class wallet_impl : public chain_observer
       void upgrade_version_unlocked();
 
       slate_id_type set_delegate_slate( signed_transaction& transaction, const vote_strategy strategy )const;
-      delegate_slate get_delegate_slate( const vote_strategy strategy )const;
+      slate_record get_delegate_slate( const vote_strategy strategy )const;
 
       bool is_receive_account( const string& account_name )const;
       bool is_valid_account( const string& account_name )const;
