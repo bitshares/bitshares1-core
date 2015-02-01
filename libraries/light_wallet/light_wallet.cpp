@@ -547,7 +547,7 @@ optional<asset_record> light_wallet::get_asset_record( const string& symbol )con
    }
    auto result = _rpc.blockchain_get_asset( symbol );
    if( result )
-      _chain_cache->store(*result);
+      _chain_cache->store_asset_record(*result);
    return result;
 } FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
@@ -561,7 +561,7 @@ optional<asset_record> light_wallet::get_asset_record(const asset_id_type& id)co
    }
    auto result = _rpc.blockchain_get_asset( fc::variant(id).as_string() );
    if( result )
-      _chain_cache->store(*result);
+      _chain_cache->store_asset_record(*result);
    return result;
    } FC_CAPTURE_AND_RETHROW( (id) ) }
 
@@ -575,7 +575,7 @@ oaccount_record light_wallet::get_account_record(const string& identifier)
    auto account = _rpc.blockchain_get_account(identifier);
    if( account )
    {
-      _chain_cache->store(*account);
+      _chain_cache->store_account_record(*account);
       _account_cache[account->name] = *account;
       _account_cache[string(account->owner_key)] = *account;
       _account_cache[string(account->active_key())] = *account;
