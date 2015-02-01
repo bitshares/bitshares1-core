@@ -13,7 +13,7 @@ namespace bts { namespace blockchain {
     *
     *  If the amount is positive then it will add funds to the bid.
     */
-   void bid_operation::evaluate( transaction_evaluation_state& eval_state )
+   void bid_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
       if( this->bid_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (bid_index.order_price) );
@@ -75,7 +75,7 @@ namespace bts { namespace blockchain {
     *
     *  If the amount is positive then it will add funds to the bid.
     */
-   void relative_bid_operation::evaluate( transaction_evaluation_state& eval_state )
+   void relative_bid_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
       if( this->bid_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (bid_index.order_price) );
@@ -128,7 +128,7 @@ namespace bts { namespace blockchain {
     *
     *  If the amount is positive then it will add funds to the bid.
     */
-   void ask_operation::evaluate( transaction_evaluation_state& eval_state )
+   void ask_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
       if( this->ask_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (ask_index.order_price) );
@@ -189,7 +189,7 @@ namespace bts { namespace blockchain {
     *
     *  If the amount is positive then it will add funds to the bid.
     */
-   void relative_ask_operation::evaluate( transaction_evaluation_state& eval_state )
+   void relative_ask_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
       if( this->ask_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (ask_index.order_price) );
@@ -238,7 +238,7 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_relative_ask_record( this->ask_index, *current_ask );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-   void short_operation::evaluate( transaction_evaluation_state& eval_state )
+   void short_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
       auto owner = this->short_index.owner;
       FC_ASSERT( short_index.order_price.ratio < fc::uint128( 10, 0 ), "Interest rate must be less than 1000% APR" );
@@ -294,7 +294,7 @@ namespace bts { namespace blockchain {
      the position and transfer collateral to proper place.
      update the call price (remove old value, add new value)
    */
-   void cover_operation::evaluate( transaction_evaluation_state& eval_state )
+   void cover_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
       if( this->cover_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );
@@ -379,7 +379,7 @@ namespace bts { namespace blockchain {
       }
    }
 
-   void add_collateral_operation::evaluate( transaction_evaluation_state& eval_state )
+   void add_collateral_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
       if( this->cover_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );
@@ -415,7 +415,7 @@ namespace bts { namespace blockchain {
                                                           *current_cover );
    }
 
-   void update_call_price_operation::evaluate( transaction_evaluation_state& eval_state )
+   void update_call_price_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
       if( this->cover_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );

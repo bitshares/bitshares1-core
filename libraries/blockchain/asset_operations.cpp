@@ -30,7 +30,7 @@ namespace bts { namespace blockchain {
       }
    }
 
-   void create_asset_operation::evaluate( transaction_evaluation_state& eval_state )
+   void create_asset_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
       if( NOT eval_state._current_state->is_valid_symbol_name( this->symbol ) )
           FC_CAPTURE_AND_THROW( invalid_asset_symbol, (symbol) );
@@ -105,7 +105,7 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_asset_record( new_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-   void update_asset_operation::evaluate( transaction_evaluation_state& eval_state )
+   void update_asset_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
       oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->asset_id );
       if( NOT current_asset_record.valid() )
@@ -164,7 +164,7 @@ namespace bts { namespace blockchain {
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 
-   void update_asset_ext_operation::evaluate( transaction_evaluation_state& eval_state )
+   void update_asset_ext_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
       oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->asset_id );
       if( NOT current_asset_record.valid() )
@@ -268,7 +268,7 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_asset_record( *current_asset_record );
    }
 
-   void issue_asset_operation::evaluate( transaction_evaluation_state& eval_state )
+   void issue_asset_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
       oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->amount.asset_id );
       if( NOT current_asset_record.valid() )
@@ -295,7 +295,7 @@ namespace bts { namespace blockchain {
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 
-   void authorize_operation::evaluate( transaction_evaluation_state& eval_state )
+   void authorize_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
       oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->asset_id );
 
@@ -308,7 +308,7 @@ namespace bts { namespace blockchain {
 
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-   void create_asset_proposal::evaluate( transaction_evaluation_state& eval_state )
+   void create_asset_proposal::evaluate( transaction_evaluation_state& eval_state )const
    { try {
       oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->asset_id );
       if( NOT current_asset_record.valid() ) FC_CAPTURE_AND_THROW( unknown_asset_id, (this->asset_id) );

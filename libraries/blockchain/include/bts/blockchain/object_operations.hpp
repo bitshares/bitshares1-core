@@ -18,7 +18,7 @@ namespace bts { namespace blockchain {
 
       object_record obj;
 
-      void evaluate( transaction_evaluation_state& eval_state );
+      void evaluate( transaction_evaluation_state& eval_state )const;
    };
 
 }} // bts::blockchain

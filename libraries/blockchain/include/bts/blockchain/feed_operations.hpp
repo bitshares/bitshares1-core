@@ -12,7 +12,7 @@ namespace bts { namespace blockchain {
       feed_index   index;
       fc::variant  value;
 
-      void evaluate( transaction_evaluation_state& eval_state );
+      void evaluate( transaction_evaluation_state& eval_state )const;
   };
 
 } } // bts::blockchain

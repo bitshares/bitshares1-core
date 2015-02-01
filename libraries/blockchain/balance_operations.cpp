@@ -83,7 +83,7 @@ namespace bts { namespace blockchain {
                                       amnt.asset_id, slate_id );
    }
 
-   void deposit_operation::evaluate( transaction_evaluation_state& eval_state )
+   void deposit_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
        if( this->amount <= 0 )
           FC_CAPTURE_AND_THROW( negative_deposit, (amount) );
@@ -148,7 +148,7 @@ namespace bts { namespace blockchain {
        eval_state._current_state->store_balance_record( *cur_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-   void withdraw_operation::evaluate( transaction_evaluation_state& eval_state )
+   void withdraw_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
        if( this->amount <= 0 )
           FC_CAPTURE_AND_THROW( negative_withdraw, (amount) );
@@ -266,7 +266,7 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_balance_record( *current_balance_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-   void burn_operation::evaluate( transaction_evaluation_state& eval_state )
+   void burn_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
       if( this->amount.amount < 0 )
          FC_CAPTURE_AND_THROW( negative_deposit, (amount) );
@@ -300,7 +300,7 @@ namespace bts { namespace blockchain {
                                                                  burn_record_value( {amount,message,message_signature} ) ) );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-   void release_escrow_operation::evaluate( transaction_evaluation_state& eval_state )
+   void release_escrow_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
       auto escrow_balance_record = eval_state._current_state->get_balance_record( this->escrow_id );
       FC_ASSERT( escrow_balance_record.valid() );
@@ -447,7 +447,7 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_balance_record( *escrow_balance_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-   void update_balance_vote_operation::evaluate( transaction_evaluation_state& eval_state )
+   void update_balance_vote_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
       auto current_balance_record = eval_state._current_state->get_balance_record( this->balance_id );
       FC_ASSERT( current_balance_record.valid(), "No such balance!" );
@@ -553,7 +553,7 @@ namespace bts { namespace blockchain {
 
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-   void pay_fee_operation::evaluate( transaction_evaluation_state& eval_state )
+   void pay_fee_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
       eval_state._max_fee[this->amount.asset_id] += this->amount.amount;
    } FC_CAPTURE_AND_RETHROW( (*this) ) }

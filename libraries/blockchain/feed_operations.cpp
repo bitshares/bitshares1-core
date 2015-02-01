@@ -5,7 +5,7 @@
 
 namespace bts { namespace blockchain {
 
-   void update_feed_operation::evaluate( transaction_evaluation_state& eval_state )
+   void update_feed_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
       const oaccount_record account_record = eval_state._current_state->get_account_record( index.delegate_id );
       if( !account_record.valid() )

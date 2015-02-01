@@ -14,7 +14,7 @@ namespace bts { namespace blockchain {
         string                           site_name;
         object_id_type                   new_owner;
 
-        void evaluate( transaction_evaluation_state& eval_state );
+        void evaluate( transaction_evaluation_state& eval_state )const;
     };
 
     // This should be doable with set_object as only user data and owners are changed
@@ -27,7 +27,7 @@ namespace bts { namespace blockchain {
         variant                          user_data;
         asset                            lease_payment;
 
-        void evaluate( transaction_evaluation_state& eval_state );
+        void evaluate( transaction_evaluation_state& eval_state )const;
     };
 
 

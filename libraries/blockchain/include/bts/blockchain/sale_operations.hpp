@@ -12,7 +12,7 @@ namespace bts { namespace blockchain {
         object_id_type   object_to_sell;
         asset            price;
 
-        void evaluate( transaction_evaluation_state& eval_state );
+        void evaluate( transaction_evaluation_state& eval_state )const;
     };
 
     struct buy_sale_operation
@@ -23,7 +23,7 @@ namespace bts { namespace blockchain {
         asset             offer;
         object_id_type    new_owner;
 
-        void evaluate( transaction_evaluation_state& eval_state );
+        void evaluate( transaction_evaluation_state& eval_state )const;
     };
 
 

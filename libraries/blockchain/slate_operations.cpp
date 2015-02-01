@@ -4,7 +4,7 @@
 
 namespace bts { namespace blockchain {
 
-void define_slate_operation::evaluate( transaction_evaluation_state& eval_state )
+void define_slate_operation::evaluate( transaction_evaluation_state& eval_state )const
 { try {
     if( this->slate.size() > BTS_BLOCKCHAIN_MAX_SLATE_SIZE )
         FC_CAPTURE_AND_THROW( too_may_delegates_in_slate, (slate.size()) );

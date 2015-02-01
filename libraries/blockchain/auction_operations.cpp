@@ -7,7 +7,7 @@
 namespace bts { namespace blockchain {
 
     // Always a user auction
-    void auction_start_operation::evaluate( transaction_evaluation_state& eval_state ) 
+    void auction_start_operation::evaluate( transaction_evaluation_state& eval_state )const
     {
         auto chain = eval_state._current_state;
         FC_ASSERT( eval_state.check_update_permission( this->item_id ), "You don't have permission to update that item" );
@@ -26,9 +26,9 @@ namespace bts { namespace blockchain {
 
         auction.balance_claimed = false;
         auction.object_claimed = false;
-    
+
         auction._id = chain->new_object_id( obj_type::user_auction_object );
-        chain->store_object_record( object_record( auction ) ); 
+        chain->store_object_record( object_record( auction ) );
     }
 
     void evaluate_throttled_auction_bid( transaction_evaluation_state& eval_state, const auction_bid_operation& op)
@@ -45,7 +45,7 @@ namespace bts { namespace blockchain {
          // Update auction state
     }
 
-    void auction_bid_operation::evaluate( transaction_evaluation_state& eval_state ) 
+    void auction_bid_operation::evaluate( transaction_evaluation_state& eval_state )const
     {
         auto object = eval_state._current_state->get_object_record( this->auction_id );
         FC_ASSERT( object.valid(), "No such auction.");
@@ -57,9 +57,9 @@ namespace bts { namespace blockchain {
             FC_ASSERT( false, "That is not an auction type!" );
     }
 
-    void user_auction_claim_operation::evaluate( transaction_evaluation_state& eval_state )
+    void user_auction_claim_operation::evaluate( transaction_evaluation_state& eval_state )const
     { try {
-        auto chain = eval_state._current_state;   
+        auto chain = eval_state._current_state;
         auto obj = chain->get_object_record( this->auction_id );
         FC_ASSERT( obj.valid(), "No such auction." );
         auto auction = obj->as<user_auction_record>();

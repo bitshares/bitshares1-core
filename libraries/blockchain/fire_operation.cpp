@@ -39,7 +39,7 @@ namespace bts { namespace blockchain {
    }
 
 
-   void fire_delegate_operation::evaluate( transaction_evaluation_state& eval_state )
+   void fire_delegate_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
        auto delegate_record = eval_state._current_state->get_account_record( this->delegate_id );
        if( !delegate_record ) FC_CAPTURE_AND_THROW( unknown_account_id, (delegate_id) );

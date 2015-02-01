@@ -920,7 +920,8 @@ namespace bts { namespace blockchain {
           pending_state->set_active_delegates( active_del );
       } FC_CAPTURE_AND_RETHROW( (block_num) ) }
 
-      void chain_database_impl::execute_markets( const time_point_sec timestamp, const pending_chain_state_ptr& pending_state )const
+      void chain_database_impl::execute_markets( const time_point_sec timestamp,
+                                                 const pending_chain_state_ptr& pending_state )const
       { try {
         vector<market_transaction> market_transactions;
 
