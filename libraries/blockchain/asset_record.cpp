@@ -84,18 +84,18 @@ namespace bts { namespace blockchain {
         return lookup_by_symbol( symbol );
     } FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
-    void asset_db_interface::store( const asset_record& record )const
+    void asset_db_interface::store( const asset_id_type id, const asset_record& record )const
     { try {
-        const oasset_record prev_record = lookup( record.id );
+        const oasset_record prev_record = lookup( id );
         if( prev_record.valid() )
         {
             if( prev_record->symbol != record.symbol )
                 erase_from_symbol_map( prev_record->symbol );
         }
 
-        insert_into_id_map( record.id, record );
-        insert_into_symbol_map( record.symbol, record.id );
-    } FC_CAPTURE_AND_RETHROW( (record) ) }
+        insert_into_id_map( id, record );
+        insert_into_symbol_map( record.symbol, id );
+    } FC_CAPTURE_AND_RETHROW( (id)(record) ) }
 
     void asset_db_interface::remove( const asset_id_type id )const
     { try {

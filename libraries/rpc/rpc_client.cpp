@@ -50,8 +50,10 @@ namespace bts { namespace rpc {
              throw;
           }
 
+          std::vector<char> packed_signature(80, ' ');
+          socket->readsome(packed_signature.data(), packed_signature.size());
           fc::ecc::compact_signature signature;
-          fc::raw::unpack(*socket, signature);
+          signature = fc::raw::unpack<fc::ecc::compact_signature>(packed_signature);
           wdump((signature));
           FC_ASSERT(blockchain::public_key_type(fc::ecc::public_key(signature, fc::digest(socket->get_shared_secret())))
                     == remote_public_key,

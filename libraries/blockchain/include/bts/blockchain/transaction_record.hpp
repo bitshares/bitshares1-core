@@ -49,7 +49,7 @@ namespace bts { namespace blockchain {
         std::function<void( const transaction& )>                                       erase_from_unique_set;
 
         otransaction_record lookup( const transaction_id_type& )const;
-        void store( const transaction_record& )const;
+        void store( const transaction_id_type&, const transaction_record& )const;
         void remove( const transaction_id_type& )const;
     };
 

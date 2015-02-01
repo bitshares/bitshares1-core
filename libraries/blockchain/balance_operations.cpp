@@ -85,38 +85,6 @@ namespace bts { namespace blockchain {
                                       amnt.asset_id, slate_id );
    }
 
-   void define_delegate_slate_operation::evaluate( transaction_evaluation_state& eval_state )
-   { try {
-      if( this->slate.supported_delegates.size() > BTS_BLOCKCHAIN_MAX_SLATE_SIZE )
-         FC_CAPTURE_AND_THROW( too_may_delegates_in_slate, (slate.supported_delegates.size()) );
-
-      if( eval_state._current_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM )
-      {
-          // verify slates are sorted
-          FC_ASSERT( slate.supported_delegates.size() > 0 );
-          for( uint32_t i = 1; i < slate.supported_delegates.size(); ++i )
-          {
-             FC_ASSERT( slate.supported_delegates[i-1] < slate.supported_delegates[i] );
-          }
-      }
-
-      const slate_id_type slate_id = this->slate.id();
-      const odelegate_slate current_slate = eval_state._current_state->get_delegate_slate( slate_id );
-      if( NOT current_slate.valid() )
-      {
-#ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_6_2_FORK_BLOCK_NUM has passed
-#endif
-          if( eval_state._current_state->get_head_block_num() < BTS_V0_6_2_FORK_BLOCK_NUM )
-          {
-              for( const signed_int& delegate_id : this->slate.supported_delegates )
-                  eval_state.verify_delegate_id( abs( delegate_id ) );
-          }
-
-         eval_state._current_state->store_delegate_slate( slate_id, slate );
-      }
-   } FC_CAPTURE_AND_RETHROW( (*this) ) }
-
    void deposit_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
        if( eval_state._current_state->get_head_block_num() < BTS_V0_4_13_FORK_BLOCK_NUM )

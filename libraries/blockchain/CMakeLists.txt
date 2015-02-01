@@ -35,8 +35,8 @@ add_library( bts_blockchain
              account_record.cpp
              asset_record.cpp
              balance_record.cpp
-             delegate_slate.cpp
              transaction_record.cpp
+             slate_record.cpp
              feed_record.cpp
              market_records.cpp
              slot_record.cpp
@@ -53,6 +53,7 @@ add_library( bts_blockchain
              operations.cpp
              account_operations_v1.cpp
              account_operations.cpp
+             slate_operations.cpp
              withdraw_types.cpp
              balance_operations_v1.cpp
              balance_operations_v2.cpp

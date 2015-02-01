@@ -53,7 +53,7 @@ struct slot_db_interface
 
     oslot_record lookup( const slot_index )const;
     oslot_record lookup( const time_point_sec )const;
-    void store( const slot_record& )const;
+    void store( const slot_index, const slot_record& )const;
     void remove( const slot_index )const;
 };
 

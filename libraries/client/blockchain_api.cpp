@@ -180,14 +180,14 @@ map<account_id_type, string> detail::client_impl::blockchain_get_slate( const st
         slate_id = std::stoi( slate );
     }
 
-    const odelegate_slate slate_record = _chain_db->get_delegate_slate( slate_id );
+    const oslate_record slate_record = _chain_db->get_slate_record( slate_id );
     FC_ASSERT( slate_record.valid() );
 
-    for( const account_id_type delegate_id : slate_record->supported_delegates )
+    for( const account_id_type id : slate_record->slate )
     {
-        const oaccount_record delegate_record = _chain_db->get_account_record( delegate_id );
-        FC_ASSERT( delegate_record.valid() );
-        delegates[ delegate_id ] = delegate_record->name;
+        const oaccount_record delegate_record = _chain_db->get_account_record( id );
+        if( delegate_record.valid() ) delegates[ id ] = delegate_record->name;
+        else delegates[ id ] = std::to_string( id );
     }
 
     return delegates;
