@@ -6,7 +6,7 @@
 
 namespace bts { namespace blockchain {
 
-void ask_operation::evaluate_v1( transaction_evaluation_state& eval_state )
+void ask_operation::evaluate_v1( transaction_evaluation_state& eval_state )const
 { try {
    if( this->ask_index.order_price == price() )
       FC_CAPTURE_AND_THROW( zero_price, (ask_index.order_price) );
@@ -59,7 +59,7 @@ void ask_operation::evaluate_v1( transaction_evaluation_state& eval_state )
    //auto check   = eval_state._current_state->get_ask_record( this->ask_index );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-void short_operation::evaluate_v1( transaction_evaluation_state& eval_state )
+void short_operation::evaluate_v1( transaction_evaluation_state& eval_state )const
 {
    if( this->short_index.order_price == price() )
       FC_CAPTURE_AND_THROW( zero_price, (short_index.order_price) );
@@ -126,7 +126,7 @@ void short_operation::evaluate_v1( transaction_evaluation_state& eval_state )
    eval_state._current_state->store_short_record( this->short_index, *current_short );
 }
 
-void add_collateral_operation::evaluate_v1( transaction_evaluation_state& eval_state )
+void add_collateral_operation::evaluate_v1( transaction_evaluation_state& eval_state )const
 {
    if( this->cover_index.order_price == price() )
       FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );
@@ -164,7 +164,7 @@ void add_collateral_operation::evaluate_v1( transaction_evaluation_state& eval_s
    eval_state._current_state->store_market_status( *market_stat );
 }
 
-void short_operation_v1::evaluate( transaction_evaluation_state& eval_state )
+void short_operation_v1::evaluate( transaction_evaluation_state& eval_state )const
 {
    if( eval_state._current_state->get_head_block_num() >= BTS_V0_4_16_FORK_BLOCK_NUM )
    {
@@ -252,7 +252,7 @@ void short_operation_v1::evaluate( transaction_evaluation_state& eval_state )
    eval_state._current_state->store_short_record( this->short_index, *current_short );
 }
 
-void short_operation_v1::evaluate_v1( transaction_evaluation_state& eval_state )
+void short_operation_v1::evaluate_v1( transaction_evaluation_state& eval_state )const
 {
    if( this->short_index.order_price == price() )
       FC_CAPTURE_AND_THROW( zero_price, (short_index.order_price) );
@@ -331,7 +331,7 @@ void short_operation_v1::evaluate_v1( transaction_evaluation_state& eval_state )
    //auto check   = eval_state._current_state->get_ask_record( this->ask_index );
 }
 
-void cover_operation::evaluate_v1( transaction_evaluation_state& eval_state )
+void cover_operation::evaluate_v1( transaction_evaluation_state& eval_state )const
 {
    if( this->cover_index.order_price == price() )
       FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );

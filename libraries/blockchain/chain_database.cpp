@@ -928,7 +928,8 @@ namespace bts { namespace blockchain {
           pending_state->set_active_delegates( active_del );
       } FC_CAPTURE_AND_RETHROW( (block_num) ) }
 
-      void chain_database_impl::execute_markets( const time_point_sec timestamp, const pending_chain_state_ptr& pending_state )const
+      void chain_database_impl::execute_markets( const time_point_sec timestamp,
+                                                 const pending_chain_state_ptr& pending_state )const
       { try {
         if( pending_state->get_head_block_num() < BTS_V0_7_0_FORK_BLOCK_NUM )
            return execute_markets_v1( timestamp, pending_state );

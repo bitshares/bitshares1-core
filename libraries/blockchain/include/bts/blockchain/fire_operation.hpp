@@ -41,7 +41,7 @@ namespace bts { namespace blockchain {
       account_id_type                    delegate_id;
       std::vector<char>                  data;
 
-      void evaluate( transaction_evaluation_state& eval_state );
+      void evaluate( transaction_evaluation_state& eval_state )const;
    };
 
 } } // bts::blockchain

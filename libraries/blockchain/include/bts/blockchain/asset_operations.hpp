@@ -49,7 +49,7 @@ namespace bts { namespace blockchain {
 
        uint64_t         precision = 0;
 
-       void evaluate( transaction_evaluation_state& eval_state );
+       void evaluate( transaction_evaluation_state& eval_state )const;
    };
 
    struct create_asset_proposal
@@ -59,7 +59,7 @@ namespace bts { namespace blockchain {
       asset_id_type  asset_id = 0;
       object_id_type info = 0;
 
-      void evaluate( transaction_evaluation_state& eval_state );
+      void evaluate( transaction_evaluation_state& eval_state )const;
    };
 
    /**
@@ -77,7 +77,7 @@ namespace bts { namespace blockchain {
        optional<share_type>         maximum_share_supply;
        optional<uint64_t>           precision;
 
-       void evaluate( transaction_evaluation_state& eval_state );
+       void evaluate( transaction_evaluation_state& eval_state )const;
    };
 
    /**
@@ -107,7 +107,7 @@ namespace bts { namespace blockchain {
        share_type          transaction_fee = 0;
        multisig_meta_info  authority;
 
-       void evaluate( transaction_evaluation_state& eval_state );
+       void evaluate( transaction_evaluation_state& eval_state )const;
    };
 
    /**
@@ -123,9 +123,9 @@ namespace bts { namespace blockchain {
 
        issue_asset_operation( asset a = asset() ):amount(a){}
 
-       asset            amount;
+       asset amount;
 
-       void evaluate( transaction_evaluation_state& eval_state );
+       void evaluate( transaction_evaluation_state& eval_state )const;
    };
 
    /**
@@ -142,7 +142,7 @@ namespace bts { namespace blockchain {
       address          owner;
       object_id_type   meta_id = 0; /// extra data about this authorization
 
-      void evaluate( transaction_evaluation_state& eval_state );
+      void evaluate( transaction_evaluation_state& eval_state )const;
    };
 
 } } // bts::blockchain

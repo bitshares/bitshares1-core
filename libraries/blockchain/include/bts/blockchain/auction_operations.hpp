@@ -6,7 +6,7 @@
 
 namespace bts { namespace blockchain {
 
-   struct auction_start_operation : operation
+   struct auction_start_operation
    {
       static const operation_type_enum type;
 
@@ -16,10 +16,10 @@ namespace bts { namespace blockchain {
       asset                       min_price;
       asset                       buy_now_price;
 
-      void evaluate( transaction_evaluation_state& eval_state );
+      void evaluate( transaction_evaluation_state& eval_state )const;
    };
 
-   struct auction_bid_operation : operation
+   struct auction_bid_operation
    {
       static const operation_type_enum type;
 
@@ -27,10 +27,10 @@ namespace bts { namespace blockchain {
       asset                       bid;
       object_id_type              new_owner;
 
-      void evaluate( transaction_evaluation_state& eval_state );
+      void evaluate( transaction_evaluation_state& eval_state )const;
    };
 
-   struct user_auction_claim_operation : operation
+   struct user_auction_claim_operation
    {
       static const operation_type_enum type;
 
@@ -38,17 +38,17 @@ namespace bts { namespace blockchain {
       bool                        claim_balance;
       bool                        claim_object;
 
-      void evaluate( transaction_evaluation_state& eval_state );
+      void evaluate( transaction_evaluation_state& eval_state )const;
    };
 
-   struct throttled_auction_claim_operation : operation
+   struct throttled_auction_claim_operation
    {
       static const operation_type_enum type;
 
       object_id_type              auction_id;
       bool                        claim_object;
 
-      void evaluate( transaction_evaluation_state& eval_state );
+      void evaluate( transaction_evaluation_state& eval_state )const;
    };
 
 }} // bts::blockchain

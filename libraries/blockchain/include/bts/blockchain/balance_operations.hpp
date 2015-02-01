@@ -25,10 +25,10 @@ namespace bts { namespace blockchain {
        /** any data required by the claim_condition */
        std::vector<char>  claim_input_data;
 
-       void evaluate( transaction_evaluation_state& eval_state );
-       void evaluate_v3( transaction_evaluation_state& eval_state );
-       void evaluate_v2( transaction_evaluation_state& eval_state );
-       void evaluate_v1( transaction_evaluation_state& eval_state );
+       void evaluate( transaction_evaluation_state& eval_state )const;
+       void evaluate_v3( transaction_evaluation_state& eval_state )const;
+       void evaluate_v2( transaction_evaluation_state& eval_state )const;
+       void evaluate_v1( transaction_evaluation_state& eval_state )const;
    };
 
    /**
@@ -52,8 +52,8 @@ namespace bts { namespace blockchain {
        share_type                       amount;
        withdraw_condition               condition;
 
-       void evaluate( transaction_evaluation_state& eval_state );
-       void evaluate_v1( transaction_evaluation_state& eval_state );
+       void evaluate( transaction_evaluation_state& eval_state )const;
+       void evaluate_v1( transaction_evaluation_state& eval_state )const;
    };
 
    /**
@@ -79,7 +79,7 @@ namespace bts { namespace blockchain {
        string                       message;
        optional<signature_type>     message_signature;
 
-       void evaluate( transaction_evaluation_state& eval_state );
+       void evaluate( transaction_evaluation_state& eval_state )const;
    };
 
    struct release_escrow_operation
@@ -91,7 +91,7 @@ namespace bts { namespace blockchain {
       share_type       amount_to_receiver = 0;
       share_type       amount_to_sender   = 0;
 
-      void evaluate( transaction_evaluation_state& eval_state );
+      void evaluate( transaction_evaluation_state& eval_state )const;
    };
 
    /* Moves funds to a new balance with the same owner key but different votes
@@ -105,7 +105,7 @@ namespace bts { namespace blockchain {
       optional<address>   new_restricted_owner;
       slate_id_type       new_slate;
 
-      void evaluate( transaction_evaluation_state& eval_state );
+      void evaluate( transaction_evaluation_state& eval_state )const;
    };
 
    /**
@@ -127,7 +127,7 @@ namespace bts { namespace blockchain {
       static const operation_type_enum type;
       asset amount;
 
-      void evaluate( transaction_evaluation_state& eval_state );
+      void evaluate( transaction_evaluation_state& eval_state )const;
    };
 
 } } // bts::blockchain

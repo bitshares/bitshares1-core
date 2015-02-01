@@ -7,7 +7,7 @@
 
 namespace bts { namespace blockchain {
 
-   void update_feed_operation::evaluate( transaction_evaluation_state& eval_state )
+   void update_feed_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
       if( eval_state._current_state->get_head_block_num() < BTS_V0_5_0_FORK_BLOCK_NUM )
           return evaluate_v1( eval_state );
