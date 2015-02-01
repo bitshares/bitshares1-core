@@ -7,7 +7,7 @@
 
 namespace bts { namespace blockchain {
 
-void cover_operation::evaluate_v4( transaction_evaluation_state& eval_state )
+void cover_operation::evaluate_v4( transaction_evaluation_state& eval_state )const
 {
    if( eval_state._current_state->get_head_block_num() < BTS_V0_4_21_FORK_BLOCK_NUM )
       return evaluate_v3( eval_state );

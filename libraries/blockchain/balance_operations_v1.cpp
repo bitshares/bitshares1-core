@@ -63,7 +63,7 @@ asset balance_record::calculate_yield_v1( fc::time_point_sec now, share_type amo
    return asset( 0, condition.asset_id );
 }
 
-void deposit_operation::evaluate_v1( transaction_evaluation_state& eval_state )
+void deposit_operation::evaluate_v1( transaction_evaluation_state& eval_state )const
 { try {
     if( this->amount <= 0 )
        FC_CAPTURE_AND_THROW( negative_deposit, (amount) );
@@ -94,7 +94,7 @@ void deposit_operation::evaluate_v1( transaction_evaluation_state& eval_state )
     eval_state._current_state->store_balance_record( *cur_record );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-void withdraw_operation::evaluate_v1( transaction_evaluation_state& eval_state )
+void withdraw_operation::evaluate_v1( transaction_evaluation_state& eval_state )const
 { try {
     if( this->amount <= 0 )
        FC_CAPTURE_AND_THROW( negative_deposit, (amount) );

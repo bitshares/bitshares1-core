@@ -39,7 +39,7 @@ namespace bts { namespace blockchain {
    }
 
 
-   void fire_delegate_operation::evaluate( transaction_evaluation_state& eval_state )
+   void fire_delegate_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
        FC_ASSERT( !"Don't even think about it." );
 

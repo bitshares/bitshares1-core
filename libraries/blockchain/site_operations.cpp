@@ -6,7 +6,7 @@
 
 namespace bts { namespace blockchain {
 
-    void site_create_operation::evaluate( transaction_evaluation_state& eval_state ) 
+    void site_create_operation::evaluate( transaction_evaluation_state& eval_state )const
     {
         FC_ASSERT( !"This operation is not enabled yet!" );
 
@@ -26,7 +26,7 @@ namespace bts { namespace blockchain {
         chain->store_object_record( object_record( auction, throttled_auction_object, auction_id ) );
     }
 
-    void site_update_operation::evaluate( transaction_evaluation_state& eval_state ) 
+    void site_update_operation::evaluate( transaction_evaluation_state& eval_state )const
     {
         FC_ASSERT( !"This operation is not enabled yet!" );
 

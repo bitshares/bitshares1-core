@@ -17,7 +17,7 @@ namespace bts { namespace blockchain {
         share_type       amount;
         market_index_key bid_index;
 
-        void evaluate( transaction_evaluation_state& eval_state );
+        void evaluate( transaction_evaluation_state& eval_state )const;
    };
 
    struct ask_operation
@@ -29,8 +29,8 @@ namespace bts { namespace blockchain {
         share_type        amount;
         market_index_key  ask_index;
 
-        void evaluate( transaction_evaluation_state& eval_state );
-        void evaluate_v1( transaction_evaluation_state& eval_state );
+        void evaluate( transaction_evaluation_state& eval_state )const;
+        void evaluate_v1( transaction_evaluation_state& eval_state )const;
    };
 
    struct relative_bid_operation
@@ -44,7 +44,7 @@ namespace bts { namespace blockchain {
         market_index_key bid_index;
         optional<price>  limit_price;
 
-        void evaluate( transaction_evaluation_state& eval_state );
+        void evaluate( transaction_evaluation_state& eval_state )const;
    };
 
    struct relative_ask_operation
@@ -57,7 +57,7 @@ namespace bts { namespace blockchain {
         market_index_key  ask_index;
         optional<price>   limit_price;
 
-        void evaluate( transaction_evaluation_state& eval_state );
+        void evaluate( transaction_evaluation_state& eval_state )const;
    };
 
 
@@ -71,8 +71,8 @@ namespace bts { namespace blockchain {
         share_type             amount;
         market_index_key_ext   short_index;
 
-        void evaluate( transaction_evaluation_state& eval_state );
-        void evaluate_v1( transaction_evaluation_state& eval_state );
+        void evaluate( transaction_evaluation_state& eval_state )const;
+        void evaluate_v1( transaction_evaluation_state& eval_state )const;
    };
 
    struct cover_operation
@@ -87,11 +87,11 @@ namespace bts { namespace blockchain {
         market_index_key    cover_index;
         fc::optional<price> new_cover_price;
 
-        void evaluate( transaction_evaluation_state& eval_state );
-        void evaluate_v4( transaction_evaluation_state& eval_state );
-        void evaluate_v3( transaction_evaluation_state& eval_state );
-        void evaluate_v2( transaction_evaluation_state& eval_state );
-        void evaluate_v1( transaction_evaluation_state& eval_state );
+        void evaluate( transaction_evaluation_state& eval_state )const;
+        void evaluate_v4( transaction_evaluation_state& eval_state )const;
+        void evaluate_v3( transaction_evaluation_state& eval_state )const;
+        void evaluate_v2( transaction_evaluation_state& eval_state )const;
+        void evaluate_v1( transaction_evaluation_state& eval_state )const;
    };
 
    /**
@@ -108,8 +108,8 @@ namespace bts { namespace blockchain {
         share_type       amount;
         market_index_key cover_index;
 
-        void evaluate( transaction_evaluation_state& eval_state );
-        void evaluate_v1( transaction_evaluation_state& eval_state );
+        void evaluate( transaction_evaluation_state& eval_state )const;
+        void evaluate_v1( transaction_evaluation_state& eval_state )const;
    };
 
    /**
@@ -128,7 +128,7 @@ namespace bts { namespace blockchain {
       market_index_key cover_index;
       price            new_call_price;
 
-      void evaluate( transaction_evaluation_state& eval_state );
+      void evaluate( transaction_evaluation_state& eval_state )const;
    };
 
 } } // bts::blockchain

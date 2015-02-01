@@ -10,7 +10,7 @@ namespace bts { namespace blockchain {
     // If ID is zero, make a new object (get a new ID)
     // if ID is negative, look in evaluation stack
     // if ID is positive, update the existing object
-    void set_object_operation::evaluate( transaction_evaluation_state& eval_state )
+    void set_object_operation::evaluate( transaction_evaluation_state& eval_state )const
     { try {
         FC_ASSERT( !"This operation is not enabled yet!" );
 

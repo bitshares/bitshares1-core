@@ -4,14 +4,14 @@
 
 namespace bts { namespace blockchain {
 
-    void make_sale_operation::evaluate( transaction_evaluation_state& eval_state ) 
+    void make_sale_operation::evaluate( transaction_evaluation_state& eval_state )const
     {
         FC_ASSERT( !"This operation is not enabled yet!" );
 
         FC_ASSERT(false, "unimplemented");
     }
 
-    void buy_sale_operation::evaluate( transaction_evaluation_state& eval_state ) 
+    void buy_sale_operation::evaluate( transaction_evaluation_state& eval_state )const
     {
         FC_ASSERT( !"This operation is not enabled yet!" );
 

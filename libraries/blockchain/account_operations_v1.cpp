@@ -6,7 +6,7 @@
 
 namespace bts { namespace blockchain {
 
-void update_account_operation::evaluate_v1( transaction_evaluation_state& eval_state )
+void update_account_operation::evaluate_v1( transaction_evaluation_state& eval_state )const
 { try {
    oaccount_record current_record = eval_state._current_state->get_account_record( this->account_id );
    if( !current_record.valid() )

@@ -13,7 +13,7 @@ namespace bts { namespace blockchain {
        return delegate_pay_rate <= 100;
    }
 
-   void register_account_operation::evaluate( transaction_evaluation_state& eval_state )
+   void register_account_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
       if( !eval_state._current_state->is_valid_account_name( this->name ) )
          FC_CAPTURE_AND_THROW( invalid_account_name, (name) );
@@ -71,7 +71,7 @@ namespace bts { namespace blockchain {
        return delegate_pay_rate <= 100;
    }
 
-   void update_account_operation::evaluate( transaction_evaluation_state& eval_state )
+   void update_account_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
       if( eval_state._current_state->get_head_block_num() < BTS_V0_6_0_FORK_BLOCK_NUM )
           return evaluate_v1( eval_state );
@@ -140,7 +140,7 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_account_record( *current_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-   void withdraw_pay_operation::evaluate( transaction_evaluation_state& eval_state )
+   void withdraw_pay_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
       if( this->amount <= 0 )
           FC_CAPTURE_AND_THROW( negative_withdraw, (amount) );
@@ -166,7 +166,7 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_account_record( *account );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-   void update_signing_key_operation::evaluate( transaction_evaluation_state& eval_state )
+   void update_signing_key_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
 #ifndef WIN32
 #warning [SOFTFORK] Remove this check after BTS_V0_6_0_FORK_BLOCK_NUM has passed

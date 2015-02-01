@@ -10,7 +10,7 @@ struct define_slate_operation
 
     vector<signed_int> slate;
 
-    void evaluate( transaction_evaluation_state& eval_state );
+    void evaluate( transaction_evaluation_state& eval_state )const;
 };
 
 } } // bts::blockchain
