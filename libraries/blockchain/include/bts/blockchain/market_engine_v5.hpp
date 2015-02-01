@@ -5,7 +5,7 @@ namespace bts { namespace blockchain { namespace detail {
   class market_engine_v5
   {
   public:
-    market_engine_v5( pending_chain_state_ptr ps, chain_database_impl& cdi );
+    market_engine_v5( const pending_chain_state_ptr ps, const chain_database_impl& cdi );
     bool execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec timestamp );
 
   private:
@@ -37,7 +37,7 @@ namespace bts { namespace blockchain { namespace detail {
 
     pending_chain_state_ptr       _pending_state;
     pending_chain_state_ptr       _prior_state;
-    chain_database_impl&          _db_impl;
+    const chain_database_impl&    _db_impl;
 
     optional<market_order>        _current_bid;
     optional<market_order>        _current_ask;

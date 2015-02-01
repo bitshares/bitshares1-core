@@ -18,12 +18,12 @@ namespace bts { namespace blockchain {
    }
 
    bool signed_block_header::validate_signee( const fc::ecc::public_key& expected_signee, bool enforce_canonical )const
-   { 
+   {
       return fc::ecc::public_key( delegate_signature, digest(), enforce_canonical ) == expected_signee;
    }
 
    public_key_type signed_block_header::signee( bool enforce_canonical )const
-   { 
+   {
       return fc::ecc::public_key( delegate_signature, digest(), enforce_canonical );
    }
 
