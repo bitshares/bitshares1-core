@@ -6,7 +6,7 @@
 
 namespace bts { namespace blockchain {
 
-uint64_t slate_record::id()const
+slate_id_type slate_record::id()const
 {
     if( slate.empty() ) return 0;
     fc::sha256::encoder enc;
