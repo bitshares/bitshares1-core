@@ -14,30 +14,31 @@ namespace bts { namespace blockchain {
    const uint8_t withdraw_with_escrow::type       = withdraw_escrow_type;
    const uint8_t withdraw_with_password::type     = withdraw_password_type;
 
-   memo_status::memo_status( const extended_memo_data& memo,
-                   bool valid_signature,
-                   const fc::ecc::private_key& opk )
-   :extended_memo_data(memo),has_valid_signature(valid_signature),owner_private_key(opk){}
+   memo_status::memo_status( const extended_memo_data& memo, bool valid_signature,
+                             const fc::ecc::private_key& opk )
+   :extended_memo_data(memo),has_valid_signature(valid_signature),owner_private_key(opk)
+   {
+   }
 
    void memo_data::set_message( const std::string& message_str )
    {
+      if( message_str.empty() ) return;
       FC_ASSERT( message_str.size() <= sizeof( message ) );
-      if( message_str.size() )
-      {
-         memcpy( message.data, message_str.c_str(), message_str.size() );
-      }
+      memcpy( message.data, message_str.c_str(), message_str.size() );
    }
+
    void extended_memo_data::set_message( const std::string& message_str )
    {
-      FC_ASSERT( message_str.size() <= sizeof( message ) + sizeof(extra_message) );
-      if( message_str.size() && message_str.size() < sizeof(message) )
+      if( message_str.empty() ) return;
+      FC_ASSERT( message_str.size() <= sizeof( message ) + sizeof( extra_message ) );
+      if( message_str.size() <= sizeof( message ) )
       {
          memcpy( message.data, message_str.c_str(), message_str.size() );
       }
       else
       {
-         memcpy( message.data, message_str.c_str(), sizeof(message) );
-         memcpy( extra_message.data, message_str.c_str() + sizeof(message), message_str.size() - sizeof(message) );
+         memcpy( message.data, message_str.c_str(), sizeof( message ) );
+         memcpy( extra_message.data, message_str.c_str() + sizeof( message ), message_str.size() - sizeof( message ) );
       }
    }
 
@@ -182,7 +183,7 @@ namespace bts { namespace blockchain {
    extended_memo_data withdraw_with_signature::decrypt_memo_data( const fc::sha512& secret )const
    { try {
       FC_ASSERT( memo.valid() );
-      if( memo->encrypted_memo_data.size() > (sizeof(memo_data) ) )
+      if( memo->encrypted_memo_data.size() > ( sizeof( memo_data ) ) )
       {
          return fc::raw::unpack<extended_memo_data>( fc::aes_decrypt( secret, memo->encrypted_memo_data ) );
       }
@@ -199,13 +200,13 @@ namespace bts { namespace blockchain {
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    void withdraw_with_signature::encrypt_memo_data( const fc::sha512& secret,
-                                             const memo_data& memo_content )
+                                                    const memo_data& memo_content )
    {
       FC_ASSERT( memo.valid() );
       memo->encrypted_memo_data = fc::aes_encrypt( secret, fc::raw::pack( memo_content ) );
    }
    void withdraw_with_signature::encrypt_memo_data( const fc::sha512& secret,
-                                             const extended_memo_data& memo_content )
+                                                    const extended_memo_data& memo_content )
    {
       FC_ASSERT( memo.valid() );
       memo->encrypted_memo_data = fc::aes_encrypt( secret, fc::raw::pack( memo_content ) );
@@ -282,7 +283,7 @@ namespace bts { namespace blockchain {
    extended_memo_data withdraw_with_escrow::decrypt_memo_data( const fc::sha512& secret )const
    { try {
       FC_ASSERT( memo.valid() );
-      if( memo->encrypted_memo_data.size() > (sizeof(memo_data) ) )
+      if( memo->encrypted_memo_data.size() > ( sizeof( memo_data ) ) )
       {
          return fc::raw::unpack<extended_memo_data>( fc::aes_decrypt( secret, memo->encrypted_memo_data ) );
       }
@@ -299,14 +300,14 @@ namespace bts { namespace blockchain {
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    void withdraw_with_escrow::encrypt_memo_data( const fc::sha512& secret,
-                                             const extended_memo_data& memo_content )
+                                                 const extended_memo_data& memo_content )
    {
       FC_ASSERT( memo.valid() );
       memo->encrypted_memo_data = fc::aes_encrypt( secret, fc::raw::pack( memo_content ) );
    }
 
    void withdraw_with_escrow::encrypt_memo_data( const fc::sha512& secret,
-                                             const memo_data& memo_content )
+                                                 const memo_data& memo_content )
    {
       FC_ASSERT( memo.valid() );
       memo->encrypted_memo_data = fc::aes_encrypt( secret, fc::raw::pack( memo_content ) );

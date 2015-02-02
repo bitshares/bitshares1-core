@@ -275,11 +275,12 @@ fc::variant_object light_wallet::prepare_transfer(const string& amount,
    bts::blockchain::transaction_creation_state creator;
    creator.pending_state = *_chain_cache;
    creator.add_known_key(_data->accounts[from_account_name].user_account.active_address());
-   creator.withdraw(fee);
-   creator.withdraw(transfer_asset);
-   creator.deposit(transfer_asset, to_account->active_key(), 0,
-                   create_one_time_key(from_account_name, fc::to_string(expiration.sec_since_epoch())),
-                   memo, active_key(from_account_name));
+   if( fee.asset_id == transfer_asset.asset_id )
+      creator.withdraw(fee + transfer_asset);
+   else {
+      creator.withdraw(fee);
+      creator.withdraw(transfer_asset);
+   }
 
    if( _relay_fee_collector )
    {
@@ -287,13 +288,16 @@ fc::variant_object light_wallet::prepare_transfer(const string& amount,
       creator.deposit(relay_fee, _relay_fee_collector->active_key(), 0);
    }
 
+   creator.deposit(transfer_asset, to_account->active_key(), 0,
+                   create_one_time_key(from_account_name, fc::to_string(expiration.sec_since_epoch())),
+                   memo, active_key(from_account_name));
+
    creator.pay_fee(fee);
 
    creator.trx.expiration = expiration;
 
    ilog("Creator built a transaction: ${trx}", ("trx", creator.trx));
 
-   // TODO include a fee payable to the light wallet service provider
    // TODO support multi-sig balances through service provider which
    // will perform N factor authentication
 
@@ -341,7 +345,7 @@ oprice light_wallet::get_median_feed_price( const string& symbol )
       auto cached_price_itr = _data->price_cache.find(symbol);
       if( cached_price_itr != _data->price_cache.end() )
       {
-         if( cached_price_itr->second.second + fc::days(1) > fc::time_point::now() )
+         if( cached_price_itr->second.second + fc::hours(1) > fc::time_point::now() )
             return cached_price_itr->second.first;
          else
             _data->price_cache.erase( cached_price_itr );
@@ -662,7 +666,7 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const string& acco
                {
                   auto one_time_key = create_one_time_key(account_name, fc::to_string(record.trx.expiration.sec_since_epoch()));
                   try {
-                     memo_data data = condition.decrypt_memo_data(one_time_key.get_shared_secret(account->active_key()));
+                     extended_memo_data data = condition.decrypt_memo_data(one_time_key.get_shared_secret(account->active_key()));
                      summary.operation_notes[i] = data.get_message();
                   } catch(...){}
                }
