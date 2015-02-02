@@ -341,7 +341,7 @@ oprice light_wallet::get_median_feed_price( const string& symbol )
       auto cached_price_itr = _data->price_cache.find(symbol);
       if( cached_price_itr != _data->price_cache.end() )
       {
-         if( cached_price_itr->second.second + fc::days(1) > fc::time_point::now() )
+         if( cached_price_itr->second.second + fc::hours(1) > fc::time_point::now() )
             return cached_price_itr->second.first;
          else
             _data->price_cache.erase( cached_price_itr );
@@ -662,7 +662,7 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const string& acco
                {
                   auto one_time_key = create_one_time_key(account_name, fc::to_string(record.trx.expiration.sec_since_epoch()));
                   try {
-                     memo_data data = condition.decrypt_memo_data(one_time_key.get_shared_secret(account->active_key()));
+                     extended_memo_data data = condition.decrypt_memo_data(one_time_key.get_shared_secret(account->active_key()));
                      summary.operation_notes[i] = data.get_message();
                   } catch(...){}
                }
