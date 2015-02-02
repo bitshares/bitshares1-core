@@ -65,7 +65,7 @@ namespace bts { namespace blockchain {
 
       yield /= 1000000;
 
-      if( (yield > 0) && (yield < yield_pool) )
+      if((yield > 0) && (yield < fc::uint128_t(yield_pool)))
          return asset( yield.to_uint64(), condition.asset_id );
       return asset( 0, condition.asset_id );
    }

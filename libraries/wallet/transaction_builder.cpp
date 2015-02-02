@@ -185,7 +185,7 @@ transaction_builder& transaction_builder::deposit_asset(const bts::wallet::walle
       FC_THROW_EXCEPTION( invalid_asset_amount, "Cannot deposit a negative amount!" );
 
    // Don't automatically truncate memos as long as users still depend on them via deposit ops rather than mail
-   if( memo.size() > BTS_BLOCKCHAIN_MAX_MEMO_SIZE )
+   if( memo.size() > BTS_BLOCKCHAIN_MAX_EXTENDED_MEMO_SIZE )
        FC_CAPTURE_AND_THROW( memo_too_long, (memo) );
 
    if( !memo_sender.valid() )
