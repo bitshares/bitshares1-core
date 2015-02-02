@@ -9,7 +9,6 @@
 #include <bts/utilities/git_revision.hpp>
 
 #include <bts/blockchain/chain_database.hpp>
-#include <bts/blockchain/checkpoints.hpp>
 #include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
@@ -90,7 +89,6 @@ const string BTS_MESSAGE_MAGIC = "BitShares Signed Message:\n";
 fc::logging_config create_default_logging_config( const fc::path&, bool enable_ulog );
 fc::path get_data_dir(const program_options::variables_map& option_variables);
 config load_config( const fc::path& datadir, const bool enable_ulog, const fc::optional<bool> statistics_enabled );
-void load_checkpoints( const fc::path& data_dir );
 void load_and_configure_chain_database( const fc::path& datadir,
                                         const program_options::variables_map& option_variables );
 
@@ -471,53 +469,6 @@ config load_config( const fc::path& datadir, const bool enable_ulog, const fc::o
       return cfg;
 } FC_RETHROW_EXCEPTIONS( warn, "unable to load config file ${cfg}", ("cfg",datadir/"config.json")) }
 
-void load_checkpoints( const fc::path& data_dir )
-{ try {
-    for( const auto& item : CHECKPOINT_BLOCKS )
-        LAST_CHECKPOINT_BLOCK_NUM = std::max( item.first, LAST_CHECKPOINT_BLOCK_NUM );
-
-    const fc::path checkpoint_file = data_dir / "checkpoints.json";
-
-    decltype( CHECKPOINT_BLOCKS ) external_checkpoints;
-    fc::oexception file_exception;
-    if( fc::exists( checkpoint_file ) )
-    {
-        try
-        {
-            external_checkpoints = fc::json::from_file( checkpoint_file ).as<decltype( external_checkpoints )>();
-        }
-        catch( const fc::exception& e )
-        {
-            file_exception = e;
-        }
-    }
-
-    uint32_t external_checkpoint_max_block_num = 0;
-    for( const auto& item : external_checkpoints )
-        external_checkpoint_max_block_num = std::max( item.first, external_checkpoint_max_block_num );
-
-    if( external_checkpoint_max_block_num >= LAST_CHECKPOINT_BLOCK_NUM )
-    {
-        ulog( "Using blockchain checkpoints from file: ${x}", ("x",checkpoint_file.preferred_string()) );
-        CHECKPOINT_BLOCKS = external_checkpoints;
-        LAST_CHECKPOINT_BLOCK_NUM = external_checkpoint_max_block_num;
-        return;
-    }
-
-    if( !file_exception.valid() )
-    {
-        fc::remove_all( checkpoint_file );
-        fc::json::save_to_file( CHECKPOINT_BLOCKS, checkpoint_file );
-    }
-    else
-    {
-        ulog( "Error loading blockchain checkpoints from file: ${x}", ("x",checkpoint_file.preferred_string()) );
-    }
-
-    if( !CHECKPOINT_BLOCKS.empty() )
-        ulog( "Using built-in blockchain checkpoints" );
-} FC_CAPTURE_AND_RETHROW( (data_dir) ) }
-
 namespace detail
 {
 //should this function be moved to rpc server eventually? probably...
@@ -666,6 +617,7 @@ void client_impl::delegate_loop()
    const auto now = blockchain::now();
    ilog( "Starting delegate loop at time: ${t}", ("t",now) );
 
+   _chain_db->_verify_transaction_signatures = true;
    if( _delegate_loop_first_run )
    {
       set_target_connections( BTS_NET_DELEGATE_DESIRED_CONNECTIONS );
@@ -1334,8 +1286,6 @@ void client::open( const path& data_dir, const fc::optional<fc::path>& genesis_f
     fc::logger::get( "user" ).add_appender( my->_user_appender );
 
     my->_exception_db.open( data_dir / "exceptions" );
-
-    load_checkpoints( data_dir );
 
     bool attempt_to_recover_database = false;
     try
