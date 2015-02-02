@@ -617,6 +617,7 @@ void client_impl::delegate_loop()
    const auto now = blockchain::now();
    ilog( "Starting delegate loop at time: ${t}", ("t",now) );
 
+   _chain_db->_verify_transaction_signatures = true;
    if( _delegate_loop_first_run )
    {
       set_target_connections( BTS_NET_DELEGATE_DESIRED_CONNECTIONS );

@@ -341,6 +341,9 @@ namespace bts { namespace blockchain {
              FC_ASSERT( false, "this shouldn't be called directly" );
          }
 
+         // Applies only when pushing new blocks; gets enabled in delegate loop
+         bool                               _verify_transaction_signatures = false;
+
       private:
          unique_ptr<detail::chain_database_impl> my;
 

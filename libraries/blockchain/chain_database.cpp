@@ -739,7 +739,7 @@ namespace bts { namespace blockchain {
          for( const auto& trx : block_data.user_transactions )
          {
             transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_state.get() );
-            trx_eval_state->_skip_signature_check = block_data.block_num <= LAST_CHECKPOINT_BLOCK_NUM;
+            trx_eval_state->_skip_signature_check = !self->_verify_transaction_signatures;
             trx_eval_state->evaluate( trx );
 
             const transaction_id_type& trx_id = trx.id();
