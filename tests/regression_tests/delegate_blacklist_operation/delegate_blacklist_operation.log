@@ -1,3 +1,11 @@
+default (unlocked) >>> wallet_account_create test
+"XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
+default (unlocked) >>> wallet_account_create test2
+"XTS5DBeMtFiZaive82nTRuZjBbfZMVFZbudCs86bDfh3XwkKSdUqw"
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
 default (unlocked) >>> delegate_get_config
 {
   "network_min_connection_count": 0,
@@ -10,6 +18,18 @@ default (unlocked) >>> delegate_get_config
   "transaction_blacklist": [],
   "operation_blacklist": []
 }
+default (unlocked) >>> wallet_account_register test delegate0
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate0           test                0.00000 XTS             register test                               0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> history test
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+<d-ign></d-ign>3         delegate0           test                0.00000 XTS             register test                               0.00000 XTS             0.00000 XTS         <d-ign></d-ign>
 default (unlocked) >>> help delegate_blacklist_add_operation
 Usage:
 delegate_blacklist_add_operation <id>                                                                 Add specified operation to blacklist
@@ -24,7 +44,11 @@ default (unlocked) >>> delegate_blacklist_add_operation bid_op_type
 OK
 default (unlocked) >>> delegate_blacklist_add_operation ask_op_type
 OK
-default (unlocked) >>> delegate_blacklist_add_operation withdraw_op_type
+default (unlocked) >>> delegate_blacklist_add_operation register_account_op_type
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> delegate_get_config
 {
@@ -37,11 +61,39 @@ default (unlocked) >>> delegate_get_config
   "transaction_min_fee": 10000,
   "transaction_blacklist": [],
   "operation_blacklist": [
-    "withdraw_op_type",
+    "register_account_op_type",
     "bid_op_type",
     "ask_op_type"
   ]
 }
+default (unlocked) >>> wallet_account_register test2 delegate0
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate0           test2               0.00000 XTS             register test2                              0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> history test2
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate0           test2               0.00000 XTS             register test2                              N/A                     0.00000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> history test2
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate0           test2               0.00000 XTS             register test2                              N/A                     0.00000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> history test2
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate0           test2               0.00000 XTS             register test2                              N/A                     0.00000 XTS         <d-ign></d-ign>
 default (unlocked) >>> help delegate_blacklist_remove_operation
 Usage:
 delegate_blacklist_remove_operation <id>                                                              Remove specified operation from blacklist
@@ -54,26 +106,8 @@ Returns:
   void
 default (unlocked) >>> delegate_blacklist_remove_operation bid_op_type
 OK
-default (unlocked) >>> help delegate_blacklist_add_transaction
-Usage:
-delegate_blacklist_add_transaction <id>                                                               Add specified transaction to blacklist
-Add specified transaction to blacklist
-
-Parameters:
-  id (transaction_id, required): transaction to add to blacklist
-
-Returns:
-  void
-default (unlocked) >>> help delegate_blacklist_remove_transaction
-Usage:
-delegate_blacklist_remove_transaction <id>                                                            Remove specified transaction from blacklist
-Remove specified transaction from blacklist
-
-Parameters:
-  id (transaction_id, required): transaction to remove from blacklist
-
-Returns:
-  void
+default (unlocked) >>> delegate_blacklist_remove_operation register_account_op_type
+OK
 default (unlocked) >>> delegate_get_config
 {
   "network_min_connection_count": 0,
@@ -85,8 +119,19 @@ default (unlocked) >>> delegate_get_config
   "transaction_min_fee": 10000,
   "transaction_blacklist": [],
   "operation_blacklist": [
-    "withdraw_op_type",
     "ask_op_type"
   ]
 }
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> history test
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+<d-ign></d-ign>3         delegate0           test                0.00000 XTS             register test                               0.00000 XTS             0.00000 XTS         <d-ign></d-ign>
+default (unlocked) >>> history test2
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+<d-ign></d-ign>8         delegate0           test2               0.00000 XTS             register test2                              0.00000 XTS             0.00000 XTS         <d-ign></d-ign>
 default (unlocked) >>> quit

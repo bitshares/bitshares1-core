@@ -2578,7 +2578,7 @@ namespace detail {
        /* Get shared secret and check memo decryption */
        bool found_recipient = false;
        public_key_type recipient_public_key;
-       memo_data memo;
+       extended_memo_data memo;
        if( !recipient_account.empty() )
        {
            recipient_public_key = get_owner_public_key( recipient_account );
