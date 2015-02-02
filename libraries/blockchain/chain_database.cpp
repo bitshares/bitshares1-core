@@ -64,10 +64,58 @@ namespace bts { namespace blockchain {
                  ("num_pending_transaction_considered", num_pending_transaction_considered));
       }
 
+      void chain_database_impl::load_checkpoints( const fc::path& data_dir )const
+      { try {
+          for( const auto& item : CHECKPOINT_BLOCKS )
+              LAST_CHECKPOINT_BLOCK_NUM = std::max( item.first, LAST_CHECKPOINT_BLOCK_NUM );
+
+          const fc::path checkpoint_file = data_dir / "checkpoints.json";
+
+          decltype( CHECKPOINT_BLOCKS ) external_checkpoints;
+          fc::oexception file_exception;
+          if( fc::exists( checkpoint_file ) )
+          {
+              try
+              {
+                  external_checkpoints = fc::json::from_file( checkpoint_file ).as<decltype( external_checkpoints )>();
+              }
+              catch( const fc::exception& e )
+              {
+                  file_exception = e;
+              }
+          }
+
+          uint32_t external_checkpoint_max_block_num = 0;
+          for( const auto& item : external_checkpoints )
+              external_checkpoint_max_block_num = std::max( item.first, external_checkpoint_max_block_num );
+
+          if( external_checkpoint_max_block_num >= LAST_CHECKPOINT_BLOCK_NUM )
+          {
+              ulog( "Using blockchain checkpoints from file: ${x}", ("x",checkpoint_file.preferred_string()) );
+              CHECKPOINT_BLOCKS = external_checkpoints;
+              LAST_CHECKPOINT_BLOCK_NUM = external_checkpoint_max_block_num;
+              return;
+          }
+
+          if( !file_exception.valid() )
+          {
+              fc::remove_all( checkpoint_file );
+              fc::json::save_to_file( CHECKPOINT_BLOCKS, checkpoint_file );
+          }
+          else
+          {
+              ulog( "Error loading blockchain checkpoints from file: ${x}", ("x",checkpoint_file.preferred_string()) );
+          }
+
+          if( !CHECKPOINT_BLOCKS.empty() )
+              ulog( "Using built-in blockchain checkpoints" );
+      } FC_CAPTURE_AND_RETHROW( (data_dir) ) }
+
       void chain_database_impl::open_database( const fc::path& data_dir )
       { try {
-          bool rebuild_index = false;
+          load_checkpoints( data_dir.parent_path() );
 
+          bool rebuild_index = false;
           if( !fc::exists(data_dir / "index" ) )
           {
               ilog("Rebuilding database index...");
