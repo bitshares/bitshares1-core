@@ -101,7 +101,7 @@ default (unlocked) >>> blockchain_get_transaction da5fbeb4f3e77927c2a59461bd3374
         50000
       ]
     ],
-    "net_delegate_votes": [],
+    "delta_votes": [],
     "chain_location": {
       "block_num": 2,
       "trx_num": 0
