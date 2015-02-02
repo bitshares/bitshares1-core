@@ -13,6 +13,8 @@
 #include <fc/optional.hpp>
 #include <fc/reflect/variant.hpp>
 
+#define BTS_WALLET_UNCONFIRMED_BLOCKNUM_SENTINEL_VALUE ((uint32_t) -1)
+
 namespace bts { namespace wallet {
    using namespace bts::blockchain;
 
@@ -179,7 +181,7 @@ namespace bts { namespace wallet {
    struct transaction_ledger_entry
    {
        transaction_id_type              id;
-       uint32_t                         block_num = -1;
+       uint32_t                         block_num = BTS_WALLET_UNCONFIRMED_BLOCKNUM_SENTINEL_VALUE;
        time_point_sec                   timestamp = time_point_sec( -1 );
 
        // e.g. { name, INCOME-name, ISSUER-name, `snapshot address`, {ASK,BID,SHORT,MARGIN}-id, FEE }
@@ -192,7 +194,7 @@ namespace bts { namespace wallet {
 
        map<uint16_t, string>            operation_notes;
 
-       bool is_confirmed()const { return block_num != -1; }
+       bool is_confirmed()const { return block_num != BTS_WALLET_UNCONFIRMED_BLOCKNUM_SENTINEL_VALUE; }
        bool is_virtual()const   { return !transaction_id.valid(); }
 
        friend bool operator < ( const transaction_ledger_entry& a, const transaction_ledger_entry& b )
