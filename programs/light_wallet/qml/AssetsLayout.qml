@@ -46,7 +46,7 @@ Page {
 
                   Item { Layout.preferredWidth: visuals.margins }
                   Label {
-                     text: amount
+                     text: format(amount, symbol)
                      font.pixelSize: units.dp(32)
                   }
                   Item { Layout.fillWidth: true }

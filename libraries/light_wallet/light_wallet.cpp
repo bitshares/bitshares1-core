@@ -549,10 +549,14 @@ optional<asset_record> light_wallet::get_asset_record( const string& symbol )con
          if( item.second.symbol == symbol )
             return item.second;
    }
-   auto result = _rpc.blockchain_get_asset( symbol );
-   if( result )
-      _chain_cache->store_asset_record(*result);
-   return result;
+   if( is_connected() )
+   {
+      auto result = _rpc.blockchain_get_asset( symbol );
+      if( result )
+         _chain_cache->store_asset_record(*result);
+      return result;
+   }
+   return oasset_record();
 } FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
 optional<asset_record> light_wallet::get_asset_record(const asset_id_type& id)const
@@ -563,11 +567,15 @@ optional<asset_record> light_wallet::get_asset_record(const asset_id_type& id)co
          if( item.second.id == id )
             return item.second;
    }
-   auto result = _rpc.blockchain_get_asset( fc::variant(id).as_string() );
-   if( result )
-      _chain_cache->store_asset_record(*result);
-   return result;
-   } FC_CAPTURE_AND_RETHROW( (id) ) }
+   if( is_connected() )
+   {
+      auto result = _rpc.blockchain_get_asset( fc::variant(id).as_string() );
+      if( result )
+         _chain_cache->store_asset_record(*result);
+      return result;
+   }
+   return oasset_record();
+} FC_CAPTURE_AND_RETHROW( (id) ) }
 
 oaccount_record light_wallet::get_account_record(const string& identifier)
 {
@@ -576,17 +584,21 @@ oaccount_record light_wallet::get_account_record(const string& identifier)
       return itr->second;
    wlog("Cache miss on account ${a}", ("a", identifier));
 
-   auto account = _rpc.blockchain_get_account(identifier);
-   if( account )
+   if( is_connected() )
    {
-      _chain_cache->store_account_record(*account);
-      _account_cache[account->name] = *account;
-      _account_cache[string(account->owner_key)] = *account;
-      _account_cache[string(account->active_key())] = *account;
-      _account_cache[string(account->owner_address())] = *account;
-      _account_cache[string(account->active_address())] = *account;
+      auto account = _rpc.blockchain_get_account(identifier);
+      if( account )
+      {
+         _chain_cache->store_account_record(*account);
+         _account_cache[account->name] = *account;
+         _account_cache[string(account->owner_key)] = *account;
+         _account_cache[string(account->active_key())] = *account;
+         _account_cache[string(account->owner_address())] = *account;
+         _account_cache[string(account->active_address())] = *account;
+      }
+      return account;
    }
-   return account;
+   return oaccount_record();
 }
 
 bts::wallet::transaction_ledger_entry light_wallet::summarize(const string& account_name,
