@@ -107,13 +107,6 @@ namespace bts { namespace blockchain {
          double get_average_delegate_participation()const;
 
          /**
-          *  When evaluating blocks, you only need to validate the delegate signature assuming you
-          *  trust the other delegates to check up on eachother (which everyone should).  This
-          *  should greatly reduce processing time for non-delegate nodes.
-          */
-         void skip_signature_verification( bool state );
-
-         /**
           * The state of the blockchain after applying all pending transactions.
           */
          pending_chain_state_ptr                    get_pending_state()const;

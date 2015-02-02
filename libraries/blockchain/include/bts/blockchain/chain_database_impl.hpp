@@ -37,7 +37,7 @@ namespace bts { namespace blockchain {
 
             std::pair<block_id_type, block_fork_data>   store_and_index( const block_id_type& id, const full_block& blk );
 
-            void                                        clear_pending(  const full_block& blk );
+            void                                        clear_pending(  const full_block& block_data );
             void                                        revalidate_pending();
 
             void                                        switch_to_fork( const block_id_type& block_id );
@@ -71,7 +71,7 @@ namespace bts { namespace blockchain {
             void                                        execute_markets( const time_point_sec timestamp,
                                                                          const pending_chain_state_ptr& pending_state )const;
 
-            void                                        apply_transactions( const full_block& block,
+            void                                        apply_transactions( const full_block& block_data,
                                                                             const pending_chain_state_ptr& pending_state )const;
 
             void                                        update_active_delegate_list( const uint32_t block_num,
@@ -103,7 +103,6 @@ namespace bts { namespace blockchain {
 
             chain_database*                                                             self = nullptr;
             unordered_set<chain_observer*>                                              _observers;
-            bool                                                                        _skip_signature_verification = false;
             share_type                                                                  _relay_fee = BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE;
 
             bts::db::level_map<uint32_t, std::vector<block_id_type>>                    _fork_number_db;
@@ -131,7 +130,6 @@ namespace bts { namespace blockchain {
             bts::db::fast_level_map<account_id_type, account_record>                    _account_id_to_record;
             bts::db::fast_level_map<string, account_id_type>                            _account_name_to_id;
             bts::db::fast_level_map<address, account_id_type>                           _account_address_to_id;
-
             set<vote_del>                                                               _delegate_votes;
 
             bts::db::fast_level_map<asset_id_type, asset_record>                        _asset_id_to_record;

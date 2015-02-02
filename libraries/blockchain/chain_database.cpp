@@ -396,12 +396,13 @@ namespace bts { namespace blockchain {
          return current_blocks;
       }
 
-      void chain_database_impl::clear_pending( const full_block& blk )
-      {
-         for( const signed_transaction& trx : blk.user_transactions )
+      void chain_database_impl::clear_pending( const full_block& block_data )
+      { try {
+         for( const signed_transaction& trx : block_data.user_transactions )
             _pending_transaction_db.remove( trx.id() );
 
          _pending_fee_index.clear();
+         _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
 
          // this schedules the revalidate-pending-transactions task to execute in this thread
          // as soon as this current task (probably pushing a block) gets around to yielding.
@@ -409,15 +410,12 @@ namespace bts { namespace blockchain {
          // during the middle of pushing a block.  If that happens, the database is in an
          // inconsistent state and it confuses the p2p network code.
          // We skip this step if we are dealing with blocks prior to the last checkpointed block
-         uint32_t last_checkpoint_block_num = 0;
-         if( !CHECKPOINT_BLOCKS.empty() )
-             last_checkpoint_block_num = (--(CHECKPOINT_BLOCKS.end()))->first;
-         if( (!_revalidate_pending.valid() || _revalidate_pending.ready()) &&
-             _head_block_header.block_num >= last_checkpoint_block_num )
-           _revalidate_pending = fc::async( [=](){ revalidate_pending(); }, "revalidate_pending" );
-
-         _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
-      }
+         if( _head_block_header.block_num >= LAST_CHECKPOINT_BLOCK_NUM )
+         {
+             if( !_revalidate_pending.valid() || _revalidate_pending.ready() )
+                 _revalidate_pending = fc::async( [=](){ revalidate_pending(); }, "revalidate_pending" );
+         }
+      } FC_CAPTURE_AND_RETHROW( (block_data) ) }
 
       std::pair<block_id_type, block_fork_data> chain_database_impl::recursive_mark_as_linked(const std::unordered_set<block_id_type>& ids)
       {
@@ -686,19 +684,20 @@ namespace bts { namespace blockchain {
          }
       } FC_CAPTURE_AND_RETHROW( (block_id) ) }
 
-      void chain_database_impl::apply_transactions( const full_block& block,
+      void chain_database_impl::apply_transactions( const full_block& block_data,
                                                     const pending_chain_state_ptr& pending_state )const
       { try {
          uint32_t trx_num = 0;
-         for( const auto& trx : block.user_transactions )
+         for( const auto& trx : block_data.user_transactions )
          {
             transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_state.get() );
-            trx_eval_state->evaluate( trx, _skip_signature_verification );
+            trx_eval_state->_skip_signature_check = block_data.block_num <= LAST_CHECKPOINT_BLOCK_NUM;
+            trx_eval_state->evaluate( trx );
 
             const transaction_id_type& trx_id = trx.id();
             otransaction_record record = pending_state->lookup<transaction_record>( trx_id );
             FC_ASSERT( record.valid() );
-            record->chain_location = transaction_location( block.block_num, trx_num );
+            record->chain_location = transaction_location( block_data.block_num, trx_num );
             pending_state->store_transaction( trx_id, *record );
 
             // TODO:  capture the evaluation state with a callback for wallets...
@@ -706,7 +705,7 @@ namespace bts { namespace blockchain {
 
             ++trx_num;
          }
-      } FC_CAPTURE_AND_RETHROW( (block) ) }
+      } FC_CAPTURE_AND_RETHROW( (block_data) ) }
 
       void chain_database_impl::pay_delegate( const block_id_type& block_id,
                                               const public_key_type& block_signee,
@@ -951,23 +950,26 @@ namespace bts { namespace blockchain {
          try
          {
             public_key_type block_signee;
-            if( CHECKPOINT_BLOCKS.size() > 0 && (--CHECKPOINT_BLOCKS.end())->first > block_data.block_num )
-               //Skip signature validation
-               block_signee = self->get_slot_signee( block_data.timestamp, self->get_active_delegates() ).signing_key();
+            if( block_data.block_num > LAST_CHECKPOINT_BLOCK_NUM )
+            {
+                block_signee = block_data.signee();
+            }
             else
-               /* We need the block_signee's key in several places and computing it is expensive, so compute it here and pass it down */
-               block_signee = block_data.signee();
+            {
+                const auto iter = CHECKPOINT_BLOCKS.find( block_data.block_num );
+                if( iter != CHECKPOINT_BLOCKS.end() && iter->second != block_id )
+                    FC_CAPTURE_AND_THROW( failed_checkpoint_verification, (block_id)(*iter) );
 
-            auto checkpoint_itr = CHECKPOINT_BLOCKS.find(block_data.block_num);
-            if( checkpoint_itr != CHECKPOINT_BLOCKS.end() && checkpoint_itr->second != block_id )
-              FC_CAPTURE_AND_THROW( failed_checkpoint_verification, (block_id)(checkpoint_itr->second) );
+                // Skip signature validation
+                block_signee = self->get_slot_signee( block_data.timestamp, self->get_active_delegates() ).signing_key();
+            }
 
-            /* Note: Secret is validated later in update_delegate_production_info() */
+            // NOTE: Secret is validated later in update_delegate_production_info()
             verify_header( digest_block( block_data ), block_signee );
 
             summary.block_data = block_data;
 
-            /* Create a pending state to track changes that would apply as we evaluate the block */
+            // Create a pending state to track changes that would apply as we evaluate the block
             pending_chain_state_ptr pending_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
             summary.applied_changes = pending_state;
 
@@ -1109,8 +1111,6 @@ namespace bts { namespace blockchain {
    :my( new detail::chain_database_impl() )
    {
       my->self = this;
-      my->_skip_signature_verification = true;
-      my->_relay_fee = BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE;
 
       init_account_db_interface();
       init_asset_db_interface();
@@ -1475,7 +1475,7 @@ namespace bts { namespace blockchain {
       pending_chain_state_ptr          pend_state = std::make_shared<pending_chain_state>(my->_pending_trx_state);
       transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>( pend_state.get() );
 
-      trx_eval_state->evaluate( trx, false );
+      trx_eval_state->evaluate( trx );
       const share_type fees = trx_eval_state->get_fees() + trx_eval_state->alt_fees_paid.amount;
       if( fees < required_fees )
       {
@@ -1495,7 +1495,7 @@ namespace bts { namespace blockchain {
           auto pending_state = std::make_shared<pending_chain_state>( shared_from_this() );
           transaction_evaluation_state_ptr eval_state = std::make_shared<transaction_evaluation_state>( pending_state.get() );
 
-          eval_state->evaluate( transaction, false );
+          eval_state->evaluate( transaction );
           const share_type fees = eval_state->get_fees() + eval_state->alt_fees_paid.amount;
           if( fees < min_fee )
              FC_CAPTURE_AND_THROW( insufficient_relay_fee, (fees)(min_fee) );
@@ -2023,7 +2023,8 @@ namespace bts { namespace blockchain {
                   auto pending_trx_state = std::make_shared<pending_chain_state>( pending_state );
                   {
                       auto trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_trx_state.get() );
-                      trx_eval_state->evaluate( new_transaction, false, config.transaction_canonical_signatures_required );
+                      trx_eval_state->_enforce_canonical_signatures = config.transaction_canonical_signatures_required;
+                      trx_eval_state->evaluate( new_transaction );
 
                       // Check transaction fee limit
                       const share_type transaction_fee = trx_eval_state->get_fees( 0 ) + trx_eval_state->alt_fees_paid.amount;
@@ -3146,11 +3147,6 @@ namespace bts { namespace blockchain {
    { try {
        return my->_unique_transactions.count( unique_transaction_key( trx, get_chain_id() ) ) > 0;
    } FC_CAPTURE_AND_RETHROW( (trx) ) }
-
-   void chain_database::skip_signature_verification( bool state )
-   {
-      my->_skip_signature_verification = state;
-   }
 
    void chain_database::set_relay_fee( share_type shares )
    {
