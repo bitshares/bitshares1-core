@@ -473,6 +473,9 @@ config load_config( const fc::path& datadir, const bool enable_ulog, const fc::o
 
 void load_checkpoints( const fc::path& data_dir )
 { try {
+    for( const auto& item : CHECKPOINT_BLOCKS )
+        LAST_CHECKPOINT_BLOCK_NUM = std::max( item.first, LAST_CHECKPOINT_BLOCK_NUM );
+
     const fc::path checkpoint_file = data_dir / "checkpoints.json";
 
     decltype( CHECKPOINT_BLOCKS ) external_checkpoints;
@@ -489,14 +492,16 @@ void load_checkpoints( const fc::path& data_dir )
         }
     }
 
-    if( !external_checkpoints.empty() )
+    uint32_t external_checkpoint_max_block_num = 0;
+    for( const auto& item : external_checkpoints )
+        external_checkpoint_max_block_num = std::max( item.first, external_checkpoint_max_block_num );
+
+    if( external_checkpoint_max_block_num >= LAST_CHECKPOINT_BLOCK_NUM )
     {
-        if( CHECKPOINT_BLOCKS.empty() || external_checkpoints.crbegin()->first >= CHECKPOINT_BLOCKS.crbegin()->first )
-        {
-            ulog( "Using blockchain checkpoints from file: ${x}", ("x",checkpoint_file.preferred_string()) );
-            CHECKPOINT_BLOCKS = external_checkpoints;
-            return;
-        }
+        ulog( "Using blockchain checkpoints from file: ${x}", ("x",checkpoint_file.preferred_string()) );
+        CHECKPOINT_BLOCKS = external_checkpoints;
+        LAST_CHECKPOINT_BLOCK_NUM = external_checkpoint_max_block_num;
+        return;
     }
 
     if( !file_exception.valid() )
@@ -670,8 +675,6 @@ void client_impl::delegate_loop()
    const auto next_block_time = _wallet->get_next_producible_block_timestamp( enabled_delegates );
    if( next_block_time.valid() )
    {
-      // delegates don't get to skip this check, they must check up on everyone else
-      _chain_db->skip_signature_verification( false );
       ilog( "Producing block at time: ${t}", ("t",*next_block_time) );
 
       if( *next_block_time <= now )
