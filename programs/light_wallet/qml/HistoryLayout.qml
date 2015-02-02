@@ -65,7 +65,7 @@ Page {
          anchors.verticalCenter: parent.verticalCenter
          anchors.right: parent.right
          anchors.rightMargin: visuals.margins
-         text: wallet.accounts[accountName].balance(assetSymbol) + " " + assetSymbol
+         text: format(wallet.accounts[accountName].balance(assetSymbol), assetSymbol) + " " + assetSymbol
          color: "white"
          font.pixelSize: units.dp(24)
 

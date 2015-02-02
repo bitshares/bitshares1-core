@@ -52,7 +52,11 @@ Window {
       }
    }
    function format(amount, symbol) {
-      return Number(amount).toLocaleString(Qt.locale(), 'f', wallet.getDigitsOfPrecision(symbol)).replace(/(\.)?0*$/, '')
+      var l = Qt.locale()
+      if( l.decimalPoint === "." )
+         return Number(amount).toLocaleString(l, 'f', wallet.getDigitsOfPrecision(symbol)).replace(/(\.)0*$/, '')
+      else
+         return Number(amount).toLocaleString(l, 'f', wallet.getDigitsOfPrecision(symbol)).replace(/(\,)0*$/, '')
    }
    function connectToServer() {
       if( !wallet.connected )
