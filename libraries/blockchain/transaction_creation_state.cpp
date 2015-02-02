@@ -71,7 +71,7 @@ namespace bts { namespace blockchain {
                                                       memo,
                                                       from ? from->get_public_key()
                                                            : one_time_key->get_public_key(),
-                                                      to_memo,
+                                                      from_memo,
                                                       stealth );
 
           deposit_operation op;
