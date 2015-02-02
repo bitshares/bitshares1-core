@@ -115,8 +115,6 @@ namespace bts { namespace blockchain {
 
       void chain_database_impl::open_database( const fc::path& data_dir )
       { try {
-          load_checkpoints( data_dir.parent_path() );
-
           bool rebuild_index = false;
           if( !fc::exists(data_dir / "index" ) )
           {
@@ -1297,6 +1295,7 @@ namespace bts { namespace blockchain {
 
           fc::create_directories( data_dir );
 
+          my->load_checkpoints( data_dir.parent_path() );
           my->open_database( data_dir );
 
           // TODO: check to see if we crashed during the last write

@@ -1729,7 +1729,7 @@ pretty_transaction wallet::to_pretty_trx( const wallet_transaction_record& trx_r
    string from_name;
    for( const pretty_ledger_entry& entry : pretty_trx.ledger_entries )
    {
-       if( my->is_valid_account( entry.from_account ) )
+       if( chain_interface::is_valid_account_name( entry.from_account ) )
        {
            ++from_name_count;
            if( from_name_count > 1 ) break;

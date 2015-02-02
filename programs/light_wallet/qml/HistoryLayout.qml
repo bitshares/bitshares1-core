@@ -15,9 +15,11 @@ Page {
 
    ScrollView {
       id: historyScroller
-      anchors.fill: parent
+      anchors.top: parent.top
+      anchors.bottom: balanceBar.top
       anchors.topMargin: visuals.margins
-      anchors.bottomMargin: balanceBar.height + visuals.margins
+      anchors.bottomMargin: visuals.margins
+      width: parent.width
       flickableItem.interactive: true
       // @disable-check M16
       verticalScrollBarPolicy: Qt.platform.os in ["android", "ios"]? Qt.ScrollBarAsNeeded : Qt.ScrollBarAlwaysOff
@@ -63,13 +65,13 @@ Page {
          anchors.verticalCenter: parent.verticalCenter
          anchors.right: parent.right
          anchors.rightMargin: visuals.margins
-         text: wallet.accounts[accountName].balance(assetSymbol) + " " + assetSymbol
+         text: format(wallet.accounts[accountName].balance(assetSymbol), assetSymbol) + " " + assetSymbol
          color: "white"
          font.pixelSize: units.dp(24)
 
          Connections {
             target: wallet
-            onSynced: balanceLabel.text = wallet.accounts[accountName].balance(assetSymbol) + " " + assetSymbol
+            onSynced: balanceLabel.text = format(wallet.accounts[accountName].balance(assetSymbol), assetSymbol) + " " + assetSymbol
          }
       }
    }
