@@ -662,7 +662,7 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const string& acco
                {
                   auto one_time_key = create_one_time_key(account_name, fc::to_string(record.trx.expiration.sec_since_epoch()));
                   try {
-                     memo_data data = condition.decrypt_memo_data(one_time_key.get_shared_secret(account->active_key()));
+                     extended_memo_data data = condition.decrypt_memo_data(one_time_key.get_shared_secret(account->active_key()));
                      summary.operation_notes[i] = data.get_message();
                   } catch(...){}
                }
