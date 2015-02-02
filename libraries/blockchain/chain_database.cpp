@@ -1084,9 +1084,9 @@ namespace bts { namespace blockchain {
 
          auto previous_block_id = _head_block_header.previous;
 
-         const auto undo_iter = _block_id_to_undo_state.find( _head_block_id );
-         FC_ASSERT( undo_iter.valid() );
-         const auto& undo_state = undo_iter.value();
+         const auto undo_iter = _block_id_to_undo_state.unordered_find( _head_block_id );
+         FC_ASSERT( undo_iter != _block_id_to_undo_state.unordered_end() );
+         const auto& undo_state = undo_iter->second;
 
          bts::blockchain::pending_chain_state_ptr undo_state_ptr = std::make_shared<bts::blockchain::pending_chain_state>( undo_state );
          undo_state_ptr->set_prev_state( self->shared_from_this() );
@@ -1207,6 +1207,8 @@ namespace bts { namespace blockchain {
 
              const auto toggle_leveldb = [ this ]( const bool enabled )
              {
+                 my->_block_id_to_undo_state.toggle_leveldb( enabled );
+
                  my->_property_db.toggle_leveldb( enabled );
 
                  my->_account_id_to_record.toggle_leveldb( enabled );
