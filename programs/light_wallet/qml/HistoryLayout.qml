@@ -65,13 +65,21 @@ Page {
          anchors.verticalCenter: parent.verticalCenter
          anchors.right: parent.right
          anchors.rightMargin: visuals.margins
-         text: format(wallet.accounts[accountName].balance(assetSymbol), assetSymbol) + " " + assetSymbol
+         text: getLabel()
+
+         function getLabel() {
+            var balance = wallet.accounts[accountName].balance(assetSymbol)
+            return format(balance.amount, assetSymbol) + " " + assetSymbol +
+                  (balance.yield ? "\n+ " + format(balance.yield, assetSymbol) + qsTr(" yield")
+                                 : "")
+         }
+
          color: "white"
          font.pixelSize: units.dp(24)
 
          Connections {
             target: wallet
-            onSynced: balanceLabel.text = format(wallet.accounts[accountName].balance(assetSymbol), assetSymbol) + " " + assetSymbol
+            onSynced: balanceLabel.text = balanceLabel.getLabel()
          }
       }
    }

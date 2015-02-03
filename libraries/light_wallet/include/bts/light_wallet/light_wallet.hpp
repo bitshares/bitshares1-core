@@ -76,7 +76,7 @@ namespace bts { namespace light_wallet {
          oprice get_median_feed_price( const string& symbol );
          asset  get_fee( const string& symbol );
 
-         map<string,double> balance(const std::string& account_name)const;
+         map<string, pair<double, double> > balance(const std::string& account_name)const;
          bts::wallet::transaction_ledger_entry summarize(const std::string& account_name, const fc::variant_object& transaction_bundle);
          vector<wallet::transaction_ledger_entry> transactions(const std::string& account_name, const string& symbol );
 
