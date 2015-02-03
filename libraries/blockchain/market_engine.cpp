@@ -35,8 +35,8 @@ namespace bts { namespace blockchain { namespace detail {
           _relative_bid_itr  = _db_impl._relative_bid_db.lower_bound( market_index_key( next_pair ) );
           _relative_ask_itr  = _db_impl._relative_ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
           _short_itr         = _db_impl._short_db.lower_bound( market_index_key_ext( next_pair ) );
-          _short_at_feed_itr  = _db_impl._shorts_at_feed.lower_bound( market_index_key_ext( next_pair ) );
-          _short_at_limit_itr = _db_impl._short_limit_index.end();
+          _short_at_feed_itr  = std::set<market_index_key>::reverse_iterator(_db_impl._shorts_at_feed.lower_bound( market_index_key_ext( next_pair ) ));
+          _short_at_limit_itr = _db_impl._short_limit_index.rend();
           _collateral_itr     = _db_impl._collateral_db.lower_bound( market_index_key( next_pair ) );
 
           edump( (_db_impl._shorts_at_feed) );
@@ -63,16 +63,6 @@ namespace bts { namespace blockchain { namespace detail {
           if( _short_itr.valid() )   --_short_itr;
           else _short_itr = _db_impl._short_db.last();
 
-          if( _short_at_feed_itr != _db_impl._shorts_at_feed.begin() ) 
-          {
-             wdump( (*_short_at_feed_itr) );
-             --_short_at_feed_itr;
-          }
-          if( _short_at_feed_itr == _db_impl._shorts_at_feed.end() && _db_impl._shorts_at_feed.size() ) 
-          {
-             wdump( (*_short_at_feed_itr) );
-             --_short_at_feed_itr;
-          }
 
           // Market issued assets cannot match until the first time there is a median feed; assume feed price base id 0
           if( quote_asset->is_market_issued() && base_asset->id == 0 )
@@ -82,10 +72,11 @@ namespace bts { namespace blockchain { namespace detail {
               if( (!market_stat.valid() || !market_stat->last_valid_feed_price.valid()) && !_feed_price.valid() )
                   FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id)(base_id) );
           }
-          //if( _feed_price )
-          //   _short_at_limit_itr= _db_impl._short_limit_index.lower_bound( std::make_pair( *_feed_price, market_index_key( next_pair )) );
 
-          if( _short_at_limit_itr != _db_impl._short_limit_index.end() ) --_short_at_limit_itr;
+          // TODO: enable this
+          if( _feed_price )
+             _short_at_limit_itr = decltype(_short_at_limit_itr)(_db_impl._short_limit_index.lower_bound( std::make_pair( *_feed_price, market_index_key( next_pair )) ));
+
 
           // prime the pump, to make sure that margin calls (asks) have a bid to check against.
           get_next_bid(); get_next_ask();
@@ -777,7 +768,7 @@ namespace bts { namespace blockchain { namespace detail {
       if( bid ) wdump( (bid->get_price(*_feed_price)) );
       wlog( "." );
           // first consider shorts at the feed price
-          if( _short_at_feed_itr != _db_impl._shorts_at_feed.end() )
+          if( _short_at_feed_itr != _db_impl._shorts_at_feed.rend() )
           {
               wlog( "found short at feed iter not null" );
               wdump((*_short_at_feed_itr) );
@@ -786,7 +777,7 @@ namespace bts { namespace blockchain { namespace detail {
                   _short_at_feed_itr->order_price.base_asset_id != _base_id  )
               {
                  wlog( "    no more shorts at feed" );
-                 _short_at_feed_itr = _db_impl._shorts_at_feed.end();
+                 _short_at_feed_itr = _db_impl._shorts_at_feed.rend();
               }
               else // fetch the order
               {
@@ -795,7 +786,7 @@ namespace bts { namespace blockchain { namespace detail {
                  FC_ASSERT( oshort.valid() );
                  bid =  market_order( short_order, *_short_at_feed_itr, *oshort );
                  _current_bid = bid;
-                 --_short_at_feed_itr;
+                 ++_short_at_feed_itr;
                  return _current_bid.valid();
               }
           }
@@ -805,13 +796,13 @@ namespace bts { namespace blockchain { namespace detail {
           }
 
           // if we have a short with a limit below the feed
-          if( _short_at_limit_itr != _db_impl._short_limit_index.end() )
+          if( _short_at_limit_itr != _db_impl._short_limit_index.rend() )
           {
              wdump((*_short_at_limit_itr) );
              if( _short_at_limit_itr->first.quote_asset_id != _quote_id ||
                  _short_at_limit_itr->first.base_asset_id != _base_id  )
              {
-                _short_at_limit_itr = _db_impl._short_limit_index.end();
+                _short_at_limit_itr = _db_impl._short_limit_index.rend();
              }
              else
              {
@@ -825,7 +816,7 @@ namespace bts { namespace blockchain { namespace detail {
                    FC_ASSERT( oshort );
                    bid =  market_order( short_order, _short_at_limit_itr->second, *oshort );
                    _current_bid = bid;
-                   --_short_at_limit_itr;
+                   ++_short_at_limit_itr;
                    return _current_bid.valid();
                 }
              }
