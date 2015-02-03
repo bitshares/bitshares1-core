@@ -31,13 +31,7 @@ class LightWallet : public QObject
    Q_PROPERTY(QString baseAssetSymbol READ baseAssetSymbol CONSTANT)
 
 public:
-   LightWallet()
-      : m_walletThread("Wallet Implementation Thread"),
-        m_wallet(QStandardPaths::writableLocation(QStandardPaths::DataLocation).toStdWString())
-   {
-      auto path = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
-      QDir(path).mkpath(".");
-   }
+   LightWallet();
    virtual ~LightWallet()
    {
       m_walletThread.quit();
@@ -128,6 +122,7 @@ public Q_SLOTS:
 
    void sync();
    void syncAllBalances();
+   void syncAllTransactions();
 
 Q_SIGNALS:
    void walletExistsChanged(bool exists);

@@ -234,6 +234,7 @@ namespace bts { namespace blockchain {
          template<typename T, typename U>
          void store( const U& key, const T& record )
          { try {
+             record.sanity_check( *this );
              T::db_interface( *this ).store( key, record );
          } FC_CAPTURE_AND_RETHROW( (key)(record) ) }
 

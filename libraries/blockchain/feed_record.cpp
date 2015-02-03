@@ -8,6 +8,10 @@ namespace bts { namespace blockchain {
         return db._feed_db_interface;
     } FC_CAPTURE_AND_RETHROW() }
 
+    void feed_record::sanity_check( const chain_interface& db )const
+    { try {
+    } FC_CAPTURE_AND_RETHROW( (*this) ) }
+
     ofeed_record feed_db_interface::lookup( const feed_index index )const
     { try {
         return lookup_by_index( index );

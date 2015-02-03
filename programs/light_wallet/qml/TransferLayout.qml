@@ -105,7 +105,7 @@ Page {
             }
             helperText: {
                var fee = wallet.getFee(assetSymbol.text)
-               var balance = Number(wallet.accounts[accountName].balance(assetSymbol.text))
+               var balance = Number(wallet.accounts[accountName].balance(assetSymbol.text).amount)
                return qsTr("Available balance: ") + format(balance, assetSymbol.text) +
                      " " + assetSymbol.text + "\n" + qsTr("Transaction fee: ") + format(fee.amount, fee.symbol) + " " + fee.symbol
             }

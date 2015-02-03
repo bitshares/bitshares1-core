@@ -114,6 +114,7 @@ namespace bts { namespace blockchain {
       optional<account_meta_info>            meta_data;
 
       static const account_db_interface& db_interface( const chain_interface& );
+      void sanity_check( const chain_interface& )const;
    };
    typedef fc::optional<account_record> oaccount_record;
 
