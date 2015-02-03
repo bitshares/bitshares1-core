@@ -291,6 +291,14 @@ void LightWallet::syncAllBalances()
    END_THREAD
 }
 
+void LightWallet::syncAllTransactions()
+{
+   IN_THREAD
+   if( m_wallet.sync_transactions(true) )
+         Q_EMIT synced();
+   END_THREAD
+}
+
 void LightWallet::generateBrainKey()
 {
    FC_ASSERT( &fc::thread::current() == &m_walletThread );

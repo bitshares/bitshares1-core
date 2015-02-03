@@ -73,7 +73,7 @@ namespace bts { namespace light_wallet {
                                 const fc::variant_object& transaction_bundle);
 
          bool sync_balance( bool resync_all = false);
-         bool sync_transactions();
+         bool sync_transactions(bool resync_all = false);
 
          oprice get_median_feed_price( const string& symbol );
          asset  get_fee( const string& symbol );
