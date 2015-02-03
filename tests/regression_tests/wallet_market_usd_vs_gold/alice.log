@@ -11996,20 +11996,19 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.013288591532 USD                       37.62626 XTS               0.50000 USD              32 weeks ago   75.25252 XTS
-                                                                             | 0.013288591532 USD                       37.62626 XTS               0.50000 USD              32 weeks ago   75.25252 XTS
+                                                                             | 0.013288591532 USD                       37.62626 XTS               0.50000 USD       2014-06-20T16:41:40   75.25252 XTS
+                                                                             | 0.013288591532 USD                       37.62626 XTS               0.50000 USD       2014-06-20T16:41:40   75.25252 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> blockchain_market_order_book GLD XTS
      BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             |+0.000100000000 GLD                      475.00000 XTS               0.04750 GLD
+                                                                             |+0.000100000000 GLD                      500.00000 XTS               0.05000 GLD
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.000066666667 GLD                       37.50000 XTS               0.00250 GLD              32 weeks ago   75.00000 XTS
-                                                                             | 0.000066666667 GLD                      750.00000 XTS               0.05000 GLD              32 weeks ago   1,500.00000 XTS
+                                                                             | 0.000066666667 GLD                      750.00000 XTS               0.05000 GLD       2014-06-20T16:41:40   1,500.00000 XTS
 Maximum Short Price: 0.0001 GLD / XTS     
 default (unlocked) >>> wallet_market_order_list USD XTS -1 dan
 TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
@@ -12034,7 +12033,7 @@ default (unlocked) >>> balance scott
 ACCOUNT                         BALANCE                     
 ============================================================
 scott                           198,798.00000 XTS           
-                                0.05250 GLD                 
+                                0.05000 GLD                 
 default (unlocked) >>> wallet_market_submit_bid scott .25 USD .001 GLD 
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
@@ -12114,16 +12113,9 @@ default (unlocked) >>> history scott
 |<d-ign>2014-06-20T14:41:50</d-ign>9         RELATIVE-b7b9d8d9   MARKET              500.00000 XTS           sell collateral @ 0.0001 GLD / XTS          198,798.00000 XTS       0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
 |                              MARKET              RELATIVE-b7b9d8d9   0.05000 GLD             payoff debt @ 0.0001 GLD / XTS              0.00000 GLD                                         |
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|<d-ign>2014-06-20T14:41:50</d-ign>9         RELATIVE-b7b9d8d9   MARKET              25.00000 XTS            sell collateral @ 0.0001 GLD / XTS          198,798.00000 XTS       0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
-|                              MARKET              RELATIVE-b7b9d8d9   0.00250 GLD             payoff debt @ 0.0001 GLD / XTS              0.00000 GLD                                         |
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 |<d-ign>2014-06-20T14:41:50</d-ign>9         SHORT-d23037e4      MARGIN-d23037e4     50.00000 XTS            add collateral                              198,798.00000 XTS       0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
 |                              MARKET              MARGIN-d23037e4     25.25252 XTS            add collateral                              198,798.00000 XTS                                   |
 |                              MARGIN-d23037e4     MARKET              0.50000 USD             short proceeds @ 0.02 USD / XTS             0.00000 USD                                         |
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|<d-ign>2014-06-20T14:41:50</d-ign>9         SHORT-d23037e4      MARGIN-d23037e4     50.00000 XTS            add collateral                              198,798.00000 XTS       0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
-|                              MARKET              MARGIN-d23037e4     25.00000 XTS            add collateral                              198,798.00000 XTS                                   |
-|                              MARGIN-d23037e4     MARKET              0.00250 GLD             short proceeds @ 0.0001 GLD / XTS           0.00000 GLD                                         |
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  <d-ign>2014-06-20T14:41:50</d-ign>10        scott               BID-c7ba8e19        0.00025 GLD             buy USD @ 0.001 GLD / USD                   0.00000 GLD             0.50000 XTS         <d-ign> cadaeaf7</d-ign>
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

@@ -932,8 +932,15 @@ namespace bts { namespace cli {
           {
             out << std::left << std::setw(30) << std::setprecision(8) << (fc::to_string(client->get_chain()->to_pretty_price_double(ask_itr->get_price( feed_price ))) + " " + quote_asset_record->symbol)
               << std::right << std::setw(23) << client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
-              << std::right << std::setw(26) << client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity())
-              << std::right << std::setw(26) << fc::get_approximate_relative_time_string( *ask_itr->expiration );
+              << std::right << std::setw(26) << client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
+            if(FILTER_OUTPUT_FOR_TESTS)
+            {
+                  out << std::right << std::setw(26) << fc::string( *ask_itr->expiration );
+            }
+            else
+            {
+                  out << std::right << std::setw(26) << fc::get_approximate_relative_time_string( *ask_itr->expiration );
+            }
             out << "   " << client->get_chain()->to_pretty_asset(asset(*ask_itr->collateral));
             out << "\n";
           }
