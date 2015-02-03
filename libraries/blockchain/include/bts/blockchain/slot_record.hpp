@@ -37,6 +37,7 @@ struct slot_record
     optional<block_id_type> block_id;
 
     static const slot_db_interface& db_interface( const chain_interface& );
+    void sanity_check( const chain_interface& )const;
 };
 typedef fc::optional<slot_record> oslot_record;
 

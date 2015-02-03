@@ -156,7 +156,6 @@ class wallet_impl : public chain_observer
       slate_record get_delegate_slate( const vote_strategy strategy )const;
 
       bool is_receive_account( const string& account_name )const;
-      bool is_valid_account( const string& account_name )const;
       bool is_unique_account( const string& account_name )const;
 
       private_key_type  get_new_private_key( const string& account_name );

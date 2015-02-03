@@ -13,6 +13,7 @@ struct slate_record
     slate_id_type id()const;
 
     static const slate_db_interface& db_interface( const chain_interface& );
+    void sanity_check( const chain_interface& )const;
 };
 typedef optional<slate_record> oslate_record;
  

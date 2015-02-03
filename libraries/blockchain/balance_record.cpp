@@ -1,5 +1,6 @@
 #include <bts/blockchain/balance_record.hpp>
 #include <bts/blockchain/chain_interface.hpp>
+#include <bts/blockchain/exceptions.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -100,6 +101,26 @@ namespace bts { namespace blockchain {
         return db._balance_db_interface;
     } FC_CAPTURE_AND_RETHROW() }
 
+#ifndef WIN32
+#warning [HARDFORK] Sanity check
+#endif
+    void balance_record::sanity_check( const chain_interface& db )const
+    { try {
+        FC_ASSERT( balance >= 0 );
+        FC_ASSERT( condition.asset_id == 0 || db.lookup<asset_record>( condition.asset_id ).valid() );
+        FC_ASSERT( condition.slate_id == 0 || db.lookup<slate_record>( condition.slate_id ).valid() );
+        switch( withdraw_condition_types( condition.type ) )
+        {
+            case withdraw_signature_type:
+            case withdraw_vesting_type:
+            case withdraw_multisig_type:
+            case withdraw_escrow_type:
+                break;
+            default:
+                FC_CAPTURE_AND_THROW( invalid_withdraw_condition );
+        }
+    } FC_CAPTURE_AND_RETHROW( (*this) ) }
+
     obalance_record balance_db_interface::lookup( const balance_id_type& id )const
     { try {
         return lookup_by_id( id );
@@ -107,7 +128,6 @@ namespace bts { namespace blockchain {
 
     void balance_db_interface::store( const balance_id_type& id, const balance_record& record )const
     { try {
-        FC_ASSERT( record.balance >= 0 ); // Sanity check
         insert_into_id_map( id, record );
     } FC_CAPTURE_AND_RETHROW( (id)(record) ) }
 

@@ -30,6 +30,7 @@ namespace bts { namespace blockchain {
         time_point_sec  last_update;
 
         static const feed_db_interface& db_interface( const chain_interface& );
+        void sanity_check( const chain_interface& )const;
     };
     typedef fc::optional<feed_record> ofeed_record;
 
