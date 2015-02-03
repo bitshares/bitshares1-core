@@ -76,20 +76,18 @@ MainView {
          width: units.dp(400)
          progress: 0
 
-         property var startTime
-
-         Timer {
-            id: registrationProgressTimer
-            repeat: true
-            interval: 100
+         NumberAnimation {
+            id: registrationProgressAnimation
             running: onboarder.state === "REGISTERING"
+            target: registrationProgress
+            property: "progress"
+            from: 0; to: 1
+            duration: 15000
+            easing.type: Easing.OutQuart
             onRunningChanged: {
-               if( running ){
-                  registrationProgress.startTime = Date.now()
+               if( !running ) {
+                  registrationProgress.progress = 0
                }
-            }
-            onTriggered: {
-               registrationProgress.progress = Math.min((Date.now() - registrationProgress.startTime) / 15000, 1)
             }
          }
       }
