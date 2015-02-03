@@ -14,7 +14,6 @@ namespace bts { namespace blockchain { namespace detail {
 
   bool market_engine::execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec timestamp )
   {
-     wlog( "================ EXECUTE ================================================\n=========================================================================\n\n" );
       try
       {
           _quote_id = quote_id;
@@ -282,7 +281,7 @@ namespace bts { namespace blockchain { namespace detail {
                 const asset short_quantity_usd = _current_bid->get_balance() * collateral_rate;
                 const asset usd_exchanged      = std::min( short_quantity_usd, ask_quantity_usd );
 
-                wdump( (ask_quantity_usd)(short_quantity_usd)(usd_exchanged) );
+                //wdump( (ask_quantity_usd)(short_quantity_usd)(usd_exchanged) );
 
                 mtrx.ask_received   = usd_exchanged;
 
@@ -310,7 +309,7 @@ namespace bts { namespace blockchain { namespace detail {
                 const asset bid_quantity_xts = _current_bid->get_quantity( _feed_price ? *_feed_price : price() );
                 const asset ask_quantity_xts = _current_ask->get_quantity( _feed_price ? *_feed_price : price() );
                 const asset quantity_xts = std::min( bid_quantity_xts, ask_quantity_xts );
-                wdump( (bid_quantity_xts)(ask_quantity_xts)(quantity_xts) );
+                //wdump( (bid_quantity_xts)(ask_quantity_xts)(quantity_xts) );
 
                 // Everyone gets the price they asked for
                 mtrx.ask_received   = quantity_xts * mtrx.ask_price;
@@ -319,7 +318,7 @@ namespace bts { namespace blockchain { namespace detail {
                 mtrx.ask_paid       = quantity_xts;
                 mtrx.bid_received   = quantity_xts;
 
-                wdump((mtrx));
+                //wdump((mtrx));
 
                 // Handle rounding errors
                 if( quantity_xts == bid_quantity_xts )
@@ -328,7 +327,7 @@ namespace bts { namespace blockchain { namespace detail {
                 if( quantity_xts == ask_quantity_xts )
                    mtrx.ask_paid = _current_ask->get_balance();
 
-                wdump((mtrx));
+                //wdump((mtrx));
 
                 mtrx.fees_collected = mtrx.bid_paid - mtrx.ask_received;
 
@@ -566,10 +565,11 @@ namespace bts { namespace blockchain { namespace detail {
           bid_payout = balance_record( mtrx.bid_owner, asset(0,_base_id), 0 );
 
       uint64_t issuer_fee = 0;
-      if( base_asset.market_fee && base_asset.market_fee <= BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE )
+      if( base_asset.market_fee && base_asset.market_fee < BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE  )
       {
-         uint64_t issuer_fee = mtrx.bid_received.amount * quote_asset.market_fee;
+         issuer_fee = mtrx.bid_received.amount * base_asset.market_fee;
          issuer_fee /= BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE;
+         //wdump( (base_asset.symbol)(base_asset.collected_fees)(issuer_fee) );
          base_asset.collected_fees += issuer_fee;
       }
 
@@ -582,7 +582,8 @@ namespace bts { namespace blockchain { namespace detail {
       // if the balance is less than 1 XTS then it gets collected as fees.
       if( (_current_bid->get_quote_quantity() * mtrx.bid_price).amount == 0 )
       {
-          quote_asset.collected_fees += _current_bid->get_quote_quantity().amount;
+          //wdump( ("collected_fees")(_current_bid->get_quote_quantity().amount));
+          quote_asset.collected_fees +=_current_bid->get_quote_quantity().amount; 
           _current_bid->state.balance = 0;
       }
       if( _current_bid->type == bid_order )
@@ -669,7 +670,7 @@ namespace bts { namespace blockchain { namespace detail {
       FC_ASSERT( _current_ask->type == ask_order || _current_ask->type == relative_ask_order );
       FC_ASSERT( mtrx.ask_type == ask_order || mtrx.ask_type == relative_ask_order );
 
-      wdump( (_current_ask->state.balance)(mtrx.ask_paid.amount) );
+      //wdump( (_current_ask->state.balance)(mtrx.ask_paid.amount) );
       _current_ask->state.balance -= mtrx.ask_paid.amount;
       FC_ASSERT( _current_ask->state.balance >= 0, "balance: ${b}", ("b",_current_ask->state.balance) );
 
@@ -679,10 +680,11 @@ namespace bts { namespace blockchain { namespace detail {
           ask_payout = balance_record( mtrx.ask_owner, asset(0,_quote_id), 0 );
 
       uint64_t issuer_fee = 0;
-      if( quote_asset.market_fee && quote_asset.market_fee <= BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE )
+      if( quote_asset.market_fee && quote_asset.market_fee < BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE  )
       {
-         uint64_t issuer_fee = mtrx.ask_received.amount * quote_asset.market_fee;
+         issuer_fee = mtrx.ask_received.amount * quote_asset.market_fee;
          issuer_fee /= BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE;
+         //wdump( (quote_asset.collected_fees)(issuer_fee) );
          quote_asset.collected_fees += issuer_fee;
       }
 
@@ -758,30 +760,21 @@ namespace bts { namespace blockchain { namespace detail {
             else bid = rel_bid;
          }
       }
-      wlog( "." );
-      wdump( (bid)(_feed_price) );
       // if abs and relative bids are less than feed price, then we can 
       // consider shorts
       if( !bid || (bid->get_price(*_feed_price) < *_feed_price) )
       {
-      wlog( "." );
-      if( bid ) wdump( (bid->get_price(*_feed_price)) );
-      wlog( "." );
           // first consider shorts at the feed price
           if( _short_at_feed_itr != _db_impl._shorts_at_feed.rend() )
           {
-              wlog( "found short at feed iter not null" );
-              wdump((*_short_at_feed_itr) );
               // if we skipped past the range for our market, note that we reached the end
               if( _short_at_feed_itr->order_price.quote_asset_id != _quote_id ||
                   _short_at_feed_itr->order_price.base_asset_id != _base_id  )
               {
-                 wlog( "    no more shorts at feed" );
                  _short_at_feed_itr = _db_impl._shorts_at_feed.rend();
               }
               else // fetch the order
               {
-                 wlog( "    using short at feed  ${itr} ", ("itr",*_short_at_feed_itr) );
                  auto oshort = _db_impl._short_db.fetch_optional( *_short_at_feed_itr );
                  FC_ASSERT( oshort.valid() );
                  bid =  market_order( short_order, *_short_at_feed_itr, *oshort );
@@ -806,11 +799,9 @@ namespace bts { namespace blockchain { namespace detail {
              }
              else
              {
-                wlog( "chekcing to see if the limit is greater than the current bid" );
                 // if the limit price is better than a current bid 
                 if( !bid || (_short_at_limit_itr->first > bid->get_price(*_feed_price)) )
                 {
-                   wlog( "using short a limit because it has a higher price than current bid" );
                    // then the short is game.
                    auto oshort = _db_impl._short_db.fetch_optional( _short_at_limit_itr->second );
                    FC_ASSERT( oshort );
