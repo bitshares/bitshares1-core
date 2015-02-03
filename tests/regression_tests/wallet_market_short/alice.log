@@ -11996,8 +11996,8 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.013288591532 USD                       37.62626 XTS               0.50000 USD              33 weeks ago   75.25252 XTS
-                                                                             | 0.013288591532 USD                       37.62626 XTS               0.50000 USD              33 weeks ago   75.25252 XTS
+                                                                             | 0.013288591532 USD                       37.62626 XTS               0.50000 USD       2014-06-20T16:41:40   75.25252 XTS
+                                                                             | 0.013288591532 USD                       37.62626 XTS               0.50000 USD       2014-06-20T16:41:40   75.25252 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> blockchain_market_order_book GLD XTS
      BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
@@ -12008,7 +12008,7 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.000066666667 GLD                      750.00000 XTS               0.05000 GLD              33 weeks ago   1,500.00000 XTS
+                                                                             | 0.000066666667 GLD                      750.00000 XTS               0.05000 GLD       2014-06-20T16:41:40   1,500.00000 XTS
 Maximum Short Price: 0.0001 GLD / XTS     
 default (unlocked) >>> wallet_market_order_list USD XTS -1 dan
 TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
