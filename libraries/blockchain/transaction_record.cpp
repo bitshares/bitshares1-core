@@ -9,6 +9,10 @@ namespace bts { namespace blockchain {
         return db._transaction_db_interface;
     } FC_CAPTURE_AND_RETHROW() }
 
+    void transaction_record::sanity_check( const chain_interface& db )const
+    { try {
+    } FC_CAPTURE_AND_RETHROW( (*this) ) }
+
     otransaction_record transaction_db_interface::lookup( const transaction_id_type& id )const
     { try {
         return lookup_by_id( id );

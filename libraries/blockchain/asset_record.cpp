@@ -22,11 +22,6 @@ namespace bts { namespace blockchain {
         return (new_share_supply > current_share_supply) && (new_share_supply <= maximum_share_supply);
     }
 
-    const asset_db_interface& asset_record::db_interface( const chain_interface& db )
-    { try {
-        return db._asset_db_interface;
-    } FC_CAPTURE_AND_RETHROW() }
-
     asset asset_record::asset_from_string( const string& amount )const
     {
        asset ugly_asset(0, id);
@@ -73,6 +68,15 @@ namespace bts { namespace blockchain {
        if( amount < 0 ) return "-" + str;
        return str;
     }
+
+    const asset_db_interface& asset_record::db_interface( const chain_interface& db )
+    { try {
+        return db._asset_db_interface;
+    } FC_CAPTURE_AND_RETHROW() }
+
+    void asset_record::sanity_check( const chain_interface& db )const
+    { try {
+    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
     oasset_record asset_db_interface::lookup( const asset_id_type id )const
     { try {
