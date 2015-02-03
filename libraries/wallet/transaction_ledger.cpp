@@ -1725,22 +1725,34 @@ pretty_transaction wallet::to_pretty_trx( const wallet_transaction_record& trx_r
        pretty_trx.ledger_entries.push_back( pretty_entry );
    }
 
-   uint16_t from_name_count = 0;
-   string from_name;
-   for( const pretty_ledger_entry& entry : pretty_trx.ledger_entries )
+   if( !pretty_trx.is_virtual && !pretty_trx.is_market )
    {
-       if( chain_interface::is_valid_account_name( entry.from_account ) )
+       uint16_t unknown_count = 0;
+       uint16_t from_name_count = 0;
+       string from_name;
+       for( const pretty_ledger_entry& entry : pretty_trx.ledger_entries )
        {
-           ++from_name_count;
-           if( from_name_count > 1 ) break;
-           from_name = entry.from_account;
+           if( entry.from_account == "UNKNOWN" )
+           {
+               ++unknown_count;
+           }
+           else if( chain_interface::is_valid_account_name( entry.from_account ) )
+           {
+               ++from_name_count;
+               if( !from_name.empty() && entry.from_account != from_name )
+               {
+                   from_name_count = 0;
+                   break;
+               }
+               from_name = entry.from_account;
+           }
        }
-   }
 
-   if( from_name_count == 1 && pretty_trx.ledger_entries.size() > 1 )
-   {
-       for( pretty_ledger_entry& entry : pretty_trx.ledger_entries )
-           entry.from_account = from_name;
+       if( from_name_count > 0 && unknown_count > 0 && from_name_count + unknown_count == pretty_trx.ledger_entries.size() )
+       {
+           for( pretty_ledger_entry& entry : pretty_trx.ledger_entries )
+               entry.from_account = from_name;
+       }
    }
 
    pretty_trx.fee = trx_rec.fee;
