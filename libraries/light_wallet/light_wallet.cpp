@@ -451,11 +451,13 @@ bool light_wallet::sync_balance( bool resync_all )
    return true;
 } FC_CAPTURE_AND_RETHROW() }
 
-bool light_wallet::sync_transactions()
+bool light_wallet::sync_transactions(bool resync_all)
 {
    FC_ASSERT( is_open() );
 
    uint32_t sync_block = _data->last_transaction_sync_block;
+   if( resync_all )
+      sync_block = 0;
    vector<string> account_names;
 
    auto batch_results = batch_active_addresses("blockchain_list_address_transactions", sync_block, account_names);

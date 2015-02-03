@@ -122,6 +122,7 @@ public Q_SLOTS:
 
    void sync();
    void syncAllBalances();
+   void syncAllTransactions();
 
 Q_SIGNALS:
    void walletExistsChanged(bool exists);

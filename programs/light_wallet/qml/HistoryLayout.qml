@@ -29,6 +29,13 @@ Page {
          id: historyList
          model: wallet.accounts[accountName].transactionHistory(assetSymbol)
          spacing: visuals.margins / 2
+         onDragEnded: {
+            if( contentY < units.dp(-100) )
+            {
+               showError(qsTr("Refreshing transactions"))
+               wallet.syncAllTransactions()
+            }
+         }
 
          Connections {
             target: wallet
@@ -40,6 +47,13 @@ Page {
             anchors.horizontalCenter: parent.horizontalCenter
             trx: model.modelData
             accountName: historyPage.accountName
+         }
+
+         Label {
+            y: units.dp(-100) - height - parent.contentY
+            text: qsTr("Release to refresh transactions")
+            anchors.horizontalCenter: parent.horizontalCenter
+            style: "headline"
          }
       }
    }
