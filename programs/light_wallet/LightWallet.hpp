@@ -110,6 +110,7 @@ public Q_SLOTS:
    void disconnectFromServer();
 
    void createWallet(QString accountName, QString password);
+   bool recoverWallet(QString accountName, QString password, QString brainKey);
    void openWallet();
    void closeWallet();
 
