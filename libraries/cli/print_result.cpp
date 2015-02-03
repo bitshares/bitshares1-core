@@ -725,7 +725,12 @@ namespace bts { namespace cli {
 
     auto status = client->get_chain()->get_market_status(quote_id, base_id);
     price short_execution_price( 0, quote_id, base_id );
-    if( status.valid() && status->current_feed_price.valid() )
+    bool short_execution_price_valid = (status.valid() && status->current_feed_price.valid());
+    // we don't declare short_execution_price as oprice here
+    //    because we still want to print the short wall
+    //    with a price of zero when the price is invalid
+    
+    if( short_execution_price_valid )
         short_execution_price = *status->current_feed_price;
     //share_type total_short_shares = 0;
 
@@ -932,8 +937,15 @@ namespace bts { namespace cli {
           {
             out << std::left << std::setw(30) << std::setprecision(8) << (fc::to_string(client->get_chain()->to_pretty_price_double(ask_itr->get_price( feed_price ))) + " " + quote_asset_record->symbol)
               << std::right << std::setw(23) << client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
-              << std::right << std::setw(26) << client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity())
-              << std::right << std::setw(26) << fc::get_approximate_relative_time_string( *ask_itr->expiration );
+              << std::right << std::setw(26) << client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
+            if(FILTER_OUTPUT_FOR_TESTS)
+            {
+                  out << std::right << std::setw(26) << fc::string( *ask_itr->expiration );
+            }
+            else
+            {
+                  out << std::right << std::setw(26) << fc::get_approximate_relative_time_string( *ask_itr->expiration );
+            }
             out << "   " << client->get_chain()->to_pretty_asset(asset(*ask_itr->collateral));
             out << "\n";
           }
@@ -948,9 +960,25 @@ namespace bts { namespace cli {
       auto status = client->get_chain()->get_market_status(quote_id, base_id);
       if(status)
       {
-        out << "Maximum Short Price: "
-          << client->get_chain()->to_pretty_price(short_execution_price)
-          << "     ";
+        if( ! short_execution_price_valid )
+        {
+          if( status->last_error && (status->last_error->code() == bts::blockchain::insufficient_feeds::code_value) )
+            // this case is when launching a new BitAsset, the whole
+            // market is shut down until there are adequate feeds
+            out << "Warning: Market not open until feeds published   ";
+          else
+            // this case is when too many feeds have expired on
+            // a BitAsset that has already been launched; bid/ask still
+            // works but feed-dependent orders won't be processed until
+            // we have a feed
+            out << "Warning: Feeds expired, only bid+ask operate     ";
+        }
+        else
+        {
+          out << "Maximum Short Price: "
+              << client->get_chain()->to_pretty_price(short_execution_price)
+              << "     ";
+        }
 
         if(status->last_error)
         {
