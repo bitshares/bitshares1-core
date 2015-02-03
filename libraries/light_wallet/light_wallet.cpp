@@ -382,15 +382,21 @@ asset light_wallet::get_fee( const string& symbol )
    return _network_fee + _relay_fee;
 } FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
-map<string, double> light_wallet::balance(const string& account_name) const
+map<string, pair<double,double>> light_wallet::balance(const string& account_name) const
 {
    FC_ASSERT(is_open());
 
-   map<string, double> balances = {{BTS_BLOCKCHAIN_SYMBOL, 0}};
+   map<string, pair<double,double>> balances = {{BTS_BLOCKCHAIN_SYMBOL, {0,0}}};
    for( auto balance : _chain_cache->_balance_id_to_record ) {
       oasset_record record = get_asset_record(balance.second.asset_id());
       if( record && balance.second.owner() == _data->accounts.find(account_name)->second.user_account.active_key() )
-         balances[record->symbol] += balance.second.balance / double(record->precision);
+      {
+         balances[record->symbol].first += balance.second.balance / double(record->precision);
+         balances[record->symbol].second += balance.second.calculate_yield(blockchain::now(),
+                                                                           balance.second.balance,
+                                                                           record->collected_fees,
+                                                                           record->current_share_supply).amount / double(record->precision);
+      }
    }
    return balances;
 }

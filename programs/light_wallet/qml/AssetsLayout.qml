@@ -46,7 +46,8 @@ Page {
 
                   Item { Layout.preferredWidth: visuals.margins }
                   Label {
-                     text: format(amount, symbol)
+                     text: format(amount, symbol) + (yield ? "\n+ " + format(yield, symbol) + qsTr(" yield")
+                                                           : "")
                      font.pixelSize: units.dp(32)
                   }
                   Item { Layout.fillWidth: true }

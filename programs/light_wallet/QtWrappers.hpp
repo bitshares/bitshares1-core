@@ -70,18 +70,28 @@ class Balance : public QObject
    Q_OBJECT
    Q_PROPERTY(QString symbol MEMBER m_symbol NOTIFY symbolChanged)
    Q_PROPERTY(qreal amount MEMBER m_amount NOTIFY amountChanged)
+   Q_PROPERTY(qreal yield MEMBER m_yield NOTIFY yieldChanged)
 
    QString m_symbol;
    qreal m_amount;
+   qreal m_yield;
 
 public:
-   Balance(QString symbol, qreal amount, QObject* parent = nullptr)
+   Balance(QString symbol, qreal amount, qreal yield = 0, QObject* parent = nullptr)
       : QObject(parent),
         m_symbol(symbol),
-        m_amount(amount)
+        m_amount(amount),
+        m_yield(yield)
+   {}
+   Balance(QString symbol, std::pair<qreal,qreal> amounts, QObject* parent = nullptr)
+      : QObject(parent),
+        m_symbol(symbol),
+        m_amount(amounts.first),
+        m_yield(amounts.second)
    {}
    virtual ~Balance(){}
 Q_SIGNALS:
    void symbolChanged(qreal arg);
    void amountChanged(qreal arg);
+   void yieldChanged(qreal arg);
 };

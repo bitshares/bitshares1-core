@@ -88,20 +88,20 @@ QQmlListProperty<Balance> Account::balances()
    while( !balanceList.empty() )
       balanceList.takeFirst()->deleteLater();
    for( auto balance : m_wallet->balance(convert(m_name)) )
-      balanceList.append(new Balance(convert(balance.first), balance.second, this));
+      balanceList.append(new Balance(convert(balance.first), balance.second.first, balance.second.second, this));
    return QQmlListProperty<Balance>(this, &balanceList, count, at);
 }
 
-qreal Account::balance(QString symbol)
+Balance* Account::balance(QString symbol)
 {
-   return m_wallet->balance(convert(m_name))[convert(symbol)];
+   return new Balance(symbol, m_wallet->balance(convert(m_name))[convert(symbol)]);
 }
 
 QStringList Account::availableAssets()
 {
    QStringList assets;
    for( auto balance : m_wallet->balance(convert(m_name)) )
-      if( balance.second > 0 )
+      if( balance.second.first > 0 || balance.second.second > 0 )
          assets.append(convert(balance.first));
    return assets;
 }
