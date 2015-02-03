@@ -725,7 +725,12 @@ namespace bts { namespace cli {
 
     auto status = client->get_chain()->get_market_status(quote_id, base_id);
     price short_execution_price( 0, quote_id, base_id );
-    if( status.valid() && status->current_feed_price.valid() )
+    bool short_execution_price_valid = (status.valid() && status->current_feed_price.valid());
+    // we don't declare short_execution_price as oprice here
+    //    because we still want to print the short wall
+    //    with a price of zero when the price is invalid
+    
+    if( short_execution_price_valid )
         short_execution_price = *status->current_feed_price;
     //share_type total_short_shares = 0;
 
@@ -955,9 +960,25 @@ namespace bts { namespace cli {
       auto status = client->get_chain()->get_market_status(quote_id, base_id);
       if(status)
       {
-        out << "Maximum Short Price: "
-          << client->get_chain()->to_pretty_price(short_execution_price)
-          << "     ";
+        if( ! short_execution_price_valid )
+        {
+          if( status->last_error && (status->last_error->code() == bts::blockchain::insufficient_feeds::code_value) )
+            // this case is when launching a new BitAsset, the whole
+            // market is shut down until there are adequate feeds
+            out << "Warning: Market not open until feeds published   ";
+          else
+            // this case is when too many feeds have expired on
+            // a BitAsset that has already been launched; bid/ask still
+            // works but feed-dependent orders won't be processed until
+            // we have a feed
+            out << "Warning: Feeds expired, only bid+ask operate     ";
+        }
+        else
+        {
+          out << "Maximum Short Price: "
+              << client->get_chain()->to_pretty_price(short_execution_price)
+              << "     ";
+        }
 
         if(status->last_error)
         {
