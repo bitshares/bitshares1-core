@@ -27,9 +27,26 @@ inline static QString normalize(QString key)
    return key.toUpper().remove(QRegExp("[^A-Z] "));
 }
 
+LightWallet::LightWallet()
+   : m_walletThread("Wallet Implementation Thread"),
+     m_wallet([this](const std::string& key, const std::string& value)
+{
+   QSettings().setValue(QStringLiteral("Backend/%1").arg(key.c_str()), convert(value));
+}, [this](const std::string& key)
+{
+   return convert(QSettings().value(QStringLiteral("Backend/%1").arg(key.c_str())).toString());
+}, [this](const std::string& key) -> bool
+{
+   return QSettings().contains(QStringLiteral("Backend/%1").arg(key.c_str()));
+})
+{
+   auto path = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+   QDir(path).mkpath(".");
+}
+
 bool LightWallet::walletExists() const
 {
-   return fc::exists(m_walletPath);
+   return QSettings().childGroups().contains(QStringLiteral("Backend"));
 }
 
 Balance* LightWallet::getFee(QString assetSymbol)
@@ -38,8 +55,8 @@ Balance* LightWallet::getFee(QString assetSymbol)
    Balance* fee = new Balance(assetSymbol, -1);
 
    IN_WAIT_THREAD
-      try {
-         auto rawFee = m_wallet.get_fee(convert(assetSymbol));
+         try {
+      auto rawFee = m_wallet.get_fee(convert(assetSymbol));
          auto feeAsset = m_wallet.get_asset_record(rawFee.asset_id);
          fee->setProperty("amount", double(rawFee.amount) / feeAsset->precision);
          fee->setProperty("symbol", convert(feeAsset->symbol));
@@ -117,7 +134,7 @@ void LightWallet::createWallet(QString accountName, QString password)
    qDebug() << "Wallet path:" << m_walletPath.generic_string().c_str();
 
    try {
-      m_wallet.create(m_walletPath, convert(accountName), convert(password), convert(normalize(m_brainKey)));
+      m_wallet.create(convert(accountName), convert(password), convert(normalize(m_brainKey)));
    } catch (fc::exception e) {
       qDebug() << "Exception when creating wallet:" << e.to_detail_string().c_str();
    }
@@ -138,9 +155,9 @@ void LightWallet::createWallet(QString accountName, QString password)
 
 void LightWallet::openWallet()
 {
-   //Opening the wallet should be fast, it's just a local file and we're not doing much crypto. Let it be blocking.
+   IN_WAIT_THREAD
    try {
-      m_wallet.open(m_walletPath);
+      m_wallet.open();
    } catch (fc::exception e) {
       m_openError = convert(e.to_string());
       Q_EMIT errorOpening(m_openError);
@@ -152,6 +169,7 @@ void LightWallet::openWallet()
 
    for( auto account : m_wallet.account_records() )
       updateAccount(*account);
+   END_WAIT_THREAD
 
    qDebug() << "Opened wallet with" << m_accounts.size() << "accounts";
 }

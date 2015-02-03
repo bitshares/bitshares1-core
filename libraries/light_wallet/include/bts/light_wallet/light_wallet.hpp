@@ -34,7 +34,9 @@ namespace bts { namespace light_wallet {
    class light_wallet 
    {
       public:
-         light_wallet(const fc::path& data_dir);
+         light_wallet(std::function<void(string,string)> persist_function,
+                      std::function<string(string)> restore_function,
+                      std::function<bool(string)> can_restore_function);
          ~light_wallet();
 
          void connect( const string& host, const string& user = "any", const string& pass = "none", uint16_t port = 0,
@@ -42,7 +44,7 @@ namespace bts { namespace light_wallet {
          bool is_connected()const;
          void disconnect();
 
-         void open( const fc::path& wallet_json );
+         void open();
          void save();
          void close();
          bool is_open()const;
@@ -52,14 +54,14 @@ namespace bts { namespace light_wallet {
          bool is_unlocked()const;
          void change_password( const string& new_password );
 
-         void create(const fc::path& wallet_json, const std::string& account_name,
+         void create(const std::string& account_name,
                      const string& password,
                      const string& brain_seed);
 
          bool request_register_account(const std::string& account_name);
          account_record& account(const string& account_name);
          account_record& fetch_account(const string& account_name);
-         vector<account_record*> account_records();
+         vector<const account_record*> account_records() const;
          
          fc::variant_object prepare_transfer( const string& amount,
                                               const string& symbol,
@@ -86,14 +88,16 @@ namespace bts { namespace light_wallet {
          oaccount_record get_account_record(const string& identifier );
 
          bts::rpc::rpc_client             _rpc;
-         fc::path                         _data_dir;
-         fc::path                         _wallet_file;
          optional<fc::sha512>             _wallet_key;
          optional<light_wallet_data>      _data;
          mutable pending_chain_state_ptr  _chain_cache;
          oaccount_record                  _relay_fee_collector;
          asset                            _relay_fee;
          asset                            _network_fee;
+
+         std::function<void(string, string)>       persist;
+         std::function<bool(string)>               can_restore;
+         std::function<string(string)>             restore;
 
          void fetch_welcome_package();
    private:
