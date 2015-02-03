@@ -53,7 +53,7 @@ Window {
    }
    function format(amount, symbol) {
       var l = Qt.locale()
-      var rx = new RegExp("(\\" + l.decimalPoint + ")0*$")
+      var rx = new RegExp("(\\" + l.decimalPoint + ")?0*$")
       return Number(amount).toLocaleString(l, 'f', wallet.getDigitsOfPrecision(symbol)).replace(rx, '')
    }
    function connectToServer() {
