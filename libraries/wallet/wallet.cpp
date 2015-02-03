@@ -712,20 +712,6 @@ namespace detail {
    } FC_CAPTURE_AND_RETHROW( (transaction)(strategy) ) }
 
    /**
-    *  A valid account is any named account registered in the blockchain or
-    *  any local named account.
-    */
-   bool wallet_impl::is_valid_account( const string& account_name )const
-   {
-      if( !_blockchain->is_valid_account_name( account_name ) )
-          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
-      FC_ASSERT( self->is_open() );
-      if( _wallet_db.lookup_account( account_name ).valid() )
-          return true;
-      return _blockchain->get_account_record( account_name ).valid();
-   }
-
-   /**
     *  Any account for which this wallet owns the active private key.
     */
    bool wallet_impl::is_receive_account( const string& account_name )const
@@ -1444,9 +1430,6 @@ namespace detail {
 
    void wallet::remove_contact_account( const string& account_name )
    { try {
-      if( !my->is_valid_account( account_name ) )
-          FC_THROW_EXCEPTION( unknown_account, "Unknown account name!", ("account_name",account_name) );
-
       if( !my->is_unique_account(account_name) )
           FC_THROW_EXCEPTION( duplicate_account_name,
                               "Local account name conflicts with registered name. Please rename your local account first.", ("account_name",account_name) );
@@ -2711,7 +2694,6 @@ namespace detail {
        FC_ASSERT( is_open() );
        FC_ASSERT( is_unlocked() );
        FC_ASSERT( my->is_receive_account( delegate_name ) );
-       FC_ASSERT( my->is_valid_account( withdraw_to_account_name ) );
 
        auto asset_rec = my->_blockchain->get_asset_record( asset_id_type(0) );
        share_type amount_to_withdraw((share_type)(real_amount_to_withdraw * asset_rec->precision));

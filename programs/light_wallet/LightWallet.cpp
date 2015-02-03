@@ -48,7 +48,20 @@ Balance* LightWallet::getFee(QString assetSymbol)
       }
    END_WAIT_THREAD
 
-   return fee;
+         return fee;
+}
+
+int LightWallet::getDigitsOfPrecision(QString assetSymbol)
+{
+   int digits = -1;
+
+   auto rec = m_wallet.get_asset_record(convert(assetSymbol));
+   if( rec )
+      digits = log10l(rec->precision);
+   else
+      digits = log10l(BTS_BLOCKCHAIN_PRECISION);
+
+   return digits;
 }
 
 bool LightWallet::accountExists(QString name)

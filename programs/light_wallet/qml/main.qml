@@ -51,6 +51,13 @@ Window {
          return "computer"
       }
    }
+   function format(amount, symbol) {
+      var l = Qt.locale()
+      if( l.decimalPoint === "." )
+         return Number(amount).toLocaleString(l, 'f', wallet.getDigitsOfPrecision(symbol)).replace(/(\.)0*$/, '')
+      else
+         return Number(amount).toLocaleString(l, 'f', wallet.getDigitsOfPrecision(symbol)).replace(/(\,)0*$/, '')
+   }
    function connectToServer() {
       if( !wallet.connected )
          wallet.connectToServer("localhost", 5656, "XTS7pq7tZnghnrnYvQg8aktrSCLVHE5SGyHFeYJBRdcFVvNCBBDjd",
