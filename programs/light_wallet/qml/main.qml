@@ -3,6 +3,8 @@ import QtQuick.Window 2.2
 import QtQuick.Layouts 1.1
 import QtGraphicalEffects 1.0
 
+import Qt.labs.settings 1.0
+
 import "utils.js" as Utils
 import org.BitShares.Types 1.0
 
@@ -11,6 +13,14 @@ import Material 0.1
 Window {
    id: window
    visible: true
+   width: units.dp(1200)
+   height: units.dp(1000)
+   Settings {
+      property alias width: window.width
+      property alias height: window.height
+      property alias x: window.x
+      property alias y: window.y
+   }
 
    property alias pageStack: __pageStack
    property alias lockAction: __lockAction
@@ -119,7 +129,7 @@ Window {
       onNotification: showError(message)
    }
 
-   WelcomeLayout {
+   LockScreen {
       id: lockScreen
       width: window.width
       height: window.height

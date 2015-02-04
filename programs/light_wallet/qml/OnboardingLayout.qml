@@ -50,7 +50,7 @@ MainView {
       id: baseLayoutColumn
       anchors.verticalCenter: parent.verticalCenter
       anchors.horizontalCenter: parent.horizontalCenter
-      width: parent.width - visuals.margins * 2
+      width: Math.min(parent.width - visuals.margins * 2, units.dp(600))
       spacing: visuals.margins
 
       Label {
@@ -66,8 +66,10 @@ MainView {
                     "This password can be short and easy to remember — we'll make a better one later.")
          anchors.horizontalCenter: parent.horizontalCenter
          width: parent.width
+         height: units.dp(50)
          style: "subheading"
          wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+         verticalAlignment: Text.AlignVCenter
       }
       ProgressBar {
          id: registrationProgress
@@ -194,7 +196,7 @@ MainView {
       id: importLayout
       anchors.horizontalCenter: parent.horizontalCenter
       anchors.top: parent.bottom
-      width: parent.width
+      width: Math.min(parent.width, units.dp(600))
 
       TextField {
          id: importNameField
@@ -295,12 +297,42 @@ MainView {
       Transition {
          from: ""
          to: "IMPORTING"
-         reversible: true
          AnchorAnimation {
             duration: 500
             easing.type: Easing.OutQuad
          }
+         PropertyAnimation {
+            duration: 200
+            target: importLayout
+            property: "opacity"
+            from: 0; to: 1
+         }
+         PropertyAnimation {
+            duration: 200
+            target: baseLayoutColumn
+            property: "opacity"
+            from: 1; to: 0
+         }
+      },
+      Transition {
+         from: "IMPORTING"
+         to: ""
+         AnchorAnimation {
+            duration: 500
+            easing.type: Easing.OutQuad
+         }
+         PropertyAnimation {
+            duration: 200
+            target: importLayout
+            property: "opacity"
+            from: 1; to: 0
+         }
+         PropertyAnimation {
+            duration: 200
+            target: baseLayoutColumn
+            property: "opacity"
+            from: 0; to: 1
+         }
       }
-
    ]
 }
