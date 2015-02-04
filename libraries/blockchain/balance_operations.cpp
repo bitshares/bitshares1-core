@@ -232,6 +232,9 @@ namespace bts { namespace blockchain {
                } FC_CAPTURE_AND_RETHROW( (password_condition ) )
                break;
             }
+#ifndef WIN32
+#warning [HARDFORK]
+#endif
             case withdraw_cover_type:
             {
                 const withdraw_by_cover condition = current_balance_record->condition.as<withdraw_by_cover>();
