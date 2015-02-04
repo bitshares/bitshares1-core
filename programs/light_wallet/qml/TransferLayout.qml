@@ -10,7 +10,7 @@ Page {
    actions: [lockAction]
 
    property string accountName
-   property alias assetSymbol: assetSymbolField.text
+   property alias assetSymbol: assetSymbolField.selectedText
 
    signal transferComplete(string assetSymbol)
    
@@ -38,7 +38,7 @@ Page {
       anchors.top: hashBar.bottom
       style: "display1"
       color: "red"
-      text: format(amountField.amount(), assetSymbolField.text) + " " + assetSymbolField.text
+      text: format(amountField.amount(), assetSymbolField.selectedText) + " " + assetSymbolField.selectedText
    }
 
    Rectangle {
@@ -102,13 +102,13 @@ Page {
             input {
                inputMethodHints: Qt.ImhDigitsOnly
                font.pixelSize: units.dp(20)
-               validator: DoubleValidator {bottom: 0; notation: DoubleValidator.StandardNotation; decimals: wallet.getDigitsOfPrecision(assetSymbolField.text)}
+               validator: DoubleValidator {bottom: 0; notation: DoubleValidator.StandardNotation; decimals: wallet.getDigitsOfPrecision(assetSymbolField.selectedText)}
             }
             helperText: {
-               var fee = wallet.getFee(assetSymbolField.text)
-               var balance = Number(wallet.accounts[accountName].balance(assetSymbolField.text).amount)
-               return qsTr("Available balance: ") + format(balance, assetSymbolField.text) +
-                     " " + assetSymbolField.text + "\n" + qsTr("Transaction fee: ") + format(fee.amount, fee.symbol) + " " + fee.symbol
+               var fee = wallet.getFee(assetSymbolField.selectedText)
+               var balance = Number(wallet.accounts[accountName].balance(assetSymbolField.selectedText).amount)
+               return qsTr("Available balance: ") + format(balance, assetSymbolField.selectedText) +
+                     " " + assetSymbolField.selectedText + "\n" + qsTr("Transaction fee: ") + format(fee.amount, fee.symbol) + " " + fee.symbol
             }
             onEditingFinished: canProceed()
 
@@ -116,53 +116,28 @@ Page {
                return Number.fromLocaleString(text)? Number.fromLocaleString(text) : 0
             }
             function canProceed() {
-               var fee = wallet.getFee(assetSymbolField.text)
+               var fee = wallet.getFee(assetSymbolField.selectedText)
                var total = amount()
-               if( fee.symbol === assetSymbolField.text ) {
+               if( fee.symbol === assetSymbolField.selectedText ) {
                   total += fee.amount
                }
 
-               hasError = total > wallet.accounts[accountName].balance(assetSymbolField.text)
+               hasError = total > wallet.accounts[accountName].balance(assetSymbolField.selectedText)
                return !hasError && amount() > 0
             }
             function canPayFee() {
-               var fee = wallet.getFee(assetSymbolField.text)
-               if( fee.symbol === assetSymbolField.text )
+               var fee = wallet.getFee(assetSymbolField.selectedText)
+               if( fee.symbol === assetSymbolField.selectedText )
                   return canProceed()
                return fee.amount <= wallet.accounts[accountName].balance(fee.symbol)
             }
          }
-         TextField {
+         MenuField {
             id: assetSymbolField
-            y: amountField.y
-            Layout.preferredWidth: units.dp(100)
-            input.readOnly: true
-            input.font.pixelSize: units.dp(20)
-            //Hack to make RowLayout place this field vertically level with amountField
-            helperText: "\n "
-            text: wallet.accounts[accountName].availableAssets.length ? wallet.accounts[accountName].availableAssets[0]
-                                                        : ":("
-            placeholderText: qsTr("Asset")
-            floatingLabel: true
+            anchors.verticalCenter: amountField.verticalCenter
+            model: wallet.accounts[accountName].availableAssets
 
-            Icon {
-               anchors.verticalCenter: parent.verticalCenter
-               anchors.right: parent.right
-               anchors.rightMargin: units.dp(5)
-               name: "navigation/arrow_drop_down"
-            }
-            Ink {
-               anchors.fill: parent
-               enabled: !assetMenu.opened
-               onClicked: assetMenu.open(assetSymbolField.text, assetSymbolField.inputRect.x, assetSymbolField.inputRect.y)
-            }
-            Menu {
-               id: assetMenu
-               width: parent.width * 1.1
-               model: wallet.accounts[accountName].availableAssets
-               owner: assetSymbolField
-               onElementSelected: assetSymbolField.text = elementData
-            }
+            Behavior on width { NumberAnimation {} }
          }
       }
       TextField {
@@ -234,7 +209,7 @@ Page {
                return memoShaker.shake()
 
             transactionPreview.trx = wallet.accounts[accountName].beginTransfer(toNameField.text, amountField.text,
-                                                                                assetSymbolField.text, memoField.text);
+                                                                                assetSymbolField.selectedText, memoField.text);
             transferPage.state = "confirmation"
             confirmPassword.forceActiveFocus()
          }
@@ -259,7 +234,7 @@ Page {
       Label {
          id: dialogContentLabel
          style: "body1"
-         text: qsTr("The BitShares network does not accept fees in " + assetSymbolField.text + ", so the transaction fee " +
+         text: qsTr("The BitShares network does not accept fees in " + assetSymbolField.selectedText + ", so the transaction fee " +
                     "must be paid in " + wallet.baseAssetSymbol + ". You do not currently have enough " +
                     wallet.baseAssetSymbol + " to pay the fee.")
          wrapMode: Text.WrapAtWordBoundaryOrAnywhere
@@ -287,7 +262,7 @@ Page {
             text: qsTr("Confirm")
             onClicked: {
                if( wallet.accounts[accountName].completeTransfer(confirmPassword.password) )
-                  transferComplete(assetSymbolField.text)
+                  transferComplete(assetSymbolField.selectedText)
                else
                   confirmPassword.shake()
             }
