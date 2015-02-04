@@ -71,10 +71,10 @@ Window {
          wallet.connectToServer("localhost", 5656, "XTS7pq7tZnghnrnYvQg8aktrSCLVHE5SGyHFeYJBRdcFVvNCBBDjd",
                                 "user", "pass")
    }
-   function openTransferPage() {
+   function openTransferPage(args) {
       //TODO: Add arguments which prefill items in transfer page
       if( wallet.accounts[wallet.accountNames[0]].availableAssets.length )
-         window.pageStack.push({item: transferUi, properties: {accountName: wallet.accountNames[0]}})
+         window.pageStack.push({item: transferUi, properties: args})
       else
          showError(qsTr("You don't have any assets, so you cannot make a transfer."), qsTr("Refresh Balances"),
                    wallet.syncAllBalances)
@@ -289,6 +289,7 @@ Window {
             id: transferUi
 
             TransferLayout {
+               accountName: wallet.accountNames[0]
                onTransferComplete: window.pageStack.pop()
             }
          }

@@ -10,7 +10,6 @@ Page {
    title: wallet.accounts[accountName].name + qsTr("'s Balances")
    actions: [payAction, lockAction]
 
-
    property string accountName
 
    signal lockRequested
