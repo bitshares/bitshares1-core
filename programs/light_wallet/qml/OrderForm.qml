@@ -14,12 +14,13 @@ import Material.ListItems 0.1
 
 Page {
    title: qsTr("Market Order")
+   actions: [lockAction]
    
    property string accountName
    
    Flickable {
       anchors.fill: parent
-      
+
       Column {
          width: units.dp(600)
          y: units.dp(16)
@@ -31,25 +32,29 @@ Page {
             
             MenuField {
                id: orderTypeField
-               width: units.dp(128)
                model: ["Buy", "Sell", "Short"]
+
+               Behavior on width { NumberAnimation {} }
             }
             MenuField {
                id: orderFirstAssetField
-               width: units.dp(128)
                model: wallet.accounts[accountName].availableAssets
+
+               Behavior on width { NumberAnimation {} }
             }
             Label {
                text: orderTypeField.selectedText === "Short"? qsTr("with") : qsTr("for")
                horizontalAlignment: Text.AlignHCenter
-               width: units.dp(32)
                anchors.verticalCenter: parent.verticalCenter
                style: "subheading"
+
+               Behavior on width { NumberAnimation {} }
             }
             MenuField {
                id: orderSecondAssetField
-               width: units.dp(128)
                model: wallet.accounts[accountName].availableAssets
+
+               Behavior on width { NumberAnimation {} }
             }
          }
       }

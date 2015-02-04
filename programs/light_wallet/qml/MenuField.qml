@@ -15,7 +15,7 @@ import Material.ListItems 0.1
 View {
    id: spinBox
    height: units.dp(32)
-   width: units.dp(146)
+   width: spinBoxContents.implicitWidth
    backgroundColor: "white"
    elevation: 1
    
@@ -50,8 +50,8 @@ View {
          id: dropDownIcon
          anchors.verticalCenter: parent.verticalCenter
          name: "navigation/arrow_drop_down"
-         size: units.dp(8)
-         scale: .4
+         Layout.maximumWidth: units.dp(24)
+         fillMode: Image.PreserveAspectFit
       }
    }
    
