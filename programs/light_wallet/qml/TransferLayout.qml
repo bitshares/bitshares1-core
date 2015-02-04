@@ -16,9 +16,9 @@ Page {
    RowLayout {
       id: hashBar
       anchors.top: parent.top
-      anchors.left: parent.left
-      anchors.right:  parent.right
+      anchors.horizontalCenter: parent.horizontalCenter
       anchors.margins: visuals.margins
+      width: Math.min(parent.width - visuals.margins*2, units.dp(600))
 
       RoboHash {
          name: wallet.accounts[accountName].name
@@ -52,11 +52,11 @@ Page {
       id: transferForm
       anchors {
          top: splitter.bottom
-         left: parent.left
-         right: parent.right
          bottom: parent.bottom
+         horizontalCenter: parent.horizontalCenter
          margins: visuals.margins
       }
+      width: Math.min(parent.width - visuals.margins*2, units.dp(600))
 
       TextField {
          id: toNameField
