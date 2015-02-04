@@ -17,7 +17,8 @@ namespace bts { namespace blockchain {
       withdraw_multisig_type    = 3,
       withdraw_password_type    = 4,
       withdraw_reserved_type    = 5,
-      withdraw_escrow_type      = 6
+      withdraw_escrow_type      = 6,
+      withdraw_cover_type       = 7
    };
 
    /**
@@ -213,6 +214,14 @@ namespace bts { namespace blockchain {
       optional<titan_memo>            memo;
    };
 
+   struct withdraw_by_cover
+   {
+      static const uint8_t type;
+
+      address        owner;
+      asset_id_type  cover_asset_id; // prediction asset
+   };
+
 } } // bts::blockchain
 
 namespace fc {
@@ -230,6 +239,7 @@ FC_REFLECT_ENUM( bts::blockchain::withdraw_condition_types,
         (withdraw_password_type)
         (withdraw_reserved_type)
         (withdraw_escrow_type)
+        (withdraw_cover_type)
         )
 FC_REFLECT( bts::blockchain::withdraw_condition,
         (asset_id)
@@ -293,3 +303,4 @@ FC_REFLECT( bts::blockchain::withdraw_with_password,
         (password_hash)
         (memo)
         )
+FC_REFLECT( bts::blockchain::withdraw_by_cover, (owner)(cover_asset_id) )

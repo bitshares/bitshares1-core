@@ -16,6 +16,12 @@ namespace bts { namespace blockchain {
       supply_unlimit        = 1 << 4  ///<! The issuer can change the supply at will
    };
 
+   struct prediction_state
+   {
+      asset_id_type base_asset_id;
+      slate_id_type judge_slate_id;
+   };
+
    class chain_interface;
    struct asset_db_interface;
    struct asset_record
@@ -29,6 +35,7 @@ namespace bts { namespace blockchain {
 
       bool is_market_issued()const      { return issuer_account_id == market_issuer_id; };
       bool is_user_issued()const        { return issuer_account_id > god_issuer_id; };
+      bool is_prediction()const         { return prediction.valid(); }
 
       bool is_retractable()const        { return is_user_issued() && (flags & retractable); }
       bool is_restricted()const         { return is_user_issued() && (flags & restricted); }
@@ -74,6 +81,7 @@ namespace bts { namespace blockchain {
 
       proposal_id_type    last_proposal_id = 0;
 
+      optional<prediction_state> prediction;
 
       /** reserved for future extensions */
       vector<char>        reserved;
@@ -127,6 +135,7 @@ FC_REFLECT_ENUM( bts::blockchain::asset_permissions,
         (balance_halt)
         (supply_unlimit)
         )
+FC_REFLECT( bts::blockchain::prediction_state, (base_asset_id)(judge_slate_id) )
 FC_REFLECT( bts::blockchain::proposal_record,
         (asset_id)
         (proposal_id)
@@ -154,4 +163,5 @@ FC_REFLECT( bts::blockchain::asset_record,
         (market_fee)
         (authority)
         (last_proposal_id)
+        (prediction)
         )
