@@ -9,6 +9,7 @@
 #include <bts/blockchain/time.hpp>
 
 #include <bts/blockchain/balance_operations.hpp>
+#include <bts/blockchain/asset_operations.hpp>
 #warning   ^^ is it ok that I added this here for generate_issuance_map? Should that that all go in blockchain_api.cpp instead?
 
 #include <fc/io/fstream.hpp>
@@ -3362,6 +3363,9 @@ namespace bts { namespace blockchain {
             {
                 if( op.type == issue_asset_op_type )
                 {
+                    auto issue = op.as<issue_asset_operation>();
+                    if( issue.amount.asset_id != uia->id )
+                        continue;
                     issued = true;
                     break;
                 }
