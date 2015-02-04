@@ -41,6 +41,16 @@
         "aliases" : ["advance_time"]
       },
       {
+        "method_name": "debug_trap",
+        "description": "Break into debugger (UNIX: SIGINT, win32: __debugbreak)",
+        "return_type": "void",
+        "parameters" : [],
+        "is_const" : true,
+        "cached"  : false,
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : []
+      },
+      {
         "method_name": "debug_wait",
         "description": "wait for specified amount of time",
         "return_type": "void",

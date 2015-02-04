@@ -16,6 +16,12 @@ namespace bts { namespace blockchain {
       supply_unlimit        = 1 << 4  ///<! The issuer can change the supply at will
    };
 
+   struct prediction_state
+   {
+      asset_id_type base_asset_id;
+      slate_id_type judge_slate_id;
+   };
+
    class chain_interface;
    struct asset_db_interface;
    struct asset_record
@@ -29,6 +35,7 @@ namespace bts { namespace blockchain {
 
       bool is_market_issued()const      { return issuer_account_id == market_issuer_id; };
       bool is_user_issued()const        { return issuer_account_id > god_issuer_id; };
+      bool is_prediction()const         { return prediction.valid(); }
 
       bool is_retractable()const        { return is_user_issued() && (flags & retractable); }
       bool is_restricted()const         { return is_user_issued() && (flags & restricted); }
@@ -52,8 +59,8 @@ namespace bts { namespace blockchain {
       uint64_t            precision = 0;
       fc::time_point_sec  registration_date;
       fc::time_point_sec  last_update;
-      share_type          current_share_supply = 0;
       share_type          maximum_share_supply = 0;
+      share_type          current_share_supply = 0;
       share_type          collected_fees = 0;
       uint32_t            flags = 0;
       uint32_t            issuer_permissions = -1;
@@ -65,18 +72,16 @@ namespace bts { namespace blockchain {
        */
       share_type          transaction_fee = 0;
       /**
-       * 0 for no fee, 10000 for 10% fee.
+       * 0 for no fee, 10000 for 100% fee.
        * This is used for gateways that want to continue earning market trading fees
        * when their assets are used.
        */
-      uint16_t            market_fee = BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE; 
+      uint16_t            market_fee = 0;
       multisig_meta_info  authority;
 
       proposal_id_type    last_proposal_id = 0;
 
-
-      /** reserved for future extensions */
-      vector<char>        reserved;
+      optional<prediction_state> prediction;
 
       static const asset_db_interface& db_interface( const chain_interface& );
       void sanity_check( const chain_interface& )const;
@@ -127,6 +132,7 @@ FC_REFLECT_ENUM( bts::blockchain::asset_permissions,
         (balance_halt)
         (supply_unlimit)
         )
+FC_REFLECT( bts::blockchain::prediction_state, (base_asset_id)(judge_slate_id) )
 FC_REFLECT( bts::blockchain::proposal_record,
         (asset_id)
         (proposal_id)
@@ -145,8 +151,8 @@ FC_REFLECT( bts::blockchain::asset_record,
         (precision)
         (registration_date)
         (last_update)
-        (current_share_supply)
         (maximum_share_supply)
+        (current_share_supply)
         (collected_fees)
         (flags)
         (issuer_permissions)
@@ -154,4 +160,5 @@ FC_REFLECT( bts::blockchain::asset_record,
         (market_fee)
         (authority)
         (last_proposal_id)
+        (prediction)
         )

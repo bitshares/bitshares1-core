@@ -212,11 +212,11 @@ namespace bts { namespace blockchain {
          oasset_record                      get_asset_record( const string& symbol )const;
          void                               store_asset_record( const asset_record& record );
 
-         obalance_record                    get_balance_record( const balance_id_type& id )const;
-         void                               store_balance_record( const balance_record& record );
-
          oslate_record                      get_slate_record( const slate_id_type id )const;
          void                               store_slate_record( const slate_record& record );
+
+         obalance_record                    get_balance_record( const balance_id_type& id )const;
+         void                               store_balance_record( const balance_record& record );
 
          ofeed_record                       get_feed_record( const feed_index index )const;
          virtual void                       store_feed_record( const feed_record& record );
@@ -253,6 +253,10 @@ namespace bts { namespace blockchain {
          asset_db_interface _asset_db_interface;
          virtual void init_asset_db_interface() = 0;
 
+         friend struct slate_record;
+         slate_db_interface _slate_db_interface;
+         virtual void init_slate_db_interface() = 0;
+
          friend struct balance_record;
          balance_db_interface _balance_db_interface;
          virtual void init_balance_db_interface() = 0;
@@ -260,10 +264,6 @@ namespace bts { namespace blockchain {
          friend struct transaction_record;
          transaction_db_interface _transaction_db_interface;
          virtual void init_transaction_db_interface() = 0;
-
-         friend struct slate_record;
-         slate_db_interface _slate_db_interface;
-         virtual void init_slate_db_interface() = 0;
 
          friend struct feed_record;
          feed_db_interface _feed_db_interface;

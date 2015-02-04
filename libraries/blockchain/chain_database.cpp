@@ -161,11 +161,11 @@ namespace bts { namespace blockchain {
           _asset_id_to_record.open( data_dir / "index/asset_id_to_record" );
           _asset_symbol_to_id.open( data_dir / "index/asset_symbol_to_id" );
 
+          _slate_id_to_record.open( data_dir / "index/slate_id_to_record" );
+
           _balance_id_to_record.open( data_dir / "index/balance_id_to_record" );
 
           _id_to_transaction_record_db.open( data_dir / "index/id_to_transaction_record_db" );
-
-          _slate_id_to_record.open( data_dir / "index/slate_id_to_record" );
 
           _market_transactions_db.open( data_dir / "index/market_transactions_db" );
 
@@ -962,12 +962,31 @@ namespace bts { namespace blockchain {
 #ifndef WIN32
 #warning [HARDFORK] Delegate shuffling
 #endif
-          //for( uint32_t i = 0; i < num_del; ++i )
-          for( uint32_t i = 0; i < num_del; )
+          for( uint32_t i=0, x=0; i < num_del; i++ )
           {
-             for( uint32_t x = 0; x < 4 && i < num_del; ++x, ++i )
-                std::swap( active_del[ i ], active_del[ rand_seed._hash[ x ] % num_del ] );
-             rand_seed = fc::sha256::hash( rand_seed );
+             //
+             // we only use xth element of hash once,
+             // then when all 4 elements have been used,
+             // we re-mix the hash by running sha256() again
+             //
+             // the algorithm used is the second algorithm described in
+             // http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle#The_modern_algorithm
+             //
+             // previous implementation suffered from bias due to
+             // picking from all elements, see
+             // http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle#Implementation_errors
+             // in addition to various problems related to
+             // pre-increment operation
+             //
+             uint64_t r = rand_seed._hash[x];
+             uint32_t choices = num_del - i;
+             uint32_t j = ((uint32_t) (r % choices)) + i;
+             
+             std::swap( active_del[ i ], active_del[ j ] );
+             
+             x = (x + 1) & 3;
+             if( x == 0 )
+                 rand_seed = fc::sha256::hash( rand_seed );
           }
 
           pending_state->set_active_delegates( active_del );
@@ -1168,9 +1187,9 @@ namespace bts { namespace blockchain {
 
       init_account_db_interface();
       init_asset_db_interface();
+      init_slate_db_interface();
       init_balance_db_interface();
       init_transaction_db_interface();
-      init_slate_db_interface();
       init_feed_db_interface();
       init_slot_db_interface();
    }
@@ -1273,9 +1292,9 @@ namespace bts { namespace blockchain {
                  my->_asset_id_to_record.toggle_leveldb( enabled );
                  my->_asset_symbol_to_id.toggle_leveldb( enabled );
 
-                 my->_balance_id_to_record.toggle_leveldb( enabled );
-
                  my->_slate_id_to_record.toggle_leveldb( enabled );
+
+                 my->_balance_id_to_record.toggle_leveldb( enabled );
              };
 
              const auto set_db_cache_write_through = [ this ]( bool write_through )
@@ -1436,13 +1455,13 @@ namespace bts { namespace blockchain {
       my->_asset_id_to_record.close();
       my->_asset_symbol_to_id.close();
 
+      my->_slate_id_to_record.close();
+
       my->_balance_id_to_record.close();
 
       my->_pending_transaction_db.close();
       my->_id_to_transaction_record_db.close();
       my->_address_to_trx_index.close();
-
-      my->_slate_id_to_record.close();
 
       my->_burn_db.close();
 
@@ -4007,6 +4026,28 @@ namespace bts { namespace blockchain {
        };
    }
 
+   void chain_database::init_slate_db_interface()
+   {
+       slate_db_interface& interface = _slate_db_interface;
+
+       interface.lookup_by_id = [ this ]( const slate_id_type id ) -> oslate_record
+       {
+           const auto iter = my->_slate_id_to_record.unordered_find( id );
+           if( iter != my->_slate_id_to_record.unordered_end() ) return iter->second;
+           return oslate_record();
+       };
+
+       interface.insert_into_id_map = [ this ]( const slate_id_type id, const slate_record& record )
+       {
+           my->_slate_id_to_record.store( id, record );
+       };
+
+       interface.erase_from_id_map = [ this ]( const slate_id_type id )
+       {
+           my->_slate_id_to_record.remove( id );
+       };
+   }
+
    void chain_database::init_balance_db_interface()
    {
        balance_db_interface& interface = _balance_db_interface;
@@ -4081,28 +4122,6 @@ namespace bts { namespace blockchain {
        interface.erase_from_unique_set = [ this ]( const transaction& trx )
        {
            my->_unique_transactions.erase( unique_transaction_key( trx, get_chain_id() ) );
-       };
-   }
-
-   void chain_database::init_slate_db_interface()
-   {
-       slate_db_interface& interface = _slate_db_interface;
-
-       interface.lookup_by_id = [ this ]( const slate_id_type id ) -> oslate_record
-       {
-           const auto iter = my->_slate_id_to_record.unordered_find( id );
-           if( iter != my->_slate_id_to_record.unordered_end() ) return iter->second;
-           return oslate_record();
-       };
-
-       interface.insert_into_id_map = [ this ]( const slate_id_type id, const slate_record& record )
-       {
-           my->_slate_id_to_record.store( id, record );
-       };
-
-       interface.erase_from_id_map = [ this ]( const slate_id_type id )
-       {
-           my->_slate_id_to_record.remove( id );
        };
    }
 
