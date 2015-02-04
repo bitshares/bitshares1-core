@@ -20,9 +20,9 @@ namespace bts { namespace blockchain {
    {
       init_account_db_interface();
       init_asset_db_interface();
+      init_slate_db_interface();
       init_balance_db_interface();
       init_transaction_db_interface();
-      init_slate_db_interface();
       init_feed_db_interface();
       init_slot_db_interface();
    }
@@ -72,9 +72,9 @@ namespace bts { namespace blockchain {
 
       apply_records( prev_state, _account_id_to_record, _account_id_remove );
       apply_records( prev_state, _asset_id_to_record, _asset_id_remove );
+      apply_records( prev_state, _slate_id_to_record, _slate_id_remove );
       apply_records( prev_state, _balance_id_to_record, _balance_id_remove );
       apply_records( prev_state, _transaction_id_to_record, _transaction_id_remove );
-      apply_records( prev_state, _slate_id_to_record, _slate_id_remove );
       apply_records( prev_state, _slot_index_to_record, _slot_index_remove );
 
       for( const auto& item : properties )      prev_state->set_property( (chain_property_enum)item.first, item.second );
@@ -129,9 +129,9 @@ namespace bts { namespace blockchain {
 
       populate_undo_state( undo_state, prev_state, _account_id_to_record, _account_id_remove );
       populate_undo_state( undo_state, prev_state, _asset_id_to_record, _asset_id_remove );
+      populate_undo_state( undo_state, prev_state, _slate_id_to_record, _slate_id_remove );
       populate_undo_state( undo_state, prev_state, _balance_id_to_record, _balance_id_remove );
       populate_undo_state( undo_state, prev_state, _transaction_id_to_record, _transaction_id_remove );
-      populate_undo_state( undo_state, prev_state, _slate_id_to_record, _slate_id_remove );
       populate_undo_state( undo_state, prev_state, _feed_index_to_record, _feed_index_remove );
       populate_undo_state( undo_state, prev_state, _slot_index_to_record, _slot_index_remove );
 
@@ -667,6 +667,33 @@ namespace bts { namespace blockchain {
        };
    }
 
+   void pending_chain_state::init_slate_db_interface()
+   {
+       slate_db_interface& interface = _slate_db_interface;
+
+       interface.lookup_by_id = [ this ]( const slate_id_type id ) -> oslate_record
+       {
+           const auto iter = _slate_id_to_record.find( id );
+           if( iter != _slate_id_to_record.end() ) return iter->second;
+           if( _slate_id_remove.count( id ) > 0 ) return oslate_record();
+           const chain_interface_ptr prev_state = _prev_state.lock();
+           if( !prev_state ) return oslate_record();
+           return prev_state->lookup<slate_record>( id );
+       };
+
+       interface.insert_into_id_map = [ this ]( const slate_id_type id, const slate_record& record )
+       {
+           _slate_id_remove.erase( id );
+           _slate_id_to_record[ id ] = record;
+       };
+
+       interface.erase_from_id_map = [ this ]( const slate_id_type id )
+       {
+           _slate_id_to_record.erase( id );
+           _slate_id_remove.insert( id );
+       };
+   }
+
    void pending_chain_state::init_balance_db_interface()
    {
        balance_db_interface& interface = _balance_db_interface;
@@ -728,33 +755,6 @@ namespace bts { namespace blockchain {
        interface.erase_from_unique_set = [ this ]( const transaction& trx )
        {
            _transaction_digests.erase( trx.digest( get_chain_id() ) );
-       };
-   }
-
-   void pending_chain_state::init_slate_db_interface()
-   {
-       slate_db_interface& interface = _slate_db_interface;
-
-       interface.lookup_by_id = [ this ]( const slate_id_type id ) -> oslate_record
-       {
-           const auto iter = _slate_id_to_record.find( id );
-           if( iter != _slate_id_to_record.end() ) return iter->second;
-           if( _slate_id_remove.count( id ) > 0 ) return oslate_record();
-           const chain_interface_ptr prev_state = _prev_state.lock();
-           if( !prev_state ) return oslate_record();
-           return prev_state->lookup<slate_record>( id );
-       };
-
-       interface.insert_into_id_map = [ this ]( const slate_id_type id, const slate_record& record )
-       {
-           _slate_id_remove.erase( id );
-           _slate_id_to_record[ id ] = record;
-       };
-
-       interface.erase_from_id_map = [ this ]( const slate_id_type id )
-       {
-           _slate_id_to_record.erase( id );
-           _slate_id_remove.insert( id );
        };
    }
 
