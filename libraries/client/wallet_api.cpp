@@ -178,7 +178,11 @@ uint32_t detail::client_impl::wallet_import_keys_from_json( const fc::path& json
         ++count;
     }
 
+    _wallet->auto_backup( "json_key_import" );
     ulog( "Successfully imported ${n} new private keys into account ${name}", ("n",count)("name",account) );
+
+    _wallet->start_scan( 0, 1 );
+
     return count;
 } FC_CAPTURE_AND_RETHROW( (json_filename) ) }
 
