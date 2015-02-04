@@ -1911,6 +1911,15 @@ namespace bts { namespace blockchain {
        }
    } FC_CAPTURE_AND_RETHROW() }
 
+   void chain_database::scan_transactions( const function<void( const transaction_record& )> callback )const
+   { try {
+       for( auto iter = my->_id_to_transaction_record_db.begin();
+            iter.valid(); ++iter )
+       {
+           callback( iter.value() );
+       }
+   } FC_CAPTURE_AND_RETHROW() }
+
    void chain_database::scan_unordered_accounts( const function<void( const account_record& )> callback )const
    { try {
        for( auto iter = my->_account_id_to_record.unordered_begin();
@@ -3315,6 +3324,10 @@ namespace bts { namespace blockchain {
 
       return results;
    }
+
+   void chain_database::generate_issuance_map( const string& symbol, const fc::path& filename )const
+   { try {
+   } FC_CAPTURE_AND_RETHROW( (symbol)(filename) ) }
 
    // NOTE: Only base asset 0 is snapshotted and addresses can have multiple entries
    void chain_database::generate_snapshot( const fc::path& filename )const
