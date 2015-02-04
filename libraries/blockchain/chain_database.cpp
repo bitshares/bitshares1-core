@@ -958,12 +958,31 @@ namespace bts { namespace blockchain {
 #ifndef WIN32
 #warning [HARDFORK] Delegate shuffling
 #endif
-          //for( uint32_t i = 0; i < num_del; ++i )
-          for( uint32_t i = 0; i < num_del; )
+          for( uint32_t i=0, x=0; i < num_del; i++ )
           {
-             for( uint32_t x = 0; x < 4 && i < num_del; ++x, ++i )
-                std::swap( active_del[ i ], active_del[ rand_seed._hash[ x ] % num_del ] );
-             rand_seed = fc::sha256::hash( rand_seed );
+             //
+             // we only use xth element of hash once,
+             // then when all 4 elements have been used,
+             // we re-mix the hash by running sha256() again
+             //
+             // the algorithm used is the second algorithm described in
+             // http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle#The_modern_algorithm
+             //
+             // previous implementation suffered from bias due to
+             // picking from all elements, see
+             // http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle#Implementation_errors
+             // in addition to various problems related to
+             // pre-increment operation
+             //
+             uint64_t r = rand_seed._hash[x];
+             uint32_t choices = num_del - i;
+             uint32_t j = ((uint32_t) (r % choices)) + i;
+             
+             std::swap( active_del[ i ], active_del[ j ] );
+             
+             x = (x + 1) & 3;
+             if( x == 0 )
+                 rand_seed = fc::sha256::hash( rand_seed );
           }
 
           pending_state->set_active_delegates( active_del );
