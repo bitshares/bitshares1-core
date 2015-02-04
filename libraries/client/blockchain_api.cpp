@@ -458,7 +458,7 @@ variant_object client_impl::blockchain_get_info()const
    info["max_delegate_reg_fee"]                 = _chain_db->get_delegate_registration_fee( 100 );
 
    info["name_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
-   info["memo_size_max"]                        = BTS_BLOCKCHAIN_MAX_MEMO_SIZE;
+   info["memo_size_max"]                        = BTS_BLOCKCHAIN_MAX_EXTENDED_MEMO_SIZE;
    info["data_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
 
    info["symbol_size_max"]                      = BTS_BLOCKCHAIN_MAX_SUB_SYMBOL_SIZE;
@@ -755,6 +755,15 @@ vector<burn_record> client_impl::blockchain_get_account_wall( const string& acco
 void client_impl::blockchain_broadcast_transaction(const signed_transaction& trx)
 {
    auto collector = _chain_db->get_account_record(_config.faucet_account_name);
+   auto accept_fee = [this](const asset& fee) -> bool {
+      auto feed_price = _chain_db->get_active_feed_price(fee.asset_id);
+      if( !feed_price ) return false;
+
+      //Forgive up to a 5% change in price from the last sync by the lightwallet
+      asset required = asset(_config.light_relay_fee * .95) * *feed_price;
+      return fee >= required;
+   };
+
    if( collector && _config.light_relay_fee )
    {
       for( operation op : trx.operations )
@@ -764,8 +773,7 @@ void client_impl::blockchain_broadcast_transaction(const signed_transaction& trx
             ilog("Checking if deposit ${d} is to ${c}", ("d", deposit)("c", collector->active_address()));
             if( deposit.condition.owner() && *deposit.condition.owner() == collector->active_address() &&
                 ( (deposit.condition.asset_id == 0 && deposit.amount >= _config.light_relay_fee) ||
-                  // Sshhhhh, don't tell! TODO: figure out minimum MIA fee
-                  deposit.amount > 0 ) )
+                  accept_fee(asset(deposit.amount, deposit.condition.asset_id)) ) )
             {
                network_broadcast_transaction(trx);
                return;

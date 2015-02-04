@@ -38,7 +38,7 @@ Rectangle {
                font.pixelSize: units.dp(20)
             }
             Label {
-               text: amount + " " + symbol
+               text: format(amount, symbol) + " " + symbol
                color: incoming? (sender === accountName? "black"
                                                         : "green")
                               : "red"
@@ -63,7 +63,7 @@ Rectangle {
             font.weight: Font.Light
             font.italic: true
             visible: trx.feeAmount
-            text: qsTr("Fee: ") + trx.feeAmount + " " + trx.feeSymbol
+            text: qsTr("Fee: ") + format(trx.feeAmount, trx.feeSymbol) + " " + trx.feeSymbol
          }
          Item { Layout.preferredWidth: visuals.margins }
       }

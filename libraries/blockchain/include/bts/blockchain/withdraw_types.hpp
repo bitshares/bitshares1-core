@@ -109,10 +109,10 @@ namespace bts { namespace blockchain {
    };
    typedef fc::optional<extended_memo_data> oextended_memo_data;
 
-   struct memo_status : public memo_data
+   struct memo_status : public extended_memo_data
    {
       memo_status(){}
-      memo_status( const memo_data& memo,
+      memo_status( const extended_memo_data& memo,
                    bool valid_signature,
                    const fc::ecc::private_key& opk );
 
@@ -137,7 +137,7 @@ namespace bts { namespace blockchain {
                                           memo_flags_enum memo_type = from_memo,
                                           bool use_stealth_address = true);
 
-      memo_data    decrypt_memo_data( const fc::sha512& secret )const;
+      extended_memo_data decrypt_memo_data( const fc::sha512& secret )const;
       void         encrypt_memo_data( const fc::sha512& secret, const memo_data& );
       void         encrypt_memo_data( const fc::sha512& secret, const extended_memo_data& );
 
@@ -181,8 +181,9 @@ namespace bts { namespace blockchain {
                                       const fc::ecc::public_key&  memo_pub_key,
                                       memo_flags_enum memo_type = from_memo);
 
-      memo_data    decrypt_memo_data( const fc::sha512& secret )const;
-      void         encrypt_memo_data( const fc::sha512& secret, const memo_data& );
+      extended_memo_data    decrypt_memo_data( const fc::sha512& secret )const;
+      void                  encrypt_memo_data( const fc::sha512& secret, const extended_memo_data& );
+      void                  encrypt_memo_data( const fc::sha512& secret, const memo_data& );
 
       optional<titan_memo>    memo;
    };

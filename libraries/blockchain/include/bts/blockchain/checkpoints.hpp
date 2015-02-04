@@ -3,7 +3,7 @@
 
 namespace bts { namespace blockchain {
 
-static std::map<uint32_t, bts::blockchain::block_id_type> CHECKPOINT_BLOCKS
+static std::unordered_map<uint32_t, bts::blockchain::block_id_type> CHECKPOINT_BLOCKS
 {
     {       1, bts::blockchain::block_id_type( "8abcfb93c52f999e3ef5288c4f837f4f15af5521" ) },
     {  100000, bts::blockchain::block_id_type( "96f98d49722848a6a47ad04aece8b9f93c9e9c23" ) },
@@ -24,5 +24,8 @@ static std::map<uint32_t, bts::blockchain::block_id_type> CHECKPOINT_BLOCKS
     { 1600000, bts::blockchain::block_id_type( "1c08742243deda31c663130fca9ab8bd825803c5" ) },
     { 1652000, bts::blockchain::block_id_type( "4ca86f5f7d9afd7c60a50a2d0886bed83dd354c9" ) }
 };
+
+// Initialized in load_checkpoints()
+static uint32_t LAST_CHECKPOINT_BLOCK_NUM = 0;
 
 } } // bts::blockchain

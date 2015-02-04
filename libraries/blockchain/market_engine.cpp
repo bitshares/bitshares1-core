@@ -121,7 +121,7 @@ namespace bts { namespace blockchain { namespace detail {
             {
                 if( _current_bid->state.limit_price.valid() )
                 {
-                  if( *_current_bid->state.limit_price <= mtrx.ask_price )
+                  if( *_current_bid->state.limit_price <= mtrx.bid_price )
                   {
                       cancel_current_relative_bid( mtrx );
                       push_market_transaction( mtrx );

@@ -31,7 +31,7 @@ namespace bts { namespace blockchain {
 
    bool transaction_evaluation_state::check_signature( const address& a )const
    { try {
-      return  _skip_signature_check || signed_keys.find( a ) != signed_keys.end();
+      return _skip_signature_check || signed_keys.find( a ) != signed_keys.end();
    } FC_CAPTURE_AND_RETHROW( (a) ) }
 
    bool transaction_evaluation_state::check_multisig( const multisig_condition& condition )const
@@ -210,10 +210,9 @@ namespace bts { namespace blockchain {
       }
    } FC_CAPTURE_AND_RETHROW() }
 
-   void transaction_evaluation_state::evaluate( const signed_transaction& trx_arg, bool skip_signature_check, bool enforce_canonical )
+   void transaction_evaluation_state::evaluate( const signed_transaction& trx_arg )
    { try {
       trx = trx_arg;
-      _skip_signature_check = skip_signature_check;
       try {
         if( _current_state->now() >= trx_arg.expiration )
         {
@@ -237,7 +236,7 @@ namespace bts { namespace blockchain {
            const auto trx_digest = trx_arg.digest( _current_state->get_chain_id() );
            for( const auto& sig : trx_arg.signatures )
            {
-              auto key = fc::ecc::public_key( sig, trx_digest, enforce_canonical ).serialize();
+              const auto key = fc::ecc::public_key( sig, trx_digest, _enforce_canonical_signatures ).serialize();
               signed_keys.insert( address(key) );
               signed_keys.insert( address(pts_address(key,false,56) ) );
               signed_keys.insert( address(pts_address(key,true,56) )  );
@@ -262,7 +261,7 @@ namespace bts { namespace blockchain {
          validation_error = e;
          throw;
       }
-   } FC_CAPTURE_AND_RETHROW( (trx_arg)(skip_signature_check)(enforce_canonical) ) }
+   } FC_CAPTURE_AND_RETHROW( (trx_arg) ) }
 
    void transaction_evaluation_state::evaluate_operation( const operation& op )
    { try {

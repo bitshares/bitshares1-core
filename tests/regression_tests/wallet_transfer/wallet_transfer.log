@@ -26,7 +26,7 @@ aliases: transfer
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate0           test                100.00000 XTS                                                       0.50000 XTS         <d-ign></d-ign>
+<d-ign>2014-06-20T14:40:30</d-ign>PENDING   delegate0           test                100.00000 XTS                                                       0.50000 XTS         <d-ign> da5fbeb4</d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4
@@ -39,4 +39,45 @@ default (unlocked) >>> wallet_account_balance test
 ACCOUNT                         BALANCE                     
 ============================================================
 test                            100.00000 XTS               
+default (unlocked) >>> wallet_transfer 101 XTS delegate0 test "an even longer very long test memo"
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate0           test                101.00000 XTS           an even longer very long test memo          0.50000 XTS         <d-ign> fd5d2eb4</d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 4
+OK
+default (unlocked) >>> wallet_account_balance delegate0
+ACCOUNT                         BALANCE                     
+============================================================
+delegate0                       19,801,778.19801 XTS        
+default (unlocked) >>> wallet_account_balance test
+ACCOUNT                         BALANCE                     
+============================================================
+test                            201.00000 XTS               
+default (unlocked) >>> history test 
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+<d-ign>2014-06-20T14:40:30</d-ign>2         delegate0           test                100.00000 XTS                                                       100.00000 XTS           0.00000 XTS         <d-ign> da5fbeb4</d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>3         delegate0           test                101.00000 XTS           an even longer very long test memo          201.00000 XTS           0.00000 XTS         <d-ign> fd5d2eb4</d-ign>
+default (unlocked) >>> history delegate0 
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+<d-ign>2014-06-20T14:40:27</d-ign>0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    19,801,980.19801 XTS    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+<d-ign>2014-06-20T14:40:30</d-ign>2         delegate0           test                100.00000 XTS                                                       19,801,879.69801 XTS    0.50000 XTS         <d-ign> da5fbeb4</d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>3         delegate0           test                101.00000 XTS           an even longer very long test memo          19,801,778.19801 XTS    0.50000 XTS         <d-ign> fd5d2eb4</d-ign>
+default (unlocked) >>> wallet_scan_transaction fd5d2eb4
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:40:40</d-ign>3         delegate0           test                101.00000 XTS           an even longer very long test memo          0.50000 XTS         <d-ign> fd5d2eb4</d-ign>
+default (unlocked) >>> wallet_verify_titan_deposit fd5d2eb4
+{
+  "from": "delegate0",
+  "to": "test",
+  "amount": {
+    "amount": 10100000,
+    "asset_id": 0
+  },
+  "memo": "an even longer very long test memo"
+}
 default (unlocked) >>> quit

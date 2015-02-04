@@ -16,9 +16,9 @@ Page {
    RowLayout {
       id: hashBar
       anchors.top: parent.top
-      anchors.left: parent.left
-      anchors.right:  parent.right
+      anchors.horizontalCenter: parent.horizontalCenter
       anchors.margins: visuals.margins
+      width: Math.min(parent.width - visuals.margins*2, units.dp(600))
 
       RoboHash {
          name: wallet.accounts[accountName].name
@@ -37,7 +37,7 @@ Page {
       anchors.top: hashBar.bottom
       style: "display1"
       color: "red"
-      text: amountField.amount() + " " + assetSymbol.text
+      text: format(amountField.amount(), assetSymbol.text) + " " + assetSymbol.text
    }
 
    Rectangle {
@@ -52,11 +52,11 @@ Page {
       id: transferForm
       anchors {
          top: splitter.bottom
-         left: parent.left
-         right: parent.right
          bottom: parent.bottom
+         horizontalCenter: parent.horizontalCenter
          margins: visuals.margins
       }
+      width: Math.min(parent.width - visuals.margins*2, units.dp(600))
 
       TextField {
          id: toNameField
@@ -101,17 +101,18 @@ Page {
             input {
                inputMethodHints: Qt.ImhDigitsOnly
                font.pixelSize: units.dp(20)
-               validator: DoubleValidator {bottom: 0; notation: DoubleValidator.StandardNotation}
+               validator: DoubleValidator {bottom: 0; notation: DoubleValidator.StandardNotation; decimals: wallet.getDigitsOfPrecision(assetSymbol.text)}
             }
             helperText: {
                var fee = wallet.getFee(assetSymbol.text)
-               return qsTr("Available balance: ") + wallet.accounts[accountName].balance(assetSymbol.text) +
-                     " " + assetSymbol.text + "\n" + qsTr("Transaction fee: ") + fee.amount + " " + fee.symbol
+               var balance = Number(wallet.accounts[accountName].balance(assetSymbol.text).amount)
+               return qsTr("Available balance: ") + format(balance, assetSymbol.text) +
+                     " " + assetSymbol.text + "\n" + qsTr("Transaction fee: ") + format(fee.amount, fee.symbol) + " " + fee.symbol
             }
             onEditingFinished: canProceed()
 
             function amount() {
-               return Number(text)? Number(text) : 0
+               return Number.fromLocaleString(text)? Number.fromLocaleString(text) : 0
             }
             function canProceed() {
                var fee = wallet.getFee(assetSymbol.text)

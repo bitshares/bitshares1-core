@@ -12,12 +12,15 @@
 namespace bts { namespace light_wallet {
 using std::string;
 
-light_wallet::light_wallet(const fc::path& data_dir)
-   : _data_dir(data_dir)
+light_wallet::light_wallet(std::function<void(string,string)> persist_function, std::function<string(string)> restore_function, std::function<bool(string)> can_restore_function)
+   : persist(persist_function),
+     can_restore(can_restore_function),
+     restore(restore_function)
 {
    try {
       _chain_cache = std::make_shared<pending_chain_state>();
-      *_chain_cache = fc::json::from_file<pending_chain_state>( data_dir / "chain_cache.json" );
+      if( can_restore("chain_cache") )
+         *_chain_cache = fc::json::from_string(restore("chain_cache"), fc::json::strict_parser).as<pending_chain_state>();
    } catch ( const fc::exception& e )
    {
       elog( "Error loading chain cache: ${e}", ("e", e.to_detail_string()));
@@ -27,7 +30,7 @@ light_wallet::light_wallet(const fc::path& data_dir)
 light_wallet::~light_wallet()
 {
    try {
-      fc::json::save_to_file(*_chain_cache, _data_dir / "chain_cache.json");
+      persist("chain_cache", fc::json::to_string(*_chain_cache));
       _chain_cache.reset();
    } catch( const fc::exception& e) {
       edump((e));
@@ -82,48 +85,21 @@ void light_wallet::disconnect()
    //if( json_con ) json_con->close();
 }
 
-void light_wallet::open( const fc::path& wallet_json )
+void light_wallet::open()
 {
-   _wallet_file = wallet_json;
-
-   auto tmp = wallet_json.generic_string() + ".tmp";
-   auto bak = wallet_json.generic_string() + ".bak";
-
-   if( fc::exists(bak) )
-   {
-      try {
-         _data = fc::json::from_file<light_wallet_data>( tmp );
-      } catch (...) {
-         _data = fc::json::from_file<light_wallet_data>( bak );
-      }
-
-      if( fc::exists(tmp) )
-         fc::rename(tmp, wallet_json.generic_string() + "." + fc::to_string(fc::time_point::now().sec_since_epoch()) + ".tmp");
-      if( fc::exists(bak) )
-         fc::rename(bak, wallet_json.generic_string() + "." + fc::to_string(fc::time_point::now().sec_since_epoch()) + ".bak");
-   } else
-      _data = fc::json::from_file<light_wallet_data>( wallet_json );
+   _data = light_wallet_data();
+   if( can_restore("wallet_data") )
+      _data = fc::json::from_string(restore("wallet_data"), fc::json::strict_parser).as<light_wallet_data>();
 }
 
 void light_wallet::save()
 {
-   if( fc::exists(_wallet_file) )
-   {
-      fc::path tmp = _wallet_file.generic_string() + ".tmp";
-      fc::path bak = _wallet_file.generic_string() + ".bak";
-
-      fc::rename(_wallet_file, bak);
-      fc::json::save_to_file(_data, tmp, false);
-      fc::rename(tmp, _wallet_file);
-      fc::remove(bak);
-   } else {
-      fc::json::save_to_file(_data, _wallet_file, false);
-   }
+   if( _data )
+      persist("wallet_data", fc::json::to_string(*_data));
 }
 
 void light_wallet::close()
 {
-   _wallet_file = fc::path();
    lock();
    _data.reset();
 }
@@ -172,13 +148,11 @@ void light_wallet::lock()
    _wallet_key.reset();
 }
 
-void light_wallet::create( const fc::path& wallet_json,
-                           const string& account_name,
+void light_wallet::create( const string& account_name,
                            const string& password,
                            const string& brain_seed )
 {
    // initialize the wallet data
-   _wallet_file = wallet_json;
    if( !_data.valid() )
       _data = light_wallet_data();
    account_record& new_account = _data->accounts[account_name].user_account;
@@ -241,10 +215,10 @@ account_record& light_wallet::fetch_account(const string& account_name)
    return _data->accounts[account_name].user_account;
    } FC_CAPTURE_AND_RETHROW( ) }
 
-vector<account_record*> light_wallet::account_records()
+vector<const account_record*> light_wallet::account_records()const
 {
    FC_ASSERT(is_open());
-   vector<account_record*> results;
+   vector<const account_record*> results;
 
    for( auto& account_pair : _data->accounts )
       results.push_back(&account_pair.second.user_account);
@@ -275,11 +249,12 @@ fc::variant_object light_wallet::prepare_transfer(const string& amount,
    bts::blockchain::transaction_creation_state creator;
    creator.pending_state = *_chain_cache;
    creator.add_known_key(_data->accounts[from_account_name].user_account.active_address());
-   creator.withdraw(fee);
-   creator.withdraw(transfer_asset);
-   creator.deposit(transfer_asset, to_account->active_key(), 0,
-                   create_one_time_key(from_account_name, fc::to_string(expiration.sec_since_epoch())),
-                   memo, active_key(from_account_name));
+   if( fee.asset_id == transfer_asset.asset_id )
+      creator.withdraw(fee + transfer_asset);
+   else {
+      creator.withdraw(fee);
+      creator.withdraw(transfer_asset);
+   }
 
    if( _relay_fee_collector )
    {
@@ -287,13 +262,16 @@ fc::variant_object light_wallet::prepare_transfer(const string& amount,
       creator.deposit(relay_fee, _relay_fee_collector->active_key(), 0);
    }
 
+   creator.deposit(transfer_asset, to_account->active_key(), 0,
+                   create_one_time_key(from_account_name, fc::to_string(expiration.sec_since_epoch())),
+                   memo, active_key(from_account_name));
+
    creator.pay_fee(fee);
 
    creator.trx.expiration = expiration;
 
    ilog("Creator built a transaction: ${trx}", ("trx", creator.trx));
 
-   // TODO include a fee payable to the light wallet service provider
    // TODO support multi-sig balances through service provider which
    // will perform N factor authentication
 
@@ -341,7 +319,7 @@ oprice light_wallet::get_median_feed_price( const string& symbol )
       auto cached_price_itr = _data->price_cache.find(symbol);
       if( cached_price_itr != _data->price_cache.end() )
       {
-         if( cached_price_itr->second.second + fc::days(1) > fc::time_point::now() )
+         if( cached_price_itr->second.second + fc::hours(1) > fc::time_point::now() )
             return cached_price_itr->second.first;
          else
             _data->price_cache.erase( cached_price_itr );
@@ -378,15 +356,21 @@ asset light_wallet::get_fee( const string& symbol )
    return _network_fee + _relay_fee;
 } FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
-map<string, double> light_wallet::balance(const string& account_name) const
+map<string, pair<double,double>> light_wallet::balance(const string& account_name) const
 {
    FC_ASSERT(is_open());
 
-   map<string, double> balances = {{BTS_BLOCKCHAIN_SYMBOL, 0}};
+   map<string, pair<double,double>> balances = {{BTS_BLOCKCHAIN_SYMBOL, {0,0}}};
    for( auto balance : _chain_cache->_balance_id_to_record ) {
       oasset_record record = get_asset_record(balance.second.asset_id());
       if( record && balance.second.owner() == _data->accounts.find(account_name)->second.user_account.active_key() )
-         balances[record->symbol] += balance.second.balance / double(record->precision);
+      {
+         balances[record->symbol].first += balance.second.balance / double(record->precision);
+         balances[record->symbol].second += balance.second.calculate_yield(blockchain::now(),
+                                                                           balance.second.balance,
+                                                                           record->collected_fees,
+                                                                           record->current_share_supply).amount / double(record->precision);
+      }
    }
    return balances;
 }
@@ -467,11 +451,13 @@ bool light_wallet::sync_balance( bool resync_all )
    return true;
 } FC_CAPTURE_AND_RETHROW() }
 
-bool light_wallet::sync_transactions()
+bool light_wallet::sync_transactions(bool resync_all)
 {
    FC_ASSERT( is_open() );
 
    uint32_t sync_block = _data->last_transaction_sync_block;
+   if( resync_all )
+      sync_block = 0;
    vector<string> account_names;
 
    auto batch_results = batch_active_addresses("blockchain_list_address_transactions", sync_block, account_names);
@@ -545,10 +531,14 @@ optional<asset_record> light_wallet::get_asset_record( const string& symbol )con
          if( item.second.symbol == symbol )
             return item.second;
    }
-   auto result = _rpc.blockchain_get_asset( symbol );
-   if( result )
-      _chain_cache->store_asset_record(*result);
-   return result;
+   if( is_connected() )
+   {
+      auto result = _rpc.blockchain_get_asset( symbol );
+      if( result )
+         _chain_cache->store_asset_record(*result);
+      return result;
+   }
+   return oasset_record();
 } FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
 optional<asset_record> light_wallet::get_asset_record(const asset_id_type& id)const
@@ -559,11 +549,15 @@ optional<asset_record> light_wallet::get_asset_record(const asset_id_type& id)co
          if( item.second.id == id )
             return item.second;
    }
-   auto result = _rpc.blockchain_get_asset( fc::variant(id).as_string() );
-   if( result )
-      _chain_cache->store_asset_record(*result);
-   return result;
-   } FC_CAPTURE_AND_RETHROW( (id) ) }
+   if( is_connected() )
+   {
+      auto result = _rpc.blockchain_get_asset( fc::variant(id).as_string() );
+      if( result )
+         _chain_cache->store_asset_record(*result);
+      return result;
+   }
+   return oasset_record();
+} FC_CAPTURE_AND_RETHROW( (id) ) }
 
 oaccount_record light_wallet::get_account_record(const string& identifier)
 {
@@ -572,17 +566,21 @@ oaccount_record light_wallet::get_account_record(const string& identifier)
       return itr->second;
    wlog("Cache miss on account ${a}", ("a", identifier));
 
-   auto account = _rpc.blockchain_get_account(identifier);
-   if( account )
+   if( is_connected() )
    {
-      _chain_cache->store_account_record(*account);
-      _account_cache[account->name] = *account;
-      _account_cache[string(account->owner_key)] = *account;
-      _account_cache[string(account->active_key())] = *account;
-      _account_cache[string(account->owner_address())] = *account;
-      _account_cache[string(account->active_address())] = *account;
+      auto account = _rpc.blockchain_get_account(identifier);
+      if( account )
+      {
+         _chain_cache->store_account_record(*account);
+         _account_cache[account->name] = *account;
+         _account_cache[string(account->owner_key)] = *account;
+         _account_cache[string(account->active_key())] = *account;
+         _account_cache[string(account->owner_address())] = *account;
+         _account_cache[string(account->active_address())] = *account;
+      }
+      return account;
    }
-   return account;
+   return oaccount_record();
 }
 
 bts::wallet::transaction_ledger_entry light_wallet::summarize(const string& account_name,
@@ -662,7 +660,7 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const string& acco
                {
                   auto one_time_key = create_one_time_key(account_name, fc::to_string(record.trx.expiration.sec_since_epoch()));
                   try {
-                     memo_data data = condition.decrypt_memo_data(one_time_key.get_shared_secret(account->active_key()));
+                     extended_memo_data data = condition.decrypt_memo_data(one_time_key.get_shared_secret(account->active_key()));
                      summary.operation_notes[i] = data.get_message();
                   } catch(...){}
                }

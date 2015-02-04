@@ -35,7 +35,7 @@ Feature: Advanced User Issued Asset Functionality
 #      | ALICE   | alice_iou  | 100000               | 1000000000           | 1000      |
 
 #TODO   this should fail!!
-        And I set asset permissions for ALICE to: [restircted, retractable, market_halt, balance_halt, supply_unlimit]
+        And I set asset permissions for ALICE to: [restricted, retractable, market_halt, balance_halt, supply_unlimit]
         And I wait for one block
 
     Scenario: Customer can send his asset to anyone and anybody can trade in the ALICE market.
