@@ -59,8 +59,8 @@ namespace bts { namespace blockchain {
       uint64_t            precision = 0;
       fc::time_point_sec  registration_date;
       fc::time_point_sec  last_update;
-      share_type          current_share_supply = 0;
       share_type          maximum_share_supply = 0;
+      share_type          current_share_supply = 0;
       share_type          collected_fees = 0;
       uint32_t            flags = 0;
       uint32_t            issuer_permissions = -1;
@@ -72,19 +72,16 @@ namespace bts { namespace blockchain {
        */
       share_type          transaction_fee = 0;
       /**
-       * 0 for no fee, 10000 for 10% fee.
+       * 0 for no fee, 10000 for 100% fee.
        * This is used for gateways that want to continue earning market trading fees
        * when their assets are used.
        */
-      uint16_t            market_fee = BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE; 
+      uint16_t            market_fee = 0;
       multisig_meta_info  authority;
 
       proposal_id_type    last_proposal_id = 0;
 
       optional<prediction_state> prediction;
-
-      /** reserved for future extensions */
-      vector<char>        reserved;
 
       static const asset_db_interface& db_interface( const chain_interface& );
       void sanity_check( const chain_interface& )const;
@@ -154,8 +151,8 @@ FC_REFLECT( bts::blockchain::asset_record,
         (precision)
         (registration_date)
         (last_update)
-        (current_share_supply)
         (maximum_share_supply)
+        (current_share_supply)
         (collected_fees)
         (flags)
         (issuer_permissions)

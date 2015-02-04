@@ -1,0 +1,85 @@
+>>> debug_advance_time 1 second
+>>> debug_wait_for_block_by_number 1 rlast
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> debug_deterministic_private_keys 0 1 angel true angel true true
+>>> debug_deterministic_private_keys 0 3 alice true alice true true
+>>> debug_deterministic_private_keys 0 3 bob true bob true true
+>>> debug_deterministic_private_keys 0 3 charlie true charlie true true
+>>> debug_deterministic_private_keys 0 3 dan true dan true true
+>>> debug_deterministic_private_keys 0 1 emily true emily true true
+
+>>> debug_enable_output false
+>>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
+>>> debug_enable_output true
+>>> wallet_market_submit_short alice 200000 XTS 0 USD 0.02
+>>> wallet_market_submit_ask bob 100000 XTS 0.02 USD
+
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> balance alice
+>>> balance bob
+
+>>> debug_enable_output false
+>>> wallet_publish_feeds_multi_experimental [["USD", "0.0135"]]
+>>> debug_enable_output true
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+
+>>> wallet_market_submit_short charlie 250000 XTS 0 USD 0.0135
+>>> wallet_market_submit_ask dan 125000 XTS 0.0135 USD
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+>>> balance charlie
+>>> balance dan
+
+>>> wallet_market_sell dan 100 USD 75.25 XTS
+>>> wallet_market_sell dan 100 USD 71.50 XTS
+>>> wallet_market_sell dan 100 USD 69.00 XTS
+>>> wallet_market_sell dan 100 USD 66.50 XTS
+>>> wallet_market_sell dan 100 USD 0 XTS 0.98
+>>> wallet_market_sell dan 100 USD 0 XTS 1.02
+>>> wallet_market_sell dan 100 USD 0 XTS 1.09
+>>> wallet_market_sell dan 100 USD 0 XTS 1.10
+>>> wallet_market_sell dan 100 USD 0 XTS 1.11
+>>> wallet_market_submit_short charlie 1000 XTS 0 USD 0.0135
+>>> wallet_market_submit_short charlie 1000 XTS 0 USD 0.0130
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> debug_trap
+>>> blockchain_market_order_book USD XTS
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+
+>>> debug_enable_output false
+>>> wallet_publish_feeds_multi_experimental [["USD", "0.0133"]]
+>>> debug_enable_output true
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+
+>>> quit

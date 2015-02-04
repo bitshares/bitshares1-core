@@ -21,6 +21,7 @@ const slate_db_interface& slate_record::db_interface( const chain_interface& db 
 
 void slate_record::sanity_check( const chain_interface& db )const
 { try {
+    FC_ASSERT( !slate.empty() );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 oslate_record slate_db_interface::lookup( const slate_id_type id )const

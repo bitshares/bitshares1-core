@@ -268,7 +268,9 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_asset_record( *current_asset_record );
    }
 
-
+#ifndef WIN32
+#warning [HARDFORK]
+#endif
    void issue_prediction_asset_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
       oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->amount.asset_id );
