@@ -329,6 +329,7 @@ namespace bts { namespace blockchain {
                                                                   const address& owner );
 
          void                               generate_snapshot( const fc::path& filename )const;
+         void                               generate_issuance_map( const string& symbol, const fc::path& filename )const;
          asset                              calculate_supply( const asset_id_type asset_id )const;
          asset                              calculate_debt( const asset_id_type asset_id, bool include_interest = false )const;
          asset                              unclaimed_genesis();

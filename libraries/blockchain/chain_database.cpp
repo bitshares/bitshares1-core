@@ -8,10 +8,14 @@
 #include <bts/blockchain/market_engine.hpp>
 #include <bts/blockchain/time.hpp>
 
+#include <bts/blockchain/balance_operations.hpp>
+#warning   ^^ is it ok that I added this here for generate_issuance_map? Should that that all go in blockchain_api.cpp instead?
+
 #include <fc/io/fstream.hpp>
 #include <fc/io/raw_variant.hpp>
 #include <fc/thread/non_preemptable_scope_check.hpp>
 #include <fc/thread/unique_lock.hpp>
+
 
 #include <iomanip>
 #include <iostream>
@@ -3325,9 +3329,54 @@ namespace bts { namespace blockchain {
       return results;
    }
 
-   void chain_database::generate_issuance_map( const string& symbol, const fc::path& filename )const
-   { try {
-   } FC_CAPTURE_AND_RETHROW( (symbol)(filename) ) }
+    void chain_database::generate_issuance_map( const string& symbol, const fc::path& filename )const
+    { try {
+        map<string, share_type> issuance_map;
+        auto uia = get_asset_record( symbol );
+        FC_ASSERT( uia.valid() );
+        FC_ASSERT( NOT uia->is_market_issued() );
+        const auto scan_trx = [&]( const transaction_record trx_rec )
+        {
+            // Did we issue the asset in this transaction?
+            bool issued = false;
+            for( auto op : trx_rec.trx.operations )
+            {
+                if( op.type == issue_asset_op_type )
+                {
+                    issued = true;
+                    break;
+                }
+            }
+            if( issued )
+            {
+                for( auto op : trx_rec.trx.operations )
+                {
+                    // make sure we didn't withdraw any of that op, that would only happen when someone is trying to be tricky
+                    if( op.type == withdraw_op_type )
+                    {
+                        auto withdraw = op.as<withdraw_operation>();
+                        auto obal = get_balance_record( withdraw.balance_id );
+                        FC_ASSERT( NOT obal->asset_id() == uia->id, "There was a withdraw for this UIA in an op that issued it!" );
+                    }
+                    if( op.type == deposit_op_type )
+                    {
+                        auto deposit = op.as<deposit_operation>();
+                        if( deposit.condition.asset_id != uia->id )
+                            continue;
+                        FC_ASSERT( deposit.condition.type == withdraw_signature_type,
+                           "I can't process deposits for any condition except withdraw_signature yet");
+                        auto raw_addr = string( *deposit.condition.owner() );
+                        if( issuance_map.find( raw_addr ) != issuance_map.end() )
+                            issuance_map[ raw_addr ] += deposit.amount;
+                        else
+                            issuance_map[ raw_addr ] = deposit.amount;
+                    }
+                }
+            }
+        };
+        scan_transactions( scan_trx );
+        fc::json::save_to_file( issuance_map, filename );
+    } FC_CAPTURE_AND_RETHROW( (symbol)(filename) ) }
 
    // NOTE: Only base asset 0 is snapshotted and addresses can have multiple entries
    void chain_database::generate_snapshot( const fc::path& filename )const

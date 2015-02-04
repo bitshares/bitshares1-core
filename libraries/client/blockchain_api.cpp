@@ -481,6 +481,12 @@ void client_impl::blockchain_generate_snapshot( const string& filename )const
     _chain_db->generate_snapshot( fc::path( filename ) );
 } FC_CAPTURE_AND_RETHROW( (filename) ) }
 
+void client_impl::blockchain_generate_issuance_map( const string& symbol, const string& filename )const
+{ try {
+    _chain_db->generate_issuance_map( symbol, fc::path( filename ) );
+} FC_CAPTURE_AND_RETHROW( (filename) ) }
+
+
 asset client_impl::blockchain_calculate_supply( const string& asset )const
 {
    asset_id_type asset_id;
