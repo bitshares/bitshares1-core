@@ -114,6 +114,8 @@ namespace bts { namespace blockchain {
       if( current_asset_record->is_market_issued() )
           FC_CAPTURE_AND_THROW( not_user_issued, (*current_asset_record) );
 
+      FC_ASSERT( !current_asset_record->is_prediction() );
+
       // Reject no-ops
       FC_ASSERT( this->name.valid() || this->description.valid() || this->public_data.valid()
                  || this->maximum_share_supply.valid() || this->precision.valid() );
@@ -169,6 +171,8 @@ namespace bts { namespace blockchain {
       oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->asset_id );
       if( NOT current_asset_record.valid() )
           FC_CAPTURE_AND_THROW( unknown_asset_id, (asset_id) );
+
+      FC_ASSERT( !current_asset_record->is_prediction() );
 
       if( current_asset_record->is_market_issued() )
           FC_CAPTURE_AND_THROW( not_user_issued, (*current_asset_record) );
@@ -269,6 +273,85 @@ namespace bts { namespace blockchain {
    }
 
 
+   void create_prediction_asset_operation::evaluate( transaction_evaluation_state& eval_state )const
+   { try {
+      if( NOT eval_state._current_state->is_valid_symbol_name( this->symbol ) )
+          FC_CAPTURE_AND_THROW( invalid_asset_symbol, (symbol) );
+
+      auto dot_pos = this->symbol.find('.');
+      if( dot_pos != std::string::npos )
+      {
+         std::string parent_symbol = this->symbol.substr( 0, dot_pos );
+         oasset_record parent_asset_record = eval_state._current_state->get_asset_record( parent_symbol );
+         FC_ASSERT( parent_asset_record.valid() );
+
+         if( !eval_state.verify_authority( parent_asset_record->authority ) )
+            FC_CAPTURE_AND_THROW( missing_signature, (parent_asset_record->authority) );
+      }
+
+      oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->symbol );
+      if( current_asset_record.valid() )
+          FC_CAPTURE_AND_THROW( asset_symbol_in_use, (symbol) );
+
+      if( this->name.empty() )
+          FC_CAPTURE_AND_THROW( invalid_asset_name, (this->name) );
+
+      const asset_id_type asset_id = eval_state._current_state->last_asset_id() + 1;
+      current_asset_record = eval_state._current_state->get_asset_record( asset_id );
+      if( current_asset_record.valid() )
+          FC_CAPTURE_AND_THROW( asset_id_in_use, (asset_id) );
+
+      oaccount_record issuer_account_record = eval_state._current_state->get_account_record( this->issuer );
+      FC_ASSERT( issuer_account_record.valid() );
+
+      if( !eval_state.check_signature( issuer_account_record->active_address() ) )
+         FC_CAPTURE_AND_THROW( missing_signature, (issuer_account_record->active_address()) );
+
+      oasset_record base_asset = eval_state._current_state->get_asset_record( this->base_asset_id );
+      FC_ASSERT( base_asset.valid() );
+
+      const asset reg_fee( eval_state._current_state->get_asset_registration_fee( this->symbol.size() ), 0 );
+      eval_state.required_fees += reg_fee;
+
+      asset_record new_record;
+      new_record.id                     = eval_state._current_state->new_asset_id();
+      new_record.symbol                 = this->symbol;
+      new_record.name                   = this->name;
+      new_record.description            = this->description;
+      new_record.public_data            = this->public_data;
+      new_record.issuer_account_id      = this->issuer;
+      new_record.precision              = base_asset->precision;
+      new_record.registration_date      = eval_state._current_state->now();
+      new_record.last_update            = new_record.registration_date;
+      new_record.current_share_supply   = 0;
+      new_record.maximum_share_supply   = BTS_BLOCKCHAIN_MAX_SHARES;
+      new_record.collected_fees         = 0;
+      // Initialize flags and issuer_permissions here, instead of
+      //   in the struct definition, so that the initialization value
+      //   may depend on e.g. block number.  This supports future
+      //   hardforks which may want to add new permissions for future
+      //   assets without applying them to existing assets.
+      new_record.flags                  = 0; // no flags
+      new_record.issuer_permissions     = 0; // no permisions
+
+      if( issuer_account_record )
+      {
+         new_record.authority.owners.insert( issuer_account_record->active_key() );
+         new_record.authority.required = 1;
+      }
+      for( auto judge_id : this->judge_slate )
+      {
+         auto judge_record = eval_state._current_state->get_account_record( judge_id );
+         FC_ASSERT( judge_record.valid() );
+         judge_record->judged_assets.push_back( new_record.id );
+         eval_state._current_state->store_account_record( *judge_record );
+      }
+
+      eval_state._current_state->store_asset_record( new_record );
+   } FC_CAPTURE_AND_RETHROW( (*this) ) }
+
+
+
    void issue_prediction_asset_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
       oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->amount.asset_id );
@@ -294,6 +377,47 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_balance_record( *current_cover_record );
       // find or create balance with withdraw_cover op
    }
+
+   void judge_prediction_asset_operation::evaluate( transaction_evaluation_state& eval_state )const
+   { try {
+      oasset_record prediction_asset = eval_state._current_state->get_asset_record( this->prediction_asset_id );
+      oaccount_record judge_account = eval_state._current_state->get_account_record( this->judge_account_id );
+
+      if( !eval_state.check_signature( judge_account->active_address() ) )
+           FC_CAPTURE_AND_THROW( missing_signature, (judge_account->active_address()) );
+
+      FC_ASSERT( judge_account.valid() );
+      FC_ASSERT( prediction_asset.valid() );
+      FC_ASSERT( prediction_asset->is_prediction() );
+      bool is_judge = false;
+      for( auto judge : prediction_asset->prediction->judges )
+      {
+         if( judge == this->judge_account_id )
+         {
+            is_judge = true;
+            break;
+         }
+      }
+      FC_ASSERT( is_judge );
+      auto& true_votes = prediction_asset->prediction->true_votes;
+      auto& false_votes = prediction_asset->prediction->false_votes;
+
+      // remove any existing votes by this judge
+      true_votes.erase( std::remove( true_votes.begin(), true_votes.end(), this->judge_account_id ), true_votes.end() );
+      false_votes.erase( std::remove( false_votes.begin(), false_votes.end(), this->judge_account_id ), false_votes.end() );
+
+      // add new vote
+      if( this->vote == true_result )
+         true_votes.push_back( this->judge_account_id );
+      else if( this->vote == false_result )
+         false_votes.push_back( this->judge_account_id );
+
+      // check result
+      prediction_asset->prediction->result = prediction_asset->prediction->evaluate_result();
+      eval_state._current_state->store_asset_record( *prediction_asset );
+   } FC_CAPTURE_AND_RETHROW( (*this) ) }
+
+
    void issue_asset_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
       oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->amount.asset_id );

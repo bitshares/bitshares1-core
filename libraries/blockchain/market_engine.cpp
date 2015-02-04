@@ -26,6 +26,10 @@ namespace bts { namespace blockchain { namespace detail {
           FC_ASSERT( !quote_asset->is_market_frozen() );
           FC_ASSERT( !base_asset->is_market_frozen() );
 
+          // force all trading for prediction markets to occur on their own
+          if( quote_asset->is_prediction() ) FC_ASSERT( base_asset->id == quote_asset->prediction->base_asset_id );
+          if( base_asset->is_prediction() ) FC_ASSERT( quote_asset->id == base_asset->prediction->base_asset_id );
+
           // The order book is sorted from low to high price. So to get the last item (highest bid),
           // we need to go to the first item in the next market class and then back up one
           const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );

@@ -246,7 +246,13 @@ namespace bts { namespace blockchain {
                 FC_ASSERT( cover_asset->is_prediction() );
                 cover_asset->current_share_supply -= this->amount;
                 eval_state._current_state->store_asset_record( *cover_asset );
-                eval_state.sub_balance( balance_id_type(), asset(this->amount, condition.cover_asset_id) );
+
+                if( cover_asset->prediction->result == false_result )
+                   break;
+                if( cover_asset->prediction->result == no_result )
+                   eval_state.sub_balance( balance_id_type(), asset(this->amount, condition.cover_asset_id) );
+                else
+                   FC_ASSERT( cover_asset->prediction->result != true_result );
                 break;
             }
 
@@ -276,7 +282,27 @@ namespace bts { namespace blockchain {
       }
 
       current_balance_record->balance -= this->amount;
-      eval_state.add_balance( asset(this->amount, current_balance_record->condition.asset_id) );
+      if( asset_rec->is_prediction() )
+      {
+         /**
+          *  When we withdraw from a closed prediction asset, we are given the
+          *  base asset ID rather than the prediction asset ID if and only if
+          *  the result is true_result 
+          */
+         FC_ASSERT( asset_rec->prediction->result != false_result );
+         if( asset_rec->prediction->result == true_result )
+         {
+            eval_state.add_balance( asset(this->amount, asset_rec->prediction->base_asset_id) );
+            asset_rec->current_share_supply -= this->amount;
+            eval_state._current_state->store_asset_record( *asset_rec );
+         }
+         else
+            eval_state.add_balance( asset(this->amount, current_balance_record->condition.asset_id) );
+      }
+      else
+      {
+         eval_state.add_balance( asset(this->amount, current_balance_record->condition.asset_id) );
+      }
 
       current_balance_record->last_update = eval_state._current_state->now();
 

@@ -16,10 +16,42 @@ namespace bts { namespace blockchain {
       supply_unlimit        = 1 << 4  ///<! The issuer can change the supply at will
    };
 
+   enum  prediction_result 
+   {
+        true_result  = 1,
+        no_result    = 0,
+        false_result = -1
+   };
+
    struct prediction_state
    {
-      asset_id_type base_asset_id;
-      slate_id_type judge_slate_id;
+      asset_id_type                               base_asset_id  = 0;
+      /** in base_asset_id type */
+      share_type                                  collected_fees = 0;
+      fc::enum_type<int8_t,prediction_result>     result = no_result;
+      vector<account_id_type>                     judges;
+      vector<account_id_type>                     true_votes;
+      vector<account_id_type>                     false_votes;
+
+      /**
+       *  Reqire majority of more than 3/4ths of the judges to declare a winner. 
+       *  With 10 judges, 8 must report and 5 must agree 
+       *  With 5 judges, 4 must report and 3 must agree.
+       *  With 3 judges, 2 must report and 2 must agree.
+       *  With 2 judges, 2 must report and 2 must agree.
+       *  With 1 judges, 1 must report and 1 must agree.
+       */
+      prediction_result evaluate_result()const
+      {
+         if( true_votes.size() + false_votes.size() > (judges.size()*3)/4 )
+         {
+            if( true_votes.size() > false_votes.size() )
+               return true_result;
+            if( true_votes.size() < false_votes.size() )
+               return false_result;
+         }
+         return no_result;
+      }
    };
 
    class chain_interface;
@@ -61,6 +93,7 @@ namespace bts { namespace blockchain {
       fc::time_point_sec  last_update;
       share_type          current_share_supply = 0;
       share_type          maximum_share_supply = 0;
+      // if prediction, then this is in the prediction.base_asset_id
       share_type          collected_fees = 0;
       uint32_t            flags = 0;
       uint32_t            issuer_permissions = -1;
@@ -135,7 +168,16 @@ FC_REFLECT_ENUM( bts::blockchain::asset_permissions,
         (balance_halt)
         (supply_unlimit)
         )
-FC_REFLECT( bts::blockchain::prediction_state, (base_asset_id)(judge_slate_id) )
+FC_REFLECT_ENUM( bts::blockchain::prediction_result, (true_result)(no_result)(false_result) )
+
+FC_REFLECT( bts::blockchain::prediction_state, 
+            (base_asset_id)
+            (collected_fees)
+            (result)
+            (judges)
+            (true_votes)
+            (false_votes) )
+
 FC_REFLECT( bts::blockchain::proposal_record,
         (asset_id)
         (proposal_id)

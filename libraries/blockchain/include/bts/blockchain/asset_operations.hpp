@@ -52,6 +52,40 @@ namespace bts { namespace blockchain {
        void evaluate( transaction_evaluation_state& eval_state )const;
    };
 
+   /**
+    *  Dedicated operation for creating prediction assets 
+    *  which must reference an existing asset type for
+    *  the purpose of setting the precision.  Options
+    *  available to other asset types are not available
+    *  for prediction assets.
+    */
+   struct create_prediction_asset_operation
+   {
+       static const operation_type_enum type;
+
+       string                  symbol;
+       string                  name;
+       string                  description;
+       variant                 public_data;
+       account_id_type         issuer;
+       uint16_t                market_fee = 0;
+       vector<account_id_type> judge_slate;
+       asset_id_type           base_asset_id;
+
+       void evaluate( transaction_evaluation_state& eval_state )const;
+   };
+
+   struct judge_prediction_asset_operation
+   {
+      static const operation_type_enum type;
+
+      asset_id_type                            prediction_asset_id;
+      fc::enum_type<int8_t,prediction_result>  vote;
+      account_id_type                          judge_account_id;
+
+      void evaluate( transaction_evaluation_state& eval_state )const;
+   };
+
    struct create_asset_proposal
    {
       static const operation_type_enum type;
@@ -106,7 +140,6 @@ namespace bts { namespace blockchain {
         */
        share_type          transaction_fee = 0;
        multisig_meta_info  authority;
-       optional<prediction_state> prediction;
 
        void evaluate( transaction_evaluation_state& eval_state )const;
    };
@@ -175,6 +208,29 @@ FC_REFLECT( bts::blockchain::create_asset_operation,
             (maximum_share_supply)
             (precision)
             )
+
+FC_REFLECT( bts::blockchain::create_prediction_asset_operation,
+            (symbol)
+            (name)
+            (description)
+            (public_data)
+            (issuer)
+            (market_fee)
+            (judge_slate)
+            (base_asset_id)
+          )
+
+FC_REFLECT( bts::blockchain::issue_prediction_asset_operation, 
+            (amount)
+            (owner) 
+           )
+
+FC_REFLECT( bts::blockchain::judge_prediction_asset_operation, 
+            (prediction_asset_id)
+            (vote)
+            (judge_account_id)
+          )
+
 FC_REFLECT( bts::blockchain::update_asset_operation,
             (asset_id)
             (name)
@@ -192,12 +248,11 @@ FC_REFLECT_DERIVED( bts::blockchain::update_asset_ext_operation,
                     (transaction_fee)
                     (market_fee)
                     (authority)
-                    (prediction)
                     )
 
 FC_REFLECT( bts::blockchain::create_asset_proposal, (asset_id)(info) );
-FC_REFLECT( bts::blockchain::issue_prediction_asset_operation, (amount)(owner) )
 
 FC_REFLECT( bts::blockchain::issue_asset_operation,
             (amount)
             )
+

@@ -102,10 +102,11 @@ namespace bts { namespace blockchain {
       redeem_lsmr_share             = 43
       */
 
-      pay_fee_op_type               = 44,
-      update_call_price_op_type     = 45,  
-      issue_prediction_asset_op_type = 46
-
+      pay_fee_op_type                 = 44,
+      update_call_price_op_type       = 45,  
+      create_prediction_asset_op_type = 46,
+      issue_prediction_asset_op_type  = 47,
+      judge_prediction_asset_op_type  = 48
    };
 
    /**
@@ -200,7 +201,9 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (buy_sale_op_type)
                  (pay_fee_op_type)
                  (update_call_price_op_type)
+                 (create_prediction_asset_op_type)
                  (issue_prediction_asset_op_type)
+                 (judge_prediction_asset_op_type)
                  )
 
 FC_REFLECT( bts::blockchain::operation, (type)(data) )
