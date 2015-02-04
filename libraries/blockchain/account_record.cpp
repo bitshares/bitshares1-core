@@ -92,6 +92,15 @@ namespace bts { namespace blockchain {
 
     void account_record::sanity_check( const chain_interface& db )const
     { try {
+        FC_ASSERT( id > 0 );
+        FC_ASSERT( !name.empty() );
+        if( delegate_info.valid() )
+        {
+            FC_ASSERT( delegate_info->votes_for >= 0 );
+            FC_ASSERT( delegate_info->pay_rate <= 100 );
+            FC_ASSERT( !delegate_info->signing_key_history.empty() );
+            FC_ASSERT( delegate_info->pay_balance >= 0 );
+        }
     } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
     oaccount_record account_db_interface::lookup( const account_id_type id )const
