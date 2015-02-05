@@ -26,6 +26,12 @@ View {
          style: "headline"
          wrapMode: Text.WrapAtWordBoundaryOrAnywhere
       }
+      Label {
+         anchors.horizontalCenter: parent.horizontalCenter
+         text: qsTr("Version %1").arg(Qt.application.version)
+         color: Theme.light.hintColor
+         style: "caption"
+      }
       PasswordField {
          id: passwordField
          width: parent.width

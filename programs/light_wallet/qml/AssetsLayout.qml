@@ -8,7 +8,7 @@ import "utils.js" as Utils
 
 Page {
    title: wallet.accounts[accountName].name + qsTr("'s Balances")
-   actions: [__marketAction, payAction, lockAction]
+   actions: [/*__marketAction, DISABLED FOR RELEASE*/ payAction, lockAction]
 
    Action {
       id: __marketAction

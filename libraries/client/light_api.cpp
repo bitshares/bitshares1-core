@@ -12,7 +12,7 @@ fc::variant_object client_impl::fetch_welcome_package()
 {
    fc::mutable_variant_object welcome_package;
    welcome_package["chain_id"] = _chain_db->get_chain_id();
-   welcome_package["relay_fee_collector"] = _chain_db->get_account_record(_config.faucet_account_name);
+   welcome_package["relay_fee_collector"] = _chain_db->get_account_record(_config.relay_account_name);
    welcome_package["relay_fee_amount"] = _config.light_relay_fee;
    welcome_package["network_fee_amount"] = _config.min_relay_fee;
    welcome_package["all_assets"] = blockchain_list_assets("", -1);

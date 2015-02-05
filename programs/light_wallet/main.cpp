@@ -15,11 +15,14 @@ int main(int argc, char *argv[])
    app.setApplicationName(QStringLiteral("BitShares %1 Light Wallet").arg(BTS_BLOCKCHAIN_SYMBOL));
    app.setOrganizationName(BTS_BLOCKCHAIN_NAME);
    app.setOrganizationDomain("bitshares.org");
+   app.setApplicationVersion("1.0 Beta");
 
    //Fire up the NTP system
    bts::blockchain::now();
 
+#ifdef BTS_TEST_NETWORK
    QQmlDebuggingEnabler enabler;
+#endif
 
    qmlRegisterType<LightWallet>("org.BitShares.Types", 1, 0, "LightWallet");
    qmlRegisterUncreatableType<Account>("org.BitShares.Types", 1, 0, "Account",
