@@ -103,7 +103,7 @@ namespace bts { namespace blockchain {
       */
 
       pay_fee_op_type               = 44,
-      update_call_price_op_type     = 45  
+      update_call_price_op_type     = 45
 
    };
 
