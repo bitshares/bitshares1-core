@@ -44,9 +44,7 @@ namespace bts { namespace blockchain {
 
     public_key_type account_record::active_key()const
     {
-        if( active_key_history.empty() )
-            return public_key_type();
-
+        FC_ASSERT( !active_key_history.empty() );
         return active_key_history.rbegin()->second;
     }
 
@@ -94,6 +92,7 @@ namespace bts { namespace blockchain {
     { try {
         FC_ASSERT( id > 0 );
         FC_ASSERT( !name.empty() );
+        FC_ASSERT( !active_key_history.empty() );
         if( delegate_info.valid() )
         {
             FC_ASSERT( delegate_info->votes_for >= 0 );
