@@ -10,15 +10,21 @@
 #include <QSettings>
 #include <QEventLoop>
 
+#include <iostream>
+
 #define IN_THREAD \
-   m_walletThread.async([=] {
+   qDebug() << "Posting" << __FUNCTION__; \
+   m_walletThread.async([=] { \
+      wlog("Entering");
+#define END_THREAD wlog("Leaving"); }, __FUNCTION__);
 #define IN_WAIT_THREAD \
    QEventLoop _THREAD_WAIT_LOOP_; \
+   qDebug() << "Posting" << __FUNCTION__; \
    m_walletThread.async([&] { \
+      wlog("Entering"); \
       QEventLoopLocker _THREAD_LOCKER_(&_THREAD_WAIT_LOOP_);
-#define END_THREAD }, __FUNCTION__);
 #define END_WAIT_THREAD \
-   END_THREAD \
+   }, /*fc::time_point::now() + fc::milliseconds(10),*/ __FUNCTION__); \
    _THREAD_WAIT_LOOP_.exec();
 
 inline static QString normalize(QString key)
@@ -55,17 +61,17 @@ Balance* LightWallet::getFee(QString assetSymbol)
    Balance* fee = new Balance(assetSymbol, -1);
 
    IN_WAIT_THREAD
-         try {
+   try {
       auto rawFee = m_wallet.get_fee(convert(assetSymbol));
-         auto feeAsset = m_wallet.get_asset_record(rawFee.asset_id);
-         fee->setProperty("amount", double(rawFee.amount) / feeAsset->precision);
-         fee->setProperty("symbol", convert(feeAsset->symbol));
-      } catch (const fc::exception& e) {
-         qDebug() << "Unable to get fee for" << assetSymbol << "because" << e.to_detail_string().c_str();
-      }
+      auto feeAsset = m_wallet.get_asset_record(rawFee.asset_id);
+      fee->setProperty("amount", double(rawFee.amount) / feeAsset->precision);
+      fee->setProperty("symbol", convert(feeAsset->symbol));
+   } catch (const fc::exception& e) {
+      qDebug() << "Unable to get fee for" << assetSymbol << "because" << e.to_detail_string().c_str();
+   }
    END_WAIT_THREAD
 
-         return fee;
+   return fee;
 }
 
 int LightWallet::getDigitsOfPrecision(QString assetSymbol)
@@ -98,6 +104,18 @@ bool LightWallet::verifyBrainKey(QString key) const
    return !m_brainKey.isEmpty() && normalize(key) == normalize(m_brainKey);
 }
 
+QStringList LightWallet::allAssets()
+{
+   QStringList assets;
+
+   IN_WAIT_THREAD
+   for( const std::string& symbol : m_wallet.all_asset_symbols() )
+      assets.append(convert(symbol));
+   END_WAIT_THREAD
+
+   return assets;
+}
+
 void LightWallet::connectToServer(QString host, quint16 port, QString serverKey, QString user, QString password)
 {
    IN_THREAD
@@ -109,6 +127,7 @@ void LightWallet::connectToServer(QString host, quint16 port, QString serverKey,
          m_wallet.connect(convert(host), convert(user), convert(password), port,
                           bts::blockchain::public_key_type(convert(serverKey)));
       Q_EMIT connectedChanged(isConnected());
+      Q_EMIT allAssetsChanged();
    } catch (fc::exception e) {
       m_connectionError = convert(e.get_log().begin()->get_message()).replace("\n", " ");
       Q_EMIT errorConnecting(m_connectionError);
