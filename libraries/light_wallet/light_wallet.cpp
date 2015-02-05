@@ -363,7 +363,7 @@ map<string, pair<double,double>> light_wallet::balance(const string& account_nam
 {
    FC_ASSERT(is_open());
 
-   map<string, pair<double,double>> balances = {{BTS_BLOCKCHAIN_SYMBOL, {0,0}},{"USD", {1,1}}};
+   map<string, pair<double,double>> balances = {{BTS_BLOCKCHAIN_SYMBOL, {0,0}}};
    for( auto balance : _chain_cache->_balance_id_to_record ) {
       oasset_record record = get_asset_record(balance.second.asset_id());
       if( record && balance.second.owner() == _data->accounts.find(account_name)->second.user_account.active_key() )
