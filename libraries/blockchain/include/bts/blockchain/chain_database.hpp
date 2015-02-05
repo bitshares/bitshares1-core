@@ -102,8 +102,6 @@ namespace bts { namespace blockchain {
          void set_relay_fee( share_type shares );
          share_type get_relay_fee();
 
-         void sanity_check()const;
-
          double get_average_delegate_participation()const;
 
          /**
@@ -131,9 +129,6 @@ namespace bts { namespace blockchain {
          optional<block_fork_data>   get_block_fork_data( const block_id_type& )const;
          bool                        is_known_block( const block_id_type& id )const;
          bool                        is_included_block( const block_id_type& id )const;
-
-         fc::ripemd160               get_current_random_seed()const override;
-
 
          account_record              get_delegate_record_for_signee( const public_key_type& block_signee )const;
          account_record              get_block_signee( const block_id_type& block_id )const;
@@ -261,10 +256,6 @@ namespace bts { namespace blockchain {
          void                               scan_transactions( const function<void( const transaction_record& )> callback )const;
          void                               scan_objects( const function<void( const object_record& )> callback )const;
 
-         virtual optional<variant>          get_property( chain_property_enum property_id )const override;
-         virtual void                       set_property( chain_property_enum property_id,
-                                                          const variant& property_value )override;
-
          bool                               is_valid_symbol( const string& asset_symbol )const;
          string                             get_asset_symbol( const asset_id_type asset_id )const;
          asset_id_type                      get_asset_id( const string& asset_symbol )const;
@@ -334,7 +325,6 @@ namespace bts { namespace blockchain {
          asset                              calculate_debt( const asset_id_type asset_id, bool include_interest = false )const;
          asset                              unclaimed_genesis();
 
-         void                               dump_state( const fc::path& path )const;
          fc::variant_object                 get_stats() const;
 
          // XXX: Only call on pending chain state
@@ -349,6 +339,7 @@ namespace bts { namespace blockchain {
       private:
          unique_ptr<detail::chain_database_impl> my;
 
+         virtual void init_property_db_interface()override;
          virtual void init_account_db_interface()override;
          virtual void init_asset_db_interface()override;
          virtual void init_balance_db_interface()override;

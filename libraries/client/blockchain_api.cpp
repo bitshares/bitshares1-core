@@ -448,7 +448,6 @@ variant_object client_impl::blockchain_get_info()const
    info["name"]                                 = BTS_BLOCKCHAIN_NAME;
    info["symbol"]                               = BTS_BLOCKCHAIN_SYMBOL;
    info["address_prefix"]                       = BTS_ADDRESS_PREFIX;
-   info["version"]                              = BTS_BLOCKCHAIN_VERSION;
    info["db_version"]                           = BTS_BLOCKCHAIN_DATABASE_VERSION;
    info["genesis_timestamp"]                    = _chain_db->get_genesis_timestamp();
 
@@ -680,11 +679,6 @@ bool client_impl::blockchain_verify_signature(const string& signer, const fc::sh
 
         }
     }
-}
-
-void client_impl::blockchain_dump_state( const string& path )const
-{
-   _chain_db->dump_state( fc::path( path ) );
 }
 
 vector<bts::blockchain::api_market_status> client_impl::blockchain_list_markets()const

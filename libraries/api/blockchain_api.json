@@ -941,21 +941,6 @@
         "aliases" : ["verify_signature", "verify_sig", "blockchain_verify_sig"]
       },
       {
-        "method_name": "blockchain_dump_state",
-        "description": "TODO",
-         "cached"      : true,
-        "return_type": "void",
-        "parameters"  : [
-           {
-              "name" : "path",
-              "type" : "string",
-              "description" : "the directory to dump the state into"
-           }
-        ],
-        "is_const"   : true,
-        "prerequisites" : ["no_prerequisites"]
-      },
-      {
         "method_name": "blockchain_broadcast_transaction",
         "description": "Takes a signed transaction and broadcasts it to the network.",
          "cached"      : true,
