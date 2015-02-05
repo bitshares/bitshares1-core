@@ -61,6 +61,12 @@ MainView {
          wrapMode: Text.WrapAtWordBoundaryOrAnywhere
       }
       Label {
+         anchors.horizontalCenter: parent.horizontalCenter
+         text: qsTr("Version %1").arg(Qt.application.version)
+         color: Theme.light.hintColor
+         style: "caption"
+      }
+      Label {
          id: statusText
          text: qsTr("To get started, create a password below.\n" +
                     "This password can be short and easy to remember — we'll make a better one later.")
