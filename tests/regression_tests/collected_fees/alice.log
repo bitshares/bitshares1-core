@@ -86,18 +86,19 @@ default (unlocked) >>> blockchain_get_asset USD
   "precision": 10000,
   "registration_date": "2014-02-02T18:00:00",
   "last_update": "2014-02-02T18:00:00",
-  "current_share_supply": 0,
   "maximum_share_supply": 1000000000000000,
+  "current_share_supply": 0,
   "collected_fees": 0,
   "flags": 0,
   "issuer_permissions": 4294967295,
   "transaction_fee": 0,
-  "market_fee": 10000,
+  "market_fee": 0,
   "authority": {
     "required": 0,
     "owners": []
   },
-  "last_proposal_id": 0
+  "last_proposal_id": 0,
+  "prediction": null
 }
 default (unlocked) >>> blockchain_market_order_book USD XTS
      BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
@@ -147,18 +148,19 @@ default (unlocked) >>> blockchain_get_asset USD
   "precision": 10000,
   "registration_date": "2014-02-02T18:00:00",
   "last_update": "2014-02-02T18:00:00",
-  "current_share_supply": 250000000,
   "maximum_share_supply": 1000000000000000,
+  "current_share_supply": 250000000,
   "collected_fees": 0,
   "flags": 0,
   "issuer_permissions": 4294967295,
   "transaction_fee": 0,
-  "market_fee": 10000,
+  "market_fee": 0,
   "authority": {
     "required": 0,
     "owners": []
   },
-  "last_proposal_id": 0
+  "last_proposal_id": 0,
+  "prediction": null
 }
 default (unlocked) >>> history
  TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
