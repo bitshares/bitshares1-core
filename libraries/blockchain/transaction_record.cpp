@@ -1,6 +1,5 @@
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/transaction_record.hpp>
-#include <fc/exception/exception.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -11,6 +10,9 @@ namespace bts { namespace blockchain {
 
     void transaction_record::sanity_check( const chain_interface& db )const
     { try {
+        FC_ASSERT( !trx.reserved.valid() );
+        FC_ASSERT( !trx.operations.empty() );
+        FC_ASSERT( !trx.signatures.empty() );
     } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
     otransaction_record transaction_db_interface::lookup( const transaction_id_type& id )const

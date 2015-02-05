@@ -458,7 +458,7 @@ variant_object client_impl::blockchain_get_info()const
    info["max_delegate_reg_fee"]                 = _chain_db->get_delegate_registration_fee( 100 );
 
    info["name_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
-   info["memo_size_max"]                        = BTS_BLOCKCHAIN_MAX_MEMO_SIZE;
+   info["memo_size_max"]                        = BTS_BLOCKCHAIN_MAX_EXTENDED_MEMO_SIZE;
    info["data_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
 
    info["symbol_size_max"]                      = BTS_BLOCKCHAIN_MAX_SUB_SYMBOL_SIZE;

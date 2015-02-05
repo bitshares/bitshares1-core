@@ -447,22 +447,22 @@ namespace bts { namespace blockchain {
        store( record.id, record );
    } FC_CAPTURE_AND_RETHROW( (record) ) }
 
-   obalance_record chain_interface::get_balance_record( const balance_id_type& id )const
-   { try {
-       return lookup<balance_record>( id );
-   } FC_CAPTURE_AND_RETHROW( (id) ) }
-
-   void chain_interface::store_balance_record( const balance_record& record )
-   { try {
-       store( record.id(), record );
-   } FC_CAPTURE_AND_RETHROW( (record) ) }
-
    oslate_record chain_interface::get_slate_record( const slate_id_type id )const
    { try {
        return lookup<slate_record>( id );
    } FC_CAPTURE_AND_RETHROW( (id) ) }
 
    void chain_interface::store_slate_record( const slate_record& record )
+   { try {
+       store( record.id(), record );
+   } FC_CAPTURE_AND_RETHROW( (record) ) }
+
+   obalance_record chain_interface::get_balance_record( const balance_id_type& id )const
+   { try {
+       return lookup<balance_record>( id );
+   } FC_CAPTURE_AND_RETHROW( (id) ) }
+
+   void chain_interface::store_balance_record( const balance_record& record )
    { try {
        store( record.id(), record );
    } FC_CAPTURE_AND_RETHROW( (record) ) }

@@ -3,6 +3,7 @@
 #include <bts/blockchain/transaction.hpp>
 #include <bts/blockchain/types.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
+#include <algorithm>
 
 namespace bts { namespace blockchain {
 
@@ -16,22 +17,15 @@ namespace bts { namespace blockchain {
       supply_unlimit        = 1 << 4  ///<! The issuer can change the supply at will
    };
 
-   enum  prediction_result 
-   {
-        true_result  = 1,
-        no_result    = 0,
-        false_result = -1
-   };
 
    struct prediction_state
    {
       asset_id_type                               base_asset_id  = 0;
       /** in base_asset_id type */
       share_type                                  collected_fees = 0;
-      fc::enum_type<int8_t,prediction_result>     result = no_result;
+      optional<uint32_t>                          result;
       vector<account_id_type>                     judges;
-      vector<account_id_type>                     true_votes;
-      vector<account_id_type>                     false_votes;
+      vector< pair<uint32_t,account_id_type> >    results;
 
       /**
        *  Reqire majority of more than 3/4ths of the judges to declare a winner. 
@@ -41,16 +35,15 @@ namespace bts { namespace blockchain {
        *  With 2 judges, 2 must report and 2 must agree.
        *  With 1 judges, 1 must report and 1 must agree.
        */
-      prediction_result evaluate_result()const
+      optional<uint32_t> evaluate_result()
       {
-         if( true_votes.size() + false_votes.size() > (judges.size()*3)/4 )
+         auto n = judges.size()/2;
+         if( results.size() > (judges.size()*3)/4 )
          {
-            if( true_votes.size() > false_votes.size() )
-               return true_result;
-            if( true_votes.size() < false_votes.size() )
-               return false_result;
+            std::nth_element( results.begin(), results.begin() + n, results.end() );
+            return results[n].first;
          }
-         return no_result;
+         return optional<uint32_t>();
       }
    };
 
@@ -91,9 +84,8 @@ namespace bts { namespace blockchain {
       uint64_t            precision = 0;
       fc::time_point_sec  registration_date;
       fc::time_point_sec  last_update;
-      share_type          current_share_supply = 0;
       share_type          maximum_share_supply = 0;
-      // if prediction, then this is in the prediction.base_asset_id
+      share_type          current_share_supply = 0;
       share_type          collected_fees = 0;
       uint32_t            flags = 0;
       uint32_t            issuer_permissions = -1;
@@ -105,19 +97,16 @@ namespace bts { namespace blockchain {
        */
       share_type          transaction_fee = 0;
       /**
-       * 0 for no fee, 10000 for 10% fee.
+       * 0 for no fee, 10000 for 100% fee.
        * This is used for gateways that want to continue earning market trading fees
        * when their assets are used.
        */
-      uint16_t            market_fee = BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE; 
+      uint16_t            market_fee = 0;
       multisig_meta_info  authority;
 
       proposal_id_type    last_proposal_id = 0;
 
       optional<prediction_state> prediction;
-
-      /** reserved for future extensions */
-      vector<char>        reserved;
 
       static const asset_db_interface& db_interface( const chain_interface& );
       void sanity_check( const chain_interface& )const;
@@ -168,15 +157,14 @@ FC_REFLECT_ENUM( bts::blockchain::asset_permissions,
         (balance_halt)
         (supply_unlimit)
         )
-FC_REFLECT_ENUM( bts::blockchain::prediction_result, (true_result)(no_result)(false_result) )
 
 FC_REFLECT( bts::blockchain::prediction_state, 
             (base_asset_id)
             (collected_fees)
             (result)
             (judges)
-            (true_votes)
-            (false_votes) )
+            (results)
+           )
 
 FC_REFLECT( bts::blockchain::proposal_record,
         (asset_id)
@@ -196,8 +184,8 @@ FC_REFLECT( bts::blockchain::asset_record,
         (precision)
         (registration_date)
         (last_update)
-        (current_share_supply)
         (maximum_share_supply)
+        (current_share_supply)
         (collected_fees)
         (flags)
         (issuer_permissions)

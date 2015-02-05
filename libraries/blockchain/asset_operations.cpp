@@ -320,6 +320,7 @@ namespace bts { namespace blockchain {
       new_record.description            = this->description;
       new_record.public_data            = this->public_data;
       new_record.issuer_account_id      = this->issuer;
+      new_record.market_fee             = this->market_fee;
       new_record.precision              = base_asset->precision;
       new_record.registration_date      = eval_state._current_state->now();
       new_record.last_update            = new_record.registration_date;
@@ -399,18 +400,20 @@ namespace bts { namespace blockchain {
          }
       }
       FC_ASSERT( is_judge );
-      auto& true_votes = prediction_asset->prediction->true_votes;
-      auto& false_votes = prediction_asset->prediction->false_votes;
-
-      // remove any existing votes by this judge
-      true_votes.erase( std::remove( true_votes.begin(), true_votes.end(), this->judge_account_id ), true_votes.end() );
-      false_votes.erase( std::remove( false_votes.begin(), false_votes.end(), this->judge_account_id ), false_votes.end() );
-
-      // add new vote
-      if( this->vote == true_result )
-         true_votes.push_back( this->judge_account_id );
-      else if( this->vote == false_result )
-         false_votes.push_back( this->judge_account_id );
+      bool update = false;
+      for( auto item : prediction_asset->prediction->results )
+      {
+         if( item.second == this->judge_account_id )
+         {
+            item.first = this->vote;
+            update = true;
+            break;
+         }
+      }
+      if( !update )
+      {
+         prediction_asset->prediction->results.push_back( std::make_pair( this->vote, this->judge_account_id ) );
+      }
 
       // check result
       prediction_asset->prediction->result = prediction_asset->prediction->evaluate_result();

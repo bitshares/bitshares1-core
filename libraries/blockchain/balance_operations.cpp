@@ -232,6 +232,9 @@ namespace bts { namespace blockchain {
                } FC_CAPTURE_AND_RETHROW( (password_condition ) )
                break;
             }
+#ifndef WIN32
+#warning [HARDFORK]
+#endif
             case withdraw_cover_type:
             {
                 const withdraw_by_cover condition = current_balance_record->condition.as<withdraw_by_cover>();
@@ -247,12 +250,46 @@ namespace bts { namespace blockchain {
                 cover_asset->current_share_supply -= this->amount;
                 eval_state._current_state->store_asset_record( *cover_asset );
 
-                if( cover_asset->prediction->result == false_result )
-                   break;
-                if( cover_asset->prediction->result == no_result )
+                if( !cover_asset->prediction->result )
+                {
                    eval_state.sub_balance( balance_id_type(), asset(this->amount, condition.cover_asset_id) );
+                }
                 else
-                   FC_ASSERT( cover_asset->prediction->result != true_result );
+                {
+                   auto percent = BTS_BLOCKCHAIN_MAX_PREDICTION_RESULT - *cover_asset->prediction->result;
+                   fc::uint128 max_to_withdraw = current_balance_record->balance;
+                   max_to_withdraw *= percent;
+                   max_to_withdraw /= BTS_BLOCKCHAIN_MAX_PREDICTION_RESULT;
+                   auto converted_amount = max_to_withdraw.to_uint64();
+                   // clear 100% of current balance 
+                   // create new balance record with max_to_withdraw USD in it
+                   
+                   balance_record converted_rec( owner, asset( 0, asset_rec->id ), 0 );
+                   auto cur_converted = eval_state._current_state->get_balance_record( converted_rec.id() );
+                   converted_rec.last_update  = eval_state._current_state->now();
+                   converted_rec.deposit_date = eval_state._current_state->now();
+                   if( !cur_converted ) cur_converted = converted_rec;
+
+                   // TODO: adjust the deposit date proportional 
+                   if( cur_converted->balance > 0 )
+                   {
+                      fc::uint128 old_sec_since_epoch( cur_converted->deposit_date.sec_since_epoch() );
+                      fc::uint128 new_sec_since_epoch( eval_state._current_state->now().sec_since_epoch() );
+
+                      fc::uint128 avg = (old_sec_since_epoch * cur_converted->balance) + 
+                                         (new_sec_since_epoch * converted_amount);
+                      avg /= (cur_converted->balance + converted_amount);
+
+                      cur_converted->deposit_date = time_point_sec( avg.to_integer() );
+                   }
+                   cur_converted->balance += converted_amount;
+
+                   // remove the current balance, use the new one.
+                   current_balance_record->balance = 0;
+                   eval_state._current_state->store_balance_record( *current_balance_record );
+
+                   current_balance_record = cur_converted;
+                }
                 break;
             }
 
@@ -282,22 +319,23 @@ namespace bts { namespace blockchain {
       }
 
       current_balance_record->balance -= this->amount;
-      if( asset_rec->is_prediction() )
+      if( asset_rec->is_prediction() && asset_rec->prediction->result )
       {
          /**
           *  When we withdraw from a closed prediction asset, we are given the
           *  base asset ID rather than the prediction asset ID if and only if
           *  the result is true_result 
           */
-         FC_ASSERT( asset_rec->prediction->result != false_result );
-         if( asset_rec->prediction->result == true_result )
-         {
-            eval_state.add_balance( asset(this->amount, asset_rec->prediction->base_asset_id) );
-            asset_rec->current_share_supply -= this->amount;
-            eval_state._current_state->store_asset_record( *asset_rec );
-         }
-         else
-            eval_state.add_balance( asset(this->amount, current_balance_record->condition.asset_id) );
+         FC_ASSERT( *asset_rec->prediction->result != 0 );
+
+         fc::uint128 amount_to_withdraw = this->amount;
+         FC_ASSERT( *asset_rec->prediction->result <= BTS_BLOCKCHAIN_MAX_PREDICTION_RESULT );
+         amount_to_withdraw *= *asset_rec->prediction->result;
+         amount_to_withdraw /= BTS_BLOCKCHAIN_MAX_PREDICTION_RESULT;
+        
+         eval_state.add_balance( asset(amount_to_withdraw.to_uint64(), asset_rec->prediction->base_asset_id) );
+         asset_rec->current_share_supply -= this->amount;
+         eval_state._current_state->store_asset_record( *asset_rec );
       }
       else
       {

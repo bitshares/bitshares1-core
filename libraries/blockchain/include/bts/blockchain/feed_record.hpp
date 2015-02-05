@@ -9,7 +9,7 @@ namespace bts { namespace blockchain {
     {
         asset_id_type   quote_id;
         account_id_type delegate_id;
- 
+
         friend bool operator < ( const feed_index& a, const feed_index& b )
         {
             return std::tie( a.quote_id, a.delegate_id ) < std::tie( b.quote_id, b.delegate_id );
@@ -39,12 +39,12 @@ namespace bts { namespace blockchain {
         std::function<ofeed_record( const feed_index )>             lookup_by_index;
         std::function<void( const feed_index, const feed_record& )> insert_into_index_map;
         std::function<void( const feed_index )>                     erase_from_index_map;
-    
+
         ofeed_record lookup( const feed_index )const;
         void store( const feed_index, const feed_record& )const;
         void remove( const feed_index )const;
     };
-    
+
     struct feed_entry
     {
         string                         delegate_name;
@@ -53,7 +53,7 @@ namespace bts { namespace blockchain {
         fc::optional<string>           asset_symbol;
         fc::optional<double>           median_price;
     };
- 
+
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::feed_index, (quote_id)(delegate_id) )

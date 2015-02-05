@@ -80,7 +80,7 @@ namespace bts { namespace blockchain {
       static const operation_type_enum type;
 
       asset_id_type                            prediction_asset_id;
-      fc::enum_type<int8_t,prediction_result>  vote;
+      uint32_t                                 vote = uint32_t(-1);
       account_id_type                          judge_account_id;
 
       void evaluate( transaction_evaluation_state& eval_state )const;
