@@ -1,3 +1,5 @@
+#include <bts/blockchain/asset_operations.hpp>
+#include <bts/blockchain/balance_operations.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/chain_database_impl.hpp>
 #include <bts/blockchain/checkpoints.hpp>
@@ -8,15 +10,10 @@
 #include <bts/blockchain/market_engine.hpp>
 #include <bts/blockchain/time.hpp>
 
-#include <bts/blockchain/balance_operations.hpp>
-#include <bts/blockchain/asset_operations.hpp>
-#warning   ^^ is it ok that I added this here for generate_issuance_map? Should that that all go in blockchain_api.cpp instead?
-
 #include <fc/io/fstream.hpp>
 #include <fc/io/raw_variant.hpp>
 #include <fc/thread/non_preemptable_scope_check.hpp>
 #include <fc/thread/unique_lock.hpp>
-
 
 #include <iomanip>
 #include <iostream>
@@ -982,9 +979,9 @@ namespace bts { namespace blockchain {
              uint64_t r = rand_seed._hash[x];
              uint32_t choices = num_del - i;
              uint32_t j = ((uint32_t) (r % choices)) + i;
-             
+
              std::swap( active_del[ i ], active_del[ j ] );
-             
+
              x = (x + 1) & 3;
              if( x == 0 )
                  rand_seed = fc::sha256::hash( rand_seed );
