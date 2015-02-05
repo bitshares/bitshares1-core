@@ -8,8 +8,14 @@ import "utils.js" as Utils
 
 Page {
    title: wallet.accounts[accountName].name + qsTr("'s Balances")
-   actions: [payAction, lockAction]
+   actions: [__marketAction, payAction, lockAction]
 
+   Action {
+      id: __marketAction
+      name: qsTr("Place Market Order")
+      iconName: "action/shopping_basket"
+      onTriggered: openOrderForm({accountName: accountName})
+   }
 
    property string accountName
 

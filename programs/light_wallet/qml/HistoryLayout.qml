@@ -7,8 +7,15 @@ import Material 0.1
 Page {
    id: historyPage
    title: accountName + "'s " + assetSymbol + " " + qsTr("Transactions")
-   actions: [payAction, lockAction]
+   actions: [__payAction, lockAction]
    clip: true
+
+   Action {
+      id: __payAction
+      name: qsTr("Send Payment")
+      iconName: "action/payment"
+      onTriggered: openTransferPage({"accountName": accountName, "assetSymbol": assetSymbol})
+   }
 
    property string accountName
    property string assetSymbol

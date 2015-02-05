@@ -31,11 +31,12 @@ add_library( bts_blockchain
              extended_address.cpp
              transaction_creation_state.cpp
 
+             property_record.cpp
              account_record.cpp
              asset_record.cpp
+             slate_record.cpp
              balance_record.cpp
              transaction_record.cpp
-             slate_record.cpp
              feed_record.cpp
              market_records.cpp
              slot_record.cpp

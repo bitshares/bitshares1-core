@@ -18,6 +18,7 @@ namespace bts { namespace blockchain {
 
    void pending_chain_state::init()
    {
+      init_property_db_interface();
       init_account_db_interface();
       init_asset_db_interface();
       init_slate_db_interface();
@@ -50,13 +51,6 @@ namespace bts { namespace blockchain {
       return prev_state->now();
    }
 
-   fc::ripemd160 pending_chain_state::get_current_random_seed()const
-   {
-      const chain_interface_ptr prev_state = _prev_state.lock();
-      FC_ASSERT( prev_state );
-      return prev_state->get_current_random_seed();
-   }
-
    oprice pending_chain_state::get_active_feed_price( const asset_id_type quote_id, const asset_id_type base_id )const
    {
       const chain_interface_ptr prev_state = _prev_state.lock();
@@ -70,6 +64,7 @@ namespace bts { namespace blockchain {
       chain_interface_ptr prev_state = _prev_state.lock();
       if( !prev_state ) return;
 
+      apply_records( prev_state, _property_id_to_record, _property_id_remove );
       apply_records( prev_state, _account_id_to_record, _account_id_remove );
       apply_records( prev_state, _asset_id_to_record, _asset_id_remove );
       apply_records( prev_state, _slate_id_to_record, _slate_id_remove );
@@ -77,7 +72,6 @@ namespace bts { namespace blockchain {
       apply_records( prev_state, _transaction_id_to_record, _transaction_id_remove );
       apply_records( prev_state, _slot_index_to_record, _slot_index_remove );
 
-      for( const auto& item : properties )      prev_state->set_property( (chain_property_enum)item.first, item.second );
       for( const auto& item : authorizations )  prev_state->authorize( item.first.first, item.first.second, item.second );
       for( const auto& item : bids )            prev_state->store_bid_record( item.first, item.second );
       for( const auto& item : relative_bids )   prev_state->store_relative_bid_record( item.first, item.second );
@@ -127,6 +121,7 @@ namespace bts { namespace blockchain {
       chain_interface_ptr prev_state = _prev_state.lock();
       FC_ASSERT( prev_state );
 
+      populate_undo_state( undo_state, prev_state, _property_id_to_record, _property_id_remove );
       populate_undo_state( undo_state, prev_state, _account_id_to_record, _account_id_remove );
       populate_undo_state( undo_state, prev_state, _asset_id_to_record, _asset_id_remove );
       populate_undo_state( undo_state, prev_state, _slate_id_to_record, _slate_id_remove );
@@ -135,12 +130,6 @@ namespace bts { namespace blockchain {
       populate_undo_state( undo_state, prev_state, _feed_index_to_record, _feed_index_remove );
       populate_undo_state( undo_state, prev_state, _slot_index_to_record, _slot_index_remove );
 
-      for( const auto& item : properties )
-      {
-         auto prev_value = prev_state->get_property( (chain_property_enum)item.first );
-         if( !!prev_value ) undo_state->set_property( (chain_property_enum)item.first, *prev_value );
-         else undo_state->set_property( (chain_property_enum)item.first, variant() );
-      }
       for( const auto& item : asset_proposals )
       {
          auto prev_value = prev_state->fetch_asset_proposal( item.first.first, item.first.second );
@@ -341,20 +330,6 @@ namespace bts { namespace blockchain {
        return osite_record();
    } FC_CAPTURE_AND_RETHROW( (site_name) ) }
 
-   optional<variant> pending_chain_state::get_property( chain_property_enum property_id )const
-   { try {
-      const auto property_itr = properties.find( property_id );
-      if( property_itr != properties.end()  ) return property_itr->second;
-      chain_interface_ptr prev_state = _prev_state.lock();
-      if( prev_state ) return prev_state->get_property( property_id );
-      return optional<variant>();
-   } FC_CAPTURE_AND_RETHROW( (property_id) ) }
-
-   void pending_chain_state::set_property( chain_property_enum property_id, const fc::variant& property_value )
-   { try {
-      properties[ property_id ] = property_value;
-   } FC_CAPTURE_AND_RETHROW( (property_id)(property_value) ) }
-
    oorder_record pending_chain_state::get_bid_record( const market_index_key& key )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
@@ -540,6 +515,33 @@ namespace bts { namespace blockchain {
       auto itr = asset_proposals.find( std::make_pair( asset_id, proposal_id ) );
       if( itr != asset_proposals.end() ) return itr->second;
       return prev_state->fetch_asset_proposal( asset_id, proposal_id );
+   }
+
+   void pending_chain_state::init_property_db_interface()
+   {
+       property_db_interface& interface = _property_db_interface;
+
+       interface.lookup_by_id = [ this ]( const property_id_type id ) -> oproperty_record
+       {
+           const auto iter = _property_id_to_record.find( id );
+           if( iter != _property_id_to_record.end() ) return iter->second;
+           if( _property_id_remove.count( id ) > 0 ) return oproperty_record();
+           const chain_interface_ptr prev_state = _prev_state.lock();
+           if( !prev_state ) return oproperty_record();
+           return prev_state->lookup<property_record>( id );
+       };
+
+       interface.insert_into_id_map = [ this ]( const property_id_type id, const property_record& record )
+       {
+           _property_id_remove.erase( id );
+           _property_id_to_record[ id ] = record;
+       };
+
+       interface.erase_from_id_map = [ this ]( const property_id_type id )
+       {
+           _property_id_to_record.erase( id );
+           _property_id_remove.insert( id );
+       };
    }
 
    void pending_chain_state::init_account_db_interface()
