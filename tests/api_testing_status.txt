@@ -4,6 +4,7 @@ approve_register_account <account_salt> <paying_account_name>
 batch <method_name> <parameters_list>                                                               
 blockchain_broadcast_transaction <trx>                                                              
 blockchain_calculate_debt <asset> [include_interest]                                                
+blockchain_generate_issuance_map <symbol> <filename>                                                
 blockchain_generate_snapshot <filename>                                                             
 blockchain_get_account_wall [account_name]                                                          
 blockchain_get_balance <owner_address>                                                              
@@ -142,7 +143,6 @@ wallet_withdraw_from_legacy_address <amount> <symbol> <from_address> <to> [strat
 
 		COMMANDS WITH TESTS
 blockchain_calculate_supply <asset>                                                                 
-blockchain_dump_state <path>                                                                        
 blockchain_export_fork_graph [start_block] [end_block] [filename]                                   
 blockchain_get_account <account>                                                                    
 blockchain_get_account_public_balance <account_name>                                                
@@ -179,6 +179,7 @@ debug_deterministic_private_keys [start] [count] [prefix] [import] [account_name
 debug_enable_output <enable_flag>                                                                   
 debug_filter_output_for_tests <enable_flag>                                                         
 debug_start_simulated_time <new_simulated_time>                                                     
+debug_trap                                                                                          
 debug_wait <wait_time>                                                                              
 debug_wait_for_block_by_number <block_number> [type]                                                
 delegate_blacklist_add_operation <id>                                                               

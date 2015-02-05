@@ -17,8 +17,6 @@ namespace bts { namespace blockchain {
 
          void                           set_prev_state( chain_interface_ptr prev_state );
 
-         fc::ripemd160                  get_current_random_seed()const override;
-
          void                           authorize( asset_id_type asset_id, const address& owner, object_id_type oid = 0 ) override;
          optional<object_id_type>       get_authorization( asset_id_type asset_id, const address& owner )const override;
 
@@ -75,9 +73,6 @@ namespace bts { namespace blockchain {
          virtual map<object_id_type, map<string, object_record>>
                                         get_edges( const object_id_type from )const override;
 
-         virtual optional<variant>      get_property( chain_property_enum property_id )const override;
-         virtual void                   set_property( chain_property_enum property_id, const variant& property_value )override;
-
          virtual void                   store_market_history_record( const market_history_key& key,
                                                                      const market_history_record& record )override;
          virtual omarket_history_record get_market_history_record( const market_history_key& key )const override;
@@ -126,7 +121,8 @@ namespace bts { namespace blockchain {
 
          virtual void                   set_market_transactions( vector<market_transaction> trxs )override;
 
-         unordered_map< chain_property_type, variant>                       properties;
+         map<property_id_type, property_record>                             _property_id_to_record;
+         set<property_id_type>                                              _property_id_remove;
 
          unordered_map<account_id_type, account_record>                     _account_id_to_record;
          unordered_set<account_id_type>                                     _account_id_remove;
@@ -137,15 +133,15 @@ namespace bts { namespace blockchain {
          unordered_set<asset_id_type>                                       _asset_id_remove;
          unordered_map<string, asset_id_type>                               _asset_symbol_to_id;
 
+         unordered_map<slate_id_type, slate_record>                         _slate_id_to_record;
+         unordered_set<slate_id_type>                                       _slate_id_remove;
+
          unordered_map<balance_id_type, balance_record>                     _balance_id_to_record;
          unordered_set<balance_id_type>                                     _balance_id_remove;
 
          unordered_map<transaction_id_type, transaction_record>             _transaction_id_to_record;
          unordered_set<transaction_id_type>                                 _transaction_id_remove;
          unordered_set<digest_type>                                         _transaction_digests;
-
-         unordered_map<slate_id_type, slate_record>                         _slate_id_to_record;
-         unordered_set<slate_id_type>                                       _slate_id_remove;
 
          map<feed_index, feed_record>                                       _feed_index_to_record;
          set<feed_index>                                                    _feed_index_remove;
@@ -182,6 +178,7 @@ namespace bts { namespace blockchain {
          // Not serialized
          std::weak_ptr<chain_interface>                                     _prev_state;
 
+         virtual void init_property_db_interface()override;
          virtual void init_account_db_interface()override;
          virtual void init_asset_db_interface()override;
          virtual void init_balance_db_interface()override;
@@ -195,7 +192,8 @@ namespace bts { namespace blockchain {
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::pending_chain_state,
-        (properties)
+        (_property_id_to_record)
+        (_property_id_remove)
         (_account_id_to_record)
         (_account_id_remove)
         (_account_name_to_id)
@@ -203,13 +201,13 @@ FC_REFLECT( bts::blockchain::pending_chain_state,
         (_asset_id_to_record)
         (_asset_id_remove)
         (_asset_symbol_to_id)
+        (_slate_id_to_record)
+        (_slate_id_remove)
         (_balance_id_to_record)
         (_balance_id_remove)
         (_transaction_id_to_record)
         (_transaction_id_remove)
         (_transaction_digests)
-        (_slate_id_to_record)
-        (_slate_id_remove)
         (_feed_index_to_record)
         (_feed_index_remove)
         (_slot_index_to_record)
