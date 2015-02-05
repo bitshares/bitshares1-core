@@ -1617,19 +1617,20 @@ namespace bts { namespace blockchain {
    } FC_CAPTURE_AND_RETHROW( (block_num) ) }
 
    vector<transaction_record> chain_database::get_transactions_for_block( const block_id_type& block_id )const
-   {
-      auto block_record = my->_block_id_to_block_record_db.fetch(block_id);
+   { try {
+      const auto block_record = my->_block_id_to_block_record_db.fetch( block_id );
       vector<transaction_record> result;
       result.reserve( block_record.user_transaction_ids.size() );
 
       for( const auto& trx_id : block_record.user_transaction_ids )
       {
          auto otrx_record = get_transaction( trx_id );
-         if( !otrx_record ) FC_CAPTURE_AND_THROW( unknown_transaction, (trx_id) );
-         result.emplace_back( *otrx_record );
+         if( !otrx_record.valid() ) FC_CAPTURE_AND_THROW( unknown_transaction, (trx_id) );
+         result.push_back( std::move( *otrx_record ) );
       }
+
       return result;
-   }
+   } FC_CAPTURE_AND_RETHROW( (block_id) ) }
 
    digest_block chain_database::get_block_digest( const block_id_type& block_id )const
    {
