@@ -44,6 +44,9 @@ void light_wallet::fetch_welcome_package()
    _relay_fee_collector = welcome_package["relay_fee_collector"].as<oaccount_record>();
    _relay_fee = asset(welcome_package["relay_fee_amount"].as<share_type>());
    _network_fee = asset(welcome_package["network_fee_amount"].as<share_type>());
+
+   for( auto& asset_record : welcome_package["all_assets"].as<vector<asset_record>>() )
+      _chain_cache->store_asset_record(std::move(asset_record));
 }
 
 void light_wallet::connect(const string& host, const string& user, const string& pass, uint16_t port,
@@ -360,7 +363,7 @@ map<string, pair<double,double>> light_wallet::balance(const string& account_nam
 {
    FC_ASSERT(is_open());
 
-   map<string, pair<double,double>> balances = {{BTS_BLOCKCHAIN_SYMBOL, {0,0}}};
+   map<string, pair<double,double>> balances = {{BTS_BLOCKCHAIN_SYMBOL, {0,0}},{"USD", {1,1}}};
    for( auto balance : _chain_cache->_balance_id_to_record ) {
       oasset_record record = get_asset_record(balance.second.asset_id());
       if( record && balance.second.owner() == _data->accounts.find(account_name)->second.user_account.active_key() )
@@ -557,7 +560,18 @@ optional<asset_record> light_wallet::get_asset_record(const asset_id_type& id)co
       return result;
    }
    return oasset_record();
-} FC_CAPTURE_AND_RETHROW( (id) ) }
+   } FC_CAPTURE_AND_RETHROW( (id) ) }
+
+vector<string> light_wallet::all_asset_symbols() const
+{
+   vector<string> symbols;
+
+   if( _chain_cache )
+      for( const auto& rec : _chain_cache->_asset_id_to_record )
+         symbols.emplace_back(rec.second.symbol);
+
+   return symbols;
+}
 
 oaccount_record light_wallet::get_account_record(const string& identifier)
 {
