@@ -4,15 +4,17 @@
     <file>qml/BackupLayout.qml</file>
     <file>qml/FloatingActionButton.qml</file>
     <file>qml/HistoryLayout.qml</file>
+    <file>qml/LockScreen.qml</file>
     <file>qml/main.qml</file>
     <file>qml/Menu.qml</file>
+    <file>qml/MenuField.qml</file>
     <file>qml/OnboardingLayout.qml</file>
+    <file>qml/OrderForm.qml</file>
     <file>qml/PasswordField.qml</file>
     <file>qml/RoboHash.qml</file>
     <file>qml/ShakeAnimation.qml</file>
     <file>qml/Transaction.qml</file>
     <file>qml/TransferLayout.qml</file>
     <file>qml/utils.js</file>
-    <file>qml/WelcomeLayout.qml</file>
   </qresource>
 </RCC>
