@@ -22,6 +22,7 @@ class LightWallet : public QObject
    Q_PROPERTY(bool unlocked READ isUnlocked NOTIFY unlockedChanged)
    Q_PROPERTY(QStringList accountNames READ accountNames NOTIFY accountsChanged)
    Q_PROPERTY(QVariantMap accounts READ accounts NOTIFY accountsChanged)
+   Q_PROPERTY(QStringList allAssets READ allAssets NOTIFY allAssetsChanged)
    Q_PROPERTY(QString connectionError READ connectionError NOTIFY errorConnecting)
    Q_PROPERTY(QString openError READ openError NOTIFY errorOpening)
    Q_PROPERTY(QString unlockError READ unlockError NOTIFY errorUnlocking)
@@ -102,6 +103,8 @@ public:
       return m_accounts;
    }
 
+   QStringList allAssets();
+
 public Q_SLOTS:
    void connectToServer(QString host, quint16 port,
                         QString serverKey = QString(),
@@ -141,6 +144,7 @@ Q_SIGNALS:
    void notification(QString message);
 
    void accountsChanged(QVariantMap arg);
+   void allAssetsChanged();
 
 private:
    fc::thread m_walletThread;

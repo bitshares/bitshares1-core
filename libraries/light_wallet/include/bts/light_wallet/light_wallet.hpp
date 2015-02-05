@@ -84,6 +84,7 @@ namespace bts { namespace light_wallet {
 
          optional<asset_record> get_asset_record( const string& symbol ) const;
          optional<asset_record> get_asset_record( const asset_id_type& id ) const;
+         vector<string>         all_asset_symbols() const;
 
          oaccount_record get_account_record(const string& identifier );
 

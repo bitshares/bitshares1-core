@@ -40,10 +40,17 @@ Page {
                id: orderFirstAssetField
                model: wallet.accounts[accountName].availableAssets
 
+               onItemSelected: {
+                  //If user selected asset in other field, and swapping is legal, swap them
+                  if( model[index] === orderSecondAssetField.selectedText &&
+                        orderSecondAssetField.model.indexOf(selectedText) >= 0 )
+                     orderSecondAssetField.selectedIndex = orderSecondAssetField.model.indexOf(selectedText)
+               }
+
                Behavior on width { NumberAnimation {} }
             }
             Label {
-               text: orderTypeField.selectedText === "Short"? qsTr("with") : qsTr("for")
+               text: orderTypeField.selectedText !== "Sell"? qsTr("with") : qsTr("for")
                horizontalAlignment: Text.AlignHCenter
                anchors.verticalCenter: parent.verticalCenter
                style: "subheading"
@@ -52,7 +59,14 @@ Page {
             }
             MenuField {
                id: orderSecondAssetField
-               model: wallet.accounts[accountName].availableAssets
+               model: wallet.allAssets
+
+               onItemSelected: {
+                  //If user selected asset in other field, and swapping is legal, swap them
+                  if( model[index] === orderFirstAssetField.selectedText &&
+                        orderFirstAssetField.model.indexOf(selectedText) >= 0 )
+                     orderFirstAssetField.selectedIndex = orderFirstAssetField.model.indexOf(selectedText)
+               }
 
                Behavior on width { NumberAnimation {} }
             }
