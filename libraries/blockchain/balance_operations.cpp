@@ -232,26 +232,6 @@ namespace bts { namespace blockchain {
                } FC_CAPTURE_AND_RETHROW( (password_condition ) )
                break;
             }
-#ifndef WIN32
-#warning [HARDFORK]
-#endif
-            case withdraw_cover_type:
-            {
-                const withdraw_by_cover condition = current_balance_record->condition.as<withdraw_by_cover>();
-                const address owner = condition.owner;
-                if( !eval_state.check_signature( owner ) )
-                    FC_CAPTURE_AND_THROW( missing_signature, (owner) );
-
-                // by withdrawing the desired amount from the transaction we confirm the condition has
-                // been met.
-                auto cover_asset = eval_state._current_state->get_asset_record( condition.cover_asset_id );
-                FC_ASSERT( cover_asset.valid() );
-                FC_ASSERT( cover_asset->is_prediction() );
-                cover_asset->current_share_supply -= this->amount;
-                eval_state._current_state->store_asset_record( *cover_asset );
-                eval_state.sub_balance( balance_id_type(), asset(this->amount, condition.cover_asset_id) );
-                break;
-            }
 
             default:
                FC_CAPTURE_AND_THROW( invalid_withdraw_condition, (current_balance_record->condition) );

@@ -13,7 +13,6 @@ namespace bts { namespace blockchain {
    const uint8_t withdraw_with_multisig::type     = withdraw_multisig_type;
    const uint8_t withdraw_with_escrow::type       = withdraw_escrow_type;
    const uint8_t withdraw_with_password::type     = withdraw_password_type;
-   const uint8_t withdraw_by_cover::type          = withdraw_cover_type;
 
    memo_status::memo_status( const extended_memo_data& memo, bool valid_signature,
                              const fc::ecc::private_key& opk )
@@ -69,8 +68,6 @@ namespace bts { namespace blockchain {
                return set<address>{ this->as<withdraw_with_signature>().owner };
            case withdraw_vesting_type:
                return set<address>{ this->as<withdraw_vesting>().owner };
-           case withdraw_cover_type:
-               return set<address>{ this->as<withdraw_by_cover>().owner };
            case withdraw_multisig_type:
                return this->as<withdraw_with_multisig>().owners;
            case withdraw_escrow_type:
@@ -91,8 +88,6 @@ namespace bts { namespace blockchain {
                return this->as<withdraw_with_signature>().owner;
            case withdraw_vesting_type:
                return this->as<withdraw_vesting>().owner;
-           case withdraw_cover_type:
-               return this->as<withdraw_by_cover>().owner;
            default:
                return optional<address>();
        }
@@ -351,9 +346,6 @@ namespace fc {
          case withdraw_escrow_type:
             obj["data"] = fc::raw::unpack<withdraw_with_escrow>( var.data );
             break;
-         case withdraw_cover_type:
-            obj["data"] = fc::raw::unpack<withdraw_by_cover>( var.data );
-            break;
          // No default to force compiler warning
       }
       vo = std::move( obj );
@@ -387,9 +379,6 @@ namespace fc {
             return;
          case withdraw_escrow_type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_with_escrow>() );
-            return;
-         case withdraw_cover_type:
-            vo.data = fc::raw::pack( obj["data"].as<withdraw_by_cover>() );
             return;
          // No default to force compiler warning
       }

@@ -106,7 +106,6 @@ namespace bts { namespace blockchain {
         */
        share_type          transaction_fee = 0;
        multisig_meta_info  authority;
-       optional<prediction_state> prediction;
 
        void evaluate( transaction_evaluation_state& eval_state )const;
    };
@@ -125,19 +124,6 @@ namespace bts { namespace blockchain {
        issue_asset_operation( asset a = asset() ):amount(a){}
 
        asset amount;
-
-       void evaluate( transaction_evaluation_state& eval_state )const;
-   };
-
-   /**
-    *  
-    */
-   struct issue_prediction_asset_operation
-   {
-       static const operation_type_enum type;
-
-       asset amount;
-       address owner;
 
        void evaluate( transaction_evaluation_state& eval_state )const;
    };
@@ -191,12 +177,9 @@ FC_REFLECT_DERIVED( bts::blockchain::update_asset_ext_operation,
                     (issuer_account_id)
                     (transaction_fee)
                     (market_fee)
-                    (authority)
-                    (prediction)
-                    )
+                    (authority) )
 
 FC_REFLECT( bts::blockchain::create_asset_proposal, (asset_id)(info) );
-FC_REFLECT( bts::blockchain::issue_prediction_asset_operation, (amount)(owner) )
 
 FC_REFLECT( bts::blockchain::issue_asset_operation,
             (amount)

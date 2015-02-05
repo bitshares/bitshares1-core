@@ -268,34 +268,6 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_asset_record( *current_asset_record );
    }
 
-#ifndef WIN32
-#warning [HARDFORK]
-#endif
-   void issue_prediction_asset_operation::evaluate( transaction_evaluation_state& eval_state )const
-   {
-      oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->amount.asset_id );
-      if( NOT current_asset_record.valid() )
-          FC_CAPTURE_AND_THROW( unknown_asset_id, (amount.asset_id) );
-
-      if( this->amount.amount <= 0 )
-          FC_CAPTURE_AND_THROW( negative_issue, (amount) );
-
-      FC_ASSERT( current_asset_record->is_prediction() );
-
-      current_asset_record->current_share_supply += this->amount.amount;
-      eval_state.add_balance( this->amount );
-      current_asset_record->last_update = eval_state._current_state->now();
-      eval_state._current_state->store_asset_record( *current_asset_record );
-      auto base_asset_id = current_asset_record->prediction->base_asset_id;
-      eval_state.sub_balance( balance_id_type(), asset(this->amount.amount, base_asset_id) );
-
-      balance_record cover_record( withdraw_condition( withdraw_by_cover{ this->owner, this->amount.asset_id }, base_asset_id));
-      auto current_cover_record = eval_state._current_state->get_balance_record( cover_record.id() );
-      if( !current_cover_record ) current_cover_record = cover_record;
-      current_cover_record->balance += this->amount.amount;
-      eval_state._current_state->store_balance_record( *current_cover_record );
-      // find or create balance with withdraw_cover op
-   }
    void issue_asset_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
       oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->amount.asset_id );
@@ -305,17 +277,14 @@ namespace bts { namespace blockchain {
       if( current_asset_record->is_market_issued() )
           FC_CAPTURE_AND_THROW( not_user_issued, (*current_asset_record) );
 
-      FC_ASSERT( !current_asset_record->is_prediction() );
+      if( !eval_state.verify_authority( current_asset_record->authority ) )
+          FC_CAPTURE_AND_THROW( missing_signature, (current_asset_record->authority) );
 
       if( this->amount.amount <= 0 )
           FC_CAPTURE_AND_THROW( negative_issue, (amount) );
 
       if( NOT current_asset_record->can_issue( this->amount ) )
           FC_CAPTURE_AND_THROW( over_issue, (amount)(*current_asset_record) );
-
-      if( !eval_state.verify_authority( current_asset_record->authority ) )
-          FC_CAPTURE_AND_THROW( missing_signature, (current_asset_record->authority) );
-
 
       current_asset_record->current_share_supply += this->amount.amount;
       eval_state.add_balance( this->amount );
