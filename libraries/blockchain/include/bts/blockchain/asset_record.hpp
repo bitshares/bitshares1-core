@@ -3,7 +3,6 @@
 #include <bts/blockchain/transaction.hpp>
 #include <bts/blockchain/types.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
-#include <algorithm>
 
 namespace bts { namespace blockchain {
 
@@ -15,36 +14,6 @@ namespace bts { namespace blockchain {
       market_halt           = 1 << 2, ///<! The issuer can/did freeze all markets
       balance_halt          = 1 << 3, ///<! The issuer can/did freeze all balances
       supply_unlimit        = 1 << 4  ///<! The issuer can change the supply at will
-   };
-
-
-   struct prediction_state
-   {
-      asset_id_type                               base_asset_id  = 0;
-      /** in base_asset_id type */
-      share_type                                  collected_fees = 0;
-      optional<uint32_t>                          result;
-      vector<account_id_type>                     judges;
-      vector< pair<uint32_t,account_id_type> >    results;
-
-      /**
-       *  Reqire majority of more than 3/4ths of the judges to declare a winner. 
-       *  With 10 judges, 8 must report and 5 must agree 
-       *  With 5 judges, 4 must report and 3 must agree.
-       *  With 3 judges, 2 must report and 2 must agree.
-       *  With 2 judges, 2 must report and 2 must agree.
-       *  With 1 judges, 1 must report and 1 must agree.
-       */
-      optional<uint32_t> evaluate_result()
-      {
-         auto n = judges.size()/2;
-         if( results.size() > (judges.size()*3)/4 )
-         {
-            std::nth_element( results.begin(), results.begin() + n, results.end() );
-            return results[n].first;
-         }
-         return optional<uint32_t>();
-      }
    };
 
    class chain_interface;
@@ -60,7 +29,6 @@ namespace bts { namespace blockchain {
 
       bool is_market_issued()const      { return issuer_account_id == market_issuer_id; };
       bool is_user_issued()const        { return issuer_account_id > god_issuer_id; };
-      bool is_prediction()const         { return prediction.valid(); }
 
       bool is_retractable()const        { return is_user_issued() && (flags & retractable); }
       bool is_restricted()const         { return is_user_issued() && (flags & restricted); }
@@ -106,7 +74,6 @@ namespace bts { namespace blockchain {
 
       proposal_id_type    last_proposal_id = 0;
 
-      optional<prediction_state> prediction;
 
       static const asset_db_interface& db_interface( const chain_interface& );
       void sanity_check( const chain_interface& )const;
@@ -157,15 +124,6 @@ FC_REFLECT_ENUM( bts::blockchain::asset_permissions,
         (balance_halt)
         (supply_unlimit)
         )
-
-FC_REFLECT( bts::blockchain::prediction_state, 
-            (base_asset_id)
-            (collected_fees)
-            (result)
-            (judges)
-            (results)
-           )
-
 FC_REFLECT( bts::blockchain::proposal_record,
         (asset_id)
         (proposal_id)
@@ -193,5 +151,4 @@ FC_REFLECT( bts::blockchain::asset_record,
         (market_fee)
         (authority)
         (last_proposal_id)
-        (prediction)
         )

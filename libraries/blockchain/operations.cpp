@@ -53,11 +53,7 @@ namespace bts { namespace blockchain {
    const operation_type_enum update_asset_ext_operation::type       = update_asset_ext_op_type;
 
    const operation_type_enum set_edge_operation::type               = set_edge_op_type;
-   const operation_type_enum pay_fee_operation::type                = pay_fee_op_type;
-
-   const operation_type_enum create_prediction_asset_operation::type = create_prediction_asset_op_type;
-   const operation_type_enum issue_prediction_asset_operation::type  = issue_prediction_asset_op_type;
-   const operation_type_enum judge_prediction_asset_operation::type  = judge_prediction_asset_op_type;
+   const operation_type_enum pay_fee_operation::type               = pay_fee_op_type;
 
    static bool first_chain = []()->bool{
       bts::blockchain::operation_factory::instance().register_operation<withdraw_operation>();
@@ -101,11 +97,6 @@ namespace bts { namespace blockchain {
 
       bts::blockchain::operation_factory::instance().register_operation<set_edge_operation>();
       bts::blockchain::operation_factory::instance().register_operation<pay_fee_operation>();
-
-      // prediction market operations
-      bts::blockchain::operation_factory::instance().register_operation<create_prediction_asset_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<issue_prediction_asset_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<judge_prediction_asset_operation>();
 
       return true;
    }();

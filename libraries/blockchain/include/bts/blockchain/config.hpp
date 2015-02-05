@@ -14,7 +14,6 @@
 #define BTS_BLOCKCHAIN_NAME                                 "BitShares XTS"
 #define BTS_BLOCKCHAIN_DESCRIPTION                          "BitShares Test Network"
 #define BTS_BLOCKCHAIN_PRECISION                            100000
-#define BTS_BLOCKCHAIN_MAX_PREDICTION_RESULT                1000000
 
 #define BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE                   10000
 #define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC                   int64_t(10)
