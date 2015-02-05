@@ -113,9 +113,6 @@ namespace bts { namespace blockchain {
       optional<delegate_stats>               delegate_info;
       optional<account_meta_info>            meta_data;
 
-      /** assets this account is appointed as judge for */
-      vector<asset_id_type>                  judged_assets;
-
       static const account_db_interface& db_interface( const chain_interface& );
       void sanity_check( const chain_interface& )const;
    };
@@ -213,7 +210,6 @@ FC_REFLECT( bts::blockchain::account_record,
             (last_update)
             (delegate_info)
             (meta_data)
-            (judged_assets)
             )
 FC_REFLECT( bts::blockchain::burn_record_key,
             (account_id)

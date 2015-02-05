@@ -87,15 +87,7 @@ namespace bts { namespace blockchain {
         FC_ASSERT( collected_fees >= 0 && collected_fees <= current_share_supply );
         FC_ASSERT( transaction_fee >= 0 && transaction_fee <= maximum_share_supply );
         FC_ASSERT( market_fee <= BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE );
-        /* TODO
-        FC_ASSERT( last_proposal_id == 0 || db.lookup<proposal_record>( last_proposal_id ).valid() );
-        if( prediction.valid() )
-        {
-            FC_ASSERT( prediction->base_asset_id == 0 || db.lookup<asset_record>( prediction->base_asset_id ).valid() );
-        }
-        */
         FC_ASSERT( last_proposal_id == 0 );
-        FC_ASSERT( !prediction.valid() );
     } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
     oasset_record asset_db_interface::lookup( const asset_id_type id )const
