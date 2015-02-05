@@ -23,6 +23,8 @@ View {
    readonly property string selectedText: listView.currentItem.text
    property alias selectedIndex: listView.currentIndex
    property int maxVisibleItems: 4
+
+   signal itemSelected(int index)
    
    Ink {
       anchors.fill: parent
@@ -76,6 +78,7 @@ View {
             text: modelData
             
             onTriggered: {
+               spinBox.itemSelected(index)
                listView.currentIndex = index
                menu.close()
             }
