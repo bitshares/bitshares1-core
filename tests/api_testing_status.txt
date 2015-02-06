@@ -112,7 +112,6 @@ wallet_mail_open <recipient> <ciphertext>
 wallet_market_add_collateral <from_account_name> <cover_id> <real_quantity_collateral_to_add>       
 wallet_market_batch_update <cancel_order_ids> <new_orders> <sign>                                   
 wallet_market_cover <from_account_name> <quantity> <quantity_symbol> <cover_id>                     
-wallet_market_sell2 <from_account_name> <quantity> <quantity_symbol> <base_price> <receive_symbol> <relative_percent> [allow_stupid] 
 wallet_multisig_deposit <amount> <symbol> <from_name> <m> <addresses> [strategy]                    
 wallet_multisig_get_balance_id <symbol> <m> <addresses>                                             
 wallet_multisig_withdraw_start <amount> <symbol> <from> <to_address> [strategy] [builder_path]      
