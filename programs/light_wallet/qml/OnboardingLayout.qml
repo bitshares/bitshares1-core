@@ -16,7 +16,7 @@ MainView {
    signal finished
 
    function useFaucet() {
-      return ["ios","android"].indexOf(Qt.platform.os) < 0
+      return ["ios","android"].indexOf(Qt.platform.os) < 0 && AppName !== "lw_xts"
    }
    function registerAccount() {
       onboarder.state = "REGISTERING"
