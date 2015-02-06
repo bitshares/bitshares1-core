@@ -158,6 +158,8 @@ private:
    QString m_brainKey;
    QVariantMap m_accounts;
 
+   mutable QMap<QString,int> m_digitsOfPrecisionCache;
+
    void generateBrainKey();
    void updateAccount(const bts::light_wallet::account_record& account);
 };
