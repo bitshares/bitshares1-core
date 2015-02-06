@@ -71,6 +71,7 @@ class Balance : public QObject
    Q_PROPERTY(QString symbol MEMBER m_symbol NOTIFY symbolChanged)
    Q_PROPERTY(qreal amount MEMBER m_amount NOTIFY amountChanged)
    Q_PROPERTY(qreal yield MEMBER m_yield NOTIFY yieldChanged)
+   Q_PROPERTY(qreal total READ total NOTIFY yieldChanged NOTIFY amountChanged STORED false)
 
    QString m_symbol;
    qreal m_amount;
@@ -90,6 +91,8 @@ public:
         m_yield(amounts.second)
    {}
    virtual ~Balance(){}
+
+   qreal total() const { return m_amount + m_yield; }
 Q_SIGNALS:
    void symbolChanged(qreal arg);
    void amountChanged(qreal arg);
