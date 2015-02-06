@@ -1,4 +1,5 @@
 #include <bts/blockchain/chain_database_impl.hpp>
+#include <bts/blockchain/transaction_evaluation_state.hpp>
 
 namespace bts { namespace blockchain { namespace detail {
 
@@ -62,6 +63,7 @@ namespace bts { namespace blockchain { namespace detail {
     void cancel_current_relative_bid( market_transaction& mtrx );
     void cancel_current_relative_ask( market_transaction& mtrx );
 
+    transaction_evaluation_state  _eval_state;
     pending_chain_state_ptr       _pending_state;
     pending_chain_state_ptr       _prior_state;
     const chain_database_impl&    _db_impl;

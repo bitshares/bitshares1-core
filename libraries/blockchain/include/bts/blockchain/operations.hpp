@@ -91,19 +91,8 @@ namespace bts { namespace blockchain {
       make_sale_op_type             = 37,
       buy_sale_op_type              = 38,  // makes a buy or an offer
 
-      /*  devshares
-      // events
-      make_event_op_type            = 39,
-      resolve_event_op_type         = 40,
-
-      // prediction markets
-      make_lsmr_market              = 41,
-      buy_lsmr_share                = 42,
-      redeem_lsmr_share             = 43
-      */
-
       pay_fee_op_type               = 44,
-      update_call_price_op_type     = 45
+      update_cover_op_type     = 45
 
    };
 
@@ -198,7 +187,7 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (make_sale_op_type)
                  (buy_sale_op_type)
                  (pay_fee_op_type)
-                 (update_call_price_op_type)
+                 (update_cover_op_type)
                  )
 
 FC_REFLECT( bts::blockchain::operation, (type)(data) )

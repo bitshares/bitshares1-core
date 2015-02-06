@@ -375,6 +375,10 @@ namespace bts { namespace blockchain {
       }
       else // withdraw the collateral to the transaction to be deposited at owners discretion / cover fees
       {
+         if( current_cover->slate_id && cover_index.order_price.base_asset_id == 0 )
+         {
+            eval_state.adjust_vote( current_cover->slate_id, -current_cover->collateral_balance );
+         }
          eval_state.add_balance( asset( current_cover->collateral_balance, cover_index.order_price.base_asset_id ) );
       }
    }
@@ -415,7 +419,7 @@ namespace bts { namespace blockchain {
                                                           *current_cover );
    }
 
-   void update_call_price_operation::evaluate( transaction_evaluation_state& eval_state )const
+   void update_cover_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
       if( this->cover_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );
@@ -441,7 +445,13 @@ namespace bts { namespace blockchain {
       // changing the payoff balance changes the call price... so we need to remove the old record
       // and insert a new one.
       eval_state._current_state->store_collateral_record( this->cover_index, collateral_record() );
-      eval_state._current_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
+      if( this->new_slate && *this->new_slate != current_cover->slate_id )
+      {
+         eval_state.adjust_vote( current_cover->slate_id, -current_cover->collateral_balance );
+         current_cover->slate_id = *this->new_slate;
+         eval_state.adjust_vote( current_cover->slate_id, current_cover->collateral_balance );
+      }
+      eval_state._current_state->store_collateral_record( market_index_key( new_call_price, this->new_owner ? *this->new_owner : this->cover_index.owner),
                                                           *current_cover );
    }
 
