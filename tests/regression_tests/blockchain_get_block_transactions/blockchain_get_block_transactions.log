@@ -100,7 +100,7 @@ default (unlocked) >>> blockchain_get_block_transactions 2
           50000
         ]
       ],
-      "delta_votes": [],
+      "delegate_vote_deltas": [],
       "chain_location": {
         "block_num": 2,
         "trx_num": 0
