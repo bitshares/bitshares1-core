@@ -447,8 +447,8 @@ int32_t client_impl::stats_unique_account_registrars()const
                 if( op.type == withdraw_op_type )
                 {
                     auto withdraw_op = op.as<withdraw_operation>();
-                    if( counts.find( withdraw_op.balance_id ) != counts.end() )
-                        counts[withdraw_op.balance_id] = registrations;
+                    if( counts.find( withdraw_op.balance_id ) == counts.end() )
+                        counts[withdraw_op.balance_id] = 1;
                     else
                         counts[withdraw_op.balance_id]++;
                     break;
@@ -467,7 +467,7 @@ int32_t client_impl::stats_slate_summary( const string& filename )const
     const auto scan_balance = [&]( const balance_record& rec )
     {
         auto id = rec.condition.slate_id;
-        if( slates.find(id) != slates.end() )
+        if( slates.find(id) == slates.end() )
             slates[id] = rec.balance;
         else
             slates[id] += rec.balance;
