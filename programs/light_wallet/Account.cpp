@@ -60,6 +60,8 @@ Account::Account(bts::light_wallet::light_wallet* wallet,
    : QObject(parent),
      m_wallet(wallet),
      m_name(convert(account.name)),
+     m_ownerKey(convert(std::string(account.owner_key))),
+     m_activeKey(convert(std::string(account.active_key()))),
      m_isRegistered(account.registration_date != fc::time_point_sec()),
      m_registrationDate(convert(account.registration_date))
 {}
@@ -67,9 +69,13 @@ Account::Account(bts::light_wallet::light_wallet* wallet,
 Account& Account::operator=(const bts::blockchain::account_record& account)
 {
    m_name = convert(account.name);
+   m_ownerKey = convert(std::string(account.owner_key));
+   m_activeKey = convert(std::string(account.active_key()));
    m_isRegistered = (account.registration_date != fc::time_point_sec());
    m_registrationDate = convert(account.registration_date);
    Q_EMIT nameChanged(m_name);
+   Q_EMIT ownerKeyChanged(m_ownerKey);
+   Q_EMIT activeKeyChanged(m_activeKey);
    Q_EMIT isRegisteredChanged(m_isRegistered);
    Q_EMIT registrationDateChanged(m_registrationDate);
 

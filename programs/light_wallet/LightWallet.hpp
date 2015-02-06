@@ -106,6 +106,8 @@ public:
    QStringList allAssets();
 
 public Q_SLOTS:
+   void pollForRegistration(QString accountName);
+
    void connectToServer(QString host, quint16 port,
                         QString serverKey = QString(),
                         QString user = QString("any"),
