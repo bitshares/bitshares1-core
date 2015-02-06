@@ -6,6 +6,7 @@ namespace bts { namespace blockchain {
 
 void define_slate_operation::evaluate( transaction_evaluation_state& eval_state )const
 { try {
+    FC_ASSERT( !slate.empty() );
     if( this->slate.size() > BTS_BLOCKCHAIN_MAX_SLATE_SIZE )
         FC_CAPTURE_AND_THROW( too_may_delegates_in_slate, (slate.size()) );
 
@@ -13,7 +14,9 @@ void define_slate_operation::evaluate( transaction_evaluation_state& eval_state 
     for( const signed_int id : this->slate )
     {
         FC_ASSERT( id >= 0 );
-        record.slate.insert( id );
+        const oaccount_record delegate_record = eval_state._current_state->get_account_record( id );
+        if( delegate_record.valid() && delegate_record->is_delegate() ) record.delegate_slate.insert( id );
+        else record.other_slate.insert( id );
     }
 
     const slate_id_type slate_id = record.id();

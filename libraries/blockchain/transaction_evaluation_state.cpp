@@ -95,21 +95,13 @@ namespace bts { namespace blockchain {
        return any_parent_has_signed( record.name );
    } FC_CAPTURE_AND_RETHROW( (record) ) }
 
-   void transaction_evaluation_state::verify_delegate_id( const account_id_type id )const
-   { try {
-      auto current_account = _current_state->get_account_record( id );
-      if( !current_account ) FC_CAPTURE_AND_THROW( unknown_account_id, (id) );
-      if( !current_account->is_delegate() ) FC_CAPTURE_AND_THROW( not_a_delegate, (id) );
-   } FC_CAPTURE_AND_RETHROW( (id) ) }
-
    void transaction_evaluation_state::update_delegate_votes()
    { try {
-      for( const auto& item : delta_votes )
+      for( const auto& item : delegate_vote_deltas )
       {
           const account_id_type id = item.first;
           oaccount_record delegate_record = _current_state->get_account_record( id );
-          if( !delegate_record.valid() || !delegate_record->is_delegate() )
-              continue;
+          FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
 
           const share_type amount = item.second;
           delegate_record->adjust_votes_for( amount );
@@ -259,8 +251,8 @@ namespace bts { namespace blockchain {
        if( !slate_record.valid() )
            FC_CAPTURE_AND_THROW( unknown_delegate_slate, (slate_id) );
 
-       for( const account_id_type id : slate_record->slate )
-           delta_votes[ id ] += amount;
+       for( const account_id_type id : slate_record->delegate_slate )
+           delegate_vote_deltas[ id ] += amount;
    } FC_CAPTURE_AND_RETHROW( (slate_id)(amount) ) }
 
    share_type transaction_evaluation_state::get_fees( asset_id_type id )const

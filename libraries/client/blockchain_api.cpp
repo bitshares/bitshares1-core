@@ -183,12 +183,15 @@ map<account_id_type, string> detail::client_impl::blockchain_get_slate( const st
     const oslate_record slate_record = _chain_db->get_slate_record( slate_id );
     FC_ASSERT( slate_record.valid() );
 
-    for( const account_id_type id : slate_record->slate )
+    for( const account_id_type id : slate_record->delegate_slate )
     {
         const oaccount_record delegate_record = _chain_db->get_account_record( id );
         if( delegate_record.valid() ) delegates[ id ] = delegate_record->name;
         else delegates[ id ] = std::to_string( id );
     }
+
+    for( const account_id_type id : slate_record->other_slate )
+        delegates[ id ] = std::to_string( id );
 
     return delegates;
 }
@@ -754,7 +757,7 @@ vector<burn_record> client_impl::blockchain_get_account_wall( const string& acco
 
 void client_impl::blockchain_broadcast_transaction(const signed_transaction& trx)
 {
-   auto collector = _chain_db->get_account_record(_config.faucet_account_name);
+   auto collector = _chain_db->get_account_record(_config.relay_account_name);
    auto accept_fee = [this](const asset& fee) -> bool {
       auto feed_price = _chain_db->get_active_feed_price(fee.asset_id);
       if( !feed_price ) return false;

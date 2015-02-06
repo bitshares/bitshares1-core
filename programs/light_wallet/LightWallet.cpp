@@ -13,18 +13,14 @@
 #include <iostream>
 
 #define IN_THREAD \
-   qDebug() << "Posting" << __FUNCTION__; \
-   m_walletThread.async([=] { \
-      wlog("Entering");
-#define END_THREAD wlog("Leaving"); }, __FUNCTION__);
+   m_walletThread.async([=] {
+#define END_THREAD }, __FUNCTION__);
 #define IN_WAIT_THREAD \
    QEventLoop _THREAD_WAIT_LOOP_; \
-   qDebug() << "Posting" << __FUNCTION__; \
    m_walletThread.async([&] { \
-      wlog("Entering"); \
       QEventLoopLocker _THREAD_LOCKER_(&_THREAD_WAIT_LOOP_);
 #define END_WAIT_THREAD \
-   }, /*fc::time_point::now() + fc::milliseconds(10),*/ __FUNCTION__); \
+   END_THREAD \
    _THREAD_WAIT_LOOP_.exec();
 
 inline static QString normalize(QString key)
@@ -76,15 +72,23 @@ Balance* LightWallet::getFee(QString assetSymbol)
 
 int LightWallet::getDigitsOfPrecision(QString assetSymbol)
 {
-   int digits = -1;
+   if( m_digitsOfPrecisionCache.contains(assetSymbol) )
+      return m_digitsOfPrecisionCache[assetSymbol];
+   int digits = log10l(BTS_BLOCKCHAIN_PRECISION);
 
-   auto rec = m_wallet.get_asset_record(convert(assetSymbol));
-   if( rec )
+   //Verify we're in the wallet thread
+   if( &fc::thread::current() != &m_walletThread )
+      return m_walletThread.async([this, assetSymbol]() {
+         return getDigitsOfPrecision(assetSymbol);
+      }, __FUNCTION__).wait();
+
+   if( assetSymbol.isEmpty() )
+      return digits;
+
+   if( auto rec = m_wallet.get_asset_record(convert(assetSymbol)) )
       digits = log10l(rec->precision);
-   else
-      digits = log10l(BTS_BLOCKCHAIN_PRECISION);
 
-   return digits;
+   return m_digitsOfPrecisionCache[assetSymbol] = digits;
 }
 
 bool LightWallet::accountExists(QString name)
@@ -386,6 +390,10 @@ void LightWallet::updateAccount(const bts::blockchain::account_record& account)
       connect(this, &LightWallet::synced, newAccount, &Account::balancesChanged);
 
       m_accounts.insert(accountName, QVariant::fromValue(newAccount));
+
+      //Precache digits of precision for all held assets
+      for( QString symbol : newAccount->availableAssets() )
+         getDigitsOfPrecision(symbol);
    }
    Q_EMIT accountsChanged(m_accounts);
 }
