@@ -2409,7 +2409,7 @@ namespace bts { namespace blockchain {
           oslate_record slate_record = get_slate_record( balance.slate_id() );
           FC_ASSERT(slate_record.valid(), "Unknown slate ID found in balance.");
 
-          for (account_id_type delegate : slate_record->delegate_slate)
+          for (account_id_type delegate : slate_record->slate)
             calculated_balances[delegate] += balance.balance;
         }
       }
