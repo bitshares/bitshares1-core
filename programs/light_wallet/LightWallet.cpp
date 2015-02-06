@@ -76,15 +76,17 @@ Balance* LightWallet::getFee(QString assetSymbol)
 
 int LightWallet::getDigitsOfPrecision(QString assetSymbol)
 {
-   int digits = -1;
+   if( m_digitsOfPrecisionCache.contains(assetSymbol) )
+      return m_digitsOfPrecisionCache[assetSymbol];
 
-   auto rec = m_wallet.get_asset_record(convert(assetSymbol));
-   if( rec )
+   int digits = log10l(BTS_BLOCKCHAIN_PRECISION);
+   if( assetSymbol.isEmpty() )
+      return digits;
+
+   if( auto rec = m_wallet.get_asset_record(convert(assetSymbol)) )
       digits = log10l(rec->precision);
-   else
-      digits = log10l(BTS_BLOCKCHAIN_PRECISION);
 
-   return digits;
+   return m_digitsOfPrecisionCache[assetSymbol] = digits;
 }
 
 bool LightWallet::accountExists(QString name)
@@ -386,6 +388,10 @@ void LightWallet::updateAccount(const bts::blockchain::account_record& account)
       connect(this, &LightWallet::synced, newAccount, &Account::balancesChanged);
 
       m_accounts.insert(accountName, QVariant::fromValue(newAccount));
+
+      //Precache digits of precision for all held assets
+      for( QString symbol : newAccount->availableAssets() )
+         getDigitsOfPrecision(symbol);
    }
    Q_EMIT accountsChanged(m_accounts);
 }
