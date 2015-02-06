@@ -794,7 +794,7 @@ namespace detail {
        slate_id = record.id();
        if( slate_id == 0 ) return slate_id;
 
-       if( !_blockchain->get_slate_record( slate_id ).valid() ) transaction.define_slate( record.delegate_slate );
+       if( !_blockchain->get_slate_record( slate_id ).valid() ) transaction.define_slate( record.slate );
        transaction.set_slates( slate_id );
        return slate_id;
    } FC_CAPTURE_AND_RETHROW( (transaction)(strategy) ) }
@@ -904,7 +904,7 @@ namespace detail {
               continue;
             }
 
-            for( const auto recommended_candidate : recommendations->delegate_slate )
+            for( const auto recommended_candidate : recommendations->slate )
               ++recommended_candidate_ranks[recommended_candidate];
           }
 
@@ -952,8 +952,8 @@ namespace detail {
       }
 
       slate_record record;
-      for( const account_id_type id : for_candidates ) record.delegate_slate.insert( id );
-      FC_ASSERT( record.delegate_slate.size() <= BTS_BLOCKCHAIN_MAX_SLATE_SIZE );
+      for( const account_id_type id : for_candidates ) record.slate.insert( id );
+      FC_ASSERT( record.slate.size() <= BTS_BLOCKCHAIN_MAX_SLATE_SIZE );
 
       return record;
    }
@@ -1743,7 +1743,7 @@ namespace detail {
                    summary.up_to_date_with_recommendation = false;
                auto oslate = my->_blockchain->get_slate_record( record.slate_id() );
                if( oslate.valid() )
-                   total += record.get_spendable_balance( my->_blockchain->now() ).amount * oslate->delegate_slate.size();
+                   total += record.get_spendable_balance( my->_blockchain->now() ).amount * oslate->slate.size();
                total_possible += record.get_spendable_balance( my->_blockchain->now() ).amount * BTS_BLOCKCHAIN_MAX_SLATE_SIZE;
            }
        }
@@ -4590,7 +4590,7 @@ namespace detail {
               const auto slate_record = pending_state->get_slate_record( slate_id );
               if( !slate_record.valid() ) FC_THROW_EXCEPTION( unknown_slate, "Unknown slate!" );
 
-              for( const account_id_type delegate_id : slate_record->delegate_slate )
+              for( const account_id_type delegate_id : slate_record->slate )
               {
                   if( raw_votes.count( delegate_id ) <= 0 ) raw_votes[ delegate_id ] = balance.amount;
                   else raw_votes[ delegate_id ] += balance.amount;

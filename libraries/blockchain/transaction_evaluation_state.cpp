@@ -271,8 +271,11 @@ namespace bts { namespace blockchain {
 
        if( slate_record->duplicate_slate.empty() )
        {
-           for( const account_id_type id : slate_record->delegate_slate )
-               delegate_vote_deltas[ id ] += amount;
+           for( const account_id_type id : slate_record->slate )
+           {
+               if( id >= 0 )
+                   delegate_vote_deltas[ id ] += amount;
+           }
        }
        else
        {
