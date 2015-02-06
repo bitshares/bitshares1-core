@@ -11,6 +11,7 @@ MainView {
 
    property alias username: nameField.text
    property string errorMessage
+   property string faucetUrl: "http://faucet.bitshares.org"
 
    signal finished
 
@@ -19,17 +20,26 @@ MainView {
       Utils.connectOnce(wallet.accounts[username].isRegisteredChanged, finished,
                         function() { return wallet.accounts[username].isRegistered })
       Utils.connectOnce(wallet.onErrorRegistering, function(reason) {
-         //FIXME: Do something much, much better here...
+         showError("Registration failed: " + reason)
          console.log("Can't register: " + reason)
       })
 
-      if( wallet.connected ) {
-         wallet.registerAccount(username)
-      } else {
-         // Not connected. Schedule for when we reconnect.
-         wallet.runWhenConnected(function() {
+      if( ["ios","android"].indexOf(Qt.platform.os) >= 0 ) {
+         if( wallet.connected ) {
+            registrationProgressAnimation.start()
             wallet.registerAccount(username)
-         })
+         } else {
+            // Not connected. Schedule for when we reconnect.
+            wallet.runWhenConnected(function() {
+               registrationProgressAnimation.start()
+               wallet.registerAccount(username)
+            })
+         }
+      } else {
+         var account = wallet.accounts[username]
+         Qt.openUrlExternally(encodeURI(faucetUrl+"?owner_key="+account.ownerKey+"&active_key="+account.activeKey+
+                                        "&account_name="+username+"&app_id="+persist.guid))
+         wallet.pollForRegistration(username);
       }
    }
    function passwordEntered(password) {
@@ -85,7 +95,6 @@ MainView {
 
          NumberAnimation {
             id: registrationProgressAnimation
-            running: onboarder.state === "REGISTERING"
             target: registrationProgress
             property: "progress"
             from: 0; to: 1
