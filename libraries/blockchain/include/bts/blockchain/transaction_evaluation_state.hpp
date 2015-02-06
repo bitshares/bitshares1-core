@@ -25,28 +25,27 @@ namespace bts { namespace blockchain {
       public:
          transaction_evaluation_state( pending_chain_state* current_state = nullptr );
 
-         virtual ~transaction_evaluation_state();
-         virtual share_type get_fees( asset_id_type id = 0)const;
+         ~transaction_evaluation_state();
+         share_type get_fees( asset_id_type id = 0 )const;
 
-         virtual void evaluate( const signed_transaction& trx );
-         virtual void evaluate_operation( const operation& op );
-         virtual bool verify_authority( const multisig_meta_info& siginfo );
+         void evaluate( const signed_transaction& trx );
+         void evaluate_operation( const operation& op );
+         bool verify_authority( const multisig_meta_info& siginfo );
 
          /** perform any final operations based upon the current state of
           * the operation such as updating fees paid etc.
           */
-         virtual void post_evaluate();
+         void post_evaluate();
 
          /** can be specalized to handle many different forms of
           * fee payment.
           */
-         virtual void validate_required_fee();
+         void validate_required_fee();
 
          /**
           * apply collected vote changes
           */
-         virtual void update_delegate_votes();
-         virtual void verify_delegate_id( const account_id_type id )const;
+         void update_delegate_votes();
 
          bool check_signature( const address& a )const;
          bool check_multisig( const multisig_condition& a )const;
@@ -101,7 +100,7 @@ namespace bts { namespace blockchain {
           */
          map<asset_id_type, share_type>                 balance;
 
-         unordered_map<account_id_type, share_type>     delta_votes;
+         unordered_map<account_id_type, share_type>     delegate_vote_deltas;
 
          // Not serialized
          chain_interface*                               _current_state = nullptr;
@@ -110,7 +109,9 @@ namespace bts { namespace blockchain {
          bool                                           _enforce_canonical_signatures = false;
          bool                                           _skip_vote_adjustment = false;
 
+         // For pay_fee op
          unordered_map<asset_id_type, share_type>       _max_fee;
+
          uint32_t                                       current_op_index = 0;
    };
    typedef shared_ptr<transaction_evaluation_state> transaction_evaluation_state_ptr;
@@ -128,5 +129,5 @@ FC_REFLECT( bts::blockchain::transaction_evaluation_state,
         (required_fees)
         (alt_fees_paid)
         (balance)
-        (delta_votes)
+        (delegate_vote_deltas)
         )
