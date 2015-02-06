@@ -3314,7 +3314,7 @@ namespace bts { namespace blockchain {
                     {
                         auto withdraw = op.as<withdraw_operation>();
                         auto obal = get_balance_record( withdraw.balance_id );
-                        FC_ASSERT( NOT obal->asset_id() == uia->id, "There was a withdraw for this UIA in an op that issued it!" );
+                        FC_ASSERT( obal->asset_id() != uia->id, "There was a withdraw for this UIA in an op that issued it!" );
                     }
                     if( op.type == deposit_op_type )
                     {
