@@ -10,7 +10,7 @@ Page {
    actions: [lockAction]
 
    property string accountName
-   property alias assetSymbol: assetSymbolField.selectedText
+   property string assetSymbol: wallet.accounts[accountName].availableAssets[0]
 
    signal transferComplete(string assetSymbol)
    
@@ -136,6 +136,7 @@ Page {
             id: assetSymbolField
             anchors.verticalCenter: amountField.verticalCenter
             model: wallet.accounts[accountName].availableAssets
+            selectedIndex: model.indexOf(assetSymbol)
 
             Behavior on width { NumberAnimation {} }
          }
