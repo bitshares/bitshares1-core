@@ -13,18 +13,14 @@
 #include <iostream>
 
 #define IN_THREAD \
-   qDebug() << "Posting" << __FUNCTION__; \
-   m_walletThread.async([=] { \
-      wlog("Entering");
-#define END_THREAD wlog("Leaving"); }, __FUNCTION__);
+   m_walletThread.async([=] {
+#define END_THREAD }, __FUNCTION__);
 #define IN_WAIT_THREAD \
    QEventLoop _THREAD_WAIT_LOOP_; \
-   qDebug() << "Posting" << __FUNCTION__; \
    m_walletThread.async([&] { \
-      wlog("Entering"); \
       QEventLoopLocker _THREAD_LOCKER_(&_THREAD_WAIT_LOOP_);
 #define END_WAIT_THREAD \
-   }, /*fc::time_point::now() + fc::milliseconds(10),*/ __FUNCTION__); \
+   END_THREAD \
    _THREAD_WAIT_LOOP_.exec();
 
 inline static QString normalize(QString key)
@@ -78,8 +74,14 @@ int LightWallet::getDigitsOfPrecision(QString assetSymbol)
 {
    if( m_digitsOfPrecisionCache.contains(assetSymbol) )
       return m_digitsOfPrecisionCache[assetSymbol];
-
    int digits = log10l(BTS_BLOCKCHAIN_PRECISION);
+
+   //Verify we're in the wallet thread
+   if( &fc::thread::current() != &m_walletThread )
+      return m_walletThread.async([this, assetSymbol]() {
+         return getDigitsOfPrecision(assetSymbol);
+      }, __FUNCTION__).wait();
+
    if( assetSymbol.isEmpty() )
       return digits;
 
