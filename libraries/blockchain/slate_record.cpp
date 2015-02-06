@@ -10,7 +10,7 @@ slate_id_type slate_record::id()const
 {
     if( slate.empty() ) return 0;
     fc::sha256::encoder enc;
-    fc::raw::pack( enc, this->slate );
+    fc::raw::pack( enc, slate );
     return enc.result()._hash[ 0 ];
 }
 

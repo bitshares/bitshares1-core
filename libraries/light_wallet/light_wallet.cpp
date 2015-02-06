@@ -45,8 +45,8 @@ void light_wallet::fetch_welcome_package()
    _relay_fee = asset(welcome_package["relay_fee_amount"].as<share_type>());
    _network_fee = asset(welcome_package["network_fee_amount"].as<share_type>());
 
-   for( auto& asset_record : welcome_package["all_assets"].as<vector<asset_record>>() )
-      _chain_cache->store_asset_record(std::move(asset_record));
+   for( auto& record : welcome_package["all_assets"].as<vector<asset_record>>() )
+      _chain_cache->store_asset_record(std::move(record));
 }
 
 void light_wallet::connect(const string& host, const string& user, const string& pass, uint16_t port,

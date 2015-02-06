@@ -24,7 +24,7 @@ struct slate_record
     }
 };
 typedef optional<slate_record> oslate_record;
- 
+
 struct slate_db_interface
 {
     std::function<oslate_record( const slate_id_type )>             lookup_by_id;
