@@ -1,4 +1,4 @@
-#include </Users/nathan/bitshares/libraries/light_wallet/include/bts/light_wallet/light_wallet.hpp>
+#include <bts/light_wallet/light_wallet.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/blockchain/balance_operations.hpp>
 #include <bts/blockchain/transaction_creation_state.hpp>
