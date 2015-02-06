@@ -8,9 +8,10 @@ namespace bts { namespace blockchain {
 
 slate_id_type slate_record::id()const
 {
-    if( slate.empty() ) return 0;
+    if( delegate_slate.empty() && other_slate.empty() ) return 0;
     fc::sha256::encoder enc;
-    fc::raw::pack( enc, this->slate );
+    if( !delegate_slate.empty() ) fc::raw::pack( enc, delegate_slate );
+    if( !other_slate.empty() ) fc::raw::pack( enc, other_slate );
     return enc.result()._hash[ 0 ];
 }
 

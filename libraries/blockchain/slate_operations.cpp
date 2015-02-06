@@ -8,6 +8,7 @@ namespace bts { namespace blockchain {
 
 void define_slate_operation::evaluate( transaction_evaluation_state& eval_state )const
 { try {
+    FC_ASSERT( !slate.empty() );
     if( this->slate.size() > BTS_BLOCKCHAIN_MAX_SLATE_SIZE )
         FC_CAPTURE_AND_THROW( too_may_delegates_in_slate, (slate.size()) );
 
@@ -18,10 +19,15 @@ void define_slate_operation::evaluate( transaction_evaluation_state& eval_state 
 #warning [SOFTFORK] Remove this check after BTS_V0_6_2_FORK_BLOCK_NUM has passed
 #endif
         if( eval_state._current_state->get_head_block_num() < BTS_V0_6_2_FORK_BLOCK_NUM )
-            eval_state.verify_delegate_id( id );
+        {
+            const oaccount_record delegate_record = eval_state._current_state->get_account_record( id );
+            FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+        }
 
         FC_ASSERT( id >= 0 );
-        record.slate.insert( id );
+        const oaccount_record delegate_record = eval_state._current_state->get_account_record( id );
+        if( delegate_record.valid() && delegate_record->is_delegate() ) record.delegate_slate.insert( id );
+        else record.other_slate.insert( id );
     }
 
     if( eval_state._current_state->get_head_block_num() < BTS_V0_6_3_FORK_BLOCK_NUM )
@@ -30,7 +36,7 @@ void define_slate_operation::evaluate( transaction_evaluation_state& eval_state 
         const oslate_record current_slate = eval_state._current_state->get_slate_record( slate_id );
         if( !current_slate.valid() )
         {
-            if( record.slate.size() < this->slate.size() )
+            if( record.delegate_slate.size() < this->slate.size() )
                 record.duplicate_slate = this->slate;
 
             eval_state._current_state->store( slate_id, record );

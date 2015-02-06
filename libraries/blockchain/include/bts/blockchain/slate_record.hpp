@@ -8,7 +8,8 @@ class chain_interface;
 struct slate_db_interface;
 struct slate_record
 {
-    set<account_id_type> slate;
+    set<account_id_type> delegate_slate;
+    set<account_id_type> other_slate;
     vector<account_id_type> duplicate_slate;
 
     slate_id_type id()const;
@@ -24,7 +25,7 @@ struct slate_record
     }
 };
 typedef optional<slate_record> oslate_record;
- 
+
 struct slate_db_interface
 {
     std::function<oslate_record( const slate_id_type )>             lookup_by_id;
@@ -38,4 +39,4 @@ struct slate_db_interface
 
 } } // bts::blockchain
 
-FC_REFLECT( bts::blockchain::slate_record, (slate)(duplicate_slate) )
+FC_REFLECT( bts::blockchain::slate_record, (delegate_slate)(other_slate)(duplicate_slate) )
