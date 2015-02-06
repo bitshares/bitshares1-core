@@ -13,16 +13,24 @@ void define_slate_operation::evaluate( transaction_evaluation_state& eval_state 
     slate_record record;
     for( const signed_int id : this->slate )
     {
-        FC_ASSERT( id >= 0 );
-        const oaccount_record delegate_record = eval_state._current_state->get_account_record( id );
-        if( delegate_record.valid() && delegate_record->is_delegate() ) record.delegate_slate.insert( id );
+        if( id > 0 )
+        {
+           const oaccount_record delegate_record = eval_state._current_state->get_account_record( id );
+           FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+           record.delegate_slate.insert( id );
+        }
         else record.other_slate.insert( id );
     }
 
     const slate_id_type slate_id = record.id();
     const oslate_record current_slate = eval_state._current_state->get_slate_record( slate_id );
     if( current_slate.valid() )
+    {
+        FC_ASSERT( *current_slate == record, 
+                   "It appears there was a hash collision in the slate_id", 
+                   ("current_slate",*current_slate)("new_slate",record) );
         return;
+    }
 
     eval_state._current_state->store_slate_record( record );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }

@@ -15,6 +15,10 @@ struct slate_record
 
     static const slate_db_interface& db_interface( const chain_interface& );
     void sanity_check( const chain_interface& )const;
+    friend bool operator==( const slate_record& a, const slate_record& b )
+    {
+       return a.delegate_slate == b.delegate_slate && a.other_slate == b.other_slate;
+    }
 };
 typedef optional<slate_record> oslate_record;
 
