@@ -15,6 +15,9 @@ MainView {
 
    signal finished
 
+   function useFaucet() {
+      return ["ios","android"].indexOf(Qt.platform.os) < 0
+   }
    function registerAccount() {
       onboarder.state = "REGISTERING"
       Utils.connectOnce(wallet.accounts[username].isRegisteredChanged, finished,
@@ -24,7 +27,7 @@ MainView {
          console.log("Can't register: " + reason)
       })
 
-      if( ["ios","android"].indexOf(Qt.platform.os) >= 0 ) {
+      if( !useFaucet() ) {
          if( wallet.connected ) {
             registrationProgressAnimation.start()
             wallet.registerAccount(username)
@@ -66,7 +69,7 @@ MainView {
       Label {
          anchors.horizontalCenter: parent.horizontalCenter
          horizontalAlignment: Text.AlignHCenter
-         text: qsTr("Welcome to BitShares")
+         text: qsTr("Welcome to %1").arg(Qt.application.organization)
          style: "headline"
          wrapMode: Text.WrapAtWordBoundaryOrAnywhere
       }
@@ -268,7 +271,8 @@ MainView {
          }
          PropertyChanges {
             target: statusText
-            text: qsTr("OK! Now registering your BitShares Account. Just a moment...")
+            text: useFaucet? qsTr("Please complete your registration in the browser window. Your wallet will open shortly after you finish.")
+                           : qsTr("OK! Now registering your BitShares Account. Just a moment...")
          }
          PropertyChanges {
             target: wallet
