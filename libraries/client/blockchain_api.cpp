@@ -183,15 +183,19 @@ map<account_id_type, string> detail::client_impl::blockchain_get_slate( const st
     const oslate_record slate_record = _chain_db->get_slate_record( slate_id );
     FC_ASSERT( slate_record.valid() );
 
-    for( const account_id_type id : slate_record->delegate_slate )
+    for( const account_id_type id : slate_record->slate )
     {
         const oaccount_record delegate_record = _chain_db->get_account_record( id );
-        if( delegate_record.valid() ) delegates[ id ] = delegate_record->name;
-        else delegates[ id ] = std::to_string( id );
+        if( delegate_record.valid() )
+        {
+            if( delegate_record->is_delegate() ) delegates[ id ] = delegate_record->name;
+            else delegates[ id ] = '(' + delegate_record->name + ')';
+        }
+        else
+        {
+            delegates[ id ] = std::to_string( id );
+        }
     }
-
-    for( const account_id_type id : slate_record->other_slate )
-        delegates[ id ] = std::to_string( id );
 
     return delegates;
 }

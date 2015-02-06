@@ -8,10 +8,9 @@ namespace bts { namespace blockchain {
 
 slate_id_type slate_record::id()const
 {
-    if( delegate_slate.empty() && other_slate.empty() ) return 0;
+    if( slate.empty() ) return 0;
     fc::sha256::encoder enc;
-    if( !delegate_slate.empty() ) fc::raw::pack( enc, delegate_slate );
-    if( !other_slate.empty() ) fc::raw::pack( enc, other_slate );
+    fc::raw::pack( enc, slate );
     return enc.result()._hash[ 0 ];
 }
 
@@ -22,7 +21,7 @@ const slate_db_interface& slate_record::db_interface( const chain_interface& db 
 
 void slate_record::sanity_check( const chain_interface& db )const
 { try {
-    FC_ASSERT( !delegate_slate.empty() || !other_slate.empty() );
+    FC_ASSERT( !slate.empty() );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 oslate_record slate_db_interface::lookup( const slate_id_type id )const

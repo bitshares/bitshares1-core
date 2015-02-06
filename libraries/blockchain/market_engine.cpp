@@ -10,6 +10,7 @@ namespace bts { namespace blockchain { namespace detail {
   {
       _pending_state = std::make_shared<pending_chain_state>( ps );
       _prior_state = ps;
+      _eval_state._current_state = _pending_state.get();
   }
 
   bool market_engine::execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec timestamp )
@@ -377,6 +378,7 @@ namespace bts { namespace blockchain { namespace detail {
           wlog( "done matching orders" );
           idump( (_current_bid)(_current_ask) );
 
+          _eval_state.update_delegate_votes();
           _pending_state->apply_changes();
           return true;
     }
@@ -624,6 +626,7 @@ namespace bts { namespace blockchain { namespace detail {
 
       *(_current_ask->collateral) -= mtrx.ask_paid.amount;
 
+
       FC_ASSERT( *_current_ask->collateral >= 0, "",
                  ("mtrx",mtrx)("_current_ask", _current_ask)("interest_paid",interest_paid)  );
 
@@ -657,6 +660,7 @@ namespace bts { namespace blockchain { namespace detail {
             _pending_state->store_balance_record( *ask_payout );
             _current_ask->collateral = 0;
       }
+      _eval_state.adjust_vote( _current_collat_record.slate_id, -mtrx.ask_paid.amount );
 
       _current_collat_record.collateral_balance = *_current_ask->collateral;
       _current_collat_record.payoff_balance = _current_ask->state.balance;

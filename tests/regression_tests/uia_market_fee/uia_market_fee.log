@@ -32,8 +32,7 @@ default (unlocked) >>> blockchain_get_asset XMO
       "XTSDG4CLPoePEPHaRaDszT4ix8gA1ghTb6FF"
     ]
   },
-  "last_proposal_id": 0,
-  "prediction": null
+  "last_proposal_id": 0
 }
 default (unlocked) >>> help wallet_asset_update
 Usage:
@@ -60,7 +59,7 @@ Returns:
 default (unlocked) >>> wallet_asset_update XMO null null null null null 8 0.23
 {
   "index": 0,
-  "record_id": "e10c2d062ccf28120ff3e22e464c98fb885d583b",
+  "record_id": "3708477a5137d06abf8fc1e8e3a7a6463d2b68ce",
   "block_num": 0,
   "is_virtual": false,
   "is_confirmed": false,
@@ -85,8 +84,7 @@ default (unlocked) >>> wallet_asset_update XMO null null null null null 8 0.23
           "authority": {
             "required": 0,
             "owners": []
-          },
-          "prediction": null
+          }
         }
       },{
         "type": "withdraw_op_type",
@@ -98,8 +96,8 @@ default (unlocked) >>> wallet_asset_update XMO null null null null null 8 0.23
       }
     ],
     "signatures": [
-      "20537bdfd3152f0bd46eea7fa57aeccd89719d238de14d8a22ac848b4e69e38d9f3098b30c34b441d6a30589070789d29238dd1b6ae2d10c4971b674c7173ad0c3",
-      "1f1e1ee9f3ca576e845f268158ddc3d03bfb7e5150b537018f30a88b8074632bdd68f56559257a62815ce4d23cea0f5caabb0b61a292f1bb577e3aca7a45ff7481"
+      "201ccfbd17aff3dc4df5f22573b87ef22cedb950842ce34dc63b7a0c9c5d37059873041be82ca2d3a17b27223842c0d64e4c98d04fab6e08ab6245139799896327",
+      "20537bdfd3152f0bd46eea7fa57aeccd89719d238de14d8a22ac848b4e69e38d9f6707019f0981ae54e146fbdab33cc29e87e740b0c240a73bcf8a84fafc818c48"
     ]
   },
   "ledger_entries": [{
@@ -145,8 +143,7 @@ default (unlocked) >>> blockchain_get_asset XMO
       "XTSDG4CLPoePEPHaRaDszT4ix8gA1ghTb6FF"
     ]
   },
-  "last_proposal_id": 0,
-  "prediction": null
+  "last_proposal_id": 0
 }
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
@@ -172,8 +169,7 @@ default (unlocked) >>> blockchain_get_asset XMO
     "required": 0,
     "owners": []
   },
-  "last_proposal_id": 0,
-  "prediction": null
+  "last_proposal_id": 0
 }
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 testaccount1
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
@@ -358,7 +354,6 @@ default (unlocked) >>> blockchain_get_asset XMO
     "required": 0,
     "owners": []
   },
-  "last_proposal_id": 0,
-  "prediction": null
+  "last_proposal_id": 0
 }
 default (unlocked) >>> quit

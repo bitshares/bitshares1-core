@@ -32,8 +32,7 @@ aliases: get_asset
     "required": 0,
     "owners": []
   },
-  "last_proposal_id": 0,
-  "prediction": null
+  "last_proposal_id": 0
 }
 (wallet closed) >>> blockchain_get_asset 0
 {
@@ -57,7 +56,6 @@ aliases: get_asset
     "required": 0,
     "owners": []
   },
-  "last_proposal_id": 0,
-  "prediction": null
+  "last_proposal_id": 0
 }
 (wallet closed) >>> quit
