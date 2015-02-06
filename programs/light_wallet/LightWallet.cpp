@@ -23,6 +23,37 @@
    END_THREAD \
    _THREAD_WAIT_LOOP_.exec();
 
+template<typename T>
+class FutureGuardian : public QObject
+{
+   fc::future<T> m_future;
+   const char* m_file;
+   const char* m_function;
+public:
+   FutureGuardian(fc::future<T> future, const char* file, const char* function, QObject* parent)
+      : QObject(parent),
+        m_future(future),
+        m_file(file),
+        m_function(function)
+   {
+      m_future.on_complete([this](fc::exception_ptr e) {
+         if( e )
+            qDebug() << "Future from" << m_file << "function" << m_function
+                     << "completed with error:" << e->to_detail_string().c_str();
+         deleteLater();
+      });
+   }
+   virtual ~FutureGuardian() {
+      if( m_future.valid() && !m_future.ready() )
+         m_future.cancel_and_wait(__FUNCTION__);
+   }
+};
+template<typename T>
+void GuardFuture(fc::future<T> f, const char* file, const char* function, QObject* owner) {
+   new FutureGuardian<T>(f, file, function, owner);
+}
+#define GUARD_FUTURE(F) GuardFuture(F, __FILE__, __FUNCTION__, this)
+
 inline static QString normalize(QString key)
 {
    key = key.simplified();
@@ -77,7 +108,7 @@ int LightWallet::getDigitsOfPrecision(QString assetSymbol)
    int digits = log10l(BTS_BLOCKCHAIN_PRECISION);
 
    //Verify we're in the wallet thread
-   if( &fc::thread::current() != &m_walletThread )
+   if( !m_walletThread.is_current() )
       return m_walletThread.async([this, assetSymbol]() {
          return getDigitsOfPrecision(assetSymbol);
       }, __FUNCTION__).wait();
@@ -285,20 +316,31 @@ void LightWallet::lockWallet()
    END_THREAD
 }
 
+void LightWallet::pollForRegistration(QString accountName)
+{
+   if( !m_walletThread.is_current() )
+   {
+      GUARD_FUTURE(m_walletThread.async([=] {
+         pollForRegistration(accountName);
+      }, __FUNCTION__));
+      return;
+   }
+
+   std::string stdAccountName = convert(accountName);
+
+   while( m_wallet.account(stdAccountName).registration_date == fc::time_point_sec() ) {
+      updateAccount(m_wallet.fetch_account(stdAccountName));
+      fc::usleep(fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC / 2));
+   }
+}
+
 void LightWallet::registerAccount(QString accountName)
 {
    IN_THREAD
    try {
       std::string stdAccountName = convert(accountName);
       if( m_wallet.request_register_account(stdAccountName) ) {
-         for( int i = 0; i < 5; ++i ) {
-            updateAccount(m_wallet.fetch_account(stdAccountName));
-            if( m_wallet.account(stdAccountName).registration_date != fc::time_point_sec() )
-               break;
-            fc::usleep(fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC / 2));
-         }
-         if( m_wallet.account(stdAccountName).registration_date == fc::time_point_sec() )
-            Q_EMIT errorRegistering(tr("Registration is taking longer than usual. Please try again later."));
+         pollForRegistration(accountName);
       } else
          Q_EMIT errorRegistering(tr("Server could not register account. Please try again later."));
    } catch( const bts::light_wallet::account_already_registered& e ) {
@@ -312,7 +354,6 @@ void LightWallet::registerAccount(QString accountName)
       else
          Q_EMIT errorRegistering(message.arg(convert(e.get_log()[0].get_format())));
    }
-
    END_THREAD
 }
 

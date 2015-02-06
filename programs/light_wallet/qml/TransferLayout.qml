@@ -106,7 +106,7 @@ Page {
             }
             helperText: {
                var fee = wallet.getFee(assetSymbolField.selectedText)
-               var balance = Number(wallet.accounts[accountName].balance(assetSymbolField.selectedText).amount)
+               var balance = Number(wallet.accounts[accountName].balance(assetSymbolField.selectedText).total)
                return qsTr("Available balance: ") + format(balance, assetSymbolField.selectedText) +
                      " " + assetSymbolField.selectedText + "\n" + qsTr("Transaction fee: ") + format(fee.amount, fee.symbol) + " " + fee.symbol
             }
@@ -122,7 +122,7 @@ Page {
                   total += fee.amount
                }
 
-               hasError = total > wallet.accounts[accountName].balance(assetSymbolField.selectedText)
+               hasError = total > wallet.accounts[accountName].balance(assetSymbolField.selectedText).total
                return !hasError && amount() > 0
             }
             function canPayFee() {
