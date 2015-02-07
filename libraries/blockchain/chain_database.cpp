@@ -125,7 +125,7 @@ namespace bts { namespace blockchain {
 
           _property_db.open( data_dir / "index/property_db" );
           const optional<variant> version = self->get_property( database_version );
-          if( !version.valid() || version->as_int64() < BTS_BLOCKCHAIN_DATABASE_VERSION )
+          if( !version.valid() || version->as_int64() != BTS_BLOCKCHAIN_DATABASE_VERSION )
           {
               if( !rebuild_index )
               {
@@ -137,10 +137,6 @@ namespace bts { namespace blockchain {
                 rebuild_index = true;
               }
               self->set_property( database_version, BTS_BLOCKCHAIN_DATABASE_VERSION );
-          }
-          else if( version.valid() && version->as_int64() > BTS_BLOCKCHAIN_DATABASE_VERSION )
-          {
-             FC_CAPTURE_AND_THROW( new_database_version, (version)(BTS_BLOCKCHAIN_DATABASE_VERSION) );
           }
 
           _fork_number_db.open( data_dir / "index/fork_number_db" );
@@ -1318,6 +1314,7 @@ namespace bts { namespace blockchain {
           bool replay_blockchain = must_rebuild_index || last_block_num == uint32_t( -1 );
           if( replay_blockchain )
           {
+             std::cout << "Erasing all state\n";
              close();
              fc::remove_all( data_dir / "index" );
              fc::create_directories( data_dir / "index");
