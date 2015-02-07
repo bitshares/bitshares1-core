@@ -176,19 +176,8 @@ namespace bts { namespace blockchain {
       if( !current_balance_record.valid() )
          FC_CAPTURE_AND_THROW( unknown_balance_record, (balance_id) );
 
-#ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_6_1_FORK_BLOCK_NUM has passed
-#endif
-      if( eval_state._current_state->get_head_block_num() >= BTS_V0_6_1_FORK_BLOCK_NUM )
-      {
-          if( this->amount > current_balance_record->get_spendable_balance( eval_state._current_state->now() ).amount )
-             FC_CAPTURE_AND_THROW( insufficient_funds, (current_balance_record)(amount) );
-      }
-      else
-      {
-          if( this->amount > current_balance_record->get_spendable_balance_v1( eval_state._current_state->now() ).amount )
-             FC_CAPTURE_AND_THROW( insufficient_funds, (current_balance_record)(amount) );
-      }
+      if( this->amount > current_balance_record->get_spendable_balance( eval_state._current_state->now() ).amount )
+         FC_CAPTURE_AND_THROW( insufficient_funds, (current_balance_record)(amount) );
 
       auto asset_rec = eval_state._current_state->get_asset_record( current_balance_record->condition.asset_id );
       FC_ASSERT( asset_rec.valid() );
@@ -228,11 +217,6 @@ namespace bts { namespace blockchain {
 
             case withdraw_multisig_type:
             {
-#ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_6_0_FORK_BLOCK_NUM has passed
-#endif
-               FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_6_0_FORK_BLOCK_NUM );
-
                auto multisig = current_balance_record->condition.as<withdraw_with_multisig>();
                uint32_t valid_signatures = 0;
                for( const auto& sig : multisig.owners )
@@ -339,11 +323,6 @@ namespace bts { namespace blockchain {
 
    void release_escrow_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
-#ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_6_0_FORK_BLOCK_NUM has passed
-#endif
-      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_6_0_FORK_BLOCK_NUM );
-
       auto escrow_balance_record = eval_state._current_state->get_balance_record( this->escrow_id );
       FC_ASSERT( escrow_balance_record.valid() );
 
@@ -491,11 +470,6 @@ namespace bts { namespace blockchain {
 
    void update_balance_vote_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
-#ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_6_0_FORK_BLOCK_NUM has passed
-#endif
-      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_6_0_FORK_BLOCK_NUM );
-
       auto current_balance_record = eval_state._current_state->get_balance_record( this->balance_id );
       FC_ASSERT( current_balance_record.valid(), "No such balance!" );
       FC_ASSERT( current_balance_record->condition.asset_id == 0, "Only BTS balances can have restricted owners." );

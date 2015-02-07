@@ -381,7 +381,7 @@ namespace bts { namespace blockchain {
                                             / BTS_BLOCKCHAIN_MCALL_D2C_DENOMINATOR,
                                             cover_index.order_price.base_asset_id );
 
-         if( eval_state._current_state->get_head_block_num() < BTS_V0_7_0_FORK_BLOCK_NUM )
+         if( eval_state._current_state->get_head_block_num() < BTS_V0_8_0_FORK_BLOCK_NUM )
          {
              new_call_price = asset( current_cover->payoff_balance, delta_amount.asset_id)
                                      / asset( (current_cover->collateral_balance*2)/3, cover_index.order_price.base_asset_id );
@@ -430,7 +430,7 @@ namespace bts { namespace blockchain {
                                   cover_index.order_price.base_asset_id );
       auto new_call_price = std::min( min_call_price, cover_index.order_price );
 
-      if( eval_state._current_state->get_head_block_num() < BTS_V0_7_0_FORK_BLOCK_NUM )
+      if( eval_state._current_state->get_head_block_num() < BTS_V0_8_0_FORK_BLOCK_NUM )
       {
           new_call_price = asset( current_cover->payoff_balance, cover_index.order_price.quote_asset_id )
                                   / asset( (current_cover->collateral_balance*2)/3, cover_index.order_price.base_asset_id );
@@ -448,9 +448,9 @@ namespace bts { namespace blockchain {
    void update_call_price_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
 #ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_7_0_FORK_BLOCK_NUM has passed
+#warning [SOFTFORK] Remove this check after BTS_V0_8_0_FORK_BLOCK_NUM has passed
 #endif
-      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM );
+      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_8_0_FORK_BLOCK_NUM );
 
       if( this->cover_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );

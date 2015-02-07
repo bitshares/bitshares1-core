@@ -15,15 +15,6 @@ void define_slate_operation::evaluate( transaction_evaluation_state& eval_state 
     slate_record record;
     for( const signed_int id : this->slate )
     {
-#ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_6_2_FORK_BLOCK_NUM has passed
-#endif
-        if( eval_state._current_state->get_head_block_num() < BTS_V0_6_2_FORK_BLOCK_NUM )
-        {
-            const oaccount_record delegate_record = eval_state._current_state->get_account_record( id );
-            FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
-        }
-
         if( id >= 0 )
         {
             const oaccount_record delegate_record = eval_state._current_state->get_account_record( id );

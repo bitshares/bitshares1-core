@@ -166,18 +166,8 @@ namespace bts { namespace blockchain {
          const oprice median_price = _current_state->get_active_feed_price( fee.first );
          if( median_price.valid() )
          {
-#ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_6_3_FORK_BLOCK_NUM has passed
-#endif
-            if( _current_state->get_head_block_num() >= BTS_V0_6_3_FORK_BLOCK_NUM )
-            {
-                // fees paid in something other than XTS are discounted 50%
-                alt_fees_paid += (asset( fee.second * 2, fee.first ) * *median_price) / 3;
-            }
-            else
-            {
-                alt_fees_paid += asset( (fee.second*2)/3, fee.first ) * *median_price;
-            }
+            // fees paid in something other than XTS are discounted 50%
+            alt_fees_paid += (asset( fee.second * 2, fee.first ) * *median_price) / 3;
 
             auto max_fee_itr = _max_fee.find( fee.first );
             if( max_fee_itr != _max_fee.end() )
