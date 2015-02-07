@@ -89,7 +89,6 @@ namespace bts { namespace blockchain {
             void                                        update_head_block( const signed_block_header& block_header,
                                                                            const block_id_type& block_id );
 
-
             fc::future<void> _revalidate_pending;
             fc::mutex        _push_block_mutex;
 

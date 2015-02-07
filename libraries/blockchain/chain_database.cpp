@@ -952,9 +952,6 @@ namespace bts { namespace blockchain {
 
           // Perform a random shuffle of the sorted delegate list.
           fc::sha256 rand_seed = fc::sha256::hash( pending_state->get_current_random_seed() );
-#ifndef WIN32
-#warning [HARDFORK] Delegate shuffling
-#endif
           for( uint32_t i=0, x=0; i < num_del; i++ )
           {
              // we only use xth element of hash once,
