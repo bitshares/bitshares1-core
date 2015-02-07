@@ -20,7 +20,7 @@ namespace bts { namespace db {
 
         void close()
         { try {
-            flush();
+            if( _db.is_open() ) flush();
             _db.close();
             _cache.clear();
             _dirty_store.clear();

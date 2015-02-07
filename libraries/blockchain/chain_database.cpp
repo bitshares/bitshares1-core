@@ -125,22 +125,18 @@ namespace bts { namespace blockchain {
 
           _property_id_to_record.open( data_dir / "index/property_id_to_record" );
           const oproperty_record record = self->get_property_record( property_id_type::database_version );
-          if( !record.valid() || record->value.as_uint64() < BTS_BLOCKCHAIN_DATABASE_VERSION )
+          if( !record.valid() || record->value.as_uint64() != BTS_BLOCKCHAIN_DATABASE_VERSION )
           {
               if( !rebuild_index )
               {
-                wlog( "Old database version detected; erasing and replaying blockchain" );
-                _property_id_to_record.close();
-                fc::remove_all( data_dir / "index" );
-                fc::create_directories( data_dir / "index" );
-                _property_id_to_record.open( data_dir / "index/property_id_to_record" );
-                rebuild_index = true;
+                  wlog( "Incompatible database version detected; erasing state and replaying blockchain" );
+                  _property_id_to_record.close();
+                  fc::remove_all( data_dir / "index" );
+                  fc::create_directories( data_dir / "index" );
+                  _property_id_to_record.open( data_dir / "index/property_id_to_record" );
+                  rebuild_index = true;
               }
               self->store_property_record( property_id_type::database_version, BTS_BLOCKCHAIN_DATABASE_VERSION );
-          }
-          else if( record.valid() && record->value.as_uint64() > BTS_BLOCKCHAIN_DATABASE_VERSION )
-          {
-             FC_CAPTURE_AND_THROW( new_database_version, (*record)(BTS_BLOCKCHAIN_DATABASE_VERSION) );
           }
 
           _fork_number_db.open( data_dir / "index/fork_number_db" );
@@ -1263,6 +1259,7 @@ namespace bts { namespace blockchain {
           bool replay_blockchain = must_rebuild_index || last_block_num == uint32_t( -1 );
           if( replay_blockchain )
           {
+             std::cout << "Erasing all state\n";
              close();
              fc::remove_all( data_dir / "index" );
              fc::create_directories( data_dir / "index");
