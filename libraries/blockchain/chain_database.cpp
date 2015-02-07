@@ -952,6 +952,9 @@ namespace bts { namespace blockchain {
       void chain_database_impl::update_active_delegate_list( const uint32_t block_num,
                                                              const pending_chain_state_ptr& pending_state )const
       { try {
+          if( pending_state->get_head_block_num() < BTS_V0_7_0_FORK_BLOCK_NUM )
+              return update_active_delegate_list_v1( block_num, pending_state );
+
           if( block_num % BTS_BLOCKCHAIN_NUM_DELEGATES != 0 )
               return;
 
@@ -960,9 +963,6 @@ namespace bts { namespace blockchain {
 
           // Perform a random shuffle of the sorted delegate list.
           fc::sha256 rand_seed = fc::sha256::hash( pending_state->get_current_random_seed() );
-#ifndef WIN32
-#warning [HARDFORK] Delegate shuffling
-#endif
           for( uint32_t i=0, x=0; i < num_del; i++ )
           {
              // we only use xth element of hash once,

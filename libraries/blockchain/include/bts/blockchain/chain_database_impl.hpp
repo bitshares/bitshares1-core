@@ -102,6 +102,8 @@ namespace bts { namespace blockchain {
             void                                        execute_markets_v1( const time_point_sec timestamp,
                                                                             const pending_chain_state_ptr& pending_state )const;
 
+            void                                        update_active_delegate_list_v1( const uint32_t block_num,
+                                                                                        const pending_chain_state_ptr& pending_state )const;
 
             fc::future<void> _revalidate_pending;
             fc::mutex        _push_block_mutex;

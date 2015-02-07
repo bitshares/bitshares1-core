@@ -101,9 +101,6 @@ namespace bts { namespace blockchain {
         return db._balance_db_interface;
     } FC_CAPTURE_AND_RETHROW() }
 
-#ifndef WIN32
-#warning [HARDFORK] Sanity check
-#endif
     void balance_record::sanity_check( const chain_interface& db )const
     { try {
         FC_ASSERT( balance >= 0 );
