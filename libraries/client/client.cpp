@@ -402,7 +402,6 @@ void load_and_configure_chain_database( const fc::path& datadir,
       }
       else if (option_variables.count("rebuild-index"))
       {
-         std::cout << "Erasing all state\n";
          try
          {
             fc::remove_all(datadir / "chain/index");
