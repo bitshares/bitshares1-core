@@ -1,3 +1,4 @@
+#include <bts/blockchain/asset_operations.hpp>
 #include <bts/blockchain/asset_record.hpp>
 #include <bts/blockchain/chain_interface.hpp>
 
@@ -21,11 +22,6 @@ namespace bts { namespace blockchain {
         // catch overflow conditions
         return (new_share_supply > current_share_supply) && (new_share_supply <= maximum_share_supply);
     }
-
-    const asset_db_interface& asset_record::db_interface( const chain_interface& db )
-    { try {
-        return db._asset_db_interface;
-    } FC_CAPTURE_AND_RETHROW() }
 
     asset asset_record::asset_from_string( const string& amount )const
     {
@@ -73,6 +69,26 @@ namespace bts { namespace blockchain {
        if( amount < 0 ) return "-" + str;
        return str;
     }
+
+    const asset_db_interface& asset_record::db_interface( const chain_interface& db )
+    { try {
+        return db._asset_db_interface;
+    } FC_CAPTURE_AND_RETHROW() }
+
+    void asset_record::sanity_check( const chain_interface& db )const
+    { try {
+        FC_ASSERT( id >= 0 );
+        FC_ASSERT( !symbol.empty() );
+        FC_ASSERT( !name.empty() );
+        FC_ASSERT( id == 0 || issuer_account_id == market_issuer_id || db.lookup<account_record>( issuer_account_id ).valid() );
+        FC_ASSERT( is_power_of_ten( precision ) );
+        FC_ASSERT( maximum_share_supply >= 0 && maximum_share_supply <= BTS_BLOCKCHAIN_MAX_SHARES );
+        FC_ASSERT( current_share_supply >= 0 && current_share_supply <= maximum_share_supply );
+        FC_ASSERT( collected_fees >= 0 && collected_fees <= current_share_supply );
+        FC_ASSERT( transaction_fee >= 0 && transaction_fee <= maximum_share_supply );
+        FC_ASSERT( market_fee <= BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE );
+        FC_ASSERT( last_proposal_id == 0 );
+    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
     oasset_record asset_db_interface::lookup( const asset_id_type id )const
     { try {

@@ -1,4 +1,5 @@
 #include <bts/blockchain/chain_database_impl.hpp>
+#include <bts/blockchain/transaction_evaluation_state.hpp>
 
 namespace bts { namespace blockchain { namespace detail {
 
@@ -62,6 +63,7 @@ namespace bts { namespace blockchain { namespace detail {
     void cancel_current_relative_bid( market_transaction& mtrx );
     void cancel_current_relative_ask( market_transaction& mtrx );
 
+    transaction_evaluation_state  _eval_state;
     pending_chain_state_ptr       _pending_state;
     pending_chain_state_ptr       _prior_state;
     const chain_database_impl&    _db_impl;
@@ -85,6 +87,8 @@ namespace bts { namespace blockchain { namespace detail {
     bts::db::cached_level_map< market_index_key, order_record >::iterator         _relative_bid_itr;
     bts::db::cached_level_map< market_index_key, order_record >::iterator         _relative_ask_itr;
     bts::db::cached_level_map< market_index_key, order_record >::iterator         _short_itr;
+    std::set< market_index_key >::reverse_iterator                                _short_at_feed_itr;
+    std::set< pair<price,market_index_key> >::reverse_iterator                    _short_at_limit_itr;
     bts::db::cached_level_map< market_index_key, collateral_record >::iterator    _collateral_itr;
     std::set< expiration_index >::iterator                   _collateral_expiration_itr;
   };

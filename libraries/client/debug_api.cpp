@@ -4,6 +4,10 @@
 #include <bts/utilities/key_conversion.hpp>
 #include <bts/wallet/wallet.hpp>
 
+#ifndef WIN32
+#include <csignal>
+#endif
+
 namespace bts { namespace client { namespace detail {
 
 void client_impl::debug_enable_output(bool enable_flag)
@@ -183,6 +187,16 @@ void client_impl::debug_wait_for_block_by_number(uint32_t block_number, const st
 std::string client_impl::debug_get_client_name() const
 {
    return this->_config.client_debug_name;
+}
+
+void client_impl::debug_trap() const
+{
+#ifdef WIN32
+    __debugbreak();
+#else
+    raise(SIGTRAP);
+#endif
+    return;
 }
 
 static std::string _generate_deterministic_private_key(const std::string& prefix, int32_t index)

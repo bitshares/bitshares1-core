@@ -38,7 +38,7 @@ file(GLOB qrc_files *.qrc)
 
 qt5_add_resources(qrc_sources ${qrc_files})
 
-add_executable(LightWallet WIN32 MACOSX_BUNDLE main.cpp LightWallet.cpp Account.cpp QtWrappers.cpp ${qrc_sources} ${qml_files})
+add_executable(LightWallet WIN32 MACOSX_BUNDLE ${OSX_ICON_FILE} main.cpp LightWallet.cpp Account.cpp QtWrappers.cpp ${qrc_sources} ${qml_files})
 qt5_use_modules(LightWallet Quick Gui Qml)
 
 target_link_libraries(LightWallet fc bts_light_wallet

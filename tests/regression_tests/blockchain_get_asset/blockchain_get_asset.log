@@ -21,13 +21,13 @@ aliases: get_asset
   "precision": 100000,
   "registration_date": "2014-06-20T14:40:27",
   "last_update": "2014-06-20T14:40:27",
-  "current_share_supply": 199999999999901,
   "maximum_share_supply": 1000000000000000,
+  "current_share_supply": 199999999999901,
   "collected_fees": 0,
   "flags": 0,
   "issuer_permissions": 0,
   "transaction_fee": 0,
-  "market_fee": 10000,
+  "market_fee": 0,
   "authority": {
     "required": 0,
     "owners": []
@@ -45,13 +45,13 @@ aliases: get_asset
   "precision": 100000,
   "registration_date": "2014-06-20T14:40:27",
   "last_update": "2014-06-20T14:40:27",
-  "current_share_supply": 199999999999901,
   "maximum_share_supply": 1000000000000000,
+  "current_share_supply": 199999999999901,
   "collected_fees": 0,
   "flags": 0,
   "issuer_permissions": 0,
   "transaction_fee": 0,
-  "market_fee": 10000,
+  "market_fee": 0,
   "authority": {
     "required": 0,
     "owners": []

@@ -44,9 +44,7 @@ namespace bts { namespace blockchain {
 
     public_key_type account_record::active_key()const
     {
-        if( active_key_history.empty() )
-            return public_key_type();
-
+        FC_ASSERT( !active_key_history.empty() );
         return active_key_history.rbegin()->second;
     }
 
@@ -90,6 +88,20 @@ namespace bts { namespace blockchain {
         return db._account_db_interface;
     } FC_CAPTURE_AND_RETHROW() }
 
+    void account_record::sanity_check( const chain_interface& db )const
+    { try {
+        FC_ASSERT( id > 0 );
+        FC_ASSERT( !name.empty() );
+        FC_ASSERT( !active_key_history.empty() );
+        if( delegate_info.valid() )
+        {
+            FC_ASSERT( delegate_info->votes_for >= 0 );
+            FC_ASSERT( delegate_info->pay_rate <= 100 );
+            FC_ASSERT( !delegate_info->signing_key_history.empty() );
+            FC_ASSERT( delegate_info->pay_balance >= 0 );
+        }
+    } FC_CAPTURE_AND_RETHROW( (*this) ) }
+
     oaccount_record account_db_interface::lookup( const account_id_type id )const
     { try {
         return lookup_by_id( id );
@@ -112,16 +124,33 @@ namespace bts { namespace blockchain {
         {
             if( prev_record->name != record.name )
                 erase_from_name_map( prev_record->name );
+
             if( prev_record->owner_address() != record.owner_address() )
                 erase_from_address_map( prev_record->owner_address() );
-            if( !prev_record->is_retracted() )
+
+            if( fc::ripemd160::hash( prev_record->active_key_history ) != fc::ripemd160::hash( record.active_key_history ) )
             {
-                if( record.is_retracted() || prev_record->active_address() != record.active_address() )
-                    erase_from_address_map( prev_record->active_address() );
-                if( prev_record->is_delegate() )
+                for( const auto& item : prev_record->active_key_history )
                 {
-                    if( record.is_retracted() || !record.is_delegate() || prev_record->signing_address() != record.signing_address() )
-                        erase_from_address_map( prev_record->signing_address() );
+                    const public_key_type& active_key = item.second;
+                    erase_from_address_map( address( active_key ) );
+                }
+            }
+
+            if( prev_record->is_delegate() )
+            {
+                if( !record.is_delegate() || fc::ripemd160::hash( prev_record->delegate_info->signing_key_history )
+                                             != fc::ripemd160::hash( record.delegate_info->signing_key_history ) )
+                {
+                    for( const auto& item : prev_record->delegate_info->signing_key_history )
+                    {
+                        const public_key_type& signing_key = item.second;
+                        erase_from_address_map( address( signing_key ) );
+                    }
+                }
+
+                if( !prev_record->is_retracted() )
+                {
                     if( record.is_retracted() || !record.is_delegate() || prev_record->net_votes() != record.net_votes() )
                         erase_from_vote_set( vote_del( prev_record->net_votes(), prev_record->id ) );
                 }
@@ -131,14 +160,23 @@ namespace bts { namespace blockchain {
         insert_into_id_map( id, record );
         insert_into_name_map( record.name, id );
         insert_into_address_map( record.owner_address(), id );
-        if( !record.is_retracted() )
+
+        for( const auto& item : record.active_key_history )
         {
-            insert_into_address_map( record.active_address(), id );
-            if( record.is_delegate() )
+            const public_key_type& active_key = item.second;
+            if( active_key != public_key_type() ) insert_into_address_map( address( active_key ), id );
+        }
+
+        if( record.is_delegate() )
+        {
+            for( const auto& item : record.delegate_info->signing_key_history )
             {
-                insert_into_address_map( record.signing_address(), id );
-                insert_into_vote_set( vote_del( record.net_votes(), id ) );
+                const public_key_type& signing_key = item.second;
+                if( signing_key != public_key_type() ) insert_into_address_map( address( signing_key ), id );
             }
+
+            if( !record.is_retracted() )
+                insert_into_vote_set( vote_del( record.net_votes(), id ) );
         }
     } FC_CAPTURE_AND_RETHROW( (id)(record) ) }
 
@@ -150,14 +188,23 @@ namespace bts { namespace blockchain {
             erase_from_id_map( id );
             erase_from_name_map( prev_record->name );
             erase_from_address_map( prev_record->owner_address() );
-            if( !prev_record->is_retracted() )
+
+            for( const auto& item : prev_record->active_key_history )
             {
-                erase_from_address_map( prev_record->active_address() );
-                if( prev_record->is_delegate() )
+                const public_key_type& active_key = item.second;
+                erase_from_address_map( address( active_key ) );
+            }
+
+            if( prev_record->is_delegate() )
+            {
+                for( const auto& item : prev_record->delegate_info->signing_key_history )
                 {
-                    erase_from_address_map( prev_record->signing_address() );
-                    erase_from_vote_set( vote_del( prev_record->net_votes(), prev_record->id ) );
+                    const public_key_type& signing_key = item.second;
+                    erase_from_address_map( address( signing_key ) );
                 }
+
+                if( !prev_record->is_retracted() )
+                    erase_from_vote_set( vote_del( prev_record->net_votes(), prev_record->id ) );
             }
         }
     } FC_CAPTURE_AND_RETHROW( (id) ) }

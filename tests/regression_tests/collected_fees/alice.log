@@ -1,0 +1,384 @@
+default (unlocked) >>> debug_advance_time 1 second
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> debug_deterministic_private_keys 0 1 angel true angel true true
+[
+  "5J3SQvvxRK4RfzFDcWZR5sLRkjrMvTn1FKXnzNGvWLgWdctLDQm"
+]
+default (unlocked) >>> wallet_market_submit_ask angel 1250000 XTS 0.02 USD
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:40:41</d-ign>PENDING   angel               angel               1,250,000.00000 XTS     sell XTS @ 0.02 USD / XTS                   0.50000 XTS         <d-ign> 20b9d338</d-ign>
+default (unlocked) >>> wallet_market_submit_short angel 2500000 XTS 5 USD
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:40:41</d-ign>PENDING   angel               angel               2,500,000.00000 XTS     short USD @ 5.% APR                         0.50000 XTS         <d-ign> c82928ce</d-ign>
+default (unlocked) >>> balance angel
+ACCOUNT                         BALANCE                     
+============================================================
+angel                           16,249,999.00000 XTS        
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+No Orders
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0.0000 USD                1,250,000.00000 XTS             0.000000000000 USD*| 0.020000000000 USD                1,250,000.00000 XTS           25,000.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+N/A                       1,250,000.00000 XTS                     5.000000 % | 
+default (unlocked) >>> balance angel
+ACCOUNT                         BALANCE                     
+============================================================
+angel                           16,249,999.00000 XTS        
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0.0000 USD                1,250,000.00000 XTS             0.000000000000 USD*| 0.020000000000 USD                1,250,000.00000 XTS           25,000.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+N/A                       1,250,000.00000 XTS                     5.000000 % | 
+Maximum Short Price: 0. USD / XTS     Last Error:  insufficient feeds (37006)
+
+
+Details:
+37006 insufficient_feeds: insufficient feeds
+
+    {"quote_id":1,"base_id":0}
+    th_a  market_engine.cpp:73 execute
+default (unlocked) >>> debug_enable_output false
+>>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
+>>> debug_enable_output true
+OK
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_get_asset USD
+{
+  "id": 1,
+  "symbol": "USD",
+  "name": "United States Dollar",
+  "description": "Federally Reserved, Inflation Guaranteed",
+  "public_data": "",
+  "issuer_account_id": -2,
+  "precision": 10000,
+  "registration_date": "2014-02-02T18:00:00",
+  "last_update": "2014-02-02T18:00:00",
+  "maximum_share_supply": 1000000000000000,
+  "current_share_supply": 0,
+  "collected_fees": 0,
+  "flags": 0,
+  "issuer_permissions": 4294967295,
+  "transaction_fee": 0,
+  "market_fee": 0,
+  "authority": {
+    "required": 0,
+    "owners": []
+  },
+  "last_proposal_id": 0
+}
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+25,000.0000 USD           1,250,000.00000 XTS             0.020000000000 USD*| 0.020000000000 USD                1,250,000.00000 XTS           25,000.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+25,000.0000 USD           1,250,000.00000 XTS                     5.000000 % | 
+Maximum Short Price: 0.02 USD / XTS     Last Error:  insufficient feeds (37006)
+
+
+Details:
+37006 insufficient_feeds: insufficient feeds
+
+    {"quote_id":1,"base_id":0}
+    th_a  market_engine.cpp:73 execute
+default (unlocked) >>> balance angel
+ACCOUNT                         BALANCE                     
+============================================================
+angel                           16,249,999.00000 XTS        
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             |
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.013333333333 USD                1,875,000.00000 XTS           25,000.0000 USD       2014-06-20T16:41:10   3,750,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> blockchain_get_asset USD
+{
+  "id": 1,
+  "symbol": "USD",
+  "name": "United States Dollar",
+  "description": "Federally Reserved, Inflation Guaranteed",
+  "public_data": "",
+  "issuer_account_id": -2,
+  "precision": 10000,
+  "registration_date": "2014-02-02T18:00:00",
+  "last_update": "2014-02-02T18:00:00",
+  "maximum_share_supply": 1000000000000000,
+  "current_share_supply": 250000000,
+  "collected_fees": 0,
+  "flags": 0,
+  "issuer_permissions": 4294967295,
+  "transaction_fee": 0,
+  "market_fee": 0,
+  "authority": {
+    "required": 0,
+    "owners": []
+  },
+  "last_proposal_id": 0
+}
+default (unlocked) >>> history
+ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+========================================================================================================================================================================
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init96              3,000,000.00000 XTS     claim PYxENd38W5gshXMfnEkm4Rx6P5jQZ4BPSm    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init56              3,000,000.00000 XTS     claim PboJtmf8Xgp8mPAcZWeq2nYsiAc6wVHdoa    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init83              3,000,000.00000 XTS     claim PjTLsujC5C9R4yxZ2BBKTCemLmEXnLmKft    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init39              3,000,000.00000 XTS     claim Pb5MVg8VUHshMVjXuDYP4NMEqissXQ42bG    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init20              3,000,000.00000 XTS     claim Pm5tyC9U6azJdFLFyk5APFMrYmDoFpWwS5    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init46              3,000,000.00000 XTS     claim PtBNxcbafJYzveBcqFcVXpGfT7Y1M2h9bk    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init38              3,000,000.00000 XTS     claim PrAFUstkTT8Xg5ZqJsKpEHytxBr1mmDfnN    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init14              3,000,000.00000 XTS     claim Ptg7CUpcDV5C1d22emxnNigWGXrMmm1qYf    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init55              3,000,000.00000 XTS     claim Pw9QqHsSUgFiH4EqAhtWGjP3kGFiajP7Zq    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init31              3,000,000.00000 XTS     claim PdhBF1s79Q8xHZd3AZQQr6K9y71sDiyeD4    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init37              3,000,000.00000 XTS     claim PsQf4CySKwAyw9Y4ESyA8rVJ3ezkna6jLZ    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init29              3,000,000.00000 XTS     claim Pkibtp9DjkhH3DpmfVuNTcXN9dcGcL2Ev9    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init30              3,000,000.00000 XTS     claim PmpxTJbJ2knyiQgNkyBXM1WaTeyvUm5VPw    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init66              3,000,000.00000 XTS     claim Pqk2KQHzu378QtmQjXqzJ1wN2DcjUPRnoj    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init80              3,000,000.00000 XTS     claim Pp2EEGPNNkr8aDCwCYXummafwj3qAgMfLG    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init91              3,000,000.00000 XTS     claim PcSVJoN47axWDSMx6J13WKkdgcp1fxiWPB    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init54              3,000,000.00000 XTS     claim PZzTx7iSuGt228QbjH6cvTmzHFBDn59Lto    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init36              3,000,000.00000 XTS     claim PeK7tXMd74fQGpAo933XWnzYaPoTvFEBmc    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init81              3,000,000.00000 XTS     claim Pma5UfutdNfG5Zt8AEebre19pAW5JL8cZ7    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init40              3,000,000.00000 XTS     claim PkE99aTCP9wxKTyT3JGhbo6ziMnFLD2fz4    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init58              3,000,000.00000 XTS     claim Pvj4Wh4wAh3VB7PP68AKnVLWeQjT2nFyp7    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init82              3,000,000.00000 XTS     claim PhrTfYY5V7sRdVnj3YiMV72PtKvhZ22UUd    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init21              3,000,000.00000 XTS     claim PpAas7dpK3KpDdcBwuhnuRkikzAfrJVwMv    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init22              3,000,000.00000 XTS     claim PZTwdKX4Hd9DKuArL9Xe2cD7eDKEZm5s9p    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init78              3,000,000.00000 XTS     claim Pnq3Gzr3RU6gr98Y1gN3NDSzXtactyWZK9    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init24              3,000,000.00000 XTS     claim PukPxFP9PZ8NR1tW27nHmoQgKhLBsx9rwD    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init90              3,000,000.00000 XTS     claim PuaMgqPPuCP2JbFmjRCngrYu1nma5xQYyP    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init41              3,000,000.00000 XTS     claim PdtdZY2eDwUDuPhMbLEwajSqGRDKmuR8uP    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init13              3,000,000.00000 XTS     claim PYazDwFSBsVtkdnqTT6DRnVQQaanVBfnoJ    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init68              3,000,000.00000 XTS     claim Pe9EPWCgxjzt6YBQB8yUcAsGawZJqTBvnt    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init79              3,000,000.00000 XTS     claim PhU2WL7jZc916BLLYyg5RxrigNDAHQiNHo    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init12              3,000,000.00000 XTS     claim Pgf59hFdLbrN71FeUNByyP79HjuihhCafP    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init92              3,000,000.00000 XTS     claim Pbs8f78az91H9AxScfrxFSvkSLcguxawyd    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init67              3,000,000.00000 XTS     claim PuuDCFdtCPacQ1zPw9H4gEYULfwCTKBCLG    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init99              3,000,000.00000 XTS     claim PqfJk4W3WY4nfogUuxK1ngek8bCYDN2nmz    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init63              3,000,000.00000 XTS     claim PiYWCQwPxePiwSWT2zVsRoVSNE8sjUnxLm    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init59              3,000,000.00000 XTS     claim Pg3em3wKLWWJzZzVt4hD9A2VoyVjbouHDc    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init62              3,000,000.00000 XTS     claim PqxXNp2nzjnyyEUzmvqZekv7p8SkEdXriA    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init45              3,000,000.00000 XTS     claim Pstd3cqkHUkNba3j3zVQ45kEToXJ17tLng    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init89              3,000,000.00000 XTS     claim Pvc5Ss9avin7JBwx355eSdFKq95kunAHHi    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init84              3,000,000.00000 XTS     claim PrsS94gu835ucgTZ357ZWkkKfhiPttjGvV    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init5               3,000,000.00000 XTS     claim PghDNciT1VUivVe9WcCYSNu9BAf8pTJhHG    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init4               3,000,000.00000 XTS     claim PnK7gxGnHYhFEQuf5s7fp5HaFBwQEyoUMn    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init60              3,000,000.00000 XTS     claim PowxNAe19HPopBcQ5MFvM8gBxk6TSaoPkR    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init48              3,000,000.00000 XTS     claim PtATX6mP4bxjsW1oQLB7kJES5j4VhB36kZ    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init27              3,000,000.00000 XTS     claim PcZqoLb1Vv9k5PdLUmEzyoTExBFeiGs1aV    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init76              3,000,000.00000 XTS     claim PtJHbQWXMCzyBYhfeAPUdfDWojbpgGaFPU    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init74              3,000,000.00000 XTS     claim PZs7AwFyarHYtKnecXgxzRifxmB88BrGW6    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             angel               20,000,000.00000 XTS    claim Pfyf3E2129Wp1NLSmsrKXBcx7ShKyevdmX    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init18              3,000,000.00000 XTS     claim Ppk5Xx4mxRM7J82uZWMB2Ssa3V3mmT39L7    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init50              3,000,000.00000 XTS     claim PfBtUh9ifio9nhcpdc15wrNXCqfuB2rqPj    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init23              3,000,000.00000 XTS     claim PcBCS7g2o2uuP4FPYq6MpuBG3PT2kXPccJ    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init51              3,000,000.00000 XTS     claim PbfQTwd8WSbEVb2Z293mtHbJCbcwb8qxSj    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init94              3,000,000.00000 XTS     claim PgGPnFwat83pPdRmYA6tTC3AbVgxFDccsm    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init33              3,000,000.00000 XTS     claim PrpPgQ3n9JRZADuvxRPksViNv6hW6dYyVV    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init61              3,000,000.00000 XTS     claim PY7oDZuevoq9RkBDqua75N76Dtz7NCocco    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init73              3,000,000.00000 XTS     claim Pw4qLxi6WjtvAkxeBVpYpxVR4gcpYkqAW7    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init75              3,000,000.00000 XTS     claim PrWuosHGeYzMGwpLDup4BVpgC4GymqLxtH    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init93              3,000,000.00000 XTS     claim PcZmDoQ4j3M7u5Ub6dULVe846J6PummWEH    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init42              3,000,000.00000 XTS     claim PYddF5iibUTituHSuGM9m6ZX1CUo33MK1X    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init43              3,000,000.00000 XTS     claim PsmdGQSA6iEb8o4HASaX3QVfgoULcxX85E    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init35              3,000,000.00000 XTS     claim PgR4SaLuhYC79aCHiz7LTUhnh3wd1KvqAU    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init19              3,000,000.00000 XTS     claim PdBhe6Tx9EK99M5oEYs6H7VDiRhoSe4ACt    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init44              3,000,000.00000 XTS     claim PqWHEBG2YTL7uQhpiirkYmTG4f9MqKSYXm    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init53              3,000,000.00000 XTS     claim Ps6EPgeHLFUdZmvHYx71wkTvGWhQyrBa6Z    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init8               3,000,000.00000 XTS     claim Po6ixPpw9ipqvnhRYfRWbHx2wRehAgTk7D    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init71              3,000,000.00000 XTS     claim Pe5E8zor2MevFqaFxfmWTFk8Vs7VT2fPie    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init77              3,000,000.00000 XTS     claim Pcz5NkDgFgeuJu2cp3UU6s1t7wFUbaisBC    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init95              3,000,000.00000 XTS     claim PYdM6a7hY8YSCoDfqjsr4dYjNd173qUijC    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init17              3,000,000.00000 XTS     claim PtwnXKQLQgfRiGYPVxSxmiApFCn1yAgAVr    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init1               3,000,000.00000 XTS     claim PdHTJF29wJCZtFHncYehR3TGB2SmUqXvpP    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init52              3,000,000.00000 XTS     claim PrK39tx4YVm6QaNkf6dm5hxjnnYg94iGtu    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init32              3,000,000.00000 XTS     claim PqCVBPJo6o86pTTX5tTo5idJNxb5CaZHwe    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init10              3,000,000.00000 XTS     claim PmwVaT6VyRS23nxfTQdyiVY85YUGECb9e1    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init69              3,000,000.00000 XTS     claim PpAihqRJKLaHgiTPwspUSetRG5xnPWou36    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init97              3,000,000.00000 XTS     claim PuvAPudSLeTX1igA6LESXUSbfWBS2Xazyi    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init16              3,000,000.00000 XTS     claim PbxFxGYfnGR4wCN7GWpDn6GfqR76eMq6ZH    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init85              3,000,000.00000 XTS     claim PswoaUqtAZewqVtt79TqhR4XT9AMPcUkX7    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init98              3,000,000.00000 XTS     claim Pn3hqruhpixmuT3hXa2jrmKEoQiF6frmYY    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init34              3,000,000.00000 XTS     claim Pm53zgkPRva54tYAsp468Cte3dyfAEG9Yp    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init26              3,000,000.00000 XTS     claim PYu5hieg66PmQj3Q5VNg2G6zrgKmhrZRnS    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init47              3,000,000.00000 XTS     claim PrAWnBx9jHaez1tSgNHQ3HUjVq8nh92UnF    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init87              3,000,000.00000 XTS     claim PoHJMVi9r1mdjLzsSH59SXsBGQbjYRoXLA    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init72              3,000,000.00000 XTS     claim PYUk1xC4CbSrmFHNGcJyJoh33gYDqN1hBf    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init100             3,000,000.00000 XTS     claim PYcTss3yLqNsH8iLGodsKWEBJxiuLGZa5d    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init57              3,000,000.00000 XTS     claim PjvjhfQgB9M8GNTszSwZSKYszth5P29WoZ    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init86              3,000,000.00000 XTS     claim Pn68vcN1ZBGr8zbH34WpA6yvaPgMKJhe2Y    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init88              3,000,000.00000 XTS     claim PvSy6UrmixvL31SkcYnmG3THN2mCgtwHZT    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init25              3,000,000.00000 XTS     claim PaEeTyUXudePr1PwizLVPDwVrog2wMFH9t    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init3               3,000,000.00000 XTS     claim PoPsHzr1qotc4hNTVsH9tBRdGHxY5SYmc3    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init49              3,000,000.00000 XTS     claim PrWmykgta5FNwMTCbpcAbSmKB3vP1N2Fhg    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init2               3,000,000.00000 XTS     claim Pn1a5WYWVSZUXSmhwXVwGw4ZrMPZKaA7Bm    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init7               3,000,000.00000 XTS     claim PuqAPT1BnmcbRP4cdVqxyQkeLcmgiSopWa    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init28              3,000,000.00000 XTS     claim PtmZYbJNjr8ibZze1cc5M8yPA2G2oyQGbm    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init70              3,000,000.00000 XTS     claim Pf6jk2KTicjE49io39urfZ1CuSXHuukEpH    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init64              3,000,000.00000 XTS     claim PajLfHEW5wqZGHevbxDum5Evs2LxNxTU8U    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init15              3,000,000.00000 XTS     claim PdQgA1uEQ6S7JHuk1VBVAwfiGxr1STRhTQ    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init65              3,000,000.00000 XTS     claim PZQHwwEuqPttYKHAUSk8CwfWxDqTaEdVUw    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init11              3,000,000.00000 XTS     claim Po5vQRJC6QuDxXXVj43saEkVxgQDuG3ER9    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init6               3,000,000.00000 XTS     claim PsZ4NT4yGgUuxVWFuPcFPhkt85izpqovJi    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init9               3,000,000.00000 XTS     claim PoKvy2GDN2qvFTvh4giaShkq68MvAPF6Cc    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-02-02T18:00:00</d-ign>0         GENESIS             init0               3,000,000.00000 XTS     claim PbBP93BbJiGKeScUDk51v5qXpWM8bJKgwM    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign>2014-06-20T14:40:41</d-ign>3         angel               ASK-cd81daf1        1,250,000.00000 XTS     sell XTS @ 0.02 USD / XTS                   0.50000 XTS         <d-ign> 20b9d338</d-ign>
+ <d-ign>2014-06-20T14:40:41</d-ign>3         angel               SHORT-351b11df      2,500,000.00000 XTS     short USD @ 5.% APR                         0.50000 XTS         <d-ign> c82928ce</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init4               init4               0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 04263bf9</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init100             init100             0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 0901b7e5</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init8               init8               0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 0923a78c</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init95              init95              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 0ac00fc6</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init60              init60              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 0b8a26ad</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init70              init70              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 0cc47b44</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init98              init98              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 0d9c07a0</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init33              init33              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 0ffd0119</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init92              init92              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 125df7ed</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init32              init32              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 12bcf3e6</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init0               init0               0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 152feddb</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init28              init28              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 1a1bce4c</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init48              init48              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 1e060103</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init43              init43              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 1e2aef74</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init45              init45              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 1e49b901</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init10              init10              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 1f155c29</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init36              init36              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 27aa0a71</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init85              init85              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 28b8f49e</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init68              init68              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 28e94abf</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init62              init62              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 2a1e22de</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init21              init21              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 2f753c39</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init49              init49              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 30b80b18</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init80              init80              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 31385a63</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init3               init3               0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 33c97d06</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init78              init78              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 3fd7cb0b</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init87              init87              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 411f2692</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init77              init77              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 42f29872</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init67              init67              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 42f4bd3b</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init16              init16              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 43e86309</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init82              init82              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 444cb36a</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init20              init20              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 4a382581</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init65              init65              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 4f8be148</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init97              init97              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 5037f1c4</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init31              init31              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 51b07e75</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init25              init25              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 51f706c3</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init23              init23              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 520252d9</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init18              init18              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 53968301</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init42              init42              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 56f71355</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init61              init61              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 5736e6cd</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init57              init57              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 5c7862f6</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init1               init1               0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 5d43653c</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init72              init72              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 5fd39d20</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init71              init71              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 60f32459</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init14              init14              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 62349201</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init40              init40              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 6295901a</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init52              init52              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 62a23b33</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init46              init46              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 63c1e492</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init93              init93              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 64927da5</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init24              init24              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 65897a66</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init79              init79              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 6867b16e</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init88              init88              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 7016157f</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init55              init55              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 747b42f6</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init30              init30              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 7a51ec2f</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init94              init94              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 7bcbe39f</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init2               init2               0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 7c5eccb4</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init13              init13              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 7e88320f</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init7               init7               0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 7f143f20</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init83              init83              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 847c4f7b</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init15              init15              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 85bafadb</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init66              init66              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 9322decf</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init17              init17              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 933c3308</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init6               init6               0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 97076e2c</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init38              init38              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 97bb6c81</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init96              init96              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> 9bd91f0a</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init9               init9               0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> a0ae5440</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init19              init19              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> a19c243b</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init41              init41              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> a6b2084f</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init91              init91              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> a7780f0e</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init47              init47              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> a8d22645</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init22              init22              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> ab029d38</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init75              init75              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> adf76462</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init5               init5               0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> afeb7111</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init64              init64              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> b2c6a915</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init74              init74              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> b3269e04</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init81              init81              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> b382e1ef</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init35              init35              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> b8cfec37</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init51              init51              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> bc92a01c</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init11              init11              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> c08a2222</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init56              init56              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> c3ee480a</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init50              init50              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> c4d08849</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init63              init63              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> c788ea38</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init44              init44              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> c8468f40</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init34              init34              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> cba96e6d</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init29              init29              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> cf6743db</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init37              init37              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> d003f6ce</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init53              init53              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> d081be15</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init27              init27              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> d66816af</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init76              init76              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> d6e46ee7</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init89              init89              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> d9e82323</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init99              init99              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> dc6698ed</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init58              init58              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> dfd2e4c7</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init73              init73              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> e2f85024</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init90              init90              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> e6530f72</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init86              init86              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> e7f36f80</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init84              init84              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> e968dbb6</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init54              init54              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> eaf7405a</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init26              init26              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> ed0e3dd3</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init59              init59              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> ee1e2718</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init39              init39              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> ef3779b5</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init69              init69              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> f2cb8387</d-ign>
+ <d-ign>2014-06-20T14:41:01</d-ign>5         init12              init12              0.00000 XTS             publish price feeds                         0.50000 XTS         <d-ign> fee0d4e7</d-ign>
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|<d-ign>2014-06-20T14:41:20</d-ign>6         ASK-cd81daf1        MARKET              1,250,000.00000 XTS     fill ask @ 0.02 USD / XTS                   0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
+|                              ASK-cd81daf1        angel               25,000.0000 USD         ask proceeds @ 0.02 USD / XTS                                           |
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|<d-ign>2014-06-20T14:41:20</d-ign>6         SHORT-351b11df      MARGIN-351b11df     2,500,000.00000 XTS     add collateral                              0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
+|                              MARKET              MARGIN-351b11df     1,250,000.00000 XTS     add collateral                                                          |
+|                              MARGIN-351b11df     MARKET              25,000.0000 USD         short proceeds @ 0.02 USD / XTS                                         |
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+default (unlocked) >>> balance angel
+ACCOUNT                         BALANCE                     
+============================================================
+angel                           16,249,999.00000 XTS        
+                                25,000.0000 USD             
+default (unlocked) >>> quit

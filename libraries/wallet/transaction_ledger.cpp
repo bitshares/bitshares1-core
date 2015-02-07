@@ -260,38 +260,6 @@ void wallet_impl::scan_balances()
    _blockchain->scan_balances( scan_balance );
 }
 
-void wallet_impl::scan_accounts()
-{ try {
-    const auto check_address = [&]( const address& addr ) -> bool
-    {
-        if( _wallet_db.lookup_account( addr ).valid() ) return true;
-        const owallet_key_record& key_record = _wallet_db.lookup_key( addr );
-        return key_record.valid() && key_record->has_private_key();
-    };
-
-    const auto scan_account = [&]( const account_record& blockchain_record )
-    {
-        bool store_account = check_address( blockchain_record.owner_address() );
-        if( !store_account ) store_account = check_address( blockchain_record.active_address() );
-        if( !store_account && blockchain_record.is_delegate() ) store_account = check_address( blockchain_record.signing_address() );
-        if( !store_account ) return;
-        _wallet_db.store_account( blockchain_record );
-    };
-
-    _blockchain->scan_unordered_accounts( scan_account );
-
-    if( self->is_unlocked() )
-    {
-        _stealth_private_keys.clear();
-        const auto& account_keys = _wallet_db.get_account_private_keys( _wallet_password );
-        _stealth_private_keys.reserve( account_keys.size() );
-        for( const auto& item : account_keys )
-           _stealth_private_keys.push_back( item.first );
-    }
-
-    _dirty_accounts = false;
-} FC_CAPTURE_AND_RETHROW() }
-
 void wallet_impl::scan_block( uint32_t block_num )
 { try {
     const full_block& block = _blockchain->get_block( block_num );
@@ -1184,7 +1152,6 @@ bool wallet_impl::scan_burn( const burn_operation& op, wallet_transaction_record
     return false;
 }
 
-// TODO: optimize
 bool wallet_impl::scan_deposit( const deposit_operation& op, wallet_transaction_record& trx_rec, asset& total_fee )
 { try {
     auto amount = asset( op.amount, op.condition.asset_id );
