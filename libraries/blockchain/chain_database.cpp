@@ -717,7 +717,7 @@ namespace bts { namespace blockchain {
          if (block_id == _head_block_id) //if block_id is current head block, do nothing
            return; //this is necessary to avoid unnecessarily popping the head block in this case
 
-         ilog( "switch from fork ${id} to ${to_id}", ("id",_head_block_id)("to_id",block_id) );
+         //ilog( "switch from fork ${id} to ${to_id}", ("id",_head_block_id)("to_id",block_id) );
          vector<block_id_type> history = get_fork_history( block_id );
          while( history.back() != _head_block_id )
          {
@@ -1158,7 +1158,6 @@ namespace bts { namespace blockchain {
        */
       std::vector<block_id_type> chain_database_impl::get_fork_history( const block_id_type& id )
       { try {
-         ilog( "" );
          std::vector<block_id_type> history;
          history.push_back( id );
 
@@ -1170,7 +1169,7 @@ namespace bts { namespace blockchain {
             history.push_back( header.previous );
             if( header.previous == block_id_type() )
             {
-               ilog( "return: ${h}", ("h",history) );
+               //ilog( "return: ${h}", ("h",history) );
                return history;
             }
             auto prev_fork_data = _fork_db.fetch( header.previous );
@@ -1179,12 +1178,12 @@ namespace bts { namespace blockchain {
             FC_ASSERT( prev_fork_data.is_linked, "we hit a dead end, this fork isn't really linked!" );
             if( prev_fork_data.is_included )
             {
-               ilog( "return: ${h}", ("h",history) );
+               //ilog( "return: ${h}", ("h",history) );
                return history;
             }
             next_id = header.previous;
          }
-         ilog( "${h}", ("h",history) );
+         //ilog( "${h}", ("h",history) );
          return history;
       } FC_CAPTURE_AND_RETHROW( (id) ) }
 
@@ -1457,7 +1456,7 @@ namespace bts { namespace blockchain {
              try
              {
                 auto trx = pending_itr.value();
-                ilog( " loading pending transaction ${trx}", ("trx",trx) );
+                //ilog( " loading pending transaction ${trx}", ("trx",trx) );
                 auto trx_id = trx.id();
                 auto eval_state = evaluate_transaction( trx, my->_relay_fee );
                 share_type fees = eval_state->get_fees();
@@ -3026,7 +3025,6 @@ namespace bts { namespace blockchain {
                                                          uint32_t limit )
 
    { try {
-       wdump( (quote_symbol)(base_symbol) );
        auto quote_asset_id = get_asset_id( quote_symbol );
        auto base_asset_id  = get_asset_id( base_symbol );
        if( base_asset_id >= quote_asset_id )
@@ -3075,7 +3073,6 @@ namespace bts { namespace blockchain {
              ++market_itr;
           }
        }
-       wdump((results));
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol)(limit) ) }
 
