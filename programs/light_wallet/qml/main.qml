@@ -42,6 +42,7 @@ Window {
 
       window.connectToServer()
       checkManifest()
+      lockScreen.focus()
    }
 
    function showError(error, buttonName, buttonCallback) {
