@@ -153,30 +153,7 @@ uint32_t detail::client_impl::wallet_import_keys_from_json( const fc::path& json
 
     uint32_t count = 0;
     for( const auto& key : keys )
-    {
-        const auto addr = address( key.get_public_key() );
-        try
-        {
-            _wallet->get_private_key( addr );
-            // We already have this key and import_private_key would fail if we tried. Do nothing.
-            continue;
-        }
-        catch( const fc::exception& )
-        {
-        }
-
-        const oaccount_record blockchain_account_record = _chain_db->get_account_record( addr );
-        if( blockchain_account_record.valid() && blockchain_account_record->name != account )
-        { // This key exists on the blockchain and I don't have it - don't associate it with a name when you import it
-            _wallet->import_private_key( key, optional<string>(), false );
-        }
-        else
-        {
-            _wallet->import_private_key( key, account, false );
-        }
-
-        ++count;
-    }
+        count += _wallet->friendly_import_private_key( key, account );
 
     _wallet->auto_backup( "json_key_import" );
     ulog( "Successfully imported ${n} new private keys into account ${name}", ("n",count)("name",account) );

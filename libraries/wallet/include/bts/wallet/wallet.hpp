@@ -217,51 +217,38 @@ namespace bts { namespace wallet {
          vector<wallet_account_record> list_unregistered_accounts()const;
          vector<wallet_account_record> list_my_accounts()const;
 
-         uint32_t import_bitcoin_wallet(
-                 const path& wallet_dat,
-                 const string& wallet_dat_passphrase,
-                 const string& account_name
-                 );
-         uint32_t import_multibit_wallet(
-                 const path& wallet_dat,
-                 const string& wallet_dat_passphrase,
-                 const string& account_name
-                 );
-         uint32_t import_electrum_wallet(
-                 const path& wallet_dat,
-                 const string& wallet_dat_passphrase,
-                 const string& account_name
-                 );
-         uint32_t import_armory_wallet(
-                 const path& wallet_dat,
-                 const string& wallet_dat_passphrase,
-                 const string& account_name
-                 );
+         uint32_t           import_bitcoin_wallet( const path& wallet_dat,
+                                                   const string& wallet_dat_passphrase,
+                                                   const string& account_name );
 
-         void import_keyhotee( const string& firstname,
-                            const string& middlename,
-                            const string& lastname,
-                            const string& brainkey,
-                            const string& keyhoteeid );
+         uint32_t           import_electrum_wallet( const path& wallet_dat,
+                                                    const string& wallet_dat_passphrase,
+                                                    const string& account_name );
 
-         public_key_type import_private_key( const private_key_type& new_private_key,
-                                             const optional<string>& account_name,
-                                             bool create_account = false );
+         void               import_keyhotee( const string& firstname,
+                                             const string& middlename,
+                                             const string& lastname,
+                                             const string& brainkey,
+                                             const string& keyhoteeid );
 
-         public_key_type import_wif_private_key( const string& wif_key,
-                                                 const optional<string>& account_name,
-                                                 bool create_account = false );
+         bool               friendly_import_private_key( const private_key_type& key, const string& account_name );
+         public_key_type    import_private_key( const private_key_type& new_private_key,
+                                                const optional<string>& account_name,
+                                                bool create_account = false );
+
+         public_key_type    import_wif_private_key( const string& wif_key,
+                                                    const optional<string>& account_name,
+                                                    bool create_account = false );
+
+         public_key_type    get_new_public_key( const string& account_name );
+         address            create_new_address( const string& account_name, const string& label = "");
 
 
-         public_key_type       get_new_public_key( const string& account_name );
-         address               create_new_address( const string& account_name, const string& label = "");
-
-
-         void              set_address_label( const address& addr, const string& label );
-         string            get_address_label( const address& addr );
-         void              set_address_group_label( const address& addr, const string& group_label );
-         string            get_address_group_label( const address& addr );
-         vector<address>   get_addresses_for_group_label( const string& group_label );
+         void               set_address_label( const address& addr, const string& label );
+         string             get_address_label( const address& addr );
+         void               set_address_group_label( const address& addr, const string& group_label );
+         string             get_address_group_label( const address& addr );
+         vector<address>    get_addresses_for_group_label( const string& group_label );
 
          ///@}
 

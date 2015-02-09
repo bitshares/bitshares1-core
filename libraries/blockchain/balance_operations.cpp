@@ -164,7 +164,6 @@ namespace bts { namespace blockchain {
       FC_ASSERT( asset_rec.valid() );
       bool issuer_override = asset_rec->is_retractable() && eval_state.verify_authority( asset_rec->authority );
 
-
       if( !issuer_override )
       {
          FC_ASSERT( !asset_rec->is_balance_frozen() );

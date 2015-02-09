@@ -195,7 +195,8 @@ namespace bts { namespace blockchain { namespace detail {
 
             if( _current_ask->type == cover_order && _current_bid->type == short_order )
             {
-                price collateral_rate                = *_feed_price; // Asserted valid above
+                //price collateral_rate                = *_feed_price; // Asserted valid above
+                price collateral_rate                = mtrx.bid_price; //*_feed_price; // Asserted valid above
                 collateral_rate.ratio               /= 2; // 2x from short, 1 x from long == 3x default collateral
                 const asset cover_collateral         = asset( *_current_ask->collateral, _base_id );
                 const asset max_usd_cover_can_afford = cover_collateral * mtrx.bid_price;
@@ -276,7 +277,7 @@ namespace bts { namespace blockchain { namespace detail {
                 FC_ASSERT( _feed_price.valid() );
 
                 // Bound collateral ratio (maximizes collateral of new margin position)
-                price collateral_rate          = *_feed_price; // Asserted valid above
+                price collateral_rate          = mtrx.bid_price; //*_feed_price; // Asserted valid above
                 collateral_rate.ratio          /= 2; // 2x from short, 1 x from long == 3x default collateral
                 const asset ask_quantity_usd   = _current_ask->get_quote_quantity(*_feed_price);
                 const asset short_quantity_usd = _current_bid->get_balance() * collateral_rate;

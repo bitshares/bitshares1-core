@@ -17,11 +17,11 @@ ACCOUNT                         BALANCE
 ============================================================
 testaccount2                    10,000.00000 XTS            
 default (unlocked) >>> blockchain_list_blocks
-HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME  RAND           
-====================================================================================================================
+HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME  RANDOM SEED                             
+=============================================================================================================================================
 3       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign></d-ign><d-ign></d-ign><d-ign></d-ign>
-2       <d-ign></d-ign><d-ign></d-ign>1       383     <d-ign></d-ign><d-ign></d-ign><d-ign></d-ign>
-1       <d-ign></d-ign><d-ign></d-ign>1       410     <d-ign></d-ign><d-ign></d-ign><d-ign></d-ign>
+2       <d-ign></d-ign><d-ign></d-ign>0       383     <d-ign></d-ign><d-ign></d-ign><d-ign></d-ign>
+1       <d-ign></d-ign><d-ign></d-ign>0       410     <d-ign></d-ign><d-ign></d-ign><d-ign></d-ign>
 default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
