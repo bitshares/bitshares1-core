@@ -13,7 +13,7 @@ static std::unordered_map<uint32_t, bts::blockchain::block_id_type> CHECKPOINT_B
     {  173585, bts::blockchain::block_id_type( "1d1695bc8ebd3ebae0168007afb2912269adbef1" ) },
     {  187001, bts::blockchain::block_id_type( "72d06a6ba3e79c02327d8048852f9e51b6c8ea71" ) },
     {  237501, bts::blockchain::block_id_type( "42d7bb317f51082f7faffee3f7c79bf59f47acac" ) },
-    {  253000, bts::blockchain::block_id_type( "39ac82bf60cb8455c9d648da18616668d4f0d5ca" ) }
+    {  286700, bts::blockchain::block_id_type( "51e83ee9fc4582aa8d9ec95d7de745c369abef2d" ) }
 };
 
 // Initialized in load_checkpoints()
