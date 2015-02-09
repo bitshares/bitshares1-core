@@ -7,8 +7,8 @@ OK
 default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
 OK
 default (unlocked) >>> blockchain_list_blocks
-HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME  RAND           
-====================================================================================================================
+HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME  RANDOM SEED                             
+=============================================================================================================================================
 1       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign></d-ign><d-ign></d-ign><d-ign></d-ign>
 default (unlocked) >>> blockchain_get_account delegate42
 Name: delegate42

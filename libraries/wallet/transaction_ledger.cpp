@@ -262,12 +262,13 @@ void wallet_impl::scan_balances()
 
 void wallet_impl::scan_block( uint32_t block_num )
 { try {
-    const full_block& block = _blockchain->get_block( block_num );
-    for( const signed_transaction& transaction : block.user_transactions )
+    const signed_block_header block_header = _blockchain->get_block_header( block_num );
+    const vector<transaction_record> transaction_records = _blockchain->get_transactions_for_block( block_header.id() );
+    for( const transaction_evaluation_state& eval_state : transaction_records )
     {
         try
         {
-            scan_transaction( transaction, block_num, block.timestamp );
+            scan_transaction( eval_state.trx, block_num, block_header.timestamp );
         }
         catch( ... )
         {
@@ -279,7 +280,7 @@ void wallet_impl::scan_block( uint32_t block_num )
     {
         try
         {
-            scan_market_transaction( market_trx, block_num, block.timestamp );
+            scan_market_transaction( market_trx, block_num, block_header.timestamp );
         }
         catch( ... )
         {
