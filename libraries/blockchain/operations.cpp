@@ -119,6 +119,13 @@ namespace bts { namespace blockchain {
    void operation_factory::from_variant( const fc::variant& in, bts::blockchain::operation& output )
    { try {
       auto obj = in.get_object();
+
+      if( obj[ "type" ].as_string() == "define_delegate_slate_op_type" )
+      {
+          output.type = define_slate_op_type;
+          return;
+      }
+
       output.type = obj["type"].as<operation_type_enum>();
 
       auto converter_itr = _converters.find( output.type.value );
