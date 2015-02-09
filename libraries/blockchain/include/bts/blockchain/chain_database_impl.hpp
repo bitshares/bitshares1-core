@@ -9,18 +9,21 @@ namespace bts { namespace blockchain {
 
    struct fee_index
    {
+      share_type            _fees = 0;
+      transaction_id_type   _trx;
+
       fee_index( share_type fees = 0, transaction_id_type trx = transaction_id_type() )
       :_fees(fees),_trx(trx){}
-      share_type          _fees;
-      transaction_id_type _trx;
+
       friend bool operator == ( const fee_index& a, const fee_index& b )
       {
-         return a._fees == b._fees && a._trx == b._trx;
+          return std::tie( a._fees, a._trx ) == std::tie( b._fees, b._trx );
       }
+
       friend bool operator < ( const fee_index& a, const fee_index& b )
       {
-         if( a._fees == b._fees ) return a._trx < b._trx; /* Lowest id wins in ties */
-         return a._fees > b._fees; /* Reverse so that highest fee is placed first in sorted maps */
+          // Reverse so that highest fee is placed first in sorted maps
+          return std::tie( a._fees, a._trx ) > std::tie( b._fees, b._trx );
       }
    };
 
@@ -105,41 +108,34 @@ namespace bts { namespace blockchain {
             void                                        update_active_delegate_list_v1( const uint32_t block_num,
                                                                                         const pending_chain_state_ptr& pending_state )const;
 
-            fc::future<void> _revalidate_pending;
-            fc::mutex        _push_block_mutex;
-
-            /**
-             *  Used to track the cumulative effect of all pending transactions that are known,
-             *  new incomming transactions are evaluated relative to this state.
-             *
-             *  After a new block is pushed this state is recalculated based upon what ever
-             *  pending transactions remain.
-             */
-            pending_chain_state_ptr                                                     _pending_trx_state = nullptr;
-
             chain_database*                                                             self = nullptr;
             unordered_set<chain_observer*>                                              _observers;
-            share_type                                                                  _relay_fee = BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE;
 
-            bts::db::level_map<uint32_t, std::vector<block_id_type>>                    _fork_number_db;
-            bts::db::level_map<block_id_type,block_fork_data>                           _fork_db;
-
-            bts::db::level_map<block_id_type,int32_t>                                   _revalidatable_future_blocks_db; //int32_t is unused, this is a set
-
-            bts::db::fast_level_map<block_id_type, pending_chain_state>                 _block_id_to_undo_state;
-
-            // blocks in the current 'official' chain.
-            bts::db::level_map<uint32_t,block_id_type>                                  _block_num_to_id_db;
-            // all blocks from any fork..
-            bts::db::level_map<block_id_type,block_record>                              _block_id_to_block_record_db;
-
-            bts::db::level_map<block_id_type,full_block>                                _block_id_to_block_data_db;
-
-            signed_block_header                                                         _head_block_header;
-            block_id_type                                                               _head_block_id;
-
+            /* Transaction propagation */
+            fc::future<void>                                                            _revalidate_pending;
+            pending_chain_state_ptr                                                     _pending_trx_state = nullptr;
             bts::db::level_map<transaction_id_type, signed_transaction>                 _pending_transaction_db;
             map<fee_index, transaction_evaluation_state_ptr>                            _pending_fee_index;
+            share_type                                                                  _relay_fee = BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE;
+
+            /* Block processing */
+            fc::mutex                                                                   _push_block_mutex;
+
+            bts::db::level_map<block_id_type, full_block>                               _block_id_to_full_block;
+            bts::db::fast_level_map<block_id_type, pending_chain_state>                 _block_id_to_undo_state;
+
+            bts::db::level_map<uint32_t, vector<block_id_type>>                         _fork_number_db; // All siblings
+            bts::db::level_map<block_id_type, block_fork_data>                          _fork_db;
+
+            bts::db::level_map<block_id_type, int32_t>                                  _revalidatable_future_blocks_db; //int32_t is unused, this is a set
+
+            bts::db::level_map<uint32_t, block_id_type>                                 _block_num_to_id_db; // Current chain
+
+            bts::db::level_map<block_id_type, block_record>                             _block_id_to_block_record_db; // Statistics
+
+            /* Current primary state */
+            block_id_type                                                               _head_block_id;
+            signed_block_header                                                         _head_block_header;
 
             bts::db::fast_level_map<uint8_t, property_record>                           _property_id_to_record;
 
@@ -205,9 +201,9 @@ namespace bts { namespace blockchain {
 
             map<operation_type_enum, std::deque<operation>>                             _recent_operations;
       };
-  } // end namespace bts::blockchain::detail
-} } // end namespace bts::blockchain
+
+  } // detail
+} } // bts::blockchain
 
 FC_REFLECT_TYPENAME( std::vector<bts::blockchain::block_id_type> )
-FC_REFLECT( bts::blockchain::vote_del, (votes)(delegate_id) )
 FC_REFLECT( bts::blockchain::fee_index, (_fees)(_trx) )
