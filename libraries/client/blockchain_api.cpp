@@ -51,16 +51,15 @@ vector<string> client_impl::blockchain_list_missing_block_delegates( uint32_t bl
    if (block_num == 0 || block_num == 1)
       return vector<string>();
    vector<string> delegates;
-   auto this_block = _chain_db->get_block_record( block_num );
-   FC_ASSERT(this_block.valid(), "Cannot use this call on a block that has not yet been produced");
-   auto prev_block = _chain_db->get_block_record( block_num - 1 );
-   auto timestamp = prev_block->timestamp;
+   const auto this_block = _chain_db->get_block_header( block_num );
+   const auto prev_block = _chain_db->get_block_header( block_num - 1 );
+   auto timestamp = prev_block.timestamp;
    timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-   while (timestamp != this_block->timestamp)
+   while (timestamp != this_block.timestamp)
    {
-      auto slot_record = _chain_db->get_slot_record( timestamp );
+      const auto slot_record = _chain_db->get_slot_record( timestamp );
       FC_ASSERT( slot_record.valid() );
-      auto delegate_record = _chain_db->get_account_record( slot_record->index.delegate_id );
+      const auto delegate_record = _chain_db->get_account_record( slot_record->index.delegate_id );
       FC_ASSERT( delegate_record.valid() );
       delegates.push_back( delegate_record->name );
       timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;

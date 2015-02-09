@@ -39,7 +39,7 @@ namespace bts { namespace blockchain {
       std::unordered_set<block_id_type> next_blocks; ///< IDs of all blocks that come after
       bool                              is_linked;   ///< is linked to genesis block
 
-      /** if at any time this block was determiend to be valid or invalid then this
+      /** if at any time this block was determined to be valid or invalid then this
        * flag will be set.
        */
       fc::optional<bool>           is_valid;

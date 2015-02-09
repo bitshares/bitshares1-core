@@ -65,18 +65,21 @@ namespace bts { namespace blockchain {
 
    struct vote_del
    {
+      share_type        votes = 0;
+      account_id_type   delegate_id = 0;
+
       vote_del( int64_t v = 0, account_id_type del = 0 )
       :votes(v),delegate_id(del){}
-      int64_t votes = 0;
-      account_id_type delegate_id;
+
       friend bool operator == ( const vote_del& a, const vote_del& b )
       {
-         return a.votes == b.votes && a.delegate_id == b.delegate_id;
+          return std::tie( a.votes, a.delegate_id ) == std::tie( b.votes, b.delegate_id );
       }
+
       friend bool operator < ( const vote_del& a, const vote_del& b )
       {
-         if( a.votes != b.votes ) return a.votes > b.votes; /* Reverse so maps sort in descending order */
-         return a.delegate_id < b.delegate_id; /* Lowest id wins in ties */
+          if( a.votes != b.votes ) return a.votes > b.votes; /* Reverse so maps sort in descending order */
+          return a.delegate_id < b.delegate_id; /* Lowest id wins in ties */
       }
    };
 
@@ -199,6 +202,10 @@ FC_REFLECT( bts::blockchain::delegate_stats,
             (total_burned)
             (blocks_produced)
             (blocks_missed)
+            )
+FC_REFLECT( bts::blockchain::vote_del,
+            (votes)
+            (delegate_id)
             )
 FC_REFLECT( bts::blockchain::account_record,
             (id)
