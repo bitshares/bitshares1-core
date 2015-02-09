@@ -55,9 +55,9 @@ namespace bts { namespace blockchain {
           template<typename OperationType>
           void   register_operation()
           {
-             FC_ASSERT( _converters.find( OperationType::type ) == _converters.end(), 
+             FC_ASSERT( _converters.find( OperationType::type ) == _converters.end(),
                         "Operation ID already Registered ${id}", ("id",OperationType::type) );
-            _converters[OperationType::type] = std::make_shared< operation_converter<OperationType> >(); 
+            _converters[OperationType::type] = std::make_shared< operation_converter<OperationType> >();
           }
 
           void evaluate( transaction_evaluation_state& eval_state, const operation& op )
@@ -77,4 +77,4 @@ namespace bts { namespace blockchain {
           std::unordered_map<int, std::shared_ptr<operation_converter_base> > _converters;
    };
 
-} } // bts::blockchain 
+} } // bts::blockchain
