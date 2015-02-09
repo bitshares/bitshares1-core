@@ -1,5 +1,6 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+#include <QSysInfo>
 #include <QQmlContext>
 #include <QQmlDebuggingEnabler>
 #include <QtQml>
@@ -42,6 +43,11 @@ int main(int argc, char *argv[])
       cache->setCacheDirectory(QStandardPaths::writableLocation(QStandardPaths::DataLocation) + "/cache");
       nam->setCache(cache);
    }
+#if QT_VERSION >= 0x050400
+   engine.rootContext()->setContextProperty("PlatformName", QSysInfo::prettyProductName());
+#endif
+   engine.rootContext()->setContextProperty("ManifestUrl", QStringLiteral("http://bitshares.org/manifest.json"));
+   engine.rootContext()->setContextProperty("AppName", QStringLiteral("lw_%1").arg(BTS_BLOCKCHAIN_SYMBOL).toLower());
    engine.load(QUrl(QStringLiteral("qml/main.qml")));
 
    return app.exec();

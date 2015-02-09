@@ -11,25 +11,38 @@ MainView {
 
    property alias username: nameField.text
    property string errorMessage
+   property string faucetUrl: "http://faucet.bitshares.org"
 
    signal finished
 
+   function useFaucet() {
+      return ["ios","android"].indexOf(Qt.platform.os) < 0 && AppName !== "lw_xts"
+   }
    function registerAccount() {
       onboarder.state = "REGISTERING"
       Utils.connectOnce(wallet.accounts[username].isRegisteredChanged, finished,
                         function() { return wallet.accounts[username].isRegistered })
       Utils.connectOnce(wallet.onErrorRegistering, function(reason) {
-         //FIXME: Do something much, much better here...
+         showError("Registration failed: " + reason)
          console.log("Can't register: " + reason)
       })
 
-      if( wallet.connected ) {
-         wallet.registerAccount(username)
-      } else {
-         // Not connected. Schedule for when we reconnect.
-         wallet.runWhenConnected(function() {
+      if( !useFaucet() ) {
+         if( wallet.connected ) {
+            registrationProgressAnimation.start()
             wallet.registerAccount(username)
-         })
+         } else {
+            // Not connected. Schedule for when we reconnect.
+            wallet.runWhenConnected(function() {
+               registrationProgressAnimation.start()
+               wallet.registerAccount(username)
+            })
+         }
+      } else {
+         var account = wallet.accounts[username]
+         Qt.openUrlExternally(encodeURI(faucetUrl+"?owner_key="+account.ownerKey+"&active_key="+account.activeKey+
+                                        "&account_name="+username+"&app_id="+persist.guid))
+         wallet.pollForRegistration(username);
       }
    }
    function passwordEntered(password) {
@@ -56,7 +69,7 @@ MainView {
       Label {
          anchors.horizontalCenter: parent.horizontalCenter
          horizontalAlignment: Text.AlignHCenter
-         text: qsTr("Welcome to BitShares")
+         text: qsTr("Welcome to %1").arg(Qt.application.organization)
          style: "headline"
          wrapMode: Text.WrapAtWordBoundaryOrAnywhere
       }
@@ -85,7 +98,6 @@ MainView {
 
          NumberAnimation {
             id: registrationProgressAnimation
-            running: onboarder.state === "REGISTERING"
             target: registrationProgress
             property: "progress"
             from: 0; to: 1
@@ -259,7 +271,8 @@ MainView {
          }
          PropertyChanges {
             target: statusText
-            text: qsTr("OK! Now registering your BitShares Account. Just a moment...")
+            text: useFaucet? qsTr("Please complete your registration in the browser window. Your wallet will open shortly after you finish.")
+                           : qsTr("OK! Now registering your BitShares Account. Just a moment...")
          }
          PropertyChanges {
             target: wallet

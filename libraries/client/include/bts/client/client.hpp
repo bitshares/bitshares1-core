@@ -94,6 +94,7 @@ namespace bts { namespace client {
         share_type          min_relay_fee = BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE;
         string              wallet_callback_url;
 
+        share_type          light_network_fee = BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE;
         share_type          light_relay_fee = BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE;
         /** relay account name is used to specify the name of the account that must be paid when
          * network_broadcast_transaction is called by a light weight client.  If it is unset then
@@ -218,6 +219,7 @@ FC_REFLECT( bts::client::config,
         (wallet_enabled)
         (min_relay_fee)
         (wallet_callback_url)
+        (light_network_fee)
         (light_relay_fee)
         (relay_account_name)
         (faucet_account_name)

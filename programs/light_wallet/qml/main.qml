@@ -11,6 +11,7 @@ import org.BitShares.Types 1.0
 
 import Material 0.1
 import Material.ListItems 0.1
+import Material.Extras 0.1 as Extras
 
 Window {
    id: window
@@ -18,10 +19,13 @@ Window {
    width: units.dp(1200)
    height: units.dp(1000)
    Settings {
+      id: persist
+
       property alias width: window.width
       property alias height: window.height
       property alias x: window.x
       property alias y: window.y
+      property string guid: Extras.Utils.generateID()
    }
 
    property alias pageStack: __pageStack
@@ -37,6 +41,7 @@ Window {
          pageStack.push({item: assetsUi, properties: {accountName: wallet.accountNames[0]}})
 
       window.connectToServer()
+      checkManifest()
    }
 
    function showError(error, buttonName, buttonCallback) {
@@ -72,6 +77,18 @@ Window {
       if( !wallet.connected )
          wallet.connectToServer("localhost", 5656, "XTS7pq7tZnghnrnYvQg8aktrSCLVHE5SGyHFeYJBRdcFVvNCBBDjd",
                                 "user", "pass")
+   }
+   function checkManifest() {
+      if( AppName === "lw_xts" )
+         return;
+      var version = Qt.application.version
+      var platform = Qt.platform.os
+      if( PlatformName )
+         platform = PlatformName
+      var xhr = new XMLHttpRequest()
+      var url = encodeURI(ManifestUrl + "?uuid="+persist.guid+"&app="+AppName+"&version="+version+"&platform="+platform)
+      xhr.open("GET", url, true)
+      xhr.send()
    }
    function openTransferPage(args) {
       if( wallet.accounts[args.accountName].availableAssets.length )
