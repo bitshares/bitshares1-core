@@ -6,24 +6,23 @@ namespace bts { namespace blockchain {
 static std::unordered_map<uint32_t, bts::blockchain::block_id_type> CHECKPOINT_BLOCKS
 {
     {       1, bts::blockchain::block_id_type( "8abcfb93c52f999e3ef5288c4f837f4f15af5521" ) },
-    {  100000, bts::blockchain::block_id_type( "96f98d49722848a6a47ad04aece8b9f93c9e9c23" ) },
-    {  200000, bts::blockchain::block_id_type( "222ddc49db592103c51ad22cdc4140185ef564d9" ) },
-    {  300000, bts::blockchain::block_id_type( "0d1d0b8f7f1f4590f8e083edc03869383ed74e3e" ) },
-    {  400000, bts::blockchain::block_id_type( "053d398b6597d5c61365afd100d87b824bf49f65" ) },
-    {  500000, bts::blockchain::block_id_type( "f02910a7115fb826984ce3a432cb371d5d7a99b8" ) },
-    {  600000, bts::blockchain::block_id_type( "f278db8722235343c9db9f077fe67c54a5f25f3b" ) },
-    {  700000, bts::blockchain::block_id_type( "f120ff9b159661b9ac084a0a69c58dcbd79cbb49" ) },
-    {  800000, bts::blockchain::block_id_type( "0e94ad17c598e42e5ec2f522a05bf4df6a1778da" ) },
-    {  900000, bts::blockchain::block_id_type( "a78e09bf1fd13bcd7b0959bc0764fe45db0a652d" ) },
-    { 1000000, bts::blockchain::block_id_type( "20da1352f86f0fc7d5b42f5e96be86ea5b219b6f" ) },
-    { 1100000, bts::blockchain::block_id_type( "bec7da4758ad453a49a9d9d4128acb92a1fdfd04" ) },
-    { 1200000, bts::blockchain::block_id_type( "9e514e0f0a17d78be7c0045f9f22a253812c6c92" ) },
-    { 1300000, bts::blockchain::block_id_type( "623e5c04a77b7e688299a45bfb1d84a0bf3ea318" ) },
-    { 1400000, bts::blockchain::block_id_type( "f7645d369b7a818c4acb94f3bedbcb7747dea9dd" ) },
-    { 1500000, bts::blockchain::block_id_type( "a9027b880105fa89f4d0c2bf9a0df328fed3108d" ) },
-    { 1600000, bts::blockchain::block_id_type( "1c08742243deda31c663130fca9ab8bd825803c5" ) },
-    { 1700000, bts::blockchain::block_id_type( "52f81f9d25f379271cb2ec588b88c636996b18aa" ) },
-    { 1720000, bts::blockchain::block_id_type( "0acc2d561376c87600c686f019adf9883486165c" ) }
+    {  274001, bts::blockchain::block_id_type( "f46c109cfb1bac323122ae59b08edc23328d880c" ) },
+    {  316002, bts::blockchain::block_id_type( "206b7e6574019f4352515bd3d96162fb40a1b18a" ) },
+    {  340001, bts::blockchain::block_id_type( "d3858436100abe3ad7ee9f026e5f7f4781732e06" ) },
+    {  357001, bts::blockchain::block_id_type( "d240848ca9bf4be30204eded02fb35ce2e215d41" ) },
+    {  408751, bts::blockchain::block_id_type( "12481e818abe9bc86069e45586df11d2cff7dbb8" ) },
+    {  451501, bts::blockchain::block_id_type( "42e519db48f09570fcc02f38288648a92789dcb3" ) },
+    {  494001, bts::blockchain::block_id_type( "59836f51f13e07be1de734a02360742c7b5f0dd6" ) },
+    {  554801, bts::blockchain::block_id_type( "4a992cc282a0024d393c6389cf84cbb8df1fc839" ) },
+    {  578901, bts::blockchain::block_id_type( "add6131c7bc6f1c9470de209b0e9c257d664f1c9" ) },
+    {  613201, bts::blockchain::block_id_type( "3317ea0a272976a10ef6593e840f9ff2032affad" ) },
+    {  640001, bts::blockchain::block_id_type( "11c748cdbfc445396deb6d24908521701aaa80aa" ) },
+    {  820201, bts::blockchain::block_id_type( "904278b4bd585e3055c092aada1e030fbdf69a0e" ) },
+    {  871001, bts::blockchain::block_id_type( "137ee1e9171a7ed1fe9cc58536d8e20749c3f199" ) },
+    {  991701, bts::blockchain::block_id_type( "2e48f0a16d2107b9ab3d1c87e803ee70d3c91ce0" ) },
+    { 1315315, bts::blockchain::block_id_type( "baede744122d4b8d296ab3497bf5c849d1131466" ) },
+    { 1575501, bts::blockchain::block_id_type( "52c5e5764fba4c876cde8c80e598c89ee5c35d9f" ) },
+    { 1747000, bts::blockchain::block_id_type( "cb5cf5a2454df5f402c58106766ff9a9c6b92e33" ) }
 };
 
 // Initialized in load_checkpoints()
