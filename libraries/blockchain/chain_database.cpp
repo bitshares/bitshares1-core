@@ -793,17 +793,20 @@ namespace bts { namespace blockchain {
                                                  const block_id_type& block_id,
                                                  const pending_chain_state_ptr& pending_state )
       { try {
-          pending_chain_state_ptr undo_state = std::make_shared<pending_chain_state>( pending_state );
-          pending_state->get_undo_state( undo_state );
-
-          if( block_num > BTS_BLOCKCHAIN_MAX_UNDO_HISTORY )
+          if( block_num > LAST_CHECKPOINT_BLOCK_NUM )
           {
-              const uint32_t old_block_num = block_num - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY;
-              const block_id_type& old_block_id = self->get_block_id( old_block_num );
-              _block_id_to_undo_state.remove( old_block_id );
-          }
+             pending_chain_state_ptr undo_state = std::make_shared<pending_chain_state>( pending_state );
+             pending_state->get_undo_state( undo_state );
 
-          _block_id_to_undo_state.store( block_id, *undo_state );
+             if( block_num > BTS_BLOCKCHAIN_MAX_UNDO_HISTORY )
+             {
+                 const uint32_t old_block_num = block_num - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY;
+                 const block_id_type& old_block_id = self->get_block_id( old_block_num );
+                 _block_id_to_undo_state.remove( old_block_id );
+             }
+
+             _block_id_to_undo_state.store( block_id, *undo_state );
+          }
       } FC_CAPTURE_AND_RETHROW( (block_num)(block_id) ) }
 
       void chain_database_impl::verify_header( const digest_block& block_digest, const public_key_type& block_signee )const
@@ -1595,6 +1598,7 @@ namespace bts { namespace blockchain {
            }
            catch( const fc::exception& )
            {
+              record = oblock_record();
            }
        }
        return record;
