@@ -271,8 +271,8 @@ MainView {
          }
          PropertyChanges {
             target: statusText
-            text: useFaucet? qsTr("Please complete your registration in the browser window. Your wallet will open shortly after you finish.")
-                           : qsTr("OK! Now registering your BitShares Account. Just a moment...")
+            text: useFaucet()? qsTr("Please complete your registration in the browser window. Your wallet will open shortly after you finish.")
+                             : qsTr("OK! Now registering your BitShares Account. Just a moment...")
          }
          PropertyChanges {
             target: wallet

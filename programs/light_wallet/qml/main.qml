@@ -233,7 +233,7 @@ Window {
    Item {
       id: applicationArea
       anchors.fill: parent
-      enabled: wallet.unlocked && !onboardLoader.sourceComponent
+      enabled: wallet.unlocked
       Toolbar {
          id: toolbar
          width: parent.width
@@ -249,8 +249,7 @@ Window {
          z: -1
 
          //Show iff brain key is set, the main page is not active or transitioning out, and we're not already in an onboarding UI
-         property bool active: wallet.brainKey.length > 0 &&
-                               !onboardLoader.sourceComponent
+         property bool active: wallet.brainKey.length > 0
 
          Label {
             anchors.verticalCenter: parent.verticalCenter
@@ -270,7 +269,7 @@ Window {
             text: qsTr("Back Up Wallet")
             textColor: "white"
 
-            onClicked: onboardLoader.sourceComponent = backupUi
+            onClicked: backupUi.show()
          }
 
          states: [
@@ -351,17 +350,13 @@ Window {
          }
       }
    }
-   Component {
+   BackupLayout {
       id: backupUi
-
-      BackupLayout {
-         onFinished: onboardLoader.sourceComponent = undefined
-      }
+      minimumWidth: parent.width / 2
    }
    Loader {
       id: onboardLoader
       z: 2
-      anchors.fill: parent
    }
    Snackbar {
       id: snack
