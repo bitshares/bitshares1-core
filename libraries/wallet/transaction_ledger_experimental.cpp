@@ -670,39 +670,6 @@ void detail::wallet_impl::scan_transaction_experimental( const transaction_evalu
             case update_balance_vote_op_type:
                 // TODO
                 break;
-            case set_object_op_type:
-                // TODO
-                break;
-            case authorize_op_type:
-                // TODO
-                break;
-            case update_asset_ext_op_type:
-                // TODO
-                break;
-            case cancel_order_op_type:
-                // TODO
-                break;
-            case set_edge_op_type:
-                // TODO
-                break;
-            case site_create_op_type:
-                // TODO
-                break;
-            case site_update_op_type:
-                // TODO
-                break;
-            case auction_start_op_type:
-                // TODO
-                break;
-            case auction_bid_op_type:
-                // TODO
-                break;
-            case make_sale_op_type:
-                // TODO
-                break;
-            case buy_sale_op_type:
-                // TODO
-                break;
             default:
                 // Ignore everything else
                 break;

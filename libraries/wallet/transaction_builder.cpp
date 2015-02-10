@@ -272,38 +272,6 @@ transaction_builder& transaction_builder::deposit_asset_to_multisig(
    return *this;
 } FC_CAPTURE_AND_RETHROW( (from_name)(addresses)(amount) ) }
 
-transaction_builder& transaction_builder::set_object(const string& payer_name,
-                                                     const object_record& obj,
-                                                     bool create )
-{ try {
-    auto payer = _wimpl->self->get_account( payer_name );
-    deduct_balance( payer.owner_address(), asset() );
-    int64_t id;
-    if( create )
-        id = 0;
-    else
-        id = obj.short_id();
-    trx.set_object( obj );
-    for( auto addr : _wimpl->_blockchain->get_object_condition( obj ).owners )
-        required_signatures.insert( addr );
-
-    return *this;
-} FC_CAPTURE_AND_RETHROW( (payer_name)(obj)(create) ) }
-
-transaction_builder& transaction_builder::set_edge(const string& payer_name,
-                                                   const edge_record& edge )
-{ try {
-    ilog("@n building a set_edge transactoin");
-    auto payer = _wimpl->self->get_account( payer_name );
-    deduct_balance( payer.owner_address(), asset() );
-    trx.set_edge( edge );
-    auto obj = object_record( edge, edge_object, 0 );
-    for( auto addr : _wimpl->_blockchain->get_object_condition( obj ).owners )
-        required_signatures.insert( addr );
-    return *this;
-} FC_CAPTURE_AND_RETHROW( (payer_name)(edge) ) }
-
-
 transaction_builder& transaction_builder::deposit_asset_with_escrow(const bts::wallet::wallet_account_record& payer,
                                                         const bts::blockchain::account_record& recipient,
                                                         const bts::blockchain::account_record& escrow_agent,

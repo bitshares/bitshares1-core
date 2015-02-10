@@ -5,12 +5,9 @@
 #include <bts/blockchain/balance_record.hpp>
 #include <bts/blockchain/block_record.hpp>
 #include <bts/blockchain/condition.hpp>
-#include <bts/blockchain/edge_record.hpp>
 #include <bts/blockchain/feed_record.hpp>
 #include <bts/blockchain/market_records.hpp>
-#include <bts/blockchain/object_record.hpp>
 #include <bts/blockchain/property_record.hpp>
-#include <bts/blockchain/site_record.hpp>
 #include <bts/blockchain/slate_record.hpp>
 #include <bts/blockchain/slot_record.hpp>
 #include <bts/blockchain/transaction_record.hpp>
@@ -45,13 +42,6 @@ namespace bts { namespace blockchain {
          vector<account_id_type>            get_active_delegates()const;
          void                               set_active_delegates( const std::vector<account_id_type>& active_delegates );
          bool                               is_active_delegate( const account_id_type id )const;
-
-         virtual void                       authorize( asset_id_type asset_id, const address& owner, object_id_type oid = 0 ) = 0;
-         void                               deauthorize( asset_id_type asset_id, const address& owner ) { authorize( asset_id, owner, -1 ); }
-         virtual optional<object_id_type>   get_authorization( asset_id_type asset_id, const address& owner )const = 0;
-
-         virtual void                       store_asset_proposal( const proposal_record& r ) = 0;
-         virtual optional<proposal_record>  fetch_asset_proposal( asset_id_type asset_id, proposal_id_type proposal_id )const = 0;
 
          /** converts an asset + asset_id to a more friendly representation using the symbol name */
          string                             to_pretty_asset( const asset& a )const;
@@ -125,36 +115,11 @@ namespace bts { namespace blockchain {
          virtual void                       store_transaction( const transaction_id_type&,
                                                                 const transaction_record&  )                = 0;
 
-         virtual void                       store_object_record( const object_record& obj )                 = 0;
-         virtual oobject_record             get_object_record( const object_id_type id )const              = 0;
-
-         virtual void                       store_edge_record( const object_record& edge )                  = 0;
-
-         virtual void                       store_site_record( const site_record& edge )                    = 0;
-
-         oobject_record                     get_edge( const object_id_type id );
-         virtual oobject_record             get_edge( const object_id_type from,
-                                                      const object_id_type to,
-                                                      const string& name )const                             = 0;
-         virtual map<string, object_record> get_edges( const object_id_type from,
-                                                       const object_id_type to )const                      = 0;
-         virtual map<object_id_type, map<string, object_record>>
-                                            get_edges( const object_id_type from )const                    = 0;
-
-         virtual osite_record               lookup_site( const string& site_name) const                    = 0;
-
          asset_id_type                      last_asset_id()const;
          asset_id_type                      new_asset_id();
 
          account_id_type                    last_account_id()const;
          account_id_type                    new_account_id();
-
-         object_id_type                     last_object_id()const;
-         object_id_type                     new_object_id( obj_type type );
-
-         virtual multisig_condition         get_object_condition( const object_id_type id, int depth = 0 );
-         virtual multisig_condition         get_object_condition( const object_record& obj, int depth = 0 );
-         virtual object_id_type             get_owner_object( const object_id_type obj );
 
          virtual uint32_t                   get_head_block_num()const                                       = 0;
 
