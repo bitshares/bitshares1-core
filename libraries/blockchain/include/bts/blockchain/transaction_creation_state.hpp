@@ -5,21 +5,21 @@
 namespace bts { namespace blockchain {
 
    /**
-    *  Transaction creation state is used to build up a transaction 
+    *  Transaction creation state is used to build up a transaction
     *  to perform a set of operations given an intial subset of the
-    *  blockchain state (pending_state) 
+    *  blockchain state (pending_state)
     *
     *  When building a transaction that withdraws from balances, orders,
     *  or otherwise the key must be in specified via add_known_key(addr)
-    *  prior to performing the operation.  Otherwise, the operation will 
-    *  fail. 
+    *  prior to performing the operation.  Otherwise, the operation will
+    *  fail.
     *
-    *  
+    *
     */
    class transaction_creation_state
    {
       public:
-         transaction_creation_state( chain_interface_ptr prev_state = chain_interface_ptr() );
+         transaction_creation_state( pending_chain_state* prev_state );
 
          /** Adds the key to the set of known keys for the purpose of
           * building this transaction.  Only balances controlled by keys
@@ -52,7 +52,7 @@ namespace bts { namespace blockchain {
 
          /**
           * Withdraws enough to pay a fee with the given asset, preferring existing
-          * withdraw balances first.  
+          * withdraw balances first.
           */
          void pay_fee( const asset& amount );
 
@@ -69,4 +69,4 @@ FC_REFLECT( bts::blockchain::transaction_creation_state,
             (pending_state)
             (required_signatures)
             (eval_state)
-          )
+            )

@@ -25,7 +25,6 @@ namespace bts { namespace blockchain {
       public:
          transaction_evaluation_state( pending_chain_state* current_state = nullptr );
 
-         ~transaction_evaluation_state();
          share_type get_fees( asset_id_type id = 0 )const;
 
          void evaluate( const signed_transaction& trx );
@@ -102,7 +101,7 @@ namespace bts { namespace blockchain {
          unordered_map<account_id_type, share_type>     delegate_vote_deltas;
 
          // Not serialized
-         chain_interface*                               _current_state = nullptr;
+         pending_chain_state*                           _current_state = nullptr;
 
          bool                                           _skip_signature_check = false;
          bool                                           _enforce_canonical_signatures = false;
@@ -113,7 +112,7 @@ namespace bts { namespace blockchain {
 
          uint32_t                                       current_op_index = 0;
    };
-   typedef shared_ptr<transaction_evaluation_state> transaction_evaluation_state_ptr;
+   typedef std::shared_ptr<transaction_evaluation_state> transaction_evaluation_state_ptr;
 
 } } // bts::blockchain
 

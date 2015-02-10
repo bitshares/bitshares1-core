@@ -30,7 +30,7 @@ namespace bts { namespace blockchain {
 
             vector<transaction_id_type> trx_to_discard;
 
-            _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
+            _pending_trx_state = pending_chain_state( self );
             unsigned num_pending_transaction_considered = 0;
             auto itr = _pending_transaction_db.begin();
             while( itr.valid() )
@@ -186,7 +186,7 @@ namespace bts { namespace blockchain {
           _market_status_db.open( data_dir / "index/market_status_db" );
           _market_history_db.open( data_dir / "index/market_history_db" );
 
-          _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
+          _pending_trx_state = pending_chain_state( self );
 
           clear_invalidation_of_future_blocks();
 
@@ -438,7 +438,7 @@ namespace bts { namespace blockchain {
             _pending_transaction_db.remove( trx.id() );
 
          _pending_fee_index.clear();
-         _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
+         _pending_trx_state = pending_chain_state( self );
 
          // this schedules the revalidate-pending-transactions task to execute in this thread
          // as soon as this current task (probably pushing a block) gets around to yielding.
@@ -713,23 +713,20 @@ namespace bts { namespace blockchain {
       } FC_CAPTURE_AND_RETHROW( (block_id) ) }
 
       void chain_database_impl::apply_transactions( const full_block& block_data,
-                                                    const pending_chain_state_ptr& pending_state )const
+                                                    pending_chain_state& pending_state )const
       { try {
          uint32_t trx_num = 0;
          for( const auto& trx : block_data.user_transactions )
          {
-            transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_state.get() );
-            trx_eval_state->_skip_signature_check = !self->_verify_transaction_signatures;
-            trx_eval_state->evaluate( trx );
+            transaction_evaluation_state trx_eval_state( &pending_state );
+            trx_eval_state._skip_signature_check = !self->_verify_transaction_signatures;
+            trx_eval_state.evaluate( trx );
 
             const transaction_id_type& trx_id = trx.id();
-            otransaction_record record = pending_state->lookup<transaction_record>( trx_id );
+            otransaction_record record = pending_state.lookup<transaction_record>( trx_id );
             FC_ASSERT( record.valid() );
             record->chain_location = transaction_location( block_data.block_num, trx_num );
-            pending_state->store_transaction( trx_id, *record );
-
-            // TODO:  capture the evaluation state with a callback for wallets...
-            // summary.transaction_states.emplace_back( std::move(trx_eval_state) );
+            pending_state.store_transaction( trx_id, *record );
 
             ++trx_num;
          }
@@ -737,15 +734,15 @@ namespace bts { namespace blockchain {
 
       void chain_database_impl::pay_delegate( const block_id_type& block_id,
                                               const public_key_type& block_signee,
-                                              const pending_chain_state_ptr& pending_state,
+                                              pending_chain_state& pending_state,
                                               oblock_record& record )const
       { try {
-          oasset_record base_asset_record = pending_state->get_asset_record( asset_id_type( 0 ) );
+          oasset_record base_asset_record = pending_state.get_asset_record( asset_id_type( 0 ) );
           FC_ASSERT( base_asset_record.valid() );
 
           oaccount_record delegate_record = self->get_account_record( address( block_signee ) );
           FC_ASSERT( delegate_record.valid() );
-          delegate_record = pending_state->get_account_record( delegate_record->id );
+          delegate_record = pending_state.get_account_record( delegate_record->id );
           FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() && delegate_record->delegate_info.valid() );
 
           const uint8_t pay_rate_percent = delegate_record->delegate_info->pay_rate;
@@ -770,8 +767,8 @@ namespace bts { namespace blockchain {
           delegate_record->delegate_info->pay_balance += accepted_paycheck;
           delegate_record->delegate_info->total_paid += accepted_paycheck;
 
-          pending_state->store_account_record( *delegate_record );
-          pending_state->store_asset_record( *base_asset_record );
+          pending_state.store_account_record( *delegate_record );
+          pending_state.store_asset_record( *base_asset_record );
 
           if( record.valid() )
           {
@@ -783,10 +780,13 @@ namespace bts { namespace blockchain {
 
       void chain_database_impl::save_undo_state( const uint32_t block_num,
                                                  const block_id_type& block_id,
-                                                 const pending_chain_state_ptr& pending_state )
+                                                 pending_chain_state& pending_state )
       { try {
-          pending_chain_state_ptr undo_state = std::make_shared<pending_chain_state>( pending_state );
-          pending_state->get_undo_state( undo_state );
+          static pending_chain_state undo_state;
+          undo_state.clear();
+          undo_state.set_prev_state( &pending_state );
+
+          pending_state.build_undo_state( undo_state );
 
           if( block_num > BTS_BLOCKCHAIN_MAX_UNDO_HISTORY )
           {
@@ -795,7 +795,7 @@ namespace bts { namespace blockchain {
               _block_id_to_undo_state.remove( old_block_id );
           }
 
-          _block_id_to_undo_state.store( block_id, *undo_state );
+          _block_id_to_undo_state.store( block_id, undo_state );
       } FC_CAPTURE_AND_RETHROW( (block_num)(block_id) ) }
 
       void chain_database_impl::verify_header( const digest_block& block_digest, const public_key_type& block_signee )const
@@ -810,7 +810,7 @@ namespace bts { namespace blockchain {
              FC_CAPTURE_AND_THROW( time_in_past, (block_digest.timestamp)(_head_block_header.timestamp) );
 
           fc::time_point_sec now = bts::blockchain::now();
-          auto delta_seconds = (block_digest.timestamp - now).to_seconds();
+          const auto delta_seconds = (block_digest.timestamp - now).to_seconds();
           if( block_digest.timestamp >  (now + BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*2) )
              FC_CAPTURE_AND_THROW( time_in_future, (block_digest.timestamp)(now)(delta_seconds) );
 
@@ -819,7 +819,7 @@ namespace bts { namespace blockchain {
 
           FC_ASSERT( block_digest.validate_unique() );
 
-          auto expected_delegate = self->get_slot_signee( block_digest.timestamp, self->get_active_delegates() );
+          const auto expected_delegate = self->get_slot_signee( block_digest.timestamp, self->get_active_delegates() );
 
           if( block_signee != expected_delegate.signing_key() )
              FC_CAPTURE_AND_THROW( invalid_delegate_signee, (expected_delegate.id) );
@@ -847,11 +847,11 @@ namespace bts { namespace blockchain {
       void chain_database_impl::update_delegate_production_info( const block_header& block_header,
                                                                  const block_id_type& block_id,
                                                                  const public_key_type& block_signee,
-                                                                 const pending_chain_state_ptr& pending_state )const
+                                                                 pending_chain_state& pending_state )const
       { try {
           /* Update production info for signing delegate */
           account_id_type delegate_id = self->get_delegate_record_for_signee( block_signee ).id;
-          oaccount_record delegate_record = pending_state->get_account_record( delegate_id );
+          oaccount_record delegate_record = pending_state.get_account_record( delegate_id );
           FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
           delegate_stats& delegate_info = *delegate_record->delegate_info;
 
@@ -869,12 +869,12 @@ namespace bts { namespace blockchain {
           delegate_info.blocks_produced += 1;
           delegate_info.next_secret_hash = block_header.next_secret_hash;
           delegate_info.last_block_num_produced = block_header.block_num;
-          pending_state->store_account_record( *delegate_record );
+          pending_state.store_account_record( *delegate_record );
 
           if( self->get_statistics_enabled() )
           {
               const slot_record slot( block_header.timestamp, delegate_id, block_id );
-              pending_state->store_slot_record( slot );
+              pending_state.store_slot_record( slot );
           }
 
           /* Update production info for missing delegates */
@@ -893,14 +893,14 @@ namespace bts { namespace blockchain {
           {
               /* Note: Active delegate list has not been updated yet so we can use the timestamp */
               delegate_id = self->get_slot_signee( block_timestamp, active_delegates ).id;
-              delegate_record = pending_state->get_account_record( delegate_id );
+              delegate_record = pending_state.get_account_record( delegate_id );
               FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
 
               delegate_record->delegate_info->blocks_missed += 1;
-              pending_state->store_account_record( *delegate_record );
+              pending_state.store_account_record( *delegate_record );
 
               if( self->get_statistics_enabled() )
-                  pending_state->store_slot_record( slot_record( block_timestamp, delegate_id )  );
+                  pending_state.store_slot_record( slot_record( block_timestamp, delegate_id )  );
           }
 
           /* Update required confirmation count */
@@ -910,24 +910,24 @@ namespace bts { namespace blockchain {
           if( required_confirmations > BTS_BLOCKCHAIN_NUM_DELEGATES*3 )
              required_confirmations = 3*BTS_BLOCKCHAIN_NUM_DELEGATES;
 
-          pending_state->set_required_confirmations( required_confirmations );
+          pending_state.set_required_confirmations( required_confirmations );
       } FC_CAPTURE_AND_RETHROW( (block_header)(block_id)(block_signee) ) }
 
       void chain_database_impl::update_random_seed( const secret_hash_type& new_secret,
-                                                    const pending_chain_state_ptr& pending_state,
+                                                    pending_chain_state& pending_state,
                                                     oblock_record& record )const
       { try {
-         const auto current_seed = pending_state->get_current_random_seed();
+         const auto current_seed = pending_state.get_current_random_seed();
          fc::sha512::encoder enc;
          fc::raw::pack( enc, new_secret );
          fc::raw::pack( enc, current_seed );
          const auto& new_seed = fc::ripemd160::hash( enc.result() );
-         pending_state->store_property_record( property_id_type::last_random_seed_id, variant( new_seed ) );
+         pending_state.store_property_record( property_id_type::last_random_seed_id, variant( new_seed ) );
          if( record.valid() ) record->random_seed = new_seed;
       } FC_CAPTURE_AND_RETHROW( (new_secret)(record) ) }
 
       void chain_database_impl::update_active_delegate_list( const uint32_t block_num,
-                                                             const pending_chain_state_ptr& pending_state )const
+                                                             pending_chain_state& pending_state )const
       { try {
           if( block_num % BTS_BLOCKCHAIN_NUM_DELEGATES != 0 )
               return;
@@ -936,7 +936,7 @@ namespace bts { namespace blockchain {
           const size_t num_del = active_del.size();
 
           // Perform a random shuffle of the sorted delegate list.
-          fc::sha256 rand_seed = fc::sha256::hash( pending_state->get_current_random_seed() );
+          fc::sha256 rand_seed = fc::sha256::hash( pending_state.get_current_random_seed() );
           for( uint32_t i=0, x=0; i < num_del; i++ )
           {
              // we only use xth element of hash once,
@@ -963,11 +963,11 @@ namespace bts { namespace blockchain {
                  rand_seed = fc::sha256::hash( rand_seed );
           }
 
-          pending_state->set_active_delegates( active_del );
+          pending_state.set_active_delegates( active_del );
       } FC_CAPTURE_AND_RETHROW( (block_num) ) }
 
       void chain_database_impl::execute_markets( const time_point_sec timestamp,
-                                                 const pending_chain_state_ptr& pending_state )const
+                                                 pending_chain_state& pending_state )const
       { try {
         vector<market_transaction> market_transactions;
 
@@ -975,7 +975,7 @@ namespace bts { namespace blockchain {
         for( const auto& market_pair : dirty_markets )
         {
            FC_ASSERT( market_pair.first > market_pair.second );
-           market_engine engine( pending_state, *this );
+           market_engine engine( &pending_state, *this );
            if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
            {
                market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(),
@@ -983,7 +983,7 @@ namespace bts { namespace blockchain {
            }
         }
 
-        pending_state->set_market_transactions( std::move( market_transactions ) );
+        pending_state.set_market_transactions( std::move( market_transactions ) );
       } FC_CAPTURE_AND_RETHROW( (timestamp) ) }
 
       /**
@@ -991,9 +991,11 @@ namespace bts { namespace blockchain {
        */
       void chain_database_impl::extend_chain( const full_block& block_data )
       { try {
+         static pending_chain_state pending_state( self );
+         pending_state.clear();
+
          const time_point start_time = time_point::now();
          const block_id_type& block_id = block_data.id();
-         block_summary summary;
          try
          {
             public_key_type block_signee;
@@ -1013,12 +1015,6 @@ namespace bts { namespace blockchain {
 
             // NOTE: Secret is validated later in update_delegate_production_info()
             verify_header( digest_block( block_data ), block_signee );
-
-            summary.block_data = block_data;
-
-            // Create a pending state to track changes that would apply as we evaluate the block
-            pending_chain_state_ptr pending_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
-            summary.applied_changes = pending_state;
 
             /** Increment the blocks produced or missed for all delegates. This must be done
              *  before applying transactions because it depends upon the current active delegate order.
@@ -1041,7 +1037,7 @@ namespace bts { namespace blockchain {
             save_undo_state( block_data.block_num, block_id, pending_state );
 
             // TODO: Verify idempotency
-            pending_state->apply_changes();
+            pending_state.apply_changes();
 
             mark_included( block_id, true );
 
@@ -1069,11 +1065,13 @@ namespace bts { namespace blockchain {
          while( iter != _unique_transactions.end() && iter->expiration <= self->now() )
              iter = _unique_transactions.erase( iter );
 
-         //Schedule the observer notifications for later; the chain is in a
-         //non-premptable state right now, and observers may yield.
-         if( (now() - block_data.timestamp).to_seconds() < BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC )
-           for( chain_observer* o : _observers )
-              fc::async([o,summary]{o->block_applied( summary );}, "call_block_applied_observer");
+         // Schedule the observer notifications for later; the chain is in a
+         // non-premptable state right now, and observers may yield.
+         if( (blockchain::now() - block_data.timestamp).to_seconds() < BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC )
+         {
+             for( chain_observer* o : _observers )
+                 fc::async( [ = ] { o->block_pushed( block_data ); }, "call_block_pushed_observer" );
+         }
       } FC_CAPTURE_AND_RETHROW( (block_data) ) }
 
       /**
@@ -1132,11 +1130,10 @@ namespace bts { namespace blockchain {
 
          const auto undo_iter = _block_id_to_undo_state.unordered_find( _head_block_id );
          FC_ASSERT( undo_iter != _block_id_to_undo_state.unordered_end() );
-         const auto& undo_state = undo_iter->second;
+         auto undo_state = undo_iter->second;
 
-         bts::blockchain::pending_chain_state_ptr undo_state_ptr = std::make_shared<bts::blockchain::pending_chain_state>( undo_state );
-         undo_state_ptr->set_prev_state( self->shared_from_this() );
-         undo_state_ptr->apply_changes();
+         undo_state.set_prev_state( self );
+         undo_state.apply_changes();
 
          _head_block_id = previous_block_id;
 
@@ -1145,10 +1142,12 @@ namespace bts { namespace blockchain {
          else
              _head_block_header = self->get_block_header( _head_block_id );
 
-         //Schedule the observer notifications for later; the chain is in a
-         //non-premptable state right now, and observers may yield.
+         // Schedule the observer notifications for later; the chain is in a
+         // non-premptable state right now, and observers may yield.
          for( chain_observer* o : _observers )
-            fc::async([o,undo_state_ptr]{ o->state_changed( undo_state_ptr ); }, "call_state_changed_observer");
+         {
+             fc::async( [ = ] { o->block_popped( undo_state ); }, "call_block_popped_observer" );
+         }
       } FC_CAPTURE_AND_RETHROW() }
 
    } // namespace detail
@@ -1515,11 +1514,9 @@ namespace bts { namespace blockchain {
    transaction_evaluation_state_ptr chain_database::evaluate_transaction( const signed_transaction& trx,
                                                                           const share_type required_fees )
    { try {
-      if( !my->_pending_trx_state )
-         my->_pending_trx_state = std::make_shared<pending_chain_state>( shared_from_this() );
+      pending_chain_state pend_state( &my->_pending_trx_state );
 
-      pending_chain_state_ptr          pend_state = std::make_shared<pending_chain_state>(my->_pending_trx_state);
-      transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>( pend_state.get() );
+      transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>( &pend_state );
 
       trx_eval_state->evaluate( trx );
       const share_type fees = trx_eval_state->get_fees() + trx_eval_state->alt_fees_paid.amount;
@@ -1529,7 +1526,7 @@ namespace bts { namespace blockchain {
           FC_CAPTURE_AND_THROW( insufficient_relay_fee, (fees)(required_fees) );
       }
       // apply changes from this transaction to _pending_trx_state
-      pend_state->apply_changes();
+      pend_state.apply_changes();
 
       return trx_eval_state;
    } FC_CAPTURE_AND_RETHROW( (trx) ) }
@@ -1538,8 +1535,8 @@ namespace bts { namespace blockchain {
    { try {
        try
        {
-          auto pending_state = std::make_shared<pending_chain_state>( shared_from_this() );
-          transaction_evaluation_state_ptr eval_state = std::make_shared<transaction_evaluation_state>( pending_state.get() );
+           pending_chain_state pending_state( this );
+          transaction_evaluation_state_ptr eval_state = std::make_shared<transaction_evaluation_state>( &pending_state );
 
           eval_state->evaluate( transaction );
           const share_type fees = eval_state->get_fees() + eval_state->alt_fees_paid.amount;
@@ -1908,7 +1905,7 @@ namespace bts { namespace blockchain {
    { try {
       const time_point start_time = time_point::now();
 
-      const pending_chain_state_ptr pending_state = std::make_shared<pending_chain_state>( shared_from_this() );
+      pending_chain_state pending_state( this );
       my->execute_markets( block_timestamp, pending_state );
 
       // Initialize block
@@ -1976,9 +1973,9 @@ namespace bts { namespace blockchain {
                   }
 
                   // Validate transaction
-                  auto pending_trx_state = std::make_shared<pending_chain_state>( pending_state );
+                  pending_chain_state pending_trx_state( &pending_state );
                   {
-                      auto trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_trx_state.get() );
+                      auto trx_eval_state = std::make_shared<transaction_evaluation_state>( &pending_trx_state );
                       trx_eval_state->_enforce_canonical_signatures = config.transaction_canonical_signatures_required;
                       trx_eval_state->evaluate( new_transaction );
 
@@ -1993,7 +1990,7 @@ namespace bts { namespace blockchain {
                   }
 
                   // Include transaction
-                  pending_trx_state->apply_changes();
+                  pending_trx_state.apply_changes();
                   new_block.user_transactions.push_back( new_transaction );
                   block_size += transaction_size;
 
@@ -2966,9 +2963,9 @@ namespace bts { namespace blockchain {
        return optional<market_order>();
    } FC_CAPTURE_AND_RETHROW() }
 
-   pending_chain_state_ptr chain_database::get_pending_state()const
+   pending_chain_state* chain_database::get_pending_state()const
    {
-      return my->_pending_trx_state;
+       return &my->_pending_trx_state;
    }
 
    void chain_database::store_market_history_record(const market_history_key& key, const market_history_record& record)

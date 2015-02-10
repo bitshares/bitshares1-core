@@ -6,7 +6,7 @@ namespace bts { namespace blockchain { namespace detail {
   class market_engine
   {
   public:
-    market_engine( const pending_chain_state_ptr ps, const chain_database_impl& cdi );
+    market_engine( pending_chain_state* ps, const chain_database_impl& cdi );
     /** return true if execute was successful and applied */
     bool execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec timestamp );
 
@@ -64,8 +64,8 @@ namespace bts { namespace blockchain { namespace detail {
     void cancel_current_relative_ask( market_transaction& mtrx );
 
     transaction_evaluation_state  _eval_state;
-    pending_chain_state_ptr       _pending_state;
-    pending_chain_state_ptr       _prior_state;
+    std::shared_ptr<pending_chain_state> _pending_state;
+    pending_chain_state*          _prior_state = nullptr;
     const chain_database_impl&    _db_impl;
 
     optional<market_order>        _current_bid;

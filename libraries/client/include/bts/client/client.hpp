@@ -175,10 +175,9 @@ namespace bts { namespace client {
          virtual bts::api::common_api* get_impl() const override;
 
        private:
-         unique_ptr<detail::client_impl> my;
+         std::unique_ptr<detail::client_impl> my;
     };
-
-    typedef shared_ptr<client> client_ptr;
+    typedef std::shared_ptr<client> client_ptr;
 
     /* Message broadcast on the network to notify all clients of some important information
       (security vulnerability, new version, that sort of thing) */
@@ -194,7 +193,7 @@ namespace bts { namespace client {
          void sign(const fc::ecc::private_key& key);
          fc::ecc::public_key signee() const;
     };
-    typedef shared_ptr<client_notification> client_notification_ptr;
+    typedef std::shared_ptr<client_notification> client_notification_ptr;
 
 } } // bts::client
 

@@ -44,7 +44,7 @@ namespace bts { namespace wallet {
    class wallet
    {
       public:
-         wallet( chain_database_ptr chain, bool enabled = true );
+         wallet( std::shared_ptr<chain_database> db, bool enabled = true );
          virtual ~wallet();
 
          void initialize_transaction_creator( transaction_creation_state& c, const string& account_name );
@@ -613,10 +613,9 @@ namespace bts { namespace wallet {
          mail::message mail_decrypt( const address& recipient, const mail::message& ciphertext );
 
      private:
-         unique_ptr<detail::wallet_impl> my;
+         std::unique_ptr<detail::wallet_impl> my;
    };
-
-   typedef shared_ptr<wallet> wallet_ptr;
+   typedef std::shared_ptr<wallet> wallet_ptr;
    typedef std::weak_ptr<wallet> wallet_weak_ptr;
 
 } } // bts::wallet

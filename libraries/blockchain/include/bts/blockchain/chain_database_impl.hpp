@@ -65,29 +65,29 @@ namespace bts { namespace blockchain {
             void                                        update_delegate_production_info( const block_header& block_header,
                                                                                          const block_id_type& block_id,
                                                                                          const public_key_type& block_signee,
-                                                                                         const pending_chain_state_ptr& pending_state )const;
+                                                                                         pending_chain_state& pending_state )const;
 
             void                                        pay_delegate( const block_id_type& block_id,
                                                                       const public_key_type& block_signee,
-                                                                      const pending_chain_state_ptr& pending_state,
+                                                                      pending_chain_state& pending_state,
                                                                       oblock_record& block_record )const;
 
             void                                        execute_markets( const time_point_sec timestamp,
-                                                                         const pending_chain_state_ptr& pending_state )const;
+                                                                         pending_chain_state& pending_state )const;
 
             void                                        apply_transactions( const full_block& block_data,
-                                                                            const pending_chain_state_ptr& pending_state )const;
+                                                                            pending_chain_state& pending_state )const;
 
             void                                        update_active_delegate_list( const uint32_t block_num,
-                                                                                     const pending_chain_state_ptr& pending_state )const;
+                                                                                     pending_chain_state& pending_state )const;
 
             void                                        update_random_seed( const secret_hash_type& new_secret,
-                                                                            const pending_chain_state_ptr& pending_state,
+                                                                            pending_chain_state& pending_state,
                                                                             oblock_record& block_record )const;
 
             void                                        save_undo_state( const uint32_t block_num,
                                                                          const block_id_type& block_id,
-                                                                         const pending_chain_state_ptr& pending_state );
+                                                                         pending_chain_state& pending_state );
 
             void                                        update_head_block( const signed_block_header& block_header,
                                                                            const block_id_type& block_id );
@@ -97,7 +97,7 @@ namespace bts { namespace blockchain {
 
             /* Transaction propagation */
             fc::future<void>                                                            _revalidate_pending;
-            pending_chain_state_ptr                                                     _pending_trx_state = nullptr;
+            pending_chain_state                                                         _pending_trx_state;
             bts::db::level_map<transaction_id_type, signed_transaction>                 _pending_transaction_db;
             map<fee_index, transaction_evaluation_state_ptr>                            _pending_fee_index;
             share_type                                                                  _relay_fee = BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE;

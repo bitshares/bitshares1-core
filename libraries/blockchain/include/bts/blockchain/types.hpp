@@ -48,8 +48,6 @@ namespace bts { namespace blockchain {
    using fc::path;
    using fc::sha512;
    using fc::sha256;
-   using std::unique_ptr;
-   using std::shared_ptr;
    using fc::time_point_sec;
    using fc::time_point;
    using fc::microseconds;

@@ -135,7 +135,7 @@ namespace bts { namespace wallet {
          void store_and_reload_generic_record( const generic_wallet_record& record, const bool sync = false );
 
          friend class detail::wallet_db_impl;
-         unique_ptr<detail::wallet_db_impl> my;
+         std::unique_ptr<detail::wallet_db_impl> my;
    };
 
 } } // bts::wallet

@@ -5,12 +5,7 @@
 
 namespace bts { namespace blockchain {
 
-   transaction_evaluation_state::transaction_evaluation_state( pending_chain_state* current_state )
-   :_current_state( current_state )
-   {
-   }
-
-   transaction_evaluation_state::~transaction_evaluation_state()
+   transaction_evaluation_state::transaction_evaluation_state( pending_chain_state* current_state ) : _current_state( current_state )
    {
    }
 

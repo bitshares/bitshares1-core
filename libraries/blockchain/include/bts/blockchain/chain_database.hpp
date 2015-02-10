@@ -9,13 +9,6 @@ namespace bts { namespace blockchain {
    namespace detail { class chain_database_impl; }
 
    class transaction_evaluation_state;
-   typedef std::shared_ptr<transaction_evaluation_state> transaction_evaluation_state_ptr;
-
-   struct block_summary
-   {
-      full_block                                    block_data;
-      pending_chain_state_ptr                       applied_changes;
-   };
 
    struct block_fork_data
    {
@@ -73,20 +66,12 @@ namespace bts { namespace blockchain {
    class chain_observer
    {
       public:
-         virtual ~chain_observer(){}
-
-         /**
-          * This method is called anytime the blockchain state changes including
-          * undo operations.
-          */
-         virtual void state_changed( const pending_chain_state_ptr& state ) = 0;
-         /**
-          *  This method is called anytime a block is applied to the chain.
-          */
-         virtual void block_applied( const block_summary& summary ) = 0;
+         virtual ~chain_observer() {}
+         virtual void block_pushed( const full_block& ) = 0;
+         virtual void block_popped( const pending_chain_state& ) = 0;
    };
 
-   class chain_database : public chain_interface, public std::enable_shared_from_this<chain_database>
+   class chain_database : public chain_interface
    {
       public:
          chain_database();
@@ -107,7 +92,7 @@ namespace bts { namespace blockchain {
          /**
           * The state of the blockchain after applying all pending transactions.
           */
-         pending_chain_state_ptr                    get_pending_state()const;
+         pending_chain_state*                       get_pending_state()const;
 
          /**
           *  @param override_limits - stores the transaction even if the pending queue is full,
@@ -196,7 +181,7 @@ namespace bts { namespace blockchain {
           *  this state can be used by wallets to scan for changes without the wallets
           *  having to process raw transactions.
           **/
-         block_fork_data push_block(const full_block& block_data);
+         block_fork_data push_block( const full_block& block_data );
 
          vector<block_id_type> get_fork_history( const block_id_type& id );
 
@@ -308,7 +293,7 @@ namespace bts { namespace blockchain {
          bool                               _verify_transaction_signatures = false;
 
       private:
-         unique_ptr<detail::chain_database_impl> my;
+         std::unique_ptr<detail::chain_database_impl> my;
 
          virtual void init_property_db_interface()override;
          virtual void init_account_db_interface()override;
@@ -319,8 +304,7 @@ namespace bts { namespace blockchain {
          virtual void init_feed_db_interface()override;
          virtual void init_slot_db_interface()override;
    };
-
-   typedef shared_ptr<chain_database> chain_database_ptr;
+   typedef std::shared_ptr<chain_database> chain_database_ptr;
 
 } } // bts::blockchain
 

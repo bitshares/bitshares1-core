@@ -5,11 +5,11 @@
 
 namespace bts { namespace blockchain { namespace detail {
 
-  market_engine::market_engine( const pending_chain_state_ptr ps, const chain_database_impl& cdi )
-  :_pending_state(ps),_db_impl(cdi)
+  market_engine::market_engine( pending_chain_state* ps, const chain_database_impl& cdi )
+  : _prior_state( ps ), _db_impl( cdi )
   {
-      _pending_state = std::make_shared<pending_chain_state>( ps );
-      _prior_state = ps;
+      FC_ASSERT( ps != nullptr );
+      _pending_state = std::make_shared<pending_chain_state>( _prior_state );
       _eval_state._current_state = _pending_state.get();
   }
 

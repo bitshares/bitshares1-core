@@ -163,12 +163,12 @@ void client_impl::debug_wait_for_block_by_number(uint32_t block_number, const st
          _block_number(block_number),
          _completion_promise(completion_promise)
       {}
-      void state_changed(const pending_chain_state_ptr& state) override {}
-      void block_applied(const block_summary& summary) override
+      virtual void block_pushed( const full_block& block_data )override
       {
-         if (summary.block_data.block_num >= _block_number)
-            _completion_promise->set_value();
+          if( block_data.block_num >= _block_number )
+              _completion_promise->set_value();
       }
+      virtual void block_popped( const pending_chain_state& )override {}
    };
    wait_for_block block_waiter(block_number, block_arrived_promise);
    _chain_db->add_observer(&block_waiter);
@@ -220,7 +220,7 @@ fc::variants client_impl::debug_deterministic_private_keys(
    )
 {
    std::vector<std::string> generated_keys;
-   
+
    if( start < 0 )
    {
       // ignore count, generate single key

@@ -21,13 +21,7 @@ namespace bts { namespace blockchain {
       public:
          virtual ~chain_interface(){};
 
-         virtual fc::time_point_sec now()const = 0;
-
-         chain_interface(){}
-
-         // don't copy member variables
-         chain_interface( const chain_interface& ){}
-         chain_interface& operator=(const chain_interface&){ return *this; };
+         virtual fc::time_point_sec         now()const = 0;
 
          optional<string>                   get_parent_account_name( const string& account_name )const;
          static bool                        is_valid_account_name( const string& name );
@@ -209,6 +203,5 @@ namespace bts { namespace blockchain {
          slot_db_interface _slot_db_interface;
          virtual void init_slot_db_interface() = 0;
    };
-   typedef std::shared_ptr<chain_interface> chain_interface_ptr;
 
 } } // bts::blockchain

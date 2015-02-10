@@ -5,17 +5,16 @@
 
 namespace bts { namespace blockchain {
 
-   class pending_chain_state : public chain_interface, public std::enable_shared_from_this<pending_chain_state>
+   class pending_chain_state : public chain_interface
    {
       public:
-                                        pending_chain_state( chain_interface_ptr prev_state = chain_interface_ptr() );
-                                        pending_chain_state( const pending_chain_state& cpy );
+                                        pending_chain_state( chain_interface* prev_state = nullptr );
+                                        pending_chain_state( const pending_chain_state& );
+         pending_chain_state&           operator = ( const pending_chain_state& ) = default;
+
          void                           init();
-         pending_chain_state&           operator=(const pending_chain_state&) = default;
-
-         virtual                        ~pending_chain_state()override;
-
-         void                           set_prev_state( chain_interface_ptr prev_state );
+         void                           clear();
+         void                           set_prev_state( chain_interface* prev_state );
 
          virtual void                   set_market_dirty( const asset_id_type quote_id, const asset_id_type base_id )override;
 
@@ -55,39 +54,33 @@ namespace bts { namespace blockchain {
                                                                      const market_history_record& record )override;
          virtual omarket_history_record get_market_history_record( const market_history_key& key )const override;
 
-         /** apply changes from this pending state to the previous state */
-         virtual void                   apply_changes()const;
-
-         /** populate undo state with everything that would be necessary to revert this
-          * pending state to the previous state.
-          */
-         virtual void                   get_undo_state( const chain_interface_ptr& undo_state )const;
+         void                           build_undo_state( pending_chain_state& undo_state )const;
+         void                           apply_changes()const;
 
          template<typename T, typename U>
-         void populate_undo_state( const chain_interface_ptr& undo_state, const chain_interface_ptr& prev_state,
-                                   const T& store_map, const U& remove_set )const
+         void populate_undo_state( pending_chain_state& undo_state, const T& store_map, const U& remove_set )const
          {
              using V = typename T::mapped_type;
              for( const auto& key : remove_set )
              {
-                 const auto prev_record = prev_state->lookup<V>( key );
-                 if( prev_record.valid() ) undo_state->store( key, *prev_record );
+                 const auto prev_record = _prev_state->lookup<V>( key );
+                 if( prev_record.valid() ) undo_state.store( key, *prev_record );
              }
              for( const auto& item : store_map )
              {
                  const auto& key = item.first;
-                 const auto prev_record = prev_state->lookup<V>( key );
-                 if( prev_record.valid() ) undo_state->store( key, *prev_record );
-                 else undo_state->remove<V>( key );
+                 const auto prev_record = _prev_state->lookup<V>( key );
+                 if( prev_record.valid() ) undo_state.store( key, *prev_record );
+                 else undo_state.remove<V>( key );
              }
          }
 
          template<typename T, typename U>
-         void apply_records( const chain_interface_ptr& prev_state, const T& store_map, const U& remove_set )const
+         void apply_records( const T& store_map, const U& remove_set )const
          {
              using V = typename T::mapped_type;
-             for( const auto& key : remove_set ) prev_state->remove<V>( key );
-             for( const auto& item : store_map ) prev_state->store( item.first, item.second );
+             for( const auto& key : remove_set ) _prev_state->remove<V>( key );
+             for( const auto& item : store_map ) _prev_state->store( item.first, item.second );
          }
 
          /** load the state from a variant */
@@ -144,8 +137,7 @@ namespace bts { namespace blockchain {
          map<market_history_key, market_history_record>                     market_history;
 
       private:
-         // Not serialized
-         std::weak_ptr<chain_interface>                                     _prev_state;
+         chain_interface* _prev_state = nullptr;
 
          virtual void init_property_db_interface()override;
          virtual void init_account_db_interface()override;
@@ -156,7 +148,6 @@ namespace bts { namespace blockchain {
          virtual void init_feed_db_interface()override;
          virtual void init_slot_db_interface()override;
    };
-   typedef std::shared_ptr<pending_chain_state> pending_chain_state_ptr;
 
 } } // bts::blockchain
 
