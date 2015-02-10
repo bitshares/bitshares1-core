@@ -213,13 +213,6 @@ namespace bts { namespace wallet {
                                                      uint32_t m,
                                                      const vector<address>& addresses );
 
-      transaction_builder& set_object(const string& payer_name,
-                                      const object_record& obj,
-                                      bool create );
-
-      transaction_builder& set_edge(const string& payer_name,
-                                    const edge_record& obj );
-
       transaction_builder& withdraw_from_balance(const balance_id_type& from,
                                                  const share_type amount);
 

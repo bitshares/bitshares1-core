@@ -68,31 +68,13 @@ namespace bts { namespace blockchain {
 
       update_balance_vote_op_type   = 27,
 
-      // objects
-      set_object_op_type            = 28,
-      authorize_op_type             = 29,
-
       // assets
+      authorize_op_type             = 29,
       update_asset_ext_op_type      = 30,
-      cancel_order_op_type          = 31, /** TODO: return funds to balance with same key as order */
-
-      // edges
-      set_edge_op_type              = 32,
-
-      // sites
-      site_create_op_type           = 33,  // creates an auction as well
-      site_update_op_type           = 34,
-
-      // auctions
-      auction_start_op_type         = 35,
-      auction_bid_op_type           = 36,
-
-      // sales
-      make_sale_op_type             = 37,
-      buy_sale_op_type              = 38,  // makes a buy or an offer
 
       pay_fee_op_type               = 44,
-      update_cover_op_type     = 45
+
+      update_cover_op_type          = 45
 
    };
 
@@ -175,17 +157,8 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (relative_bid_op_type)
                  (relative_ask_op_type)
                  (update_balance_vote_op_type)
-                 (set_object_op_type)
                  (authorize_op_type)
                  (update_asset_ext_op_type)
-                 (cancel_order_op_type)
-                 (set_edge_op_type)
-                 (site_create_op_type)
-                 (site_update_op_type)
-                 (auction_start_op_type)
-                 (auction_bid_op_type)
-                 (make_sale_op_type)
-                 (buy_sale_op_type)
                  (pay_fee_op_type)
                  (update_cover_op_type)
                  )

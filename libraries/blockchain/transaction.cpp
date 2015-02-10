@@ -1,10 +1,8 @@
 #include <bts/blockchain/account_operations.hpp>
 #include <bts/blockchain/asset_operations.hpp>
 #include <bts/blockchain/balance_operations.hpp>
-#include <bts/blockchain/edge_operations.hpp>
 #include <bts/blockchain/feed_operations.hpp>
 #include <bts/blockchain/market_operations.hpp>
-#include <bts/blockchain/object_operations.hpp>
 #include <bts/blockchain/slate_operations.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/blockchain/transaction.hpp>
@@ -44,16 +42,6 @@ namespace bts { namespace blockchain {
    { try {
        return fc::ecc::public_key( signatures.at( sig_index ), this->digest( chain_id ), false );
    } FC_CAPTURE_AND_RETHROW( (sig_index)(chain_id) ) }
-
-   void transaction::set_object( const object_record& obj )
-   {
-      operations.emplace_back( set_object_operation( obj ) );
-   }
-
-   void transaction::set_edge( const edge_record& edge )
-   {
-      operations.emplace_back( set_edge_operation( edge ) );
-   }
 
    void transaction::define_slate( const set<account_id_type>& slate )
    { try {
