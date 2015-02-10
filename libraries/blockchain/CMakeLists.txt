@@ -41,11 +41,6 @@ add_library( bts_blockchain
              feed_record.cpp
              market_records.cpp
              slot_record.cpp
-             object_record.cpp
-             edge_record.cpp
-             site_record.cpp
-             auction_records.cpp
-             sale_record.cpp
 
              transaction.cpp
              transaction_evaluation_state.cpp
@@ -68,11 +63,6 @@ add_library( bts_blockchain
              market_operations_v3.cpp
              market_operations_v4.cpp
              market_operations.cpp
-             object_operations.cpp
-             edge_operations.cpp
-             site_operations.cpp
-             auction_operations.cpp
-             sale_operations.cpp
 
              time.cpp
              chain_interface_v1.cpp

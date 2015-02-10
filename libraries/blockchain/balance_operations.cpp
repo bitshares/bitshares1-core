@@ -153,6 +153,8 @@ namespace bts { namespace blockchain {
            if( asset_rec->is_market_issued() ) FC_ASSERT( cur_record->condition.slate_id == 0 );
        }
 
+       // TODO
+       /*
        if( asset_rec->is_restricted() )
        {
          for( const auto& owner : cur_record->owners() )
@@ -160,6 +162,7 @@ namespace bts { namespace blockchain {
            FC_ASSERT( eval_state._current_state->get_authorization(asset_rec->id, owner) );
          }
        }
+       */
 
        eval_state._current_state->store_balance_record( *cur_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
@@ -186,6 +189,7 @@ namespace bts { namespace blockchain {
       if( !issuer_override )
       {
          FC_ASSERT( !asset_rec->is_balance_frozen() );
+         /*
          if( asset_rec->is_restricted() )
          {
             const auto& owner_addrs = current_balance_record->owners();
@@ -194,6 +198,8 @@ namespace bts { namespace blockchain {
               FC_ASSERT(eval_state._current_state->get_authorization(asset_rec->id, owner));
             }
          }
+         */
+
          switch( (withdraw_condition_types)current_balance_record->condition.type )
          {
             case withdraw_signature_type:
@@ -345,7 +351,8 @@ namespace bts { namespace blockchain {
       auto asset_rec = eval_state._current_state->get_asset_record( escrow_balance_record->condition.asset_id );
       if( asset_rec->is_restricted() )
       {
-         FC_ASSERT( eval_state._current_state->get_authorization( escrow_balance_record->condition.asset_id, escrow_condition.receiver ) );
+         // TODO
+         //FC_ASSERT( eval_state._current_state->get_authorization( escrow_balance_record->condition.asset_id, escrow_condition.receiver ) );
       }
       if( asset_rec->is_retractable() )
       {

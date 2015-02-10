@@ -27,8 +27,7 @@ enum class property_id_type : uint8_t
     *  are on the minority chain.
     */
     confirmation_requirement    = 7,
-    dirty_markets               = 8,
-    last_object_id              = 9
+    dirty_markets               = 8
 };
 
 class chain_interface;
@@ -67,7 +66,6 @@ FC_REFLECT_ENUM( bts::blockchain::property_id_type,
         (statistics_enabled)
         (confirmation_requirement)
         (dirty_markets)
-        (last_object_id)
         );
 FC_REFLECT( bts::blockchain::property_record,
         (id)

@@ -49,7 +49,6 @@ namespace bts { namespace blockchain {
 
          bool check_signature( const address& a )const;
          bool check_multisig( const multisig_condition& a )const;
-         bool check_update_permission( const object_id_type id )const;
 
          bool any_parent_has_signed( const string& account_name )const;
          bool account_or_any_parent_has_signed( const account_record& record )const;

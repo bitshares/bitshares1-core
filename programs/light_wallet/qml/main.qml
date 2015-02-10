@@ -86,7 +86,7 @@ Window {
       if( PlatformName )
          platform = PlatformName
       var xhr = new XMLHttpRequest()
-      var url = encodeURI(ManifestUrl + "?uuid="+persist.guid+"&app="+AppName+"&version="+version+"&platform="+platform)
+      var url = encodeURI(ManifestUrl + "?uuid="+persist.guid+"&version="+AppName+"/"+version+"&platform="+platform)
       xhr.open("GET", url, true)
       xhr.send()
    }
@@ -356,6 +356,7 @@ Window {
    }
    Loader {
       id: onboardLoader
+      anchors.fill: parent
       z: 2
    }
    Snackbar {

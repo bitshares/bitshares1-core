@@ -184,20 +184,15 @@ namespace bts { namespace blockchain {
             bts::db::level_map<slot_index, slot_record>                                 _slot_index_to_record;
             bts::db::level_map<time_point_sec, account_id_type>                         _slot_timestamp_to_delegate;
 
-            bts::db::level_map<object_id_type, object_record>                           _object_db;
-            bts::db::level_map<edge_index_key, object_id_type/*edge id*/>               _edge_index;
-            bts::db::level_map<edge_index_key, object_id_type/*edge id*/>               _reverse_edge_index;
-
-            bts::db::level_map<string, site_record>                                     _site_index;
-
             /**
              *  This index is to facilitate light weight clients and is intended mostly for
              *  block explorers and other APIs serving data.
              */
-            bts::db::level_map< pair<address,transaction_id_type>, int>                 _address_to_trx_index;
+            bts::db::level_map<pair<address,transaction_id_type>, int>                  _address_to_trx_index;
 
-            bts::db::level_map<pair<asset_id_type,address>, object_id_type>             _auth_db;
-            bts::db::level_map<pair<asset_id_type,proposal_id_type>, proposal_record>   _asset_proposal_db;
+            // TODO
+            //bts::db::level_map<pair<asset_id_type,address>, object_id_type>             _auth_db;
+            //bts::db::level_map<pair<asset_id_type,proposal_id_type>, proposal_record>   _asset_proposal_db;
 
             map<operation_type_enum, std::deque<operation>>                             _recent_operations;
       };

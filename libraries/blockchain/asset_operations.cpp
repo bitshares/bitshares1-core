@@ -312,7 +312,8 @@ namespace bts { namespace blockchain {
       FC_ASSERT( current_asset_record->is_user_issued() );
       FC_ASSERT( current_asset_record->issuer_permissions & restricted );
 
-      eval_state._current_state->authorize( this->asset_id, this->owner, this->meta_id );
+      // TODO
+      //eval_state._current_state->authorize( this->asset_id, this->owner, this->meta_id );
 
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
@@ -329,7 +330,8 @@ namespace bts { namespace blockchain {
          FC_CAPTURE_AND_THROW( missing_signature, (current_asset_record->authority) );
 
       current_asset_record->last_proposal_id++;
-      eval_state._current_state->store_asset_proposal( proposal_record( this->asset_id, current_asset_record->last_proposal_id, this->info ) );
+      // TODO
+      //eval_state._current_state->store_asset_proposal( proposal_record( this->asset_id, current_asset_record->last_proposal_id, this->info ) );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 } } // bts::blockchain

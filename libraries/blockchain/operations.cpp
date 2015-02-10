@@ -1,10 +1,8 @@
 #include <bts/blockchain/account_operations.hpp>
 #include <bts/blockchain/asset_operations.hpp>
 #include <bts/blockchain/balance_operations.hpp>
-#include <bts/blockchain/edge_operations.hpp>
 #include <bts/blockchain/feed_operations.hpp>
 #include <bts/blockchain/market_operations.hpp>
-#include <bts/blockchain/object_operations.hpp>
 #include <bts/blockchain/operation_factory.hpp>
 #include <bts/blockchain/operations.hpp>
 #include <bts/blockchain/slate_operations.hpp>
@@ -31,7 +29,6 @@ namespace bts { namespace blockchain {
    const operation_type_enum short_operation_v1::type               = short_op_type;
    const operation_type_enum cover_operation::type                  = cover_op_type;
    const operation_type_enum add_collateral_operation::type         = add_collateral_op_type;
-   const operation_type_enum update_cover_operation::type      = update_cover_op_type;
 
    const operation_type_enum define_slate_operation::type           = define_slate_op_type;
 
@@ -48,13 +45,12 @@ namespace bts { namespace blockchain {
 
    const operation_type_enum update_balance_vote_operation::type    = update_balance_vote_op_type;
 
-   const operation_type_enum set_object_operation::type             = set_object_op_type;
    const operation_type_enum authorize_operation::type              = authorize_op_type;
-
    const operation_type_enum update_asset_ext_operation::type       = update_asset_ext_op_type;
 
-   const operation_type_enum set_edge_operation::type               = set_edge_op_type;
-   const operation_type_enum pay_fee_operation::type               = pay_fee_op_type;
+   const operation_type_enum pay_fee_operation::type                = pay_fee_op_type;
+
+   const operation_type_enum update_cover_operation::type           = update_cover_op_type;
 
    static bool first_chain = []()->bool{
       bts::blockchain::operation_factory::instance().register_operation<withdraw_operation>();
@@ -74,7 +70,6 @@ namespace bts { namespace blockchain {
       bts::blockchain::operation_factory::instance().register_operation<short_operation_v1>();
       bts::blockchain::operation_factory::instance().register_operation<cover_operation>();
       bts::blockchain::operation_factory::instance().register_operation<add_collateral_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<update_cover_operation>();
 
       bts::blockchain::operation_factory::instance().register_operation<define_slate_operation>();
 
@@ -91,14 +86,12 @@ namespace bts { namespace blockchain {
 
       bts::blockchain::operation_factory::instance().register_operation<update_balance_vote_operation>();
 
-      bts::blockchain::operation_factory::instance().register_operation<set_object_operation>();
       bts::blockchain::operation_factory::instance().register_operation<authorize_operation>();
-
       bts::blockchain::operation_factory::instance().register_operation<update_asset_ext_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<create_asset_proposal>();
 
-      bts::blockchain::operation_factory::instance().register_operation<set_edge_operation>();
       bts::blockchain::operation_factory::instance().register_operation<pay_fee_operation>();
+
+      bts::blockchain::operation_factory::instance().register_operation<update_cover_operation>();
 
       return true;
    }();
