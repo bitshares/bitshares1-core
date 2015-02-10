@@ -134,9 +134,13 @@ Page {
          }
          MenuField {
             id: assetSymbolField
+            Layout.preferredHeight: amountField.height
             anchors.verticalCenter: amountField.verticalCenter
             model: wallet.accounts[accountName].availableAssets
             selectedIndex: model.indexOf(assetSymbol)
+            floatingLabel: true
+            placeholderText: "Asset"
+            hasHelperText: true
 
             Behavior on width { NumberAnimation {} }
          }

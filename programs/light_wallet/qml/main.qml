@@ -357,6 +357,7 @@ Window {
    }
    Loader {
       id: onboardLoader
+      anchors.fill: parent
       z: 2
    }
    Snackbar {
