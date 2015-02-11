@@ -61,6 +61,22 @@
         "aliases" : ["validateaddress"]
       },
       {
+        "method_name": "convert_to_native_address",
+        "description": "Convert a BTC or PTS address into a BTS address.",
+        "return_type": "address",
+        "parameters" :
+          [
+            {
+              "name" : "raw_address",
+              "type" : "string",
+              "description" : "the BTC or PTS address to convert"
+            }
+          ],
+        "is_const"   : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["convertaddress"]
+      },
+      {
         "method_name": "execute_command_line",
         "description": "Execute the given command as if it were typed on the CLI",
         "return_type": "string",
