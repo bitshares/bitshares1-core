@@ -188,7 +188,7 @@ namespace bts { namespace blockchain {
                     FC_CAPTURE_AND_THROW( missing_signature, (owner) );
                 if( asset_rec->is_restricted() )
                 {
-                    FC_ASSERT( "This is a case I do not expect." );
+                    wlog( "This is a case I do not expect." );
                     FC_ASSERT( eval_state._current_state->get_authorization(asset_rec->id, owner) );
                 }
                 break;
