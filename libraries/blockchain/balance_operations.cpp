@@ -91,7 +91,6 @@ namespace bts { namespace blockchain {
        switch( withdraw_condition_types( this->condition.type ) )
        {
           case withdraw_signature_type:
-          case withdraw_vesting_type:
           case withdraw_multisig_type:
           case withdraw_escrow_type:
              break;
@@ -137,8 +136,6 @@ namespace bts { namespace blockchain {
 
        if( asset_rec->is_market_issued() ) FC_ASSERT( cur_record->condition.slate_id == 0 );
 
-       // TODO
-       /*
        if( asset_rec->is_restricted() )
        {
          for( const auto& owner : cur_record->owners() )
@@ -146,7 +143,6 @@ namespace bts { namespace blockchain {
            FC_ASSERT( eval_state._current_state->get_authorization(asset_rec->id, owner) );
          }
        }
-       */
 
        eval_state._current_state->store_balance_record( *cur_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
@@ -170,16 +166,6 @@ namespace bts { namespace blockchain {
       if( !issuer_override )
       {
          FC_ASSERT( !asset_rec->is_balance_frozen() );
-         /*
-         if( asset_rec->is_restricted() )
-         {
-            const auto& owner_addrs = current_balance_record->owners();
-            for( const auto& owner : owner_addrs )
-            {
-              FC_ASSERT(eval_state._current_state->get_authorization(asset_rec->id, owner));
-            }
-         }
-         */
 
          switch( (withdraw_condition_types)current_balance_record->condition.type )
          {
@@ -189,6 +175,8 @@ namespace bts { namespace blockchain {
                 const address owner = condition.owner;
                 if( !eval_state.check_signature( owner ) )
                     FC_CAPTURE_AND_THROW( missing_signature, (owner) );
+                if( asset_rec->is_restricted() )
+                    FC_ASSERT( eval_state._current_state->get_authorization(asset_rec->id, owner) );
                 break;
             }
 
@@ -198,6 +186,11 @@ namespace bts { namespace blockchain {
                 const address owner = condition.owner;
                 if( !eval_state.check_signature( owner ) )
                     FC_CAPTURE_AND_THROW( missing_signature, (owner) );
+                if( asset_rec->is_restricted() )
+                {
+                    FC_ASSERT( "This is a case I do not expect." );
+                    FC_ASSERT( eval_state._current_state->get_authorization(asset_rec->id, owner) );
+                }
                 break;
             }
 
@@ -206,7 +199,11 @@ namespace bts { namespace blockchain {
                auto multisig = current_balance_record->condition.as<withdraw_with_multisig>();
                uint32_t valid_signatures = 0;
                for( const auto& sig : multisig.owners )
-                  valid_signatures += eval_state.check_signature( sig );
+               {
+                   if( asset_rec->is_restricted() && NOT eval_state._current_state->get_authorization(asset_rec->id, owner) )
+                       continue;
+                   valid_signatures += eval_state.check_signature( sig );
+               }
                if( valid_signatures < multisig.required )
                   FC_CAPTURE_AND_THROW( missing_signature, (valid_signatures)(multisig) );
                break;
@@ -328,16 +325,21 @@ namespace bts { namespace blockchain {
 
       escrow_balance_record->balance -= total_released;
       auto asset_rec = eval_state._current_state->get_asset_record( escrow_balance_record->condition.asset_id );
+
       if( asset_rec->is_restricted() )
       {
-         // TODO
-         //FC_ASSERT( eval_state._current_state->get_authorization( escrow_balance_record->condition.asset_id, escrow_condition.receiver ) );
+          if( amount_to_sender > 0 )
+              FC_ASSERT( eval_state._current_state->get_authorization( escrow_balance_record->condition.asset_id, escrow_condition.sender ) );
+          if( amount_to_receiver > 0 )
+              FC_ASSERT( eval_state._current_state->get_authorization( escrow_balance_record->condition.asset_id, escrow_condition.receiver ) );
       }
+    
+      bool retracting = false; 
       if( asset_rec->is_retractable() )
       {
          if( eval_state.verify_authority( asset_rec->authority ) )
          {
-            //
+            retracting = true;
          }
       }
 
@@ -346,7 +348,7 @@ namespace bts { namespace blockchain {
          FC_ASSERT( amount_to_sender == 0 );
          FC_ASSERT( amount_to_receiver <= escrow_balance_record->balance );
 
-         if( !eval_state.check_signature( escrow_condition.sender ) )
+         if( !eval_state.check_signature( escrow_condition.sender ) && !retracting)
              FC_CAPTURE_AND_THROW( missing_signature, (escrow_condition.sender) );
 
          balance_record new_balance_record( escrow_condition.receiver,
@@ -366,7 +368,7 @@ namespace bts { namespace blockchain {
          FC_ASSERT( amount_to_receiver == 0 );
          FC_ASSERT( amount_to_sender <= escrow_balance_record->balance );
 
-         if( !eval_state.check_signature( escrow_condition.receiver ) )
+         if( !eval_state.check_signature( escrow_condition.receiver ) && !retracting)
              FC_CAPTURE_AND_THROW( missing_signature, (escrow_condition.receiver) );
 
          balance_record new_balance_record( escrow_condition.sender,
@@ -383,7 +385,7 @@ namespace bts { namespace blockchain {
       }
       else if( escrow_condition.escrow == this->released_by )
       {
-         if( !eval_state.check_signature( escrow_condition.escrow ) )
+         if( !eval_state.check_signature( escrow_condition.escrow ) && !retracting )
              FC_CAPTURE_AND_THROW( missing_signature, (escrow_condition.escrow) );
          // get a balance record for the receiver, create it if necessary and deposit funds
          {
@@ -414,9 +416,9 @@ namespace bts { namespace blockchain {
       }
       else if( address() == this->released_by )
       {
-         if( !eval_state.check_signature( escrow_condition.sender ) )
+         if( !eval_state.check_signature( escrow_condition.sender ) && !retracting)
              FC_CAPTURE_AND_THROW( missing_signature, (escrow_condition.sender) );
-         if( !eval_state.check_signature( escrow_condition.receiver ) )
+         if( !eval_state.check_signature( escrow_condition.receiver ) && !retracting)
              FC_CAPTURE_AND_THROW( missing_signature, (escrow_condition.receiver) );
          // get a balance record for the receiver, create it if necessary and deposit funds
          {
