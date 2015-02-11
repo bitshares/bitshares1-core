@@ -28,7 +28,7 @@ class LedgerEntry : public QObject
    qreal m_yield;
 
 public:
-   LedgerEntry(QObject* parent = nullptr): QObject(parent){}
+   LedgerEntry(QObject* parent = nullptr): QObject(parent), m_amount(0), m_yield(0){}
    ~LedgerEntry(){}
 
 Q_SIGNALS:
