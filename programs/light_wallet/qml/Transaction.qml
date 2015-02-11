@@ -37,12 +37,20 @@ Rectangle {
                font.italic: !memo
                font.pixelSize: units.dp(20)
             }
-            Label {
-               text: format(amount, symbol) + " " + symbol
-               color: incoming? (sender === accountName? "black"
-                                                        : "green")
-                              : "red"
-               font.pixelSize: units.dp(32)
+            Column {
+               Label {
+                  text: format(amount, symbol) + " " + symbol
+                  color: incoming? (sender === accountName? "black"
+                                                          : "green")
+                                 : "red"
+                  font.pixelSize: units.dp(32)
+               }
+               Label {
+                  text: qsTr("Yield %1").arg(format(yield, symbol))
+                  color: "green"
+                  font.pixelSize: units.dp(16)
+                  visible: sender === accountName && yield
+               }
             }
             Item { Layout.preferredWidth: visuals.margins }
          }

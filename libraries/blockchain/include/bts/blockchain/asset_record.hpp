@@ -72,9 +72,6 @@ namespace bts { namespace blockchain {
       uint16_t            market_fee = 0;
       multisig_meta_info  authority;
 
-      proposal_id_type    last_proposal_id = 0;
-
-
       static const asset_db_interface& db_interface( const chain_interface& );
       void sanity_check( const chain_interface& )const;
    };
@@ -97,23 +94,6 @@ namespace bts { namespace blockchain {
        void remove( const asset_id_type )const;
    };
 
-   struct proposal_record
-   {
-      proposal_record(){}
-
-      proposal_record( asset_id_type id, proposal_id_type pid, object_id_type oid = -1 )
-      :asset_id(id),proposal_id(pid),info(oid){}
-
-      proposal_record make_null()const { auto tmp = *this; tmp.info = -1; return tmp; }
-      std::pair<asset_id_type,proposal_id_type> key()const{ return std::make_pair(asset_id,proposal_id); }
-
-      asset_id_type      asset_id      = 0;
-      proposal_id_type   proposal_id   = 0;
-      object_id_type     info          = -1;
-      uint32_t           votes_for     = 0;
-      uint32_t           votes_against = 0;
-   };
-
 } } // bts::blockchain
 
 FC_REFLECT_ENUM( bts::blockchain::asset_permissions,
@@ -124,14 +104,6 @@ FC_REFLECT_ENUM( bts::blockchain::asset_permissions,
         (balance_halt)
         (supply_unlimit)
         )
-FC_REFLECT( bts::blockchain::proposal_record,
-        (asset_id)
-        (proposal_id)
-        (info)
-        (votes_for)
-        (votes_against)
-        );
-
 FC_REFLECT( bts::blockchain::asset_record,
         (id)
         (symbol)
@@ -150,5 +122,4 @@ FC_REFLECT( bts::blockchain::asset_record,
         (transaction_fee)
         (market_fee)
         (authority)
-        (last_proposal_id)
         )

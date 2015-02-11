@@ -171,7 +171,6 @@ namespace bts { namespace blockchain {
 
             // TODO
             //bts::db::level_map<pair<asset_id_type,address>, object_id_type>             _auth_db;
-            //bts::db::level_map<pair<asset_id_type,proposal_id_type>, proposal_record>   _asset_proposal_db;
 
             map<operation_type_enum, std::deque<operation>>                             _recent_operations;
       };

@@ -31,6 +31,14 @@ TransactionSummary* Account::buildSummary(bts::wallet::transaction_ledger_entry 
          if( trx.operation_notes.count(label.first) )
             entry->setProperty("memo", convert(trx.operation_notes[label.first]));
 
+         auto& yields = trx.delta_amounts["Yield"];
+         auto asset_yield = std::find_if(yields.begin(), yields.end(),
+                                         [amount] (const bts::blockchain::asset& a) {
+                                            return a.asset_id == amount.asset_id;
+                                         });
+         if( asset_yield != yields.end() )
+            entry->setProperty("yield", double(asset_yield->amount) / asset->precision);
+
          ledger.append(entry);
       }
    }
@@ -114,22 +122,28 @@ QStringList Account::availableAssets()
 
 QList<QObject*> Account::transactionHistory(QString asset_symbol)
 {
-   auto raw_transactions = m_wallet->transactions(convert(m_name), convert(asset_symbol));
-   std::sort(raw_transactions.rbegin(), raw_transactions.rend(),
-             [](const bts::wallet::transaction_ledger_entry& a,
+   try {
+      auto raw_transactions = m_wallet->transactions(convert(m_name), convert(asset_symbol));
+      std::sort(raw_transactions.rbegin(), raw_transactions.rend(),
+                [](const bts::wallet::transaction_ledger_entry& a,
                 const bts::wallet::transaction_ledger_entry& b) {
-      return a.timestamp < b.timestamp;
-   });
+         return a.timestamp < b.timestamp;
+      });
 
-   int position = 0;
-   for( bts::wallet::transaction_ledger_entry trx : raw_transactions )
-   {
-      if( std::find_if(transactionList[asset_symbol].begin(), transactionList[asset_symbol].end(), [&trx] (QObject* o) -> bool {
-                       return o->property("id").toString() == convert(string(trx.id));
-      }) != transactionList[asset_symbol].end() )
-         continue;
+      int position = 0;
+      for( bts::wallet::transaction_ledger_entry trx : raw_transactions )
+      {
+         if( std::find_if(transactionList[asset_symbol].begin(), transactionList[asset_symbol].end(),
+                          [&trx] (QObject* o) -> bool {
+                             return o->property("id").toString() == convert(string(trx.id));
+                          }) != transactionList[asset_symbol].end() )
+            continue;
 
-      transactionList[asset_symbol].insert(position++, buildSummary(std::move(trx)));
+         transactionList[asset_symbol].insert(position++, buildSummary(std::move(trx)));
+      }
+   } catch( fc::exception& e ) {
+      elog("Unhandled exception: ${e}", ("e", e.to_detail_string()));
+      Q_EMIT error(tr("Internal error while building transaction history"));
    }
 
    return transactionList[asset_symbol];

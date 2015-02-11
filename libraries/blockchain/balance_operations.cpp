@@ -140,7 +140,8 @@ namespace bts { namespace blockchain {
        {
          for( const auto& owner : cur_record->owners() )
          {
-           FC_ASSERT( eval_state._current_state->get_authorization(asset_rec->id, owner) );
+           // TODO
+           //FC_ASSERT( eval_state._current_state->get_authorization(asset_rec->id, owner) );
          }
        }
 
@@ -175,8 +176,9 @@ namespace bts { namespace blockchain {
                 const address owner = condition.owner;
                 if( !eval_state.check_signature( owner ) )
                     FC_CAPTURE_AND_THROW( missing_signature, (owner) );
-                if( asset_rec->is_restricted() )
-                    FC_ASSERT( eval_state._current_state->get_authorization(asset_rec->id, owner) );
+                // TODO
+                //if( asset_rec->is_restricted() )
+                    //FC_ASSERT( eval_state._current_state->get_authorization(asset_rec->id, owner) );
                 break;
             }
 
@@ -188,8 +190,9 @@ namespace bts { namespace blockchain {
                     FC_CAPTURE_AND_THROW( missing_signature, (owner) );
                 if( asset_rec->is_restricted() )
                 {
-                    FC_ASSERT( "This is a case I do not expect." );
-                    FC_ASSERT( eval_state._current_state->get_authorization(asset_rec->id, owner) );
+                    wlog( "This is a case I do not expect." );
+                    // TODO
+                    //FC_ASSERT( eval_state._current_state->get_authorization(asset_rec->id, owner) );
                 }
                 break;
             }
@@ -200,38 +203,13 @@ namespace bts { namespace blockchain {
                uint32_t valid_signatures = 0;
                for( const auto& sig : multisig.owners )
                {
-                   if( asset_rec->is_restricted() && NOT eval_state._current_state->get_authorization(asset_rec->id, owner) )
-                       continue;
+                   // TODO
+                   //if( asset_rec->is_restricted() && NOT eval_state._current_state->get_authorization(asset_rec->id, owner) )
+                       //continue;
                    valid_signatures += eval_state.check_signature( sig );
                }
                if( valid_signatures < multisig.required )
                   FC_CAPTURE_AND_THROW( missing_signature, (valid_signatures)(multisig) );
-               break;
-            }
-
-            case withdraw_password_type:
-            {
-               auto password_condition = current_balance_record->condition.as<withdraw_with_password>();
-               try {
-                  if( password_condition.timeout < eval_state._current_state->now() )
-                  {
-                     if( !eval_state.check_signature( password_condition.payor ) )
-                        FC_CAPTURE_AND_THROW( missing_signature, (password_condition.payor) );
-                  }
-                  else
-                  {
-                     if( !eval_state.check_signature( password_condition.payee ) )
-                        FC_CAPTURE_AND_THROW( missing_signature, (password_condition.payee) );
-                     if( claim_input_data.size() < sizeof( fc::ripemd160 ) )
-                        FC_CAPTURE_AND_THROW( invalid_claim_password, (claim_input_data) );
-
-                     auto input_password_hash = fc::ripemd160::hash( claim_input_data.data(),
-                                                                     claim_input_data.size() );
-
-                     if( password_condition.password_hash != input_password_hash )
-                        FC_CAPTURE_AND_THROW( invalid_claim_password, (input_password_hash) );
-                  }
-               } FC_CAPTURE_AND_RETHROW( (password_condition ) )
                break;
             }
 
@@ -328,13 +306,14 @@ namespace bts { namespace blockchain {
 
       if( asset_rec->is_restricted() )
       {
-          if( amount_to_sender > 0 )
-              FC_ASSERT( eval_state._current_state->get_authorization( escrow_balance_record->condition.asset_id, escrow_condition.sender ) );
-          if( amount_to_receiver > 0 )
-              FC_ASSERT( eval_state._current_state->get_authorization( escrow_balance_record->condition.asset_id, escrow_condition.receiver ) );
+          // TODO
+          //if( amount_to_sender > 0 )
+              //FC_ASSERT( eval_state._current_state->get_authorization( escrow_balance_record->condition.asset_id, escrow_condition.sender ) );
+          //if( amount_to_receiver > 0 )
+              //FC_ASSERT( eval_state._current_state->get_authorization( escrow_balance_record->condition.asset_id, escrow_condition.receiver ) );
       }
-    
-      bool retracting = false; 
+
+      bool retracting = false;
       if( asset_rec->is_retractable() )
       {
          if( eval_state.verify_authority( asset_rec->authority ) )
