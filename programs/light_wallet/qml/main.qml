@@ -147,6 +147,12 @@ Window {
          Utils.connectOnce(wallet.onConnectedChanged, fn, function() { return connected })
       }
 
+      onConnectedChanged: {
+         if( !connected ) {
+            showError(qsTr("Connection to server lost. Retrying..."))
+            window.connectToServer()
+         }
+      }
       onErrorConnecting: {
          showError(error)
       }

@@ -42,6 +42,7 @@ namespace bts { namespace light_wallet {
          void connect( const string& host, const string& user = "any", const string& pass = "none", uint16_t port = 0,
                        const public_key_type& server_key = public_key_type() );
          bool is_connected()const;
+         void set_disconnect_callback(std::function<void (fc::exception_ptr)> callback);
          void disconnect();
 
          void open();

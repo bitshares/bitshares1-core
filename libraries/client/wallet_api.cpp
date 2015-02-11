@@ -313,8 +313,8 @@ int32_t detail::client_impl::wallet_recover_accounts( int32_t accounts_to_recove
   return _wallet->recover_accounts( accounts_to_recover, maximum_number_of_attempts );
 }
 
-wallet_transaction_record detail::client_impl::wallet_recover_transaction( const string& transaction_id_prefix,
-                                                                           const string& recipient_account )
+wallet_transaction_record detail::client_impl::wallet_recover_titan_deposit_info( const string& transaction_id_prefix,
+                                                                                  const string& recipient_account )
 {
     return _wallet->recover_transaction( transaction_id_prefix, recipient_account );
 }

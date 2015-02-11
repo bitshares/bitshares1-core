@@ -27,6 +27,7 @@ namespace bts { namespace rpc {
 
        bool login(const std::string& username, const std::string& password);
        virtual fc::rpc::json_connection_ptr get_json_connection() const override;
+       void reset_json_connection();
      private:
        std::unique_ptr<detail::rpc_client_impl> my;
   };
