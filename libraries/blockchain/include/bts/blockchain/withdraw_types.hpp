@@ -15,8 +15,6 @@ namespace bts { namespace blockchain {
       withdraw_signature_type   = 1,
       withdraw_vesting_type     = 2,
       withdraw_multisig_type    = 3,
-      withdraw_password_type    = 4,
-      withdraw_reserved_type    = 5,
       withdraw_escrow_type      = 6
    };
 
@@ -188,31 +186,6 @@ namespace bts { namespace blockchain {
       optional<titan_memo>    memo;
    };
 
-   /**
-    *  User A picks a random password and generates password_hash.
-    *  User A sends funds to user B which they may claim with the password + their signature, but
-    *     where User A can recover the funds after a timeout T.
-    *  User B sends funds to user A under the same conditions where they can recover the
-    *     the funds after a timeout T2 << T
-    *  User A claims the funds from User B revealing password before T2....
-    *  User B now has the time between T2 and T to claim the funds.
-    *
-    *  When User A claims the funds from user B, user B learns the password that
-    *  allows them to spend the funds from user A.
-    *
-    *  User A can spend the funds after a timeout.
-    */
-   struct withdraw_with_password
-   {
-      static const uint8_t type;
-
-      address                         payee;
-      address                         payor;
-      fc::time_point_sec              timeout;
-      fc::ripemd160                   password_hash;
-      optional<titan_memo>            memo;
-   };
-
 } } // bts::blockchain
 
 namespace fc {
@@ -227,8 +200,6 @@ FC_REFLECT_ENUM( bts::blockchain::withdraw_condition_types,
         (withdraw_signature_type)
         (withdraw_vesting_type)
         (withdraw_multisig_type)
-        (withdraw_password_type)
-        (withdraw_reserved_type)
         (withdraw_escrow_type)
         )
 FC_REFLECT( bts::blockchain::withdraw_condition,
@@ -284,12 +255,5 @@ FC_REFLECT( bts::blockchain::withdraw_with_escrow,
         (receiver)
         (escrow)
         (agreement_digest)
-        (memo)
-        )
-FC_REFLECT( bts::blockchain::withdraw_with_password,
-        (payee)
-        (payor)
-        (timeout)
-        (password_hash)
         (memo)
         )

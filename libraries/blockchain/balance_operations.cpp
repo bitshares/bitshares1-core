@@ -212,32 +212,6 @@ namespace bts { namespace blockchain {
                break;
             }
 
-            case withdraw_password_type:
-            {
-               auto password_condition = current_balance_record->condition.as<withdraw_with_password>();
-               try {
-                  if( password_condition.timeout < eval_state._current_state->now() )
-                  {
-                     if( !eval_state.check_signature( password_condition.payor ) )
-                        FC_CAPTURE_AND_THROW( missing_signature, (password_condition.payor) );
-                  }
-                  else
-                  {
-                     if( !eval_state.check_signature( password_condition.payee ) )
-                        FC_CAPTURE_AND_THROW( missing_signature, (password_condition.payee) );
-                     if( claim_input_data.size() < sizeof( fc::ripemd160 ) )
-                        FC_CAPTURE_AND_THROW( invalid_claim_password, (claim_input_data) );
-
-                     auto input_password_hash = fc::ripemd160::hash( claim_input_data.data(),
-                                                                     claim_input_data.size() );
-
-                     if( password_condition.password_hash != input_password_hash )
-                        FC_CAPTURE_AND_THROW( invalid_claim_password, (input_password_hash) );
-                  }
-               } FC_CAPTURE_AND_RETHROW( (password_condition ) )
-               break;
-            }
-
             default:
                FC_CAPTURE_AND_THROW( invalid_withdraw_condition, (current_balance_record->condition) );
          }
