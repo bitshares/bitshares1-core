@@ -441,8 +441,9 @@ namespace bts { namespace blockchain {
       FC_ASSERT( current_balance_record->condition.asset_id == 0, "Only BTS balances can have restricted owners." );
       FC_ASSERT( current_balance_record->condition.type == withdraw_signature_type, "Restricted owners not enabled for anything but basic balances" );
 
-      if( asset_rec->is_restricted() )
-          FC_ASSERT( eval_state._current_state->get_authorization(asset_rec->id, owner) );
+      // TODO
+      //if( asset_rec->is_restricted() )
+          //FC_ASSERT( eval_state._current_state->get_authorization(asset_rec->id, owner) );
 
       auto last_update_secs = current_balance_record->last_update.sec_since_epoch();
       ilog("last_update_secs is: ${secs}", ("secs", last_update_secs) );

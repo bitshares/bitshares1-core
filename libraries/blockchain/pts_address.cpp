@@ -52,7 +52,6 @@ namespace bts { namespace blockchain {
     */
    bool pts_address::is_valid()const
    {
-//       if( addr.data[0]  != 56 ) return false;
        auto check    = fc::sha256::hash( addr.data, sizeof(fc::ripemd160)+1 );
        check = fc::sha256::hash(check); // double
        return memcmp( addr.data+1+sizeof(fc::ripemd160), (char*)&check, 4 ) == 0;
