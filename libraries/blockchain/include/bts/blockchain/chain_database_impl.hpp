@@ -135,8 +135,9 @@ namespace bts { namespace blockchain {
 
             bts::db::fast_level_map<balance_id_type, balance_record>                    _balance_id_to_record;
 
-            bts::db::level_map<transaction_id_type,transaction_record>                  _id_to_transaction_record_db;
+            bts::db::level_map<transaction_id_type, transaction_record>                 _transaction_id_to_record;
             set<unique_transaction_key>                                                 _unique_transactions;
+            bts::db::level_map<address, unordered_set<transaction_id_type>>             _address_to_transaction_ids;
 
             bts::db::cached_level_map<feed_index, feed_record>                          _feed_index_to_record;
             unordered_map<asset_id_type, unordered_map<account_id_type, feed_record>>   _nested_feed_map;
@@ -168,12 +169,6 @@ namespace bts { namespace blockchain {
             bts::db::level_map<slot_index, slot_record>                                 _slot_index_to_record;
             bts::db::level_map<time_point_sec, account_id_type>                         _slot_timestamp_to_delegate;
 
-            /**
-             *  This index is to facilitate light weight clients and is intended mostly for
-             *  block explorers and other APIs serving data.
-             */
-            bts::db::level_map<pair<address,transaction_id_type>, int>                  _address_to_trx_index;
-
             // TODO
             //bts::db::level_map<pair<asset_id_type,address>, object_id_type>             _auth_db;
             //bts::db::level_map<pair<asset_id_type,proposal_id_type>, proposal_record>   _asset_proposal_db;
@@ -185,4 +180,5 @@ namespace bts { namespace blockchain {
 } } // bts::blockchain
 
 FC_REFLECT_TYPENAME( std::vector<bts::blockchain::block_id_type> )
+FC_REFLECT_TYPENAME( std::unordered_set<bts::blockchain::transaction_id_type> )
 FC_REFLECT( bts::blockchain::fee_index, (_fees)(_trx) )

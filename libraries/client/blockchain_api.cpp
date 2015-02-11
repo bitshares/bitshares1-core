@@ -330,10 +330,10 @@ account_balance_summary_type detail::client_impl::blockchain_get_account_public_
   account_balance_summary_type ret;
   ret[account_name] = balances;
   return ret;
-} FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+} FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
 map<balance_id_type, balance_record> detail::client_impl::blockchain_list_address_balances( const string& raw_addr, const time_point& after )const
-{
+{ try {
     address addr;
     try {
         addr = address( raw_addr );
@@ -349,10 +349,10 @@ map<balance_id_type, balance_record> detail::client_impl::blockchain_list_addres
           ++itr;
     }
     return result;
-}
-fc::variant_object detail::client_impl::blockchain_list_address_transactions( const string& raw_addr,
-                                                                              uint32_t after_block )const
-{
+} FC_CAPTURE_AND_RETHROW( (raw_addr)(after) ) }
+
+fc::variant_object detail::client_impl::blockchain_list_address_transactions( const string& raw_addr, uint32_t after_block )const
+{ try {
    fc::mutable_variant_object results;
 
    address addr;
@@ -379,7 +379,7 @@ fc::variant_object detail::client_impl::blockchain_list_address_transactions( co
    }
 
    return results;
-}
+} FC_CAPTURE_AND_RETHROW( (raw_addr)(after_block) ) }
 
 map<balance_id_type, balance_record> detail::client_impl::blockchain_list_key_balances( const public_key_type& key )const
 {
