@@ -31,6 +31,14 @@ TransactionSummary* Account::buildSummary(bts::wallet::transaction_ledger_entry 
          if( trx.operation_notes.count(label.first) )
             entry->setProperty("memo", convert(trx.operation_notes[label.first]));
 
+         auto& yields = trx.delta_amounts["Yield"];
+         auto asset_yield = std::find_if(yields.begin(), yields.end(),
+                                         [asset] (const bts::blockchain::asset& a) {
+                                            return a.asset_id == asset->id;
+                                         });
+         if( asset_yield != yields.end() )
+            entry->setProperty("yield", double(asset_yield->amount) / asset->precision);
+
          ledger.append(entry);
       }
    }

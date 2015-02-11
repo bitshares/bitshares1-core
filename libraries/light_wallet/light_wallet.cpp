@@ -677,10 +677,12 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const string& acco
 
                summary.delta_labels[i] = string(condition.owner);
 
+               //Do I know the recipient? If so, name him
                auto account = get_account_record(string(condition.owner));
                if( account ) summary.delta_labels[i] = _data->accounts[account_name].user_account.name + ">" + account->name;
                else summary.delta_labels[i] = _data->accounts[account_name].user_account.name + ">" + "Unknown";
 
+               //Recover memo
                if( account && condition.memo )
                {
                   auto one_time_key = create_one_time_key(account_name, fc::to_string(record.trx.expiration.sec_since_epoch()));
@@ -688,6 +690,20 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const string& acco
                      extended_memo_data data = condition.decrypt_memo_data(one_time_key.get_shared_secret(account->active_key()));
                      summary.operation_notes[i] = data.get_message();
                   } catch(...){}
+               }
+
+               //Record any yield
+               if( record.yield.count(asset_id) )
+               {
+                  auto& yields = summary.delta_amounts["Yield"];
+                  auto asset_yield = std::find_if(yields.begin(), yields.end(),
+                                                  [asset_id] (const asset& a) {
+                                                     return a.asset_id == asset_id;
+                                                  });
+                  if( asset_yield != yields.end() )
+                     asset_yield->amount += record.yield[asset_id];
+                  else
+                     yields.emplace_back(asset_yield->amount, asset_id);
                }
 
                raw_delta_amounts[summary.delta_labels[i]][asset_id] -= deposit.amount;
