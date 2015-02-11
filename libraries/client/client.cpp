@@ -374,10 +374,6 @@ fc::path get_data_dir(const program_options::variables_map& option_variables)
 void load_and_configure_chain_database( const fc::path& datadir,
                                         const program_options::variables_map& option_variables)
 { try {
-      //FIXME: Remove this move in a future version; this is just to bump new users up to the new version
-      if (fc::exists(datadir / "chain/index/block_num_to_id_db") && fc::exists(datadir / "chain"))
-         fc::rename(datadir / "chain/index/block_num_to_id_db", datadir / "chain/raw_chain/block_num_to_id_db");
-
       if (option_variables.count("resync-blockchain"))
       {
          std::cout << "Deleting old copy of the blockchain in: " << ( datadir / "chain" ).preferred_string() << "\n";
@@ -1289,13 +1285,12 @@ void client::open( const path& data_dir, const fc::optional<fc::path>& genesis_f
     bool attempt_to_recover_database = false;
     try
     {
-       if( my->_config.statistics_enabled )
-           ulog( "Additional blockchain statistics enabled" );
+       if( my->_config.statistics_enabled ) ulog( "Additional blockchain statistics enabled" );
        my->_chain_db->open( data_dir / "chain", genesis_file_path, my->_config.statistics_enabled, replay_status_callback );
     }
     catch( const db::level_map_open_failure& e )
     {
-       if (e.to_string().find("Corruption") != string::npos)
+       if( e.to_string().find("Corruption") != string::npos )
        {
           elog("Chain database corrupted. Deleting it and attempting to recover.");
           ulog("Chain database corrupted. Deleting it and attempting to recover.");
@@ -1307,31 +1302,31 @@ void client::open( const path& data_dir, const fc::optional<fc::path>& genesis_f
        }
     }
 
-    if (attempt_to_recover_database)
+    if( attempt_to_recover_database )
     {
-       fc::remove_all(data_dir / "chain");
+       fc::remove_all( data_dir / "chain" );
        my->_chain_db->open( data_dir / "chain", genesis_file_path, my->_config.statistics_enabled, replay_status_callback );
     }
 
     my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db, my->_config.wallet_enabled );
     my->_wallet->set_data_directory( data_dir / "wallets" );
 
-    if (my->_config.mail_server_enabled)
+    if( my->_config.mail_server_enabled )
     {
        my->_mail_server = std::make_shared<bts::mail::server>();
        my->_mail_server->open( data_dir / "mail" );
     }
 
-    if (my->_config.mail_client_enabled)
+    if( my->_config.mail_client_enabled )
     {
         my->_mail_client = std::make_shared<bts::mail::client>(my->_wallet, my->_chain_db);
         my->_mail_client->open( data_dir / "mail_client" );
     }
 
     //if we are using a simulated network, _p2p_node will already be set by client's constructor
-    if (!my->_p2p_node)
-       my->_p2p_node = std::make_shared<bts::net::node>(my->_user_agent);
-    my->_p2p_node->set_node_delegate(my.get());
+    if( !my->_p2p_node )
+       my->_p2p_node = std::make_shared<bts::net::node>( my->_user_agent );
+    my->_p2p_node->set_node_delegate( my.get() );
 
     my->start_rebroadcast_pending_loop();
 } FC_CAPTURE_AND_RETHROW( (data_dir) ) }

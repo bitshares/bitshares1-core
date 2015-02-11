@@ -33,7 +33,8 @@ namespace bts { namespace blockchain {
       {
          public:
             void                                        load_checkpoints( const fc::path& data_dir )const;
-            void                                        open_database(const fc::path& data_dir );
+            bool                                        replay_required( const fc::path& data_dir );
+            void                                        open_database( const fc::path& data_dir );
             void                                        clear_invalidation_of_future_blocks();
             digest_type                                 initialize_genesis( const optional<path>& genesis_file,
                                                                             const bool statistics_enabled );

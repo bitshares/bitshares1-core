@@ -113,32 +113,16 @@ namespace bts { namespace blockchain {
               ulog( "Using built-in blockchain checkpoints" );
       } FC_CAPTURE_AND_RETHROW( (data_dir) ) }
 
-      void chain_database_impl::open_database( const fc::path& data_dir )
+      bool chain_database_impl::replay_required( const fc::path& data_dir )
       { try {
-          bool rebuild_index = false;
-          if( !fc::exists(data_dir / "index" ) )
-          {
-              ilog("Rebuilding database index...");
-              fc::create_directories( data_dir / "index" );
-              rebuild_index = true;
-          }
-
           _property_id_to_record.open( data_dir / "index/property_id_to_record" );
           const oproperty_record record = self->get_property_record( property_id_type::database_version );
-          if( !record.valid() || record->value.as_uint64() != BTS_BLOCKCHAIN_DATABASE_VERSION )
-          {
-              if( !rebuild_index )
-              {
-                  wlog( "Incompatible database version detected; erasing state and replaying blockchain" );
-                  _property_id_to_record.close();
-                  fc::remove_all( data_dir / "index" );
-                  fc::create_directories( data_dir / "index" );
-                  _property_id_to_record.open( data_dir / "index/property_id_to_record" );
-                  rebuild_index = true;
-              }
-              self->store_property_record( property_id_type::database_version, BTS_BLOCKCHAIN_DATABASE_VERSION );
-          }
+          _property_id_to_record.close();
+          return !record.valid() || record->value.as_uint64() != BTS_BLOCKCHAIN_DATABASE_VERSION;
+      } FC_CAPTURE_AND_RETHROW( (data_dir) ) }
 
+      void chain_database_impl::open_database( const fc::path& data_dir )
+      { try {
           _block_id_to_full_block.open( data_dir / "raw_chain/block_id_to_block_data_db" );
           _block_id_to_undo_state.open( data_dir / "index/block_id_to_undo_state" );
 
@@ -150,6 +134,8 @@ namespace bts { namespace blockchain {
           _block_num_to_id_db.open( data_dir / "raw_chain/block_num_to_id_db" );
 
           _block_id_to_block_record_db.open( data_dir / "index/block_id_to_block_record_db" );
+
+          _property_id_to_record.open( data_dir / "index/property_id_to_record" );
 
           _account_id_to_record.open( data_dir / "index/account_id_to_record" );
           _account_name_to_id.open( data_dir / "index/account_name_to_id" );
@@ -189,7 +175,6 @@ namespace bts { namespace blockchain {
           _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
 
           clear_invalidation_of_future_blocks();
-
       } FC_CAPTURE_AND_RETHROW( (data_dir) ) }
 
       void chain_database_impl::populate_indexes()
@@ -1204,208 +1189,215 @@ namespace bts { namespace blockchain {
    void chain_database::open( const fc::path& data_dir, const fc::optional<fc::path>& genesis_file, const bool statistics_enabled,
                               const std::function<void(float)> replay_status_callback )
    { try {
-      bool must_rebuild_index = !fc::exists( data_dir / "index" );
       std::exception_ptr error_opening_database;
       try
       {
           //This function will yield the first time it is called. Do that now, before calling push_block
           now();
 
-          fc::create_directories( data_dir );
-
           my->load_checkpoints( data_dir.parent_path() );
-          my->open_database( data_dir );
 
-          // TODO: check to see if we crashed during the last write
-          //   if so, then apply the last undo operation stored.
-
-          uint32_t       last_block_num = -1;
-          block_id_type  last_block_id;
-          my->_block_num_to_id_db.last( last_block_num, last_block_id );
-
-          try
+          if( !my->replay_required( data_dir ) )
           {
-              if( !must_rebuild_index && last_block_num != uint32_t( -1 ) )
+              my->open_database( data_dir );
+
+              uint32_t head_block_num = 0;
+              block_id_type head_block_id;
+              my->_block_num_to_id_db.last( head_block_num, head_block_id );
+
+              if( head_block_num > 0 )
               {
-                  my->_head_block_id = last_block_id;
-                  my->_head_block_header = get_block_header( last_block_id );
+                  my->_head_block_id = head_block_id;;
+                  my->_head_block_header = get_block_header( head_block_id );
               }
-          }
-          catch( const fc::exception& )
-          {
-              must_rebuild_index = true;
-          }
 
-          bool replay_blockchain = must_rebuild_index || last_block_num == uint32_t( -1 );
-          if( replay_blockchain )
-          {
-             std::cout << "Erasing all state\n";
-             close();
-             fc::remove_all( data_dir / "index" );
-             fc::create_directories( data_dir / "index");
-             if( !fc::is_directory(data_dir / "raw_chain/id_to_data_orig") )
-                fc::rename( data_dir / "raw_chain/block_id_to_block_data_db", data_dir / "raw_chain/id_to_data_orig" );
-
-             //During replaying we implement stop-and-copy garbage collection on the raw chain
-             decltype(my->_block_id_to_full_block) id_to_data_orig;
-             id_to_data_orig.open( data_dir / "raw_chain/id_to_data_orig" );
-             auto orig_chain_size = fc::directory_size( data_dir / "raw_chain/id_to_data_orig" );
-
-             my->open_database( data_dir );
-
-             const auto toggle_leveldb = [ this ]( const bool enabled )
-             {
-                 my->_block_id_to_undo_state.toggle_leveldb( enabled );
-
-                 my->_property_id_to_record.toggle_leveldb( enabled );
-
-                 my->_account_id_to_record.toggle_leveldb( enabled );
-                 my->_account_name_to_id.toggle_leveldb( enabled );
-                 my->_account_address_to_id.toggle_leveldb( enabled );
-
-                 my->_asset_id_to_record.toggle_leveldb( enabled );
-                 my->_asset_symbol_to_id.toggle_leveldb( enabled );
-
-                 my->_slate_id_to_record.toggle_leveldb( enabled );
-
-                 my->_balance_id_to_record.toggle_leveldb( enabled );
-             };
-
-             const auto set_db_cache_write_through = [ this ]( bool write_through )
-             {
-                 my->_burn_db.set_write_through( write_through );
-
-                 my->_feed_index_to_record.set_write_through( write_through );
-
-                 my->_ask_db.set_write_through( write_through );
-                 my->_bid_db.set_write_through( write_through );
-                 my->_relative_ask_db.set_write_through( write_through );
-                 my->_relative_bid_db.set_write_through( write_through );
-                 my->_short_db.set_write_through( write_through );
-                 my->_collateral_db.set_write_through( write_through );
-
-                 my->_market_transactions_db.set_write_through( write_through );
-                 my->_market_status_db.set_write_through( write_through );
-                 my->_market_history_db.set_write_through( write_through );
-             };
-
-             // For the duration of replaying, we allow certain databases to postpone flushing until we finish
-             toggle_leveldb( false );
-             set_db_cache_write_through( false );
-
-             my->initialize_genesis( genesis_file, statistics_enabled );
-
-             // Load block num -> id db into memory and clear from disk for replaying
-             map<uint32_t, block_id_type> num_to_id;
-             {
-                 for( auto itr = my->_block_num_to_id_db.begin(); itr.valid(); ++itr )
-                     num_to_id.emplace_hint( num_to_id.end(), itr.key(), itr.value() );
-
-                 my->_block_num_to_id_db.close();
-                 fc::remove_all( data_dir / "raw_chain/block_num_to_id_db" );
-                 my->_block_num_to_id_db.open( data_dir / "raw_chain/block_num_to_id_db" );
-             }
-
-             if( !replay_status_callback )
-                 std::cout << "Please be patient, this will take several minutes...\r\nReplaying blockchain..." << std::flush << std::fixed;
-             else
-                 replay_status_callback(0);
-
-             uint32_t blocks_indexed = 0;
-             const float total_blocks = num_to_id.size();
-             auto genesis_time = get_genesis_timestamp();
-             auto start_time = blockchain::now();
-
-             auto insert_block = [&](const full_block& block) {
-                 if( blocks_indexed % 200 == 0 ) {
-                     float progress;
-                     if (total_blocks)
-                         progress = blocks_indexed / total_blocks;
-                     else
-                         progress = float(blocks_indexed*BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) / (start_time - genesis_time).to_seconds();
-                     progress *= 100;
-
-                     if( !replay_status_callback )
-                         std::cout << "\rReplaying blockchain... "
-                                      "Approximately " << std::setprecision(2) << progress << "% complete." << std::flush;
-                     else
-                         replay_status_callback(progress);
-                 }
-
-                 push_block(block);
-                 ++blocks_indexed;
-
-                 if( blocks_indexed % 1000 == 0 )
-                 {
-                     set_db_cache_write_through( true );
-                     set_db_cache_write_through( false );
-                 }
-             };
-
-             if (num_to_id.empty())
-             {
-                 for( auto block_itr = id_to_data_orig.begin(); block_itr.valid(); ++block_itr )
-                     insert_block(block_itr.value());
-             }
-             else
-             {
-                 for (const auto& num_id : num_to_id)
-                 {
-                     auto oblock = id_to_data_orig.fetch_optional(num_id.second);
-                     if (oblock)
-                         insert_block(*oblock);
-                 }
-             }
-
-             // Re-enable flushing on all cached databases we disabled it on above
-             toggle_leveldb( true );
-             set_db_cache_write_through( true );
-
-             id_to_data_orig.close();
-             fc::remove_all( data_dir / "raw_chain/id_to_data_orig" );
-             auto final_chain_size = fc::directory_size( data_dir / "raw_chain/block_id_to_block_data_db" );
-
-             std::cout << "\rSuccessfully replayed " << blocks_indexed << " blocks in "
-                       << (blockchain::now() - start_time).to_seconds() << " seconds.                          "
-                                                                           "\nBlockchain size changed from "
-                       << orig_chain_size / 1024 / 1024 << "MiB to "
-                       << final_chain_size / 1024 / 1024 << "MiB.\n" << std::flush;
+              my->populate_indexes();
           }
           else
           {
-              my->populate_indexes();
+              wlog( "Database inconsistency detected; erasing state and attempting to replay blockchain" );
+
+              fc::remove_all( data_dir / "index" );
+
+              if( fc::is_directory( data_dir / "raw_chain/block_id_to_block_data_db" ) )
+              {
+                  if( !fc::is_directory( data_dir / "raw_chain/block_id_to_data_original" ) )
+                      fc::rename( data_dir / "raw_chain/block_id_to_block_data_db", data_dir / "raw_chain/block_id_to_data_original" );
+              }
+
+              // During replay we implement stop-and-copy garbage collection on the raw blocks
+              decltype( my->_block_id_to_full_block ) block_id_to_data_original;
+              block_id_to_data_original.open( data_dir / "raw_chain/block_id_to_data_original" );
+              const size_t original_size = fc::directory_size( data_dir / "raw_chain/block_id_to_data_original" );
+
+              my->open_database( data_dir );
+              store_property_record( property_id_type::database_version, variant( BTS_BLOCKCHAIN_DATABASE_VERSION ) );
+
+              const auto toggle_leveldb = [ this ]( const bool enabled )
+              {
+                  my->_block_id_to_undo_state.toggle_leveldb( enabled );
+
+                  my->_property_id_to_record.toggle_leveldb( enabled );
+
+                  my->_account_id_to_record.toggle_leveldb( enabled );
+                  my->_account_name_to_id.toggle_leveldb( enabled );
+                  my->_account_address_to_id.toggle_leveldb( enabled );
+
+                  my->_asset_id_to_record.toggle_leveldb( enabled );
+                  my->_asset_symbol_to_id.toggle_leveldb( enabled );
+
+                  my->_slate_id_to_record.toggle_leveldb( enabled );
+
+                  my->_balance_id_to_record.toggle_leveldb( enabled );
+              };
+
+              const auto set_db_cache_write_through = [ this ]( bool write_through )
+              {
+                  my->_burn_db.set_write_through( write_through );
+
+                  my->_feed_index_to_record.set_write_through( write_through );
+
+                  my->_ask_db.set_write_through( write_through );
+                  my->_bid_db.set_write_through( write_through );
+                  my->_relative_ask_db.set_write_through( write_through );
+                  my->_relative_bid_db.set_write_through( write_through );
+                  my->_short_db.set_write_through( write_through );
+                  my->_collateral_db.set_write_through( write_through );
+
+                  my->_market_transactions_db.set_write_through( write_through );
+                  my->_market_status_db.set_write_through( write_through );
+                  my->_market_history_db.set_write_through( write_through );
+              };
+
+              // For the duration of replaying, we allow certain databases to postpone flushing until we finish
+              toggle_leveldb( false );
+              set_db_cache_write_through( false );
+
+              my->initialize_genesis( genesis_file, statistics_enabled );
+
+              // Load block num -> id db into memory and clear from disk for replaying
+              map<uint32_t, block_id_type> num_to_id;
+              {
+                  for( auto itr = my->_block_num_to_id_db.begin(); itr.valid(); ++itr )
+                      num_to_id.emplace_hint( num_to_id.end(), itr.key(), itr.value() );
+
+                  my->_block_num_to_id_db.close();
+                  fc::remove_all( data_dir / "raw_chain/block_num_to_id_db" );
+                  my->_block_num_to_id_db.open( data_dir / "raw_chain/block_num_to_id_db" );
+              }
+
+              if( !replay_status_callback )
+              {
+                  std::cout << "Please be patient, this will take several minutes...\r\nReplaying blockchain..."
+                            << std::flush << std::fixed;
+              }
+              else
+              {
+                  replay_status_callback( 0 );
+              }
+
+              uint32_t blocks_indexed = 0;
+              const auto total_blocks = num_to_id.size();
+              const auto genesis_time = get_genesis_timestamp();
+              const auto start_time = blockchain::now();
+
+              const auto insert_block = [&]( const full_block& block )
+              {
+                  if( blocks_indexed % 200 == 0 )
+                  {
+                      float progress;
+                      if( total_blocks )
+                      {
+                          progress = float( blocks_indexed ) / total_blocks;
+                      }
+                      else
+                      {
+                          const auto seconds = (start_time - genesis_time).to_seconds();
+                          progress = float( blocks_indexed * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC ) / seconds;
+                      }
+
+                      progress *= 100;
+
+                      if( !replay_status_callback )
+                      {
+                          std::cout << "\rReplaying blockchain... "
+                                       "Approximately " << std::setprecision( 2 ) << progress << "% complete." << std::flush;
+                      }
+                      else
+                      {
+                          replay_status_callback( progress );
+                      }
+                  }
+
+                  push_block( block );
+                  ++blocks_indexed;
+
+                  if( blocks_indexed % 1000 == 0 )
+                  {
+                      set_db_cache_write_through( true );
+                      set_db_cache_write_through( false );
+                  }
+              };
+
+              if( num_to_id.empty() )
+              {
+                  for( auto block_itr = block_id_to_data_original.begin(); block_itr.valid(); ++block_itr )
+                      insert_block( block_itr.value() );
+              }
+              else
+              {
+                  for( const auto& num_id : num_to_id )
+                  {
+                      const auto oblock = block_id_to_data_original.fetch_optional( num_id.second );
+                      if( oblock.valid() ) insert_block(*oblock);
+                  }
+              }
+
+              // Re-enable flushing on all cached databases we disabled it on above
+              toggle_leveldb( true );
+              set_db_cache_write_through( true );
+
+              block_id_to_data_original.close();
+              fc::remove_all( data_dir / "raw_chain/block_id_to_data_original" );
+
+              const size_t final_size = fc::directory_size( data_dir / "raw_chain/block_id_to_block_data_db" );
+
+              std::cout << "\rSuccessfully replayed " << blocks_indexed << " blocks in "
+                        << (blockchain::now() - start_time).to_seconds() << " seconds.                          "
+                                                                            "\nBlockchain size changed from "
+                        << original_size / 1024 / 1024 << "MiB to "
+                        << final_size / 1024 / 1024 << "MiB.\n" << std::flush;
           }
 
-          //  process the pending transactions to cache by fees
+          // Process the pending transactions to cache by fees
           for( auto pending_itr = my->_pending_transaction_db.begin(); pending_itr.valid(); ++pending_itr )
           {
              try
              {
-                auto trx = pending_itr.value();
-                //ilog( " loading pending transaction ${trx}", ("trx",trx) );
-                auto trx_id = trx.id();
-                auto eval_state = evaluate_transaction( trx, my->_relay_fee );
+                const auto trx = pending_itr.value();
+                const auto trx_id = trx.id();
+                const auto eval_state = evaluate_transaction( trx, my->_relay_fee );
                 share_type fees = eval_state->get_fees();
                 my->_pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
                 my->_pending_transaction_db.store( trx_id, trx );
              }
              catch( const fc::exception& e )
              {
-                ilog( "error processing pending transaction: ${e}", ("e",e.to_detail_string() ) );
+                wlog( "Error processing pending transaction: ${e}", ("e",e.to_detail_string() ) );
              }
           }
       }
-      catch (...)
+      catch( ... )
       {
-        error_opening_database = std::current_exception();
+          error_opening_database = std::current_exception();
       }
 
-      if (error_opening_database)
+      if( error_opening_database )
       {
-        elog( "error opening database" );
-        close();
-        fc::remove_all( data_dir / "index" );
-        std::rethrow_exception(error_opening_database);
+          elog( "Error opening database!" );
+          close();
+          fc::remove_all( data_dir / "index" );
+          std::rethrow_exception( error_opening_database );
       }
    } FC_CAPTURE_AND_RETHROW( (data_dir) ) }
 
