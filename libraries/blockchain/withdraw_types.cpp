@@ -12,7 +12,6 @@ namespace bts { namespace blockchain {
    const uint8_t withdraw_vesting::type           = withdraw_vesting_type;
    const uint8_t withdraw_with_multisig::type     = withdraw_multisig_type;
    const uint8_t withdraw_with_escrow::type       = withdraw_escrow_type;
-   const uint8_t withdraw_with_password::type     = withdraw_password_type;
 
    memo_status::memo_status( const extended_memo_data& memo, bool valid_signature,
                              const fc::ecc::private_key& opk )
@@ -338,11 +337,6 @@ namespace fc {
          case withdraw_multisig_type:
             obj["data"] = fc::raw::unpack<withdraw_with_multisig>( var.data );
             break;
-         case withdraw_password_type:
-            obj["data"] = fc::raw::unpack<withdraw_with_password>( var.data );
-            break;
-         case withdraw_reserved_type:
-            break;
          case withdraw_escrow_type:
             obj["data"] = fc::raw::unpack<withdraw_with_escrow>( var.data );
             break;
@@ -378,11 +372,6 @@ namespace fc {
             return;
          case withdraw_multisig_type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_with_multisig>() );
-            return;
-         case withdraw_password_type:
-            vo.data = fc::raw::pack( obj["data"].as<withdraw_with_password>() );
-            return;
-         case withdraw_reserved_type:
             return;
          case withdraw_escrow_type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_with_escrow>() );

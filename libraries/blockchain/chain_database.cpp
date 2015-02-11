@@ -164,13 +164,13 @@ namespace bts { namespace blockchain {
 
           _balance_id_to_record.open( data_dir / "index/balance_id_to_record" );
 
-          _id_to_transaction_record_db.open( data_dir / "index/id_to_transaction_record_db" );
+          _transaction_id_to_record.open( data_dir / "index/transaction_id_to_record" );
+          _address_to_transaction_ids.open( data_dir / "index/address_to_transaction_ids" );
 
           _market_transactions_db.open( data_dir / "index/market_transactions_db" );
 
           _pending_transaction_db.open( data_dir / "index/pending_transaction_db" );
 
-          _address_to_trx_index.open( data_dir / "index/address_to_trx_db" );
           _burn_db.open( data_dir / "index/burn_db" );
 
           _feed_index_to_record.open( data_dir / "index/feed_index_to_record" );
@@ -204,7 +204,7 @@ namespace bts { namespace blockchain {
                   _delegate_votes.emplace( record.net_votes(), record.id );
           }
 
-          for( auto iter = _id_to_transaction_record_db.begin(); iter.valid(); ++iter )
+          for( auto iter = _transaction_id_to_record.begin(); iter.valid(); ++iter )
           {
               const transaction& trx = iter.value().trx;
               if( trx.expiration > self->now() )
@@ -1493,6 +1493,8 @@ namespace bts { namespace blockchain {
 
    void chain_database::close()
    { try {
+      my->_pending_transaction_db.close();
+
       my->_block_id_to_full_block.close();
       my->_block_id_to_undo_state.close();
 
@@ -1518,9 +1520,8 @@ namespace bts { namespace blockchain {
 
       my->_balance_id_to_record.close();
 
-      my->_pending_transaction_db.close();
-      my->_id_to_transaction_record_db.close();
-      my->_address_to_trx_index.close();
+      my->_transaction_id_to_record.close();
+      my->_address_to_transaction_ids.close();
 
       my->_burn_db.close();
 
@@ -1685,7 +1686,7 @@ namespace bts { namespace blockchain {
        records.reserve( block.user_transactions.size() );
 
        for( const signed_transaction& transaction : block.user_transactions )
-           records.push_back( my->_id_to_transaction_record_db.fetch( transaction.id() ) );
+           records.push_back( my->_transaction_id_to_record.fetch( transaction.id() ) );
 
        return records;
    } FC_CAPTURE_AND_RETHROW( (block_id) ) }
@@ -1861,7 +1862,7 @@ namespace bts { namespace blockchain {
 
    otransaction_record chain_database::get_transaction( const transaction_id_type& trx_id, bool exact )const
    { try {
-      auto trx_rec = my->_id_to_transaction_record_db.fetch_optional( trx_id );
+      auto trx_rec = my->_transaction_id_to_record.fetch_optional( trx_id );
       if( trx_rec || exact )
       {
          if( trx_rec )
@@ -1869,7 +1870,7 @@ namespace bts { namespace blockchain {
          return trx_rec;
       }
 
-      auto itr = my->_id_to_transaction_record_db.lower_bound( trx_id );
+      auto itr = my->_transaction_id_to_record.lower_bound( trx_id );
       if( itr.valid() )
       {
          auto id = itr.key();
@@ -1899,7 +1900,7 @@ namespace bts { namespace blockchain {
 
    void chain_database::scan_transactions( const function<void( const transaction_record& )> callback )const
    { try {
-       for( auto iter = my->_id_to_transaction_record_db.begin();
+       for( auto iter = my->_transaction_id_to_record.begin();
             iter.valid(); ++iter )
        {
            callback( iter.value() );
@@ -3654,7 +3655,7 @@ namespace bts { namespace blockchain {
                            (_account_id_to_record)(_account_name_to_id)(_account_address_to_id) \
                            (_asset_id_to_record)(_asset_symbol_to_id) \
                            (_balance_id_to_record) \
-                           (_id_to_transaction_record_db)(_pending_transaction_db)(_pending_fee_index) \
+                           (_transaction_id_to_record)(_pending_transaction_db)(_pending_fee_index) \
                            (_slate_id_to_record) \
                            (_burn_db) \
                            (_feed_index_to_record) \
@@ -3667,22 +3668,21 @@ namespace bts { namespace blockchain {
    }
 
    vector<transaction_record> chain_database::fetch_address_transactions( const address& addr )
-   {
+   { try {
       vector<transaction_record> results;
-      auto itr = my->_address_to_trx_index.lower_bound( std::make_pair(addr, transaction_id_type()) );
-      while( itr.valid() )
+
+      const auto transaction_ids = my->_address_to_transaction_ids.fetch_optional( addr );
+      if( transaction_ids.valid() )
       {
-         auto key = itr.key();
-         if( key.first != addr )
-            break;
-
-         if( auto otrx = get_transaction( key.second ) )
-            results.push_back( *otrx );
-
-         ++itr;
+          for( const transaction_id_type& transaction_id : *transaction_ids )
+          {
+              otransaction_record record = get_transaction( transaction_id );
+              if( record.valid() ) results.push_back( std::move( *record ) );
+          }
       }
+
       return results;
-   }
+   } FC_CAPTURE_AND_RETHROW( (addr) ) }
 
    void chain_database::init_property_db_interface()
    {
@@ -3861,18 +3861,21 @@ namespace bts { namespace blockchain {
 
        interface.lookup_by_id = [ this ]( const transaction_id_type& id ) -> otransaction_record
        {
-           return my->_id_to_transaction_record_db.fetch_optional( id );
+           return my->_transaction_id_to_record.fetch_optional( id );
        };
 
        interface.insert_into_id_map = [ this ]( const transaction_id_type& id, const transaction_record& record )
        {
-           my->_id_to_transaction_record_db.store( id, record );
+           my->_transaction_id_to_record.store( id, record );
 
            if( get_statistics_enabled() )
            {
-               const auto scan_address = [&]( const address& addr )
+               const auto scan_address = [ & ]( const address& addr )
                {
-                   my->_address_to_trx_index.store( std::make_pair( addr, id ), char( 0 ) );
+                   auto ids = my->_address_to_transaction_ids.fetch_optional( addr );
+                   if( !ids.valid() ) ids = unordered_set<transaction_id_type>();
+                   ids->insert( id );
+                   my->_address_to_transaction_ids.store( addr, *ids );
                };
                record.scan_addresses( *this, scan_address );
 
@@ -3893,15 +3896,19 @@ namespace bts { namespace blockchain {
                const otransaction_record record = interface.lookup_by_id( id );
                if( record.valid() )
                {
-                   const auto scan_address = [&]( const address& addr )
+                   const auto scan_address = [ & ]( const address& addr )
                    {
-                       my->_address_to_trx_index.remove( std::make_pair( addr, id ) );
+                       auto ids = my->_address_to_transaction_ids.fetch_optional( addr );
+                       if( !ids.valid() ) return;
+                       ids->erase( id );
+                       if( !ids->empty() ) my->_address_to_transaction_ids.store( addr, *ids );
+                       else my->_address_to_transaction_ids.remove( addr );
                    };
                    record->scan_addresses( *this, scan_address );
                }
            }
 
-           my->_id_to_transaction_record_db.remove( id );
+           my->_transaction_id_to_record.remove( id );
        };
 
        interface.erase_from_unique_set = [ this ]( const transaction& trx )
