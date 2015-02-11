@@ -58,14 +58,26 @@ light_wallet::~light_wallet()
 
 void light_wallet::fetch_welcome_package()
 {
-   auto welcome_package = _rpc.fetch_welcome_package();
+   fc::mutable_variant_object args;
+   asset_id_type last_known_asset_id = -1;
+   //_asset_id_to_record is unordered_map, so not sorted
+   for( const auto& asset : _chain_cache->_asset_id_to_record )
+      last_known_asset_id = std::max(last_known_asset_id, asset.first);
+   args["last_known_asset_id"] = last_known_asset_id;
+
+   auto welcome_package = _rpc.fetch_welcome_package(args);
    _chain_cache->set_chain_id(welcome_package["chain_id"].as<digest_type>());
    _relay_fee_collector = welcome_package["relay_fee_collector"].as<oaccount_record>();
    _relay_fee = asset(welcome_package["relay_fee_amount"].as<share_type>());
    _network_fee = asset(welcome_package["network_fee_amount"].as<share_type>());
 
-   for( auto& record : welcome_package["all_assets"].as<vector<asset_record>>() )
+   for( auto& record : welcome_package["new_assets"].as<vector<asset_record>>() )
+   {
+      //Caveat: we need to already have cached the issuer's account if dealing with a UIA
+      if( record.is_user_issued() )
+         get_account_record(fc::to_string(record.issuer_account_id));
       _chain_cache->store_asset_record(std::move(record));
+   }
 }
 
 void light_wallet::connect(const string& host, const string& user, const string& pass, uint16_t port,
@@ -106,11 +118,11 @@ void light_wallet::set_disconnect_callback(std::function<void(fc::exception_ptr)
 {
    auto connection = _rpc.get_json_connection();
    if( !connection ) return;
-   _rpc.get_json_connection()->set_close_callback([this, callback](fc::exception_ptr e) {
-      _rpc.reset_json_connection();
-      if( callback )
-         callback(e);
-   });
+//   _rpc.get_json_connection()->set_close_callback([this, callback](fc::exception_ptr e) {
+//      _rpc.reset_json_connection();
+//      if( callback )
+//         callback(e);
+//   });
 }
 
 void light_wallet::disconnect()
