@@ -2541,7 +2541,7 @@
          "prerequisites" : ["wallet_unlocked"]
       },
       {
-         "method_name" : "wallet_recover_transaction",
+         "method_name" : "wallet_recover_titan_deposit_info",
          "description" : "Attempts to recover any missing recipient and memo information for the specified transaction",
          "return_type" : "transaction_record",
          "parameters"  : [
@@ -2598,7 +2598,7 @@
       },
       {
          "method_name" : "wallet_publish_feeds",
-         "description" : "publishes a set of feeds for BitAssets, only active delegates may do this",
+         "description" : "publish price feeds for market-pegged assets; pays fee from delegate pay balance otherwise wallet account balance",
          "return_type" : "transaction_record",
          "parameters"  : [
              {
