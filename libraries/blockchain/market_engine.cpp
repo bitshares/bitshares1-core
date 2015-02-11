@@ -195,7 +195,8 @@ namespace bts { namespace blockchain { namespace detail {
 
             if( _current_ask->type == cover_order && _current_bid->type == short_order )
             {
-                price collateral_rate                = *_feed_price; // Asserted valid above
+                //price collateral_rate                = *_feed_price; // Asserted valid above
+                price collateral_rate                = mtrx.bid_price; //*_feed_price; // Asserted valid above
                 collateral_rate.ratio               /= 2; // 2x from short, 1 x from long == 3x default collateral
                 const asset cover_collateral         = asset( *_current_ask->collateral, _base_id );
                 const asset max_usd_cover_can_afford = cover_collateral * mtrx.bid_price;
@@ -276,7 +277,7 @@ namespace bts { namespace blockchain { namespace detail {
                 FC_ASSERT( _feed_price.valid() );
 
                 // Bound collateral ratio (maximizes collateral of new margin position)
-                price collateral_rate          = *_feed_price; // Asserted valid above
+                price collateral_rate          = mtrx.bid_price; //*_feed_price; // Asserted valid above
                 collateral_rate.ratio          /= 2; // 2x from short, 1 x from long == 3x default collateral
                 const asset ask_quantity_usd   = _current_ask->get_quote_quantity(*_feed_price);
                 const asset short_quantity_usd = _current_bid->get_balance() * collateral_rate;
@@ -894,13 +895,19 @@ namespace bts { namespace blockchain { namespace detail {
          if( _collateral_expiration_itr->expiration > fc::time_point(_pending_state->now()) )
             break;
 
-         auto val = _db_impl._collateral_db.fetch( _collateral_expiration_itr->key );
+         auto val = _pending_state->get_collateral_record( _collateral_expiration_itr->key ); //_db_impl._collateral_db.fetch( _collateral_expiration_itr->key );
+         if( !val || !val->collateral_balance )
+         {
+            ++_collateral_expiration_itr;
+            continue;
+         }
+
          const auto cover_ask = market_order( cover_order,
                                                 _collateral_expiration_itr->key,
-                                                order_record(val.payoff_balance),
-                                                val.collateral_balance,
-                                                val.interest_rate,
-                                                val.expiration);
+                                                order_record(val->payoff_balance),
+                                                val->collateral_balance,
+                                                val->interest_rate,
+                                                val->expiration);
 
          ++_collateral_expiration_itr;
 

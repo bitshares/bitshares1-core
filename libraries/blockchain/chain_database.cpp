@@ -162,13 +162,13 @@ namespace bts { namespace blockchain {
 
           _balance_id_to_record.open( data_dir / "index/balance_id_to_record" );
 
-          _id_to_transaction_record_db.open( data_dir / "index/id_to_transaction_record_db" );
+          _transaction_id_to_record.open( data_dir / "index/transaction_id_to_record" );
+          _address_to_transaction_ids.open( data_dir / "index/address_to_transaction_ids" );
 
           _market_transactions_db.open( data_dir / "index/market_transactions_db" );
 
           _pending_transaction_db.open( data_dir / "index/pending_transaction_db" );
 
-          _address_to_trx_index.open( data_dir / "index/address_to_trx_db" );
           _burn_db.open( data_dir / "index/burn_db" );
 
           _feed_index_to_record.open( data_dir / "index/feed_index_to_record" );
@@ -183,15 +183,8 @@ namespace bts { namespace blockchain {
           _slot_index_to_record.open( data_dir / "index/slot_index_to_record" );
           _slot_timestamp_to_delegate.open( data_dir / "index/slot_timestamp_to_delegate" );
 
-          _object_db.open( data_dir / "index/object_db" );
-          _edge_index.open( data_dir / "index/edge_index" );
-          _reverse_edge_index.open( data_dir / "index/reverse_edge_index" );
-
           _market_status_db.open( data_dir / "index/market_status_db" );
           _market_history_db.open( data_dir / "index/market_history_db" );
-
-          _auth_db.open( data_dir / "index/auth_db" );
-          _asset_proposal_db.open( data_dir / "index/asset_proposal_db" );
 
           _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
 
@@ -209,7 +202,7 @@ namespace bts { namespace blockchain {
                   _delegate_votes.emplace( record.net_votes(), record.id );
           }
 
-          for( auto iter = _id_to_transaction_record_db.begin(); iter.valid(); ++iter )
+          for( auto iter = _transaction_id_to_record.begin(); iter.valid(); ++iter )
           {
               const transaction& trx = iter.value().trx;
               if( trx.expiration > self->now() )
@@ -428,7 +421,6 @@ namespace bts { namespace blockchain {
          self->store_property_record( property_id_type::last_account_id, variant( account_id ) );
          self->set_active_delegates( self->next_round_active_delegates() );
          self->set_statistics_enabled( statistics_enabled );
-         self->store_property_record( property_id_type::last_object_id, 0 );
 
          return chain_id;
       } FC_CAPTURE_AND_RETHROW( (genesis_file)(statistics_enabled) ) }
@@ -1419,6 +1411,8 @@ namespace bts { namespace blockchain {
 
    void chain_database::close()
    { try {
+      my->_pending_transaction_db.close();
+
       my->_block_id_to_full_block.close();
       my->_block_id_to_undo_state.close();
 
@@ -1444,9 +1438,8 @@ namespace bts { namespace blockchain {
 
       my->_balance_id_to_record.close();
 
-      my->_pending_transaction_db.close();
-      my->_id_to_transaction_record_db.close();
-      my->_address_to_trx_index.close();
+      my->_transaction_id_to_record.close();
+      my->_address_to_transaction_ids.close();
 
       my->_burn_db.close();
 
@@ -1465,13 +1458,6 @@ namespace bts { namespace blockchain {
 
       my->_slot_index_to_record.close();
       my->_slot_timestamp_to_delegate.close();
-
-      my->_object_db.close();
-      my->_edge_index.close();
-      my->_reverse_edge_index.close();
-
-      my->_auth_db.close();
-      my->_asset_proposal_db.close();
    } FC_CAPTURE_AND_RETHROW() }
 
    account_record chain_database::get_delegate_record_for_signee( const public_key_type& block_signee )const
@@ -1618,7 +1604,7 @@ namespace bts { namespace blockchain {
        records.reserve( block.user_transactions.size() );
 
        for( const signed_transaction& transaction : block.user_transactions )
-           records.push_back( my->_id_to_transaction_record_db.fetch( transaction.id() ) );
+           records.push_back( my->_transaction_id_to_record.fetch( transaction.id() ) );
 
        return records;
    } FC_CAPTURE_AND_RETHROW( (block_id) ) }
@@ -1792,107 +1778,9 @@ namespace bts { namespace blockchain {
         recent_op_queue.pop_front();
    }
 
-    oobject_record chain_database::get_object_record( const object_id_type id )const
-    {
-       return my->_object_db.fetch_optional( id );
-    }
-
-    void chain_database::store_object_record( const object_record& obj )
-    { try {
-        switch( obj.type() )
-        {
-            case base_object:
-            {
-                ilog("@n storing a base_object record in chain DB");
-                my->_object_db.store( obj._id, obj );
-                auto o = my->_object_db.fetch_optional( obj._id );
-                ilog("@n fetched it again as a sanity check: ${o}", ("o", o));
-                break;
-            }
-            case edge_object:
-            {
-                store_edge_record( obj );
-                break;
-            }
-            case account_object:
-            case asset_object:
-            case throttled_auction_object:
-            case user_auction_object:
-            case site_object:
-            default:
-                FC_ASSERT(false, "You cannot store these object types via object interface yet!");
-                break;
-        }
-    } FC_CAPTURE_AND_RETHROW( (obj) ) }
-
-
-
-    void                       chain_database::store_site_record( const site_record& site )
-    {
-        /*
-        my->_site_index.store(site.site_name, site);
-        my->_object_db.store(site._id, site);
-        ilog("@n after storing site in chain DB:");
-        ilog("@n      as an object: ${o}", ("o", object_record(site)));
-        ilog("@n      as a site: ${s}", ("s", site));
-        */
-    }
-
-   osite_record  chain_database::lookup_site( const string& site_name )const
-   { try {
-       auto site = my->_site_index.fetch_optional( site_name );
-       if( site.valid() )
-       {
-           return site;
-           /*
-           auto obj = my->_object_db.fetch( *site_id );
-           return obj.as<site_record>();
-           */
-       }
-       return osite_record();
-   } FC_CAPTURE_AND_RETHROW( (site_name) ) }
-
-
-
-
-    void            chain_database::store_edge_record( const object_record& edge )
-    { try {
-        ilog("@n storing edge in chain DB: ${e}", ("e", edge));
-        auto edge_data = edge.as<edge_record>();
-        my->_edge_index.store( edge_data.index_key(), edge._id );
-        my->_reverse_edge_index.store( edge_data.reverse_index_key(), edge._id );
-        my->_object_db.store( edge._id, edge );
-    } FC_CAPTURE_AND_RETHROW( (edge) ) }
-
-    oobject_record  chain_database::get_edge( const object_id_type from,
-                                             const object_id_type to,
-                                             const string& name )const
-    {
-        ilog("@n getting edge with key: (${f}, ${t}, ${n})", ("f",from)("t",to)("n",name));
-        edge_index_key key( from, to, name );
-        auto object_id = my->_edge_index.fetch_optional( key );
-        if( object_id.valid() )
-           return get_object_record( *object_id );
-        return oobject_record();
-    }
-    map<string, object_record>   chain_database::get_edges( const object_id_type from,
-                                                            const object_id_type to )const
-    {
-        FC_ASSERT(false, "unimplemented");
-        map<string, object_record> ret;
-        return ret;
-    }
-
-    map<object_id_type, map<string, object_record>> chain_database::get_edges( const object_id_type from )const
-    {
-        FC_ASSERT(false, "unimplemented");
-        map<object_id_type, map<string, object_record>> ret;
-        return ret;
-    }
-
    otransaction_record chain_database::get_transaction( const transaction_id_type& trx_id, bool exact )const
    { try {
-      auto trx_rec = my->_id_to_transaction_record_db.fetch_optional( trx_id );
+      auto trx_rec = my->_transaction_id_to_record.fetch_optional( trx_id );
       if( trx_rec || exact )
       {
          if( trx_rec )
@@ -1900,7 +1788,7 @@ namespace bts { namespace blockchain {
          return trx_rec;
       }
 
-      auto itr = my->_id_to_transaction_record_db.lower_bound( trx_id );
+      auto itr = my->_transaction_id_to_record.lower_bound( trx_id );
       if( itr.valid() )
       {
          auto id = itr.key();
@@ -1930,7 +1818,7 @@ namespace bts { namespace blockchain {
 
    void chain_database::scan_transactions( const function<void( const transaction_record& )> callback )const
    { try {
-       for( auto iter = my->_id_to_transaction_record_db.begin();
+       for( auto iter = my->_transaction_id_to_record.begin();
             iter.valid(); ++iter )
        {
            callback( iter.value() );
@@ -1972,16 +1860,6 @@ namespace bts { namespace blockchain {
            if( record.valid() ) callback( *record );
        }
    } FC_CAPTURE_AND_RETHROW() }
-
-   void chain_database::scan_objects( const function<void( const object_record& )> callback )const
-   {
-        ilog("@n starting object db scan");
-        for( auto itr = my->_object_db.begin(); itr.valid(); ++itr )
-        {
-           ilog("@n scanning object: ${o}", ("o", itr.value()));
-           callback( itr.value() );
-        }
-   }
 
    /** this should throw if the trx is invalid */
    transaction_evaluation_state_ptr chain_database::store_pending_transaction( const signed_transaction& trx, bool override_limits )
@@ -3692,65 +3570,34 @@ namespace bts { namespace blockchain {
                            (_account_id_to_record)(_account_name_to_id)(_account_address_to_id) \
                            (_asset_id_to_record)(_asset_symbol_to_id) \
                            (_balance_id_to_record) \
-                           (_id_to_transaction_record_db)(_pending_transaction_db)(_pending_fee_index) \
+                           (_transaction_id_to_record)(_pending_transaction_db)(_pending_fee_index) \
                            (_slate_id_to_record) \
                            (_burn_db) \
                            (_feed_index_to_record) \
                            (_ask_db)(_bid_db)(_short_db)(_collateral_db) \
                            (_market_transactions_db)(_market_status_db)(_market_history_db) \
-                           (_slot_index_to_record)(_slot_timestamp_to_delegate) \
-                           (_object_db)(_edge_index)(_reverse_edge_index)
+                           (_slot_index_to_record)(_slot_timestamp_to_delegate)
 #define GET_DATABASE_SIZE(r, data, elem) stats[BOOST_PP_STRINGIZE(elem)] = my->elem.size();
      BOOST_PP_SEQ_FOR_EACH(GET_DATABASE_SIZE, _, CHAIN_DB_DATABASES)
      return stats;
    }
 
-   void                        chain_database::authorize( asset_id_type asset_id, const address& owner, object_id_type oid  )
-   {
-      if( oid != -1 )
-         my->_auth_db.store( std::make_pair( asset_id, owner ), oid );
-      else
-         my->_auth_db.remove( std::make_pair( asset_id, owner ) );
-   }
-
-   optional<object_id_type>    chain_database::get_authorization( asset_id_type asset_id, const address& owner )const
-   {
-      return my->_auth_db.fetch_optional( std::make_pair( asset_id, owner ) );
-   }
-   void                       chain_database::store_asset_proposal( const proposal_record& r )
-   {
-      if( r.info == -1 )
-      {
-         my->_asset_proposal_db.remove( r.key() );
-      }
-      else
-      {
-         my->_asset_proposal_db.store( r.key(), r );
-      }
-   }
-
-   optional<proposal_record> chain_database::fetch_asset_proposal( asset_id_type asset_id, proposal_id_type proposal_id )const
-   {
-      return my->_asset_proposal_db.fetch_optional( std::make_pair(asset_id,proposal_id) );
-   }
-
    vector<transaction_record> chain_database::fetch_address_transactions( const address& addr )
-   {
+   { try {
       vector<transaction_record> results;
-      auto itr = my->_address_to_trx_index.lower_bound( std::make_pair(addr, transaction_id_type()) );
-      while( itr.valid() )
+
+      const auto transaction_ids = my->_address_to_transaction_ids.fetch_optional( addr );
+      if( transaction_ids.valid() )
       {
-         auto key = itr.key();
-         if( key.first != addr )
-            break;
-
-         if( auto otrx = get_transaction( key.second ) )
-            results.push_back( *otrx );
-
-         ++itr;
+          for( const transaction_id_type& transaction_id : *transaction_ids )
+          {
+              otransaction_record record = get_transaction( transaction_id );
+              if( record.valid() ) results.push_back( std::move( *record ) );
+          }
       }
+
       return results;
-   }
+   } FC_CAPTURE_AND_RETHROW( (addr) ) }
 
    void chain_database::init_property_db_interface()
    {
@@ -3929,18 +3776,21 @@ namespace bts { namespace blockchain {
 
        interface.lookup_by_id = [ this ]( const transaction_id_type& id ) -> otransaction_record
        {
-           return my->_id_to_transaction_record_db.fetch_optional( id );
+           return my->_transaction_id_to_record.fetch_optional( id );
        };
 
        interface.insert_into_id_map = [ this ]( const transaction_id_type& id, const transaction_record& record )
        {
-           my->_id_to_transaction_record_db.store( id, record );
+           my->_transaction_id_to_record.store( id, record );
 
            if( get_statistics_enabled() )
            {
-               const auto scan_address = [&]( const address& addr )
+               const auto scan_address = [ & ]( const address& addr )
                {
-                   my->_address_to_trx_index.store( std::make_pair( addr, id ), char( 0 ) );
+                   auto ids = my->_address_to_transaction_ids.fetch_optional( addr );
+                   if( !ids.valid() ) ids = unordered_set<transaction_id_type>();
+                   ids->insert( id );
+                   my->_address_to_transaction_ids.store( addr, *ids );
                };
                record.scan_addresses( *this, scan_address );
 
@@ -3961,15 +3811,19 @@ namespace bts { namespace blockchain {
                const otransaction_record record = interface.lookup_by_id( id );
                if( record.valid() )
                {
-                   const auto scan_address = [&]( const address& addr )
+                   const auto scan_address = [ & ]( const address& addr )
                    {
-                       my->_address_to_trx_index.remove( std::make_pair( addr, id ) );
+                       auto ids = my->_address_to_transaction_ids.fetch_optional( addr );
+                       if( !ids.valid() ) return;
+                       ids->erase( id );
+                       if( !ids->empty() ) my->_address_to_transaction_ids.store( addr, *ids );
+                       else my->_address_to_transaction_ids.remove( addr );
                    };
                    record->scan_addresses( *this, scan_address );
                }
            }
 
-           my->_id_to_transaction_record_db.remove( id );
+           my->_transaction_id_to_record.remove( id );
        };
 
        interface.erase_from_unique_set = [ this ]( const transaction& trx )

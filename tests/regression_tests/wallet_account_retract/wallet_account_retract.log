@@ -1,0 +1,61 @@
+default (unlocked) >>> wallet_account_create test
+"XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
+default (unlocked) >>> wallet_account_register test delegate0 "Hi" 5
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate0           test                0.00000 XTS             register test as a delegate                 2,994.55940 XTS     <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> blockchain_get_account test
+Name: test
+Registered: <d-ign></d-ign>
+Last Updated: <d-ign></d-ign>
+Owner Key: XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra
+Active Key History:
+- XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX, last used <d-ign></d-ign>
+
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+==========================================================================================================================================
+102   test                            0.00000000 %   0        0        N/A           5 %      0.00000 XTS         NONE                    
+
+Block Signing Key: XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX
+Public Data:
+"Hi"
+default (unlocked) >>> help wallet_account_retract
+Usage:
+wallet_account_retract <account_to_retract> <pay_from_account>                                        Retract (permanently disable) the specified account in case of master key compromise.
+Retract (permanently disable) the specified account in case of master key compromise.
+
+Parameters:
+  account_to_retract (account_name, required): The name of the account to retract.
+  pay_from_account (account_name, required): The account from which fees will be paid.
+
+Returns:
+  transaction_record
+default (unlocked) >>> wallet_account_retract test delegate1
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate1           test                0.00000 XTS             Update test's active key                    0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> blockchain_get_account test
+Name: test
+Registered: <d-ign></d-ign>
+Last Updated: <d-ign></d-ign>
+Owner Key: XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra
+Active Key History:
+- XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX, last used <d-ign></d-ign>
+- XTS1111111111111111111111111111111114T1Anm, last used <d-ign></d-ign>
+
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+==========================================================================================================================================
+102   test                            0.00000000 %   0        0        N/A           5 %      0.00000 XTS         NONE                    
+
+Block Signing Key: XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX
+Public Data:
+"Hi"
+default (unlocked) >>> quit

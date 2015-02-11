@@ -330,10 +330,10 @@ account_balance_summary_type detail::client_impl::blockchain_get_account_public_
   account_balance_summary_type ret;
   ret[account_name] = balances;
   return ret;
-} FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+} FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
 map<balance_id_type, balance_record> detail::client_impl::blockchain_list_address_balances( const string& raw_addr, const time_point& after )const
-{
+{ try {
     address addr;
     try {
         addr = address( raw_addr );
@@ -349,10 +349,10 @@ map<balance_id_type, balance_record> detail::client_impl::blockchain_list_addres
           ++itr;
     }
     return result;
-}
-fc::variant_object detail::client_impl::blockchain_list_address_transactions( const string& raw_addr,
-                                                                              uint32_t after_block )const
-{
+} FC_CAPTURE_AND_RETHROW( (raw_addr)(after) ) }
+
+fc::variant_object detail::client_impl::blockchain_list_address_transactions( const string& raw_addr, uint32_t after_block )const
+{ try {
    fc::mutable_variant_object results;
 
    address addr;
@@ -379,7 +379,7 @@ fc::variant_object detail::client_impl::blockchain_list_address_transactions( co
    }
 
    return results;
-}
+} FC_CAPTURE_AND_RETHROW( (raw_addr)(after_block) ) }
 
 map<balance_id_type, balance_record> detail::client_impl::blockchain_list_key_balances( const public_key_type& key )const
 {
@@ -790,41 +790,5 @@ void client_impl::blockchain_broadcast_transaction(const signed_transaction& trx
    }
    network_broadcast_transaction(trx);
 }
-
-
-object_record client_impl::blockchain_get_object( const object_id_type& id )const
-{
-    auto oobj = _chain_db->get_object_record( id );
-    FC_ASSERT( oobj.valid(), "No such object!" );
-    return *oobj;
-}
-
-vector<edge_record> client_impl::blockchain_get_edges( const object_id_type& from,
-                                                       const object_id_type& to,
-                                                       const string& name )const
-{ try {
-    vector<edge_record> edges;
-    if( name != "" )
-    {
-        auto oedge = _chain_db->get_edge( from, to, name );
-        if( oedge.valid() )
-            edges.push_back( oedge->as<edge_record>() );
-    }
-    else if( to != -1 )
-    {
-        auto name_map = _chain_db->get_edges( from, to );
-        for( auto pair : name_map )
-            edges.push_back( pair.second.as<edge_record>() );
-    }
-    else
-    {
-        auto from_map = _chain_db->get_edges( from );
-        for( auto p1 : from_map )
-            for( auto p2 : p1.second )
-                edges.push_back( p2.second.as<edge_record>() );
-    }
-    return edges;
-} FC_CAPTURE_AND_RETHROW( (from)(to)(name) ) }
-
 
 } } } // namespace bts::client::detail

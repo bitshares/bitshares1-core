@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 #if QT_VERSION >= 0x050400
    engine.rootContext()->setContextProperty("PlatformName", QSysInfo::prettyProductName());
 #endif
-   engine.rootContext()->setContextProperty("ManifestUrl", QStringLiteral("http://bitshares.org/manifest.json"));
+   engine.rootContext()->setContextProperty("ManifestUrl", QStringLiteral("https://bitshares.org/manifest.json"));
    engine.rootContext()->setContextProperty("AppName", QStringLiteral("lw_%1").arg(BTS_BLOCKCHAIN_SYMBOL).toLower());
    engine.load(QUrl(QStringLiteral("qml/main.qml")));
 

@@ -279,157 +279,6 @@
         "aliases" : ["set_expiration"]
       },
       {
-        "method_name": "wallet_object_create",
-        "description": "Creates a normal user object. If no owner info is specified, uses a new address from payer.",
-        "return_type": "transaction_record",
-        "parameters" :
-          [
-            {
-              "name" : "account",
-              "type" : "account_name",
-              "description" : ""
-            },
-            {
-               "name" : "user_data",
-               "type" : "variant",
-               "description" : "",
-               "default_value": ""
-            },
-            {
-               "name" : "m",
-               "type" : "int32_t",
-               "description" : "",
-               "default_value" : -1
-            },
-            {
-               "name" : "owners",
-               "type" : "address_list",
-               "description" : "",
-               "default_value": []
-            }
-        ],
-        "prerequisites" : ["wallet_unlocked"],
-        "aliases" : ["create_object"]
-      },
-      {
-        "method_name": "wallet_object_update",
-        "description": "Update a normal user object.",
-        "return_type": "transaction_builder",
-        "parameters" :
-          [
-            {
-              "name" : "paying_account_name",
-              "type" : "sending_account_name",
-              "description" : "the source account to draw the shares from"
-            },
-            {
-              "name" : "object_id",
-              "type" : "object_id_type",
-              "description" : "the object to update"
-            },
-            {
-               "name" : "user_data",
-               "type" : "variant",
-               "description" : "",
-               "default_value": ""
-            },
-            {
-                "name": "sign_and_broadcast",
-                "type": "bool",
-                "description": "",
-                "default_value": true
-            }
-        ],
-        "prerequisites" : ["wallet_unlocked"],
-        "aliases" : ["update_object"]
-      },
-      {
-        "method_name": "wallet_object_transfer",
-        "description": "Update a normal user object's owner.",
-        "return_type": "transaction_builder",
-        "parameters" :
-          [
-            {
-              "name" : "paying_account_name",
-              "type" : "sending_account_name",
-              "description" : "the source account to draw the shares from"
-            },
-            {
-              "name" : "object_id",
-              "type" : "object_id_type",
-              "description" : "the object to update"
-            },
-            {
-               "name" : "m",
-               "type" : "uint32_t",
-               "description" : ""
-            },
-            {
-               "name" : "owners",
-               "type" : "address_list",
-               "description" : ""
-            },
-            {
-                "name": "sign_and_broadcast",
-                "type": "bool",
-                "description": "",
-                "default_value": true
-            }
-        ],
-        "prerequisites" : ["wallet_unlocked"],
-        "aliases" : ["transfer_object"]
-      },
-      {
-        "method_name": "wallet_object_list",
-        "description": "List objects that belong to an account.",
-        "return_type": "object_array",
-        "parameters" :
-          [
-            {
-              "name" : "account",
-              "type" : "account_name",
-              "description" : "Account to fetch objects for"
-            }
-          ],
-        "prerequisites" : ["wallet_unlocked"],
-        "aliases" : ["object_list"]
-      },
-      {
-        "method_name": "wallet_set_edge",
-        "description": "Create or update an edge object.",
-        "return_type": "transaction_builder",
-        "parameters" :
-          [
-            {
-              "name" : "paying_account",
-              "type" : "account_name",
-              "description" : "Account that will pay for this transaction"
-            },
-            {
-              "name" : "from",
-              "type" : "object_id_type",
-              "description" : ""
-            },
-            {
-              "name" : "to",
-              "type" : "object_id_type",
-              "description" : "Account that will pay for this transaction"
-            },
-            {
-              "name" : "name",
-              "type" : "string",
-              "description" : "The edge name (the 'key', used in index)"
-            },
-            {
-              "name" : "value",
-              "type" : "variant",
-              "description" : "The edge 'value', not part of the index"
-            }
-          ],
-        "prerequisites" : ["wallet_unlocked"],
-        "aliases" : ["set_edge"]
-      },
-      {
         "method_name": "wallet_account_transaction_history",
         "description": "Lists transaction history for the specified account",
         "return_type": "pretty_transactions",
@@ -1153,7 +1002,7 @@
                 "type": "bool",
                 "description": "Try to broadcast this transaction?",
                 "default_value": false
-            },
+            }
         ],
         "prerequisites": ["json_authenticated"],
         "aliases": ["add_signature"]
@@ -1748,7 +1597,7 @@
                   "name" : "issuer_market_fee",
                   "type" : "real_amount",
                   "description" : "an additional fee (denominated in percent) charged by the issuer on every order that is matched",
-                  "default_value" : -1 
+                  "default_value" : -1
                },
                {
                   "name" : "flags",
@@ -2692,7 +2541,7 @@
          "prerequisites" : ["wallet_unlocked"]
       },
       {
-         "method_name" : "wallet_recover_transaction",
+         "method_name" : "wallet_recover_titan_deposit_info",
          "description" : "Attempts to recover any missing recipient and memo information for the specified transaction",
          "return_type" : "transaction_record",
          "parameters"  : [
@@ -2749,7 +2598,7 @@
       },
       {
          "method_name" : "wallet_publish_feeds",
-         "description" : "publishes a set of feeds for BitAssets, only active delegates may do this",
+         "description" : "publish price feeds for market-pegged assets; pays fee from delegate pay balance otherwise wallet account balance",
          "return_type" : "transaction_record",
          "parameters"  : [
              {

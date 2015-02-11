@@ -137,9 +137,6 @@ namespace bts { namespace blockchain {
          account_record              get_slot_signee( const time_point_sec timestamp,
                                                       const std::vector<account_id_type>& ordered_delegates )const;
 
-         void                        authorize( asset_id_type asset_id, const address& owner, object_id_type oid = 0 ) override;
-         optional<object_id_type>    get_authorization( asset_id_type asset_id, const address& owner )const override;
-
          optional<time_point_sec>    get_next_producible_block_timestamp( const vector<account_id_type>& delegate_ids )const;
 
          vector<transaction_record>  fetch_address_transactions( const address& addr );
@@ -171,15 +168,11 @@ namespace bts { namespace blockchain {
          virtual void                store_transaction( const transaction_id_type&,
                                                         const transaction_record&  ) override;
 
-
          virtual void                store_burn_record( const burn_record& br ) override;
          virtual oburn_record        fetch_burn_record( const burn_record_key& key )const override;
          vector<burn_record>         fetch_burn_records( const string& account_name )const;
 
          virtual void                       store_feed_record( const feed_record& r ) override;
-
-         virtual void                       store_asset_proposal( const proposal_record& r ) override;
-         virtual optional<proposal_record>  fetch_asset_proposal( asset_id_type asset_id, proposal_id_type proposal_id )const override;
 
          map<balance_id_type, balance_record>  get_balances( const balance_id_type& first,
                                                              uint32_t limit )const;
@@ -254,7 +247,6 @@ namespace bts { namespace blockchain {
          void                               scan_ordered_assets( const function<void( const asset_record& )> )const;
          void                               scan_balances( const function<void( const balance_record& )> callback )const;
          void                               scan_transactions( const function<void( const transaction_record& )> callback )const;
-         void                               scan_objects( const function<void( const object_record& )> callback )const;
 
          bool                               is_valid_symbol( const string& asset_symbol )const;
          string                             get_asset_symbol( const asset_id_type asset_id )const;
@@ -262,27 +254,6 @@ namespace bts { namespace blockchain {
 
          virtual vector<operation>          get_recent_operations( operation_type_enum t )const;
          virtual void                       store_recent_operation( const operation& o );
-
-         virtual void                       store_object_record( const object_record& obj )override;
-         virtual oobject_record             get_object_record( const object_id_type id )const override;
-
-
-        virtual void                       store_site_record( const site_record& site )override;
-        virtual osite_record               lookup_site( const string& site_name) const override;
-
-        virtual void                       store_edge_record( const object_record& edge )override;
-
-
-        virtual oobject_record             get_edge( const object_id_type from,
-                                                  const object_id_type to,
-                                                  const string& name )const          override;
-
-        virtual map<string, object_record> get_edges( const object_id_type from,
-                                                   const object_id_type to )const   override;
-
-        virtual map<object_id_type, map<string, object_record>>
-                                            get_edges( const object_id_type from )const override;
-
 
          virtual oorder_record              get_bid_record( const market_index_key& )const override;
          virtual oorder_record              get_ask_record( const market_index_key& )const override;

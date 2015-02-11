@@ -1495,6 +1495,32 @@ namespace detail {
       my->_dirty_accounts = true;
    } FC_CAPTURE_AND_RETHROW( (old_account_name)(new_account_name) ) }
 
+   bool wallet::friendly_import_private_key( const private_key_type& key, const string& account_name )
+   { try {
+       const auto addr = address( key.get_public_key() );
+       try
+       {
+           get_private_key( addr );
+           // We already have this key and import_private_key would fail if we tried. Do nothing.
+           return false;
+       }
+       catch( const fc::exception& )
+       {
+       }
+
+       const oaccount_record blockchain_account_record = my->_blockchain->get_account_record( addr );
+       if( blockchain_account_record.valid() && blockchain_account_record->name != account_name )
+       { // This key exists on the blockchain and I don't have it - don't associate it with a name when you import it
+           import_private_key( key, optional<string>(), false );
+       }
+       else
+       {
+           import_private_key( key, account_name, false );
+       }
+
+       return true;
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
+
    public_key_type wallet::import_private_key( const private_key_type& new_private_key,
                                                const optional<string>& account_name,
                                                bool create_account )

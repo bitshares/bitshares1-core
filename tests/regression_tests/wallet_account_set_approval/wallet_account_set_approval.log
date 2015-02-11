@@ -1,3 +1,17 @@
+default (unlocked) >>> help wallet_list_accounts
+Usage:
+wallet_list_accounts                                                                                  Lists all accounts associated with this wallet
+Lists all accounts associated with this wallet
+
+Parameters:
+  (none)
+
+Returns:
+  wallet_account_record_array
+
+aliases: listaccounts
+default (unlocked) >>> wallet_list_accounts
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
 default (unlocked) >>> help wallet_account_set_approval
 Usage:
 wallet_account_set_approval <account_name> [approval]                                                 Updates your approval of the specified account
@@ -11,8 +25,6 @@ Returns:
   int8_t
 
 aliases: approve, set_approval, wallet_approve_delegate, wallet_approve
-default (unlocked) >>> wallet_list_accounts
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
 default (unlocked) >>> wallet_account_set_approval delegate0 1
 1
 default (unlocked) >>> wallet_account_set_approval delegate1 1

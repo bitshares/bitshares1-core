@@ -134,9 +134,13 @@ Page {
          }
          MenuField {
             id: assetSymbolField
+            Layout.preferredHeight: amountField.height
             anchors.verticalCenter: amountField.verticalCenter
             model: wallet.accounts[accountName].availableAssets
             selectedIndex: model.indexOf(assetSymbol)
+            floatingLabel: true
+            placeholderText: "Asset"
+            hasHelperText: true
 
             Behavior on width { NumberAnimation {} }
          }
@@ -205,7 +209,7 @@ Page {
             if( !amountField.canProceed() )
                return amountShaker.shake()
             if( !amountField.canPayFee() )
-               return badFeeDialog.open()
+               return badFeeDialog.show()
             if( memoField.characterCount > memoField.characterLimit )
                return memoShaker.shake()
 
@@ -217,18 +221,12 @@ Page {
       }
    }
 
-   MouseArea {
-      anchors.fill: parent
-      onClicked: badFeeDialog.close()
-      enabled: badFeeDialog.visible
-   }
    Dialog {
       id: badFeeDialog
       title: qsTr("Cannot pay fee")
       height: units.dp(200)
-      negativeBtnText: ""
-      positiveBtnText: qsTr("OK")
-      visible: false
+      negativeButtonText: ""
+      positiveButtonText: qsTr("OK")
 
       onAccepted: close()
 

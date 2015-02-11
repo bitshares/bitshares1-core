@@ -161,6 +161,9 @@ void LightWallet::connectToServer(QString host, quint16 port, QString serverKey,
       else
          m_wallet.connect(convert(host), convert(user), convert(password), port,
                           bts::blockchain::public_key_type(convert(serverKey)));
+      m_wallet.set_disconnect_callback([this](fc::exception_ptr) {
+         Q_EMIT connectedChanged(false);
+      });
       Q_EMIT connectedChanged(isConnected());
       Q_EMIT allAssetsChanged();
    } catch (fc::exception e) {
@@ -201,6 +204,7 @@ void LightWallet::createWallet(QString accountName, QString password)
    fc::sha512 key = fc::sha512::hash(convert(password));
    auto brainKey = convert(m_brainKey);
    auto plaintext = std::vector<char>(brainKey.begin(), brainKey.end());
+   plaintext.push_back(char(0));
    auto ciphertext = fc::aes_encrypt(key, plaintext);
    QSettings().setValue(QStringLiteral("brainKey"), QByteArray::fromRawData(ciphertext.data(), ciphertext.size()));
 
@@ -287,7 +291,7 @@ void LightWallet::unlockWallet(QString password)
             fc::sha512 key = fc::sha512::hash(convert(password));
             auto plaintext = fc::aes_decrypt(key, std::vector<char>(ciphertext.data(),
                                                                     ciphertext.data() + ciphertext.size()));
-            m_brainKey = QString::fromLocal8Bit(plaintext.data());
+            m_brainKey = QString::fromLocal8Bit(plaintext.data(), plaintext.size());
             Q_EMIT brainKeyChanged(m_brainKey);
          }
       }
