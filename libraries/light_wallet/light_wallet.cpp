@@ -18,6 +18,25 @@ light_wallet::light_wallet(std::function<void(string,string)> persist_function, 
      restore(restore_function)
 {
    try {
+      int storage_version = 0;
+      if( can_restore("storage_version") )
+         storage_version = std::stoi(restore("storage_version"));
+      if( storage_version != BTS_LIGHT_WALLET_STORAGE_VERSION )
+      {
+         // STORAGE VERSION UPGRADES GO HERE
+
+         if( storage_version == 0 && can_restore("wallet_data") ) {
+            //Remove scanned transaction cache
+            wlog("Upgrading storage from version 0 to version 1.");
+            light_wallet_data data = fc::json::from_string(restore("wallet_data"), fc::json::strict_parser).as<light_wallet_data>();
+            for( auto& account : data.accounts )
+               account.second.scan_cache.clear();
+            persist("wallet_data", fc::json::to_string(data));
+            storage_version = 1;
+         }
+      }
+      persist("storage_version", fc::to_string(BTS_LIGHT_WALLET_STORAGE_VERSION));
+
       _chain_cache = std::make_shared<pending_chain_state>();
       if( can_restore("chain_cache") )
          *_chain_cache = fc::json::from_string(restore("chain_cache"), fc::json::strict_parser).as<pending_chain_state>();
@@ -703,7 +722,7 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const string& acco
                   if( asset_yield != yields.end() )
                      asset_yield->amount += record.yield[asset_id];
                   else
-                     yields.emplace_back(asset_yield->amount, asset_id);
+                     yields.emplace_back(record.yield[asset_id], asset_id);
                }
 
                raw_delta_amounts[summary.delta_labels[i]][asset_id] -= deposit.amount;

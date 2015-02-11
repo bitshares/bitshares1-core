@@ -433,6 +433,9 @@ void LightWallet::updateAccount(const bts::blockchain::account_record& account)
       newAccount->moveToThread(thread());
       newAccount->setParent(this);
       connect(this, &LightWallet::synced, newAccount, &Account::balancesChanged);
+      connect(newAccount, &Account::error, [this, newAccount] (QString error) {
+         Q_EMIT notification(tr("Error from account %1: %2").arg(newAccount->name()).arg(error));
+      });
 
       m_accounts.insert(accountName, QVariant::fromValue(newAccount));
 

@@ -10,7 +10,7 @@
 #include <bts/wallet/wallet_records.hpp>
 
 #define BTS_LIGHT_WALLET_PORT 8899
-#define BTS_LIGHT_WALLET_DEFAULT_FEE  50000 // 0.5 XTS
+#define BTS_LIGHT_WALLET_STORAGE_VERSION 1
 
 namespace bts { namespace light_wallet {
    using namespace bts::blockchain;

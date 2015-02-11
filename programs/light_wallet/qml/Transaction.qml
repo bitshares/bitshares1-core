@@ -49,7 +49,7 @@ Rectangle {
                   text: qsTr("Yield %1").arg(format(yield, symbol))
                   color: "green"
                   font.pixelSize: units.dp(16)
-                  visible: sender === accountName && yield > Number.EPSILON
+                  visible: sender === accountName && yield > .0000001
                }
             }
             Item { Layout.preferredWidth: visuals.margins }
