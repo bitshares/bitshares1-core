@@ -8,8 +8,6 @@ blockchain_generate_issuance_map <symbol> <filename>
 blockchain_generate_snapshot <filename>                                                             
 blockchain_get_account_wall [account_name]                                                          
 blockchain_get_balance <owner_address>                                                              
-blockchain_get_edges <from> [to] [name]                                                             
-blockchain_get_object <id>                                                                          
 blockchain_list_address_balances <addr> [chanced_since]                                             
 blockchain_list_address_transactions <addr> [filter_before]                                         
 blockchain_list_balances [first_balance_id] [limit]                                                 
@@ -77,9 +75,6 @@ rpc_set_password [password]
 rpc_set_username [username]                                                                         
 rpc_start_server [port]                                                                             
 stop                                                                                                
-wallet_account_balance_ids [account_name]                                                           
-wallet_account_order_list [account_name] [limit]                                                    
-wallet_account_retract <account_to_retract> <pay_from_account>                                      
 wallet_account_vesting_balances [account_name]                                                      
 wallet_account_yield [account_name]                                                                 
 wallet_add_transaction_note_experimental <transaction_id> <note>                                    
@@ -115,20 +110,15 @@ wallet_market_cover <from_account_name> <quantity> <quantity_symbol> <cover_id>
 wallet_multisig_deposit <amount> <symbol> <from_name> <m> <addresses> [strategy]                    
 wallet_multisig_get_balance_id <symbol> <m> <addresses>                                             
 wallet_multisig_withdraw_start <amount> <symbol> <from> <to_address> [strategy] [builder_path]      
-wallet_object_create <account> [user_data] [m] [owners]                                             
-wallet_object_list <account>                                                                        
-wallet_object_transfer <paying_account_name> <object_id> <m> <owners> [sign_and_broadcast]          
-wallet_object_update <paying_account_name> <object_id> [user_data] [sign_and_broadcast]             
 wallet_publish_version <publishing_account_name> [paying_account_name]                              
 wallet_rebroadcast_transaction <transaction_id>                                                     
 wallet_recover_accounts <accounts_to_recover> [maximum_number_of_attempts]                          
-wallet_recover_transaction <transaction_id_prefix> [recipient_account]                              
+wallet_recover_titan_deposit_info <transaction_id_prefix> [recipient_account]                       
 wallet_regenerate_keys <account_name> <max_key_number>                                              
 wallet_remove_transaction <transaction_id>                                                          
 wallet_repair_records [collecting_account_name]                                                     
 wallet_scan_transaction <transaction_id> [overwrite_existing]                                       
 wallet_scan_transaction_experimental <transaction_id> [overwrite_existing]                          
-wallet_set_edge <paying_account> <from> <to> <name> <value>                                         
 wallet_set_preferred_mail_servers <account_name> <server_list> [paying_account]                     
 wallet_set_transaction_expiration_time <seconds>                                                    
 wallet_sign_hash <signer> <hash>                                                                    
@@ -197,10 +187,13 @@ get_info
 validate_address <address>                                                                          
 wallet_account_balance [account_name]                                                               
 wallet_account_balance_extended [account_name]                                                      
+wallet_account_balance_ids [account_name]                                                           
 wallet_account_create <account_name> [private_data]                                                 
 wallet_account_list_public_keys <account_name>                                                      
+wallet_account_order_list [account_name] [limit]                                                    
 wallet_account_register <account_name> <pay_from_account> [public_data] [delegate_pay_rate] [account_type] 
 wallet_account_rename <current_account_name> <new_account_name>                                     
+wallet_account_retract <account_to_retract> <pay_from_account>                                      
 wallet_account_set_approval <account_name> [approval]                                               
 wallet_account_set_favorite <account_name> [is_favorite]                                            
 wallet_account_transaction_history [account_name] [asset_symbol] [limit] [start_block_num] [end_block_num] 
