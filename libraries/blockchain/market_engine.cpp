@@ -895,13 +895,19 @@ namespace bts { namespace blockchain { namespace detail {
          if( _collateral_expiration_itr->expiration > fc::time_point(_pending_state->now()) )
             break;
 
-         auto val = _db_impl._collateral_db.fetch( _collateral_expiration_itr->key );
+         auto val = _pending_state->get_collateral_record( _collateral_expiration_itr->key ); //_db_impl._collateral_db.fetch( _collateral_expiration_itr->key );
+         if( !val || !val->collateral_balance )
+         {
+            ++_collateral_expiration_itr;
+            continue;
+         }
+
          const auto cover_ask = market_order( cover_order,
                                                 _collateral_expiration_itr->key,
-                                                order_record(val.payoff_balance),
-                                                val.collateral_balance,
-                                                val.interest_rate,
-                                                val.expiration);
+                                                order_record(val->payoff_balance),
+                                                val->collateral_balance,
+                                                val->interest_rate,
+                                                val->expiration);
 
          ++_collateral_expiration_itr;
 
