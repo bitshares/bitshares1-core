@@ -8,6 +8,14 @@ namespace bts { namespace blockchain {
         return db._feed_db_interface;
     } FC_CAPTURE_AND_RETHROW() }
 
+    void feed_record::sanity_check( const chain_interface& db )const
+    { try {
+        FC_ASSERT( db.lookup<asset_record>( index.quote_id ).valid() );
+        FC_ASSERT( db.lookup<account_record>( index.delegate_id ).valid() );
+        FC_ASSERT( value.quote_asset_id == index.quote_id );
+        FC_ASSERT( value.base_asset_id == 0 );
+    } FC_CAPTURE_AND_RETHROW( (*this) ) }
+
     ofeed_record feed_db_interface::lookup( const feed_index index )const
     { try {
         return lookup_by_index( index );

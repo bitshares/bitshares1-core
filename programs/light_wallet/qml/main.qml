@@ -86,7 +86,7 @@ Window {
       if( PlatformName )
          platform = PlatformName
       var xhr = new XMLHttpRequest()
-      var url = encodeURI(ManifestUrl + "?uuid="+persist.guid+"&app="+AppName+"&version="+version+"&platform="+platform)
+      var url = encodeURI(ManifestUrl + "?uuid="+persist.guid+"&version="+AppName+"/"+version+"&platform="+platform)
       xhr.open("GET", url, true)
       xhr.send()
    }
@@ -147,6 +147,12 @@ Window {
          Utils.connectOnce(wallet.onConnectedChanged, fn, function() { return connected })
       }
 
+      onConnectedChanged: {
+         if( !connected ) {
+            showError(qsTr("Connection to server lost. Retrying..."))
+            window.connectToServer()
+         }
+      }
       onErrorConnecting: {
          showError(error)
       }

@@ -26,10 +26,11 @@ namespace bts { namespace blockchain {
       auto quote_asset_rec = eval_state._current_state->get_asset_record( bid_index.order_price.quote_asset_id );
       FC_ASSERT( base_asset_rec.valid() );
       FC_ASSERT( quote_asset_rec.valid() );
-      if( base_asset_rec->is_restricted() )
-         FC_ASSERT( eval_state._current_state->get_authorization( base_asset_rec->id, owner ) );
-      if( quote_asset_rec->is_restricted() )
-         FC_ASSERT( eval_state._current_state->get_authorization( quote_asset_rec->id, owner ) );
+      // TODO
+      //if( base_asset_rec->is_restricted() )
+         //FC_ASSERT( eval_state._current_state->get_authorization( base_asset_rec->id, owner ) );
+      //if( quote_asset_rec->is_restricted() )
+         //FC_ASSERT( eval_state._current_state->get_authorization( quote_asset_rec->id, owner ) );
 
       const bool issuer_override = quote_asset_rec->is_retractable() && eval_state.verify_authority( quote_asset_rec->authority );
       if( !issuer_override && !eval_state.check_signature( owner ) )
@@ -146,10 +147,11 @@ namespace bts { namespace blockchain {
       auto quote_asset_rec = eval_state._current_state->get_asset_record( ask_index.order_price.quote_asset_id );
       FC_ASSERT( base_asset_rec.valid() );
       FC_ASSERT( quote_asset_rec.valid() );
-      if( base_asset_rec->is_restricted() )
-         FC_ASSERT( eval_state._current_state->get_authorization( base_asset_rec->id, owner ) );
-      if( quote_asset_rec->is_restricted() )
-         FC_ASSERT( eval_state._current_state->get_authorization( quote_asset_rec->id, owner ) );
+      // TODO
+      //if( base_asset_rec->is_restricted() )
+         //FC_ASSERT( eval_state._current_state->get_authorization( base_asset_rec->id, owner ) );
+      //if( quote_asset_rec->is_restricted() )
+         //FC_ASSERT( eval_state._current_state->get_authorization( quote_asset_rec->id, owner ) );
 
       const bool issuer_override = base_asset_rec->is_retractable() && eval_state.verify_authority( base_asset_rec->authority );
       if( !issuer_override && !eval_state.check_signature( owner ) )
@@ -381,7 +383,7 @@ namespace bts { namespace blockchain {
                                             / BTS_BLOCKCHAIN_MCALL_D2C_DENOMINATOR,
                                             cover_index.order_price.base_asset_id );
 
-         if( eval_state._current_state->get_head_block_num() < BTS_V0_7_0_FORK_BLOCK_NUM )
+         if( eval_state._current_state->get_head_block_num() < BTS_V0_8_0_FORK_BLOCK_NUM )
          {
              new_call_price = asset( current_cover->payoff_balance, delta_amount.asset_id)
                                      / asset( (current_cover->collateral_balance*2)/3, cover_index.order_price.base_asset_id );
@@ -396,6 +398,10 @@ namespace bts { namespace blockchain {
       }
       else // withdraw the collateral to the transaction to be deposited at owners discretion / cover fees
       {
+         if( current_cover->slate_id && cover_index.order_price.base_asset_id == 0 )
+         {
+            eval_state.adjust_vote( current_cover->slate_id, -current_cover->collateral_balance );
+         }
          eval_state.add_balance( asset( current_cover->collateral_balance, cover_index.order_price.base_asset_id ) );
       }
    }
@@ -430,7 +436,7 @@ namespace bts { namespace blockchain {
                                   cover_index.order_price.base_asset_id );
       auto new_call_price = std::min( min_call_price, cover_index.order_price );
 
-      if( eval_state._current_state->get_head_block_num() < BTS_V0_7_0_FORK_BLOCK_NUM )
+      if( eval_state._current_state->get_head_block_num() < BTS_V0_8_0_FORK_BLOCK_NUM )
       {
           new_call_price = asset( current_cover->payoff_balance, cover_index.order_price.quote_asset_id )
                                   / asset( (current_cover->collateral_balance*2)/3, cover_index.order_price.base_asset_id );
@@ -445,12 +451,12 @@ namespace bts { namespace blockchain {
                                                           *current_cover );
    }
 
-   void update_call_price_operation::evaluate( transaction_evaluation_state& eval_state )const
+   void update_cover_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
 #ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_7_0_FORK_BLOCK_NUM has passed
+#warning [SOFTFORK] Remove this check after BTS_V0_8_0_FORK_BLOCK_NUM has passed
 #endif
-      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM );
+      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_8_0_FORK_BLOCK_NUM );
 
       if( this->cover_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );
@@ -476,7 +482,13 @@ namespace bts { namespace blockchain {
       // changing the payoff balance changes the call price... so we need to remove the old record
       // and insert a new one.
       eval_state._current_state->store_collateral_record( this->cover_index, collateral_record() );
-      eval_state._current_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
+      if( this->new_slate && *this->new_slate != current_cover->slate_id )
+      {
+         eval_state.adjust_vote( current_cover->slate_id, -current_cover->collateral_balance );
+         current_cover->slate_id = *this->new_slate;
+         eval_state.adjust_vote( current_cover->slate_id, current_cover->collateral_balance );
+      }
+      eval_state._current_state->store_collateral_record( market_index_key( new_call_price, this->new_owner ? *this->new_owner : this->cover_index.owner),
                                                           *current_cover );
    }
 

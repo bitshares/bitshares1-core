@@ -60,8 +60,10 @@ void light_wallet::connect(const string& host, const string& user, const string&
    {
       try {
          _rpc.connect_to( item, blockchain::public_key_type(server_key) );
+         set_disconnect_callback(nullptr);
          if( user != "any" && pass != "none" )
             _rpc.login( user, pass );
+         FC_ASSERT( is_connected(), "Unable to connect to server." );
 
          fetch_welcome_package();
 
@@ -81,11 +83,20 @@ bool light_wallet::is_connected() const
    return bool(_rpc.get_json_connection());
 }
 
+void light_wallet::set_disconnect_callback(std::function<void(fc::exception_ptr)> callback)
+{
+   auto connection = _rpc.get_json_connection();
+   if( !connection ) return;
+   _rpc.get_json_connection()->set_close_callback([this, callback](fc::exception_ptr e) {
+      _rpc.reset_json_connection();
+      if( callback )
+         callback(e);
+   });
+}
+
 void light_wallet::disconnect()
 {
-   // TODO: note there is no clear way of closing the json connection
-   auto json_con = _rpc.get_json_connection();
-   //if( json_con ) json_con->close();
+   _rpc.reset_json_connection();
 }
 
 void light_wallet::open()

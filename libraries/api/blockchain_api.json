@@ -28,6 +28,26 @@
         "aliases" : []
       },
       {
+        "method_name": "blockchain_generate_issuance_map",
+        "description": "A utility to help verify UIA distribution. Returns a snapshot map of all issuances for a particular UIA.",
+        "return_type": "void",
+        "parameters" : [
+            {
+              "name" : "symbol",
+              "type" : "string",
+              "description" : "the UIA for which to compute issuance map"
+            },
+            {
+              "name" : "filename",
+              "type" : "string",
+              "description" : "filename to save snapshot to"
+            }
+        ],
+        "is_const"   : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
+      },
+      {
         "method_name": "blockchain_calculate_supply",
         "description": "Calculate the total supply of an asset from the current blockchain database state",
         "cached"      : true,
@@ -921,21 +941,6 @@
         "aliases" : ["verify_signature", "verify_sig", "blockchain_verify_sig"]
       },
       {
-        "method_name": "blockchain_dump_state",
-        "description": "TODO",
-         "cached"      : true,
-        "return_type": "void",
-        "parameters"  : [
-           {
-              "name" : "path",
-              "type" : "string",
-              "description" : "the directory to dump the state into"
-           }
-        ],
-        "is_const"   : true,
-        "prerequisites" : ["no_prerequisites"]
-      },
-      {
         "method_name": "blockchain_broadcast_transaction",
         "description": "Takes a signed transaction and broadcasts it to the network.",
          "cached"      : true,
@@ -949,52 +954,6 @@
         ],
         "is_const"   : false,
         "prerequisites" : ["no_prerequisites"]
-      },
-      {
-        "method_name": "blockchain_get_object",
-        "description": "Get a particular object with a known ID",
-         "cached"      : true,
-        "return_type": "object_record",
-        "parameters" :
-          [
-            {
-              "name" : "id",
-              "type" : "object_id_type",
-              "description" : ""
-            }
-          ],
-        "prerequisites" : ["wallet_unlocked"],
-        "aliases" : ["get_object"],
-        "is_const": true
-      },
-      {
-        "method_name": "blockchain_get_edges",
-        "description": "Get all edges with given properties",
-         "cached"      : true,
-        "return_type": "edge_array",
-        "parameters" :
-          [
-            {
-              "name" : "from",
-              "type" : "object_id_type",
-              "description" : -1
-            },
-            {
-              "name" : "to",
-              "type" : "object_id_type",
-              "description" : "",
-              "default_value" : -1
-            },
-            {
-              "name" : "name",
-              "type" : "string",
-              "description" : "",
-              "default_value" : ""
-            }
-          ],
-        "prerequisites" : ["wallet_unlocked"],
-        "aliases" : ["get_edges"],
-        "is_const": true
       }
     ]
 }

@@ -51,16 +51,15 @@ vector<string> client_impl::blockchain_list_missing_block_delegates( uint32_t bl
    if (block_num == 0 || block_num == 1)
       return vector<string>();
    vector<string> delegates;
-   auto this_block = _chain_db->get_block_record( block_num );
-   FC_ASSERT(this_block.valid(), "Cannot use this call on a block that has not yet been produced");
-   auto prev_block = _chain_db->get_block_record( block_num - 1 );
-   auto timestamp = prev_block->timestamp;
+   const auto this_block = _chain_db->get_block_header( block_num );
+   const auto prev_block = _chain_db->get_block_header( block_num - 1 );
+   auto timestamp = prev_block.timestamp;
    timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-   while (timestamp != this_block->timestamp)
+   while (timestamp != this_block.timestamp)
    {
-      auto slot_record = _chain_db->get_slot_record( timestamp );
+      const auto slot_record = _chain_db->get_slot_record( timestamp );
       FC_ASSERT( slot_record.valid() );
-      auto delegate_record = _chain_db->get_account_record( slot_record->index.delegate_id );
+      const auto delegate_record = _chain_db->get_account_record( slot_record->index.delegate_id );
       FC_ASSERT( delegate_record.valid() );
       delegates.push_back( delegate_record->name );
       timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
@@ -331,10 +330,10 @@ account_balance_summary_type detail::client_impl::blockchain_get_account_public_
   account_balance_summary_type ret;
   ret[account_name] = balances;
   return ret;
-} FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+} FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
 map<balance_id_type, balance_record> detail::client_impl::blockchain_list_address_balances( const string& raw_addr, const time_point& after )const
-{
+{ try {
     address addr;
     try {
         addr = address( raw_addr );
@@ -350,10 +349,10 @@ map<balance_id_type, balance_record> detail::client_impl::blockchain_list_addres
           ++itr;
     }
     return result;
-}
-fc::variant_object detail::client_impl::blockchain_list_address_transactions( const string& raw_addr,
-                                                                              uint32_t after_block )const
-{
+} FC_CAPTURE_AND_RETHROW( (raw_addr)(after) ) }
+
+fc::variant_object detail::client_impl::blockchain_list_address_transactions( const string& raw_addr, uint32_t after_block )const
+{ try {
    fc::mutable_variant_object results;
 
    address addr;
@@ -380,7 +379,7 @@ fc::variant_object detail::client_impl::blockchain_list_address_transactions( co
    }
 
    return results;
-}
+} FC_CAPTURE_AND_RETHROW( (raw_addr)(after_block) ) }
 
 map<balance_id_type, balance_record> detail::client_impl::blockchain_list_key_balances( const public_key_type& key )const
 {
@@ -455,7 +454,6 @@ variant_object client_impl::blockchain_get_info()const
    info["name"]                                 = BTS_BLOCKCHAIN_NAME;
    info["symbol"]                               = BTS_BLOCKCHAIN_SYMBOL;
    info["address_prefix"]                       = BTS_ADDRESS_PREFIX;
-   info["version"]                              = BTS_BLOCKCHAIN_VERSION;
    info["db_version"]                           = BTS_BLOCKCHAIN_DATABASE_VERSION;
    info["genesis_timestamp"]                    = _chain_db->get_genesis_timestamp();
 
@@ -487,6 +485,12 @@ void client_impl::blockchain_generate_snapshot( const string& filename )const
 { try {
     _chain_db->generate_snapshot( fc::path( filename ) );
 } FC_CAPTURE_AND_RETHROW( (filename) ) }
+
+void client_impl::blockchain_generate_issuance_map( const string& symbol, const string& filename )const
+{ try {
+    _chain_db->generate_issuance_map( symbol, fc::path( filename ) );
+} FC_CAPTURE_AND_RETHROW( (filename) ) }
+
 
 asset client_impl::blockchain_calculate_supply( const string& asset )const
 {
@@ -683,11 +687,6 @@ bool client_impl::blockchain_verify_signature(const string& signer, const fc::sh
     }
 }
 
-void client_impl::blockchain_dump_state( const string& path )const
-{
-   _chain_db->dump_state( fc::path( path ) );
-}
-
 vector<bts::blockchain::api_market_status> client_impl::blockchain_list_markets()const
 {
    const vector<pair<asset_id_type, asset_id_type>> pairs = _chain_db->get_market_pairs();
@@ -791,41 +790,5 @@ void client_impl::blockchain_broadcast_transaction(const signed_transaction& trx
    }
    network_broadcast_transaction(trx);
 }
-
-
-object_record client_impl::blockchain_get_object( const object_id_type& id )const
-{
-    auto oobj = _chain_db->get_object_record( id );
-    FC_ASSERT( oobj.valid(), "No such object!" );
-    return *oobj;
-}
-
-vector<edge_record> client_impl::blockchain_get_edges( const object_id_type& from,
-                                                       const object_id_type& to,
-                                                       const string& name )const
-{ try {
-    vector<edge_record> edges;
-    if( name != "" )
-    {
-        auto oedge = _chain_db->get_edge( from, to, name );
-        if( oedge.valid() )
-            edges.push_back( oedge->as<edge_record>() );
-    }
-    else if( to != -1 )
-    {
-        auto name_map = _chain_db->get_edges( from, to );
-        for( auto pair : name_map )
-            edges.push_back( pair.second.as<edge_record>() );
-    }
-    else
-    {
-        auto from_map = _chain_db->get_edges( from );
-        for( auto p1 : from_map )
-            for( auto p2 : p1.second )
-                edges.push_back( p2.second.as<edge_record>() );
-    }
-    return edges;
-} FC_CAPTURE_AND_RETHROW( (from)(to)(name) ) }
-
 
 } } } // namespace bts::client::detail

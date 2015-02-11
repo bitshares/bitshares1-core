@@ -118,7 +118,12 @@ namespace bts { namespace rpc {
   
   fc::rpc::json_connection_ptr rpc_client::get_json_connection() const
   {
-    return my->_json_connection;
+     return my->_json_connection;
+  }
+
+  void rpc_client::reset_json_connection()
+  {
+     my->_json_connection.reset();
   }
 
 } } // bts::rpc

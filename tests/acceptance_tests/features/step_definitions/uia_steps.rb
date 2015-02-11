@@ -21,6 +21,18 @@ When(/^(\w+) issues? ([\d,]+) ([A-Z]+) to account: (\w+)$/) do |name, amount, sy
   actor.node.exec 'wallet_asset_issue', amount, symbol, to_name, 'minted shares'
 end
 
+When(/^(\w+) issues? ([\d,]+) ([A-Z]+) satoshis each to: (\[.*\])$/) do |name, amount, symbol, addresses|
+  actor = get_actor(name)
+  amount.gsub!(',','')
+  addr_name_list = JSON.parse(addresses.gsub(/(\w+)/, '"\1"'))
+  addr_map = []
+  for name in addr_name_list
+      addr_map << [@addresses[name], amount]
+      #addr_map[@addresses[name]] = amount
+  end
+  actor.node.exec 'wallet_asset_issue_to_addresses', symbol, addr_map
+end
+
 
 Then(/^(\w+) should see the following assets:$/) do |name, table|
   actor = get_actor(name)

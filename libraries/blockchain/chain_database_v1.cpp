@@ -156,4 +156,26 @@ void chain_database_impl::execute_markets_v1( const fc::time_point_sec timestamp
   pending_state->set_market_transactions( std::move( market_transactions ) );
 } FC_CAPTURE_AND_RETHROW( (timestamp) ) }
 
+void chain_database_impl::update_active_delegate_list_v1( const uint32_t block_num,
+                                                          const pending_chain_state_ptr& pending_state )const
+{ try {
+    if( block_num % BTS_BLOCKCHAIN_NUM_DELEGATES != 0 )
+        return;
+
+    auto active_del = self->next_round_active_delegates();
+    const size_t num_del = active_del.size();
+
+    // Perform a random shuffle of the sorted delegate list.
+    fc::sha256 rand_seed = fc::sha256::hash( pending_state->get_current_random_seed() );
+    for( uint32_t i = 0; i < num_del; ++i )
+    {
+        for( uint32_t x = 0; x < 4 && i < num_del; ++x, ++i )
+            std::swap( active_del[ i ], active_del[ rand_seed._hash[ x ] % num_del ] );
+
+        rand_seed = fc::sha256::hash( rand_seed );
+    }
+
+    pending_state->set_active_delegates( active_del );
+} FC_CAPTURE_AND_RETHROW( (block_num) ) }
+
 } } } // bts::blockchain::detail

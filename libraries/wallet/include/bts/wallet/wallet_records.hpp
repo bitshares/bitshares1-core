@@ -179,7 +179,10 @@ namespace bts { namespace wallet {
    struct transaction_ledger_entry
    {
        transaction_id_type              id;
-       uint32_t                         block_num = -1;
+
+       uint32_t                         block_num = uint32_t( -1 );
+       block_id_type                    block_id;
+       
        time_point_sec                   timestamp = time_point_sec( -1 );
 
        // e.g. { name, INCOME-name, ISSUER-name, `snapshot address`, {ASK,BID,SHORT,MARGIN}-id, FEE }
@@ -192,7 +195,7 @@ namespace bts { namespace wallet {
 
        map<uint16_t, string>            operation_notes;
 
-       bool is_confirmed()const { return block_num != -1; }
+       bool is_confirmed()const { return block_num != uint32_t( -1 ); }
        bool is_virtual()const   { return !transaction_id.valid(); }
 
        friend bool operator < ( const transaction_ledger_entry& a, const transaction_ledger_entry& b )
@@ -208,23 +211,6 @@ namespace bts { namespace wallet {
        mutable vector<std::pair<string, asset>> balances;
        vector<string>                           notes;
    };
-
-#if 0
-   struct market_order_status
-   {
-      order_type_enum get_type()const;
-      order_id_type   get_id()const;
-
-      asset           get_balance()const; // funds available for this order
-      price           get_price()const;
-      asset           get_quantity()const;
-      asset           get_proceeds()const;
-
-      bts::blockchain::market_order        order;
-      share_type                           proceeds = 0;
-      unordered_set<transaction_id_type>   transactions;
-   };
-#endif
 
    /* Used to store GUI preferences and such */
    struct setting
@@ -337,8 +323,6 @@ FC_REFLECT( bts::wallet::transaction_data,
         (extra_addresses)
         )
 
-//FC_REFLECT( bts::wallet::market_order_status, (order)(proceeds)(transactions) )
-
 FC_REFLECT( bts::wallet::setting,
         (name)
         (value)
@@ -348,6 +332,7 @@ FC_REFLECT( bts::wallet::setting,
 FC_REFLECT( bts::wallet::transaction_ledger_entry,
         (id)
         (block_num)
+        (block_id)
         (timestamp)
         (delta_amounts)
         (transaction_id)

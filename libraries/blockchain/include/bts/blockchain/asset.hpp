@@ -7,10 +7,8 @@ namespace bts { namespace blockchain {
   struct price;
 
   /**
-   *  An asset is a fixed point number with
-   *  64.64 bit precision.  This is used
-   *  for accumalating dividends and
-   *  calculating prices on the built-in exchange.
+   *  An asset is a 64-bit amount of shares, and an
+   *  asset_id specifying the type of shares.
    */
   struct asset
   {
@@ -35,8 +33,11 @@ namespace bts { namespace blockchain {
   };
 
   /**
-   *  A price is the result of dividing 2 asset classes and has
-   *  the fixed point format 64.64 and -1 equals infinite.
+   *  A price is the result of dividing 2 asset classes.  It is
+   *  a 128-bit decimal fraction with denominator FC_REAL128_PRECISION
+   *  together with units specifying the two asset ID's.
+   * 
+   *  -1 is considered to be infinity.
    */
   struct price
   {

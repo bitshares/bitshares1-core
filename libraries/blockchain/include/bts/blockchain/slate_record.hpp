@@ -13,8 +13,6 @@ struct slate_record
 
     slate_id_type id()const;
 
-    static const slate_db_interface& db_interface( const chain_interface& );
-
     static slate_id_type id_v1( const vector<account_id_type>& slate )
     {
         if( slate.empty() ) return 0;
@@ -22,6 +20,9 @@ struct slate_record
         fc::raw::pack( enc, slate );
         return enc.result()._hash[ 0 ];
     }
+
+    static const slate_db_interface& db_interface( const chain_interface& );
+    void sanity_check( const chain_interface& )const;
 };
 typedef optional<slate_record> oslate_record;
 

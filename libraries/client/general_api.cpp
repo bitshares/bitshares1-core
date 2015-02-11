@@ -150,6 +150,12 @@ variant_object client_impl::get_info()const
    return info;
 }
 
+address client_impl::convert_to_native_address( const string& raw_address)const
+{
+    auto pts_addr = pts_address(raw_address);
+    return address(pts_addr);
+}
+
 fc::variant_object client_impl::validate_address(const string& address) const
 {
    fc::mutable_variant_object result;

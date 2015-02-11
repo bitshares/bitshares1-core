@@ -121,12 +121,14 @@ namespace bts { namespace blockchain {
     *  allow the short to exit their position without having to keep
     *  extra BTS on the side to buy USD to cover the order.
     */
-   struct update_call_price_operation
+   struct update_cover_operation
    {
       static const operation_type_enum type;
 
-      market_index_key cover_index;
-      price            new_call_price;
+      market_index_key        cover_index;
+      price                   new_call_price;
+      optional<address>       new_owner;
+      optional<slate_id_type> new_slate;
 
       void evaluate( transaction_evaluation_state& eval_state )const;
    };
@@ -141,4 +143,4 @@ FC_REFLECT( bts::blockchain::short_operation,             (amount)(short_index) 
 FC_REFLECT( bts::blockchain::short_operation_v1,          (amount)(short_index) )
 FC_REFLECT( bts::blockchain::cover_operation,             (amount)(cover_index)(new_cover_price) )
 FC_REFLECT( bts::blockchain::add_collateral_operation,    (amount)(cover_index))
-FC_REFLECT( bts::blockchain::update_call_price_operation, (cover_index)(new_call_price))
+FC_REFLECT( bts::blockchain::update_cover_operation, (cover_index)(new_call_price)(new_owner)(new_slate) )

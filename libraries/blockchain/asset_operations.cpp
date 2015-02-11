@@ -300,7 +300,6 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_asset_record( *current_asset_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-
    void authorize_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
       FC_ASSERT( !"This operation is not enabled yet!" );
@@ -312,24 +311,9 @@ namespace bts { namespace blockchain {
       FC_ASSERT( current_asset_record->is_user_issued() );
       FC_ASSERT( current_asset_record->issuer_permissions & restricted );
 
-      eval_state._current_state->authorize( this->asset_id, this->owner, this->meta_id );
+      // TODO
+      //eval_state._current_state->authorize( this->asset_id, this->owner, this->meta_id );
 
-   } FC_CAPTURE_AND_RETHROW( (*this) ) }
-
-   void create_asset_proposal::evaluate( transaction_evaluation_state& eval_state )const
-   { try {
-      FC_ASSERT( !"This operation is not enabled yet!" );
-
-      oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->asset_id );
-      if( NOT current_asset_record.valid() ) FC_CAPTURE_AND_THROW( unknown_asset_id, (this->asset_id) );
-      FC_ASSERT( current_asset_record->is_user_issued() );
-      FC_ASSERT( !current_asset_record->is_market_issued() );
-
-      if( !eval_state.verify_authority( current_asset_record->authority ) )
-         FC_CAPTURE_AND_THROW( missing_signature, (current_asset_record->authority) );
-
-      current_asset_record->last_proposal_id++;
-      eval_state._current_state->store_asset_proposal( proposal_record( this->asset_id, current_asset_record->last_proposal_id, this->info ) );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 } } // bts::blockchain

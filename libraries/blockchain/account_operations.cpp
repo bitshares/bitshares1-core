@@ -168,11 +168,6 @@ namespace bts { namespace blockchain {
 
    void update_signing_key_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
-#ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_6_0_FORK_BLOCK_NUM has passed
-#endif
-      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_6_0_FORK_BLOCK_NUM );
-
       oaccount_record account_rec = eval_state._current_state->get_account_record( this->account_id );
       if( !account_rec.valid() )
           FC_CAPTURE_AND_THROW( unknown_account_id, (account_id) );

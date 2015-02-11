@@ -40,6 +40,9 @@ namespace bts { namespace blockchain {
       bool can_issue( const share_type amount )const;
       share_type available_shares()const;
 
+      asset asset_from_string( const string& amount )const;
+      string amount_to_string( share_type amount, bool append_symbol = true )const;
+
       asset_id_type       id;
       std::string         symbol;
       std::string         name;
@@ -49,8 +52,8 @@ namespace bts { namespace blockchain {
       uint64_t            precision = 0;
       fc::time_point_sec  registration_date;
       fc::time_point_sec  last_update;
-      share_type          current_share_supply = 0;
       share_type          maximum_share_supply = 0;
+      share_type          current_share_supply = 0;
       share_type          collected_fees = 0;
       uint32_t            flags = 0;
       uint32_t            issuer_permissions = -1;
@@ -62,23 +65,15 @@ namespace bts { namespace blockchain {
        */
       share_type          transaction_fee = 0;
       /**
-       * 0 for no fee, 10000 for 10% fee.
+       * 0 for no fee, 10000 for 100% fee.
        * This is used for gateways that want to continue earning market trading fees
        * when their assets are used.
        */
-      uint16_t            market_fee = BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE; 
+      uint16_t            market_fee = 0;
       multisig_meta_info  authority;
 
-      proposal_id_type    last_proposal_id = 0;
-
-
-      /** reserved for future extensions */
-      vector<char>        reserved;
-
       static const asset_db_interface& db_interface( const chain_interface& );
-
-      asset asset_from_string( const string& amount )const;
-      string amount_to_string( share_type amount, bool append_symbol = true )const;
+      void sanity_check( const chain_interface& )const;
    };
    typedef fc::optional<asset_record> oasset_record;
 
@@ -99,23 +94,6 @@ namespace bts { namespace blockchain {
        void remove( const asset_id_type )const;
    };
 
-   struct proposal_record
-   {
-      proposal_record(){}
-
-      proposal_record( asset_id_type id, proposal_id_type pid, object_id_type oid = -1 )
-      :asset_id(id),proposal_id(pid),info(oid){}
-
-      proposal_record make_null()const { auto tmp = *this; tmp.info = -1; return tmp; }
-      std::pair<asset_id_type,proposal_id_type> key()const{ return std::make_pair(asset_id,proposal_id); }
-
-      asset_id_type      asset_id      = 0;
-      proposal_id_type   proposal_id   = 0;
-      object_id_type     info          = -1;
-      uint32_t           votes_for     = 0;
-      uint32_t           votes_against = 0;
-   };
-
 } } // bts::blockchain
 
 FC_REFLECT_ENUM( bts::blockchain::asset_permissions,
@@ -126,14 +104,6 @@ FC_REFLECT_ENUM( bts::blockchain::asset_permissions,
         (balance_halt)
         (supply_unlimit)
         )
-FC_REFLECT( bts::blockchain::proposal_record,
-        (asset_id)
-        (proposal_id)
-        (info)
-        (votes_for)
-        (votes_against)
-        );
-
 FC_REFLECT( bts::blockchain::asset_record,
         (id)
         (symbol)
@@ -144,13 +114,12 @@ FC_REFLECT( bts::blockchain::asset_record,
         (precision)
         (registration_date)
         (last_update)
-        (current_share_supply)
         (maximum_share_supply)
+        (current_share_supply)
         (collected_fees)
         (flags)
         (issuer_permissions)
         (transaction_fee)
         (market_fee)
         (authority)
-        (last_proposal_id)
         )

@@ -4,10 +4,9 @@
 
 #include <fc/reflect/variant.hpp>
 #include <fc/uint128.hpp>
+#include <fc/real128.hpp>
 
 #include <sstream>
-
-#define BTS_PRICE_PRECISION uint64_t(BTS_BLOCKCHAIN_MAX_SHARES*1000)
 
 namespace bts { namespace blockchain {
 
@@ -39,7 +38,7 @@ namespace bts { namespace blockchain {
 
      fc::bigint product = l.ratio;
      product *= r.ratio;
-     product /= BTS_PRICE_PRECISION;
+     product /= FC_REAL128_PRECISION;
 
      // if the quotient is zero, it means there was an underflow
      //    (i.e. the result is nonzero but too small to represent)
@@ -139,7 +138,7 @@ namespace bts { namespace blockchain {
         ++c;
         digit = *c - '0';
       }
-      ratio = fc::uint128(int_part) * BTS_PRICE_PRECISION;
+      ratio = fc::uint128(int_part) * FC_REAL128_PRECISION;
     }
     else
     {
@@ -167,7 +166,7 @@ namespace bts { namespace blockchain {
           ++c;
           digit = *c - '0';
         }
-        ratio += fc::uint128(frac_part) * (BTS_PRICE_PRECISION / frac_magnitude);
+        ratio += fc::uint128(frac_part) * (FC_REAL128_PRECISION / frac_magnitude);
       }
     }
 
@@ -182,7 +181,7 @@ namespace bts { namespace blockchain {
      double fract_part = a - high_bits;
      //uint64_t low_bits = uint64_t(-1)*fract_part;
      //ratio = fc::uint128( high_bits, low_bits );
-     ratio = (fc::uint128( high_bits ) * BTS_PRICE_PRECISION) + (int64_t((fract_part) * BTS_PRICE_PRECISION));
+     ratio = (fc::uint128( high_bits ) * FC_REAL128_PRECISION) + (int64_t((fract_part) * FC_REAL128_PRECISION));
      base_asset_id = b;
      quote_asset_id = q;
   }
@@ -196,9 +195,9 @@ namespace bts { namespace blockchain {
   {
      std::string full_int = std::string( ratio );
      std::stringstream ss;
-     ss <<std::string( ratio / BTS_PRICE_PRECISION ); 
+     ss <<std::string( ratio / FC_REAL128_PRECISION ); 
      ss << '.';
-     ss << std::string( (ratio % BTS_PRICE_PRECISION) + BTS_PRICE_PRECISION ).substr(1);
+     ss << std::string( (ratio % FC_REAL128_PRECISION) + FC_REAL128_PRECISION ).substr(1);
 
      auto number = ss.str();
      while(  number.back() == '0' ) number.pop_back();
@@ -244,7 +243,7 @@ namespace bts { namespace blockchain {
 
         fc::bigint bl = l.amount;
         fc::bigint br = r.amount;
-        fc::bigint result = (bl * fc::bigint(BTS_PRICE_PRECISION)) / br;
+        fc::bigint result = (bl * fc::bigint(FC_REAL128_PRECISION)) / br;
 
         p.ratio = result;
         return p;
@@ -274,7 +273,7 @@ namespace bts { namespace blockchain {
             fc::bigint r( p.ratio ); // 64.64
 
             auto amnt = ba * r; //  128.128
-            amnt /= BTS_PRICE_PRECISION; // 128.64 
+            amnt /= FC_REAL128_PRECISION; // 128.64 
             auto lg2 = amnt.log2();
             if( lg2 >= 128 )
             {
@@ -291,7 +290,7 @@ namespace bts { namespace blockchain {
         else if( a.asset_id == p.quote_asset_id )
         {
             fc::bigint amt( a.amount ); // 64.64
-            amt *= BTS_PRICE_PRECISION; //<<= 64;  // 64.128
+            amt *= FC_REAL128_PRECISION; //<<= 64;  // 64.128
             fc::bigint pri( p.ratio ); // 64.64
 
             auto result = amt / pri;  // 64.64

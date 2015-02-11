@@ -169,148 +169,49 @@ namespace bts { namespace blockchain {
 
    asset_id_type chain_interface::last_asset_id()const
    { try {
-       const optional<variant> result = get_property( chain_property_enum::last_asset_id );
-       FC_ASSERT( result.valid() );
-       return result->as<asset_id_type>();
+       const oproperty_record record = get_property_record( property_id_type::last_asset_id );
+       FC_ASSERT( record.valid() );
+       return record->value.as<asset_id_type>();
    } FC_CAPTURE_AND_RETHROW() }
 
    asset_id_type chain_interface::new_asset_id()
-   {
-       auto next_id = last_asset_id() + 1;
-       set_property( chain_property_enum::last_asset_id, next_id );
+   { try {
+       const asset_id_type next_id = last_asset_id() + 1;
+       store_property_record( property_id_type::last_asset_id, variant( next_id ) );
        return next_id;
-   }
+   } FC_CAPTURE_AND_RETHROW() }
 
    account_id_type chain_interface::last_account_id()const
    { try {
-       const optional<variant> result = get_property( chain_property_enum::last_account_id );
-       FC_ASSERT( result.valid() );
-       return result->as<account_id_type>();
+       const oproperty_record record = get_property_record( property_id_type::last_account_id );
+       FC_ASSERT( record.valid() );
+       return record->value.as<account_id_type>();
    } FC_CAPTURE_AND_RETHROW() }
 
    account_id_type chain_interface::new_account_id()
-   {
-       auto next_id = last_account_id() + 1;
-       set_property( chain_property_enum::last_account_id, next_id );
+   { try {
+       const account_id_type next_id = last_account_id() + 1;
+       store_property_record( property_id_type::last_account_id, variant( next_id ) );
        return next_id;
-   }
-
-   object_id_type chain_interface::last_object_id()const
-   { try {
-       const optional<variant> result = get_property( chain_property_enum::last_object_id );
-       FC_ASSERT( result.valid() );
-       return result->as<object_id_type>();
    } FC_CAPTURE_AND_RETHROW() }
-
-   object_id_type chain_interface::new_object_id( obj_type type )
-   {
-      auto last_id = last_object_id();
-      auto tmp = object_record( type, last_id );
-      tmp.set_id( tmp.type(), tmp.short_id() + 1 );
-      auto next_id = tmp._id;
-      set_property( chain_property_enum::last_object_id, object_id_type( next_id ) );
-      return next_id;
-   }
-
-   // Get an object for whom get_object_condition(o) will not throw and will represent
-   // the condition that is also the owner for this given object
-   object_id_type       chain_interface::get_owner_object( const object_id_type obj )
-   {
-       FC_ASSERT(false, "unimplemented");
-   }
-
-   multisig_condition   chain_interface::get_object_condition( const object_id_type id, int depth )
-   { try {
-       auto oobj = get_object_record( id );
-       FC_ASSERT( oobj.valid(), "No such object (id: ${id}", ("id", id) );
-       return get_object_condition( *oobj, depth );
-   } FC_CAPTURE_AND_RETHROW( (id ) ) }
-
-
-   multisig_condition   chain_interface::get_object_condition( const object_record& obj, int depth )
-   { try {
-       ilog("@n getting object condition for object: ${o}", ("o", obj));
-       if( depth >= 1 )//BTS_OWNER_DEPENDENCY_MAX_DEPTH )
-           FC_ASSERT(false, "Cannot determine object condition - recursion depth exceeded (are you trying to make an edge from an edge?)");
-       multisig_condition condition;
-       switch( obj.type() )
-       {
-           case( obj_type::base_object ):
-           {
-               if( obj.owner_object == obj._id )
-                   return obj._owners;
-               else
-                   return get_object_condition( obj.owner_object, depth+1 );
-           }
-           case( obj_type::edge_object ):
-           {
-               ilog("@n object: ${o}", ("o", obj));
-               const edge_record& edge = obj.as<edge_record>();
-               ilog("@n edge: ${e}", ("e", edge));
-               auto from_object = get_object_record( edge.from );
-               FC_ASSERT( from_object.valid(), "Unrecognized from object.");
-               return get_object_condition( *from_object, depth+1 );
-           }
-           case( obj_type::account_object ):
-           {
-               auto account_id = obj.short_id();
-               auto oacct = get_account_record( account_id );
-               FC_ASSERT( oacct.valid(), "No such account object!");
-               condition.owners.insert( oacct->owner_address() );
-               condition.required = 1;
-               return condition;
-           }
-           case( obj_type::asset_object ):
-           {
-               auto oasset = get_asset_record( obj.short_id() );
-               FC_ASSERT( oasset.valid(), "No such asset!" );
-               if( oasset->issuer_account_id > 0 )
-               {
-                   auto oacct = get_account_record( oasset->issuer_account_id );
-                   FC_ASSERT(false, "This asset has an issuer but the issuer account doens't exist. Crap!");
-                   condition.owners.insert( oacct->owner_address() );
-                   condition.required = 1;
-                   return condition;
-               }
-               else
-               {
-                   FC_ASSERT(false, "That asset has no issuer!");
-               }
-           }
-           default:
-           {
-               FC_ASSERT(false, "I don't know how to get the condition for this object type!");
-           }
-       }
-       FC_ASSERT(false, "This code path should not happen.");
-   } FC_CAPTURE_AND_RETHROW( (obj.short_id())(obj.type())(obj) ) }
-
-   oobject_record chain_interface::get_edge( const object_id_type id )
-   { try {
-      auto object = get_object_record( id );
-      if( NOT object.valid() )
-          return oobject_record();
-      FC_ASSERT( object->type() == edge_object, "This object is not an edge!"); // TODO check form ID as first check
-      return object;
-   } FC_CAPTURE_AND_RETHROW( (id) ) }
 
    vector<account_id_type> chain_interface::get_active_delegates()const
    { try {
-      const optional<variant> result = get_property( active_delegate_list_id );
-      FC_ASSERT( result.valid() );
-      return result->as<std::vector<account_id_type>>();
+       const oproperty_record record = get_property_record( property_id_type::active_delegate_list_id );
+       FC_ASSERT( record.valid() );
+       return record->value.as<vector<account_id_type>>();
    } FC_CAPTURE_AND_RETHROW() }
 
-   void chain_interface::set_active_delegates( const std::vector<account_id_type>& delegate_ids )
-   {
-      set_property( active_delegate_list_id, fc::variant( delegate_ids ) );
-   }
+   void chain_interface::set_active_delegates( const std::vector<account_id_type>& active_delegates )
+   { try {
+       store_property_record( property_id_type::active_delegate_list_id, variant( active_delegates ) );
+   } FC_CAPTURE_AND_RETHROW( (active_delegates) ) }
 
    bool chain_interface::is_active_delegate( const account_id_type id )const
    { try {
-      const auto active = get_active_delegates();
-      return active.end() != std::find( active.begin(), active.end(), id );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("id",id) ) }
+       const auto active_delegates = get_active_delegates();
+       return std::count( active_delegates.begin(), active_delegates.end(), id ) > 0;
+   } FC_CAPTURE_AND_RETHROW( (id) ) }
 
    double chain_interface::to_pretty_price_double( const price& price_to_pretty_print )const
    {
@@ -373,57 +274,74 @@ namespace bts { namespace blockchain {
 
    void chain_interface::set_chain_id( const digest_type& id )
    { try {
-      set_property( chain_id, variant( id ) );
+       store_property_record( property_id_type::chain_id, variant( id ) );
    } FC_CAPTURE_AND_RETHROW( (id) ) }
 
    digest_type chain_interface::get_chain_id()const
    { try {
-      static optional<digest_type> value;
-      if( value.valid() ) return *value;
-      const optional<variant> result = get_property( chain_id );
-      FC_ASSERT( result.valid() );
-      value = result->as<digest_type>();
-      return *value;
+       static optional<digest_type> value;
+       if( value.valid() ) return *value;
+       const oproperty_record record = get_property_record( property_id_type::chain_id );
+       FC_ASSERT( record.valid() );
+       value = record->value.as<digest_type>();
+       return *value;
+   } FC_CAPTURE_AND_RETHROW() }
+
+   fc::ripemd160 chain_interface::get_current_random_seed()const
+   { try {
+       const oproperty_record record = get_property_record( property_id_type::last_random_seed_id );
+       if( record.valid() ) return record->value.as<fc::ripemd160>();
+       return fc::ripemd160();
    } FC_CAPTURE_AND_RETHROW() }
 
    void chain_interface::set_statistics_enabled( const bool enabled )
    { try {
-      set_property( statistics_enabled, variant( enabled ) );
+       store_property_record( property_id_type::statistics_enabled, variant( enabled ) );
    } FC_CAPTURE_AND_RETHROW( (enabled) ) }
 
    bool chain_interface::get_statistics_enabled()const
    { try {
-      static optional<bool> value;
-      if( value.valid() ) return *value;
-      const optional<variant> result = get_property( statistics_enabled );
-      FC_ASSERT( result.valid() );
-      value = result->as_bool();
-      return *value;
+       static optional<bool> value;
+       if( value.valid() ) return *value;
+       const oproperty_record record = get_property_record( property_id_type::statistics_enabled );
+       FC_ASSERT( record.valid() );
+       value = record->value.as<bool>();
+       return *value;
    } FC_CAPTURE_AND_RETHROW() }
 
-   void chain_interface::set_required_confirmations( uint64_t c )
+   void chain_interface::set_required_confirmations( uint64_t count )
    { try {
-      set_property( confirmation_requirement, fc::variant( c ) );
-   } FC_CAPTURE_AND_RETHROW( (c) ) }
+       store_property_record( property_id_type::confirmation_requirement, variant( count ) );
+   } FC_CAPTURE_AND_RETHROW( (count) ) }
 
    uint64_t chain_interface::get_required_confirmations()const
    { try {
-      const optional<variant> result = get_property( confirmation_requirement );
-      if( result.valid() ) return result->as_uint64();
-      return BTS_BLOCKCHAIN_NUM_DELEGATES * 3;
+       const oproperty_record record = get_property_record( property_id_type::confirmation_requirement );
+       if( record.valid() ) return record->value.as_uint64();
+       return BTS_BLOCKCHAIN_NUM_DELEGATES * 3;
    } FC_CAPTURE_AND_RETHROW() }
 
-   void chain_interface::set_dirty_markets( const std::set<std::pair<asset_id_type, asset_id_type>>& d )
+   void chain_interface::set_dirty_markets( const std::set<std::pair<asset_id_type, asset_id_type>>& markets )
    { try {
-      set_property( dirty_markets, fc::variant( d ) );
-   } FC_CAPTURE_AND_RETHROW( (d) ) }
+       store_property_record( property_id_type::dirty_markets, variant( markets ) );
+   } FC_CAPTURE_AND_RETHROW( (markets) ) }
 
    std::set<std::pair<asset_id_type, asset_id_type>> chain_interface::get_dirty_markets()const
    { try {
-      const optional<variant> result = get_property( dirty_markets );
-      if( result.valid() ) return result->as<std::set<std::pair<asset_id_type, asset_id_type>>>();
-      return std::set<std::pair<asset_id_type, asset_id_type>>();
+       const oproperty_record record = get_property_record( property_id_type::dirty_markets );
+       if( record.valid() ) return record->value.as<std::set<std::pair<asset_id_type, asset_id_type>>>();
+       return std::set<std::pair<asset_id_type, asset_id_type>>();
    } FC_CAPTURE_AND_RETHROW() }
+
+   oproperty_record chain_interface::get_property_record( const property_id_type id )const
+   { try {
+       return lookup<property_record>( id );
+   } FC_CAPTURE_AND_RETHROW( (id) ) }
+
+   void chain_interface::store_property_record( const property_id_type id, const variant& value)
+   { try {
+       store( id, property_record{ id, value } );
+   } FC_CAPTURE_AND_RETHROW( (id)(value) ) }
 
    oaccount_record chain_interface::get_account_record( const account_id_type id )const
    { try {
@@ -460,22 +378,22 @@ namespace bts { namespace blockchain {
        store( record.id, record );
    } FC_CAPTURE_AND_RETHROW( (record) ) }
 
-   obalance_record chain_interface::get_balance_record( const balance_id_type& id )const
-   { try {
-       return lookup<balance_record>( id );
-   } FC_CAPTURE_AND_RETHROW( (id) ) }
-
-   void chain_interface::store_balance_record( const balance_record& record )
-   { try {
-       store( record.id(), record );
-   } FC_CAPTURE_AND_RETHROW( (record) ) }
-
    oslate_record chain_interface::get_slate_record( const slate_id_type id )const
    { try {
        return lookup<slate_record>( id );
    } FC_CAPTURE_AND_RETHROW( (id) ) }
 
    void chain_interface::store_slate_record( const slate_record& record )
+   { try {
+       store( record.id(), record );
+   } FC_CAPTURE_AND_RETHROW( (record) ) }
+
+   obalance_record chain_interface::get_balance_record( const balance_id_type& id )const
+   { try {
+       return lookup<balance_record>( id );
+   } FC_CAPTURE_AND_RETHROW( (id) ) }
+
+   void chain_interface::store_balance_record( const balance_record& record )
    { try {
        store( record.id(), record );
    } FC_CAPTURE_AND_RETHROW( (record) ) }

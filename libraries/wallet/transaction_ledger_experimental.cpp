@@ -2,6 +2,7 @@
 #include <bts/wallet/exceptions.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/wallet/wallet_impl.hpp>
+
 #include <fc/io/json.hpp> // TODO: Temporary
 
 namespace bts { namespace wallet {
@@ -32,6 +33,38 @@ void detail::wallet_impl::scan_balances_experimental()
     _dirty_balances = false;
 } FC_CAPTURE_AND_RETHROW() }
 
+void detail::wallet_impl::scan_accounts()
+{ try {
+    const auto check_address = [&]( const address& addr ) -> bool
+    {
+        if( _wallet_db.lookup_account( addr ).valid() ) return true;
+        const owallet_key_record& key_record = _wallet_db.lookup_key( addr );
+        return key_record.valid() && key_record->has_private_key();
+    };
+
+    const auto scan_account = [&]( const account_record& blockchain_record )
+    {
+        bool store_account = check_address( blockchain_record.owner_address() );
+        if( !store_account ) store_account = check_address( blockchain_record.active_address() );
+        if( !store_account && blockchain_record.is_delegate() ) store_account = check_address( blockchain_record.signing_address() );
+        if( !store_account ) return;
+        _wallet_db.store_account( blockchain_record );
+    };
+
+    _blockchain->scan_unordered_accounts( scan_account );
+
+    if( self->is_unlocked() )
+    {
+        _stealth_private_keys.clear();
+        const auto& account_keys = _wallet_db.get_account_private_keys( _wallet_password );
+        _stealth_private_keys.reserve( account_keys.size() );
+        for( const auto& item : account_keys )
+           _stealth_private_keys.push_back( item.first );
+    }
+
+    _dirty_accounts = false;
+} FC_CAPTURE_AND_RETHROW() }
+
 void detail::wallet_impl::scan_block_experimental( uint32_t block_num,
                                                    const map<private_key_type, string>& account_keys,
                                                    const map<address, string>& account_balances,
@@ -46,8 +79,9 @@ void detail::wallet_impl::scan_block_experimental( uint32_t block_num,
             scan_transaction_experimental( eval_state, block_num, block_header.timestamp,
                                            account_keys, account_balances, account_names, true );
         }
-        catch( ... )
+        catch( const fc::exception& e )
         {
+            elog( "Error scanning transaction ${t}: ${e}", ("t",eval_state)("e",e.to_detail_string()) );
         }
     }
 } FC_CAPTURE_AND_RETHROW( (block_num)(account_balances)(account_names) ) }
@@ -188,48 +222,48 @@ void detail::wallet_impl::scan_transaction_experimental( const transaction_evalu
     // to do this make a wrapper around trx.deposit_to_account just like my->withdraw_to_transaction
     const auto scan_deposit = [&]( const deposit_operation& op ) -> bool
     {
-        const balance_id_type balance_id = op.balance_id();
+        const balance_id_type& balance_id = op.balance_id();
 
         const auto scan_withdraw_with_signature = [&]( const withdraw_with_signature& condition ) -> bool
         {
-            if( condition.memo.valid() ) // TODO: This could be TITAN or public
+            if( condition.memo.valid() )
             {
-                if( record.delta_labels.count( op_index ) == 0 )
+                bool stealth = false;
+                omemo_status status;
+                private_key_type recipient_key;
+
+                try
+                {
+                    const private_key_type key = self->get_private_key( condition.owner );
+                    status = condition.decrypt_memo_data( key, true );
+                    if( status.valid() ) recipient_key = key;
+                }
+                catch( const fc::exception& )
+                {
+                }
+
+                if( !status.valid() )
                 {
                     vector<fc::future<void>> decrypt_memo_futures;
-                    decrypt_memo_futures.resize( account_keys.size() );
-                    uint32_t key_index = 0;
+                    decrypt_memo_futures.resize( _stealth_private_keys.size() );
 
-                    for( const auto& key_item : account_keys )
+                    for( uint32_t key_index = 0; key_index < _stealth_private_keys.size(); ++key_index )
                     {
-                        const private_key_type& key = key_item.first;
-                        const string& account_name = key_item.second;
-
-                        decrypt_memo_futures[ key_index ] = fc::async( [&, key_index]()
+                        decrypt_memo_futures[ key_index ] = fc::async( [ &, key_index ]()
                         {
-                            omemo_status status;
-                            _scanner_threads[ key_index % _num_scanner_threads ]->async( [&]()
+                            _scanner_threads[ key_index % _num_scanner_threads ]->async( [ & ]()
                             {
-                                // TODO: Need to also handle non-TITAN memos
-                                status = condition.decrypt_memo_data( key );
+                                if( status.valid() ) return;
+                                const private_key_type& key = _stealth_private_keys.at( key_index );
+                                const omemo_status inner_status = condition.decrypt_memo_data( key );
+                                if( inner_status.valid() )
+                                {
+                                    stealth = true;
+                                    status = inner_status;
+                                    recipient_key = key;
+                                }
                             }, "decrypt memo" ).wait();
-
-                            if( status.valid() )
-                            {
-                                _wallet_db.cache_memo( *status, key, _wallet_password );
-
-                                titan_memos.push_back( *status );
-
-                                const string& delta_label = account_name;
-                                record.delta_labels[ op_index ] = delta_label;
-
-                                const string memo = status->get_message();
-                                if( !memo.empty() )
-                                    record.operation_notes[ op_index ] = memo;
-                            }
                         } );
-
-                        ++key_index;
                     }
 
                     for( auto& decrypt_memo_future : decrypt_memo_futures )
@@ -238,10 +272,24 @@ void detail::wallet_impl::scan_transaction_experimental( const transaction_evalu
                         {
                             decrypt_memo_future.wait();
                         }
-                        catch( const fc::exception& e )
+                        catch( const fc::exception& )
                         {
                         }
                     }
+                }
+
+                // If I've successfully decrypted then it's for me
+                if( status.valid() )
+                {
+                    _wallet_db.cache_memo( *status, recipient_key, _wallet_password );
+
+                    if( stealth ) titan_memos.push_back( *status );
+
+                    const string& delta_label = account_keys.at( recipient_key );
+                    record.delta_labels[ op_index ] = delta_label;
+
+                    const string& memo = status->get_message();
+                    if( !memo.empty() ) record.operation_notes[ op_index ] = memo;
                 }
             }
 
@@ -249,6 +297,7 @@ void detail::wallet_impl::scan_transaction_experimental( const transaction_evalu
             {
                 return collect_balance( balance_id, delta_amount );
             };
+
             return eval_state.scan_deltas( op_index, scan_delta );
         };
 
@@ -550,64 +599,67 @@ void detail::wallet_impl::scan_transaction_experimental( const transaction_evalu
     bool relevant_to_me = false;
     for( const auto& op : eval_state.trx.operations )
     {
+        bool result = false;
         switch( operation_type_enum( op.type ) )
         {
             case withdraw_op_type:
-                relevant_to_me |= scan_withdraw( op.as<withdraw_operation>() );
+                result = scan_withdraw( op.as<withdraw_operation>() );
                 break;
             case deposit_op_type:
-                relevant_to_me |= scan_deposit( op.as<deposit_operation>() );
+                result = scan_deposit( op.as<deposit_operation>() );
                 break;
             case register_account_op_type:
-                relevant_to_me |= scan_register_account( op.as<register_account_operation>() );
+                result = scan_register_account( op.as<register_account_operation>() );
+                _dirty_accounts |= result;
                 break;
             case update_account_op_type:
-                relevant_to_me |= scan_update_account( op.as<update_account_operation>() );
+                result = scan_update_account( op.as<update_account_operation>() );
+                _dirty_accounts |= result;
                 break;
             case withdraw_pay_op_type:
-                relevant_to_me |= scan_withdraw_pay( op.as<withdraw_pay_operation>() );
+                result = scan_withdraw_pay( op.as<withdraw_pay_operation>() );
                 break;
             case create_asset_op_type:
-                relevant_to_me |= scan_create_asset( op.as<create_asset_operation>() );
+                result = scan_create_asset( op.as<create_asset_operation>() );
                 break;
             case update_asset_op_type:
                 // TODO
                 break;
             case issue_asset_op_type:
-                relevant_to_me |= scan_issue_asset( op.as<issue_asset_operation>() );
+                result = scan_issue_asset( op.as<issue_asset_operation>() );
                 break;
             case create_asset_prop_op_type:
                 // TODO
                 break;
             case bid_op_type:
-                relevant_to_me |= scan_bid( op.as<bid_operation>() );
+                result = scan_bid( op.as<bid_operation>() );
                 break;
             case ask_op_type:
-                relevant_to_me |= scan_ask( op.as<ask_operation>() );
+                result = scan_ask( op.as<ask_operation>() );
                 break;
             case short_op_type:
-                relevant_to_me |= scan_short( op.as<short_operation>() );
+                result = scan_short( op.as<short_operation>() );
                 break;
             case cover_op_type:
-                relevant_to_me |= scan_cover( op.as<cover_operation>() );
+                result = scan_cover( op.as<cover_operation>() );
                 break;
             case add_collateral_op_type:
-                relevant_to_me |= scan_add_collateral( op.as<add_collateral_operation>() );
+                result = scan_add_collateral( op.as<add_collateral_operation>() );
                 break;
             case define_slate_op_type:
                 // Don't care; do nothing
                 break;
             case update_feed_op_type:
-                relevant_to_me |= scan_update_feed( op.as<update_feed_operation>() );
+                result = scan_update_feed( op.as<update_feed_operation>() );
                 break;
             case burn_op_type:
-                relevant_to_me |= scan_burn( op.as<burn_operation>() );
+                result = scan_burn( op.as<burn_operation>() );
                 break;
             case release_escrow_op_type:
                 // TODO
                 break;
             case update_signing_key_op_type:
-                relevant_to_me |= scan_update_signing_key( op.as<update_signing_key_operation>() );
+                result = scan_update_signing_key( op.as<update_signing_key_operation>() );
                 break;
             case relative_bid_op_type:
                 // TODO
@@ -618,44 +670,12 @@ void detail::wallet_impl::scan_transaction_experimental( const transaction_evalu
             case update_balance_vote_op_type:
                 // TODO
                 break;
-            case set_object_op_type:
-                // TODO
-                break;
-            case authorize_op_type:
-                // TODO
-                break;
-            case update_asset_ext_op_type:
-                // TODO
-                break;
-            case cancel_order_op_type:
-                // TODO
-                break;
-            case set_edge_op_type:
-                // TODO
-                break;
-            case site_create_op_type:
-                // TODO
-                break;
-            case site_update_op_type:
-                // TODO
-                break;
-            case auction_start_op_type:
-                // TODO
-                break;
-            case auction_bid_op_type:
-                // TODO
-                break;
-            case make_sale_op_type:
-                // TODO
-                break;
-            case buy_sale_op_type:
-                // TODO
-                break;
             default:
                 // Ignore everything else
                 break;
         }
 
+        relevant_to_me |= result;
         ++op_index;
     }
 

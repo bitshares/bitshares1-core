@@ -35,6 +35,7 @@ namespace bts { namespace blockchain {
        transaction_location chain_location;
 
        static const transaction_db_interface& db_interface( const chain_interface& );
+       void sanity_check( const chain_interface& )const;
     };
     typedef optional<transaction_record> otransaction_record;
 

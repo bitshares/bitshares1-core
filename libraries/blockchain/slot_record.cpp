@@ -8,6 +8,11 @@ const slot_db_interface& slot_record::db_interface( const chain_interface& db )
     return db._slot_db_interface;
 } FC_CAPTURE_AND_RETHROW() }
 
+void slot_record::sanity_check( const chain_interface& db )const
+{ try {
+    FC_ASSERT( db.lookup<account_record>( index.delegate_id ).valid() );
+} FC_CAPTURE_AND_RETHROW( (*this) ) }
+
 oslot_record slot_db_interface::lookup( const slot_index index )const
 { try {
     return lookup_by_index( index );

@@ -1,5 +1,6 @@
 #include <bts/blockchain/balance_record.hpp>
 #include <bts/blockchain/chain_interface.hpp>
+#include <bts/blockchain/exceptions.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -85,51 +86,6 @@ namespace bts { namespace blockchain {
        FC_ASSERT( false, "Should never get here!" );
    }
 
-   asset balance_record::get_spendable_balance_v1( const time_point_sec at_time )const
-   {
-       switch( withdraw_condition_types( condition.type ) )
-       {
-           case withdraw_signature_type:
-           case withdraw_escrow_type:
-           case withdraw_multisig_type:
-           {
-               return asset( balance, condition.asset_id );
-           }
-           case withdraw_vesting_type:
-           {
-               const withdraw_vesting vesting_condition = condition.as<withdraw_vesting>();
-
-               // First calculate max that could be claimed assuming no prior withdrawals
-               share_type max_claimable = 0;
-               if( at_time >= vesting_condition.start_time + vesting_condition.duration )
-               {
-                   max_claimable = vesting_condition.original_balance;
-               }
-               else if( at_time > vesting_condition.start_time )
-               {
-                   const auto elapsed_time = (at_time - vesting_condition.start_time).to_seconds();
-                   FC_ASSERT( elapsed_time > 0 && elapsed_time < vesting_condition.duration );
-                   max_claimable = (vesting_condition.original_balance * elapsed_time) / vesting_condition.duration;
-                   FC_ASSERT( max_claimable >= 0 && max_claimable < vesting_condition.original_balance );
-               }
-
-               const share_type claimed_so_far = vesting_condition.original_balance - balance;
-               FC_ASSERT( claimed_so_far >= 0 && claimed_so_far <= vesting_condition.original_balance );
-
-               const share_type spendable_balance = max_claimable - claimed_so_far;
-               FC_ASSERT( spendable_balance >= 0 && spendable_balance <= vesting_condition.original_balance );
-
-               return asset( spendable_balance, condition.asset_id );
-           }
-           default:
-           {
-               elog( "balance_record::get_spendable_balance() called on unsupported withdraw type!" );
-               return asset();
-           }
-       }
-       FC_ASSERT( false, "Should never get here!" );
-   }
-
     balance_id_type balance_record::get_multisig_balance_id( asset_id_type asset_id, uint32_t m, const vector<address>& addrs )
     { try {
         withdraw_with_multisig multisig_condition;
@@ -145,6 +101,23 @@ namespace bts { namespace blockchain {
         return db._balance_db_interface;
     } FC_CAPTURE_AND_RETHROW() }
 
+    void balance_record::sanity_check( const chain_interface& db )const
+    { try {
+        FC_ASSERT( balance >= 0 );
+        FC_ASSERT( condition.asset_id == 0 || db.lookup<asset_record>( condition.asset_id ).valid() );
+        FC_ASSERT( condition.slate_id == 0 || db.lookup<slate_record>( condition.slate_id ).valid() );
+        switch( withdraw_condition_types( condition.type ) )
+        {
+            case withdraw_signature_type:
+            case withdraw_vesting_type:
+            case withdraw_multisig_type:
+            case withdraw_escrow_type:
+                break;
+            default:
+                FC_CAPTURE_AND_THROW( invalid_withdraw_condition );
+        }
+    } FC_CAPTURE_AND_RETHROW( (*this) ) }
+
     obalance_record balance_db_interface::lookup( const balance_id_type& id )const
     { try {
         return lookup_by_id( id );
@@ -152,7 +125,6 @@ namespace bts { namespace blockchain {
 
     void balance_db_interface::store( const balance_id_type& id, const balance_record& record )const
     { try {
-        FC_ASSERT( record.balance >= 0 ); // Sanity check
         insert_into_id_map( id, record );
     } FC_CAPTURE_AND_RETHROW( (id)(record) ) }
 

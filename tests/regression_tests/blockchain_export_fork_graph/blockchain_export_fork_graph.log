@@ -1,8 +1,8 @@
 default (unlocked) >>> debug_wait_for_block_by_number 1
 OK
 default (unlocked) >>> blockchain_list_blocks
-HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME  RAND           
-====================================================================================================================
+HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME  RANDOM SEED                             
+=============================================================================================================================================
 1       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign></d-ign><d-ign></d-ign><d-ign></d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
@@ -53,8 +53,8 @@ OK
 default (unlocked) >>> debug_wait_for_block_by_number 9
 OK
 default (unlocked) >>> blockchain_list_blocks
-HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME  RAND           
-====================================================================================================================
+HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME  RANDOM SEED                             
+=============================================================================================================================================
 9       <d-ign></d-ign><d-ign>delegate50</d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
 8       <d-ign></d-ign><d-ign>delegate49</d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>
 7       <d-ign></d-ign><d-ign>delegate48</d-ign>0       166     <d-ign> 0</d-ign><d-ign></d-ign><d-ign></d-ign>

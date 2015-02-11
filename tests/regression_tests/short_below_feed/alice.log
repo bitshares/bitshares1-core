@@ -1,0 +1,25 @@
+>>> debug_advance_time 1 second
+>>> debug_wait_for_block_by_number 1 rlast
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> debug_deterministic_private_keys 0 1 alice true alice true true
+
+>>> debug_enable_output false
+>>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
+>>> debug_enable_output true
+>>> wallet_market_submit_ask alice 15000 XTS 0.015 USD
+>>> wallet_market_submit_short alice 30000 XTS 0 USD 0.015
+>>> blockchain_market_order_book USD XTS
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+>>> wallet_market_order_list USD XTS
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> balance alice
+>>> wallet_market_order_list USD XTS
+
+>>> quit
