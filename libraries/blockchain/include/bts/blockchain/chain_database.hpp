@@ -213,8 +213,6 @@ namespace bts { namespace blockchain {
          vector<account_id_type>            next_round_active_delegates()const;
          vector<account_id_type>            get_delegates_by_vote( uint32_t first=0, uint32_t count = uint32_t(-1) )const;
 
-         fc::variant_object                 find_delegate_vote_discrepancies() const;
-
          optional<market_order>             get_market_bid( const market_index_key& )const;
          vector<market_order>               get_market_bids( const string& quote_symbol,
                                                              const string& base_symbol,
@@ -295,8 +293,6 @@ namespace bts { namespace blockchain {
          asset                              calculate_supply( const asset_id_type asset_id )const;
          asset                              calculate_debt( const asset_id_type asset_id, bool include_interest = false )const;
          asset                              unclaimed_genesis();
-
-         fc::variant_object                 get_stats() const;
 
          // XXX: Only call on pending chain state
          virtual void                       set_market_dirty( const asset_id_type quote_id, const asset_id_type base_id )override

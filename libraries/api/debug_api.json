@@ -261,14 +261,6 @@
         "prerequisites" : ["no_prerequisites"]
       },
       {
-        "method_name": "debug_verify_delegate_votes",
-        "description": "Adds up delegate votes using balances, and reports any discrepancies with the stored values in the database",
-        "return_type": "json_object",
-        "parameters" : [],
-        "is_const"   : true,
-        "prerequisites" : ["no_prerequisites"]
-      },
-      {
         "method_name": "debug_get_client_name",
         "description": "Returns client's debug name specified in config.json",
         "return_type": "string",

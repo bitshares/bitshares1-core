@@ -119,11 +119,6 @@ fc::variant_object client_impl::debug_get_call_statistics() const
    return _p2p_node->get_call_statistics();
 }
 
-fc::variant_object client_impl::debug_verify_delegate_votes() const
-{
-   return _chain_db->find_delegate_vote_discrepancies();
-}
-
 void client_impl::debug_start_simulated_time(const fc::time_point& starting_time)
 {
    bts::blockchain::start_simulated_time(starting_time);

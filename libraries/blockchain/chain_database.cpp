@@ -2268,49 +2268,6 @@ namespace bts { namespace blockchain {
         return slot_records;
     } FC_CAPTURE_AND_RETHROW( (delegate_id)(limit) ) }
 
-   fc::variant_object chain_database::find_delegate_vote_discrepancies() const
-   {
-      unordered_map<account_id_type, share_type> calculated_balances;
-
-      for( auto iter = my->_balance_id_to_record.unordered_begin();
-           iter != my->_balance_id_to_record.unordered_end(); ++iter )
-      {
-        const balance_record& balance = iter->second;
-        if (balance.slate_id() == 0)
-          continue;
-        if (balance.asset_id() == 0)
-        {
-          oslate_record slate_record = get_slate_record( balance.slate_id() );
-          FC_ASSERT(slate_record.valid(), "Unknown slate ID found in balance.");
-
-          for (account_id_type delegate : slate_record->slate)
-            calculated_balances[delegate] += balance.balance;
-        }
-      }
-
-      fc::mutable_variant_object discrepancies;
-
-      for( const auto& vote_record : my->_delegate_votes )
-      {
-        oaccount_record delegate_record = get_account_record(vote_record.delegate_id);
-        FC_ASSERT(delegate_record.valid(), "Unknown delegate ID in votes database.");
-
-        calculated_balances[delegate_record->id] += delegate_record->delegate_pay_balance();
-
-        if (vote_record.votes != delegate_record->net_votes() ||
-            vote_record.votes != calculated_balances[vote_record.delegate_id])
-        {
-          fc::mutable_variant_object discrepancy_record;
-          discrepancy_record["calculated_votes"] = calculated_balances[vote_record.delegate_id];
-          discrepancy_record["indexed_votes"] = vote_record.votes;
-          discrepancy_record["stored_votes"] = delegate_record->net_votes();
-          discrepancies[delegate_record->name] = discrepancy_record;
-        }
-      }
-
-      return discrepancies;
-   }
-
    oorder_record chain_database::get_bid_record( const market_index_key&  key )const
    {
       return my->_bid_db.fetch_optional(key);
@@ -3552,27 +3509,6 @@ namespace bts { namespace blockchain {
       }
       return results;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
-
-   fc::variant_object chain_database::get_stats() const
-   {
-     fc::mutable_variant_object stats;
-#define CHAIN_DB_DATABASES (_block_num_to_id_db)(_block_id_to_block_record_db)(_block_id_to_full_block) \
-                           (_fork_number_db)(_fork_db)(_block_id_to_undo_state) \
-                           (_property_id_to_record) \
-                           (_account_id_to_record)(_account_name_to_id)(_account_address_to_id) \
-                           (_asset_id_to_record)(_asset_symbol_to_id) \
-                           (_balance_id_to_record) \
-                           (_transaction_id_to_record)(_pending_transaction_db)(_pending_fee_index) \
-                           (_slate_id_to_record) \
-                           (_burn_db) \
-                           (_feed_index_to_record) \
-                           (_ask_db)(_bid_db)(_short_db)(_collateral_db) \
-                           (_market_transactions_db)(_market_status_db)(_market_history_db) \
-                           (_slot_index_to_record)(_slot_timestamp_to_delegate)
-#define GET_DATABASE_SIZE(r, data, elem) stats[BOOST_PP_STRINGIZE(elem)] = my->elem.size();
-     BOOST_PP_SEQ_FOR_EACH(GET_DATABASE_SIZE, _, CHAIN_DB_DATABASES)
-     return stats;
-   }
 
    vector<transaction_record> chain_database::fetch_address_transactions( const address& addr )
    { try {
