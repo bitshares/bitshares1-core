@@ -70,11 +70,6 @@ namespace bts { namespace blockchain {
        return str;
     }
 
-    const asset_db_interface& asset_record::db_interface( const chain_interface& db )
-    { try {
-        return db._asset_db_interface;
-    } FC_CAPTURE_AND_RETHROW() }
-
     void asset_record::sanity_check( const chain_interface& db )const
     { try {
         FC_ASSERT( id >= 0 );
@@ -89,36 +84,36 @@ namespace bts { namespace blockchain {
         FC_ASSERT( market_fee <= BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE );
     } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-    oasset_record asset_db_interface::lookup( const asset_id_type id )const
+    oasset_record asset_record::lookup( const chain_interface& db, const asset_id_type id )
     { try {
-        return lookup_by_id( id );
+        return db.asset_lookup_by_id( id );
     } FC_CAPTURE_AND_RETHROW( (id) ) }
 
-    oasset_record asset_db_interface::lookup( const string& symbol )const
+    oasset_record asset_record::lookup( const chain_interface& db, const string& symbol )
     { try {
-        return lookup_by_symbol( symbol );
+        return db.asset_lookup_by_symbol( symbol );
     } FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
-    void asset_db_interface::store( const asset_id_type id, const asset_record& record )const
+    void asset_record::store( chain_interface& db, const asset_id_type id, const asset_record& record )
     { try {
-        const oasset_record prev_record = lookup( id );
+        const oasset_record prev_record = db.lookup<asset_record>( id );
         if( prev_record.valid() )
         {
             if( prev_record->symbol != record.symbol )
-                erase_from_symbol_map( prev_record->symbol );
+                db.asset_erase_from_symbol_map( prev_record->symbol );
         }
 
-        insert_into_id_map( id, record );
-        insert_into_symbol_map( record.symbol, id );
+        db.asset_insert_into_id_map( id, record );
+        db.asset_insert_into_symbol_map( record.symbol, id );
     } FC_CAPTURE_AND_RETHROW( (id)(record) ) }
 
-    void asset_db_interface::remove( const asset_id_type id )const
+    void asset_record::remove( chain_interface& db, const asset_id_type id )
     { try {
-        const oasset_record prev_record = lookup( id );
+        const oasset_record prev_record = db.lookup<asset_record>( id );
         if( prev_record.valid() )
         {
-            erase_from_id_map( id );
-            erase_from_symbol_map( prev_record->symbol );
+            db.asset_erase_from_id_map( id );
+            db.asset_erase_from_symbol_map( prev_record->symbol );
         }
     } FC_CAPTURE_AND_RETHROW( (id) ) }
 

@@ -23,8 +23,10 @@ namespace bts { namespace blockchain {
         }
     };
 
+    struct transaction_record;
+    typedef optional<transaction_record> otransaction_record;
+
     class chain_interface;
-    struct transaction_db_interface;
     struct transaction_record : public transaction_evaluation_state
     {
        transaction_record(){}
@@ -34,24 +36,23 @@ namespace bts { namespace blockchain {
 
        transaction_location chain_location;
 
-       static const transaction_db_interface& db_interface( const chain_interface& );
        void sanity_check( const chain_interface& )const;
+       static otransaction_record lookup( const chain_interface& db, const transaction_id_type& );
+       static void store( chain_interface& db, const transaction_id_type&, const transaction_record& );
+       static void remove( chain_interface& db, const transaction_id_type& );
     };
-    typedef optional<transaction_record> otransaction_record;
 
-    struct transaction_db_interface
+    class transaction_db_interface
     {
-        std::function<otransaction_record( const transaction_id_type& )>                lookup_by_id;
+       friend struct transaction_record;
 
-        std::function<void( const transaction_id_type&, const transaction_record& )>    insert_into_id_map;
-        std::function<void( const transaction& )>                                       insert_into_unique_set;
+       virtual otransaction_record transaction_lookup_by_id( const transaction_id_type& )const = 0;
 
-        std::function<void( const transaction_id_type& )>                               erase_from_id_map;
-        std::function<void( const transaction& )>                                       erase_from_unique_set;
+       virtual void transaction_insert_into_id_map( const transaction_id_type&, const transaction_record& ) = 0;
+       virtual void transaction_insert_into_unique_set( const transaction& ) = 0;
 
-        otransaction_record lookup( const transaction_id_type& )const;
-        void store( const transaction_id_type&, const transaction_record& )const;
-        void remove( const transaction_id_type& )const;
+       virtual void transaction_erase_from_id_map( const transaction_id_type& ) = 0;
+       virtual void transaction_erase_from_unique_set( const transaction& ) = 0;
     };
 
 } } // bts::blockchain

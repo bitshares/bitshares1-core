@@ -1142,15 +1142,6 @@ namespace bts { namespace blockchain {
    :my( new detail::chain_database_impl() )
    {
       my->self = this;
-
-      init_property_db_interface();
-      init_account_db_interface();
-      init_asset_db_interface();
-      init_slate_db_interface();
-      init_balance_db_interface();
-      init_transaction_db_interface();
-      init_feed_db_interface();
-      init_slot_db_interface();
    }
 
    chain_database::~chain_database()
@@ -3527,314 +3518,274 @@ namespace bts { namespace blockchain {
       return results;
    } FC_CAPTURE_AND_RETHROW( (addr) ) }
 
-   void chain_database::init_property_db_interface()
+   oproperty_record chain_database::property_lookup_by_id( const property_id_type id )const
    {
-       property_db_interface& interface = _property_db_interface;
-
-       interface.lookup_by_id = [ this ]( const property_id_type id ) -> oproperty_record
-       {
-           const auto iter = my->_property_id_to_record.unordered_find( static_cast<uint8_t>( id ) );
-           if( iter != my->_property_id_to_record.unordered_end() ) return iter->second;
-           return oproperty_record();
-       };
-
-       interface.insert_into_id_map = [ this ]( const property_id_type id, const property_record& record )
-       {
-           my->_property_id_to_record.store( static_cast<uint8_t>( id ), record );
-       };
-
-       interface.erase_from_id_map = [ this ]( const property_id_type id )
-       {
-           my->_property_id_to_record.remove( static_cast<uint8_t>( id ) );
-       };
+       const auto iter = my->_property_id_to_record.unordered_find( static_cast<uint8_t>( id ) );
+       if( iter != my->_property_id_to_record.unordered_end() ) return iter->second;
+       return oproperty_record();
    }
 
-   void chain_database::init_account_db_interface()
+   void chain_database::property_insert_into_id_map( const property_id_type id, const property_record& record )
    {
-       account_db_interface& interface = _account_db_interface;
-
-       interface.lookup_by_id = [ this ]( const account_id_type id ) -> oaccount_record
-       {
-           const auto iter = my->_account_id_to_record.unordered_find( id );
-           if( iter != my->_account_id_to_record.unordered_end() ) return iter->second;
-           return oaccount_record();
-       };
-
-       interface.lookup_by_name = [ this, &interface ]( const string& name ) -> oaccount_record
-       {
-           const auto iter = my->_account_name_to_id.unordered_find( name );
-           if( iter != my->_account_name_to_id.unordered_end() ) return interface.lookup_by_id( iter->second );
-           return oaccount_record();
-       };
-
-       interface.lookup_by_address = [ this, &interface ]( const address& addr ) -> oaccount_record
-       {
-           const auto iter = my->_account_address_to_id.unordered_find( addr );
-           if( iter != my->_account_address_to_id.unordered_end() ) return interface.lookup_by_id( iter->second );
-           return oaccount_record();
-       };
-
-       interface.insert_into_id_map = [ this ]( const account_id_type id, const account_record& record )
-       {
-           my->_account_id_to_record.store( id, record );
-       };
-
-       interface.insert_into_name_map = [ this ]( const string& name, const account_id_type id )
-       {
-           my->_account_name_to_id.store( name, id );
-       };
-
-       interface.insert_into_address_map = [ this ]( const address& addr, const account_id_type id )
-       {
-           my->_account_address_to_id.store( addr, id );
-       };
-
-       interface.insert_into_vote_set = [ this ]( const vote_del& vote )
-       {
-           my->_delegate_votes.insert( vote );
-       };
-
-       interface.erase_from_id_map = [ this ]( const account_id_type id )
-       {
-           my->_account_id_to_record.remove( id );
-       };
-
-       interface.erase_from_name_map = [ this ]( const string& name )
-       {
-           my->_account_name_to_id.remove( name );
-       };
-
-       interface.erase_from_address_map = [ this ]( const address& addr )
-       {
-           my->_account_address_to_id.remove( addr );
-       };
-
-       interface.erase_from_vote_set = [ this ]( const vote_del& vote )
-       {
-           my->_delegate_votes.erase( vote );
-       };
+       my->_property_id_to_record.store( static_cast<uint8_t>( id ), record );
    }
 
-   void chain_database::init_asset_db_interface()
+   void chain_database::property_erase_from_id_map( const property_id_type id )
    {
-       asset_db_interface& interface = _asset_db_interface;
-
-       interface.lookup_by_id = [ this ]( const asset_id_type id ) -> oasset_record
-       {
-           const auto iter = my->_asset_id_to_record.unordered_find( id );
-           if( iter != my->_asset_id_to_record.unordered_end() ) return iter->second;
-           return oasset_record();
-       };
-
-       interface.lookup_by_symbol = [ this, &interface ]( const string& symbol ) -> oasset_record
-       {
-           const auto iter = my->_asset_symbol_to_id.unordered_find( symbol );
-           if( iter != my->_asset_symbol_to_id.unordered_end() ) return interface.lookup_by_id( iter->second );
-           return oasset_record();
-       };
-
-       interface.insert_into_id_map = [ this ]( const asset_id_type id, const asset_record& record )
-       {
-           my->_asset_id_to_record.store( id, record );
-       };
-
-       interface.insert_into_symbol_map = [ this ]( const string& symbol, const asset_id_type id )
-       {
-           my->_asset_symbol_to_id.store( symbol, id );
-       };
-
-       interface.erase_from_id_map = [ this ]( const asset_id_type id )
-       {
-           my->_asset_id_to_record.remove( id );
-       };
-
-       interface.erase_from_symbol_map = [ this ]( const string& symbol )
-       {
-           my->_asset_symbol_to_id.remove( symbol );
-       };
+       my->_property_id_to_record.remove( static_cast<uint8_t>( id ) );
    }
 
-   void chain_database::init_slate_db_interface()
+   oaccount_record chain_database::account_lookup_by_id( const account_id_type id )const
    {
-       slate_db_interface& interface = _slate_db_interface;
-
-       interface.lookup_by_id = [ this ]( const slate_id_type id ) -> oslate_record
-       {
-           const auto iter = my->_slate_id_to_record.unordered_find( id );
-           if( iter != my->_slate_id_to_record.unordered_end() ) return iter->second;
-           return oslate_record();
-       };
-
-       interface.insert_into_id_map = [ this ]( const slate_id_type id, const slate_record& record )
-       {
-           my->_slate_id_to_record.store( id, record );
-       };
-
-       interface.erase_from_id_map = [ this ]( const slate_id_type id )
-       {
-           my->_slate_id_to_record.remove( id );
-       };
+       const auto iter = my->_account_id_to_record.unordered_find( id );
+       if( iter != my->_account_id_to_record.unordered_end() ) return iter->second;
+       return oaccount_record();
    }
 
-   void chain_database::init_balance_db_interface()
+   oaccount_record chain_database::account_lookup_by_name( const string& name )const
    {
-       balance_db_interface& interface = _balance_db_interface;
-
-       interface.lookup_by_id = [ this ]( const balance_id_type& id ) -> obalance_record
-       {
-           const auto iter = my->_balance_id_to_record.unordered_find( id );
-           if( iter != my->_balance_id_to_record.unordered_end() ) return iter->second;
-           return obalance_record();
-       };
-
-       interface.insert_into_id_map = [ this ]( const balance_id_type& id, const balance_record& record )
-       {
-           my->_balance_id_to_record.store( id, record );
-       };
-
-       interface.erase_from_id_map = [ this ]( const balance_id_type& id )
-       {
-           my->_balance_id_to_record.remove( id );
-       };
+       const auto iter = my->_account_name_to_id.unordered_find( name );
+       if( iter != my->_account_name_to_id.unordered_end() ) return account_lookup_by_id( iter->second );
+       return oaccount_record();
    }
 
-   void chain_database::init_transaction_db_interface()
+   oaccount_record chain_database::account_lookup_by_address( const address& addr )const
    {
-       transaction_db_interface& interface = _transaction_db_interface;
+       const auto iter = my->_account_address_to_id.unordered_find( addr );
+       if( iter != my->_account_address_to_id.unordered_end() ) return account_lookup_by_id( iter->second );
+       return oaccount_record();
+   }
 
-       interface.lookup_by_id = [ this ]( const transaction_id_type& id ) -> otransaction_record
+   void chain_database::account_insert_into_id_map( const account_id_type id, const account_record& record )
+   {
+       my->_account_id_to_record.store( id, record );
+   }
+
+   void chain_database::account_insert_into_name_map( const string& name, const account_id_type id )
+   {
+       my->_account_name_to_id.store( name, id );
+   }
+
+   void chain_database::account_insert_into_address_map( const address& addr, const account_id_type id )
+   {
+       my->_account_address_to_id.store( addr, id );
+   }
+
+   void chain_database::account_insert_into_vote_set( const vote_del& vote )
+   {
+       my->_delegate_votes.insert( vote );
+   }
+
+   void chain_database::account_erase_from_id_map( const account_id_type id )
+   {
+       my->_account_id_to_record.remove( id );
+   }
+
+   void chain_database::account_erase_from_name_map( const string& name )
+   {
+       my->_account_name_to_id.remove( name );
+   }
+
+   void chain_database::account_erase_from_address_map( const address& addr )
+   {
+       my->_account_address_to_id.remove( addr );
+   }
+
+   void chain_database::account_erase_from_vote_set( const vote_del& vote )
+   {
+       my->_delegate_votes.erase( vote );
+   }
+
+   oasset_record chain_database::asset_lookup_by_id( const asset_id_type id )const
+   {
+       const auto iter = my->_asset_id_to_record.unordered_find( id );
+       if( iter != my->_asset_id_to_record.unordered_end() ) return iter->second;
+       return oasset_record();
+   }
+
+   oasset_record chain_database::asset_lookup_by_symbol( const string& symbol )const
+   {
+       const auto iter = my->_asset_symbol_to_id.unordered_find( symbol );
+       if( iter != my->_asset_symbol_to_id.unordered_end() ) return asset_lookup_by_id( iter->second );
+       return oasset_record();
+   }
+
+   void chain_database::asset_insert_into_id_map( const asset_id_type id, const asset_record& record )
+   {
+       my->_asset_id_to_record.store( id, record );
+   }
+
+   void chain_database::asset_insert_into_symbol_map( const string& symbol, const asset_id_type id )
+   {
+       my->_asset_symbol_to_id.store( symbol, id );
+   }
+
+   void chain_database::asset_erase_from_id_map( const asset_id_type id )
+   {
+       my->_asset_id_to_record.remove( id );
+   }
+
+   void chain_database::asset_erase_from_symbol_map( const string& symbol )
+   {
+       my->_asset_symbol_to_id.remove( symbol );
+   }
+
+   oslate_record chain_database::slate_lookup_by_id( const slate_id_type id )const
+   {
+       const auto iter = my->_slate_id_to_record.unordered_find( id );
+       if( iter != my->_slate_id_to_record.unordered_end() ) return iter->second;
+       return oslate_record();
+   }
+
+   void chain_database::slate_insert_into_id_map( const slate_id_type id, const slate_record& record )
+   {
+       my->_slate_id_to_record.store( id, record );
+   }
+
+   void chain_database::slate_erase_from_id_map( const slate_id_type id )
+   {
+       my->_slate_id_to_record.remove( id );
+   }
+
+   obalance_record chain_database::balance_lookup_by_id( const balance_id_type& id )const
+   {
+       const auto iter = my->_balance_id_to_record.unordered_find( id );
+       if( iter != my->_balance_id_to_record.unordered_end() ) return iter->second;
+       return obalance_record();
+   }
+
+   void chain_database::balance_insert_into_id_map( const balance_id_type& id, const balance_record& record )
+   {
+       my->_balance_id_to_record.store( id, record );
+   }
+
+   void chain_database::balance_erase_from_id_map( const balance_id_type& id )
+   {
+       my->_balance_id_to_record.remove( id );
+   }
+
+   otransaction_record chain_database::transaction_lookup_by_id( const transaction_id_type& id )const
+   {
+       return my->_transaction_id_to_record.fetch_optional( id );
+   }
+
+   void chain_database::transaction_insert_into_id_map( const transaction_id_type& id, const transaction_record& record )
+   {
+       my->_transaction_id_to_record.store( id, record );
+
+       if( get_statistics_enabled() )
        {
-           return my->_transaction_id_to_record.fetch_optional( id );
-       };
+           const auto scan_address = [ & ]( const address& addr )
+           {
+               auto ids = my->_address_to_transaction_ids.fetch_optional( addr );
+               if( !ids.valid() ) ids = unordered_set<transaction_id_type>();
+               ids->insert( id );
+               my->_address_to_transaction_ids.store( addr, *ids );
+           };
+           record.scan_addresses( *this, scan_address );
 
-       interface.insert_into_id_map = [ this ]( const transaction_id_type& id, const transaction_record& record )
+           for( const operation& op : record.trx.operations )
+               store_recent_operation( op );
+       }
+   }
+
+   void chain_database::transaction_insert_into_unique_set( const transaction& trx )
+   {
+       my->_unique_transactions.emplace_hint( my->_unique_transactions.cend(), trx, get_chain_id() );
+   }
+
+   void chain_database::transaction_erase_from_id_map( const transaction_id_type& id )
+   {
+       if( get_statistics_enabled() )
        {
-           my->_transaction_id_to_record.store( id, record );
-
-           if( get_statistics_enabled() )
+           const otransaction_record record = transaction_lookup_by_id( id );
+           if( record.valid() )
            {
                const auto scan_address = [ & ]( const address& addr )
                {
                    auto ids = my->_address_to_transaction_ids.fetch_optional( addr );
-                   if( !ids.valid() ) ids = unordered_set<transaction_id_type>();
-                   ids->insert( id );
-                   my->_address_to_transaction_ids.store( addr, *ids );
+                   if( !ids.valid() ) return;
+                   ids->erase( id );
+                   if( !ids->empty() ) my->_address_to_transaction_ids.store( addr, *ids );
+                   else my->_address_to_transaction_ids.remove( addr );
                };
-               record.scan_addresses( *this, scan_address );
-
-               for( const operation& op : record.trx.operations )
-                   store_recent_operation( op );
+               record->scan_addresses( *this, scan_address );
            }
-       };
+       }
 
-       interface.insert_into_unique_set = [ this ]( const transaction& trx )
-       {
-           my->_unique_transactions.emplace_hint( my->_unique_transactions.cend(), trx, get_chain_id() );
-       };
-
-       interface.erase_from_id_map = [ this, &interface ]( const transaction_id_type& id )
-       {
-           if( get_statistics_enabled() )
-           {
-               const otransaction_record record = interface.lookup_by_id( id );
-               if( record.valid() )
-               {
-                   const auto scan_address = [ & ]( const address& addr )
-                   {
-                       auto ids = my->_address_to_transaction_ids.fetch_optional( addr );
-                       if( !ids.valid() ) return;
-                       ids->erase( id );
-                       if( !ids->empty() ) my->_address_to_transaction_ids.store( addr, *ids );
-                       else my->_address_to_transaction_ids.remove( addr );
-                   };
-                   record->scan_addresses( *this, scan_address );
-               }
-           }
-
-           my->_transaction_id_to_record.remove( id );
-       };
-
-       interface.erase_from_unique_set = [ this ]( const transaction& trx )
-       {
-           my->_unique_transactions.erase( unique_transaction_key( trx, get_chain_id() ) );
-       };
+       my->_transaction_id_to_record.remove( id );
    }
 
-   void chain_database::init_feed_db_interface()
+   void chain_database::transaction_erase_from_unique_set( const transaction& trx )
    {
-       feed_db_interface& interface = _feed_db_interface;
-
-       interface.lookup_by_index = [ this ]( const feed_index index ) -> ofeed_record
-       {
-           const auto outer_iter = my->_nested_feed_map.find( index.quote_id );
-           if( outer_iter != my->_nested_feed_map.end() )
-           {
-               const auto inner_iter = outer_iter->second.find( index.delegate_id );
-               if( inner_iter != outer_iter->second.end() )
-                   return inner_iter->second;
-
-           }
-           return ofeed_record();
-       };
-
-       interface.insert_into_index_map = [ this ]( const feed_index index, const feed_record& record )
-       {
-           my->_feed_index_to_record.store( index, record );
-           my->_nested_feed_map[ index.quote_id ][ index.delegate_id ] = record;
-       };
-
-       interface.erase_from_index_map = [ this ]( const feed_index index )
-       {
-           my->_feed_index_to_record.remove( index );
-           const auto outer_iter = my->_nested_feed_map.find( index.quote_id );
-           if( outer_iter != my->_nested_feed_map.end() )
-           {
-               const auto inner_iter = outer_iter->second.find( index.delegate_id );
-               if( inner_iter != outer_iter->second.end() )
-                   outer_iter->second.erase( index.delegate_id );
-           }
-       };
+       my->_unique_transactions.erase( unique_transaction_key( trx, get_chain_id() ) );
    }
 
-   void chain_database::init_slot_db_interface()
+   ofeed_record chain_database::feed_lookup_by_index( const feed_index index )const
    {
-       slot_db_interface& interface = _slot_db_interface;
-
-       interface.lookup_by_index = [ this ]( const slot_index index ) -> oslot_record
+       const auto outer_iter = my->_nested_feed_map.find( index.quote_id );
+       if( outer_iter != my->_nested_feed_map.end() )
        {
-           return my->_slot_index_to_record.fetch_optional( index );
-       };
+           const auto inner_iter = outer_iter->second.find( index.delegate_id );
+           if( inner_iter != outer_iter->second.end() )
+               return inner_iter->second;
 
-       interface.lookup_by_timestamp = [ this ]( const time_point_sec timestamp ) -> oslot_record
-       {
-           const optional<account_id_type> delegate_id = my->_slot_timestamp_to_delegate.fetch_optional( timestamp );
-           if( !delegate_id.valid() ) return oslot_record();
-           return my->_slot_index_to_record.fetch_optional( slot_index( *delegate_id, timestamp ) );
-       };
+       }
+       return ofeed_record();
+   }
 
-       interface.insert_into_index_map = [ this ]( const slot_index index, const slot_record& record )
-       {
-           if( !get_statistics_enabled() ) return;
-           my->_slot_index_to_record.store( index, record );
-       };
+   void chain_database::feed_insert_into_index_map( const feed_index index, const feed_record& record )
+   {
+       my->_feed_index_to_record.store( index, record );
+       my->_nested_feed_map[ index.quote_id ][ index.delegate_id ] = record;
+   }
 
-       interface.insert_into_timestamp_map = [ this ]( const time_point_sec timestamp, const account_id_type delegate_id )
+   void chain_database::feed_erase_from_index_map( const feed_index index )
+   {
+       my->_feed_index_to_record.remove( index );
+       const auto outer_iter = my->_nested_feed_map.find( index.quote_id );
+       if( outer_iter != my->_nested_feed_map.end() )
        {
-           if( !get_statistics_enabled() ) return;
-           my->_slot_timestamp_to_delegate.store( timestamp, delegate_id );
-       };
+           const auto inner_iter = outer_iter->second.find( index.delegate_id );
+           if( inner_iter != outer_iter->second.end() )
+               outer_iter->second.erase( index.delegate_id );
+       }
+   }
 
-       interface.erase_from_index_map = [ this ]( const slot_index index )
-       {
-           if( !get_statistics_enabled() ) return;
-           my->_slot_index_to_record.remove( index );
-       };
+   oslot_record chain_database::slot_lookup_by_index( const slot_index index )const
+   {
+       return my->_slot_index_to_record.fetch_optional( index );
+   }
 
-       interface.erase_from_timestamp_map = [ this ]( const time_point_sec timestamp )
-       {
-           if( !get_statistics_enabled() ) return;
-           my->_slot_timestamp_to_delegate.remove( timestamp );
-       };
+   oslot_record chain_database::slot_lookup_by_timestamp( const time_point_sec timestamp )const
+   {
+       const optional<account_id_type> delegate_id = my->_slot_timestamp_to_delegate.fetch_optional( timestamp );
+       if( !delegate_id.valid() ) return oslot_record();
+       return my->_slot_index_to_record.fetch_optional( slot_index( *delegate_id, timestamp ) );
+   }
+
+   void chain_database::slot_insert_into_index_map( const slot_index index, const slot_record& record )
+   {
+       if( !get_statistics_enabled() ) return;
+       my->_slot_index_to_record.store( index, record );
+   }
+
+   void chain_database::slot_insert_into_timestamp_map( const time_point_sec timestamp, const account_id_type delegate_id )
+   {
+       if( !get_statistics_enabled() ) return;
+       my->_slot_timestamp_to_delegate.store( timestamp, delegate_id );
+   }
+
+   void chain_database::slot_erase_from_index_map( const slot_index index )
+   {
+       if( !get_statistics_enabled() ) return;
+       my->_slot_index_to_record.remove( index );
+   }
+
+   void chain_database::slot_erase_from_timestamp_map( const time_point_sec timestamp )
+   {
+       if( !get_statistics_enabled() ) return;
+       my->_slot_timestamp_to_delegate.remove( timestamp );
    }
 
 } } // bts::blockchain

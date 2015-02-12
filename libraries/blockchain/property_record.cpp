@@ -3,31 +3,26 @@
 
 namespace bts { namespace blockchain {
 
-const property_db_interface& property_record::db_interface( const chain_interface& db )
-{ try {
-    return db._property_db_interface;
-} FC_CAPTURE_AND_RETHROW() }
-
 void property_record::sanity_check( const chain_interface& db )const
 { try {
     FC_ASSERT( !value.is_null() );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-oproperty_record property_db_interface::lookup( const property_id_type id )const
+oproperty_record property_record::lookup( const chain_interface& db, const property_id_type id )
 { try {
-    return lookup_by_id( id );
+    return db.property_lookup_by_id( id );
 } FC_CAPTURE_AND_RETHROW( (id) ) }
 
-void property_db_interface::store( const property_id_type id, const property_record& record )const
+void property_record::store( chain_interface& db, const property_id_type id, const property_record& record )
 { try {
-    insert_into_id_map( id, record );
+    db.property_insert_into_id_map( id, record );
 } FC_CAPTURE_AND_RETHROW( (id)(record) ) }
 
-void property_db_interface::remove( const property_id_type id )const
+void property_record::remove( chain_interface& db, const property_id_type id )
 { try {
-    const oproperty_record prev_record = lookup( id );
+    const oproperty_record prev_record = db.lookup<property_record>( id );
     if( prev_record.valid() )
-        erase_from_id_map( id );
+        db.property_erase_from_id_map( id );
 } FC_CAPTURE_AND_RETHROW( (id) ) }
 
 } } // bts::blockchain

@@ -83,11 +83,6 @@ namespace bts { namespace blockchain {
        return fc::ecc::public_key( *signer, digest );
     }
 
-    const account_db_interface& account_record::db_interface( const chain_interface& db )
-    { try {
-        return db._account_db_interface;
-    } FC_CAPTURE_AND_RETHROW() }
-
     void account_record::sanity_check( const chain_interface& db )const
     { try {
         FC_ASSERT( id > 0 );
@@ -102,38 +97,38 @@ namespace bts { namespace blockchain {
         }
     } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-    oaccount_record account_db_interface::lookup( const account_id_type id )const
+    oaccount_record account_record::lookup( const chain_interface& db, const account_id_type id )
     { try {
-        return lookup_by_id( id );
+        return db.account_lookup_by_id( id );
     } FC_CAPTURE_AND_RETHROW( (id) ) }
 
-    oaccount_record account_db_interface::lookup( const string& name )const
+    oaccount_record account_record::lookup( const chain_interface& db, const string& name )
     { try {
-        return lookup_by_name( name );
+        return db.account_lookup_by_name( name );
     } FC_CAPTURE_AND_RETHROW( (name) ) }
 
-    oaccount_record account_db_interface::lookup( const address& addr )const
+    oaccount_record account_record::lookup( const chain_interface& db, const address& addr )
     { try {
-        return lookup_by_address( addr );
+        return db.account_lookup_by_address( addr );
     } FC_CAPTURE_AND_RETHROW( (addr) ) }
 
-    void account_db_interface::store( const account_id_type id, const account_record& record )const
+    void account_record::store( chain_interface& db, const account_id_type id, const account_record& record )
     { try {
-        const oaccount_record prev_record = lookup( id );
+        const oaccount_record prev_record = db.lookup<account_record>( id );
         if( prev_record.valid() )
         {
             if( prev_record->name != record.name )
-                erase_from_name_map( prev_record->name );
+                db.account_erase_from_name_map( prev_record->name );
 
             if( prev_record->owner_address() != record.owner_address() )
-                erase_from_address_map( prev_record->owner_address() );
+                db.account_erase_from_address_map( prev_record->owner_address() );
 
             if( fc::ripemd160::hash( prev_record->active_key_history ) != fc::ripemd160::hash( record.active_key_history ) )
             {
                 for( const auto& item : prev_record->active_key_history )
                 {
                     const public_key_type& active_key = item.second;
-                    erase_from_address_map( address( active_key ) );
+                    db.account_erase_from_address_map( address( active_key ) );
                 }
             }
 
@@ -145,26 +140,26 @@ namespace bts { namespace blockchain {
                     for( const auto& item : prev_record->delegate_info->signing_key_history )
                     {
                         const public_key_type& signing_key = item.second;
-                        erase_from_address_map( address( signing_key ) );
+                        db.account_erase_from_address_map( address( signing_key ) );
                     }
                 }
 
                 if( !prev_record->is_retracted() )
                 {
                     if( record.is_retracted() || !record.is_delegate() || prev_record->net_votes() != record.net_votes() )
-                        erase_from_vote_set( vote_del( prev_record->net_votes(), prev_record->id ) );
+                        db.account_erase_from_vote_set( vote_del( prev_record->net_votes(), prev_record->id ) );
                 }
             }
         }
 
-        insert_into_id_map( id, record );
-        insert_into_name_map( record.name, id );
-        insert_into_address_map( record.owner_address(), id );
+        db.account_insert_into_id_map( id, record );
+        db.account_insert_into_name_map( record.name, id );
+        db.account_insert_into_address_map( record.owner_address(), id );
 
         for( const auto& item : record.active_key_history )
         {
             const public_key_type& active_key = item.second;
-            if( active_key != public_key_type() ) insert_into_address_map( address( active_key ), id );
+            if( active_key != public_key_type() ) db.account_insert_into_address_map( address( active_key ), id );
         }
 
         if( record.is_delegate() )
@@ -172,27 +167,27 @@ namespace bts { namespace blockchain {
             for( const auto& item : record.delegate_info->signing_key_history )
             {
                 const public_key_type& signing_key = item.second;
-                if( signing_key != public_key_type() ) insert_into_address_map( address( signing_key ), id );
+                if( signing_key != public_key_type() ) db.account_insert_into_address_map( address( signing_key ), id );
             }
 
             if( !record.is_retracted() )
-                insert_into_vote_set( vote_del( record.net_votes(), id ) );
+                db.account_insert_into_vote_set( vote_del( record.net_votes(), id ) );
         }
     } FC_CAPTURE_AND_RETHROW( (id)(record) ) }
 
-    void account_db_interface::remove( const account_id_type id )const
+    void account_record::remove( chain_interface& db, const account_id_type id )
     { try {
-        const oaccount_record prev_record = lookup( id );
+        const oaccount_record prev_record = db.lookup<account_record>( id );
         if( prev_record.valid() )
         {
-            erase_from_id_map( id );
-            erase_from_name_map( prev_record->name );
-            erase_from_address_map( prev_record->owner_address() );
+            db.account_erase_from_id_map( id );
+            db.account_erase_from_name_map( prev_record->name );
+            db.account_erase_from_address_map( prev_record->owner_address() );
 
             for( const auto& item : prev_record->active_key_history )
             {
                 const public_key_type& active_key = item.second;
-                erase_from_address_map( address( active_key ) );
+                db.account_erase_from_address_map( address( active_key ) );
             }
 
             if( prev_record->is_delegate() )
@@ -200,11 +195,11 @@ namespace bts { namespace blockchain {
                 for( const auto& item : prev_record->delegate_info->signing_key_history )
                 {
                     const public_key_type& signing_key = item.second;
-                    erase_from_address_map( address( signing_key ) );
+                    db.account_erase_from_address_map( address( signing_key ) );
                 }
 
                 if( !prev_record->is_retracted() )
-                    erase_from_vote_set( vote_del( prev_record->net_votes(), prev_record->id ) );
+                    db.account_erase_from_vote_set( vote_del( prev_record->net_votes(), prev_record->id ) );
             }
         }
     } FC_CAPTURE_AND_RETHROW( (id) ) }

@@ -9,11 +9,7 @@ namespace bts { namespace blockchain {
    {
       public:
                                         pending_chain_state( chain_interface_ptr prev_state = chain_interface_ptr() );
-                                        pending_chain_state( const pending_chain_state& cpy );
-         void                           init();
-         pending_chain_state&           operator=(const pending_chain_state&) = default;
-
-         virtual                        ~pending_chain_state()override;
+         pending_chain_state&           operator = ( const pending_chain_state& ) = default;
 
          void                           set_prev_state( chain_interface_ptr prev_state );
 
@@ -147,14 +143,61 @@ namespace bts { namespace blockchain {
          // Not serialized
          std::weak_ptr<chain_interface>                                     _prev_state;
 
-         virtual void init_property_db_interface()override;
-         virtual void init_account_db_interface()override;
-         virtual void init_asset_db_interface()override;
-         virtual void init_balance_db_interface()override;
-         virtual void init_transaction_db_interface()override;
-         virtual void init_slate_db_interface()override;
-         virtual void init_feed_db_interface()override;
-         virtual void init_slot_db_interface()override;
+         virtual oproperty_record property_lookup_by_id( const property_id_type )const override;
+         virtual void property_insert_into_id_map( const property_id_type, const property_record& )override;
+         virtual void property_erase_from_id_map( const property_id_type )override;
+
+         virtual oaccount_record account_lookup_by_id( const account_id_type )const override;
+         virtual oaccount_record account_lookup_by_name( const string& )const override;
+         virtual oaccount_record account_lookup_by_address( const address& )const override;
+
+         virtual void account_insert_into_id_map( const account_id_type, const account_record& )override;
+         virtual void account_insert_into_name_map( const string&, const account_id_type )override;
+         virtual void account_insert_into_address_map( const address&, const account_id_type )override;
+         virtual void account_insert_into_vote_set( const vote_del& )override;
+
+         virtual void account_erase_from_id_map( const account_id_type )override;
+         virtual void account_erase_from_name_map( const string& )override;
+         virtual void account_erase_from_address_map( const address& )override;
+         virtual void account_erase_from_vote_set( const vote_del& )override;
+
+         virtual oasset_record asset_lookup_by_id( const asset_id_type )const override;
+         virtual oasset_record asset_lookup_by_symbol( const string& )const override;
+
+         virtual void asset_insert_into_id_map( const asset_id_type, const asset_record& )override;
+         virtual void asset_insert_into_symbol_map( const string&, const asset_id_type )override;
+
+         virtual void asset_erase_from_id_map( const asset_id_type )override;
+         virtual void asset_erase_from_symbol_map( const string& )override;
+
+         virtual oslate_record slate_lookup_by_id( const slate_id_type )const override;
+         virtual void slate_insert_into_id_map( const slate_id_type, const slate_record& )override;
+         virtual void slate_erase_from_id_map( const slate_id_type )override;
+
+         virtual obalance_record balance_lookup_by_id( const balance_id_type& )const override;
+         virtual void balance_insert_into_id_map( const balance_id_type&, const balance_record& )override;
+         virtual void balance_erase_from_id_map( const balance_id_type& )override;
+
+         virtual otransaction_record transaction_lookup_by_id( const transaction_id_type& )const override;
+
+         virtual void transaction_insert_into_id_map( const transaction_id_type&, const transaction_record& )override;
+         virtual void transaction_insert_into_unique_set( const transaction& )override;
+
+         virtual void transaction_erase_from_id_map( const transaction_id_type& )override;
+         virtual void transaction_erase_from_unique_set( const transaction& )override;
+
+         virtual ofeed_record feed_lookup_by_index( const feed_index )const override;
+         virtual void feed_insert_into_index_map( const feed_index, const feed_record& )override;
+         virtual void feed_erase_from_index_map( const feed_index )override;
+
+         virtual oslot_record slot_lookup_by_index( const slot_index )const override;
+         virtual oslot_record slot_lookup_by_timestamp( const time_point_sec )const override;
+
+         virtual void slot_insert_into_index_map( const slot_index, const slot_record& )override;
+         virtual void slot_insert_into_timestamp_map( const time_point_sec, const account_id_type )override;
+
+         virtual void slot_erase_from_index_map( const slot_index )override;
+         virtual void slot_erase_from_timestamp_map( const time_point_sec )override;
    };
    typedef std::shared_ptr<pending_chain_state> pending_chain_state_ptr;
 
