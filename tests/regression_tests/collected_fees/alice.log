@@ -96,8 +96,7 @@ default (unlocked) >>> blockchain_get_asset USD
   "authority": {
     "required": 0,
     "owners": []
-  },
-  "last_proposal_id": 0
+  }
 }
 default (unlocked) >>> blockchain_market_order_book USD XTS
      BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
@@ -157,8 +156,7 @@ default (unlocked) >>> blockchain_get_asset USD
   "authority": {
     "required": 0,
     "owners": []
-  },
-  "last_proposal_id": 0
+  }
 }
 default (unlocked) >>> history
  TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
