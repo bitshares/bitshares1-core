@@ -88,8 +88,7 @@ default (unlocked) >>> blockchain_get_asset TEST
     "owners": [
       "XTSBcMjERMjXoESq9zjCGBHsX3RbGhNFABUX"
     ]
-  },
-  "last_proposal_id": 0
+  }
 }
 default (unlocked) >>> wallet_asset_update TEST null null null null null 0 ["restricted"] ["restricted", "retractable", "market_halt"]
 {
