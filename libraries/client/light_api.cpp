@@ -8,14 +8,24 @@
 
 namespace bts { namespace client { namespace detail {
 
-fc::variant_object client_impl::fetch_welcome_package()
+fc::variant_object client_impl::fetch_welcome_package(const fc::variant_object& arguments)
 {
    fc::mutable_variant_object welcome_package;
    welcome_package["chain_id"] = _chain_db->get_chain_id();
    welcome_package["relay_fee_collector"] = _chain_db->get_account_record(_config.relay_account_name);
    welcome_package["network_fee_amount"] = _config.light_network_fee;
    welcome_package["relay_fee_amount"] = _config.light_relay_fee;
-   welcome_package["all_assets"] = blockchain_list_assets("", -1);
+
+   auto all_assets = blockchain_list_assets("", -1);
+   if( arguments.contains("last_known_asset_id") )
+   {
+      asset_id_type last_known_asset_id = arguments["last_known_asset_id"].as<asset_id_type>();
+      all_assets.erase(std::remove_if(all_assets.begin(), all_assets.end(), [last_known_asset_id] (const asset_record& rec) {
+         return rec.id <= last_known_asset_id;
+      }), all_assets.end());
+   }
+   welcome_package["new_assets"] = all_assets;
+
    return welcome_package;
 }
 

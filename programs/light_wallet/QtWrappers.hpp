@@ -18,15 +18,17 @@ class LedgerEntry : public QObject
    Q_PROPERTY(qreal amount MEMBER m_amount NOTIFY stub)
    Q_PROPERTY(QString symbol MEMBER m_symbol NOTIFY stub)
    Q_PROPERTY(QString memo MEMBER m_memo NOTIFY stub)
+   Q_PROPERTY(qreal yield MEMBER m_yield NOTIFY stub)
 
    QString m_sender;
    QString m_receiver;
    qreal m_amount;
    QString m_symbol;
    QString m_memo;
+   qreal m_yield;
 
 public:
-   LedgerEntry(QObject* parent = nullptr): QObject(parent){}
+   LedgerEntry(QObject* parent = nullptr): QObject(parent), m_amount(0), m_yield(0){}
    ~LedgerEntry(){}
 
 Q_SIGNALS:

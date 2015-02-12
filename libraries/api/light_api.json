@@ -5,7 +5,13 @@
          "method_name" : "fetch_welcome_package",
          "description" : "Return all the data a light wallet needs to bootstrap itself.",
          "return_type" : "variant_object",
-         "parameters"  : [],
+         "parameters"  : [
+            {
+               "name" : "arguments",
+               "type" : "variant_object",
+               "description" : "Arguments to fetch_welcome_package"
+            }
+         ],
          "prerequisites" : ["no_prerequisites"]
       },
       {
