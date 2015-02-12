@@ -94,9 +94,9 @@ void light_wallet::connect(const string& host, const string& user, const string&
          set_disconnect_callback(nullptr);
          if( user != "any" && pass != "none" )
             _rpc.login( user, pass );
-         FC_ASSERT( is_connected(), "Unable to connect to server." );
 
          fetch_welcome_package();
+         _is_connected = true;
 
          return;
       }
@@ -111,18 +111,18 @@ void light_wallet::connect(const string& host, const string& user, const string&
 
 bool light_wallet::is_connected() const
 {
-   return bool(_rpc.get_json_connection());
+   return _is_connected;
 }
 
 void light_wallet::set_disconnect_callback(std::function<void(fc::exception_ptr)> callback)
 {
    auto connection = _rpc.get_json_connection();
    if( !connection ) return;
-//   _rpc.get_json_connection()->set_close_callback([this, callback](fc::exception_ptr e) {
-//      _rpc.reset_json_connection();
-//      if( callback )
-//         callback(e);
-//   });
+   _rpc.get_json_connection()->set_on_disconnected_callback([this, callback](fc::exception_ptr e) {
+      _is_connected = false;
+      if( callback )
+         callback(e);
+   });
 }
 
 void light_wallet::disconnect()
