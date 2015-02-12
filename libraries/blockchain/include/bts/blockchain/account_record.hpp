@@ -23,10 +23,10 @@ namespace bts { namespace blockchain {
 
    struct account_meta_info
    {
-      fc::enum_type<fc::unsigned_int,account_type> type;
+      fc::enum_type<fc::unsigned_int,account_type> type = public_account;
       vector<char>                                 data;
 
-      account_meta_info( account_type atype = titan_account )
+      account_meta_info( account_type atype = public_account )
       :type( atype ){}
 
       template<typename AccountType>
@@ -106,7 +106,7 @@ namespace bts { namespace blockchain {
       public_key_type   signing_key()const;
       address           signing_address()const;
 
-      bool              is_public_account()const { return meta_data.valid() && meta_data->type == public_account; }
+      bool              is_titan_account()const { return meta_data.valid() && meta_data->type == titan_account; }
 
       account_id_type                        id = 0;
       std::string                            name;

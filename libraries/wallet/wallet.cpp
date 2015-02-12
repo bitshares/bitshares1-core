@@ -2278,7 +2278,7 @@ namespace detail {
                               account_record->active_key(),
                               my->get_new_private_key( account_name ),
                               from_memo,
-                              !account_record->is_public_account()
+                              account_record->is_titan_account()
                               );
 
       auto entry = ledger_entry();
@@ -2754,7 +2754,7 @@ namespace detail {
                                delegate_public_key,
                                my->get_new_private_key( delegate_name ),
                                from_memo,
-                               !receiver_account.is_public_account()
+                               receiver_account.is_titan_account()
                                );
 
        auto entry = ledger_entry();
@@ -3124,9 +3124,7 @@ namespace detail {
 
       trx.expiration = blockchain::now() + get_transaction_expiration();
 
-      optional<account_meta_info> meta_info;
-      if( new_account_type == public_account )
-         meta_info = account_meta_info( public_account );
+      optional<account_meta_info> meta_info = account_meta_info( new_account_type );
 
       // TODO: This is a hack to register with different owner and active keys until the API is fixed
       try
@@ -3375,7 +3373,7 @@ namespace detail {
                               issuer->active_key(),
                               my->get_new_private_key( issuer_account->name ),
                               from_memo,
-                              !receiver_account.is_public_account()
+                              receiver_account.is_titan_account()
                               );
 
       auto entry = ledger_entry();
