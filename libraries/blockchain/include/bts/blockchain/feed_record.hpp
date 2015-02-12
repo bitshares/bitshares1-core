@@ -21,28 +21,29 @@ namespace bts { namespace blockchain {
         }
     };
 
+    struct feed_record;
+    typedef fc::optional<feed_record> ofeed_record;
+
     class chain_interface;
-    struct feed_db_interface;
     struct feed_record
     {
         feed_index      index;
         price           value;
         time_point_sec  last_update;
 
-        static const feed_db_interface& db_interface( const chain_interface& );
         void sanity_check( const chain_interface& )const;
+        static ofeed_record lookup( const chain_interface&, const feed_index );
+        static void store( chain_interface&, const feed_index, const feed_record& );
+        static void remove( chain_interface&, const feed_index );
     };
-    typedef fc::optional<feed_record> ofeed_record;
 
-    struct feed_db_interface
+    class feed_db_interface
     {
-        std::function<ofeed_record( const feed_index )>             lookup_by_index;
-        std::function<void( const feed_index, const feed_record& )> insert_into_index_map;
-        std::function<void( const feed_index )>                     erase_from_index_map;
+        friend struct feed_record;
 
-        ofeed_record lookup( const feed_index )const;
-        void store( const feed_index, const feed_record& )const;
-        void remove( const feed_index )const;
+        virtual ofeed_record feed_lookup_by_index( const feed_index )const = 0;
+        virtual void feed_insert_into_index_map( const feed_index, const feed_record& ) = 0;
+        virtual void feed_erase_from_index_map( const feed_index ) = 0;
     };
 
     struct feed_entry

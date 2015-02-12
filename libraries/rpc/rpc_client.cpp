@@ -123,6 +123,10 @@ namespace bts { namespace rpc {
 
   void rpc_client::reset_json_connection()
   {
+     my->_json_connection->close();
+     auto ptr_copy = my->_json_connection;
+     fc::schedule([ptr_copy] { /* Do nothing; just let ptr_copy go out of scope */ },
+                  fc::time_point::now() + fc::seconds(1), __FUNCTION__);
      my->_json_connection.reset();
   }
 

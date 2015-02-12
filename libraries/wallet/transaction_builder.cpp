@@ -202,7 +202,7 @@ transaction_builder& transaction_builder::deposit_asset(const bts::wallet::walle
    auto one_time_key = _wimpl->get_new_private_key(payer.name);
    titan_one_time_key = one_time_key.get_public_key();
    trx.deposit_to_account(recipient.active_key(), amount, _wimpl->self->get_private_key(memo_key), memo,
-                          memo_key, one_time_key, from_memo, !recipient.is_public_account());
+                          memo_key, one_time_key, from_memo, recipient.is_titan_account());
 
    deduct_balance(payer.owner_key, amount);
 
@@ -297,7 +297,7 @@ transaction_builder& transaction_builder::deposit_asset_with_escrow(const bts::w
        memo_sender = payer.active_key();
 
    optional<public_key_type> titan_one_time_key;
-   if( recipient.is_public_account() )
+   if( !recipient.is_titan_account() )
    {
       // TODO: user public active receiver key...
    } else {

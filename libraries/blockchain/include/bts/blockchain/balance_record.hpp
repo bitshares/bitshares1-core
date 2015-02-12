@@ -17,8 +17,10 @@ namespace bts { namespace blockchain {
    };
    typedef fc::optional<snapshot_record> osnapshot_record;
 
+   struct balance_record;
+   typedef fc::optional<balance_record> obalance_record;
+
    class chain_interface;
-   struct balance_db_interface;
    struct balance_record
    {
       balance_record(){}
@@ -51,20 +53,19 @@ namespace bts { namespace blockchain {
 
       static balance_id_type get_multisig_balance_id( asset_id_type asset_id, uint32_t m, const vector<address>& addrs );
 
-      static const balance_db_interface& db_interface( const chain_interface& );
       void sanity_check( const chain_interface& )const;
+      static obalance_record lookup( const chain_interface&, const balance_id_type& );
+      static void store( chain_interface&, const balance_id_type&, const balance_record& );
+      static void remove( chain_interface&, const balance_id_type& );
    };
-   typedef fc::optional<balance_record> obalance_record;
 
-   struct balance_db_interface
+   class balance_db_interface
    {
-       std::function<obalance_record( const balance_id_type& )>             lookup_by_id;
-       std::function<void( const balance_id_type&, const balance_record& )> insert_into_id_map;
-       std::function<void( const balance_id_type& )>                        erase_from_id_map;
+      friend struct balance_record;
 
-       obalance_record lookup( const balance_id_type& )const;
-       void store( const balance_id_type&, const balance_record& )const;
-       void remove( const balance_id_type& )const;
+      virtual obalance_record balance_lookup_by_id( const balance_id_type& )const = 0;
+      virtual void balance_insert_into_id_map( const balance_id_type&, const balance_record& ) = 0;
+      virtual void balance_erase_from_id_map( const balance_id_type& ) = 0;
    };
 
 } } // bts::blockchain

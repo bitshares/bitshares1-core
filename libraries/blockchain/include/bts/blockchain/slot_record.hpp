@@ -25,8 +25,10 @@ struct slot_index
     }
 };
 
+struct slot_record;
+typedef fc::optional<slot_record> oslot_record;
+
 class chain_interface;
-struct slot_db_interface;
 struct slot_record
 {
     slot_record(){}
@@ -36,26 +38,25 @@ struct slot_record
     slot_index              index;
     optional<block_id_type> block_id;
 
-    static const slot_db_interface& db_interface( const chain_interface& );
     void sanity_check( const chain_interface& )const;
+    static oslot_record lookup( const chain_interface&, const slot_index );
+    static oslot_record lookup( const chain_interface&, const time_point_sec );
+    static void store( chain_interface&, const slot_index, const slot_record& );
+    static void remove( chain_interface&, const slot_index );
 };
-typedef fc::optional<slot_record> oslot_record;
 
-struct slot_db_interface
+class slot_db_interface
 {
-    std::function<oslot_record( const slot_index )>                     lookup_by_index;
-    std::function<oslot_record( const time_point_sec )>                 lookup_by_timestamp;
+    friend struct slot_record;
 
-    std::function<void( const slot_index, const slot_record& )>         insert_into_index_map;
-    std::function<void( const time_point_sec, const account_id_type )>  insert_into_timestamp_map;
+    virtual oslot_record slot_lookup_by_index( const slot_index )const = 0;
+    virtual oslot_record slot_lookup_by_timestamp( const time_point_sec )const = 0;
 
-    std::function<void( const slot_index )>                             erase_from_index_map;
-    std::function<void( const time_point_sec )>                         erase_from_timestamp_map;
+    virtual void slot_insert_into_index_map( const slot_index, const slot_record& ) = 0;
+    virtual void slot_insert_into_timestamp_map( const time_point_sec, const account_id_type ) = 0;
 
-    oslot_record lookup( const slot_index )const;
-    oslot_record lookup( const time_point_sec )const;
-    void store( const slot_index, const slot_record& )const;
-    void remove( const slot_index )const;
+    virtual void slot_erase_from_index_map( const slot_index ) = 0;
+    virtual void slot_erase_from_timestamp_map( const time_point_sec ) = 0;
 };
 
 } } // bts::blockchain

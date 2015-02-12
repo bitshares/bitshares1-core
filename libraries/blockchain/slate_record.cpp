@@ -14,31 +14,26 @@ slate_id_type slate_record::id()const
     return enc.result()._hash[ 0 ];
 }
 
-const slate_db_interface& slate_record::db_interface( const chain_interface& db )
-{ try {
-    return db._slate_db_interface;
-} FC_CAPTURE_AND_RETHROW() }
-
 void slate_record::sanity_check( const chain_interface& db )const
 { try {
     FC_ASSERT( !slate.empty() );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-oslate_record slate_db_interface::lookup( const slate_id_type id )const
+oslate_record slate_record::lookup( const chain_interface& db, const slate_id_type id )
 { try {
-    return lookup_by_id( id );
+    return db.slate_lookup_by_id( id );
 } FC_CAPTURE_AND_RETHROW( (id) ) }
 
-void slate_db_interface::store( const slate_id_type id, const slate_record& record )const
+void slate_record::store( chain_interface& db, const slate_id_type id, const slate_record& record )
 { try {
-    insert_into_id_map( id, record );
+    db.slate_insert_into_id_map( id, record );
 } FC_CAPTURE_AND_RETHROW( (id)(record) ) }
 
-void slate_db_interface::remove( const slate_id_type id )const
+void slate_record::remove( chain_interface& db, const slate_id_type id )
 { try {
-    const oslate_record prev_record = lookup( id );
+    const oslate_record prev_record = db.lookup<slate_record>( id );
     if( prev_record.valid() )
-        erase_from_id_map( id );
+        db.slate_erase_from_id_map( id );
 } FC_CAPTURE_AND_RETHROW( (id) ) }
 
 } } // bts::blockchain

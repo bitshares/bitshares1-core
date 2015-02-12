@@ -503,38 +503,12 @@ void replay_chain_database()
   fc::time_point load_end_time(fc::time_point::now());
   BOOST_TEST_MESSAGE("Done loading into memory in " << ((double)(load_end_time - load_start_time).count() / fc::seconds(1).count()) << " seconds, replaying now...");
 
-//#define COLLECT_DETAILED_STATS
-#ifdef COLLECT_DETAILED_STATS
-  std::ofstream csv_file("replay_chain_database.csv");
-  csv_file << "\"block_num\",\"elapsed_time\"";
-  fc::variant_object stats = client->get_chain()->get_stats();
-  for (fc::variant_object::iterator iter = stats.begin(); iter != stats.end(); ++iter)
-    csv_file << ",\"" << iter->key() << "\"";
-  csv_file << "\n";
-#endif
-
   fc::time_point start_time(fc::time_point::now());
   fc::microseconds overhead_time;
   client->sync_status(bts::client::block_message::type, total_blocks_to_replay);
   for (unsigned block_num = 1; block_num <= total_blocks_to_replay; ++block_num)
   {
     client->handle_message(all_messages[block_num - 1], true);
-
-#ifdef COLLECT_DETAILED_STATS
-    if (block_num % granularity == 0 || block_num == total_blocks_to_replay)
-    {
-      fc::time_point start_dumping_time(fc::time_point::now());
-      fc::microseconds elapsed_since_start = start_dumping_time - start_time - overhead_time;
-      csv_file << block_num << "," << elapsed_since_start.count();
-      stats = client->get_chain()->get_stats();
-      for (fc::variant_object::iterator iter = stats.begin(); iter != stats.end(); ++iter)
-        csv_file << ","<< iter->value().as<size_t>();
-      csv_file << "\n";
-
-      fc::time_point end_dumping_time(fc::time_point::now());
-      overhead_time += end_dumping_time - start_dumping_time;
-    }
-#endif
 
     if (block_num % 100 == 0)
       fc::yield();

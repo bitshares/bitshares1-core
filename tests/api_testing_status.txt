@@ -24,6 +24,7 @@ blockchain_median_feed_price <symbol>
 blockchain_unclaimed_genesis                                                                        
 blockchain_verify_signature <signer> <hash> <signature>                                             
 builder_finalize_and_sign <builder>                                                                 
+convert_to_native_address <raw_address>                                                             
 debug_clear_errors [start_time] [first_error_number] [limit]                                        
 debug_get_call_statistics                                                                           
 debug_get_client_name                                                                               
@@ -36,7 +37,7 @@ debug_write_errors_to_file [path] [start_time]
 disk_usage                                                                                          
 execute_command_line <input>                                                                        
 execute_script <script>                                                                             
-fetch_welcome_package                                                                               
+fetch_welcome_package <arguments>                                                                   
 get_registration_requests                                                                           
 http_start_server [port]                                                                            
 mail_archive_message <message_id>                                                                   
