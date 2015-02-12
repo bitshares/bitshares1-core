@@ -770,6 +770,9 @@ namespace bts { namespace blockchain {
                                                  const block_id_type& block_id,
                                                  const pending_chain_state_ptr& pending_state )
       { try {
+          if( block_num < _min_undo_block )
+              return;
+
           pending_chain_state_ptr undo_state = std::make_shared<pending_chain_state>( pending_state );
           pending_state->get_undo_state( undo_state );
 
@@ -1337,6 +1340,10 @@ namespace bts { namespace blockchain {
               }
               else
               {
+                  const uint32_t last_known_block_num = num_to_id.crbegin()->first;
+                  if( last_known_block_num > BTS_BLOCKCHAIN_MAX_UNDO_HISTORY )
+                      my->_min_undo_block = last_known_block_num - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY;
+
                   for( const auto& num_id : num_to_id )
                   {
                       const auto oblock = block_id_to_data_original.fetch_optional( num_id.second );

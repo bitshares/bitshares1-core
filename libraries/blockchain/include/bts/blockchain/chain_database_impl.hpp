@@ -104,6 +104,8 @@ namespace bts { namespace blockchain {
             share_type                                                                  _relay_fee = BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE;
 
             /* Block processing */
+            uint32_t /* Only used to skip undo states when possible during replay */    _min_undo_block = 0;
+
             fc::mutex                                                                   _push_block_mutex;
 
             bts::db::level_map<block_id_type, full_block>                               _block_id_to_full_block;
