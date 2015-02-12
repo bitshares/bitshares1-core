@@ -17,17 +17,19 @@
 namespace bts { namespace blockchain {
 
    class chain_interface
+   : public property_db_interface,
+     public account_db_interface,
+     public asset_db_interface,
+     public slate_db_interface,
+     public balance_db_interface,
+     public transaction_db_interface,
+     public feed_db_interface,
+     public slot_db_interface
    {
       public:
          virtual ~chain_interface(){};
 
          virtual fc::time_point_sec now()const = 0;
-
-         chain_interface(){}
-
-         // don't copy member variables
-         chain_interface( const chain_interface& ){}
-         chain_interface& operator=(const chain_interface&){ return *this; };
 
          optional<string>                   get_parent_account_name( const string& account_name )const;
          static bool                        is_valid_account_name( const string& name );
@@ -167,54 +169,20 @@ namespace bts { namespace blockchain {
          template<typename T, typename U>
          optional<T> lookup( const U& key )const
          { try {
-             return T::db_interface( *this ).lookup( key );
+             return T::lookup( *this, key );
          } FC_CAPTURE_AND_RETHROW( (key) ) }
 
          template<typename T, typename U>
          void store( const U& key, const T& record )
          { try {
-             //record.sanity_check( *this );
-             T::db_interface( *this ).store( key, record );
+             T::store( *this, key, record );
          } FC_CAPTURE_AND_RETHROW( (key)(record) ) }
 
          template<typename T, typename U>
          void remove( const U& key )
          { try {
-             T::db_interface( *this ).remove( key );
+             T::remove( *this, key );
          } FC_CAPTURE_AND_RETHROW( (key) ) }
-
-      protected:
-         friend struct property_record;
-         property_db_interface _property_db_interface;
-         virtual void init_property_db_interface() = 0;
-
-         friend struct account_record;
-         account_db_interface _account_db_interface;
-         virtual void init_account_db_interface() = 0;
-
-         friend struct asset_record;
-         asset_db_interface _asset_db_interface;
-         virtual void init_asset_db_interface() = 0;
-
-         friend struct slate_record;
-         slate_db_interface _slate_db_interface;
-         virtual void init_slate_db_interface() = 0;
-
-         friend struct balance_record;
-         balance_db_interface _balance_db_interface;
-         virtual void init_balance_db_interface() = 0;
-
-         friend struct transaction_record;
-         transaction_db_interface _transaction_db_interface;
-         virtual void init_transaction_db_interface() = 0;
-
-         friend struct feed_record;
-         feed_db_interface _feed_db_interface;
-         virtual void init_feed_db_interface() = 0;
-
-         friend struct slot_record;
-         slot_db_interface _slot_db_interface;
-         virtual void init_slot_db_interface() = 0;
    };
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;
 

@@ -30,27 +30,28 @@ enum class property_id_type : uint8_t
     dirty_markets               = 8
 };
 
+struct property_record;
+typedef fc::optional<property_record> oproperty_record;
+
 class chain_interface;
-struct property_db_interface;
 struct property_record
 {
     property_id_type    id;
     variant             value;
 
-    static const property_db_interface& db_interface( const chain_interface& );
     void sanity_check( const chain_interface& )const;
+    static oproperty_record lookup( const chain_interface&, const property_id_type );
+    static void store( chain_interface&, const property_id_type, const property_record& );
+    static void remove( chain_interface&, const property_id_type );
 };
-typedef fc::optional<property_record> oproperty_record;
 
-struct property_db_interface
+class property_db_interface
 {
-    std::function<oproperty_record( const property_id_type )>               lookup_by_id;
-    std::function<void( const property_id_type, const property_record& )>   insert_into_id_map;
-    std::function<void( const property_id_type )>                           erase_from_id_map;
+    friend struct property_record;
 
-    oproperty_record lookup( const property_id_type )const;
-    void store( const property_id_type, const property_record& )const;
-    void remove( const property_id_type )const;
+    virtual oproperty_record property_lookup_by_id( const property_id_type )const = 0;
+    virtual void property_insert_into_id_map( const property_id_type, const property_record& ) = 0;
+    virtual void property_erase_from_id_map( const property_id_type ) = 0;
 };
 
 } } // bts::blockchain

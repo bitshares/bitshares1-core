@@ -109,6 +109,7 @@ namespace bts { namespace light_wallet {
          fc::ecc::private_key active_key(const string& account_name);
 
          map<string, account_record> _account_cache;
+         bool _is_connected = false;
    };
 
 } }

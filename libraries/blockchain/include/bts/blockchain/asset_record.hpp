@@ -16,8 +16,10 @@ namespace bts { namespace blockchain {
       supply_unlimit        = 1 << 4  ///<! The issuer can change the supply at will
    };
 
+   struct asset_record;
+   typedef fc::optional<asset_record> oasset_record;
+
    class chain_interface;
-   struct asset_db_interface;
    struct asset_record
    {
       enum
@@ -72,26 +74,25 @@ namespace bts { namespace blockchain {
       uint16_t            market_fee = 0;
       multisig_meta_info  authority;
 
-      static const asset_db_interface& db_interface( const chain_interface& );
       void sanity_check( const chain_interface& )const;
+      static oasset_record lookup( const chain_interface&, const asset_id_type );
+      static oasset_record lookup( const chain_interface&, const string& );
+      static void store( chain_interface&, const asset_id_type, const asset_record& );
+      static void remove( chain_interface&, const asset_id_type );
    };
-   typedef fc::optional<asset_record> oasset_record;
 
-   struct asset_db_interface
+   class asset_db_interface
    {
-       std::function<oasset_record( const asset_id_type )>              lookup_by_id;
-       std::function<oasset_record( const string& )>                    lookup_by_symbol;
+      friend struct asset_record;
 
-       std::function<void( const asset_id_type, const asset_record& )>  insert_into_id_map;
-       std::function<void( const string&, const asset_id_type )>        insert_into_symbol_map;
+      virtual oasset_record asset_lookup_by_id( const asset_id_type )const = 0;
+      virtual oasset_record asset_lookup_by_symbol( const string& )const = 0;
 
-       std::function<void( const asset_id_type )>                       erase_from_id_map;
-       std::function<void( const string& )>                             erase_from_symbol_map;
+      virtual void asset_insert_into_id_map( const asset_id_type, const asset_record& ) = 0;
+      virtual void asset_insert_into_symbol_map( const string&, const asset_id_type ) = 0;
 
-       oasset_record lookup( const asset_id_type )const;
-       oasset_record lookup( const string& )const;
-       void store( const asset_id_type, const asset_record& )const;
-       void remove( const asset_id_type )const;
+      virtual void asset_erase_from_id_map( const asset_id_type ) = 0;
+      virtual void asset_erase_from_symbol_map( const string& ) = 0;
    };
 
 } } // bts::blockchain

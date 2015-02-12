@@ -4,8 +4,10 @@
 
 namespace bts { namespace blockchain {
 
+struct slate_record;
+typedef optional<slate_record> oslate_record;
+
 class chain_interface;
-struct slate_db_interface;
 struct slate_record
 {
     set<account_id_type> slate;
@@ -16,25 +18,22 @@ struct slate_record
     static slate_id_type id_v1( const vector<account_id_type>& slate )
     {
         if( slate.empty() ) return 0;
-        fc::sha256::encoder enc;
-        fc::raw::pack( enc, slate );
-        return enc.result()._hash[ 0 ];
+        return fc::sha256::hash( slate )._hash[ 0 ];
     }
 
-    static const slate_db_interface& db_interface( const chain_interface& );
     void sanity_check( const chain_interface& )const;
+    static oslate_record lookup( const chain_interface&, const slate_id_type );
+    static void store( chain_interface&, const slate_id_type, const slate_record& );
+    static void remove( chain_interface&, const slate_id_type );
 };
-typedef optional<slate_record> oslate_record;
 
-struct slate_db_interface
+class slate_db_interface
 {
-    std::function<oslate_record( const slate_id_type )>             lookup_by_id;
-    std::function<void( const slate_id_type, const slate_record& )> insert_into_id_map;
-    std::function<void( const slate_id_type )>                      erase_from_id_map;
+    friend struct slate_record;
 
-    oslate_record lookup( const slate_id_type )const;
-    void store( const slate_id_type, const slate_record& )const;
-    void remove( const slate_id_type )const;
+    virtual oslate_record slate_lookup_by_id( const slate_id_type )const = 0;
+    virtual void slate_insert_into_id_map( const slate_id_type, const slate_record& ) = 0;
+    virtual void slate_erase_from_id_map( const slate_id_type ) = 0;
 };
 
 } } // bts::blockchain
