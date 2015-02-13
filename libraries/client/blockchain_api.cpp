@@ -313,7 +313,7 @@ oblock_record detail::client_impl::blockchain_get_block( const string& block )co
    return oblock_record();
 }
 
-map<balance_id_type, balance_record> detail::client_impl::blockchain_list_balances( const string& first, uint32_t limit )const
+unordered_map<balance_id_type, balance_record> detail::client_impl::blockchain_list_balances( const string& first, uint32_t limit )const
 { try {
     FC_ASSERT( limit > 0 );
     balance_id_type id;
@@ -332,12 +332,16 @@ account_balance_summary_type detail::client_impl::blockchain_get_account_public_
   return ret;
 } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
-map<balance_id_type, balance_record> detail::client_impl::blockchain_list_address_balances( const string& raw_addr, const time_point& after )const
+unordered_map<balance_id_type, balance_record> detail::client_impl::blockchain_list_address_balances( const string& raw_addr,
+                                                                                                      const time_point& after )const
 { try {
     address addr;
-    try {
+    try
+    {
         addr = address( raw_addr );
-    } catch (...) {
+    }
+    catch( const fc::exception& )
+    {
         addr = address( pts_address( raw_addr ) );
     }
     auto result =  _chain_db->get_balances_for_address( addr );
@@ -381,10 +385,10 @@ fc::variant_object detail::client_impl::blockchain_list_address_transactions( co
    return results;
 } FC_CAPTURE_AND_RETHROW( (raw_addr)(after_block) ) }
 
-map<balance_id_type, balance_record> detail::client_impl::blockchain_list_key_balances( const public_key_type& key )const
-{
+unordered_map<balance_id_type, balance_record> detail::client_impl::blockchain_list_key_balances( const public_key_type& key )const
+{ try {
     return _chain_db->get_balances_for_key( key );
-}
+} FC_CAPTURE_AND_RETHROW( (key) ) }
 
 vector<account_record> detail::client_impl::blockchain_list_accounts( const string& first, uint32_t limit )const
 { try {

@@ -172,18 +172,18 @@ namespace bts { namespace blockchain {
          virtual oburn_record        fetch_burn_record( const burn_record_key& key )const override;
          vector<burn_record>         fetch_burn_records( const string& account_name )const;
 
-         virtual void                       store_feed_record( const feed_record& r ) override;
+         virtual void                store_feed_record( const feed_record& r ) override;
 
-         map<balance_id_type, balance_record>  get_balances( const balance_id_type& first,
-                                                             uint32_t limit )const;
+         unordered_map<balance_id_type, balance_record>     get_balances( const balance_id_type& first,
+                                                                          uint32_t limit )const;
 
-         map<balance_id_type, balance_record>     get_balances_for_address( const address& addr )const;
-         map<balance_id_type, balance_record>     get_balances_for_key( const public_key_type& key )const;
-         vector<account_record>                   get_accounts( const string& first,
-                                                                uint32_t limit )const;
+         unordered_map<balance_id_type, balance_record>     get_balances_for_address( const address& addr )const;
+         unordered_map<balance_id_type, balance_record>     get_balances_for_key( const public_key_type& key )const;
+         vector<account_record>                             get_accounts( const string& first,
+                                                                          uint32_t limit )const;
 
-         vector<asset_record>                     get_assets( const string& first_symbol,
-                                                              uint32_t limit )const;
+         vector<asset_record>                               get_assets( const string& first_symbol,
+                                                                        uint32_t limit )const;
 
          std::vector<slot_record> get_delegate_slot_records( const account_id_type delegate_id, uint32_t limit )const;
 

@@ -36,7 +36,6 @@ namespace bts { namespace blockchain {
       set<address>               owners()const;
       optional<address>          owner()const;
       bool                       is_owner( const address& addr )const;
-      bool                       is_owner( const public_key_type& key )const;
 
       asset_id_type              asset_id()const { return condition.asset_id; }
       asset                      get_spendable_balance( const time_point_sec at_time )const;

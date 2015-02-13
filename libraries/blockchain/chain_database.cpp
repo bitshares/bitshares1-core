@@ -2058,9 +2058,9 @@ namespace bts { namespace blockchain {
       return my->_head_block_id;
    } FC_CAPTURE_AND_RETHROW() }
 
-   map<balance_id_type, balance_record> chain_database::get_balances( const balance_id_type& first, uint32_t limit )const
+   unordered_map<balance_id_type, balance_record> chain_database::get_balances( const balance_id_type& first, uint32_t limit )const
    { try {
-       map<balance_id_type, balance_record> records;
+       unordered_map<balance_id_type, balance_record> records;
        for( auto iter = my->_balance_id_to_record.ordered_lower_bound( first ); iter.valid(); ++iter )
        {
            records[ iter.key() ] = iter.value();
@@ -2069,25 +2069,39 @@ namespace bts { namespace blockchain {
        return records;
    } FC_CAPTURE_AND_RETHROW( (first)(limit) ) }
 
-   map<balance_id_type, balance_record> chain_database::get_balances_for_address( const address& addr )const
+   unordered_map<balance_id_type, balance_record> chain_database::get_balances_for_address( const address& addr )const
    { try {
-        map<balance_id_type, balance_record> records;
+        unordered_map<balance_id_type, balance_record> records;
         const auto scan_balance = [ &addr, &records ]( const balance_record& record )
         {
-            if( record.is_owner( addr ) || record.id() == addr )
+            if( record.is_owner( addr ) )
                 records[ record.id() ] = record;
         };
         scan_balances( scan_balance );
         return records;
    } FC_CAPTURE_AND_RETHROW( (addr) ) }
 
-   map<balance_id_type, balance_record> chain_database::get_balances_for_key( const public_key_type& key )const
+   unordered_map<balance_id_type, balance_record> chain_database::get_balances_for_key( const public_key_type& key )const
    { try {
-        map<balance_id_type, balance_record> records;
-        const auto scan_balance = [ &key, &records ]( const balance_record& record )
+        unordered_map<balance_id_type, balance_record> records;
+        const vector<address> addrs
         {
-            if( record.is_owner( key ) )
-                records[ record.id() ] = record;
+            address( key ),
+            address( pts_address( key, false, 56 ) ),
+            address( pts_address( key, true, 56 ) ),
+            address( pts_address( key, false, 0 ) ),
+            address( pts_address( key, true, 0 ) )
+        };
+        const auto scan_balance = [ &addrs, &records ]( const balance_record& record )
+        {
+            for( const address& addr : addrs )
+            {
+                if( record.is_owner( addr ) )
+                {
+                    records[ record.id() ] = record;
+                    break;
+                }
+            }
         };
         scan_balances( scan_balance );
         return records;
