@@ -61,7 +61,10 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
       "blocks_produced": 0,
       "blocks_missed": 0
     },
-    "meta_data": null
+    "meta_data": {
+      "type": "titan_account",
+      "data": ""
+    }
   }
 ]
 default (unlocked) >>> wallet_account_register testaccount2 delegate0 null 90
@@ -101,7 +104,10 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
       "blocks_produced": 0,
       "blocks_missed": 0
     },
-    "meta_data": null
+    "meta_data": {
+      "type": "titan_account",
+      "data": ""
+    }
   },{
     "id": 103,
     "name": "testaccount2",
@@ -130,7 +136,10 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
       "blocks_produced": 0,
       "blocks_missed": 0
     },
-    "meta_data": null
+    "meta_data": {
+      "type": "titan_account",
+      "data": ""
+    }
   }
 ]
 default (unlocked) >>> wallet_account_register testaccount3 delegate0 null 10
@@ -170,7 +179,10 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
       "blocks_produced": 0,
       "blocks_missed": 0
     },
-    "meta_data": null
+    "meta_data": {
+      "type": "titan_account",
+      "data": ""
+    }
   },{
     "id": 103,
     "name": "testaccount2",
@@ -199,7 +211,10 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
       "blocks_produced": 0,
       "blocks_missed": 0
     },
-    "meta_data": null
+    "meta_data": {
+      "type": "titan_account",
+      "data": ""
+    }
   },{
     "id": 104,
     "name": "testaccount3",
@@ -228,7 +243,10 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
       "blocks_produced": 0,
       "blocks_missed": 0
     },
-    "meta_data": null
+    "meta_data": {
+      "type": "titan_account",
+      "data": ""
+    }
   }
 ]
 default (unlocked) >>> wallet_account_register testaccount4 delegate0 null 100
@@ -320,7 +338,10 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
       "blocks_produced": 0,
       "blocks_missed": 0
     },
-    "meta_data": null
+    "meta_data": {
+      "type": "titan_account",
+      "data": ""
+    }
   },{
     "id": 103,
     "name": "testaccount2",
@@ -349,7 +370,10 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
       "blocks_produced": 0,
       "blocks_missed": 0
     },
-    "meta_data": null
+    "meta_data": {
+      "type": "titan_account",
+      "data": ""
+    }
   },{
     "id": 104,
     "name": "testaccount3",
@@ -378,7 +402,10 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
       "blocks_produced": 0,
       "blocks_missed": 0
     },
-    "meta_data": null
+    "meta_data": {
+      "type": "titan_account",
+      "data": ""
+    }
   },{
     "id": 105,
     "name": "testaccount4",
@@ -407,7 +434,10 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
       "blocks_produced": 0,
       "blocks_missed": 0
     },
-    "meta_data": null
+    "meta_data": {
+      "type": "titan_account",
+      "data": ""
+    }
   }
 ]
 default (unlocked) >>> quit

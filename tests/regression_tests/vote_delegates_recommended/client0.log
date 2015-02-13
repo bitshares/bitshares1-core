@@ -131,8 +131,8 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 ======================================================================================================================================================================
 <d-ign></d-ign>2         delegate0           mydelegate          1,000,000.00000 XTS                                                 0.50000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>3         delegate0           account1            2,000.00000 XTS                                                     0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>3         delegate0           account0            0.00000 XTS             register account0                           0.50000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>3         delegate0           mydelegate          0.00000 XTS             register mydelegate as a delegate           59,881.68811 XTS    <d-ign></d-ign>
+<d-ign></d-ign>3         delegate0           account0            0.00000 XTS             register account0                           0.50000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>4         mydelegate          mydelegate          0.00000 XTS             publish slate 386653298819755463            0.50000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>8         account1            account0            100.00000 XTS           vote all                                    0.50000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>10        account1            account0            100.00000 XTS           vote recommended                            0.50000 XTS         <d-ign></d-ign>
