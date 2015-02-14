@@ -248,7 +248,7 @@ namespace bts { namespace blockchain {
 
    void burn_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
-      if( this->amount.amount < 0 )
+      if( this->amount.amount <= 0 )
          FC_CAPTURE_AND_THROW( negative_deposit, (amount) );
 
       if( message.size() )
@@ -272,12 +272,18 @@ namespace bts { namespace blockchain {
 
       if( account_id != 0 ) // you can offer burnt offerings to God if you like... otherwise it must be an account
       {
-          // TODO: support burning to any OBJECT ID not just accounts
           const oaccount_record account_rec = eval_state._current_state->get_account_record( abs( this->account_id ) );
           FC_ASSERT( account_rec.valid() );
       }
-      eval_state._current_state->store_burn_record( burn_record( burn_record_key( {account_id, eval_state.trx.id()} ),
-                                                                 burn_record_value( {amount,message,message_signature} ) ) );
+
+      burn_record record;
+      record.index.account_id = account_id;
+      record.index.transaction_id = eval_state.trx.id();
+      record.amount = amount;
+      record.message = message;
+      record.signer = message_signature;
+
+      eval_state._current_state->store_burn_record( std::move( record ) );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
    void release_escrow_operation::evaluate( transaction_evaluation_state& eval_state )const

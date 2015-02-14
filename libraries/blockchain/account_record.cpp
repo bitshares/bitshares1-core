@@ -74,15 +74,6 @@ namespace bts { namespace blockchain {
         return address( signing_key() );
     }
 
-    public_key_type burn_record_value::signer_key()const
-    {
-       FC_ASSERT( signer.valid() );
-       fc::sha256 digest;
-       if( message.size() )
-          digest = fc::sha256::hash( message.c_str(), message.size() );
-       return fc::ecc::public_key( *signer, digest );
-    }
-
     void account_record::sanity_check( const chain_interface& db )const
     { try {
         FC_ASSERT( id > 0 );
