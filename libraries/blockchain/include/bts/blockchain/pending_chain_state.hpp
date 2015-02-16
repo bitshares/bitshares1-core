@@ -100,6 +100,9 @@ namespace bts { namespace blockchain {
          unordered_map<string, account_id_type>                             _account_name_to_id;
          unordered_map<address, account_id_type>                            _account_address_to_id;
 
+         unordered_map<delegate_id_type, delegate_record>                   _delegate_id_to_record;
+         unordered_set<delegate_id_type>                                    _delegate_id_remove;
+
          unordered_map<asset_id_type, asset_record>                         _asset_id_to_record;
          unordered_set<asset_id_type>                                       _asset_id_remove;
          unordered_map<string, asset_id_type>                               _asset_symbol_to_id;
@@ -152,12 +155,18 @@ namespace bts { namespace blockchain {
          virtual void account_insert_into_id_map( const account_id_type, const account_record& )override;
          virtual void account_insert_into_name_map( const string&, const account_id_type )override;
          virtual void account_insert_into_address_map( const address&, const account_id_type )override;
-         virtual void account_insert_into_vote_set( const vote_del& )override;
 
          virtual void account_erase_from_id_map( const account_id_type )override;
          virtual void account_erase_from_name_map( const string& )override;
          virtual void account_erase_from_address_map( const address& )override;
-         virtual void account_erase_from_vote_set( const vote_del& )override;
+
+         virtual odelegate_record delegate_lookup_by_id( const delegate_id_type )const override;
+
+         virtual void delegate_insert_into_id_map( const delegate_id_type, const delegate_record& )override;
+         virtual void delegate_insert_into_vote_set( const vote_del )override;
+
+         virtual void delegate_erase_from_id_map( const delegate_id_type )override;
+         virtual void delegate_erase_from_vote_set( const vote_del )override;
 
          virtual oasset_record asset_lookup_by_id( const asset_id_type )const override;
          virtual oasset_record asset_lookup_by_symbol( const string& )const override;
@@ -212,6 +221,8 @@ FC_REFLECT( bts::blockchain::pending_chain_state,
             (_account_id_remove)
             (_account_name_to_id)
             (_account_address_to_id)
+            (_delegate_id_to_record)
+            (_delegate_id_remove)
             (_asset_id_to_record)
             (_asset_id_remove)
             (_asset_symbol_to_id)

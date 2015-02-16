@@ -350,6 +350,16 @@ namespace bts { namespace blockchain {
        store( record.id, record );
    } FC_CAPTURE_AND_RETHROW( (record) ) }
 
+   odelegate_record chain_interface::get_delegate_record( const delegate_id_type id )const
+   { try {
+       return lookup<delegate_record>( id );
+   } FC_CAPTURE_AND_RETHROW( (id) ) }
+
+   void chain_interface::store_delegate_record( const delegate_record& record )
+   { try {
+       store( record.id, record );
+   } FC_CAPTURE_AND_RETHROW( (record) ) }
+
    oasset_record chain_interface::get_asset_record( const asset_id_type id )const
    { try {
        return lookup<asset_record>( id );

@@ -9,7 +9,7 @@
 
 namespace bts { namespace client { namespace detail {
 
-vector<account_record> client_impl::blockchain_list_active_delegates( uint32_t first, uint32_t count )const
+vector<extended_account_record> client_impl::blockchain_list_active_delegates( uint32_t first, uint32_t count )const
 {
    if( first > 0 ) --first;
    FC_ASSERT( first < BTS_BLOCKCHAIN_NUM_DELEGATES );
@@ -18,29 +18,29 @@ vector<account_record> client_impl::blockchain_list_active_delegates( uint32_t f
    FC_ASSERT( all_delegate_ids.size() == BTS_BLOCKCHAIN_NUM_DELEGATES );
    vector<account_id_type> delegate_ids( all_delegate_ids.begin() + first, all_delegate_ids.begin() + first + count );
 
-   vector<account_record> delegate_records;
+   vector<extended_account_record> delegate_records;
    delegate_records.reserve( count );
    for( const auto& delegate_id : delegate_ids )
    {
       auto delegate_record = _chain_db->get_account_record( delegate_id );
       FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
-      delegate_records.push_back( *delegate_record );
+      delegate_records.emplace_back( *delegate_record, _chain_db->get_delegate_record( delegate_id ) );
    }
    return delegate_records;
 }
 
-vector<account_record> client_impl::blockchain_list_delegates( uint32_t first, uint32_t count )const
+vector<extended_account_record> client_impl::blockchain_list_delegates( uint32_t first, uint32_t count )const
 {
    if( first > 0 ) --first;
    vector<account_id_type> delegate_ids = _chain_db->get_delegates_by_vote( first, count );
 
-   vector<account_record> delegate_records;
+   vector<extended_account_record> delegate_records;
    delegate_records.reserve( delegate_ids.size() );
    for( const auto& delegate_id : delegate_ids )
    {
       auto delegate_record = _chain_db->get_account_record( delegate_id );
       FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
-      delegate_records.push_back( *delegate_record );
+      delegate_records.emplace_back( *delegate_record, _chain_db->get_delegate_record( delegate_id ) );
    }
    return delegate_records;
 }
@@ -130,26 +130,37 @@ uint32_t detail::client_impl::blockchain_get_block_count() const
    return _chain_db->get_head_block_num();
 }
 
-oaccount_record detail::client_impl::blockchain_get_account( const string& account )const
+optional<extended_account_record> detail::client_impl::blockchain_get_account( const string& account )const
 {
-   try
-   {
-      ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
-      if( std::all_of( account.begin(), account.end(), ::isdigit) )
-         return _chain_db->get_account_record( std::stoi( account ) );
-      else if( account.substr( 0, string( BTS_ADDRESS_PREFIX ).size() ) == BTS_ADDRESS_PREFIX ) {
-         //Magic number 39 is hopefully longer than the longest address and shorter than the shortest key. Hopefully.
-         if( account.length() < 39 )
-            return _chain_db->get_account_record( address( account ) );
-         else
-            return _chain_db->get_account_record( address( blockchain::public_key_type( account ) ) );
-      } else
-         return _chain_db->get_account_record( account );
-   }
-   catch( ... )
-   {
-   }
-   return oaccount_record();
+    const auto get_account = [ & ]() -> oaccount_record
+    {
+       try
+       {
+          ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
+          if( std::all_of( account.begin(), account.end(), ::isdigit) )
+             return _chain_db->get_account_record( std::stoi( account ) );
+          else if( account.substr( 0, string( BTS_ADDRESS_PREFIX ).size() ) == BTS_ADDRESS_PREFIX ) {
+             //Magic number 39 is hopefully longer than the longest address and shorter than the shortest key. Hopefully.
+             if( account.length() < 39 )
+                return _chain_db->get_account_record( address( account ) );
+             else
+                return _chain_db->get_account_record( address( blockchain::public_key_type( account ) ) );
+          } else
+             return _chain_db->get_account_record( account );
+       }
+       catch( ... )
+       {
+       }
+       return oaccount_record();
+    };
+
+    optional<extended_account_record> result;
+
+    const auto record = get_account();
+    if( record.valid() )
+        result = extended_account_record( *record, _chain_db->get_delegate_record( record->id ) );
+
+    return result;
 }
 
 map<account_id_type, string> detail::client_impl::blockchain_get_slate( const string& slate )const
@@ -390,41 +401,51 @@ unordered_map<balance_id_type, balance_record> detail::client_impl::blockchain_l
     return _chain_db->get_balances_for_key( key );
 } FC_CAPTURE_AND_RETHROW( (key) ) }
 
-vector<account_record> detail::client_impl::blockchain_list_accounts( const string& first, uint32_t limit )const
+vector<extended_account_record> detail::client_impl::blockchain_list_accounts( const string& first, uint32_t limit )const
 { try {
    FC_ASSERT( limit > 0 );
-   return _chain_db->get_accounts( first, limit );
+   const auto accounts = _chain_db->get_accounts( first, limit );
+
+   vector<extended_account_record> result;
+   result.reserve( accounts.size() );
+
+   for( const auto& record : accounts )
+      result.emplace_back( record, _chain_db->get_delegate_record( record.id ) );
+
+   return result;
 } FC_CAPTURE_AND_RETHROW( (first)(limit) ) }
 
-vector<account_record> detail::client_impl::blockchain_list_recently_updated_accounts()const
+vector<extended_account_record> detail::client_impl::blockchain_list_recently_updated_accounts()const
 {
    FC_ASSERT( _chain_db->get_statistics_enabled() );
    vector<operation> account_updates = _chain_db->get_recent_operations(update_account_op_type);
-   vector<account_record> accounts;
+
+   vector<extended_account_record> accounts;
    accounts.reserve(account_updates.size());
 
    for( const operation& op : account_updates )
    {
       auto oaccount = _chain_db->get_account_record(op.as<update_account_operation>().account_id);
-      if(oaccount)
-         accounts.push_back(*oaccount);
+      if( oaccount.valid() )
+         accounts.emplace_back( *oaccount, _chain_db->get_delegate_record( oaccount->id ) );
    }
 
   return accounts;
 }
 
-vector<account_record> detail::client_impl::blockchain_list_recently_registered_accounts()const
+vector<extended_account_record> detail::client_impl::blockchain_list_recently_registered_accounts()const
 {
    FC_ASSERT( _chain_db->get_statistics_enabled() );
    vector<operation> account_registrations = _chain_db->get_recent_operations(register_account_op_type);
-   vector<account_record> accounts;
+
+   vector<extended_account_record> accounts;
    accounts.reserve(account_registrations.size());
 
    for( const operation& op : account_registrations )
    {
       auto oaccount = _chain_db->get_account_record(op.as<register_account_operation>().owner_key);
-      if(oaccount)
-         accounts.push_back(*oaccount);
+      if( oaccount.valid() )
+         accounts.emplace_back( *oaccount, _chain_db->get_delegate_record( oaccount->id ) );
    }
 
    return accounts;

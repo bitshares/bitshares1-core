@@ -33,6 +33,7 @@ add_library( bts_blockchain
 
              property_record.cpp
              account_record.cpp
+             delegate_record.cpp
              asset_record.cpp
              slate_record.cpp
              balance_record.cpp

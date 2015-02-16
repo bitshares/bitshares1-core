@@ -46,7 +46,7 @@ namespace bts { namespace cli {
     static void f_blockchain_get_block( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client );
 
     static void print_network_usage_graph( std::ostream& out, const std::vector<uint32_t>& usage_data );
-    static void print_registered_account_list( std::ostream& out, const vector<account_record>& account_records, int32_t count, cptr client );
+    static void print_registered_account_list( std::ostream& out, const vector<extended_account_record>& account_records, int32_t count, cptr client );
 
   private:
     typedef std::function<void( std::ostream&, const fc::variants&, const fc::variant&, cptr )> t_function;

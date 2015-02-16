@@ -99,7 +99,7 @@ namespace bts { namespace wallet {
    /**
     *  Contacts are tracked by the hash of their receive key
     */
-   struct account_data : public bts::blockchain::account_record
+   struct account_data : public bts::blockchain::extended_account_record
    {
        bool                             is_my_account = false;
        int8_t                           approved = 0;

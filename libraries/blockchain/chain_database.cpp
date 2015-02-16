@@ -141,6 +141,8 @@ namespace bts { namespace blockchain {
           _account_name_to_id.open( data_dir / "index/account_name_to_id" );
           _account_address_to_id.open( data_dir / "index/account_address_to_id" );
 
+          _delegate_id_to_record.open( data_dir / "index/delegate_id_to_record" );
+
           _asset_id_to_record.open( data_dir / "index/asset_id_to_record" );
           _asset_symbol_to_id.open( data_dir / "index/asset_symbol_to_id" );
 
@@ -179,12 +181,12 @@ namespace bts { namespace blockchain {
 
       void chain_database_impl::populate_indexes()
       { try {
-          for( auto iter = _account_id_to_record.unordered_begin();
-               iter != _account_id_to_record.unordered_end(); ++iter )
+          for( auto iter = _delegate_id_to_record.unordered_begin();
+               iter != _delegate_id_to_record.unordered_end(); ++iter )
           {
-              const account_record& record = iter->second;
-              if( !record.is_retracted() && record.is_delegate() )
-                  _delegate_votes.emplace( record.net_votes(), record.id );
+              const delegate_record& record = iter->second;
+              if( !record.retracted )
+                  _delegate_votes.emplace( record.votes_for, record.id );
           }
 
           for( auto iter = _transaction_id_to_record.begin(); iter.valid(); ++iter )
@@ -286,10 +288,13 @@ namespace bts { namespace blockchain {
              rec.set_active_key( timestamp, delegate.owner );
              rec.registration_date = timestamp;
              rec.last_update = timestamp;
-             rec.delegate_info = delegate_stats();
-             rec.delegate_info->pay_rate = 100;
              rec.set_signing_key( 0, delegate.owner );
              self->store_account_record( rec );
+
+             delegate_record drec;
+             drec.id = rec.id;
+             drec.pay_rate = 100;
+             self->store_delegate_record( drec );
          }
 
          // For loading balances originally snapshotted from other chains
@@ -728,12 +733,13 @@ namespace bts { namespace blockchain {
           oasset_record base_asset_record = pending_state->get_asset_record( asset_id_type( 0 ) );
           FC_ASSERT( base_asset_record.valid() );
 
-          oaccount_record delegate_record = self->get_account_record( address( block_signee ) );
-          FC_ASSERT( delegate_record.valid() );
-          delegate_record = pending_state->get_account_record( delegate_record->id );
-          FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() && delegate_record->delegate_info.valid() );
+          const oaccount_record account_record = pending_state->get_account_record( address( block_signee ) );
+          FC_ASSERT( account_record.valid() && account_record->is_delegate() );
 
-          const uint8_t pay_rate_percent = delegate_record->delegate_info->pay_rate;
+          odelegate_record delegate_record = pending_state->get_delegate_record( account_record->id );
+          FC_ASSERT( delegate_record.valid() && !delegate_record->retracted );
+
+          const uint8_t pay_rate_percent = delegate_record->pay_rate;
           FC_ASSERT( pay_rate_percent >= 0 && pay_rate_percent <= 100 );
 
           const share_type max_new_shares = self->get_max_delegate_pay_issued_per_block();
@@ -751,11 +757,11 @@ namespace bts { namespace blockchain {
 
           const share_type accepted_paycheck = accepted_new_shares + accepted_collected_fees;
           FC_ASSERT( accepted_paycheck >= 0 );
-          delegate_record->delegate_info->votes_for += accepted_paycheck;
-          delegate_record->delegate_info->pay_balance += accepted_paycheck;
-          delegate_record->delegate_info->total_paid += accepted_paycheck;
+          delegate_record->votes_for += accepted_paycheck;
+          delegate_record->pay_balance += accepted_paycheck;
+          delegate_record->total_paid += accepted_paycheck;
 
-          pending_state->store_account_record( *delegate_record );
+          pending_state->store_delegate_record( *delegate_record );
           pending_state->store_asset_record( *base_asset_record );
 
           if( record.valid() )
@@ -838,30 +844,31 @@ namespace bts { namespace blockchain {
                                                                  const pending_chain_state_ptr& pending_state )const
       { try {
           /* Update production info for signing delegate */
-          account_id_type delegate_id = self->get_delegate_record_for_signee( block_signee ).id;
-          oaccount_record delegate_record = pending_state->get_account_record( delegate_id );
-          FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
-          delegate_stats& delegate_info = *delegate_record->delegate_info;
+          const oaccount_record account_record = pending_state->get_account_record( address( block_signee ) );
+          FC_ASSERT( account_record.valid() && account_record->is_delegate() );
+
+          odelegate_record delegate_record = pending_state->get_delegate_record( account_record->id );
+          FC_ASSERT( delegate_record.valid() && !delegate_record->retracted );
 
           /* Validate secret */
-          if( delegate_info.next_secret_hash.valid() )
+          if( delegate_record->next_secret_hash.valid() )
           {
               const secret_hash_type hash_of_previous_secret = fc::ripemd160::hash( block_header.previous_secret );
-              FC_ASSERT( hash_of_previous_secret == *delegate_info.next_secret_hash,
+              FC_ASSERT( hash_of_previous_secret == *delegate_record->next_secret_hash,
                          "",
                          ("previous_secret",block_header.previous_secret)
                          ("hash_of_previous_secret",hash_of_previous_secret)
                          ("delegate_record",delegate_record) );
           }
 
-          delegate_info.blocks_produced += 1;
-          delegate_info.next_secret_hash = block_header.next_secret_hash;
-          delegate_info.last_block_num_produced = block_header.block_num;
-          pending_state->store_account_record( *delegate_record );
+          delegate_record->blocks_produced += 1;
+          delegate_record->next_secret_hash = block_header.next_secret_hash;
+          delegate_record->last_block_num_produced = block_header.block_num;
+          pending_state->store_delegate_record( *delegate_record );
 
           if( self->get_statistics_enabled() )
           {
-              const slot_record slot( block_header.timestamp, delegate_id, block_id );
+              const slot_record slot( block_header.timestamp, delegate_record->id, block_id );
               pending_state->store_slot_record( slot );
           }
 
@@ -880,12 +887,12 @@ namespace bts { namespace blockchain {
                  required_confirmations += 2 )
           {
               /* Note: Active delegate list has not been updated yet so we can use the timestamp */
-              delegate_id = self->get_slot_signee( block_timestamp, active_delegates ).id;
-              delegate_record = pending_state->get_account_record( delegate_id );
-              FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+              const delegate_id_type delegate_id = self->get_slot_signee( block_timestamp, active_delegates ).id;
+              delegate_record = pending_state->get_delegate_record( delegate_id );
+              FC_ASSERT( delegate_record.valid() );
 
-              delegate_record->delegate_info->blocks_missed += 1;
-              pending_state->store_account_record( *delegate_record );
+              delegate_record->blocks_missed += 1;
+              pending_state->store_delegate_record( *delegate_record );
 
               if( self->get_statistics_enabled() )
                   pending_state->store_slot_record( slot_record( block_timestamp, delegate_id )  );
@@ -984,6 +991,7 @@ namespace bts { namespace blockchain {
          block_summary summary;
          try
          {
+             // TODO: save signing delegate ID somewhere here and pass on
             public_key_type block_signee;
             if( block_data.block_num > LAST_CHECKPOINT_BLOCK_NUM )
             {
@@ -1237,6 +1245,8 @@ namespace bts { namespace blockchain {
                   my->_account_name_to_id.toggle_leveldb( enabled );
                   my->_account_address_to_id.toggle_leveldb( enabled );
 
+                  my->_delegate_id_to_record.toggle_leveldb( enabled );
+
                   my->_asset_id_to_record.toggle_leveldb( enabled );
                   my->_asset_symbol_to_id.toggle_leveldb( enabled );
 
@@ -1420,6 +1430,8 @@ namespace bts { namespace blockchain {
       my->_account_id_to_record.close();
       my->_account_name_to_id.close();
       my->_account_address_to_id.close();
+
+      my->_delegate_id_to_record.close();
 
       my->_asset_id_to_record.close();
       my->_asset_symbol_to_id.close();
@@ -3213,16 +3225,18 @@ namespace bts { namespace blockchain {
        }
 
        // Add outstanding delegate pay balances
-       for( auto iter = my->_account_id_to_record.unordered_begin();
-            iter != my->_account_id_to_record.unordered_end(); ++iter )
+       for( auto iter = my->_delegate_id_to_record.unordered_begin();
+            iter != my->_delegate_id_to_record.unordered_end(); ++iter )
        {
-           const account_record& record = iter->second;
-           if( !record.is_delegate() ) continue;
-           if( record.is_retracted() ) continue;
+           const delegate_record& record = iter->second;
+           if( record.retracted ) continue;
+
+           const oaccount_record account_record = get_account_record( record.id );
+           if( !account_record.valid() || account_record->is_retracted() ) continue;
 
            genesis_balance balance;
-           balance.raw_address = string( record.active_address() );
-           balance.balance = record.delegate_pay_balance();
+           balance.raw_address = string( account_record->active_address() );
+           balance.balance = record.pay_balance;
 
            snapshot.initial_balances.push_back( balance );
        }
@@ -3341,12 +3355,11 @@ namespace bts { namespace blockchain {
            }
 
            // Add pay balances
-           for( auto account_itr = my->_account_id_to_record.unordered_begin();
-                account_itr != my->_account_id_to_record.unordered_end(); ++account_itr )
+           for( auto delegate_itr = my->_delegate_id_to_record.unordered_begin();
+                delegate_itr != my->_delegate_id_to_record.unordered_end(); ++delegate_itr )
            {
-               const account_record& account = account_itr->second;
-               if( account.delegate_info.valid() )
-                   total.amount += account.delegate_info->pay_balance;
+               const delegate_record& delegate = delegate_itr->second;
+               total.amount += delegate.pay_balance;
            }
        }
        else // If non-base asset
@@ -3575,11 +3588,6 @@ namespace bts { namespace blockchain {
        my->_account_address_to_id.store( addr, id );
    }
 
-   void chain_database::account_insert_into_vote_set( const vote_del& vote )
-   {
-       my->_delegate_votes.insert( vote );
-   }
-
    void chain_database::account_erase_from_id_map( const account_id_type id )
    {
        my->_account_id_to_record.remove( id );
@@ -3595,7 +3603,29 @@ namespace bts { namespace blockchain {
        my->_account_address_to_id.remove( addr );
    }
 
-   void chain_database::account_erase_from_vote_set( const vote_del& vote )
+   odelegate_record chain_database::delegate_lookup_by_id( const delegate_id_type id )const
+   {
+       const auto iter = my->_delegate_id_to_record.unordered_find( id );
+       if( iter != my->_delegate_id_to_record.unordered_end() ) return iter->second;
+       return odelegate_record();
+   }
+
+   void chain_database::delegate_insert_into_id_map( const delegate_id_type id, const delegate_record& record )
+   {
+       my->_delegate_id_to_record.store( id, record );
+   }
+
+   void chain_database::delegate_insert_into_vote_set( const vote_del vote )
+   {
+       my->_delegate_votes.insert( vote );
+   }
+
+   void chain_database::delegate_erase_from_id_map( const delegate_id_type id )
+   {
+       my->_delegate_id_to_record.remove( id );
+   }
+
+   void chain_database::delegate_erase_from_vote_set( const vote_del vote )
    {
        my->_delegate_votes.erase( vote );
    }

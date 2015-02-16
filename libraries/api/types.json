@@ -78,21 +78,16 @@
       },
       {
         "type_name" : "account_record",
-        "cpp_return_type" : "bts::blockchain::account_record",
-        "cpp_include_file" : "bts/blockchain/types.hpp",
-        "default_example" : "TODO"
+        "cpp_return_type" : "bts::blockchain::extended_account_record"
       },
       {
         "type_name" : "account_record_array",
         "container_type" : "array",
-        "contained_type" : "account_record",
-        "default_example" : "TODO"
+        "contained_type" : "account_record"
       },
       {
         "type_name" : "optional_account_record",
-        "cpp_return_type" : "fc::optional<bts::blockchain::account_record>",
-        "cpp_include_file" : "bts/blockchain/types.hpp",
-        "default_example" : "TODO"
+        "cpp_return_type" : "fc::optional<bts::blockchain::extended_account_record>"
       },
       {
         "type_name" : "signed_transactions",
@@ -505,8 +500,7 @@
       {
         "type_name" : "wallet_account_record_array",
         "container_type" : "array",
-        "contained_type" : "wallet_account_record",
-        "default_example" : "TODO"
+        "contained_type" : "wallet_account_record"
       },
       {
         "type_name" : "address_list",

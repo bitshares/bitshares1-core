@@ -315,12 +315,18 @@ namespace bts { namespace blockchain {
          virtual void account_insert_into_id_map( const account_id_type, const account_record& )override;
          virtual void account_insert_into_name_map( const string&, const account_id_type )override;
          virtual void account_insert_into_address_map( const address&, const account_id_type )override;
-         virtual void account_insert_into_vote_set( const vote_del& )override;
 
          virtual void account_erase_from_id_map( const account_id_type )override;
          virtual void account_erase_from_name_map( const string& )override;
          virtual void account_erase_from_address_map( const address& )override;
-         virtual void account_erase_from_vote_set( const vote_del& )override;
+
+         virtual odelegate_record delegate_lookup_by_id( const delegate_id_type )const override;
+
+         virtual void delegate_insert_into_id_map( const delegate_id_type, const delegate_record& )override;
+         virtual void delegate_insert_into_vote_set( const vote_del )override;
+
+         virtual void delegate_erase_from_id_map( const delegate_id_type )override;
+         virtual void delegate_erase_from_vote_set( const vote_del )override;
 
          virtual oasset_record asset_lookup_by_id( const asset_id_type )const override;
          virtual oasset_record asset_lookup_by_symbol( const string& )const override;

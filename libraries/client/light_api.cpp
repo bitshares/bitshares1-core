@@ -39,7 +39,7 @@ fc::variant_object client_impl::fetch_welcome_package(const fc::variant_object& 
  *
  *  The account name must be globally unique.
  */
-bool client_impl::request_register_account( const account_record& account_to_register )
+bool client_impl::request_register_account( const extended_account_record& account_to_register )
 { try {
    FC_ASSERT( !_config.faucet_account_name.empty(), "This server isn't a faucet. Cannot register account." );
    if( !_chain_db->is_valid_account_name(account_to_register.name) )
@@ -65,11 +65,5 @@ bool client_impl::approve_register_account( const string& salt, const string& pa
 { try {
    return false;
 } FC_CAPTURE_AND_RETHROW( ) }
-
-vector<account_record> client_impl::get_registration_requests()
-{
-   return vector<account_record>();
-}
-
 
 } } } // namespace bts::client::detail

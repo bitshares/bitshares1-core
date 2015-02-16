@@ -381,10 +381,6 @@ namespace bts { namespace blockchain {
        _account_address_to_id[ addr ] = id;
    }
 
-   void pending_chain_state::account_insert_into_vote_set( const vote_del& )
-   {
-   }
-
    void pending_chain_state::account_erase_from_id_map( const account_id_type id )
    {
        _account_id_to_record.erase( id );
@@ -401,7 +397,33 @@ namespace bts { namespace blockchain {
        _account_address_to_id.erase( addr );
    }
 
-   void pending_chain_state::account_erase_from_vote_set( const vote_del& )
+   odelegate_record pending_chain_state::delegate_lookup_by_id( const delegate_id_type id )const
+   {
+       const auto iter = _delegate_id_to_record.find( id );
+       if( iter != _delegate_id_to_record.end() ) return iter->second;
+       if( _delegate_id_remove.count( id ) > 0 ) return odelegate_record();
+       const chain_interface_ptr prev_state = _prev_state.lock();
+       if( !prev_state ) return odelegate_record();
+       return prev_state->lookup<delegate_record>( id );
+   }
+
+   void pending_chain_state::delegate_insert_into_id_map( const delegate_id_type id, const delegate_record& record )
+   {
+       _delegate_id_remove.erase( id );
+       _delegate_id_to_record[ id ] = record;
+   }
+
+   void pending_chain_state::delegate_insert_into_vote_set( const vote_del vote )
+   {
+   }
+
+   void pending_chain_state::delegate_erase_from_id_map( const delegate_id_type id )
+   {
+       _delegate_id_to_record.erase( id );
+       _delegate_id_remove.insert( id );
+   }
+
+   void pending_chain_state::delegate_erase_from_vote_set( const vote_del vote )
    {
    }
 

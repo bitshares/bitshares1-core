@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bts/blockchain/asset.hpp>
+#include <bts/blockchain/delegate_record.hpp>
 #include <fc/io/enum_type.hpp>
 #include <fc/time.hpp>
 
@@ -44,45 +45,6 @@ struct account_meta_info
    }
 };
 
-struct delegate_stats
-{
-   share_type                        votes_for = 0;
-
-   uint8_t                           pay_rate = 0;
-   map<uint32_t, public_key_type>    signing_key_history;
-
-   uint32_t                          last_block_num_produced = 0;
-   optional<secret_hash_type>        next_secret_hash;
-
-   share_type                        pay_balance = 0;
-   share_type                        total_paid = 0;
-   share_type                        total_burned = 0;
-
-   uint32_t                          blocks_produced = 0;
-   uint32_t                          blocks_missed = 0;
-};
-typedef fc::optional<delegate_stats> odelegate_stats;
-
-struct vote_del
-{
-   share_type        votes = 0;
-   account_id_type   delegate_id = 0;
-
-   vote_del( int64_t v = 0, account_id_type del = 0 )
-   :votes(v),delegate_id(del){}
-
-   friend bool operator == ( const vote_del& a, const vote_del& b )
-   {
-       return std::tie( a.votes, a.delegate_id ) == std::tie( b.votes, b.delegate_id );
-   }
-
-   friend bool operator < ( const vote_del& a, const vote_del& b )
-   {
-       if( a.votes != b.votes ) return a.votes > b.votes; /* Reverse so maps sort in descending order */
-       return a.delegate_id < b.delegate_id; /* Lowest id wins in ties */
-   }
-};
-
 struct account_record;
 typedef fc::optional<account_record> oaccount_record;
 
@@ -97,10 +59,6 @@ struct account_record
    bool              is_retracted()const;
 
    bool              is_delegate()const;
-   uint8_t           delegate_pay_rate()const;
-   void              adjust_votes_for( const share_type delta );
-   share_type        net_votes()const;
-   share_type        delegate_pay_balance()const;
 
    void              set_signing_key( uint32_t block_num, const public_key_type& signing_key );
    public_key_type   signing_key()const;
@@ -108,15 +66,15 @@ struct account_record
 
    bool              is_titan_account()const { return meta_data.valid() && meta_data->type == titan_account; }
 
-   account_id_type                        id = 0;
-   std::string                            name;
-   fc::variant                            public_data;
-   public_key_type                        owner_key;
-   map<time_point_sec, public_key_type>   active_key_history;
-   fc::time_point_sec                     registration_date;
-   fc::time_point_sec                     last_update;
-   optional<delegate_stats>               delegate_info;
-   optional<account_meta_info>            meta_data;
+   account_id_type                      id = 0;
+   std::string                          name;
+   fc::variant                          public_data;
+   public_key_type                      owner_key;
+   map<time_point_sec, public_key_type> active_key_history;
+   fc::time_point_sec                   registration_date;
+   fc::time_point_sec                   last_update;
+   map<uint32_t, public_key_type>       signing_key_history;
+   optional<account_meta_info>          meta_data;
 
    void sanity_check( const chain_interface& )const;
    static oaccount_record lookup( const chain_interface&, const account_id_type );
@@ -137,12 +95,20 @@ class account_db_interface
    virtual void account_insert_into_id_map( const account_id_type, const account_record& ) = 0;
    virtual void account_insert_into_name_map( const string&, const account_id_type ) = 0;
    virtual void account_insert_into_address_map( const address&, const account_id_type ) = 0;
-   virtual void account_insert_into_vote_set( const vote_del& ) = 0;
 
    virtual void account_erase_from_id_map( const account_id_type ) = 0;
    virtual void account_erase_from_name_map( const string& ) = 0;
    virtual void account_erase_from_address_map( const address& ) = 0;
-   virtual void account_erase_from_vote_set( const vote_del& ) = 0;
+};
+
+struct extended_account_record : public account_record
+{
+    extended_account_record() {}
+
+    extended_account_record( const account_record& a, const odelegate_record& d = odelegate_record() )
+        : account_record( a ), delegate_info( d ) {}
+
+    odelegate_record delegate_info;
 };
 
 } } // bts::blockchain
@@ -160,22 +126,6 @@ FC_REFLECT( bts::blockchain::account_meta_info,
             (type)
             (data)
             )
-FC_REFLECT( bts::blockchain::delegate_stats,
-            (votes_for)
-            (pay_rate)
-            (signing_key_history)
-            (last_block_num_produced)
-            (next_secret_hash)
-            (pay_balance)
-            (total_paid)
-            (total_burned)
-            (blocks_produced)
-            (blocks_missed)
-            )
-FC_REFLECT( bts::blockchain::vote_del,
-            (votes)
-            (delegate_id)
-            )
 FC_REFLECT( bts::blockchain::account_record,
             (id)
             (name)
@@ -184,6 +134,10 @@ FC_REFLECT( bts::blockchain::account_record,
             (active_key_history)
             (registration_date)
             (last_update)
-            (delegate_info)
+            (signing_key_history)
             (meta_data)
             )
+FC_REFLECT_DERIVED( bts::blockchain::extended_account_record,
+                    (bts::blockchain::account_record),
+                    (delegate_info)
+                    );

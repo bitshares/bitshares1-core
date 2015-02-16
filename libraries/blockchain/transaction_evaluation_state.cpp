@@ -81,12 +81,12 @@ namespace bts { namespace blockchain {
       for( const auto& item : delegate_vote_deltas )
       {
           const account_id_type id = item.first;
-          oaccount_record delegate_record = _current_state->get_account_record( id );
-          FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+          odelegate_record delegate_record = _current_state->get_delegate_record( id );
+          FC_ASSERT( delegate_record.valid() );
 
-          const share_type amount = item.second;
-          delegate_record->adjust_votes_for( amount );
-          _current_state->store_account_record( *delegate_record );
+          const share_type delta = item.second;
+          delegate_record->votes_for += delta;
+          _current_state->store_delegate_record( *delegate_record );
       }
    } FC_CAPTURE_AND_RETHROW() }
 

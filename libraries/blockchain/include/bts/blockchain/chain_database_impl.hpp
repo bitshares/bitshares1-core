@@ -129,6 +129,8 @@ namespace bts { namespace blockchain {
             bts::db::fast_level_map<account_id_type, account_record>                    _account_id_to_record;
             bts::db::fast_level_map<string, account_id_type>                            _account_name_to_id;
             bts::db::fast_level_map<address, account_id_type>                           _account_address_to_id;
+
+            bts::db::fast_level_map<delegate_id_type, delegate_record>                  _delegate_id_to_record;
             set<vote_del>                                                               _delegate_votes;
 
             bts::db::fast_level_map<asset_id_type, asset_record>                        _asset_id_to_record;

@@ -1818,8 +1818,9 @@ namespace detail {
       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
 
       const vector<account_id_type>& active_delegate_ids = my->_blockchain->get_active_delegates();
-      const account_record delegate_record = my->_blockchain->get_slot_signee( header.timestamp, active_delegate_ids );
+      extended_account_record delegate_record( my->_blockchain->get_slot_signee( header.timestamp, active_delegate_ids ) );
       FC_ASSERT( delegate_record.is_delegate() );
+      delegate_record.delegate_info = my->_blockchain->get_delegate_record( delegate_record.id );
 
       const public_key_type public_signing_key = delegate_record.signing_key();
       const private_key_type private_signing_key = get_private_key( address( public_signing_key ) );
@@ -1830,8 +1831,7 @@ namespace detail {
       const optional<secret_hash_type>& prev_secret_hash = delegate_record.delegate_info->next_secret_hash;
       if( prev_secret_hash.valid() )
       {
-          FC_ASSERT( !delegate_record.delegate_info->signing_key_history.empty() );
-          const map<uint32_t, public_key_type>& signing_key_history = delegate_record.delegate_info->signing_key_history;
+          const map<uint32_t, public_key_type>& signing_key_history = delegate_record.signing_key_history;
           const uint32_t last_signing_key_change_block_num = signing_key_history.crbegin()->first;
 
           if( last_produced_block_num > last_signing_key_change_block_num )
@@ -1960,7 +1960,10 @@ namespace detail {
 
       auto required_fees = get_transaction_fee();
 
-      if( required_fees.amount < current_account->delegate_pay_balance() )
+      const auto delegate_account = my->_blockchain->get_delegate_record( current_account->id );
+      FC_ASSERT( delegate_account.valid() );
+
+      if( required_fees.amount < delegate_account->pay_balance )
       {
         // withdraw delegate pay...
         trx.withdraw_pay( current_account->id, required_fees.amount );
@@ -1994,7 +1997,6 @@ namespace detail {
            const string& account_to_publish_under,
            double amount_per_xts,
            const string& amount_asset_symbol,
-           bool force_settle,
            bool sign )
    { try {
       FC_ASSERT( is_open() );
@@ -2021,17 +2023,13 @@ namespace detail {
       FC_ASSERT( base_asset_record.valid() );
       FC_ASSERT( quote_asset_record.valid() );
 
-      feed_price quote_price_shares;
       const double ratio = (amount_per_xts * quote_asset_record->precision) / base_asset_record->precision;
-      price& standard_price = quote_price_shares;
-      standard_price = price( ratio, quote_asset_record->id, base_asset_record->id );
-      quote_price_shares.force_settle = force_settle;
+      const price quote_price_shares( ratio, quote_asset_record->id, base_asset_record->id );
 
-      idump( (quote_price_shares) );
       if( amount_per_xts > 0 )
       {
          trx.publish_feed( my->_blockchain->get_asset_id( amount_asset_symbol ),
-                           current_account->id, fc::variant( price( quote_price_shares ) )  );
+                           current_account->id, fc::variant( quote_price_shares ) );
       }
       else
       {
@@ -2041,7 +2039,10 @@ namespace detail {
 
       auto required_fees = get_transaction_fee();
 
-      if( required_fees.amount <  current_account->delegate_pay_balance() )
+      const auto delegate_account = my->_blockchain->get_delegate_record( current_account->id );
+      FC_ASSERT( delegate_account.valid() );
+
+      if( required_fees.amount < delegate_account->pay_balance )
       {
         // withdraw delegate pay...
         trx.withdraw_pay( current_account->id, required_fees.amount );
@@ -2108,15 +2109,28 @@ namespace detail {
 
       public_data[ "slate_id" ] = slate_id;
 
-      trx.update_account( current_account->id,
-                          current_account->delegate_pay_rate(),
-                          fc::variant_object( public_data ),
-                          optional<public_key_type>() );
+      const auto delegate_account = my->_blockchain->get_delegate_record( current_account->id );
+
+      if( delegate_account.valid() )
+      {
+          trx.update_account( current_account->id,
+                              delegate_account->pay_rate,
+                              fc::variant_object( public_data ),
+                              optional<public_key_type>() );
+      }
+      else
+      {
+          trx.update_account( current_account->id,
+                              -1,
+                              fc::variant_object( public_data ),
+                              optional<public_key_type>() );
+      }
       my->authorize_update( required_signatures, current_account );
 
       const auto required_fees = get_transaction_fee();
 
-      if( current_account->is_delegate() && required_fees.amount < current_account->delegate_pay_balance() )
+
+      if( delegate_account.valid() && required_fees.amount < delegate_account->pay_balance )
       {
         // withdraw delegate pay...
         trx.withdraw_pay( current_account->id, required_fees.amount );
@@ -2180,15 +2194,28 @@ namespace detail {
       const auto version = bts::client::version_info()["client_version"].as_string();
       public_data[ "version" ] = version;
 
-      trx.update_account( current_account->id,
-                          current_account->delegate_pay_rate(),
-                          fc::variant_object( public_data ),
-                          optional<public_key_type>() );
+      const auto delegate_account = my->_blockchain->get_delegate_record( current_account->id );
+
+      if( delegate_account.valid() )
+      {
+          trx.update_account( current_account->id,
+                              delegate_account->pay_rate,
+                              fc::variant_object( public_data ),
+                              optional<public_key_type>() );
+      }
+      else
+      {
+          trx.update_account( current_account->id,
+                              -1,
+                              fc::variant_object( public_data ),
+                              optional<public_key_type>() );
+      }
+
       my->authorize_update( required_signatures, current_account );
 
       const auto required_fees = get_transaction_fee();
 
-      if( current_account->is_delegate() && required_fees.amount < current_account->delegate_pay_balance() )
+      if( delegate_account.valid() && required_fees.amount < delegate_account->pay_balance )
       {
         // withdraw delegate pay...
         trx.withdraw_pay( current_account->id, required_fees.amount );
@@ -2724,9 +2751,10 @@ namespace detail {
        auto asset_rec = my->_blockchain->get_asset_record( asset_id_type(0) );
        share_type amount_to_withdraw((share_type)(real_amount_to_withdraw * asset_rec->precision));
 
-       auto delegate_account_record = my->_blockchain->get_account_record( delegate_name );
+       optional<extended_account_record> delegate_account_record = my->_blockchain->get_account_record( delegate_name );
        FC_ASSERT( delegate_account_record.valid() );
        FC_ASSERT( delegate_account_record->is_delegate() );
+       delegate_account_record->delegate_info = my->_blockchain->get_delegate_record( delegate_account_record->id );
 
        auto required_fees = get_transaction_fee();
        FC_ASSERT( delegate_account_record->delegate_info->pay_balance >= (amount_to_withdraw + required_fees.amount), "",

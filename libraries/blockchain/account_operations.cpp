@@ -48,9 +48,12 @@ namespace bts { namespace blockchain {
 
       if( this->is_delegate() )
       {
-          new_record.delegate_info = delegate_stats();
-          new_record.delegate_info->pay_rate = this->delegate_pay_rate;
           new_record.set_signing_key( eval_state._current_state->get_head_block_num(), this->active_key );
+
+          delegate_record record;
+          record.id = new_record.id;
+          record.pay_rate = this->delegate_pay_rate;
+          eval_state._current_state->store_delegate_record( record );
 
           const asset reg_fee( eval_state._current_state->get_delegate_registration_fee( this->delegate_pay_rate ), 0 );
           eval_state.required_fees += reg_fee;
@@ -75,6 +78,14 @@ namespace bts { namespace blockchain {
       if( !current_record.valid() )
           FC_CAPTURE_AND_THROW( unknown_account_id, (account_id) );
 
+      odelegate_record current_delegate_record;
+      if( current_record->is_delegate() )
+      {
+          current_delegate_record = eval_state._current_state->get_delegate_record( current_record->id );
+          if( !current_delegate_record.valid() )
+              FC_CAPTURE_AND_THROW( unknown_account_id, (current_record->id) );
+      }
+
       if( current_record->is_retracted() )
           FC_CAPTURE_AND_THROW( account_retracted, (current_record) );
 
@@ -89,8 +100,13 @@ namespace bts { namespace blockchain {
           }
           else
           {
-              if( current_record->is_delegate() && current_record->delegate_pay_balance() > 0 )
-                  FC_CAPTURE_AND_THROW( pay_balance_remaining, (*current_record) );
+              if( current_delegate_record.valid() )
+              {
+                  if( current_delegate_record->pay_balance > 0 )
+                      FC_CAPTURE_AND_THROW( pay_balance_remaining, (*current_delegate_record) );
+
+                  current_delegate_record->retracted = true;
+              }
           }
 
           if( !eval_state.check_signature( current_record->owner_key ) && !eval_state.any_parent_has_signed( current_record->name ) )
@@ -113,16 +129,18 @@ namespace bts { namespace blockchain {
 
       if( this->is_delegate() )
       {
-          if( current_record->is_delegate() )
+          if( current_delegate_record.valid() )
           {
               // Delegates cannot increase their pay rate
-              FC_ASSERT( this->delegate_pay_rate <= current_record->delegate_info->pay_rate );
-              current_record->delegate_info->pay_rate = this->delegate_pay_rate;
+              FC_ASSERT( this->delegate_pay_rate <= current_delegate_record->pay_rate );
+              current_delegate_record->pay_rate = this->delegate_pay_rate;
           }
           else
           {
-              current_record->delegate_info = delegate_stats();
-              current_record->delegate_info->pay_rate = this->delegate_pay_rate;
+              current_delegate_record = delegate_record();
+              current_delegate_record->id = current_record->id;
+              current_delegate_record->pay_rate = this->delegate_pay_rate;
+
               current_record->set_signing_key( eval_state._current_state->get_head_block_num(), current_record->active_key() );
 
               const asset reg_fee( eval_state._current_state->get_delegate_registration_fee( this->delegate_pay_rate ), 0 );
@@ -133,6 +151,9 @@ namespace bts { namespace blockchain {
       current_record->last_update = eval_state._current_state->now();
 
       eval_state._current_state->store_account_record( *current_record );
+
+      if( current_delegate_record.valid() )
+          eval_state._current_state->store_delegate_record( *current_delegate_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
    void withdraw_pay_operation::evaluate( transaction_evaluation_state& eval_state )const
@@ -140,25 +161,27 @@ namespace bts { namespace blockchain {
       if( this->amount <= 0 )
           FC_CAPTURE_AND_THROW( negative_withdraw, (amount) );
 
-      const account_id_type account_id = abs( this->account_id );
-      oaccount_record account = eval_state._current_state->get_account_record( account_id );
-      if( !account.valid() )
+      const oaccount_record current_account_record = eval_state._current_state->get_account_record( this->account_id );
+      if( !current_account_record.valid() )
           FC_CAPTURE_AND_THROW( unknown_account_id, (account_id) );
 
-      if( !account->is_delegate() )
-          FC_CAPTURE_AND_THROW( not_a_delegate, (account) );
+      if( !current_account_record->is_delegate() )
+          FC_CAPTURE_AND_THROW( not_a_delegate, (account_id) );
 
-      if( account->delegate_info->pay_balance < this->amount )
-         FC_CAPTURE_AND_THROW( insufficient_funds, (account)(amount) );
+      odelegate_record current_record = eval_state._current_state->get_delegate_record( current_account_record->id );
+      FC_ASSERT( current_record.valid() );
 
-      if( !eval_state.account_or_any_parent_has_signed( *account ) )
+      if( current_record->pay_balance < this->amount )
+         FC_CAPTURE_AND_THROW( insufficient_funds, (*current_record)(amount) );
+
+      if( !eval_state.account_or_any_parent_has_signed( *current_account_record ) )
           FC_CAPTURE_AND_THROW( missing_signature, (*this) );
 
-      account->delegate_info->pay_balance -= this->amount;
+      current_record->pay_balance -= this->amount;
       eval_state.delegate_vote_deltas[ account_id ] -= this->amount;
       eval_state.add_balance( asset( this->amount, 0 ) );
 
-      eval_state._current_state->store_account_record( *account );
+      eval_state._current_state->store_delegate_record( *current_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
    void update_signing_key_operation::evaluate( transaction_evaluation_state& eval_state )const

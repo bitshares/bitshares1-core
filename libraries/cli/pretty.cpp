@@ -298,7 +298,7 @@ string pretty_disk_usage( fc::mutable_variant_object usage )
     return out.str();
 }
 
-string pretty_delegate_list( const vector<account_record>& delegate_records, cptr client )
+string pretty_delegate_list( const vector<extended_account_record>& delegate_records, cptr client )
 {
     if( delegate_records.empty() ) return "No delegates found.\n";
     FC_ASSERT( client != nullptr );
@@ -342,7 +342,7 @@ string pretty_delegate_list( const vector<account_record>& delegate_records, cpt
         else
             out << std::setw( 32 ) << pretty_shorten( delegate_name, 29 ) + " *";
 
-        out << std::setw( 15 ) << pretty_percent( delegate_record.net_votes(), share_supply, 8 );
+        out << std::setw( 15 ) << pretty_percent( delegate_record.delegate_info->votes_for, share_supply, 8 );
 
         const auto num_produced = delegate_record.delegate_info->blocks_produced;
         const auto num_missed = delegate_record.delegate_info->blocks_missed;
@@ -806,7 +806,7 @@ string pretty_asset_list( const vector<asset_record>& asset_records, cptr client
     return out.str();
 }
 
-string pretty_account( const oaccount_record& record, cptr client )
+string pretty_account( const optional<extended_account_record>& record, cptr client )
 {
     if( !record.valid() ) return "No account found.\n";
     FC_ASSERT( client != nullptr );
@@ -830,7 +830,7 @@ string pretty_account( const oaccount_record& record, cptr client )
 
     if( record->is_delegate() )
     {
-      const vector<account_record> delegate_records = { *record };
+      const vector<extended_account_record> delegate_records = { *record };
       out << "\n" << pretty_delegate_list( delegate_records, client ) << "\n";
       out << "Block Signing Key: " << std::string( record->signing_key() ) << "\n";
     }

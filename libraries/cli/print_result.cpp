@@ -191,7 +191,7 @@ namespace bts { namespace cli {
 
     _command_to_function["blockchain_get_account"] = [](std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
     {
-      out << pretty_account(result.as<oaccount_record>(), client);
+      out << pretty_account(result.as<optional<extended_account_record>>(), client);
     };
 
     _command_to_function["blockchain_list_forks"] = &f_blockchain_list_forks;
@@ -491,7 +491,7 @@ namespace bts { namespace cli {
 
   void print_result::f_blockchain_list_delegates(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
-    const auto& delegate_records = result.as<vector<account_record>>();
+    const auto& delegate_records = result.as<vector<extended_account_record>>();
     out << pretty_delegate_list(delegate_records, client);
   }
 
@@ -503,10 +503,10 @@ namespace bts { namespace cli {
       start = arguments[0].as_string();
     if(arguments.size() > 1)
       count = arguments[1].as<int32_t>();
-    print_registered_account_list(out, result.as<vector<account_record>>(), count, client);
+    print_registered_account_list(out, result.as<vector<extended_account_record>>(), count, client);
   }
 
-  void print_result::print_registered_account_list(std::ostream& out, const vector<account_record>& account_records, int32_t count, cptr client)
+  void print_result::print_registered_account_list(std::ostream& out, const vector<extended_account_record>& account_records, int32_t count, cptr client)
   {
     out << std::setw(35) << std::left << "NAME (* delegate)";
     out << std::setw(64) << "KEY";

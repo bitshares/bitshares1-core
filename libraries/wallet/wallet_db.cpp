@@ -78,7 +78,7 @@ namespace bts { namespace wallet {
                }
                if( account_record.is_delegate() )
                {
-                   for( const auto& item : account_record.delegate_info->signing_key_history )
+                   for( const auto& item : account_record.signing_key_history )
                    {
                        const public_key_type& signing_key = item.second;
                        if( signing_key == public_key_type() ) continue;
@@ -476,7 +476,7 @@ namespace bts { namespace wallet {
        }
        if( account.is_delegate() )
        {
-           for( const auto& item : account.delegate_info->signing_key_history )
+           for( const auto& item : account.signing_key_history )
            {
                const public_key_type& signing_key = item.second;
                if( signing_key == public_key_type() ) continue;
@@ -934,7 +934,7 @@ namespace bts { namespace wallet {
        }
        if( account_record->is_delegate() )
        {
-           for( const auto& item : account_record->delegate_info->signing_key_history )
+           for( const auto& item : account_record->signing_key_history )
            {
                const public_key_type& signing_key = item.second;
                address_to_account_wallet_record_index.erase( address( signing_key ) );

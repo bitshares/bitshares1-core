@@ -6,6 +6,7 @@
 #include <bts/blockchain/block_record.hpp>
 #include <bts/blockchain/burn_record.hpp>
 #include <bts/blockchain/condition.hpp>
+#include <bts/blockchain/delegate_record.hpp>
 #include <bts/blockchain/feed_record.hpp>
 #include <bts/blockchain/market_records.hpp>
 #include <bts/blockchain/property_record.hpp>
@@ -20,6 +21,7 @@ namespace bts { namespace blockchain {
    class chain_interface
    : public property_db_interface,
      public account_db_interface,
+     public delegate_db_interface,
      public asset_db_interface,
      public slate_db_interface,
      public balance_db_interface,
@@ -140,6 +142,9 @@ namespace bts { namespace blockchain {
          oaccount_record                    get_account_record( const string& name )const;
          oaccount_record                    get_account_record( const address& addr )const;
          void                               store_account_record( const account_record& record );
+
+         odelegate_record                   get_delegate_record( const delegate_id_type id )const;
+         void                               store_delegate_record( const delegate_record& record );
 
          oasset_record                      get_asset_record( const asset_id_type id )const;
          oasset_record                      get_asset_record( const string& symbol )const;

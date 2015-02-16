@@ -113,17 +113,17 @@ transaction_builder& transaction_builder::update_account_registration(const wall
    if( delegate_pay )
    {
       FC_ASSERT( !account.is_delegate() ||
-                 *delegate_pay <= account.delegate_pay_rate(), "Pay rate can only be decreased!" );
+                 *delegate_pay <= account.delegate_info->pay_rate, "Pay rate can only be decreased!" );
 
       //If account is not a delegate but wants to become one OR account is a delegate changing his pay rate...
       if( (!account.is_delegate() && *delegate_pay <= 100) ||
-           (account.is_delegate() && *delegate_pay != account.delegate_pay_rate()) )
+           (account.is_delegate() && *delegate_pay != account.delegate_info->pay_rate) )
       {
          if( !paying_account->is_my_account )
             FC_THROW_EXCEPTION( unknown_account, "Unknown paying account!", ("paying_account", paying_account) );
 
          asset fee(_wimpl->_blockchain->get_delegate_registration_fee( *delegate_pay ));
-         if( paying_account->is_delegate() && paying_account->delegate_pay_balance() >= fee.amount )
+         if( paying_account->is_delegate() && paying_account->delegate_info->pay_balance >= fee.amount )
          {
             //Withdraw into trx, but don't record it in outstanding_balances because it's a fee
             trx.withdraw_pay(paying_account->id, fee.amount);
@@ -141,7 +141,14 @@ transaction_builder& transaction_builder::update_account_registration(const wall
             entry.memo = "Fee to promote " + account.name + " to a delegate";
          transaction_record.ledger_entries.push_back(entry);
       }
-   } else delegate_pay = account.delegate_pay_rate();
+   }
+   else
+   {
+       if( account.is_delegate() )
+           delegate_pay = account.delegate_info->pay_rate;
+       else
+           delegate_pay = -1;
+   }
 
    fc::optional<public_key_type> active_public_key;
    if( active_key )
