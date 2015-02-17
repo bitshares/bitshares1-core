@@ -283,6 +283,8 @@ namespace bts { namespace blockchain {
       record.message = message;
       record.signer = message_signature;
 
+      FC_ASSERT( !eval_state._current_state->get_burn_record( record.index ).valid() );
+
       eval_state._current_state->store_burn_record( std::move( record ) );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
