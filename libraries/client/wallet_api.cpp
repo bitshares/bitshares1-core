@@ -923,6 +923,8 @@ string detail::client_impl::wallet_import_private_key( const string& wif_key_to_
 
   if( wallet_rescan_blockchain )
       _wallet->start_scan( 0, -1 );
+  else
+      _wallet->start_scan( 0, 1 );
 
   const owallet_account_record account_record = _wallet->get_account_for_address( address( new_public_key ) );
   FC_ASSERT( account_record.valid(), "No account for the key we just imported!?" );
