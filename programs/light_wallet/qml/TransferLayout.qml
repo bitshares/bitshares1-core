@@ -213,7 +213,7 @@ Page {
             if( memoField.characterCount > memoField.characterLimit )
                return memoShaker.shake()
 
-            transactionPreview.trx = wallet.accounts[accountName].beginTransfer(toNameField.text, amountField.text,
+            transactionPreview.trx = wallet.accounts[accountName].beginTransfer(toNameField.text, amountField.amount(),
                                                                                 assetSymbolField.selectedText, memoField.text);
             transferPage.state = "confirmation"
             confirmPassword.forceActiveFocus()
