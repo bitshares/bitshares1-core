@@ -138,7 +138,6 @@ blockchain_get_account_public_balance <account_name>
 blockchain_get_asset <asset>                                                                        
 blockchain_get_block <block>                                                                        
 blockchain_get_block_count                                                                          
-blockchain_get_block_hash <block_number>                                                            
 blockchain_get_block_signee <block>                                                                 
 blockchain_get_block_transactions <block>                                                           
 blockchain_get_delegate_slot_records <delegate_name> [limit]                                        
