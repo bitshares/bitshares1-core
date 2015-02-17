@@ -67,46 +67,37 @@ vector<string> client_impl::blockchain_list_missing_block_delegates( uint32_t bl
    return delegates;
 }
 
-vector<block_record> client_impl::blockchain_list_blocks( uint32_t first, int32_t count )
-{
-   FC_ASSERT( count <= 1000 );
-   FC_ASSERT( count >= -1000 );
-   if (count == 0) return vector<block_record>();
+vector<block_record> client_impl::blockchain_list_blocks( const uint32_t max_block_num, const uint32_t limit )
+{ try {
+    FC_ASSERT( max_block_num > 0 );
+    FC_ASSERT( limit > 0 );
 
-   uint32_t total_blocks = _chain_db->get_head_block_num();
-   FC_ASSERT( first <= total_blocks );
+    const uint32_t head_block_num = _chain_db->get_head_block_num();
 
-   int32_t increment = 1;
+    uint32_t start_block_num = head_block_num;
+    if( max_block_num <= head_block_num )
+    {
+        start_block_num = max_block_num;
+    }
+    else
+    {
+        FC_ASSERT( -max_block_num <= head_block_num );
+        start_block_num = head_block_num + max_block_num + 1;
+    }
 
-   //Normalize first and count if count < 0 and adjust count if necessary to not try to list nonexistent blocks
-   if( count < 0 )
-   {
-      first = total_blocks - first;
-      count *= -1;
-      if( signed(first) - count < 0 )
-         count = first;
-      increment = -1;
-   }
-   else
-   {
-      if ( first == 0 )
-         first = 1;
-      if( first + count - 1 > total_blocks )
-         count = total_blocks - first + 1;
-   }
+    const uint32_t count = std::min( limit, start_block_num );
+    vector<block_record> records;
+    records.reserve( count );
 
-   vector<block_record> result;
-   result.reserve( count );
+    for( uint32_t block_num = start_block_num; block_num > 0; --block_num )
+    {
+        oblock_record record = _chain_db->get_block_record( block_num );
+        if( record.valid() ) records.push_back( std::move( *record ) );
+        if( records.size() >= count ) break;
+    }
 
-   for( int32_t block_num = first; count; --count, block_num += increment )
-   {
-      auto record = _chain_db->get_block_record( block_num );
-      FC_ASSERT( record.valid() );
-      result.push_back( *record );
-   }
-
-   return result;
-}
+    return records;
+} FC_CAPTURE_AND_RETHROW( (max_block_num)(limit) ) }
 
 signed_transactions client_impl::blockchain_list_pending_transactions() const
 {

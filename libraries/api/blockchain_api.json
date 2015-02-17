@@ -752,21 +752,21 @@
       },
       {
          "method_name" : "blockchain_list_blocks",
-         "description" : "Returns the block headers for blocks in a range",
+         "description" : "Returns a descending list of block records starting from the specified block number",
          "cached"      : true,
          "return_type" : "block_record_array",
          "parameters"  : [
             {
-               "name" : "first_block_number",
+               "name" : "max_block_num",
                "type" : "uint32_t",
-               "description" : "the first block to list. If limit is negative, a first_block_number of 0 indicates the head block; otherwise, 0 indicates the first block",
-               "default_value" : 0
+               "description" : "the block num to start from; negative to count backwards from the current head block",
+               "default_value" : -1
             },
             {
                "name" : "limit",
-               "type" : "int32_t",
-               "description" : "the maximum number of blocks to return. A negative value means to start at the head block and work backwards; a positive value means to start at the first block",
-               "default_value" : -20
+               "type" : "uint32_t",
+               "description" : "max number of blocks to return",
+               "default_value" : 20
             }
          ],
          "aliases" : ["list_blocks"],
