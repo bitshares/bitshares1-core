@@ -63,7 +63,11 @@ Returns:
   account_balance_summary_type
 default (unlocked) >>> blockchain_get_account_public_balance test
 [[
-    "test",[]
+    "test",[[
+        0,
+        4011831189
+      ]
+    ]
   ]
 ]
 default (unlocked) >>> blockchain_get_account_public_balance delegate0

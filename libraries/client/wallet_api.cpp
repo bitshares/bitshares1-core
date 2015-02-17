@@ -1527,7 +1527,7 @@ wallet_transaction_record client_impl::wallet_publish_price_feed( const std::str
                                                                   double real_amount_per_xts,
                                                                   const std::string& real_amount_symbol )
 {
-   auto record = _wallet->publish_price( delegate_account, real_amount_per_xts, real_amount_symbol, false, true );
+   auto record = _wallet->publish_price( delegate_account, real_amount_per_xts, real_amount_symbol, true );
    _wallet->cache_transaction( record );
    network_broadcast_transaction( record.trx );
    return record;

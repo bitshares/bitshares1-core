@@ -31,7 +31,6 @@ debug_get_client_name
 debug_list_errors [first_error_number] [limit] [filename]                                           
 debug_list_errors_brief [first_error_number] [limit] [filename]                                     
 debug_update_logging_config                                                                         
-debug_verify_delegate_votes                                                                         
 debug_wait_block_interval <wait_time_in_block_intervals>                                            
 debug_write_errors_to_file [path] [start_time]                                                      
 disk_usage                                                                                          

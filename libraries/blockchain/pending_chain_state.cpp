@@ -48,6 +48,7 @@ namespace bts { namespace blockchain {
       apply_records( prev_state, _slate_id_to_record, _slate_id_remove );
       apply_records( prev_state, _balance_id_to_record, _balance_id_remove );
       apply_records( prev_state, _transaction_id_to_record, _transaction_id_remove );
+      apply_records( prev_state, _burn_index_to_record, _burn_index_remove );
       apply_records( prev_state, _slot_index_to_record, _slot_index_remove );
 
       for( const auto& item : bids )            prev_state->store_bid_record( item.first, item.second );
@@ -58,7 +59,6 @@ namespace bts { namespace blockchain {
       for( const auto& item : collateral )      prev_state->store_collateral_record( item.first, item.second );
       for( const auto& item : market_history )  prev_state->store_market_history_record( item.first, item.second );
       for( const auto& item : market_statuses ) prev_state->store_market_status( item.second );
-      for( const auto& item : burns ) prev_state->store_burn_record( burn_record(item.first,item.second) );
 
       /** do this last because it could have side effects on other records while
        * we manage the short index
@@ -102,6 +102,7 @@ namespace bts { namespace blockchain {
       populate_undo_state( undo_state, prev_state, _slate_id_to_record, _slate_id_remove );
       populate_undo_state( undo_state, prev_state, _balance_id_to_record, _balance_id_remove );
       populate_undo_state( undo_state, prev_state, _transaction_id_to_record, _transaction_id_remove );
+      populate_undo_state( undo_state, prev_state, _burn_index_to_record, _burn_index_remove );
       populate_undo_state( undo_state, prev_state, _feed_index_to_record, _feed_index_remove );
       populate_undo_state( undo_state, prev_state, _slot_index_to_record, _slot_index_remove );
 
@@ -149,10 +150,6 @@ namespace bts { namespace blockchain {
          {
             undo_state->store_market_status( market_status() );
          }
-      }
-      for( const auto& item : burns )
-      {
-         undo_state->store_burn_record( burn_record( item.first ) );
       }
 
       const auto dirty_markets = prev_state->get_dirty_markets();
@@ -312,22 +309,6 @@ namespace bts { namespace blockchain {
    void pending_chain_state::store_market_status( const market_status& s )
    {
       market_statuses[std::make_pair(s.quote_id,s.base_id)] = s;
-   }
-
-   void pending_chain_state::store_burn_record( const burn_record& br )
-   {
-      burns[br] = br;
-   }
-
-   oburn_record pending_chain_state::fetch_burn_record( const burn_record_key& key )const
-   {
-      auto itr = burns.find(key);
-      if( itr == burns.end() )
-      {
-         chain_interface_ptr prev_state = _prev_state.lock();
-         return prev_state->fetch_burn_record( key );
-      }
-      return burn_record( itr->first, itr->second );
    }
 
    oproperty_record pending_chain_state::property_lookup_by_id( const property_id_type id )const
@@ -541,6 +522,28 @@ namespace bts { namespace blockchain {
    void pending_chain_state::transaction_erase_from_unique_set( const transaction& trx )
    {
        _transaction_digests.erase( trx.digest( get_chain_id() ) );
+   }
+
+   oburn_record pending_chain_state::burn_lookup_by_index( const burn_index& index )const
+   {
+       const auto iter = _burn_index_to_record.find( index );
+       if( iter != _burn_index_to_record.end() ) return iter->second;
+       if( _burn_index_remove.count( index ) > 0 ) return oburn_record();
+       const chain_interface_ptr prev_state = _prev_state.lock();
+       if( !prev_state ) return oburn_record();
+       return prev_state->lookup<burn_record>( index );
+   }
+
+   void pending_chain_state::burn_insert_into_index_map( const burn_index& index, const burn_record& record )
+   {
+       _burn_index_remove.erase( index );
+       _burn_index_to_record[ index ] = record;
+   }
+
+   void pending_chain_state::burn_erase_from_index_map( const burn_index& index )
+   {
+       _burn_index_to_record.erase( index );
+       _burn_index_remove.insert( index );
    }
 
    ofeed_record pending_chain_state::feed_lookup_by_index( const feed_index index )const

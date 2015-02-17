@@ -399,12 +399,9 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
     {
         /* Print any missed slots */
 
-        const bool descending = last_block_timestamp > block_record.timestamp;
         while( last_block_timestamp != block_record.timestamp )
         {
-            if( descending ) last_block_timestamp -= BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-            else last_block_timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-
+            last_block_timestamp -= BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
             if( last_block_timestamp == block_record.timestamp ) break;
 
             out << std::setw(  8 ) << "MISSED";
@@ -415,8 +412,7 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
             if( slot_record.valid() )
             {
                 const auto delegate_record = client->get_chain()->get_account_record( slot_record->index.delegate_id );
-                if( delegate_record.valid() && delegate_record->is_delegate() )
-                    delegate_name = delegate_record->name;
+                if( delegate_record.valid() ) delegate_name = delegate_record->name;
             }
             out << std::setw( 32 ) << pretty_shorten( delegate_name, 31 );
 

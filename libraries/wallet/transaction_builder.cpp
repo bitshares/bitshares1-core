@@ -623,11 +623,14 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
    FC_ASSERT( order_balance.asset_id == cover_amount.asset_id,
               "Asset types of cover amount ${c} and short position ${s} do not match.",
               ("c", cover_amount.asset_id)("s", order_balance.asset_id) );
-   //Add interest to the balance
-   auto age_at_transaction_expiration = _wimpl->_blockchain->now() + _wimpl->self->get_transaction_expiration() -
-                     (*order->expiration - BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC);
+
+   // Add interest minimum to the balance
+   auto age_at_earliest_confirmation = _wimpl->_blockchain->now()
+                                       + BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC
+                                       - (*order->expiration - BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC);
+
    order_balance += blockchain::detail::market_engine
-           ::get_interest_owed(order_balance, *order->interest_rate, age_at_transaction_expiration.to_seconds());
+           ::get_interest_owed(order_balance, *order->interest_rate, age_at_earliest_confirmation.to_seconds());
 
    //What's the account's actual balance? We can't pay more than that.
    auto account_balances = _wimpl->self->get_spendable_account_balances( from_account.name );

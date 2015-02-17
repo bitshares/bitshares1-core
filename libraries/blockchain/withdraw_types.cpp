@@ -211,7 +211,7 @@ namespace bts { namespace blockchain {
       memo->encrypted_memo_data = fc::aes_encrypt( secret, fc::raw::pack( memo_content ) );
    }
 
-   omemo_status withdraw_with_escrow::decrypt_memo_data( const fc::ecc::private_key& receiver_key )const
+   omemo_status withdraw_with_escrow::decrypt_memo_data( const fc::ecc::private_key& receiver_key, bool ignore_owner )const
    { try {
        try {
          FC_ASSERT( memo.valid() );
@@ -222,10 +222,13 @@ namespace bts { namespace blockchain {
                                                                            extended_private_key::public_derivation );
          auto secret_public_key = secret_private_key.get_public_key();
 
-         //if( receiver != address(secret_public_key) )
-         //   return omemo_status();
+         if( !ignore_owner
+             && sender != address( secret_public_key )
+             && receiver != address( secret_public_key )
+             && escrow != address( secret_public_key )  )
+            return omemo_status();
 
-         extended_memo_data memo = decrypt_memo_data( secret );
+         auto memo = decrypt_memo_data( secret );
 
          bool has_valid_signature = false;
          if( memo.memo_flags == from_memo && !( memo.from == public_key_type() && memo.from_signature == 0 ) )
@@ -244,7 +247,7 @@ namespace bts { namespace blockchain {
       {
          return omemo_status();
       }
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW( (ignore_owner) ) }
 
    public_key_type withdraw_with_escrow::encrypt_memo_data(
            const fc::ecc::private_key& one_time_private_key,
