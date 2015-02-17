@@ -111,11 +111,6 @@ signed_transactions client_impl::blockchain_list_pending_transactions() const
    return trxs;
 }
 
-block_id_type detail::client_impl::blockchain_get_block_hash( uint32_t block_number ) const
-{
-   return _chain_db->get_block(block_number).id();
-}
-
 uint32_t detail::client_impl::blockchain_get_block_count() const
 {
    return _chain_db->get_head_block_num();
@@ -289,7 +284,7 @@ pair<transaction_id_type, transaction_record> detail::client_impl::blockchain_ge
 } FC_CAPTURE_AND_RETHROW( (transaction_id_prefix)(exact) ) }
 
 oblock_record detail::client_impl::blockchain_get_block( const string& block )const
-{
+{ try {
    try
    {
       ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
@@ -302,7 +297,7 @@ oblock_record detail::client_impl::blockchain_get_block( const string& block )co
    {
    }
    return oblock_record();
-}
+} FC_CAPTURE_AND_RETHROW( (block) ) }
 
 unordered_map<balance_id_type, balance_record> detail::client_impl::blockchain_list_balances( const string& first, uint32_t limit )const
 { try {

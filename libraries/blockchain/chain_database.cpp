@@ -538,6 +538,7 @@ namespace bts { namespace blockchain {
               block_record record;
               digest_block& temp = record;
               temp = digest_block( block_data );
+              record.id = block_id;
               record.block_size = block_data.block_size();
               record.latency = blockchain::now() - block_data.timestamp;
               _block_id_to_block_record_db.store( block_id, record );
@@ -1568,6 +1569,7 @@ namespace bts { namespace blockchain {
                record = block_record();
                digest_block& temp = *record;
                temp = get_block_digest( block_id );
+               record->id = block_id;
            }
            catch( const fc::exception& )
            {
