@@ -19,9 +19,9 @@ Parameters:
 
 Returns:
   transaction_record_pair
-default (unlocked) >>> blockchain_get_transaction da5fbeb4f3e77927c2a59461bd3374acd94f5eef
+default (unlocked) >>> blockchain_get_transaction 30f727facd88885415b34db143da76b0c8d98289
 [
-  "da5fbeb4f3e77927c2a59461bd3374acd94f5eef",{
+  "30f727facd88885415b34db143da76b0c8d98289",{
     "trx": {
       "expiration": "2014-06-20T15:40:30",
       "reserved": null,
@@ -34,10 +34,10 @@ default (unlocked) >>> blockchain_get_transaction da5fbeb4f3e77927c2a59461bd3374
               "slate_id": 0,
               "type": "withdraw_signature_type",
               "data": {
-                "owner": "XTSBVZrKzTUnG15JjakSbNyxQr6ibus6TDZL",
+                "owner": "XTSFtXy1oqCnZ5Sw5txgm2421smvzZ6jwVUM",
                 "memo": {
                   "one_time_key": "XTS87YMmAemcZkuecYie5nY5q5oVhupccvbM95E7g8puVCgFGQmPT",
-                  "encrypted_memo_data": "e890bf522bddff8e8833b2306977b44aeac707b6567db02bbc9623e3c72e7ccd2051296fe174473f44ba4c38dec012dbb5bfa650f9d39fa893c53e561a5a4252"
+                  "encrypted_memo_data": "e890bf522bddff8e8833b2306977b44aeac707b6567db02bbc9623e3c72e7ccd57eda82df358d777f678a29fff0865b179ba25af58d373a055cab9c862be5f6c"
                 }
               }
             }
@@ -52,7 +52,7 @@ default (unlocked) >>> blockchain_get_transaction da5fbeb4f3e77927c2a59461bd3374
         }
       ],
       "signatures": [
-        "1f07787593e6158df2ab1559f42a5dc9d8f2a9e0e0a60f519372e83ad3051bce4c398fa892d3aabe5007a0f18298266b3d719afec29289135498a420dcf2e992f9"
+        "1f07787593e6158df2ab1559f42a5dc9d8f2a9e0e0a60f519372e83ad3051bce4c3ae76cb0739f7bf71d5d4735bfa485bc8e0b04c6d44d7be56a5aafbe0370d1f3"
       ]
     },
     "signed_keys": [

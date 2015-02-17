@@ -25,20 +25,6 @@ namespace bts { namespace blockchain {
        return this->owners().count( addr ) > 0;
    }
 
-   bool balance_record::is_owner( const public_key_type& key )const
-   {
-       const auto& addrs = this->owners();
-       for( const auto& addr : addrs )
-       {
-           if( addr == address( key ) ) return true;
-           if( addr == address( pts_address( key, false, 56 ) ) ) return true;
-           if( addr == address( pts_address( key, true, 56 ) ) ) return true;
-           if( addr == address( pts_address( key, false, 0 ) ) ) return true;
-           if( addr == address( pts_address( key, true, 0 ) ) ) return true;
-       }
-       return false;
-   }
-
    asset balance_record::get_spendable_balance( const time_point_sec at_time )const
    {
        switch( withdraw_condition_types( condition.type ) )

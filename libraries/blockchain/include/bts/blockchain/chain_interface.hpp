@@ -4,6 +4,7 @@
 #include <bts/blockchain/asset_record.hpp>
 #include <bts/blockchain/balance_record.hpp>
 #include <bts/blockchain/block_record.hpp>
+#include <bts/blockchain/burn_record.hpp>
 #include <bts/blockchain/condition.hpp>
 #include <bts/blockchain/feed_record.hpp>
 #include <bts/blockchain/market_records.hpp>
@@ -23,6 +24,7 @@ namespace bts { namespace blockchain {
      public slate_db_interface,
      public balance_db_interface,
      public transaction_db_interface,
+     public burn_db_interface,
      public feed_db_interface,
      public slot_db_interface
    {
@@ -69,9 +71,6 @@ namespace bts { namespace blockchain {
 
          void                               set_statistics_enabled( const bool enabled );
          bool                               get_statistics_enabled()const;
-
-         virtual void                       store_burn_record( const burn_record& br ) = 0;
-         virtual oburn_record               fetch_burn_record( const burn_record_key& key )const = 0;
 
          virtual oprice                     get_active_feed_price( const asset_id_type quote_id,
                                                                    const asset_id_type base_id = 0 )const = 0;
@@ -159,6 +158,9 @@ namespace bts { namespace blockchain {
          obalance_record                    get_balance_record( const balance_id_type& id )const;
          void                               store_balance_record( const balance_record& record );
 
+         oburn_record                       get_burn_record( const burn_index& index )const;
+         void                               store_burn_record( const burn_record& record );
+
          ofeed_record                       get_feed_record( const feed_index index )const;
          virtual void                       store_feed_record( const feed_record& record );
 
@@ -175,6 +177,9 @@ namespace bts { namespace blockchain {
          template<typename T, typename U>
          void store( const U& key, const T& record )
          { try {
+#ifdef BTS_TEST_NETWORK
+             record.sanity_check( *this );
+#endif
              T::store( *this, key, record );
          } FC_CAPTURE_AND_RETHROW( (key)(record) ) }
 

@@ -24,8 +24,6 @@ public:
         FC_ASSERT( !_ldb_path.valid() );
         _ldb_path = path;
         _ldb.open( *_ldb_path );
-        const size_t size = _ldb.size();
-        if( size > 0 ) _cache.reserve( size );
         for( auto iter = _ldb.begin(); iter.valid(); ++iter )
             _cache.emplace( iter.key(), iter.value() );
     } FC_CAPTURE_AND_RETHROW( (path) ) }

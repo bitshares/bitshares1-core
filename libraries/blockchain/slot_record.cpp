@@ -15,11 +15,13 @@ oslot_record slot_record::lookup( const chain_interface& db, const slot_index in
 
 oslot_record slot_record::lookup( const chain_interface& db, const time_point_sec timestamp )
 { try {
+    if( !db.get_statistics_enabled() ) return oslot_record();
     return db.slot_lookup_by_timestamp( timestamp );
 } FC_CAPTURE_AND_RETHROW( (timestamp) ) }
 
 void slot_record::store( chain_interface& db, const slot_index index, const slot_record& record )
 { try {
+    if( !db.get_statistics_enabled() ) return;
     const oslot_record prev_record = db.lookup<slot_record>( index );
     if( prev_record.valid() )
     {
@@ -33,6 +35,7 @@ void slot_record::store( chain_interface& db, const slot_index index, const slot
 
 void slot_record::remove( chain_interface& db, const slot_index index )
 { try {
+    if( !db.get_statistics_enabled() ) return;
     const oslot_record prev_record = db.lookup<slot_record>( index );
     if( prev_record.valid() )
     {

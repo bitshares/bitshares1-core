@@ -17,9 +17,6 @@ namespace bts { namespace blockchain {
 
          virtual fc::time_point_sec     now()const override;
 
-         virtual void                   store_burn_record( const burn_record& br ) override;
-         virtual oburn_record           fetch_burn_record( const burn_record_key& key )const override;
-
          virtual oprice                 get_active_feed_price( const asset_id_type quote_id,
                                                                const asset_id_type base_id = 0 )const override;
 
@@ -117,14 +114,15 @@ namespace bts { namespace blockchain {
          unordered_set<transaction_id_type>                                 _transaction_id_remove;
          unordered_set<digest_type>                                         _transaction_digests;
 
+         map<burn_index, burn_record>                                       _burn_index_to_record;
+         set<burn_index>                                                    _burn_index_remove;
+
          map<feed_index, feed_record>                                       _feed_index_to_record;
          set<feed_index>                                                    _feed_index_remove;
 
          map<slot_index, slot_record>                                       _slot_index_to_record;
          set<slot_index>                                                    _slot_index_remove;
          map<time_point_sec, account_id_type>                               _slot_timestamp_to_delegate;
-
-         map<burn_record_key,burn_record_value>                             burns;
 
          map< market_index_key, order_record>                               asks;
          map< market_index_key, order_record>                               bids;
@@ -186,6 +184,10 @@ namespace bts { namespace blockchain {
          virtual void transaction_erase_from_id_map( const transaction_id_type& )override;
          virtual void transaction_erase_from_unique_set( const transaction& )override;
 
+         virtual oburn_record burn_lookup_by_index( const burn_index& )const override;
+         virtual void burn_insert_into_index_map( const burn_index&, const burn_record& )override;
+         virtual void burn_erase_from_index_map( const burn_index& )override;
+
          virtual ofeed_record feed_lookup_by_index( const feed_index )const override;
          virtual void feed_insert_into_index_map( const feed_index, const feed_record& )override;
          virtual void feed_erase_from_index_map( const feed_index )override;
@@ -220,12 +222,13 @@ FC_REFLECT( bts::blockchain::pending_chain_state,
             (_transaction_id_to_record)
             (_transaction_id_remove)
             (_transaction_digests)
+            (_burn_index_to_record)
+            (_burn_index_remove)
             (_feed_index_to_record)
             (_feed_index_remove)
             (_slot_index_to_record)
             (_slot_index_remove)
             (_slot_timestamp_to_delegate)
-            (burns)
             (asks)
             (bids)
             (relative_asks)
