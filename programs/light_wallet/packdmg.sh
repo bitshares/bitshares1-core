@@ -1,6 +1,6 @@
 #!/bin/bash
 
-title="LightWallet"
+title="BitShares_Light_Wallet"
 applicationName="BitShares Light Wallet"
 source="dmg_pack_dir"
 macdeployqt="/usr/local/opt/qt5/bin/macdeployqt"
@@ -10,12 +10,12 @@ finalDMGName="BitShares Light Wallet.dmg"
 size=200m
 
 mkdir $source
-cp -r "${title}.app" "${source}/"
+cp -r "${title}.app" "${source}/${applicationName}.app"
 
 cd "${source}/"
-$macdeployqt "${title}.app" $deployArgs
+$macdeployqt "${applicationName}.app" $deployArgs
 cd -
-cp "${iconFile}" "${source}/${title}.app/Contents/Resources/"
+cp "${iconFile}" "${source}/${applicationName}.app/Contents/Resources/"
 rm -f "${finalDMGName}"
 
 hdiutil create -srcfolder "${source}" -volname "${applicationName}" -fs HFS+ \
@@ -39,7 +39,7 @@ echo '
            set icon size of theViewOptions to 192
            #set background picture of theViewOptions to file ".background:'${backgroundPictureName}'"
            make new alias file at container window to POSIX file "/Applications" with properties {name:"Applications"}
-           set position of item "'${title}'" of container window to {100, 100}
+           set position of item "'${applicationName}'" of container window to {100, 100}
            set position of item "Applications" of container window to {350, 100}
            update without registering applications
            delay 5
