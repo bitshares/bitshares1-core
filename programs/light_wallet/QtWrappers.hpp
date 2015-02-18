@@ -40,15 +40,19 @@ class TransactionSummary : public QObject
 {
    Q_OBJECT
    Q_PROPERTY(QString id MEMBER m_id NOTIFY stub)
-   Q_PROPERTY(QString timestamp MEMBER m_when NOTIFY stub)
+   Q_PROPERTY(QString timestamp READ timestamp NOTIFY timestampChanged)
    Q_PROPERTY(QString feeAmount MEMBER m_feeAmount NOTIFY stub)
    Q_PROPERTY(QString feeSymbol MEMBER m_feeSymbol NOTIFY stub)
    Q_PROPERTY(QQmlListProperty<LedgerEntry> ledger READ ledger CONSTANT)
 
+   Q_PROPERTY(bool updatingTimestamp MEMBER m_updatingTimestamp NOTIFY updatingTimestampChanged)
+
 public:
    // TransactionSummary takes ownership of the LedgerEntries in ledger
-   TransactionSummary(QString id, QString timestamp, QList<LedgerEntry*>&& ledger, QObject* parent = nullptr);
+   TransactionSummary(QString id, fc::time_point_sec timestamp, QList<LedgerEntry*>&& ledger, QObject* parent = nullptr);
    ~TransactionSummary(){}
+
+   QString timestamp() const;
 
    QQmlListProperty<LedgerEntry> ledger()
    {
@@ -57,13 +61,17 @@ public:
 
 private:
    QString m_id;
-   QString m_when;
+   fc::time_point_sec m_timestamp;
    QString m_feeAmount;
    QString m_feeSymbol;
    QList<LedgerEntry*> m_ledger;
 
+   bool m_updatingTimestamp;
+
 Q_SIGNALS:
-   //None of the properties change, so squelch warnings by setting this as their NOTIFY property
+   void timestampChanged();
+   void updatingTimestampChanged(bool);
+   //Many of the properties never change, so squelch warnings by setting this as their NOTIFY property
    void stub();
 };
 

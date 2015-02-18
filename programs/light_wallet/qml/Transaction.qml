@@ -62,8 +62,25 @@ Rectangle {
 
          Item { Layout.preferredWidth: visuals.margins }
          Label {
+            id: timestampLabel
             text: trx.timestamp
             font.pixelSize: units.dp(12)
+
+            Behavior on text {
+               SequentialAnimation {
+                  PropertyAnimation {
+                     target: timestampLabel
+                     property: "opacity"
+                     from: 1; to: 0
+                  }
+                  PropertyAction { target: timestampLabel; property: "text" }
+                  PropertyAnimation {
+                     target: timestampLabel
+                     property: "opacity"
+                     from: 0; to: 1
+                  }
+               }
+            }
          }
          Item { Layout.fillWidth: true }
          Label {
