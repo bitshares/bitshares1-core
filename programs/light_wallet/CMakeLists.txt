@@ -5,7 +5,7 @@ if(POLICY CMP0043)
    cmake_policy(SET CMP0043 NEW)
 endif()
 
-set(BINARY_NAME "LightWallet")
+set(BINARY_NAME "DevShares_Light_Wallet")
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 9)
 set(VERSION_PATCH 0)
@@ -38,9 +38,9 @@ file(GLOB qrc_files *.qrc)
 
 qt5_add_resources(qrc_sources ${qrc_files})
 
-add_executable(LightWallet WIN32 MACOSX_BUNDLE ${OSX_ICON_FILE} main.cpp LightWallet.cpp Account.cpp QtWrappers.cpp ${qrc_sources} ${qml_files})
-qt5_use_modules(LightWallet Quick Gui Qml)
+add_executable(${BINARY_NAME} WIN32 MACOSX_BUNDLE ${OSX_ICON_FILE} main.cpp LightWallet.cpp Account.cpp QtWrappers.cpp ${qrc_sources} ${qml_files})
+qt5_use_modules(${BINARY_NAME} Quick Gui Qml)
 
-target_link_libraries(LightWallet fc bts_light_wallet
+target_link_libraries(${BINARY_NAME} fc bts_light_wallet
    ${READLINE_LIBRARIES} ${CMAKE_DL_LIBS} ${PLATFORM_SPECIFIC_LIBS}
    ${crypto_library} ${CrashRpt_LIBRARIES} ${ZLIB_LIBRARY} upnpc-static)
