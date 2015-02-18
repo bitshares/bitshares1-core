@@ -126,7 +126,6 @@ wallet_transaction_history_experimental [account_name]
 wallet_transfer_to_address <amount_to_transfer> <asset_symbol> <from_account_name> <to_address> [memo_message] [strategy] 
 wallet_transfer_to_legacy_address <amount_to_transfer> <asset_symbol> <from_account_name> <to_address> [memo_message] [strategy] 
 wallet_transfer_to_public_account <amount_to_transfer> <asset_symbol> <from_account_name> <to_account_name> [memo_message] [strategy] 
-wallet_verify_titan_deposit <transaction_id_prefix>                                                 
 wallet_withdraw_from_address <amount> <symbol> <from_address> <to> [strategy] [sign_and_broadcast] [builder_path] 
 wallet_withdraw_from_legacy_address <amount> <symbol> <from_address> <to> [strategy] [sign_and_broadcast] [builder_path]
 
@@ -249,6 +248,7 @@ wallet_transfer <amount_to_transfer> <asset_symbol> <from_account_name> <to_acco
 wallet_transfer_from <amount_to_transfer> <asset_symbol> <paying_account_name> <from_account_name> <to_account_name> [memo_message] [strategy] 
 wallet_transfer_from_with_escrow <amount_to_transfer> <asset_symbol> <paying_account_name> <from_account_name> <to_account_name> <escrow_account_name> [agreement] [memo_message] [strategy] 
 wallet_unlock <timeout> <passphrase>                                                                
+wallet_verify_titan_deposit <transaction_id_prefix>                                                 
 
 
 		DIFFICULT TO TEST COMMANDS

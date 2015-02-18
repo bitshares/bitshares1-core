@@ -1,0 +1,59 @@
+default (unlocked) >>> wallet_account_create account
+"XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
+default (unlocked) >>> wallet_account_register account delegate0
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate0           account             0.00000 XTS             register account                            0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> help wallet_verify_titan_deposit
+Usage:
+wallet_verify_titan_deposit <transaction_id_prefix>                                                   Verify whether the specified transaction made a TITAN deposit to the current wallet; returns null if not
+Verify whether the specified transaction made a TITAN deposit to the current wallet; returns null if not
+
+Parameters:
+  transaction_id_prefix (string, required): the id (or id prefix) of the transaction record
+
+Returns:
+  optional_variant_object
+default (unlocked) >>> wallet_transfer 100 XTS delegate0 account "transfer to account"
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate0           account             100.00000 XTS           transfer to account                         0.50000 XTS         <d-ign> b5b0ed32</d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_verify_titan_deposit b5b0ed32
+{
+  "from": "delegate0",
+  "to": "account",
+  "amount": {
+    "amount": 10000000,
+    "asset_id": 0
+  },
+  "memo": "transfer to account"
+}
+default (unlocked) >>> wallet_account_create account-public
+"XTS5DBeMtFiZaive82nTRuZjBbfZMVFZbudCs86bDfh3XwkKSdUqw"
+default (unlocked) >>> wallet_account_register account-public delegate0 null -1 public_account
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate0           account-public      0.00000 XTS             register account-public                     0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_transfer 100 XTS delegate0 account-public "transfer to account-public"
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate0           account-public      100.00000 XTS           transfer to account-public                  0.50000 XTS         <d-ign> 6efcc9c4</d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_verify_titan_deposit 6efcc9c4
+null
+default (unlocked) >>> quit
