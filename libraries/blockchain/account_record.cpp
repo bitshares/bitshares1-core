@@ -74,15 +74,6 @@ namespace bts { namespace blockchain {
         return address( signing_key() );
     }
 
-    public_key_type burn_record_value::signer_key()const
-    {
-       FC_ASSERT( signer.valid() );
-       fc::sha256 digest;
-       if( message.size() )
-          digest = fc::sha256::hash( message.c_str(), message.size() );
-       return fc::ecc::public_key( *signer, digest );
-    }
-
     void account_record::sanity_check( const chain_interface& db )const
     { try {
         FC_ASSERT( id > 0 );
@@ -123,7 +114,7 @@ namespace bts { namespace blockchain {
             if( prev_record->owner_address() != record.owner_address() )
                 db.account_erase_from_address_map( prev_record->owner_address() );
 
-            if( fc::ripemd160::hash( prev_record->active_key_history ) != fc::ripemd160::hash( record.active_key_history ) )
+            if( prev_record->active_key() != record.active_key() )
             {
                 for( const auto& item : prev_record->active_key_history )
                 {
@@ -134,8 +125,7 @@ namespace bts { namespace blockchain {
 
             if( prev_record->is_delegate() )
             {
-                if( !record.is_delegate() || fc::ripemd160::hash( prev_record->delegate_info->signing_key_history )
-                                             != fc::ripemd160::hash( record.delegate_info->signing_key_history ) )
+                if( !record.is_delegate() || prev_record->signing_key() != record.signing_key() )
                 {
                     for( const auto& item : prev_record->delegate_info->signing_key_history )
                     {

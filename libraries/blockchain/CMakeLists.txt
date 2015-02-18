@@ -37,6 +37,7 @@ add_library( bts_blockchain
              slate_record.cpp
              balance_record.cpp
              transaction_record.cpp
+             burn_record.cpp
              feed_record.cpp
              market_records.cpp
              slot_record.cpp

@@ -18,10 +18,6 @@ namespace bts { namespace blockchain {
       withdraw_escrow_type      = 6
    };
 
-   /**
-    * The withdraw condition defines which delegate this address
-    * is voting for, assuming asset_type == 0
-    */
    struct withdraw_condition
    {
       withdraw_condition():asset_id(0),slate_id(0),type(withdraw_null_type){}
@@ -171,7 +167,7 @@ namespace bts { namespace blockchain {
       address                 escrow;
       digest_type             agreement_digest;
 
-      omemo_status decrypt_memo_data( const fc::ecc::private_key& receiver_key )const;
+      omemo_status decrypt_memo_data( const fc::ecc::private_key& receiver_key, bool ignore_owner = false )const;
       public_key_type encrypt_memo_data( const fc::ecc::private_key& one_time_private_key,
                                       const fc::ecc::public_key&  to_public_key,
                                       const fc::ecc::private_key& from_private_key,

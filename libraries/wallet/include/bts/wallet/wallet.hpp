@@ -378,7 +378,6 @@ namespace bts { namespace wallet {
                  const string& account,
                  double amount_per_xts,
                  const string& amount_asset_symbol,
-                 bool settle,
                  bool sign
                  );
          transaction_builder set_vote_info(

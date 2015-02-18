@@ -46,6 +46,9 @@ namespace bts { namespace blockchain {
       new_record.last_update       = now;
       new_record.meta_data         = this->meta_data;
 
+      if( !new_record.meta_data.valid() )
+          new_record.meta_data = account_meta_info( titan_account );
+
       if( this->is_delegate() )
       {
           new_record.delegate_info = delegate_stats();

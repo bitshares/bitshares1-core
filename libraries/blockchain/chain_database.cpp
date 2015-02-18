@@ -151,13 +151,13 @@ namespace bts { namespace blockchain {
           _transaction_id_to_record.open( data_dir / "index/transaction_id_to_record" );
           _address_to_transaction_ids.open( data_dir / "index/address_to_transaction_ids" );
 
+          _burn_index_to_record.open( data_dir / "index/burn_index_to_record" );
+
+          _feed_index_to_record.open( data_dir / "index/feed_index_to_record" );
+
           _market_transactions_db.open( data_dir / "index/market_transactions_db" );
 
           _pending_transaction_db.open( data_dir / "index/pending_transaction_db" );
-
-          _burn_db.open( data_dir / "index/burn_db" );
-
-          _feed_index_to_record.open( data_dir / "index/feed_index_to_record" );
 
           _ask_db.open( data_dir / "index/ask_db" );
           _bid_db.open( data_dir / "index/bid_db" );
@@ -166,11 +166,11 @@ namespace bts { namespace blockchain {
           _short_db.open( data_dir / "index/short_db" );
           _collateral_db.open( data_dir / "index/collateral_db" );
 
-          _slot_index_to_record.open( data_dir / "index/slot_index_to_record" );
-          _slot_timestamp_to_delegate.open( data_dir / "index/slot_timestamp_to_delegate" );
-
           _market_status_db.open( data_dir / "index/market_status_db" );
           _market_history_db.open( data_dir / "index/market_history_db" );
+
+          _slot_index_to_record.open( data_dir / "index/slot_index_to_record" );
+          _slot_timestamp_to_delegate.open( data_dir / "index/slot_timestamp_to_delegate" );
 
           _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
 
@@ -538,6 +538,7 @@ namespace bts { namespace blockchain {
               block_record record;
               digest_block& temp = record;
               temp = digest_block( block_data );
+              record.id = block_id;
               record.block_size = block_data.block_size();
               record.latency = blockchain::now() - block_data.timestamp;
               _block_id_to_block_record_db.store( block_id, record );
@@ -1247,7 +1248,7 @@ namespace bts { namespace blockchain {
 
               const auto set_db_cache_write_through = [ this ]( bool write_through )
               {
-                  my->_burn_db.set_write_through( write_through );
+                  my->_burn_index_to_record.set_write_through( write_through );
 
                   my->_feed_index_to_record.set_write_through( write_through );
 
@@ -1431,7 +1432,7 @@ namespace bts { namespace blockchain {
       my->_transaction_id_to_record.close();
       my->_address_to_transaction_ids.close();
 
-      my->_burn_db.close();
+      my->_burn_index_to_record.close();
 
       my->_feed_index_to_record.close();
 
@@ -1568,6 +1569,7 @@ namespace bts { namespace blockchain {
                record = block_record();
                digest_block& temp = *record;
                temp = get_block_digest( block_id );
+               record->id = block_id;
            }
            catch( const fc::exception& )
            {
@@ -2058,9 +2060,9 @@ namespace bts { namespace blockchain {
       return my->_head_block_id;
    } FC_CAPTURE_AND_RETHROW() }
 
-   map<balance_id_type, balance_record> chain_database::get_balances( const balance_id_type& first, uint32_t limit )const
+   unordered_map<balance_id_type, balance_record> chain_database::get_balances( const balance_id_type& first, uint32_t limit )const
    { try {
-       map<balance_id_type, balance_record> records;
+       unordered_map<balance_id_type, balance_record> records;
        for( auto iter = my->_balance_id_to_record.ordered_lower_bound( first ); iter.valid(); ++iter )
        {
            records[ iter.key() ] = iter.value();
@@ -2069,25 +2071,39 @@ namespace bts { namespace blockchain {
        return records;
    } FC_CAPTURE_AND_RETHROW( (first)(limit) ) }
 
-   map<balance_id_type, balance_record> chain_database::get_balances_for_address( const address& addr )const
+   unordered_map<balance_id_type, balance_record> chain_database::get_balances_for_address( const address& addr )const
    { try {
-        map<balance_id_type, balance_record> records;
+        unordered_map<balance_id_type, balance_record> records;
         const auto scan_balance = [ &addr, &records ]( const balance_record& record )
         {
-            if( record.is_owner( addr ) || record.id() == addr )
+            if( record.is_owner( addr ) )
                 records[ record.id() ] = record;
         };
         scan_balances( scan_balance );
         return records;
    } FC_CAPTURE_AND_RETHROW( (addr) ) }
 
-   map<balance_id_type, balance_record> chain_database::get_balances_for_key( const public_key_type& key )const
+   unordered_map<balance_id_type, balance_record> chain_database::get_balances_for_key( const public_key_type& key )const
    { try {
-        map<balance_id_type, balance_record> records;
-        const auto scan_balance = [ &key, &records ]( const balance_record& record )
+        unordered_map<balance_id_type, balance_record> records;
+        const vector<address> addrs
         {
-            if( record.is_owner( key ) )
-                records[ record.id() ] = record;
+            address( key ),
+            address( pts_address( key, false, 56 ) ),
+            address( pts_address( key, true, 56 ) ),
+            address( pts_address( key, false, 0 ) ),
+            address( pts_address( key, true, 0 ) )
+        };
+        const auto scan_balance = [ &addrs, &records ]( const balance_record& record )
+        {
+            for( const address& addr : addrs )
+            {
+                if( record.is_owner( addr ) )
+                {
+                    records[ record.id() ] = record;
+                    break;
+                }
+            }
         };
         scan_balances( scan_balance );
         return records;
@@ -3469,40 +3485,23 @@ namespace bts { namespace blockchain {
       return records;
    } FC_CAPTURE_AND_RETHROW( (delegate_id) ) }
 
-   void chain_database::store_burn_record( const burn_record& br )
-   {
-      if( br.is_null() )
-      {
-         my->_burn_db.remove( br );
-      }
-      else
-         my->_burn_db.store( br, br );
-   }
-
-   oburn_record chain_database::fetch_burn_record( const burn_record_key& key )const
-   {
-      auto oval = my->_burn_db.fetch_optional( key );
-      if( oval )
-         return burn_record( key, *oval );
-      return oburn_record();
-   }
    vector<burn_record> chain_database::fetch_burn_records( const string& account_name )const
    { try {
       vector<burn_record> results;
       auto opt_account_record = get_account_record( account_name );
       FC_ASSERT( opt_account_record.valid() );
 
-      auto itr = my->_burn_db.lower_bound( {opt_account_record->id} );
+      auto itr = my->_burn_index_to_record.lower_bound( {opt_account_record->id} );
       while( itr.valid() && itr.key().account_id == opt_account_record->id )
       {
-         results.push_back( burn_record( itr.key(), itr.value() ) );
+         results.push_back( itr.value() );
          ++itr;
       }
 
-      itr = my->_burn_db.lower_bound( {-opt_account_record->id} );
+      itr = my->_burn_index_to_record.lower_bound( {-opt_account_record->id} );
       while( itr.valid() && abs(itr.key().account_id) == opt_account_record->id )
       {
-         results.push_back( burn_record( itr.key(), itr.value() ) );
+         results.push_back( itr.value() );
          ++itr;
       }
       return results;
@@ -3728,6 +3727,21 @@ namespace bts { namespace blockchain {
        my->_unique_transactions.erase( unique_transaction_key( trx, get_chain_id() ) );
    }
 
+   oburn_record chain_database::burn_lookup_by_index( const burn_index& index )const
+   {
+       return my->_burn_index_to_record.fetch_optional( index );
+   }
+
+   void chain_database::burn_insert_into_index_map( const burn_index& index, const burn_record& record )
+   {
+       my->_burn_index_to_record.store( index, record );
+   }
+
+   void chain_database::burn_erase_from_index_map( const burn_index& index )
+   {
+       my->_burn_index_to_record.remove( index );
+   }
+
    ofeed_record chain_database::feed_lookup_by_index( const feed_index index )const
    {
        const auto outer_iter = my->_nested_feed_map.find( index.quote_id );
@@ -3773,25 +3787,21 @@ namespace bts { namespace blockchain {
 
    void chain_database::slot_insert_into_index_map( const slot_index index, const slot_record& record )
    {
-       if( !get_statistics_enabled() ) return;
        my->_slot_index_to_record.store( index, record );
    }
 
    void chain_database::slot_insert_into_timestamp_map( const time_point_sec timestamp, const account_id_type delegate_id )
    {
-       if( !get_statistics_enabled() ) return;
        my->_slot_timestamp_to_delegate.store( timestamp, delegate_id );
    }
 
    void chain_database::slot_erase_from_index_map( const slot_index index )
    {
-       if( !get_statistics_enabled() ) return;
        my->_slot_index_to_record.remove( index );
    }
 
    void chain_database::slot_erase_from_timestamp_map( const time_point_sec timestamp )
    {
-       if( !get_statistics_enabled() ) return;
        my->_slot_timestamp_to_delegate.remove( timestamp );
    }
 
