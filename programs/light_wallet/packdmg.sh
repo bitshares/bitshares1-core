@@ -10,10 +10,11 @@ finalDMGName="DevShares Light Wallet.dmg"
 size=200m
 
 mkdir $source
-cp -r "${title}.app" "${source}/${applicationName}.app"
+cp -r "${title}.app" "${source}/${title}.app"
 
 cd "${source}/"
-$macdeployqt "${applicationName}.app" $deployArgs
+$macdeployqt "${title}.app" $deployArgs
+mv "${title}.app" "${applicationName}.app"
 cd -
 cp "${iconFile}" "${source}/${applicationName}.app/Contents/Resources/"
 rm -f "${finalDMGName}"
