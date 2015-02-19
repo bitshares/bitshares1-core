@@ -1633,9 +1633,9 @@ wallet_contact_record client_impl::wallet_add_contact( const string& contact, co
     return _wallet->add_contact( record );
 } FC_CAPTURE_AND_RETHROW( (contact)(label) ) }
 
-owallet_contact_record client_impl::wallet_remove_contact( const string& label )
+owallet_contact_record client_impl::wallet_remove_contact( const string& contact )
 { try {
-    return _wallet->remove_contact( label );
-} FC_CAPTURE_AND_RETHROW( (label) ) }
+    return _wallet->remove_contact( contact );
+} FC_CAPTURE_AND_RETHROW( (contact) ) }
 
 } } } // namespace bts::client::detail

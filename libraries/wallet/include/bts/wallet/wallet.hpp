@@ -180,7 +180,7 @@ namespace bts { namespace wallet {
 
          vector<wallet_contact_record> list_contacts()const;
          wallet_contact_record add_contact( const contact_data& contact );
-         owallet_contact_record remove_contact( const string& label );
+         owallet_contact_record remove_contact( const string& contact );
 
          owallet_account_record  get_account_for_address( address addr )const;
          ///@}

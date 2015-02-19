@@ -99,20 +99,21 @@ namespace bts { namespace wallet {
        contact_data() {}
 
        explicit contact_data( const string& name )
-           : label( name ), contact_type( contact_type_enum::account_name ), data( variant( name ) ) {}
+           : contact_type( contact_type_enum::account_name ), data( variant( name ) ), label( name ) {}
 
        explicit contact_data( const public_key_type& key )
-           : label( string( key ) ), contact_type( contact_type_enum::public_key ), data( variant( key ) ) {}
+           : contact_type( contact_type_enum::public_key ), data( variant( key ) ), label( string( key ) ) {}
 
        explicit contact_data( const address& addr )
-           : label( string( addr ) ), contact_type( contact_type_enum::address ), data( variant( addr ) ) {}
+           : contact_type( contact_type_enum::address ), data( variant( addr ) ), label( string( addr ) ) {}
 
        explicit contact_data( const pts_address& addr )
-           : label( string( addr ) ), contact_type( contact_type_enum::btc_address ), data( variant( addr ) ) {}
+           : contact_type( contact_type_enum::btc_address ), data( variant( addr ) ), label( string( addr ) ) {}
 
-       string               label;
        contact_type_enum    contact_type;
        variant              data;
+       string               label;
+       bool                 favorite = false;
    };
 
    struct ledger_entry;
@@ -308,9 +309,10 @@ FC_REFLECT_ENUM( bts::wallet::contact_data::contact_type_enum,
         )
 
 FC_REFLECT( bts::wallet::contact_data,
-        (label)
         (contact_type)
         (data)
+        (label)
+        (favorite)
         )
 
 FC_REFLECT( bts::wallet::transaction_data,

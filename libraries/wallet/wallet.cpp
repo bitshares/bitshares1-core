@@ -4758,16 +4758,22 @@ namespace detail {
        return *record;
    } FC_CAPTURE_AND_RETHROW( (contact) ) }
 
-   owallet_contact_record wallet::remove_contact( const string& label )
+   owallet_contact_record wallet::remove_contact( const string& contact )
    { try {
        if( !is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
 
-       const owallet_contact_record record = my->_wallet_db.lookup_contact( label );
+       owallet_contact_record record = my->_wallet_db.lookup_contact( variant( contact ) );
+       if( record.valid() )
+       {
+           my->_wallet_db.remove_contact( record->data );
+       }
+       else
+       {
+           record = my->_wallet_db.lookup_contact( contact );
+           if( record.valid() ) my->_wallet_db.remove_contact( record->label );
+       }
 
-       my->_wallet_db.remove_contact( label );
-
-       if( record.valid() ) return *record; // Compiler, why?
-       return owallet_contact_record();
-   } FC_CAPTURE_AND_RETHROW( (label) ) }
+       return record;
+   } FC_CAPTURE_AND_RETHROW( (contact) ) }
 
 } } // bts::wallet

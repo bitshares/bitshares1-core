@@ -542,9 +542,9 @@
         "parameters" :
           [
             {
-              "name" : "label",
+              "name" : "contact",
               "type" : "string",
-              "description" : "the label of the contact to remove"
+              "description" : "the value or label of the contact to remove"
             }
           ],
         "prerequisites" : ["wallet_open"],
