@@ -1,0 +1,35 @@
+default (unlocked) >>> wallet_account_create test
+"XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
+default (unlocked) >>> wallet_account_register test delegate0
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate0           test                0.00000 XTS             register test                               0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_transfer 100 XTS delegate0 test 
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate0           test                100.00000 XTS                                                       0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> help blockchain_get_balance
+Usage:
+blockchain_get_balance <owner_address>                                                                Retrieves the balance record for the given address
+Retrieves the balance record for the given address
+
+Parameters:
+  owner_address (address, required): address of the balance owner
+
+Returns:
+  balance_record
+
+aliases: get_balance
+default (unlocked) >>> wallet_get_account_public_address test
+XTSFVXDozgCnWhF3w4efcv75jaVPkkMVbcKm
+default (unlocked) >>> blockchain_get_balance XTSFVXDozgCnWhF3w4efcv75jaVPkkMVbcKm
+
+default (unlocked) >>> quit
