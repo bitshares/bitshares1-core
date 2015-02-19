@@ -51,7 +51,7 @@ namespace bts { namespace rpc {
           }
 
           std::vector<char> packed_signature(80, ' ');
-          socket->readsome(packed_signature.data(), packed_signature.size());
+          FC_ASSERT( socket->readsome(packed_signature.data(), packed_signature.size()) == 80, "Unexpected number of bytes read from RPC socket" );
           fc::ecc::compact_signature signature;
           signature = fc::raw::unpack<fc::ecc::compact_signature>(packed_signature);
           wdump((signature));
