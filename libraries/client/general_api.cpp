@@ -188,17 +188,22 @@ string client_impl::execute_command_line(const string& input) const
 fc::variants client_impl::batch( const std::string& method_name,
                                  const std::vector<fc::variants>& parameters_list) const
 {
-   fc::variants result;
    FC_ASSERT( _self->get_rpc_server()->get_method_data(method_name).prerequisites == bts::api::no_prerequisites,
               "${method_name}", ("method_name", method_name) );
 
+   return batch_authenticated(method_name, parameters_list);
+}
+
+fc::variants client_impl::batch_authenticated( const std::string& method_name,
+                                 const std::vector<fc::variants>& parameters_list) const
+{
+   fc::variants result;
    for ( auto parameters : parameters_list )
    {
       result.push_back( _self->get_rpc_server()->direct_invoke_method( method_name, parameters) );
    }
    return result;
 }
-
 
 wallet_transaction_record  client_impl::builder_finalize_and_sign( const transaction_builder& builder )const
 {
