@@ -5,7 +5,7 @@ if(POLICY CMP0043)
    cmake_policy(SET CMP0043 NEW)
 endif()
 
-set(BINARY_NAME "DevShares_Light_Wallet")
+set(BINARY_NAME "BitShares_Light_Wallet")
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 9)
 set(VERSION_PATCH 0)
