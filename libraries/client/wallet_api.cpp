@@ -1585,4 +1585,57 @@ string client_impl::wallet_generate_brain_seed()const
    return result;
 }
 
+vector<wallet_contact_record> client_impl::wallet_list_contacts()const
+{ try {
+    return _wallet->list_contacts();
+} FC_CAPTURE_AND_RETHROW() }
+
+wallet_contact_record client_impl::wallet_add_contact( const string& contact, const string& label )
+{ try {
+    contact_data record;
+
+    if( _chain_db->get_account_record( contact ).valid() )
+    {
+        record = contact_data( contact );
+    }
+    else
+    {
+        try
+        {
+            const public_key_type key( contact );
+            record = contact_data( key );
+        }
+        catch( const fc::exception& )
+        {
+            try
+            {
+                const address addr( contact );
+                record = contact_data( addr );
+            }
+            catch( const fc::exception& )
+            {
+                try
+                {
+                    const pts_address addr( contact );
+                    record = contact_data( addr );
+                }
+                catch( const fc::exception& )
+                {
+                    FC_THROW_EXCEPTION( invalid_contact, "Invalid contact!", ("contact",contact) );
+                }
+            }
+        }
+    }
+
+    if( !label.empty() )
+        record.label = label;
+
+    return _wallet->add_contact( record );
+} FC_CAPTURE_AND_RETHROW( (contact)(label) ) }
+
+owallet_contact_record client_impl::wallet_remove_contact( const string& label )
+{ try {
+    return _wallet->remove_contact( label );
+} FC_CAPTURE_AND_RETHROW( (label) ) }
+
 } } } // namespace bts::client::detail

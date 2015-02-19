@@ -169,9 +169,6 @@ namespace bts { namespace wallet {
 
          wallet_account_record get_account( const string& account_name )const;
 
-         /**
-          *  A contact is an account for which we do not have the private key.
-          */
          void     add_contact_account( const string& account_name,
                                        const public_key_type& key,
                                        const variant& private_data = variant() );
@@ -180,6 +177,10 @@ namespace bts { namespace wallet {
 
          void     rename_account( const string& old_contact_name,
                                   const string& new_contact_name );
+
+         vector<wallet_contact_record> list_contacts()const;
+         wallet_contact_record add_contact( const contact_data& contact );
+         owallet_contact_record remove_contact( const string& label );
 
          owallet_account_record  get_account_for_address( address addr )const;
          ///@}

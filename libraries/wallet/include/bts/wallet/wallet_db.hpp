@@ -22,7 +22,7 @@ namespace bts { namespace wallet {
          fc::variant get_property( property_enum property_id )const;
 
          // ********************************************************************
-         // Recently rewritten by Vikram
+         // Most recently rewritten by Vikram
 
          // Wallet child keys
          uint32_t               get_last_wallet_child_key_index()const;
@@ -51,6 +51,12 @@ namespace bts { namespace wallet {
          void                   store_key( const key_data& key );
          void                   import_key( const fc::sha512& password, const string& account_name,
                                             const private_key_type& private_key, bool move_existing );
+
+         // Contact getters and setters
+         owallet_contact_record lookup_contact( const string& label )const;
+         owallet_contact_record lookup_contact( const contact_data& contact )const;
+         void                   store_contact( const contact_data& contact );
+         void                   remove_contact( const string& label );
 
          // Transaction getters and setters
          owallet_transaction_record lookup_transaction( const transaction_id_type& id )const;
@@ -98,17 +104,18 @@ namespace bts { namespace wallet {
 
          const unordered_map<transaction_id_type, wallet_transaction_record>& get_transactions()const { return transactions; }
          const unordered_map<int32_t,wallet_account_record>& get_accounts()const { return accounts; }
-         const unordered_map< address, wallet_key_record >& get_keys()const { return keys; }
+         const unordered_map<address, wallet_key_record>& get_keys()const { return keys; }
+         const unordered_map<string, wallet_contact_record>& get_contacts()const { return contacts; }
 
          unordered_map<transaction_id_type, transaction_ledger_entry>   experimental_transactions;
 
       private:
+         map<property_enum, wallet_property_record>                     properties;
          optional<wallet_master_key_record>                             wallet_master_key;
-
          unordered_map<int32_t, wallet_account_record>                  accounts;
          unordered_map<address, wallet_key_record>                      keys;
+         unordered_map<string, wallet_contact_record>                   contacts;
          unordered_map<transaction_id_type, wallet_transaction_record>  transactions;
-         map<property_enum, wallet_property_record>                     properties;
          unordered_map<string, wallet_setting_record>                   settings;
 
          // Caches to lookup accounts

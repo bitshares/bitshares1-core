@@ -34,6 +34,9 @@ namespace bts { namespace wallet {
            { try {
                switch( wallet_record_type_enum( record.type ) )
                {
+                   case property_record_type:
+                       load_property_record( record.as<wallet_property_record>() );
+                       break;
                    case master_key_record_type:
                        load_master_key_record( record.as<wallet_master_key_record>() );
                        break;
@@ -43,11 +46,11 @@ namespace bts { namespace wallet {
                    case key_record_type:
                        load_key_record( record.as<wallet_key_record>() );
                        break;
+                   case contact_record_type:
+                       load_contact_record( record.as<wallet_contact_record>() );
+                       break;
                    case transaction_record_type:
                        load_transaction_record( record.as<wallet_transaction_record>() );
-                       break;
-                   case property_record_type:
-                       load_property_record( record.as<wallet_property_record>() );
                        break;
                    case setting_record_type:
                        load_setting_record( record.as<wallet_setting_record>() );
@@ -57,6 +60,11 @@ namespace bts { namespace wallet {
                        break;
                 }
            } FC_CAPTURE_AND_RETHROW( (record) ) }
+
+           void load_property_record( const wallet_property_record& property_rec )
+           { try {
+              self->properties[property_rec.key] = property_rec;
+           } FC_CAPTURE_AND_RETHROW( (property_rec) ) }
 
            void load_master_key_record( const wallet_master_key_record& key )
            { try {
@@ -108,6 +116,11 @@ namespace bts { namespace wallet {
                self->btc_to_bts_address[ address( pts_address( key_record.public_key, true,  56 ) ) ] = key_address; // Compressed PTS
            } FC_CAPTURE_AND_RETHROW( (key_record) ) }
 
+           void load_contact_record( const wallet_contact_record& record )
+           { try {
+               self->contacts[ record.label ] = record;
+           } FC_CAPTURE_AND_RETHROW( (record) ) }
+
            void load_transaction_record( const wallet_transaction_record& transaction_record )
            { try {
                const transaction_id_type& record_id = transaction_record.record_id;
@@ -119,11 +132,6 @@ namespace bts { namespace wallet {
                if( transaction_id != signed_transaction().id() )
                    self->id_to_transaction_record_index[ transaction_id ] = record_id;
            } FC_CAPTURE_AND_RETHROW( (transaction_record) ) }
-
-           void load_property_record( const wallet_property_record& property_rec )
-           { try {
-              self->properties[property_rec.key] = property_rec;
-           } FC_CAPTURE_AND_RETHROW( (property_rec) ) }
 
            void load_setting_record( const wallet_setting_record& rec )
            { try {
@@ -602,6 +610,50 @@ namespace bts { namespace wallet {
 
        store_key( *key_record );
    } FC_CAPTURE_AND_RETHROW( (account_name)(move_existing) ) }
+
+   owallet_contact_record wallet_db::lookup_contact( const string& label )const
+   { try {
+       FC_ASSERT( is_open() );
+       const auto iter = contacts.find( label );
+       if( iter != contacts.end() ) return iter->second;
+       return owallet_contact_record();
+   } FC_CAPTURE_AND_RETHROW( (label) ) }
+
+   owallet_contact_record wallet_db::lookup_contact( const contact_data& contact )const
+   { try {
+       FC_ASSERT( is_open() );
+       const string data = contact.data.as_string();
+       for( const auto& item : contacts )
+       {
+           if( item.second.contact_type != contact.contact_type ) continue;
+           if( item.second.data.as_string() == data ) return item.second;
+       }
+       return owallet_contact_record();
+   } FC_CAPTURE_AND_RETHROW( (contact) ) }
+
+   void wallet_db::store_contact( const contact_data& contact )
+   { try {
+       FC_ASSERT( is_open() );
+       FC_ASSERT( !contact.label.empty() );
+       FC_ASSERT( !contact.data.is_null() );
+
+       owallet_contact_record contact_record = lookup_contact( contact );
+       if( !contact_record.valid() )
+           contact_record = wallet_contact_record();
+       else
+           remove_contact( contact_record->label );
+
+       contact_data& temp = *contact_record;
+       temp = contact;
+
+       store_and_reload_record( *contact_record );
+   } FC_CAPTURE_AND_RETHROW( (contact) ) }
+
+   void wallet_db::remove_contact( const string& label )
+   { try {
+       FC_ASSERT( is_open() );
+       contacts.erase( label );
+   } FC_CAPTURE_AND_RETHROW( (label) ) }
 
    owallet_transaction_record wallet_db::lookup_transaction( const transaction_id_type& id )const
    { try {

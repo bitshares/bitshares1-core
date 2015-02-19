@@ -505,8 +505,20 @@
       {
         "type_name" : "wallet_account_record_array",
         "container_type" : "array",
-        "contained_type" : "wallet_account_record",
-        "default_example" : "TODO"
+        "contained_type" : "wallet_account_record"
+      },
+      {
+        "type_name" : "wallet_contact_record",
+        "cpp_return_type" : "bts::wallet::wallet_contact_record"
+      },
+      {
+        "type_name" : "owallet_contact_record",
+        "cpp_return_type" : "bts::wallet::owallet_contact_record"
+      },
+      {
+        "type_name" : "wallet_contact_record_array",
+        "container_type" : "array",
+        "contained_type" : "wallet_contact_record"
       },
       {
         "type_name" : "address_list",

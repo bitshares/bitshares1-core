@@ -67,11 +67,26 @@ struct pretty_vesting_balance
     share_type          available_balance;
 };
 
+   struct escrow_summary
+   {
+      /** the transaction ID that created the escrow balance */
+      transaction_id_type creating_transaction_id;
+      balance_id_type     balance_id;
+      /** the amount of money still held in escrow */
+      asset               balance;
+      /** the account name of the escrow agent */
+      string              sender_account_name;
+      string              receiver_account_name;
+      string              escrow_agent_account_name;
+      digest_type         agreement_digest;
+   };
+
+
 }} // bts::wallet
 
-FC_REFLECT( bts::wallet::public_key_summary, (hex)(native_pubkey)(native_address)(pts_normal_address)(pts_compressed_address)(btc_normal_address)(btc_compressed_address) );
+FC_REFLECT( bts::wallet::public_key_summary, (hex)(native_pubkey)(native_address)(pts_normal_address)(pts_compressed_address)(btc_normal_address)(btc_compressed_address) )
 
-FC_REFLECT( bts::wallet::vote_summary, (utilization)(negative_utilization)(up_to_date_with_recommendation) );
+FC_REFLECT( bts::wallet::vote_summary, (utilization)(negative_utilization)(up_to_date_with_recommendation) )
 
 FC_REFLECT( bts::wallet::pretty_ledger_entry,
             (from_account)
@@ -79,7 +94,7 @@ FC_REFLECT( bts::wallet::pretty_ledger_entry,
             (amount)
             (memo)
             (running_balances)
-            );
+            )
 FC_REFLECT( bts::wallet::pretty_transaction,
             (is_virtual)
             (is_confirmed)
@@ -92,7 +107,7 @@ FC_REFLECT( bts::wallet::pretty_transaction,
             (timestamp)
             (expiration_timestamp)
             (error)
-            );
+            )
 FC_REFLECT( bts::wallet::pretty_vesting_balance,
         (balance_id)
         (sharedrop_address)
@@ -103,4 +118,13 @@ FC_REFLECT( bts::wallet::pretty_vesting_balance,
         (vested_balance)
         (claimed_balance)
         (available_balance)
-        );
+        )
+FC_REFLECT( bts::wallet::escrow_summary,
+            (creating_transaction_id)
+            (balance_id)
+            (balance)
+            (sender_account_name)
+            (receiver_account_name)
+            (escrow_agent_account_name)
+            (agreement_digest)
+            )

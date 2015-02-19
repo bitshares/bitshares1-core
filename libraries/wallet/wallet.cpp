@@ -4728,4 +4728,46 @@ namespace detail {
 
    }
 
+   vector<wallet_contact_record> wallet::list_contacts()const
+   { try {
+       if( !is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
+
+       vector<wallet_contact_record> contacts;
+
+       const auto& records = my->_wallet_db.get_contacts();
+       contacts.reserve( records.size() );
+
+       for( const auto& item : records )
+           contacts.push_back( item.second );
+
+       std::sort( contacts.begin(), contacts.end(),
+                  []( const wallet_contact_record& a, const wallet_contact_record& b ) -> bool
+                  { return a.label.compare( b.label ) < 0; } );
+
+       return contacts;
+   } FC_CAPTURE_AND_RETHROW() }
+
+   wallet_contact_record wallet::add_contact( const contact_data& contact )
+   { try {
+       if( !is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
+
+       my->_wallet_db.store_contact( contact );
+
+       const owallet_contact_record record = my->_wallet_db.lookup_contact( contact.label );
+       FC_ASSERT( record.valid() );
+       return *record;
+   } FC_CAPTURE_AND_RETHROW( (contact) ) }
+
+   owallet_contact_record wallet::remove_contact( const string& label )
+   { try {
+       if( !is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
+
+       const owallet_contact_record record = my->_wallet_db.lookup_contact( label );
+
+       my->_wallet_db.remove_contact( label );
+
+       if( record.valid() ) return *record; // Compiler, why?
+       return owallet_contact_record();
+   } FC_CAPTURE_AND_RETHROW( (label) ) }
+
 } } // bts::wallet
