@@ -121,7 +121,7 @@ namespace bts { namespace wallet {
            { try {
                const string data = record.data.as_string();
                self->contacts[ data ] = record;
-               self->contact_label_to_data[ record.label ] = data;
+               self->label_to_account_or_contact[ record.label ] = data;
            } FC_CAPTURE_AND_RETHROW( (record) ) }
 
            void load_transaction_record( const wallet_transaction_record& transaction_record )
@@ -630,61 +630,62 @@ namespace bts { namespace wallet {
        FC_ASSERT( is_open() );
        FC_ASSERT( !label.empty() );
 
-       const auto iter = contact_label_to_data.find( label );
-       if( iter != contact_label_to_data.end() ) return lookup_contact( iter->second );
+       const auto iter = label_to_account_or_contact.find( label );
+       if( iter != label_to_account_or_contact.end() ) return lookup_contact( variant( iter->second ) );
 
        return owallet_contact_record();
    } FC_CAPTURE_AND_RETHROW( (label) ) }
 
-   void wallet_db::store_contact( const contact_data& contact )
+   wallet_contact_record wallet_db::store_contact( const contact_data& contact )
    { try {
        FC_ASSERT( is_open() );
        FC_ASSERT( !contact.data.is_null() );
        FC_ASSERT( !contact.label.empty() );
 
-       const string data = contact.data.as_string();
-
+       // Check for label collision
        owallet_contact_record contact_record = lookup_contact( contact.label );
-       if( contact_record.valid() && contact_record->data.as_string() != data )
-           FC_CAPTURE_AND_THROW( label_or_value_already_in_use, );
-
-       contact_record = lookup_contact( variant( contact.label ) );
-       if( contact_record.valid() && contact_record->data.as_string() != data )
-           FC_CAPTURE_AND_THROW( label_or_value_already_in_use, );
-
-       contact_record = lookup_contact( data );
-       if( contact_record.valid() && contact_record->data.as_string() != data )
-           FC_CAPTURE_AND_THROW( label_or_value_already_in_use, );
+       if( contact_record.valid() && contact_record->data.as_string() != contact.data.as_string() )
+           FC_CAPTURE_AND_THROW( label_already_in_use, );
 
        contact_record = lookup_contact( contact.data );
        if( !contact_record.valid() )
            contact_record = wallet_contact_record();
        else if( contact_record->label != contact.label )
-           contact_label_to_data.erase( contact_record->label );
+           label_to_account_or_contact.erase( contact_record->label );
 
        contact_data& temp = *contact_record;
        temp = contact;
 
        store_and_reload_record( *contact_record );
+       return *contact_record;
    } FC_CAPTURE_AND_RETHROW( (contact) ) }
 
-   void wallet_db::remove_contact( const variant& data )
+   owallet_contact_record wallet_db::remove_contact( const variant& data )
    { try {
        FC_ASSERT( is_open() );
        FC_ASSERT( !data.is_null() );
 
-       const owallet_contact_record record = lookup_contact( data );
-       if( record.valid() ) contact_label_to_data.erase( record->label );
-       contacts.erase( data.as_string() );
+       owallet_contact_record record = lookup_contact( data );
+       if( record.valid() )
+       {
+           label_to_account_or_contact.erase( record->label );
+           contacts.erase( data.as_string() );
+           remove_item( record->wallet_record_index );
+       }
+
+       return record;
    } FC_CAPTURE_AND_RETHROW( (data) ) }
 
-   void wallet_db::remove_contact( const string& label )
+   owallet_contact_record wallet_db::remove_contact( const string& label )
    { try {
        FC_ASSERT( is_open() );
        FC_ASSERT( !label.empty() );
 
-       const owallet_contact_record record = lookup_contact( label );
-       if( record.valid() ) remove_contact( record->data );
+       owallet_contact_record record = lookup_contact( label );
+       if( record.valid() )
+           return remove_contact( record->data );
+
+       return record;
    } FC_CAPTURE_AND_RETHROW( (label) ) }
 
    owallet_transaction_record wallet_db::lookup_transaction( const transaction_id_type& id )const

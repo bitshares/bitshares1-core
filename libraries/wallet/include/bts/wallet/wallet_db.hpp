@@ -55,9 +55,9 @@ namespace bts { namespace wallet {
          // Contact getters and setters
          owallet_contact_record lookup_contact( const variant& data )const;
          owallet_contact_record lookup_contact( const string& label )const;
-         void                   store_contact( const contact_data& contact );
-         void                   remove_contact( const variant& data );
-         void                   remove_contact( const string& label );
+         wallet_contact_record  store_contact( const contact_data& contact );
+         owallet_contact_record remove_contact( const variant& data );
+         owallet_contact_record remove_contact( const string& label );
 
          // Transaction getters and setters
          owallet_transaction_record lookup_transaction( const transaction_id_type& id )const;
@@ -127,8 +127,8 @@ namespace bts { namespace wallet {
          // Cache to lookup keys
          unordered_map<address, address>                                btc_to_bts_address;
 
-         // Cache to lookup contacts
-         unordered_map<string, string>                                  contact_label_to_data;
+         // Cache to lookup accounts and contacts
+         unordered_map<string, string>                                  label_to_account_or_contact;
 
          // Cache to lookup transactions
          unordered_map<transaction_id_type, transaction_id_type>        id_to_transaction_record_index;

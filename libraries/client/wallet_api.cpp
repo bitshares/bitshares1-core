@@ -1590,52 +1590,25 @@ vector<wallet_contact_record> client_impl::wallet_list_contacts()const
     return _wallet->list_contacts();
 } FC_CAPTURE_AND_RETHROW() }
 
+owallet_contact_record client_impl::wallet_get_contact( const string& contact )const
+{ try {
+    if( contact.find( "label:" ) == 0 )
+        return _wallet->get_contact( contact.substr( string( "label:" ).size() ) );
+    else
+        return _wallet->get_contact( variant( contact ) );
+} FC_CAPTURE_AND_RETHROW( (contact) ) }
+
 wallet_contact_record client_impl::wallet_add_contact( const string& contact, const string& label )
 { try {
-    contact_data record;
-
-    if( _chain_db->get_account_record( contact ).valid() )
-    {
-        record = contact_data( contact );
-    }
-    else
-    {
-        try
-        {
-            const public_key_type key( contact );
-            record = contact_data( key );
-        }
-        catch( const fc::exception& )
-        {
-            try
-            {
-                const address addr( contact );
-                record = contact_data( addr );
-            }
-            catch( const fc::exception& )
-            {
-                try
-                {
-                    const pts_address addr( contact );
-                    record = contact_data( addr );
-                }
-                catch( const fc::exception& )
-                {
-                    FC_THROW_EXCEPTION( invalid_contact, "Invalid contact!", ("contact",contact) );
-                }
-            }
-        }
-    }
-
-    if( !label.empty() )
-        record.label = label;
-
-    return _wallet->add_contact( record );
+    return _wallet->add_contact( contact_data( *_chain_db, contact, label) );
 } FC_CAPTURE_AND_RETHROW( (contact)(label) ) }
 
 owallet_contact_record client_impl::wallet_remove_contact( const string& contact )
 { try {
-    return _wallet->remove_contact( contact );
+    if( contact.find( "label:" ) == 0 )
+        return _wallet->remove_contact( contact.substr( string( "label:" ).size() ) );
+    else
+        return _wallet->remove_contact( variant( contact ) );
 } FC_CAPTURE_AND_RETHROW( (contact) ) }
 
 } } } // namespace bts::client::detail

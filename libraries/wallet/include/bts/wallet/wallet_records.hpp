@@ -110,6 +110,8 @@ namespace bts { namespace wallet {
        explicit contact_data( const pts_address& addr )
            : contact_type( contact_type_enum::btc_address ), data( variant( addr ) ), label( string( addr ) ) {}
 
+       contact_data( const chain_interface& db, const string& data, const string& label = "" );
+
        contact_type_enum    contact_type;
        variant              data;
        string               label;

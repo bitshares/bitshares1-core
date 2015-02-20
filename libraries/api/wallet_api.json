@@ -511,7 +511,23 @@
         "return_type": "wallet_contact_record_array",
         "parameters" : [],
         "prerequisites" : ["wallet_open"],
-        "aliases": ["contacts"],
+        "aliases": ["contacts", "get_contacts", "list_contacts"],
+        "is_const": true
+      },
+      {
+        "method_name": "wallet_get_contact",
+        "description": "Get the specified contact entry",
+        "return_type": "owallet_contact_record",
+        "parameters" :
+          [
+            {
+              "name" : "contact",
+              "type" : "string",
+              "description" : "the value or label (prefixed by \"label:\") of the contact to query"
+            }
+          ],
+        "prerequisites" : ["wallet_open"],
+        "aliases": ["contact", "get_contact"],
         "is_const": true
       },
       {
@@ -544,7 +560,7 @@
             {
               "name" : "contact",
               "type" : "string",
-              "description" : "the value or label of the contact to remove"
+              "description" : "the value or label (prefixed by \"label:\") of the contact to remove"
             }
           ],
         "prerequisites" : ["wallet_open"],

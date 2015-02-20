@@ -179,8 +179,11 @@ namespace bts { namespace wallet {
                                   const string& new_contact_name );
 
          vector<wallet_contact_record> list_contacts()const;
+         owallet_contact_record get_contact( const variant& data )const;
+         owallet_contact_record get_contact( const string& label )const;
          wallet_contact_record add_contact( const contact_data& contact );
-         owallet_contact_record remove_contact( const string& contact );
+         owallet_contact_record remove_contact( const variant& data );
+         owallet_contact_record remove_contact( const string& label );
 
          owallet_account_record  get_account_for_address( address addr )const;
          ///@}
