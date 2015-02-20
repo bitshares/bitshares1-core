@@ -3488,7 +3488,7 @@ namespace bts { namespace blockchain {
    vector<burn_record> chain_database::fetch_burn_records( const string& account_name )const
    { try {
       vector<burn_record> results;
-      auto opt_account_record = get_account_record( account_name );
+      const auto opt_account_record = get_account_record( account_name );
       FC_ASSERT( opt_account_record.valid() );
 
       auto itr = my->_burn_index_to_record.lower_bound( {opt_account_record->id} );
@@ -3499,11 +3499,12 @@ namespace bts { namespace blockchain {
       }
 
       itr = my->_burn_index_to_record.lower_bound( {-opt_account_record->id} );
-      while( itr.valid() && abs(itr.key().account_id) == opt_account_record->id )
+      while( itr.valid() && itr.key().account_id == -opt_account_record->id )
       {
          results.push_back( itr.value() );
          ++itr;
       }
+
       return results;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
