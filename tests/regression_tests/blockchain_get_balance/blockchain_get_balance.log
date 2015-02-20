@@ -8,7 +8,7 @@ default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
 OK
-default (unlocked) >>> wallet_transfer 100 XTS delegate0 test 
+default (unlocked) >>> wallet_transfer 123.45 XTS delegate0 test 
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 <d-ign></d-ign>PENDING   delegate0           test                100.00000 XTS                                                       0.50000 XTS         <d-ign></d-ign>
@@ -28,8 +28,6 @@ Returns:
   balance_record
 
 aliases: get_balance
-default (unlocked) >>> wallet_get_account_public_address test
-XTSFVXDozgCnWhF3w4efcv75jaVPkkMVbcKm
-default (unlocked) >>> blockchain_get_balance XTSFVXDozgCnWhF3w4efcv75jaVPkkMVbcKm
-
+default (unlocked) >>> wallet_account_balance_ids test
+default (unlocked) >>> blockchain_get_balance XTSQ64zpSJuFzNuDMp1ThGz9tgudPYUYwtsH
 default (unlocked) >>> quit
