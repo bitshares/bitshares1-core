@@ -54,6 +54,9 @@ Page {
             anchors.horizontalCenter: parent.horizontalCenter
             trx: model.modelData
             accountName: historyPage.accountName
+
+            Component.onCompleted: model.modelData.updatingTimestamp = true
+            Component.onDestruction: model.modelData.updatingTimestamp = false
          }
 
          Label {
