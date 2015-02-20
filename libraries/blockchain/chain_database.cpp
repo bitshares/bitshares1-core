@@ -684,7 +684,7 @@ namespace bts { namespace blockchain {
          if (block_id == _head_block_id) //if block_id is current head block, do nothing
            return; //this is necessary to avoid unnecessarily popping the head block in this case
 
-         //ilog( "switch from fork ${id} to ${to_id}", ("id",_head_block_id)("to_id",block_id) );
+         ilog( "switch from fork ${id} to ${to_id}", ("id",_head_block_id)("to_id",block_id) );
          vector<block_id_type> history = get_fork_history( block_id );
          while( history.back() != _head_block_id )
          {
@@ -1084,7 +1084,7 @@ namespace bts { namespace blockchain {
             history.push_back( header.previous );
             if( header.previous == block_id_type() )
             {
-               //ilog( "return: ${h}", ("h",history) );
+               ilog( "return: ${h}", ("h",history) );
                return history;
             }
             auto prev_fork_data = _fork_db.fetch( header.previous );
@@ -1093,12 +1093,12 @@ namespace bts { namespace blockchain {
             FC_ASSERT( prev_fork_data.is_linked, "we hit a dead end, this fork isn't really linked!" );
             if( prev_fork_data.is_included )
             {
-               //ilog( "return: ${h}", ("h",history) );
+               ilog( "return: ${h}", ("h",history) );
                return history;
             }
             next_id = header.previous;
          }
-         //ilog( "${h}", ("h",history) );
+         ilog( "${h}", ("h",history) );
          return history;
       } FC_CAPTURE_AND_RETHROW( (id) ) }
 
