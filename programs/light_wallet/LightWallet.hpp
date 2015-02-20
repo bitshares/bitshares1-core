@@ -35,7 +35,6 @@ public:
    LightWallet();
    virtual ~LightWallet()
    {
-      m_walletThread.quit();
       if( walletExists() )
          m_wallet.save();
    }
