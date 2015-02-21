@@ -44,7 +44,7 @@ TransactionSummary* Account::buildSummary(bts::wallet::transaction_ledger_entry 
    }
 
    TransactionSummary* summary = new TransactionSummary(convert(string(trx.id)),
-                                                        convert(fc::get_approximate_relative_time_string(trx.timestamp)),
+                                                        trx.timestamp,
                                                         std::move(ledger), this);
 
    if( trx.delta_amounts.count("Fee") && trx.delta_amounts["Fee"].size() )

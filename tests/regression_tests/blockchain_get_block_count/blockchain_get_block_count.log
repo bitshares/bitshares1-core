@@ -1,7 +1,7 @@
 default (unlocked) >>> help blockchain_get_block_count
 Usage:
-blockchain_get_block_count                                                                            Returns the number of blocks in the longest block chain
-Returns the number of blocks in the longest block chain
+blockchain_get_block_count                                                                            Returns the current head block number
+Returns the current head block number
 
 Parameters:
   (none)

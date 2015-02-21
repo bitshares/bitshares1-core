@@ -432,8 +432,7 @@
             {
               "name" : "account_name",
               "type" : "account_name",
-              "description" : "the name you will use to refer to this receive account",
-              "enable_autocomplete" : false
+              "description" : "the name you will use to refer to this receive account"
             },
             {
               "name" : "private_data",
@@ -496,8 +495,7 @@
             {
               "name" : "account_name",
               "type" : "account_name",
-              "description" : "the name you will use to refer to this sending account",
-              "enable_autocomplete" : false
+              "description" : "the name you will use to refer to this sending account"
             },
             {
               "name" : "account_key",
@@ -506,6 +504,67 @@
             }
           ],
         "prerequisites" : ["wallet_open"]
+      },
+      {
+        "method_name": "wallet_list_contacts",
+        "description": "List contact entries",
+        "return_type": "wallet_contact_record_array",
+        "parameters" : [],
+        "prerequisites" : ["wallet_open"],
+        "aliases": ["contacts", "get_contacts", "list_contacts"],
+        "is_const": true
+      },
+      {
+        "method_name": "wallet_get_contact",
+        "description": "Get the specified contact entry",
+        "return_type": "owallet_contact_record",
+        "parameters" :
+          [
+            {
+              "name" : "contact",
+              "type" : "string",
+              "description" : "the value or label (prefixed by \"label:\") of the contact to query"
+            }
+          ],
+        "prerequisites" : ["wallet_open"],
+        "aliases": ["contact", "get_contact"],
+        "is_const": true
+      },
+      {
+        "method_name": "wallet_add_contact",
+        "description": "Add a new contact entry or update the label for an existing entry",
+        "return_type": "wallet_contact_record",
+        "parameters" :
+          [
+            {
+              "name" : "contact",
+              "type" : "string",
+              "description" : "a registered account name, a public key, an address, or a btc address that represents this contact"
+            },
+            {
+              "name" : "label",
+              "type" : "string",
+              "description" : "an optional custom label to use when referring to this contact",
+              "default_value" : ""
+            }
+          ],
+        "prerequisites" : ["wallet_open"],
+        "aliases": ["add_contact", "update_contact"]
+      },
+      {
+        "method_name": "wallet_remove_contact",
+        "description": "Remove a contact entry",
+        "return_type": "owallet_contact_record",
+        "parameters" :
+          [
+            {
+              "name" : "contact",
+              "type" : "string",
+              "description" : "the value or label (prefixed by \"label:\") of the contact to remove"
+            }
+          ],
+        "prerequisites" : ["wallet_open"],
+        "aliases": ["remove_contact"]
       },
       {
         "method_name": "wallet_asset_authorize_key",

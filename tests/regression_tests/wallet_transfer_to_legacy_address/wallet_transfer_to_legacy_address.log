@@ -1,0 +1,195 @@
+default (unlocked) >>> wallet_account_balance delegate0
+ACCOUNT                         BALANCE                     
+============================================================
+delegate0                       19,801,980.19801 XTS        
+default (unlocked) >>> wallet_account_create test
+"XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
+default (unlocked) >>> wallet_account_balance test
+No balances found.
+default (unlocked) >>> wallet_account_list_public_keys test
+[{
+    "hex": "02d6a0351c151cf57938e0f540830cb390305081aed4a6f01ec42668d7b85f03eb",
+    "native_pubkey": "XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX",
+    "native_address": "XTSFtXy1oqCnZ5Sw5txgm2421smvzZ6jwVUM",
+    "pts_normal_address": "PvRmwBk2YNJUqcuJCJF9acrHzqetRxow7B",
+    "pts_compressed_address": "PmBMQNvypoMaUTRQUqQNX7KgW1m9Vvrh1a",
+    "btc_normal_address": "1PVzo73tnGMR3M6SpobJRbcEkbE4bd4iE3",
+    "btc_compressed_address": "1EFaGJEr4hQWgBcZ7LkXN65dFmLKiCLdSb"
+  },{
+    "hex": "02e310a74ab789949e7a8b17b0ae06a70cb414bdec78513375a572fb592d33c0d4",
+    "native_pubkey": "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra",
+    "native_address": "XTSFVXDozgCnWhF3w4efcv75jaVPkkMVbcKm",
+    "pts_normal_address": "PaWvEfxXFR1LWPEsVzWCGZPe7ESvNoPUpA",
+    "pts_compressed_address": "PvrSYijUNcwCsJca8UN8B5yERhTCW1a2PU",
+    "btc_normal_address": "13b96bGPVK4Gi7S28VrM7Y9arz26W3qtkr",
+    "btc_compressed_address": "1PvfQe3LcWz952oikyiH24jBBT2NdN3Faq"
+  }
+]
+default (unlocked) >>> help wallet_transfer_to_legacy_address
+Usage:
+wallet_transfer_to_legacy_address <amount_to_transfer> <asset_symbol> <from_account_name> <to_address> [memo_message] [strategy]   Do a simple (non-TITAN) transfer to a BTC-style address
+Do a simple (non-TITAN) transfer to a BTC-style address
+
+Parameters:
+  amount_to_transfer (real_amount, required): the amount of shares to transfer
+  asset_symbol (asset_symbol, required): the asset to transfer
+  from_account_name (account_name, required): the source account to draw the shares from
+  to_address (legacy_address, required): the address to transfer to
+  memo_message (string, optional, defaults to ""): a memo to store with the transaction
+  strategy (vote_strategy, optional, defaults to "vote_recommended"): enumeration [vote_none | vote_all | vote_random | vote_recommended] 
+
+Returns:
+  transaction_record
+default (unlocked) >>> wallet_transfer_to_legacy_address 100 XTS delegate0 13b96bGPVK4Gi7S28VrM7Y9arz26W3qtkr "btc normal address"
+{
+  "index": 0,
+  "record_id": "e30713cc75de3d9baa05af74a285b49d7662b721",
+  "block_num": 0,
+  "is_virtual": false,
+  "is_confirmed": false,
+  "is_market": false,
+  "trx": {
+    "expiration": "2014-06-20T15:40:30",
+    "reserved": null,
+    "operations": [{
+        "type": "withdraw_op_type",
+        "data": {
+          "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
+          "amount": 10050000,
+          "claim_input_data": ""
+        }
+      },{
+        "type": "deposit_op_type",
+        "data": {
+          "amount": 10000000,
+          "condition": {
+            "asset_id": 0,
+            "slate_id": 0,
+            "type": "withdraw_signature_type",
+            "data": {
+              "owner": "XTS5Z5g2FXWyDd6xu4ucBBi5kLrrrHTFFJnF",
+              "memo": null
+            }
+          }
+        }
+      }
+    ],
+    "signatures": [
+      "1f2b4503925f1656d010053986a88f7ac4b2229637bd2841baff4a85e2d3ccd1e169ca26f218736d7c7d5cc0ebd63202f4d45ef2bb4841b94e691a9623c0092d60"
+    ]
+  },
+  "ledger_entries": [{
+      "from_account": "XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z",
+      "to_account": null,
+      "amount": {
+        "amount": 10000000,
+        "asset_id": 0
+      },
+      "memo": "btc normal address",
+      "memo_from_account": null
+    }
+  ],
+  "fee": {
+    "amount": 50000,
+    "asset_id": 0
+  },
+  "created_time": "2014-06-20T14:40:30",
+  "received_time": "2014-06-20T14:40:30",
+  "extra_addresses": [
+    "XTS5Z5g2FXWyDd6xu4ucBBi5kLrrrHTFFJnF"
+  ]
+}
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_account_balance delegate0
+ACCOUNT                         BALANCE                     
+============================================================
+delegate0                       19,801,879.69801 XTS        
+default (unlocked) >>> wallet_account_balance test
+ACCOUNT                         BALANCE                     
+============================================================
+test                            100.00000 XTS               
+default (unlocked) >>> wallet_transfer_to_legacy_address 101 XTS delegate0 1PvfQe3LcWz952oikyiH24jBBT2NdN3Faq "to btc compressed address"
+{
+  "index": 0,
+  "record_id": "c96fde2aa9cefe40c27a550d4f560851f0b7050c",
+  "block_num": 0,
+  "is_virtual": false,
+  "is_confirmed": false,
+  "is_market": false,
+  "trx": {
+    "expiration": "2014-06-20T15:40:40",
+    "reserved": null,
+    "operations": [{
+        "type": "withdraw_op_type",
+        "data": {
+          "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
+          "amount": 10150000,
+          "claim_input_data": ""
+        }
+      },{
+        "type": "deposit_op_type",
+        "data": {
+          "amount": 10100000,
+          "condition": {
+            "asset_id": 0,
+            "slate_id": 0,
+            "type": "withdraw_signature_type",
+            "data": {
+              "owner": "XTSBkS3p3dTDbtsVbB2VmmJBiWSbUyMM4wCD",
+              "memo": null
+            }
+          }
+        }
+      }
+    ],
+    "signatures": [
+      "1f39b353ca907cdc39e0947d8d0c4de080e5e72ab69341e17b8a52e14f9b26bd511ff72a0593157d3cd781637f35e60175a1af364b8deb6deb6ba8835b6f8ffc56"
+    ]
+  },
+  "ledger_entries": [{
+      "from_account": "XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z",
+      "to_account": null,
+      "amount": {
+        "amount": 10100000,
+        "asset_id": 0
+      },
+      "memo": "to btc compressed address",
+      "memo_from_account": null
+    }
+  ],
+  "fee": {
+    "amount": 50000,
+    "asset_id": 0
+  },
+  "created_time": "2014-06-20T14:40:40",
+  "received_time": "2014-06-20T14:40:40",
+  "extra_addresses": [
+    "XTSBkS3p3dTDbtsVbB2VmmJBiWSbUyMM4wCD"
+  ]
+}
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_account_balance delegate0
+ACCOUNT                         BALANCE                     
+============================================================
+delegate0                       19,801,778.19801 XTS        
+default (unlocked) >>> wallet_account_balance test
+ACCOUNT                         BALANCE                     
+============================================================
+test                            201.00000 XTS               
+default (unlocked) >>> history delegate0
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+<d-ign></d-ign>0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    19,801,980.19801 XTS    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+<d-ign></d-ign>2         delegate0           UNKNOWN             100.00000 XTS           btc normal address                          19,801,879.69801 XTS    0.50000 XTS         <d-ign> e30713cc</d-ign>
+<d-ign></d-ign>3         delegate0           UNKNOWN             101.00000 XTS           to btc compressed address                   19,801,778.19801 XTS    0.50000 XTS         <d-ign> c96fde2a</d-ign>
+default (unlocked) >>> wallet_scan_transaction c96fde2a
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>3         delegate0           test                101.00000 XTS           to btc compressed address                   101.50000 XTS       <d-ign></d-ign>
+default (unlocked) >>> quit

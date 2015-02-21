@@ -6,8 +6,6 @@ blockchain_broadcast_transaction <trx>
 blockchain_calculate_debt <asset> [include_interest]                                                
 blockchain_generate_issuance_map <symbol> <filename>                                                
 blockchain_generate_snapshot <filename>                                                             
-blockchain_get_account_wall [account_name]                                                          
-blockchain_get_balance <owner_address>                                                              
 blockchain_list_address_balances <addr> [chanced_since]                                             
 blockchain_list_address_transactions <addr> [filter_before]                                         
 blockchain_list_balances [first_balance_id] [limit]                                                 
@@ -84,13 +82,11 @@ wallet_asset_issue_to_addresses <symbol> <addresses>
 wallet_balance_set_vote_info <balance_id> [voter_address] [strategy] [sign_and_broadcast] [builder_path] 
 wallet_builder_add_signature <builder> [broadcast]                                                  
 wallet_builder_file_add_signature [builder_path] [broadcast]                                        
-wallet_burn <amount_to_burn> <asset_symbol> <from_account_name> <for_or_against> <to_account_name> [public_message] [anonymous] 
 wallet_cancel_scan                                                                                  
 wallet_check_vote_status <account>                                                                  
 wallet_collect_genesis_balances <account_name>                                                      
 wallet_collect_vested_balances <account_name>                                                       
 wallet_delegate_update_signing_key <authorizing_account_name> <delegate_name> <signing_key>         
-wallet_dump_account_private_key <account_name> <key_type>                                           
 wallet_generate_brain_seed                                                                          
 wallet_get_account_public_address <account_name>                                                    
 wallet_get_pending_transaction_errors [filename]                                                    
@@ -123,10 +119,7 @@ wallet_set_preferred_mail_servers <account_name> <server_list> [paying_account]
 wallet_set_transaction_expiration_time <seconds>                                                    
 wallet_sign_hash <signer> <hash>                                                                    
 wallet_transaction_history_experimental [account_name]                                              
-wallet_transfer_to_address <amount_to_transfer> <asset_symbol> <from_account_name> <to_address> [memo_message] [strategy] 
-wallet_transfer_to_legacy_address <amount_to_transfer> <asset_symbol> <from_account_name> <to_address> [memo_message] [strategy] 
 wallet_transfer_to_public_account <amount_to_transfer> <asset_symbol> <from_account_name> <to_account_name> [memo_message] [strategy] 
-wallet_verify_titan_deposit <transaction_id_prefix>                                                 
 wallet_withdraw_from_address <amount> <symbol> <from_address> <to> [strategy] [sign_and_broadcast] [builder_path] 
 wallet_withdraw_from_legacy_address <amount> <symbol> <from_address> <to> [strategy] [sign_and_broadcast] [builder_path]
 
@@ -135,10 +128,11 @@ blockchain_calculate_supply <asset>
 blockchain_export_fork_graph [start_block] [end_block] [filename]                                   
 blockchain_get_account <account>                                                                    
 blockchain_get_account_public_balance <account_name>                                                
+blockchain_get_account_wall [account_name]                                                          
 blockchain_get_asset <asset>                                                                        
+blockchain_get_balance <owner_address>                                                              
 blockchain_get_block <block>                                                                        
 blockchain_get_block_count                                                                          
-blockchain_get_block_hash <block_number>                                                            
 blockchain_get_block_signee <block>                                                                 
 blockchain_get_block_transactions <block>                                                           
 blockchain_get_delegate_slot_records <delegate_name> [limit]                                        
@@ -207,11 +201,13 @@ wallet_asset_issue <amount> <symbol> <to_account_name> [memo_message]
 wallet_asset_update <symbol> [name] [description] [public_data] [maximum_share_supply] [precision] [issuer_transaction_fee] [issuer_market_fee] [flags] [issuer_permissions] [issuer_account_name] [required_sigs] [authority] 
 wallet_backup_create <json_filename>                                                                
 wallet_backup_restore <json_filename> <wallet_name> <imported_wallet_passphrase>                    
+wallet_burn <amount_to_burn> <asset_symbol> <from_account_name> <for_or_against> <to_account_name> [public_message] [anonymous] 
 wallet_change_passphrase <passphrase>                                                               
 wallet_close                                                                                        
 wallet_create <wallet_name> <new_passphrase> [brain_key]                                            
 wallet_delegate_set_block_production <delegate_name> <enabled>                                      
 wallet_delegate_withdraw_pay <delegate_name> <to_account_name> <amount_to_withdraw>                 
+wallet_dump_account_private_key <account_name> <key_type>                                           
 wallet_dump_private_key <input>                                                                     
 wallet_escrow_summary [account_name]                                                                
 wallet_get_account <account_name>                                                                   
@@ -249,7 +245,10 @@ wallet_set_transaction_scanning <enabled>
 wallet_transfer <amount_to_transfer> <asset_symbol> <from_account_name> <to_account_name> [memo_message] [strategy] 
 wallet_transfer_from <amount_to_transfer> <asset_symbol> <paying_account_name> <from_account_name> <to_account_name> [memo_message] [strategy] 
 wallet_transfer_from_with_escrow <amount_to_transfer> <asset_symbol> <paying_account_name> <from_account_name> <to_account_name> <escrow_account_name> [agreement] [memo_message] [strategy] 
+wallet_transfer_to_address <amount_to_transfer> <asset_symbol> <from_account_name> <to_address> [memo_message] [strategy] 
+wallet_transfer_to_legacy_address <amount_to_transfer> <asset_symbol> <from_account_name> <to_address> [memo_message] [strategy] 
 wallet_unlock <timeout> <passphrase>                                                                
+wallet_verify_titan_deposit <transaction_id_prefix>                                                 
 
 
 		DIFFICULT TO TEST COMMANDS

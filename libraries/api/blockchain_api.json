@@ -297,14 +297,14 @@
       },
       {
         "method_name": "blockchain_get_balance",
-        "description": "Retrieves the balance record for the given address",
+        "description": "Retrieves the specified balance record",
         "cached"   : true,
         "return_type": "balance_record",
         "parameters" : [
             {
-              "name" : "owner_address",
+              "name" : "balance_id",
               "type" : "address",
-              "description" : "address of the balance owner"
+              "description" : "the ID of the balance record"
             }
         ],
         "is_const" : true,

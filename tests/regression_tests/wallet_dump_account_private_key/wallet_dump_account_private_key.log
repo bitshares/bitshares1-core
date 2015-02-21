@@ -1,0 +1,22 @@
+default (unlocked) >>> wallet_account_create test
+"XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 1
+OK
+default (unlocked) >>> help wallet_dump_account_private_key
+Usage:
+wallet_dump_account_private_key <account_name> <key_type>                                             Reveals the specified account private key; use with caution
+Reveals the specified account private key; use with caution
+
+Parameters:
+  account_name (string, required): account name to dump private key for
+  key_type (account_key_type, required): which account private key to dump; one of {owner_key, active_key, signing_key}
+
+Returns:
+  optional_string
+default (unlocked) >>> wallet_dump_account_private_key test owner_key
+"5KV9x9uKC8DdWozG9NRC9ySRqgPGn9XgcZrgVWxntsh4msJF9zb"
+default (unlocked) >>> wallet_dump_account_private_key test active_key
+"5J34mbwS4unYpfvyVzh5yLqe5ZL4BXqbVh5piGw4uHRe8pKdi33"
+default (unlocked) >>> quit

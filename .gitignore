@@ -7,6 +7,7 @@
 *.dot
 *.DS_Store
 *.pyc
+*.pyo
 
 docs/html
 docs/latex
@@ -48,6 +49,7 @@ programs/utils/web_update_utility/web_update_utility_automoc.cpp
 
 tests/bitcoin/wallet_import_tests
 tests/bitshares_client_tests
+tests/btstests/out
 tests/chain_database_tests
 tests/client_node
 tests/client_rpc_tests/client_rpc_tests

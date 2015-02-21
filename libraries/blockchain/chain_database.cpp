@@ -689,7 +689,7 @@ namespace bts { namespace blockchain {
          if (block_id == _head_block_id) //if block_id is current head block, do nothing
            return; //this is necessary to avoid unnecessarily popping the head block in this case
 
-         //ilog( "switch from fork ${id} to ${to_id}", ("id",_head_block_id)("to_id",block_id) );
+         ilog( "switch from fork ${id} to ${to_id}", ("id",_head_block_id)("to_id",block_id) );
          vector<block_id_type> history = get_fork_history( block_id );
          while( history.back() != _head_block_id )
          {
@@ -1166,7 +1166,7 @@ namespace bts { namespace blockchain {
             history.push_back( header.previous );
             if( header.previous == block_id_type() )
             {
-               //ilog( "return: ${h}", ("h",history) );
+               ilog( "return: ${h}", ("h",history) );
                return history;
             }
             auto prev_fork_data = _fork_db.fetch( header.previous );
@@ -1175,12 +1175,12 @@ namespace bts { namespace blockchain {
             FC_ASSERT( prev_fork_data.is_linked, "we hit a dead end, this fork isn't really linked!" );
             if( prev_fork_data.is_included )
             {
-               //ilog( "return: ${h}", ("h",history) );
+               ilog( "return: ${h}", ("h",history) );
                return history;
             }
             next_id = header.previous;
          }
-         //ilog( "${h}", ("h",history) );
+         ilog( "${h}", ("h",history) );
          return history;
       } FC_CAPTURE_AND_RETHROW( (id) ) }
 
@@ -3573,7 +3573,7 @@ namespace bts { namespace blockchain {
    vector<burn_record> chain_database::fetch_burn_records( const string& account_name )const
    { try {
       vector<burn_record> results;
-      auto opt_account_record = get_account_record( account_name );
+      const auto opt_account_record = get_account_record( account_name );
       FC_ASSERT( opt_account_record.valid() );
 
       auto itr = my->_burn_index_to_record.lower_bound( {opt_account_record->id} );
@@ -3584,11 +3584,12 @@ namespace bts { namespace blockchain {
       }
 
       itr = my->_burn_index_to_record.lower_bound( {-opt_account_record->id} );
-      while( itr.valid() && abs(itr.key().account_id) == opt_account_record->id )
+      while( itr.valid() && itr.key().account_id == -opt_account_record->id )
       {
          results.push_back( itr.value() );
          ++itr;
       }
+
       return results;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
