@@ -1602,6 +1602,8 @@ owallet_contact_record client_impl::wallet_get_contact( const string& contact )c
 
 wallet_contact_record client_impl::wallet_add_contact( const string& contact, const string& label )
 { try {
+    FC_ASSERT( false, "Still under development!" );
+
     return _wallet->add_contact( contact_data( *_chain_db, contact, label) );
 } FC_CAPTURE_AND_RETHROW( (contact)(label) ) }
 
