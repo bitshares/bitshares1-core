@@ -1,5 +1,5 @@
 import QtQuick 2.3
-import QtQuick.Controls 1.3
+import QtQuick.Controls 1.2
 import QtQuick.Layouts 1.1
 
 import Material 0.1
@@ -28,8 +28,6 @@ Page {
       anchors.bottomMargin: visuals.margins
       width: parent.width
       flickableItem.interactive: true
-      // @disable-check M16
-      verticalScrollBarPolicy: Qt.platform.os in ["android", "ios"]? Qt.ScrollBarAsNeeded : Qt.ScrollBarAlwaysOff
       viewport.clip: false
 
       ListView {
