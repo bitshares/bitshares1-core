@@ -141,6 +141,7 @@ namespace bts { namespace blockchain {
 
          vector<transaction_record>  fetch_address_transactions( const address& addr );
 
+         uint32_t                    find_block_num(fc::time_point_sec &time)const;
          uint32_t                    get_block_num( const block_id_type& )const;
          signed_block_header         get_block_header( const block_id_type& )const;
          signed_block_header         get_block_header( uint32_t block_num )const;

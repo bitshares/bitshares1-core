@@ -587,6 +587,8 @@ namespace bts { namespace wallet {
                                                                             uint32_t start_block_num = 0,
                                                                             uint32_t end_block_num = -1,
                                                                             const string& asset_symbol = "" )const;
+         account_balance_summary_type       compute_historic_balance( const string &account_name,
+                                                                      uint32_t block_num )const;
 
          void                               remove_transaction_record( const string& record_id );
 

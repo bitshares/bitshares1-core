@@ -1626,6 +1626,31 @@ namespace bts { namespace blockchain {
        return my->_head_block_header;
    } FC_CAPTURE_AND_RETHROW() }
 
+   uint32_t chain_database::find_block_num(fc::time_point_sec &time)const
+   { try {
+       uint32_t start = 1, end = get_head_block_num();
+       auto start_block = get_block_header( start );
+       if( start_block.timestamp >= time ) {
+           return start;
+       }
+       auto end_block = get_block_header( end );
+       if( end_block.timestamp <= time ) {
+           return end;
+       }
+       while( end > start + 1 ) {
+           fc::time_point_sec mid((start_block.timestamp.sec_since_epoch() + end_block.timestamp.sec_since_epoch()) / 2);
+           if( mid > time )
+           {
+               end = (start + end) / 2;
+               end_block = get_block_header( end );
+           } else {
+               start = (start + end) / 2;
+               start_block = get_block_header( start );
+           }
+       }
+       return start;
+   } FC_CAPTURE_AND_RETHROW( (time) ) }
+
    /**
     *  Adds the block to the database and manages any reorganizations as a result.
     *

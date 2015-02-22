@@ -145,6 +145,12 @@ namespace bts { namespace cli {
       out << pretty_balances( yield, client );
     };
 
+    _command_to_function["wallet_account_historic_balance"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
+    {
+      const auto& balances = result.as<account_balance_summary_type>();
+      out << pretty_balances( balances, client );
+    };
+
     _command_to_function["wallet_transfer"]                     = &f_wallet_transfer;
     _command_to_function["wallet_transfer_from"]                = &f_wallet_transfer;
     _command_to_function["wallet_get_transaction"]              = &f_wallet_transfer;
