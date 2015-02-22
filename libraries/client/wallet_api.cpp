@@ -847,6 +847,14 @@ vector<pretty_transaction> detail::client_impl::wallet_account_transaction_histo
   }
 } FC_RETHROW_EXCEPTIONS( warn, "") }
 
+account_balance_summary_type detail::client_impl::wallet_account_historic_balance( const time_point& time,
+                                                                                     const string& account )const
+{ try {
+    fc::time_point_sec target(time);
+    return _wallet->compute_historic_balance( account,
+                                              _self->get_chain()->find_block_num( target ) );
+} FC_RETHROW_EXCEPTIONS( warn, "") }
+
 void detail::client_impl::wallet_remove_transaction( const string& transaction_id )
 { try {
    _wallet->remove_transaction_record( transaction_id );

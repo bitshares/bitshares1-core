@@ -321,6 +321,30 @@
         "aliases" : ["history", "listtransactions"]
       },
       {
+        "method_name": "wallet_account_historic_balance",
+        "description": "Lists wallet's balance at the given time",
+        "return_type": "account_balance_summary_type",
+        "parameters" :
+          [
+            {
+              "name" : "time",
+              "type" : "timestamp",
+              "description" : "the date and time for which the balance will be computed",
+              "example" : "2015-01-31T23:59:59"
+            },
+            {
+              "name" : "account_name",
+              "type" : "string",
+              "description" : "the name of the account for which the historic balance will be returned, \"\" for all accounts",
+              "example" : "alice",
+              "default_value" : ""
+            }
+        ],
+        "prerequisites" : ["wallet_open"],
+        "is_const": true,
+        "aliases" : []
+      },
+      {
         "method_name": "wallet_transaction_history_experimental",
         "description": "",
         "return_type": "experimental_transactions",
