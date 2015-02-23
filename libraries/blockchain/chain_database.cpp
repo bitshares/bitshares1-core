@@ -1640,7 +1640,7 @@ namespace bts { namespace blockchain {
        while( end > start + 1 ) {
            double relative = double(time.sec_since_epoch() - start_block_time.sec_since_epoch())
                              / (end_block_time.sec_since_epoch() - start_block_time.sec_since_epoch());
-           int mid = start + ((end - start) * relative);
+           uint32_t mid = start + ((end - start) * relative);
            if( mid == start ) { mid++; }
            auto mid_block_time = get_block_header( mid ).timestamp;
            if( mid_block_time > time )
