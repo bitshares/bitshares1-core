@@ -45,7 +45,7 @@ Window {
       lockScreen.focus()
    }
 
-   function showError(error, buttonName, buttonCallback) {
+   function showMessage(error, buttonName, buttonCallback) {
       snack.text = error
       if( buttonName && buttonCallback ) {
          snack.buttonText = buttonName
@@ -95,14 +95,14 @@ Window {
       if( wallet.accounts[args.accountName].availableAssets.length )
          window.pageStack.push({item: transferUi, properties: args})
       else
-         showError(qsTr("You don't have any assets, so you cannot make a transfer."), qsTr("Refresh Balances"),
+         showMessage(qsTr("You don't have any assets, so you cannot make a transfer."), qsTr("Refresh Balances"),
                    wallet.syncAllBalances)
    }
    function openOrderForm(args) {
       if( wallet.accounts[args.accountName].availableAssets.length )
          window.pageStack.push({item: orderUi, properties: args})
       else
-         showError(qsTr("You don't have any assets, so you cannot place a market order."), qsTr("Refresh Balances"),
+         showMessage(qsTr("You don't have any assets, so you cannot place a market order."), qsTr("Refresh Balances"),
                    wallet.syncAllBalances)
    }
 
@@ -150,14 +150,14 @@ Window {
 
       onConnectedChanged: {
          if( !connected ) {
-            showError(qsTr("Connection to server lost. Retrying..."))
+            showMessage(qsTr("Connection to server lost. Retrying..."))
             window.connectToServer()
          }
       }
       onErrorConnecting: {
-         showError(error)
+         showMessage(error)
       }
-      onNotification: showError(message)
+      onNotification: showMessage(message)
    }
 
    Item {

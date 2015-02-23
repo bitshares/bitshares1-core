@@ -28,7 +28,9 @@ Page {
       }
       RoboHash {
          id: recipientHash
-         name: toNameField.text? toNameField.text : "Unknown"
+         name: toNameField.text ? toNameField.text.indexOf(wallet.keyPrefix) === 0 ? "Unregistered Account"
+                                                                                   : toNameField.text
+                                : "Unknown"
          Layout.fillWidth: true
       }
    }
@@ -67,20 +69,21 @@ Page {
          focus: true
          onEditingFinished: canProceed()
          transform: ShakeAnimation { id: recipientShaker }
-         helperText: " "
+         helperText: "Enter username or key"
          input {
-            inputMethodHints: Qt.ImhLowercaseOnly | Qt.ImhLatinOnly
+            inputMethodHints: Qt.ImhLatinOnly
             font.pixelSize: units.dp(20)
          }
 
          function canProceed() {
-            if( !wallet.accountExists(text) )
+            if( wallet.accountExists(text) || wallet.isValidKey(text) )
             {
-               hasError = true
-               helperText = qsTr("This account does not exist")
-            } else {
                hasError = false
                helperText = ""
+            } else {
+               hasError = true
+               helperText = text.indexOf(wallet.keyPrefix) === 0 ? qsTr("Invalid recipient key")
+                                                                 : qsTr("This account does not exist")
             }
 
             return !hasError

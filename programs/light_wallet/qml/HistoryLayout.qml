@@ -39,7 +39,7 @@ Page {
          onDragEnded: {
             if( contentY < units.dp(-100) )
             {
-               showError(qsTr("Refreshing transactions"))
+               showMessage(qsTr("Refreshing transactions"))
                wallet.syncAllTransactions()
             }
          }
