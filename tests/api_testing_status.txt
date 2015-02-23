@@ -2,6 +2,7 @@
 about                                                                                               
 approve_register_account <account_salt> <paying_account_name>                                       
 batch <method_name> <parameters_list>                                                               
+batch_authenticated <method_name> <parameters_list>                                                 
 blockchain_broadcast_transaction <trx>                                                              
 blockchain_calculate_debt <asset> [include_interest]                                                
 blockchain_generate_issuance_map <symbol> <filename>                                                
@@ -75,6 +76,7 @@ rpc_start_server [port]
 stop                                                                                                
 wallet_account_vesting_balances [account_name]                                                      
 wallet_account_yield [account_name]                                                                 
+wallet_add_contact <contact> [label]                                                                
 wallet_add_transaction_note_experimental <transaction_id> <note>                                    
 wallet_address_create <account_name> [label] [legacy_network_byte]                                  
 wallet_asset_authorize_key <paying_account> <symbol> <address> [meta]                               
@@ -89,12 +91,14 @@ wallet_collect_vested_balances <account_name>
 wallet_delegate_update_signing_key <authorizing_account_name> <delegate_name> <signing_key>         
 wallet_generate_brain_seed                                                                          
 wallet_get_account_public_address <account_name>                                                    
+wallet_get_contact <contact>                                                                        
 wallet_get_pending_transaction_errors [filename]                                                    
 wallet_get_transaction <transaction_id>                                                             
 wallet_get_transaction_fee [symbol]                                                                 
 wallet_import_bitcoin <wallet_filename> <passphrase> <account_name>                                 
 wallet_import_electrum <wallet_filename> <passphrase> <account_name>                                
 wallet_import_keys_from_json <json_filename> <imported_wallet_passphrase> <account>                 
+wallet_list_contacts                                                                                
 wallet_login_finish <server_key> <client_key> <client_signature>                                    
 wallet_login_start <server_account>                                                                 
 wallet_mail_create <sender> <subject> <body> [reply_to]                                             
@@ -111,6 +115,7 @@ wallet_rebroadcast_transaction <transaction_id>
 wallet_recover_accounts <accounts_to_recover> [maximum_number_of_attempts]                          
 wallet_recover_titan_deposit_info <transaction_id_prefix> [recipient_account]                       
 wallet_regenerate_keys <account_name> <max_key_number>                                              
+wallet_remove_contact <contact>                                                                     
 wallet_remove_transaction <transaction_id>                                                          
 wallet_repair_records [collecting_account_name]                                                     
 wallet_scan_transaction <transaction_id> [overwrite_existing]                                       
@@ -130,7 +135,7 @@ blockchain_get_account <account>
 blockchain_get_account_public_balance <account_name>                                                
 blockchain_get_account_wall [account_name]                                                          
 blockchain_get_asset <asset>                                                                        
-blockchain_get_balance <owner_address>                                                              
+blockchain_get_balance <balance_id>                                                                 
 blockchain_get_block <block>                                                                        
 blockchain_get_block_count                                                                          
 blockchain_get_block_signee <block>                                                                 
