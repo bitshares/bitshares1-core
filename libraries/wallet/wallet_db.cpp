@@ -70,7 +70,7 @@ namespace bts { namespace wallet {
            void load_master_key_record( const wallet_master_key_record& key )
            { try {
               self->wallet_master_key = key;
-           } FC_CAPTURE_AND_RETHROW() }
+           } FC_CAPTURE_AND_RETHROW( (key) ) }
 
            void load_account_record( const wallet_account_record& account_record )
            { try {
@@ -165,16 +165,16 @@ namespace bts { namespace wallet {
              try
              {
                 my->load_generic_record( record );
-                // prevent hanging on large wallets
-                fc::usleep( fc::microseconds(1000) );
+                // Prevent hanging on large wallets
+                fc::usleep( fc::milliseconds( 1 ) );
              }
-             catch (const fc::canceled_exception&)
+             catch( const fc::canceled_exception& )
              {
                 throw;
              }
-             catch ( const fc::exception& e )
+             catch( const fc::exception& e )
              {
-                wlog( "Error loading wallet record:\n${r}\nreason: ${e}", ("e",e.to_detail_string())("r",record) );
+                wlog( "Error loading wallet record:\n${r}\nReason: ${e}", ("e",e.to_detail_string())("r",record) );
              }
           }
       }
@@ -965,7 +965,22 @@ namespace bts { namespace wallet {
 
       auto records = fc::json::from_file<std::vector<generic_wallet_record>>( filename );
       for( const auto& record : records )
-         store_and_reload_generic_record( record );
+      {
+          try
+          {
+              store_and_reload_generic_record( record, false );
+              // Prevent hanging on large wallets
+              fc::usleep( fc::milliseconds( 1 ) );
+          }
+          catch( const fc::canceled_exception& )
+          {
+              throw;
+          }
+          catch( const fc::exception& e )
+          {
+              elog( "Error loading wallet record:\n${r}\nReason: ${e}", ("e",e.to_detail_string())("r",record) );
+          }
+      }
    } FC_CAPTURE_AND_RETHROW( (filename) ) }
 
    bool wallet_db::has_private_key( const address& addr )const
@@ -1078,7 +1093,7 @@ namespace bts { namespace wallet {
                                    const fc::sha512& new_password )
    { try {
       master_key key;
-      key.encrypt_key(new_password,extended_key);
+      key.encrypt_key( new_password, extended_key );
       auto key_record = wallet_master_key_record( key, -1 );
       store_and_reload_record( key_record, true );
    } FC_CAPTURE_AND_RETHROW() }

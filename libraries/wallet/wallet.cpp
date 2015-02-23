@@ -1060,12 +1060,12 @@ namespace detail {
           import_failure = std::current_exception();
       }
 
-      if (import_failure)
+      if( import_failure )
       {
           close();
           fc::path wallet_file_path = fc::absolute( get_data_directory() ) / wallet_name;
           fc::remove_all( wallet_file_path );
-          std::rethrow_exception(import_failure);
+          std::rethrow_exception( import_failure );
       }
    } FC_CAPTURE_AND_RETHROW( (filename)(wallet_name) ) }
 
