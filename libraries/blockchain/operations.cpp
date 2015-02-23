@@ -1,6 +1,7 @@
 #include <bts/blockchain/account_operations.hpp>
 #include <bts/blockchain/asset_operations.hpp>
 #include <bts/blockchain/balance_operations.hpp>
+#include <bts/blockchain/data_operations.hpp>
 #include <bts/blockchain/feed_operations.hpp>
 #include <bts/blockchain/market_operations.hpp>
 #include <bts/blockchain/operation_factory.hpp>
@@ -43,6 +44,8 @@ namespace bts { namespace blockchain {
 
    const operation_type_enum update_balance_vote_operation::type    = update_balance_vote_op_type;
 
+   const operation_type_enum data_operation::type                   = data_op_type;
+
    const operation_type_enum authorize_operation::type              = authorize_op_type;
    const operation_type_enum update_asset_ext_operation::type       = update_asset_ext_op_type;
 
@@ -82,6 +85,8 @@ namespace bts { namespace blockchain {
       bts::blockchain::operation_factory::instance().register_operation<relative_ask_operation>();
 
       bts::blockchain::operation_factory::instance().register_operation<update_balance_vote_operation>();
+
+      bts::blockchain::operation_factory::instance().register_operation<data_operation>();
 
       bts::blockchain::operation_factory::instance().register_operation<authorize_operation>();
       bts::blockchain::operation_factory::instance().register_operation<update_asset_ext_operation>();

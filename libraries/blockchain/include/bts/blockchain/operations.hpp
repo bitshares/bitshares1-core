@@ -35,10 +35,8 @@ namespace bts { namespace blockchain {
       issue_asset_op_type           = 8,
       create_asset_prop_op_type     = 9,
 
-      // data noop
-      data_op_type                  = 10,
-
       // reserved
+      reserved_op_1_type            = 10,
       reserved_op_2_type            = 11,
 
       // market
@@ -69,6 +67,8 @@ namespace bts { namespace blockchain {
       relative_ask_op_type          = 26,
 
       update_balance_vote_op_type   = 27,
+
+      data_op_type                  = 28,
 
       // assets
       authorize_op_type             = 29,
@@ -141,7 +141,7 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (update_asset_op_type)
                  (issue_asset_op_type)
                  (create_asset_prop_op_type)
-                 (data_op_type)
+                 (reserved_op_1_type)
                  (reserved_op_2_type)
                  (bid_op_type)
                  (ask_op_type)
@@ -159,6 +159,7 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (relative_bid_op_type)
                  (relative_ask_op_type)
                  (update_balance_vote_op_type)
+                 (data_op_type)
                  (authorize_op_type)
                  (update_asset_ext_op_type)
                  (pay_fee_op_type)

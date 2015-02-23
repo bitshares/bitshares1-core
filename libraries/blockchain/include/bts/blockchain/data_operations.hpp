@@ -5,7 +5,7 @@ namespace bts { namespace blockchain {
     struct data_operation
     {
         static const operation_type_enum  type;
-        uint32_t                          tag;
+        uint64_t                          tag;
         std::vector<char>                 data;
         void evaluate( transaction_evaluation_state& eval_state )const;
     };
