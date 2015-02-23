@@ -811,8 +811,11 @@ namespace bts { namespace blockchain {
           if( block_digest.timestamp >  (now + BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*2) )
              FC_CAPTURE_AND_THROW( time_in_future, (block_digest.timestamp)(now)(delta_seconds) );
 
-          if( NOT block_digest.validate_digest() )
-             FC_CAPTURE_AND_THROW( invalid_block_digest );
+          if( block_digest.block_num >= BTS_V0_7_0_FORK_BLOCK_NUM )
+          {
+              if( NOT block_digest.validate_digest() )
+                 FC_CAPTURE_AND_THROW( invalid_block_digest );
+          }
 
           FC_ASSERT( block_digest.validate_unique() );
 
