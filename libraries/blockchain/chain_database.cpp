@@ -1629,23 +1629,28 @@ namespace bts { namespace blockchain {
    uint32_t chain_database::find_block_num(fc::time_point_sec &time)const
    { try {
        uint32_t start = 1, end = get_head_block_num();
-       auto start_block = get_block_header( start );
-       if( start_block.timestamp >= time ) {
+       auto start_block_time = get_block_header( start ).timestamp;
+       if( start_block_time >= time ) {
            return start;
        }
-       auto end_block = get_block_header( end );
-       if( end_block.timestamp <= time ) {
+       auto end_block_time = get_block_header( end ).timestamp;
+       if( end_block_time <= time ) {
            return end;
        }
        while( end > start + 1 ) {
-           fc::time_point_sec mid((start_block.timestamp.sec_since_epoch() + end_block.timestamp.sec_since_epoch()) / 2);
-           if( mid > time )
+           double relative = double(time.sec_since_epoch() - start_block_time.sec_since_epoch())
+                             / (end_block_time.sec_since_epoch() - start_block_time.sec_since_epoch());
+           int mid = start + ((end - start) * relative);
+           auto mid_block_time = get_block_header( mid ).timestamp;
+           if( mid_block_time > time )
            {
-               end = (start + end) / 2;
-               end_block = get_block_header( end );
-           } else {
-               start = (start + end) / 2;
-               start_block = get_block_header( start );
+               end = mid;
+               end_block_time = mid_block_time;
+           }
+           else
+           {
+               start = mid;
+               start_block_time = mid_block_time;
            }
        }
        return start;
