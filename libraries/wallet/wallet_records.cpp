@@ -15,7 +15,7 @@ namespace bts { namespace wallet {
 
     bool master_key::validate_password( const fc::sha512& password )const
     {
-       return checksum == fc::sha512::hash(password);
+       return checksum == fc::sha512::hash( password );
     }
 
     void master_key::encrypt_key( const fc::sha512& password,
