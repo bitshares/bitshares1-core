@@ -1566,10 +1566,12 @@ namespace bts { namespace blockchain {
        {
            try
            {
+               const full_block block_data = get_block( block_id );
                record = block_record();
                digest_block& temp = *record;
-               temp = get_block_digest( block_id );
+               temp = digest_block( block_data );
                record->id = block_id;
+               record->block_size = block_data.block_size();
            }
            catch( const fc::exception& )
            {
