@@ -1906,3 +1906,34 @@ wallet_transaction_record wallet::get_transaction( const string& transaction_id_
 
     FC_THROW_EXCEPTION( transaction_not_found, "Transaction not found!", ("transaction_id_prefix",transaction_id_prefix) );
 }
+
+account_balance_summary_type wallet::compute_historic_balance( const string &account_name,
+                                                                  uint32_t block_num )const
+{ try {
+    const vector<pretty_transaction> ledger = get_pretty_transaction_history( account_name,
+                                                                              0, block_num,
+                                                                              "" );
+    map<string, map<asset_id_type, share_type>> balances;
+
+    for( const auto& trx : ledger )
+    {
+        for( const auto& entry : trx.ledger_entries )
+        {
+            for( const auto &account_balances : entry.running_balances )
+            {
+                const string name = account_balances.first;
+                for( const auto &balance : account_balances.second )
+                {
+                    if( balance.second.amount == 0 )
+                    {
+                        balances[name].erase(balance.first);
+                    } else {
+                        balances[name][balance.first] = balance.second.amount;
+                    }
+                }
+            }
+        }
+    }
+
+    return balances;
+} FC_CAPTURE_AND_RETHROW( (account_name) (block_num) ) }
