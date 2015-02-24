@@ -324,10 +324,10 @@ namespace bts { namespace net { namespace detail {
           (*_delay_after_accumulator)(delay_after.count());
           if (total_duration > fc::milliseconds(500))
           {
-            wlog("Call to method node_delegate::${method} took ${total_duration}us, longer than our target maximum of 500ms",
+            ilog("Call to method node_delegate::${method} took ${total_duration}us, longer than our target maximum of 500ms",
                  ("method", _method_name)
                  ("total_duration", total_duration.count()));
-            wlog("Actual execution took ${execution_duration}us, with a ${delegate_delay}us delay before the delegate thread started "
+            ilog("Actual execution took ${execution_duration}us, with a ${delegate_delay}us delay before the delegate thread started "
                  "executing the method, and a ${p2p_delay}us delay after it finished before the p2p thread started processing the response",
                  ("execution_duration", actual_execution_time)
                  ("delegate_delay", delay_before)
@@ -1315,7 +1315,7 @@ namespace bts { namespace net { namespace detail {
         {
           // we asked this peer to close their connectoin to us at least BTS_NET_PEER_DISCONNECT_TIMEOUT
           // seconds ago, but they haven't done it yet.  Terminate the connection now
-          wlog( "Forcibly disconnecting peer ${peer} who failed to close their conneciton in a timely manner",
+          wlog( "Forcibly disconnecting peer ${peer} who failed to close their connection in a timely manner",
                 ( "peer", closing_peer->get_remote_endpoint() ) );
           peers_to_disconnect_forcibly.push_back( closing_peer );
         }
@@ -2748,7 +2748,7 @@ namespace bts { namespace net { namespace detail {
       try
       {
         _delegate->handle_message(block_message_to_send, true);
-        wlog("Successfully pushed sync block ${num} (id:${id})",
+        ilog("Successfully pushed sync block ${num} (id:${id})",
              ("num", block_message_to_send.block.block_num)
              ("id", block_message_to_send.block_id));
         _most_recent_blocks_accepted.push_back(block_message_to_send.block_id);
@@ -3067,7 +3067,7 @@ namespace bts { namespace net { namespace detail {
         {
           _delegate->handle_message(block_message_to_process, false);
           message_validated_time = fc::time_point::now();
-          wlog("Successfully pushed block ${num} (id:${id})",
+          ilog("Successfully pushed block ${num} (id:${id})",
                ("num", block_message_to_process.block.block_num)
                ("id", block_message_to_process.block_id));
           _most_recent_blocks_accepted.push_back(block_message_to_process.block_id);
