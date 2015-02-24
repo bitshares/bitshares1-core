@@ -285,7 +285,11 @@ fc::variant_object light_wallet::prepare_transfer(const string& amount,
    asset transfer_asset = symbol_asset->asset_from_string(amount);
 
    auto to_account  = get_account_record( to_account_name );
-   FC_ASSERT( to_account.valid() );
+   bts::blockchain::public_key_type recipient_key;
+   if( to_account.valid() )
+      recipient_key = to_account->active_key();
+   else
+      recipient_key = bts::blockchain::public_key_type(to_account_name);
 
    asset fee = get_fee( symbol );
 
@@ -307,7 +311,7 @@ fc::variant_object light_wallet::prepare_transfer(const string& amount,
       creator.deposit(relay_fee, _relay_fee_collector->active_key(), 0);
    }
 
-   creator.deposit(transfer_asset, to_account->active_key(), 0,
+   creator.deposit(transfer_asset, recipient_key, 0,
                    create_one_time_key(from_account_name, fc::to_string(expiration.sec_since_epoch())),
                    memo, active_key(from_account_name));
 
@@ -711,7 +715,7 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const string& acco
                //Do I know the recipient? If so, name him
                auto account = get_account_record(string(condition.owner));
                if( account ) summary.delta_labels[i] = _data->accounts[account_name].user_account.name + ">" + account->name;
-               else summary.delta_labels[i] = _data->accounts[account_name].user_account.name + ">" + "Unknown";
+               else summary.delta_labels[i] = _data->accounts[account_name].user_account.name + ">" + "Unregistered Account";
 
                //Recover memo
                if( account && condition.memo )

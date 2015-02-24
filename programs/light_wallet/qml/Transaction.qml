@@ -23,17 +23,19 @@ Rectangle {
          model: trx.ledger
          delegate: RowLayout {
             property bool incoming: receiver === accountName
-            
+            property string name: incoming? sender : receiver
+
             Item { Layout.preferredWidth: visuals.margins }
             RoboHash {
-               name: incoming? sender : receiver
+               name: parent.name
                elideMode: Text.ElideNone
                Layout.preferredWidth: units.dp(100)
             }
             Label {
                Layout.fillWidth: true
                anchors.top: parent.top
-               text: memo? memo : "No memo provided"
+               text: memo? memo : name === "Unregistered Account" ? qsTr("Cannot recover memo to unregistered account")
+                                                                  : qsTr("No memo provided")
                font.italic: !memo
                font.pixelSize: units.dp(20)
             }
@@ -94,5 +96,28 @@ Rectangle {
       }
       Item { Layout.preferredHeight: units.dp(3) }
    }
-   Ink { anchors.fill: parent }
+   Ink {
+      id: transactionInk
+
+      anchors.fill: parent
+      onClicked: {
+         //Iterate ledger entries looking for one which contains the mouse
+         for( var index in ledgerRepeater.model ) {
+            var entry = ledgerRepeater.itemAt(index)
+            var position = entry.mapFromItem(transactionInk, mouse.x, mouse.y)
+
+            //If this entry contains the mouse, or there's only one entry, copy the name
+            if( entry.contains(Qt.point(position.x, position.y)) || ledgerRepeater.count === 1 ) {
+               //Hack to get clipboard access in QML
+               var input = Qt.createQmlObject("import QtQuick 2.2; TextInput{visible: false}", this)
+               input.text = entry.name
+               input.selectAll()
+               input.copy()
+               showMessage("Copied <i>" + input.text + "</i> to clipboard")
+               input.destroy()
+               return
+            }
+         }
+      }
+   }
 }

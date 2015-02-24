@@ -14,6 +14,33 @@
 
 namespace bts { namespace net
   {
+    message peer_connection::real_queued_message::get_message(peer_connection_delegate*)
+    {
+      if (message_send_time_field_offset != (size_t)-1)
+      {
+        // patch the current time into the message.  Since this operates on the packed version of the structure,
+        // it won't work for anything after a variable-length field
+        std::vector<char> packed_current_time = fc::raw::pack(fc::time_point::now());
+        assert(message_send_time_field_offset + packed_current_time.size() <= message_to_send.data.size());
+        memcpy(message_to_send.data.data() + message_send_time_field_offset,
+               packed_current_time.data(), packed_current_time.size());
+      }
+      return message_to_send;
+    }
+    size_t peer_connection::real_queued_message::get_size_in_queue()
+    {
+      return message_to_send.data.size();
+    }
+    message peer_connection::virtual_queued_message::get_message(peer_connection_delegate* node)
+    {
+      return node->get_message_for_item(item_to_send);
+    }
+
+    size_t peer_connection::virtual_queued_message::get_size_in_queue()
+    {
+      return sizeof(item_id);
+    }
+
     peer_connection::peer_connection(peer_connection_delegate* delegate) :
       _node(delegate),
       _message_connection(this),
@@ -233,22 +260,14 @@ namespace bts { namespace net
 #endif
       while (!_queued_messages.empty())
       {
-        _queued_messages.front().transmission_start_time = fc::time_point::now();
+        _queued_messages.front()->transmission_start_time = fc::time_point::now();
+        message message_to_send = _queued_messages.front()->get_message(_node);
         try
         {
           dlog("peer_connection::send_queued_messages_task() calling message_oriented_connection::send_message() "
                "to send message of type ${type} for peer ${endpoint}",
-               ("type", _queued_messages.front().message_to_send.msg_type)("endpoint", get_remote_endpoint()));
-          if (_queued_messages.front().message_send_time_field_offset != (size_t)-1)
-          {
-            // patch the current time into the message.  Since this operates on the packed version of the structure,
-            // it won't work for anything after a variable-length field
-            std::vector<char> packed_current_time = fc::raw::pack(fc::time_point::now());
-            assert(_queued_messages.front().message_send_time_field_offset + packed_current_time.size() <= _queued_messages.front().message_to_send.data.size());
-            memcpy(_queued_messages.front().message_to_send.data.data() + _queued_messages.front().message_send_time_field_offset,
-                   packed_current_time.data(), packed_current_time.size());
-          }
-          _message_connection.send_message(_queued_messages.front().message_to_send);
+               ("type", message_to_send.msg_type)("endpoint", get_remote_endpoint()));
+          _message_connection.send_message(message_to_send);
           dlog("peer_connection::send_queued_messages_task()'s call to message_oriented_connection::send_message() completed normally for peer ${endpoint}",
                ("endpoint", get_remote_endpoint()));
         }
@@ -278,20 +297,18 @@ namespace bts { namespace net
         {
           elog("message_oriented_exception::send_message() threw an unhandled exception");
         }
-        _queued_messages.front().transmission_finish_time = fc::time_point::now();
-        _total_queued_messages_size -= _queued_messages.front().message_to_send.size;
+        _queued_messages.front()->transmission_finish_time = fc::time_point::now();
+        _total_queued_messages_size -= _queued_messages.front()->get_size_in_queue();
         _queued_messages.pop();
       }
       dlog("leaving peer_connection::send_queued_messages_task() due to queue exhaustion");
     }
 
-    void peer_connection::send_message(const message& message_to_send, size_t message_send_time_field_offset)
+    void peer_connection::send_queueable_message(std::unique_ptr<queued_message>&& message_to_send)
     {
       VERIFY_CORRECT_THREAD();
-      dlog("peer_connection::send_message() enqueueing message of type ${type} for peer ${endpoint}",
-           ("type", message_to_send.msg_type)("endpoint", get_remote_endpoint()));
-      _queued_messages.emplace(queued_message(message_to_send, message_send_time_field_offset));
-      _total_queued_messages_size += message_to_send.size;
+      _total_queued_messages_size += message_to_send->get_size_in_queue();
+      _queued_messages.emplace(std::move(message_to_send));
       if (_total_queued_messages_size > BTS_NET_MAXIMUM_QUEUED_MESSAGES_IN_BYTES)
       {
         elog("send queue exceeded maximum size of ${max} bytes (current size ${current} bytes)",
@@ -317,7 +334,24 @@ namespace bts { namespace net
       }
       else
         dlog("peer_connection::send_message() doesn't need to fire up send_queued_message_task, it's already running");
+    }
+      
+    void peer_connection::send_message(const message& message_to_send, size_t message_send_time_field_offset)
+    {
+      VERIFY_CORRECT_THREAD();
+      dlog("peer_connection::send_message() enqueueing message of type ${type} for peer ${endpoint}",
+           ("type", message_to_send.msg_type)("endpoint", get_remote_endpoint()));
+      std::unique_ptr<queued_message> message_to_enqueue(new real_queued_message(message_to_send, message_send_time_field_offset));
+      send_queueable_message(std::move(message_to_enqueue));
+    }
 
+    void peer_connection::send_item(const item_id& item_to_send)
+    {
+      VERIFY_CORRECT_THREAD();
+      dlog("peer_connection::send_item() enqueueing message of type ${type} for peer ${endpoint}",
+           ("type", item_to_send.item_type)("endpoint", get_remote_endpoint()));
+      std::unique_ptr<queued_message> message_to_enqueue(new virtual_queued_message(item_to_send));
+      send_queueable_message(std::move(message_to_enqueue));
     }
 
     void peer_connection::close_connection()
