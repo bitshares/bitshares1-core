@@ -513,10 +513,13 @@ namespace bts { namespace rpc {
 
             // the login method is a special case that is only used for raw json connections
             // (not for the CLI or HTTP(s) json rpc)
-            con->add_method("login", boost::bind(&rpc_server_impl::login, this, capture_con, _1));
+            if( _config.rpc_user != "nouser" )
+               con->add_method("login", boost::bind(&rpc_server_impl::login, this, capture_con, _1));
             for (const method_map_type::value_type& method : _method_map)
             {
-              if (method.second.method)
+              if (method.second.method &&
+                  //Refuse to add methods with prerequisites if _config.rpc_user is "nouser"
+                  !(_config.rpc_user == "nouser" && method.second.prerequisites != api::no_prerequisites))
               {
                 // old method using old registration system
                 auto bind_method = boost::bind(&rpc_server_impl::dispatch_method_from_json_connection,
