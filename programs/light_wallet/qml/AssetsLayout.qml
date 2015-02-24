@@ -1,5 +1,5 @@
 import QtQuick 2.3
-import QtQuick.Controls 1.3
+import QtQuick.Controls 1.2
 import QtQuick.Layouts 1.1
 
 import Material 0.1
@@ -34,14 +34,12 @@ Page {
          Layout.fillWidth: true
          Layout.fillHeight: true
          flickableItem.interactive: true
-         // @disable-check M16 -- For some reason, QtC doesn't recognize this property...
-         verticalScrollBarPolicy: Qt.platform.os in ["android", "ios"]? Qt.ScrollBarAsNeeded : Qt.ScrollBarAlwaysOff
 
          ListView {
             onDragEnded: {
                if( contentY < units.dp(-100) )
                {
-                  showError(qsTr("Refreshing balances"))
+                  showMessage(qsTr("Refreshing balances"))
                   wallet.syncAllBalances()
                }
             }

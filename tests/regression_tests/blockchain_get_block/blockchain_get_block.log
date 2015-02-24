@@ -9,7 +9,7 @@ Parameters:
 Returns:
   oblock_record
 
-aliases: get_block, getblock
+aliases: get_block, getblock, blockchain_get_block_hash, blockchain_get_blockhash, getblockhash
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 1
@@ -24,6 +24,7 @@ default (unlocked) >>> blockchain_get_block 1
   "previous_secret": "0000000000000000000000000000000000000000",
   "delegate_signature": "<d-ign></d-ign>",
   "user_transaction_ids": [],
+  "id": "a7410f0d620d950dc1c5516dd944f9376f451367",
   "block_size": 166,
   "latency": 0,
   "signee_shares_issued": 5000000,
@@ -46,6 +47,7 @@ default (unlocked) >>> blockchain_get_block 2
   "previous_secret": "0000000000000000000000000000000000000000",
   "delegate_signature": "<d-ign></d-ign>",
   "user_transaction_ids": [],
+  "id": "47508a46e9e5df869a9384c91338d989e020549e",
   "block_size": 166,
   "latency": 0,
   "signee_shares_issued": 5000000,
@@ -68,6 +70,7 @@ default (unlocked) >>> blockchain_get_block 3
   "previous_secret": "0000000000000000000000000000000000000000",
   "delegate_signature": "<d-ign></d-ign>",
   "user_transaction_ids": [],
+  "id": "765f2c7eca16518b3faa32a23ab38eeca458880e",
   "block_size": 166,
   "latency": 0,
   "signee_shares_issued": 5000000,
@@ -90,6 +93,7 @@ default (unlocked) >>> blockchain_get_block 4
   "previous_secret": "0000000000000000000000000000000000000000",
   "delegate_signature": "<d-ign></d-ign>",
   "user_transaction_ids": [],
+  "id": "35c13db51a0e99065e110928b04bd77de59dd125",
   "block_size": 166,
   "latency": 0,
   "signee_shares_issued": 5000000,

@@ -128,6 +128,26 @@
          "prerequisites" : ["no_prerequisites"]
       },
       {
+         "method_name": "batch_authenticated",
+         "description": "Takes any no_prerequisites command and an array of its arguments and returns an array of results. Example: batch_authenticated blockchain_get_blockhash [[1], [2]]",
+         "return_type": "variants",
+         "parameters" :
+         [
+         {
+            "name" : "method_name",
+            "type" : "string",
+            "description" : "The command name for calling"
+         },
+         {
+            "name" : "parameters_list",
+            "type" : "parameters_list",
+            "description" : "The list of list of parameters for this command, the return will be the list of execute result of corresponding parameters"
+         }
+         ],
+         "is_const"   : true,
+         "prerequisites" : ["json_authenticated"]
+      },
+      {
          "method_name": "builder_finalize_and_sign",
          "description": "Takes a transaction builder and returns a signed transaction for broadcasting",
          "return_type": "transaction_record",

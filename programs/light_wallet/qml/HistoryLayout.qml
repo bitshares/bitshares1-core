@@ -1,5 +1,5 @@
 import QtQuick 2.3
-import QtQuick.Controls 1.3
+import QtQuick.Controls 1.2
 import QtQuick.Layouts 1.1
 
 import Material 0.1
@@ -28,8 +28,6 @@ Page {
       anchors.bottomMargin: visuals.margins
       width: parent.width
       flickableItem.interactive: true
-      // @disable-check M16
-      verticalScrollBarPolicy: Qt.platform.os in ["android", "ios"]? Qt.ScrollBarAsNeeded : Qt.ScrollBarAlwaysOff
       viewport.clip: false
 
       ListView {
@@ -39,7 +37,7 @@ Page {
          onDragEnded: {
             if( contentY < units.dp(-100) )
             {
-               showError(qsTr("Refreshing transactions"))
+               showMessage(qsTr("Refreshing transactions"))
                wallet.syncAllTransactions()
             }
          }
@@ -54,6 +52,9 @@ Page {
             anchors.horizontalCenter: parent.horizontalCenter
             trx: model.modelData
             accountName: historyPage.accountName
+
+            Component.onCompleted: model.modelData.updatingTimestamp = true
+            Component.onDestruction: model.modelData.updatingTimestamp = false
          }
 
          Label {

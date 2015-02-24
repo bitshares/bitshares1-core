@@ -1,0 +1,59 @@
+default (unlocked) >>> wallet_account_create test
+"XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
+default (unlocked) >>> wallet_account_register test delegate0
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate0           test                0.00000 XTS             register test                               0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_transfer 123.45 XTS delegate0 test 
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate0           test                123.45000 XTS                                                       0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> help blockchain_get_balance
+Usage:
+blockchain_get_balance <balance_id>                                                                   Retrieves the specified balance record
+Retrieves the specified balance record
+
+Parameters:
+  balance_id (address, required): the ID of the balance record
+
+Returns:
+  balance_record
+
+aliases: get_balance
+default (unlocked) >>> wallet_account_balance_ids test
+[[
+    "test",[
+      "XTSQ64zpSJuFzNuDMp1ThGz9tgudPYUYwtsH"
+    ]
+  ]
+]
+default (unlocked) >>> blockchain_get_balance XTSQ64zpSJuFzNuDMp1ThGz9tgudPYUYwtsH
+{
+  "condition": {
+    "asset_id": 0,
+    "slate_id": 0,
+    "type": "withdraw_signature_type",
+    "data": {
+      "owner": "XTSBVZrKzTUnG15JjakSbNyxQr6ibus6TDZL",
+      "memo": {
+        "one_time_key": "XTS87YMmAemcZkuecYie5nY5q5oVhupccvbM95E7g8puVCgFGQmPT",
+        "encrypted_memo_data": "e890bf522bddff8e8833b2306977b44aeac707b6567db02bbc9623e3c72e7ccd2051296fe174473f44ba4c38dec012dbb5bfa650f9d39fa893c53e561a5a4252"
+      }
+    }
+  },
+  "balance": 12345000,
+  "restricted_owner": null,
+  "snapshot_info": null,
+  "deposit_date": "2014-06-20T14:40:40",
+  "last_update": "2014-06-20T14:40:40",
+  "meta_data": null
+}
+default (unlocked) >>> quit

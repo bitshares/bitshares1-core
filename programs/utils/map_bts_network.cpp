@@ -164,6 +164,11 @@ public:
     _probe_complete_promise->set_value();
   }
 
+  bts::net::message get_message_for_item(const bts::net::item_id& item) override
+  {
+    return bts::net::item_not_available_message(item);
+  }
+
   void wait()
   {
     _probe_complete_promise->wait();

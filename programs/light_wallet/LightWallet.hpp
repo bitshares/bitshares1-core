@@ -30,12 +30,12 @@ class LightWallet : public QObject
 
    Q_PROPERTY(qint16 maxMemoSize READ maxMemoSize CONSTANT)
    Q_PROPERTY(QString baseAssetSymbol READ baseAssetSymbol CONSTANT)
+   Q_PROPERTY(QString keyPrefix READ keyPrefix CONSTANT)
 
 public:
    LightWallet();
    virtual ~LightWallet()
    {
-      m_walletThread.quit();
       if( walletExists() )
          m_wallet.save();
    }
@@ -69,10 +69,6 @@ public:
    {
       return m_brainKey;
    }
-   qint16 maxMemoSize() const
-   {
-      return BTS_BLOCKCHAIN_MAX_EXTENDED_MEMO_SIZE;
-   }
 
    Q_INVOKABLE Balance* getFee(QString assetSymbol);
    Q_INVOKABLE int getDigitsOfPrecision(QString assetSymbol);
@@ -81,10 +77,26 @@ public:
    {
       return bts::blockchain::chain_database::is_valid_account_name(convert(name));
    }
+   Q_INVOKABLE bool isValidKey(QString key)
+   {
+      try {
+         return bts::blockchain::public_key_type(convert(key)) != bts::blockchain::public_key_type();
+      } catch (...) {
+         return false;
+      }
+   }
 
+   qint16 maxMemoSize() const
+   {
+      return BTS_BLOCKCHAIN_MAX_EXTENDED_MEMO_SIZE;
+   }
    QString baseAssetSymbol() const
    {
       return QStringLiteral(BTS_BLOCKCHAIN_SYMBOL);
+   }
+   QString keyPrefix() const
+   {
+      return QStringLiteral(BTS_ADDRESS_PREFIX);
    }
 
    Q_INVOKABLE bool verifyBrainKey(QString key) const;

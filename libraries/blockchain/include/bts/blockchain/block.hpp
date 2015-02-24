@@ -27,27 +27,23 @@ namespace bts { namespace blockchain {
        signature_type delegate_signature;
    };
 
-   struct digest_block : public signed_block_header
-   {
-       digest_block( const signed_block_header& c )
-       :signed_block_header(c){}
-
-       digest_block(){}
-
-       bool                             validate_digest()const;
-       bool                             validate_unique()const;
-       digest_type                      calculate_transaction_digest()const;
-
-       std::vector<transaction_id_type> user_transaction_ids;
-   };
-
    struct full_block : public signed_block_header
    {
        size_t               block_size()const;
 
        signed_transactions  user_transactions;
+   };
 
-       operator digest_block()const;
+   struct digest_block : public signed_block_header
+   {
+       digest_block(){}
+       digest_block( const full_block& block_data );
+
+       digest_type                      calculate_transaction_digest()const;
+       bool                             validate_digest()const;
+       bool                             validate_unique()const;
+
+       std::vector<transaction_id_type> user_transaction_ids;
    };
 
 } } // bts::blockchain
@@ -55,5 +51,5 @@ namespace bts { namespace blockchain {
 FC_REFLECT( bts::blockchain::block_header,
             (previous)(block_num)(timestamp)(transaction_digest)(next_secret_hash)(previous_secret) )
 FC_REFLECT_DERIVED( bts::blockchain::signed_block_header, (bts::blockchain::block_header), (delegate_signature) )
-FC_REFLECT_DERIVED( bts::blockchain::digest_block, (bts::blockchain::signed_block_header), (user_transaction_ids) )
 FC_REFLECT_DERIVED( bts::blockchain::full_block, (bts::blockchain::signed_block_header), (user_transactions) )
+FC_REFLECT_DERIVED( bts::blockchain::digest_block, (bts::blockchain::signed_block_header), (user_transaction_ids) )

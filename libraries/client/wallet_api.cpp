@@ -847,6 +847,14 @@ vector<pretty_transaction> detail::client_impl::wallet_account_transaction_histo
   }
 } FC_RETHROW_EXCEPTIONS( warn, "") }
 
+account_balance_summary_type detail::client_impl::wallet_account_historic_balance( const time_point& time,
+                                                                                     const string& account )const
+{ try {
+    fc::time_point_sec target(time);
+    return _wallet->compute_historic_balance( account,
+                                              _self->get_chain()->find_block_num( target ) );
+} FC_RETHROW_EXCEPTIONS( warn, "") }
+
 void detail::client_impl::wallet_remove_transaction( const string& transaction_id )
 { try {
    _wallet->remove_transaction_record( transaction_id );
@@ -923,6 +931,8 @@ string detail::client_impl::wallet_import_private_key( const string& wif_key_to_
 
   if( wallet_rescan_blockchain )
       _wallet->start_scan( 0, -1 );
+  else
+      _wallet->start_scan( 0, 1 );
 
   const owallet_account_record account_record = _wallet->get_account_for_address( address( new_public_key ) );
   FC_ASSERT( account_record.valid(), "No account for the key we just imported!?" );
@@ -1584,5 +1594,33 @@ string client_impl::wallet_generate_brain_seed()const
 
    return result;
 }
+
+vector<wallet_contact_record> client_impl::wallet_list_contacts()const
+{ try {
+    return _wallet->list_contacts();
+} FC_CAPTURE_AND_RETHROW() }
+
+owallet_contact_record client_impl::wallet_get_contact( const string& contact )const
+{ try {
+    if( contact.find( "label:" ) == 0 )
+        return _wallet->get_contact( contact.substr( string( "label:" ).size() ) );
+    else
+        return _wallet->get_contact( variant( contact ) );
+} FC_CAPTURE_AND_RETHROW( (contact) ) }
+
+wallet_contact_record client_impl::wallet_add_contact( const string& contact, const string& label )
+{ try {
+    FC_ASSERT( false, "Still under development!" );
+
+    return _wallet->add_contact( contact_data( *_chain_db, contact, label) );
+} FC_CAPTURE_AND_RETHROW( (contact)(label) ) }
+
+owallet_contact_record client_impl::wallet_remove_contact( const string& contact )
+{ try {
+    if( contact.find( "label:" ) == 0 )
+        return _wallet->remove_contact( contact.substr( string( "label:" ).size() ) );
+    else
+        return _wallet->remove_contact( variant( contact ) );
+} FC_CAPTURE_AND_RETHROW( (contact) ) }
 
 } } } // namespace bts::client::detail

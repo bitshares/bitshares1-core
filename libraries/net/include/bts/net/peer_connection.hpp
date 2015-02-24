@@ -45,6 +45,7 @@ namespace bts { namespace net
       virtual void on_message(peer_connection* originating_peer,
                               const message& received_message) = 0;
       virtual void on_connection_closed(peer_connection* originating_peer) = 0;
+      virtual message get_message_for_item(const item_id& item) = 0;
     };
 
     class peer_connection;
@@ -86,24 +87,63 @@ namespace bts { namespace net
       fc::optional<fc::ip::endpoint> _remote_endpoint;
       message_oriented_connection    _message_connection;
 
+      /* a base class for messages on the queue, to hide the fact that some
+       * messages are complete messages and some are only hashes of messages.
+       */
       struct queued_message
       {
-        message        message_to_send;
-        size_t         message_send_time_field_offset;
         fc::time_point enqueue_time;
         fc::time_point transmission_start_time;
         fc::time_point transmission_finish_time;
 
-        queued_message(message message_to_send, 
-                       size_t message_send_time_field_offset = (size_t)-1, 
-                       fc::time_point enqueue_time = fc::time_point::now()) :
-          message_to_send(std::move(message_to_send)),
-          message_send_time_field_offset(message_send_time_field_offset),
+        queued_message(fc::time_point enqueue_time = fc::time_point::now()) : 
           enqueue_time(enqueue_time)
         {}
+
+        virtual message get_message(peer_connection_delegate* node) = 0;
+        /** returns roughly the number of bytes of memory the message is consuming while
+         * it is sitting on the queue
+         */
+        virtual size_t get_size_in_queue() = 0;
       };
+
+      /* when you queue up a 'real_queued_message', a full copy of the message is
+       * stored on the heap until it is sent
+       */
+      struct real_queued_message : queued_message
+      {
+        message        message_to_send;
+        size_t         message_send_time_field_offset;
+
+        real_queued_message(message message_to_send, 
+                            size_t message_send_time_field_offset = (size_t)-1) :
+          message_to_send(std::move(message_to_send)),
+          message_send_time_field_offset(message_send_time_field_offset)
+        {}
+
+        message get_message(peer_connection_delegate* node) override;
+        size_t get_size_in_queue() override;
+      };
+
+      /* when you queue up a 'virtual_queued_message', we just queue up the hash of the
+       * item we want to send.  When it reaches the top of the queue, we make a callback
+       * to the node to generate the message.
+       */
+      struct virtual_queued_message : queued_message
+      {
+        item_id item_to_send;
+
+        virtual_queued_message(item_id item_to_send) :
+          item_to_send(std::move(item_to_send))
+        {}
+
+        message get_message(peer_connection_delegate* node) override;
+        size_t get_size_in_queue() override;
+      };
+
+
       size_t _total_queued_messages_size;
-      std::queue<queued_message, std::list<queued_message> > _queued_messages;
+      std::queue<std::unique_ptr<queued_message>, std::list<std::unique_ptr<queued_message> > > _queued_messages;
       fc::future<void> _send_queued_messages_done;
     public:
       fc::time_point connection_initiation_time;
@@ -220,7 +260,9 @@ namespace bts { namespace net
       void on_message(message_oriented_connection* originating_connection, const message& received_message) override;
       void on_connection_closed(message_oriented_connection* originating_connection) override;
 
+      void send_queueable_message(std::unique_ptr<queued_message>&& message_to_send);
       void send_message(const message& message_to_send, size_t message_send_time_field_offset = (size_t)-1);
+      void send_item(const item_id& item_to_send);
       void close_connection();
       void destroy_connection();
 

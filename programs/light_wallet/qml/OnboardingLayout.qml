@@ -1,5 +1,5 @@
 import QtQuick 2.3
-import QtQuick.Controls 1.3
+import QtQuick.Controls 1.2
 import QtQuick.Layouts 1.1
 
 import Material 0.1
@@ -23,7 +23,7 @@ MainView {
       Utils.connectOnce(wallet.accounts[username].isRegisteredChanged, finished,
                         function() { return wallet.accounts[username].isRegistered })
       Utils.connectOnce(wallet.onErrorRegistering, function(reason) {
-         showError("Registration failed: " + reason)
+         showMessage("Registration failed: " + reason)
          console.log("Can't register: " + reason)
       })
 
@@ -166,7 +166,7 @@ MainView {
 
             onClicked: {
                if( !wallet.connected ) {
-                  showError("Unable to connect to server.", "Try Again", connectToServer)
+                  showMessage("Unable to connect to server.", "Try Again", connectToServer)
                   return
                }
 

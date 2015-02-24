@@ -1,0 +1,97 @@
+default (unlocked) >>> wallet_account_create test
+"XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
+default (unlocked) >>> wallet_account_register test delegate0
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate0           test                0.00000 XTS             register test                               0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> wallet_transfer 100000 XTS delegate0 test
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate0           test                100,000.00000 XTS                                                   0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> help wallet_burn
+Usage:
+wallet_burn <amount_to_burn> <asset_symbol> <from_account_name> <for_or_against> <to_account_name> [public_message] [anonymous]   Burns given amount to the given account.  This will allow you to post message and +/- sentiment on someones account as a form of reputation.
+Burns given amount to the given account.  This will allow you to post message and +/- sentiment on someones account as a form of reputation.
+
+Parameters:
+  amount_to_burn (real_amount, required): the amount of shares to burn
+  asset_symbol (asset_symbol, required): the asset to burn
+  from_account_name (sending_account_name, required): the source account to draw the shares from
+  for_or_against (string, required): the value 'for' or 'against'
+  to_account_name (receive_account_name, required): the account to which the burn should be credited (for or against) and on which the public message will appear
+  public_message (string, optional, defaults to ""): a public message to post
+  anonymous (bool, optional, defaults to "false"): true if anonymous, else signed by from_account_name
+
+Returns:
+  transaction_record
+
+aliases: burn
+default (unlocked) >>> wallet_burn 1 XTS test for delegate1 "message on delegate1 wall"
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   test                NETWORK             1.00000 XTS             burn: message on delegate1 wall             0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_burn 1.5 XTS test for delegate1 "message on delegate1 wall #2"
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   test                NETWORK             1.50000 XTS             burn: message on delegate1 wall #2          0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_burn 2 XTS test against delegate1 "***" true
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   test                NETWORK             2.00000 XTS             burn: ***                                   0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_burn 1 XTS test for delegate1 "message on delegate1 wall #3" true
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   test                NETWORK             1.00000 XTS             burn: message on delegate1 wall #3          0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_burn 1 XTS test against delegate1 "against"
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   test                NETWORK             1.00000 XTS             burn: against                               0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> help blockchain_get_account_wall
+Usage:
+blockchain_get_account_wall [account_name]                                                            returns all burn records associated with an account
+returns all burn records associated with an account
+
+Parameters:
+  account_name (account_name, optional, defaults to ""): the name of the account to fetch the burn records for
+
+Returns:
+  burn_records
+
+aliases: wall
+default (unlocked) >>> blockchain_get_account_wall delegate1
+AMOUNT                        MESSAGE                                                                                             SIGNER                        
+================================================================================================================================================================
+1.00000 XTS                   message on delegate1 wall                                                                           test                          
+1.50000 XTS                   message on delegate1 wall #2                                                                        test                          
+1.00000 XTS                   message on delegate1 wall #3                                                                        ANONYMOUS                     
+-2.00000 XTS                  ***                                                                                                 ANONYMOUS                     
+-1.00000 XTS                  against                                                                                             test                          
+default (unlocked) >>> quit
