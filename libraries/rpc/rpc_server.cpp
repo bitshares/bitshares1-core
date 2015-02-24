@@ -176,9 +176,8 @@ namespace bts { namespace rpc {
                    }
 
                //    ilog( "\n\n\n  username: ${user}  password ${password}", ("path",r.path)("user",username)("password", password));
-                   if( _config.rpc_user != "nouser" &&
-                       (_config.rpc_user     != username ||
-                       _config.rpc_password != password ) )
+                   if( _config.rpc_user     != username ||
+                       _config.rpc_password != password )
                    {
                       //fc_ilog( fc::logger::get("rpc"), "Unauthorized ${path}, username: ${user}", ("path",r.path)("user",username));
                    // WARNING: logging RPC calls can capture passwords and private keys
