@@ -713,6 +713,7 @@ namespace bts { namespace net { namespace detail {
       void                       set_total_bandwidth_limit( uint32_t upload_bytes_per_second, uint32_t download_bytes_per_second );
       void                       disable_peer_advertising();
       fc::variant_object         get_call_statistics() const;
+      message                    get_message_for_item(const item_id& item) override;
 
       fc::variant_object         network_get_info() const;
       fc::variant_object         network_get_usage_stats() const;
@@ -2445,53 +2446,70 @@ namespace bts { namespace net { namespace detail {
       }
     }
 
+    message node_impl::get_message_for_item(const item_id& item)
+    {
+      try
+      {
+        return _message_cache.get_message(item.item_hash);
+      }
+      catch (fc::key_not_found_exception&)
+      {}
+      try
+      {
+        return _delegate->get_item(item);
+      }
+      catch (fc::key_not_found_exception&)
+      {}
+      return item_not_available_message(item);
+    }
+
     void node_impl::on_fetch_items_message(peer_connection* originating_peer, const fetch_items_message& fetch_items_message_received)
     {
       VERIFY_CORRECT_THREAD();
-      dlog( "received items request for ids ${ids} of type ${type} from peer ${endpoint}",
-           ( "ids", fetch_items_message_received.items_to_fetch )
-           ( "type", fetch_items_message_received.item_type )
-           ( "endpoint", originating_peer->get_remote_endpoint() ) );
+      dlog("received items request for ids ${ids} of type ${type} from peer ${endpoint}",
+           ("ids", fetch_items_message_received.items_to_fetch)
+           ("type", fetch_items_message_received.item_type)
+           ("endpoint", originating_peer->get_remote_endpoint()));
 
       fc::optional<message> last_block_message_sent;
 
       std::list<message> reply_messages;
-      for( const item_hash_t& item_hash : fetch_items_message_received.items_to_fetch )
+      for (const item_hash_t& item_hash : fetch_items_message_received.items_to_fetch)
       {
         try
         {
-          message requested_message = _message_cache.get_message( item_hash );
-          dlog( "received item request for item ${id} from peer ${endpoint}, returning the item from my message cache",
-               ( "endpoint", originating_peer->get_remote_endpoint() )
-               ( "id", requested_message.id() ) );
-          reply_messages.push_back( requested_message );
+          message requested_message = _message_cache.get_message(item_hash);
+          dlog("received item request for item ${id} from peer ${endpoint}, returning the item from my message cache",
+               ("endpoint", originating_peer->get_remote_endpoint())
+               ("id", requested_message.id()));
+          reply_messages.push_back(requested_message);
           if (fetch_items_message_received.item_type == block_message_type)
             last_block_message_sent = requested_message;
           continue;
         }
-        catch ( fc::key_not_found_exception& )
+        catch (fc::key_not_found_exception&)
         {
            // it wasn't in our local cache, that's ok ask the client
         }
 
-        item_id item_to_fetch( fetch_items_message_received.item_type, item_hash );
+        item_id item_to_fetch(fetch_items_message_received.item_type, item_hash);
         try
         {
-          message requested_message = _delegate->get_item( item_to_fetch );
-          dlog( "received item request from peer ${endpoint}, returning the item from delegate with id ${id} size ${size}",
-               ( "id", requested_message.id() )
-               ( "size", requested_message.size )
-               ( "endpoint", originating_peer->get_remote_endpoint() ) );
-          reply_messages.push_back( requested_message );
+          message requested_message = _delegate->get_item(item_to_fetch);
+          dlog("received item request from peer ${endpoint}, returning the item from delegate with id ${id} size ${size}",
+               ("id", requested_message.id())
+               ("size", requested_message.size)
+               ("endpoint", originating_peer->get_remote_endpoint()));
+          reply_messages.push_back(requested_message);
           if (fetch_items_message_received.item_type == block_message_type)
             last_block_message_sent = requested_message;
           continue;
         }
-        catch ( fc::key_not_found_exception& )
+        catch (fc::key_not_found_exception&)
         {
-          reply_messages.push_back( item_not_available_message(item_to_fetch ) );
-          dlog( "received item request from peer ${endpoint} but we don't have it",
-               ( "endpoint", originating_peer->get_remote_endpoint() ) );
+          reply_messages.push_back(item_not_available_message(item_to_fetch));
+          dlog("received item request from peer ${endpoint} but we don't have it",
+               ("endpoint", originating_peer->get_remote_endpoint()));
         }
       }
 
@@ -2505,7 +2523,12 @@ namespace bts { namespace net { namespace detail {
       }
 
       for (const message& reply : reply_messages)
-        originating_peer->send_message(reply);
+      {
+        if (reply.msg_type == block_message_type)
+          originating_peer->send_item(item_id(block_message_type, reply.as<bts::client::block_message>().block_id));
+        else
+          originating_peer->send_message(reply);
+      }
     }
 
     void node_impl::on_item_not_available_message( peer_connection* originating_peer, const item_not_available_message& item_not_available_message_received )
