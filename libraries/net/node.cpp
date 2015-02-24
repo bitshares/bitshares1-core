@@ -4616,11 +4616,8 @@ namespace bts { namespace net { namespace detail {
       result["peer_connection_retry_timeout"] = _peer_connection_retry_timeout;
       result["desired_number_of_connections"] = _desired_number_of_connections;
       result["maximum_number_of_connections"] = _maximum_number_of_connections;
-      if (_maximum_number_of_blocks_to_handle_at_one_time != MAXIMUM_NUMBER_OF_BLOCKS_TO_HANDLE_AT_ONE_TIME)
-        result["maximum_number_of_blocks_to_handle_at_one_time"] = _maximum_number_of_blocks_to_handle_at_one_time;
-      if (_maximum_number_of_sync_blocks_to_prefetch != MAXIMUM_NUMBER_OF_BLOCKS_TO_PREFETCH)
-        result["maximum_number_of_sync_blocks_to_prefetch"] = _maximum_number_of_sync_blocks_to_prefetch;
-      if (_maximum_blocks_per_peer_during_syncing != BTS_NET_MAX_BLOCKS_PER_PEER_DURING_SYNCING)
+      result["maximum_number_of_blocks_to_handle_at_one_time"] = _maximum_number_of_blocks_to_handle_at_one_time;
+      result["maximum_number_of_sync_blocks_to_prefetch"] = _maximum_number_of_sync_blocks_to_prefetch;
       result["maximum_blocks_per_peer_during_syncing"] = _maximum_blocks_per_peer_during_syncing;
       return result;
     }
