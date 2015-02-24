@@ -59,7 +59,7 @@ namespace bts { namespace wallet {
                    default:
                        elog( "Unknown wallet record type: ${type}", ("type",record.type) );
                        break;
-                }
+               }
            } FC_CAPTURE_AND_RETHROW( (record) ) }
 
            void load_property_record( const wallet_property_record& property_rec )
@@ -968,7 +968,7 @@ namespace bts { namespace wallet {
       {
           try
           {
-              store_and_reload_generic_record( record, false );
+              store_and_reload_generic_record( record );
               // Prevent hanging on large wallets
               fc::usleep( fc::milliseconds( 1 ) );
           }
@@ -979,6 +979,15 @@ namespace bts { namespace wallet {
           catch( const fc::exception& e )
           {
               elog( "Error loading wallet record:\n${r}\nReason: ${e}", ("e",e.to_detail_string())("r",record) );
+
+              switch( wallet_record_type_enum( record.type ) )
+              {
+                  case master_key_record_type:
+                  case key_record_type:
+                      throw;
+                  default:
+                      break;
+              }
           }
       }
    } FC_CAPTURE_AND_RETHROW( (filename) ) }

@@ -51,7 +51,7 @@ No balances found.
 default (unlocked) >>> wallet_transfer_from_with_escrow  1000 XTS sender sender receiver agent "5100000000000000000000000000000000000000000000000000000000000005" "my memo"
 {
   "index": 0,
-  "record_id": "e4d1f3d76c0470fc238fd35df01cf139a7636ff2",
+  "record_id": "c074a93e3df2115975c71864206e3b594c83f398",
   "block_num": 0,
   "is_virtual": false,
   "is_confirmed": false,
@@ -89,7 +89,7 @@ default (unlocked) >>> wallet_transfer_from_with_escrow  1000 XTS sender sender 
       }
     ],
     "signatures": [
-      "2045f0ac995618c48784ccf3ba3db3f4fd3c91c646cdd2f9c8213eb528f7f101a96f655face5bb292e99b3be725b707f2ffeaf48cc9fb03119477046f684c2182a"
+      "1f0be6a70d9f111f39f566be7d8e2c5b9f9bfec0a2e2e1c38a0d3cbd0d14b154822b1229ec2b03bc16a7b0c26b30dbf402a2f4e18a75148aa31ccc011628c2cc4b"
     ]
   },
   "ledger_entries": [{
@@ -117,7 +117,7 @@ default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> wallet_escrow_summary sender
 [{
-    "creating_transaction_id": "e4d1f3d76c0470fc238fd35df01cf139a7636ff2",
+    "creating_transaction_id": "c074a93e3df2115975c71864206e3b594c83f398",
     "balance_id": "XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3",
     "balance": {
       "amount": 100000000,
@@ -131,7 +131,7 @@ default (unlocked) >>> wallet_escrow_summary sender
 ]
 default (unlocked) >>> wallet_escrow_summary receiver
 [{
-    "creating_transaction_id": "e4d1f3d76c0470fc238fd35df01cf139a7636ff2",
+    "creating_transaction_id": "c074a93e3df2115975c71864206e3b594c83f398",
     "balance_id": "XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3",
     "balance": {
       "amount": 100000000,
@@ -150,7 +150,7 @@ default (unlocked) >>> wallet_escrow_summary delegate0
 default (unlocked) >>> wallet_release_escrow sender XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3 sender 0 200 
 {
   "index": 0,
-  "record_id": "4db6e8b7c39933e5438965f3b74c69557d943025",
+  "record_id": "7b6980d582772f52a2854b931f5a53739635627a",
   "block_num": 0,
   "is_virtual": false,
   "is_confirmed": false,
@@ -176,8 +176,8 @@ default (unlocked) >>> wallet_release_escrow sender XTSKrhkPnQToEZfF4JXDztmKbFUR
       }
     ],
     "signatures": [
-      "1f672c5579fc74835305c615ec09f1dd64259e54f563bbed8c1d968c540f8b120a5d9dbc4e5f071697c7c5af4983b445cdc5863c2a65ba35d69037e94e38f74932",
-      "1f55719b6e62cc62101e60a811a51c233bed95c45e7af1f7601cebaa53b3beed800578669aee6e1bab0d2964666a648d69a3be510bbc540178acfd2374fe74b9ea"
+      "1f16d836531cf769675c83f90344b20a041b57f8e8c0d84b9a42c1e10a21e02b1561f7d534a5a3408b8871fb547c0e4f305460d9f58a0c6ed7fc78f56072f0cd0f",
+      "201de456661873e5055c3c8feed0bc68fae05791dc5066d120fac7dafacb4c790141d86b2b2e29135c2a3c13ec8da83370ef4614ae0bffca182000756e03b6fc70"
     ]
   },
   "ledger_entries": [],
@@ -195,7 +195,7 @@ default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> wallet_escrow_summary sender
 [{
-    "creating_transaction_id": "e4d1f3d76c0470fc238fd35df01cf139a7636ff2",
+    "creating_transaction_id": "c074a93e3df2115975c71864206e3b594c83f398",
     "balance_id": "XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3",
     "balance": {
       "amount": 80000000,
@@ -209,7 +209,7 @@ default (unlocked) >>> wallet_escrow_summary sender
 ]
 default (unlocked) >>> wallet_escrow_summary receiver
 [{
-    "creating_transaction_id": "e4d1f3d76c0470fc238fd35df01cf139a7636ff2",
+    "creating_transaction_id": "c074a93e3df2115975c71864206e3b594c83f398",
     "balance_id": "XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3",
     "balance": {
       "amount": 80000000,
@@ -232,7 +232,7 @@ sender                          8,999.00000 XTS
 default (unlocked) >>> wallet_release_escrow receiver XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3 receiver 100 0 
 {
   "index": 0,
-  "record_id": "bb3ebf3391785e9af7a2ff08e77b4a99199b0f43",
+  "record_id": "bdf67db389a790a016bdd3853bc224b8388ecd08",
   "block_num": 0,
   "is_virtual": false,
   "is_confirmed": false,
@@ -258,7 +258,7 @@ default (unlocked) >>> wallet_release_escrow receiver XTSKrhkPnQToEZfF4JXDztmKbF
       }
     ],
     "signatures": [
-      "1f0be6a70d9f111f39f566be7d8e2c5b9f9bfec0a2e2e1c38a0d3cbd0d14b154820be6a311cd47109c651ff8bda97e802dd5199d24ca09b5c1c91fbd28b6f2460f"
+      "1f02b022ee892b6897c45d97a369a359de6503d3afc0841fba2c2a11713201cd0777730d5dd65dac585ce570f5ec9e1e1727e9c339fed17071cf542ade5f2f4a6f"
     ]
   },
   "ledger_entries": [],
@@ -276,7 +276,7 @@ default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> wallet_escrow_summary sender
 [{
-    "creating_transaction_id": "e4d1f3d76c0470fc238fd35df01cf139a7636ff2",
+    "creating_transaction_id": "c074a93e3df2115975c71864206e3b594c83f398",
     "balance_id": "XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3",
     "balance": {
       "amount": 70000000,
@@ -290,7 +290,7 @@ default (unlocked) >>> wallet_escrow_summary sender
 ]
 default (unlocked) >>> wallet_escrow_summary receiver
 [{
-    "creating_transaction_id": "e4d1f3d76c0470fc238fd35df01cf139a7636ff2",
+    "creating_transaction_id": "c074a93e3df2115975c71864206e3b594c83f398",
     "balance_id": "XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3",
     "balance": {
       "amount": 70000000,
@@ -313,7 +313,7 @@ sender                          9,099.00000 XTS
 default (unlocked) >>> wallet_release_escrow delegate0 XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3 agent 222 111 
 {
   "index": 0,
-  "record_id": "6003d40b60261dbaafea34c5887561b2e774cda0",
+  "record_id": "546c31572dd36b4e303661f57730f904acc4398c",
   "block_num": 0,
   "is_virtual": false,
   "is_confirmed": false,
@@ -339,8 +339,8 @@ default (unlocked) >>> wallet_release_escrow delegate0 XTSKrhkPnQToEZfF4JXDztmKb
       }
     ],
     "signatures": [
-      "1f16d836531cf769675c83f90344b20a041b57f8e8c0d84b9a42c1e10a21e02b157635e34cd45aa1ca75020d87736fade6574848b437d673eae3a359dc078d0c2e",
-      "206d97f611bbbea05c3aba2f31087d48571b0cef7e1b577c5b5f895712ad74ed433c34f8b93c47865a3650bf4307ee404b935e86358dd22cc6f69cdc5af36d5688"
+      "206b7f76e1ae178407c32f71852eed1b74e73217d95a6e6f45f9d875114b1a87101e4a10b371a408ac9e24a8113c3dacc46e931be317a2d51ec63293514a4e5313",
+      "2024281e72f4578f5056d5f244ed72d0d55aa533399fc76066da7f265feed792380fd7d75f49bc71ae4f41c4a1c01359e248c9ad08a1114739dcf47e727ac8f054"
     ]
   },
   "ledger_entries": [],
@@ -358,7 +358,7 @@ default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> wallet_escrow_summary sender
 [{
-    "creating_transaction_id": "e4d1f3d76c0470fc238fd35df01cf139a7636ff2",
+    "creating_transaction_id": "c074a93e3df2115975c71864206e3b594c83f398",
     "balance_id": "XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3",
     "balance": {
       "amount": 36700000,
@@ -372,7 +372,7 @@ default (unlocked) >>> wallet_escrow_summary sender
 ]
 default (unlocked) >>> wallet_escrow_summary receiver
 [{
-    "creating_transaction_id": "e4d1f3d76c0470fc238fd35df01cf139a7636ff2",
+    "creating_transaction_id": "c074a93e3df2115975c71864206e3b594c83f398",
     "balance_id": "XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3",
     "balance": {
       "amount": 36700000,
