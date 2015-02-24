@@ -116,7 +116,7 @@ true
 >>> debug_wait_for_block_by_number 1
 OK
 >>> wallet_account_create myaccount
-"XTS6TvbCdMcm1D7zpwiHMYfZtRm435bzT2ifYpbENwTV5vZLbHxMh"
+"XTS8RCamk6kQtmQeaew1U42qaR67dFnSpQodEZUjWeQGQQhsm53PZ"
 >>> wallet_account_balance myaccount
 No balances found.
 >>> debug_deterministic_private_keys 0 1 alice true myaccount false true
@@ -132,65 +132,26 @@ No account found.
 >>> wallet_account_register myaccount myaccount
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-2014-06-20T14:40:30 PENDING   myaccount           myaccount           0.00000 XTS             register myaccount                          0.50000 XTS         3577f090
+2014-06-20T14:40:30 PENDING   myaccount           myaccount           0.00000 XTS             register myaccount                          0.50000 XTS         4523b1c3
 >>> blockchain_get_account myaccount
 No account found.
->>> blockchain_get_info
-{
-  "blockchain_id": "fd0691b3d34c5854e05c362be63f68c7c333a43b775042e81836bbc02e1a6565",
-  "name": "BitShares XTS",
-  "symbol": "XTS",
-  "address_prefix": "XTS",
-  "db_version": 199,
-  "genesis_timestamp": "2014-02-02T18:00:00",
-  "block_interval": 10,
-  "delegate_num": 101,
-  "max_delegate_pay_issued_per_block": "50.00000 XTS",
-  "max_delegate_reg_fee": "59,881.18811 XTS",
-  "name_size_max": 63,
-  "memo_size_max": 51,
-  "data_size_max": 65536,
-  "symbol_size_max": 8,
-  "symbol_size_min": 3,
-  "asset_shares_max": 1000000000000000,
-  "short_symbol_asset_reg_fee": "500,000.00000 XTS",
-  "long_symbol_asset_reg_fee": "500.00000 XTS",
-  "statistics_enabled": false,
-  "relay_fee": "0.10000 XTS",
-  "max_pending_queue_size": 10,
-  "max_trx_per_second": 1,
-  "min_block_fee": "0.00000 XTS"
-}
 >>> debug_advance_time 1 block
 OK
 >>> debug_wait_for_block_by_number 1 rlast
 OK
->>> blockchain_get_info
-{
-  "blockchain_id": "fd0691b3d34c5854e05c362be63f68c7c333a43b775042e81836bbc02e1a6565",
-  "name": "BitShares XTS",
-  "symbol": "XTS",
-  "address_prefix": "XTS",
-  "db_version": 199,
-  "genesis_timestamp": "2014-02-02T18:00:00",
-  "block_interval": 10,
-  "delegate_num": 101,
-  "max_delegate_pay_issued_per_block": "50.00000 XTS",
-  "max_delegate_reg_fee": "59,881.18811 XTS",
-  "name_size_max": 63,
-  "memo_size_max": 51,
-  "data_size_max": 65536,
-  "symbol_size_max": 8,
-  "symbol_size_min": 3,
-  "asset_shares_max": 1000000000000000,
-  "short_symbol_asset_reg_fee": "500,000.00000 XTS",
-  "long_symbol_asset_reg_fee": "500.00000 XTS",
-  "statistics_enabled": false,
-  "relay_fee": "0.10000 XTS",
-  "max_pending_queue_size": 10,
-  "max_trx_per_second": 1,
-  "min_block_fee": "0.00000 XTS"
-}
 >>> blockchain_get_account myaccount
 No account found.
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> blockchain_get_account myaccount
+Name: myaccount
+Registered: 2014-06-20T14:40:30
+Last Updated: 36 weeks ago
+Owner Key: XTS8RCamk6kQtmQeaew1U42qaR67dFnSpQodEZUjWeQGQQhsm53PZ
+Active Key History:
+- XTS5VjXgz22FTUrPtv7Y2jp1HnWEcEQm2ksQLenRncBf59wSh6fmq, last used 36 weeks ago
+Not a delegate.
 >>> quit
+

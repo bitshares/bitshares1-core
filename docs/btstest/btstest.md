@@ -64,8 +64,8 @@ Here is the code that achieves all of that:
         rpc_client.wait_for_rpc()
         run_testdir(my_path)
 
-btstest file format
--------------------
+Simple btstest usage
+--------------------
 
 The main purpose of `.btstest` files is to act as a list of commands and command output.
 Taking inspiration from `regression_tests`, a session interacting with the BitShares client is a valid test!
@@ -88,21 +88,194 @@ Here is an example of a `.btstest` file with no output:
     >>> blockchain_get_account myaccount
     >>> wallet_account_register myaccount myaccount
     >>> blockchain_get_account myaccount
-    >>> blockchain_get_info
     >>> debug_advance_time 1 block
     >>> debug_wait_for_block_by_number 1 rlast
-    >>> blockchain_get_info
+    >>> blockchain_get_account myaccount
+    >>> debug_advance_time 1 block
+    >>> debug_wait_for_block_by_number 1 rlast
     >>> blockchain_get_account myaccount
     >>> quit
 
-However, the problem with copy-pasted output is that some output may change between testing and production, and some other output will change from run to run.
+This test is present in the `tests/btstests/tutorial/register_account_0` directory with a suitable `testenv`.  The test can easily be run by compiling the `develop` branch and running the following command:
 
+    tests/btstest.py tests/btstests/tutorial/register_account_0
+
+The presence of `>>>` characters in a line flags that line as a command.  The rest of the line is passed through to the `execute_command_line` RPC, unless it is a *metacommand*, which
+is a command that begins with `!`.  Metacommands are handled directly by the `btstest` framework.  In this case, the `!client` command addreses subsequent commands to the client named `alice` (which was specified in the testenv),
+and the `!expect disable` command disables the *expectation functionality* (checking of command output).  Disabling expectation is useful to run a test as a *batch script*, only executing the commands and not complaining about failure to match output.  Which is often useful for developing new tests or upgrading badly broken tests.
+
+Expectation
+-----------
+
+Like `regression_tests`, the `btstest` framework has the capability to test that command output matches a given string.  Placing the previous test's output into a file and deleting `!expect disable` gives this output:
+
+    >>> !showmatch enable
+    >>> !client alice
+    >>> debug_start_simulated_time "20140620T144030.000000"
+    OK
+    >>> wallet_create default password
+    OK
+    >>> wallet_set_automatic_backups false
+    false
+    >>> debug_deterministic_private_keys 0 101 init true
+    [
+      "5JZAeEjgszF9kXVpFsAK9wsVer2L3z9WwY63DT7p9kLNZUFYyRQ",
+      "5KegApb8VGr1CAtUJH4a41KGqX1ZMK2ik64YCjRD3LR95k7LJAS",
+      ...
+      "5KZw3WpATeW1JdthN6jpdEAwJsgdupgF2CRovbjw4rCE9xvCZp7"
+    ]
+    >>> wallet_delegate_set_block_production ALL true
+    OK
+    >>> wallet_set_transaction_scanning true
+    true
+    >>> debug_wait_for_block_by_number 1
+    OK
+    >>> wallet_account_create myaccount
+    "XTS8RCamk6kQtmQeaew1U42qaR67dFnSpQodEZUjWeQGQQhsm53PZ"
+    ...
+    >>> blockchain_get_account myaccount
+    Name: myaccount
+    Registered: 2014-06-20T14:40:30
+    Last Updated: 36 weeks ago
+    Owner Key: XTS8RCamk6kQtmQeaew1U42qaR67dFnSpQodEZUjWeQGQQhsm53PZ
+    Active Key History:
+    - XTS5VjXgz22FTUrPtv7Y2jp1HnWEcEQm2ksQLenRncBf59wSh6fmq, last used 36 weeks ago
+    Not a delegate.
+    >>> quit
+
+Again, this file is present in `tests/btstests/tutorial/register_account_1` directory.  When you run this test, you will see the following output:
+
+    >>> !client alice
+    >>> debug_start_simulated_time "20140620T144030.000000"
+    OK
+    >>> wallet_create default password
+    OK
+    >>> wallet_set_automatic_backups false
+    false
+    >>> debug_deterministic_private_keys 0 101 init true
+    [
+      "5JZAeEjgszF9kXVpFsAK9wsVer2L3z9WwY63DT7p9kLNZUFYyRQ",
+      ...
+      "5KZw3WpATeW1JdthN6jpdEAwJsgdupgF2CRovbjw4rCE9xvCZp7"
+    ]
+    >>> wallet_delegate_set_block_production ALL true
+    OK
+    >>> wallet_set_transaction_scanning true
+    true
+    >>> debug_wait_for_block_by_number 1
+    OK
+    >>> wallet_account_create myaccount
+    !{ "XTS8RCamk6kQtmQeaew1U42qaR67dFnSpQodEZUjWeQGQQhsm53PZ" }!~{ "XTS7wmhc95NpJuRQE8aGDUzzZhd7W34JQbgCbNdHrtPV1nnGxEq9V" }~
+    ...
+    >>> blockchain_get_account myaccount
+    Name: myaccount
+    Registered: 2014-06-20T14:40:30
+    Last Updated: 36 weeks ago
+    Owner Key: !{ XTS8RCamk6kQtmQeaew1U42qaR67dFnSpQodEZUjWeQGQQhsm53PZ }!~{ XTS7wmhc95NpJuRQE8aGDUzzZhd7W34JQbgCbNdHrtPV1nnGxEq9V }~
+    Active Key History:
+    - !{ XTS5VjXgz22FTUrPtv7Y2jp1HnWEcEQm2ksQLenRncBf59wSh6fmq, }!~{ XTS5kjEMtBUEzpoe2aZf4C8XGSZrTTc4Ch9Y1jdkp3XgnnA1qy2cE, }~ last used 36 weeks ago
+    Not a delegate.
+    >>> quit
+
+The mismatches are clearly marked with `!{ }!` delimiters, and the text that was actually output is `~{ }~` delimiters.
+It is clear that the mismatch is due to randomly generated keys which change from run to run.  In the next section, you will learn how to use regular expressions to deal with this properly and flexibly.
+
+TODO:  Eventually mismatches will trigger a final error message and OS exit code, but this is not implemented yet.
+
+TODO:  The `!showmatch` command will eventually allow to toggle between the above form and just straight-up output, but this is not implemented yet.
+
+Expecting regular expressions
+-----------------------------
+
+The `${ }$` delimiters cause anything between to be interpreted as Python code.  The code runs in an environment which defines a few functions.  The one which will be presented in this section is called `expect_regex`.
+
+Here is an example:
+
+    >>> !showmatch enable
+    >>> !client alice
+    >>> debug_start_simulated_time "20140620T144030.000000"
+    OK
+    >>> wallet_create default password
+    OK
+    >>> wallet_set_automatic_backups false
+    false
+    >>> debug_deterministic_private_keys 0 101 init true
+    [ ${ expect_regex(r'(?:\s*"[a-zA-Z0-9]+"[,]?){101}') }$ ]
+    >>> wallet_delegate_set_block_production ALL true
+    OK
+    >>> wallet_set_transaction_scanning true
+    true
+    >>> debug_wait_for_block_by_number 1
+    OK
+    >>> wallet_account_create myaccount
+    "XTS   ${ expect_regex(r'[a-zA-Z0-9]+') }$   "
+    >>> wallet_account_balance myaccount
+    No balances found.
+    >>> debug_deterministic_private_keys 0 1 alice true myaccount false true
+    [
+      "${ expect_regex(r'[a-zA-Z0-9]+') }$"
+    ]
+    >>> wallet_account_balance myaccount
+    ACCOUNT                         BALANCE                     
+    ============================================================
+    myaccount                       100,000.00000 XTS           
+    >>> blockchain_get_account myaccount
+    No account found.
+    >>> wallet_account_register myaccount myaccount
+    TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+    ======================================================================================================================================================================
+    2014-06-20T14:40:30 PENDING   myaccount           myaccount           0.00000 XTS             register myaccount                          0.50000 XTS         ${ regex(r'[0-9a-f]{8}') }$
+    >>> blockchain_get_account myaccount
+    No account found.
+    >>> debug_advance_time 1 block
+    OK
+    >>> debug_wait_for_block_by_number 1 rlast
+    OK
+    >>> blockchain_get_account myaccount
+    No account found.
+    >>> debug_advance_time 1 block
+    OK
+    >>> debug_wait_for_block_by_number 1 rlast
+    OK
+    >>> blockchain_get_account myaccount
+    Name: myaccount
+    Registered: 2014-06-20T14:40:30
+    Last Updated: ${ expect_regex(r'[^\n]*') }$
+    Owner Key: ${ expect_regex(r'[a-zA-Z0-9]+') }$
+    Active Key History:
+    - XTS ${ expect_regex(r'[a-zA-Z0-9]+') }$, last used ${ expect_regex(r'[^\n]*') }$
+    Not a delegate.
+    >>> quit
+
+This test exists in `tests/btstests/tutorial/register_account_2`.
+
+Here's a quick primer on what you need to know about Python's syntax and regular expression library in order to use `expect_regex`.
+The regular expression passed to `expect_regex` is a Python string literal.
+The `r` prefix denotes a *raw string literal* which is a Python language feature to disable the usual C-style handling of escape sequences for a particular string.
+Using `r` allows regular expressions like the first one can contain sequences like `\s` which are passed through to the regular expression engine.
+The actual syntax of the regular expressions themselves is detailed in `https://docs.python.org/3/library/re.html`.
+
+This test also shows the `btstest` matching is rather "loose" about spare whitespace in your tests.
+You can basically write whitespace anywhere in your test and it will be ignored.
+This allows you to write readable tests by adding extra whitespace as needed.
+
+You can see the regular expression match here:
+
+    >>> blockchain_get_account myaccount
+    Name: myaccount
+    Registered: 2014-06-20T14:40:30
+    Last Updated: ${ expect_regex(r'[^\n]*') }$~{36 weeks ago}~
+    Owner Key: ${ expect_regex(r'[a-zA-Z0-9]+') }$~{XTS7A6gUbHCiye1JNv2HWNBxmjZxsUkPUXPCEeYLGcQk855umGi31}~
+    Active Key History:
+    - XTS ${ expect_regex(r'[a-zA-Z0-9]+') }$~{63EXgREEvRAFyzWw3apqTimmQwf3HvQALiMUYZzXXQwcza8Uf8}~, last used ${ expect_regex(r'[^\n]*') }$~{36 weeks ago}~
+    Not a delegate.
+
+TODO:  Regex flags will be passed in, but this is not currently implemented.  Will likely require killing the compiled RE cache.
 
 Improvements to btstest
 -----------------------
 
 - Document how to do comments in `.btstest` file
-- Better whitespace handling
 - Custom comment syntax
 - When expected input doesn't match, display line number in `btstest` file
 - Command line option to toggle echo on/off
@@ -119,6 +292,8 @@ Test API
 - `run_testdir` will run all `.btstest` files in given directory
 - `register_client` will register a new `TestClient` object
 - `_btstest` directly exposes the `btstest.py` module content.  The API should evolve to a point where using this is unnecessary
+
+TODO:  Document new features after refactoring
 
 Goals of btstest framework
 --------------------------
