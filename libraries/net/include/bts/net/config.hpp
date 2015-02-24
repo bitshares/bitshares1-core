@@ -33,8 +33,6 @@
 #define BTS_NET_DELEGATE_DESIRED_CONNECTIONS            50
 #define BTS_NET_DEFAULT_MAX_CONNECTIONS                 200
 
-#define BTS_NET_MAXIMUM_QUEUED_MESSAGES_IN_BYTES        (1024 * 1024)
-
 /**
  * We prevent a peer from offering us a list of blocks which, if we fetched them
  * all, would result in a blockchain that extended into the future.
@@ -57,3 +55,6 @@
  * but haven't yet fetched drops below this
  */
 #define BTS_NET_MIN_BLOCK_IDS_TO_PREFETCH               10000
+
+#define BTS_NET_MAXIMUM_QUEUED_MESSAGES_IN_BYTES        (BTS_NET_MAX_BLOCKS_PER_PEER_DURING_SYNCING * 51200 * 10)
+
