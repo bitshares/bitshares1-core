@@ -379,7 +379,8 @@ void LightWallet::sync()
    IN_THREAD
    if( !isConnected() ) return;
 
-   if( m_wallet.sync_balance() || m_wallet.sync_transactions() )
+   bool dirty = m_wallet.sync_balance() | m_wallet.sync_transactions();
+   if( dirty )
       Q_EMIT synced();
 
    END_THREAD
