@@ -39,20 +39,19 @@ namespace bts { namespace blockchain {
       return ds.tellp();
    }
 
+   digest_block::digest_block( const full_block& block_data )
+   {
+      (signed_block_header&)*this = block_data;
+      user_transaction_ids.reserve( block_data.user_transactions.size() );
+      for( const auto& item : block_data.user_transactions )
+         user_transaction_ids.push_back( item.id() );
+   }
+
    digest_type digest_block::calculate_transaction_digest()const
    {
       fc::sha512::encoder enc;
       fc::raw::pack( enc, user_transaction_ids );
       return fc::sha256::hash( enc.result() );
-   }
-
-   full_block::operator digest_block()const
-   {
-      digest_block db( (signed_block_header&)*this );
-      db.user_transaction_ids.reserve( user_transactions.size() );
-      for( const auto& item : user_transactions )
-         db.user_transaction_ids.push_back( item.id() );
-      return db;
    }
 
    bool digest_block::validate_digest()const

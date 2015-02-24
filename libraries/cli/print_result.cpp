@@ -145,6 +145,12 @@ namespace bts { namespace cli {
       out << pretty_balances( yield, client );
     };
 
+    _command_to_function["wallet_account_historic_balance"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
+    {
+      const auto& balances = result.as<account_balance_summary_type>();
+      out << pretty_balances( balances, client );
+    };
+
     _command_to_function["wallet_transfer"]                     = &f_wallet_transfer;
     _command_to_function["wallet_transfer_from"]                = &f_wallet_transfer;
     _command_to_function["wallet_get_transaction"]              = &f_wallet_transfer;
@@ -255,11 +261,16 @@ namespace bts { namespace cli {
      out << "\n";
      out << pretty_line( 160 );
      out << "\n";
-     auto burn_records = result.as< vector<burn_record> >();
+     auto burn_records = result.as<vector<burn_record>>();
      for( auto record : burn_records )
      {
         out << std::left;
-        out << std::setw( 30 )  << client->get_chain()->to_pretty_asset( record.amount );
+
+        if( record.index.account_id >= 0 )
+            out << std::setw( 30 )  << client->get_chain()->to_pretty_asset( record.amount );
+        else
+            out << std::setw( 30 )  << client->get_chain()->to_pretty_asset( -record.amount );
+
         out << std::setw( 100 ) << record.message;
         if( record.signer )
         {
@@ -729,7 +740,7 @@ namespace bts { namespace cli {
     // we don't declare short_execution_price as oprice here
     //    because we still want to print the short wall
     //    with a price of zero when the price is invalid
-    
+
     if( short_execution_price_valid )
         short_execution_price = *status->current_feed_price;
     //share_type total_short_shares = 0;

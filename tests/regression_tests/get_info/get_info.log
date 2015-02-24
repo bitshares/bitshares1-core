@@ -15,6 +15,7 @@ default (unlocked) >>> get_info
   "blockchain_head_block_num": 1,
   "blockchain_head_block_age": "<d-ign></d-ign>",
   "blockchain_head_block_timestamp": "<d-ign></d-ign>",
+  "blockchain_head_block_id": "a7410f0d620d950dc1c5516dd944f9376f451367",
   "blockchain_average_delegate_participation": null,
   "blockchain_confirmation_requirement": 302,
   "blockchain_share_supply": "2,000,000,049.99901 XTS",

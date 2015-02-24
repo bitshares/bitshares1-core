@@ -394,7 +394,7 @@ class Test(object):
         self.context["run_testdir"] = self.run_testdir
         self.context["regex"] = self.expect_regex
         self.context["register_client"] = self.register_client
-        self.context["expect_enabled"] = False
+        self.context["expect_enabled"] = True
         self.context["_btstest"] = sys.modules[__name__]
         return
 

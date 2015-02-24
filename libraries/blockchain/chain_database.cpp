@@ -684,7 +684,7 @@ namespace bts { namespace blockchain {
          if (block_id == _head_block_id) //if block_id is current head block, do nothing
            return; //this is necessary to avoid unnecessarily popping the head block in this case
 
-         //ilog( "switch from fork ${id} to ${to_id}", ("id",_head_block_id)("to_id",block_id) );
+         ilog( "switch from fork ${id} to ${to_id}", ("id",_head_block_id)("to_id",block_id) );
          vector<block_id_type> history = get_fork_history( block_id );
          while( history.back() != _head_block_id )
          {
@@ -1084,7 +1084,7 @@ namespace bts { namespace blockchain {
             history.push_back( header.previous );
             if( header.previous == block_id_type() )
             {
-               //ilog( "return: ${h}", ("h",history) );
+               ilog( "return: ${h}", ("h",history) );
                return history;
             }
             auto prev_fork_data = _fork_db.fetch( header.previous );
@@ -1093,12 +1093,12 @@ namespace bts { namespace blockchain {
             FC_ASSERT( prev_fork_data.is_linked, "we hit a dead end, this fork isn't really linked!" );
             if( prev_fork_data.is_included )
             {
-               //ilog( "return: ${h}", ("h",history) );
+               ilog( "return: ${h}", ("h",history) );
                return history;
             }
             next_id = header.previous;
          }
-         //ilog( "${h}", ("h",history) );
+         ilog( "${h}", ("h",history) );
          return history;
       } FC_CAPTURE_AND_RETHROW( (id) ) }
 
@@ -1566,10 +1566,12 @@ namespace bts { namespace blockchain {
        {
            try
            {
+               const full_block block_data = get_block( block_id );
                record = block_record();
                digest_block& temp = *record;
-               temp = get_block_digest( block_id );
+               temp = digest_block( block_data );
                record->id = block_id;
+               record->block_size = block_data.block_size();
            }
            catch( const fc::exception& )
            {
@@ -1625,6 +1627,37 @@ namespace bts { namespace blockchain {
    { try {
        return my->_head_block_header;
    } FC_CAPTURE_AND_RETHROW() }
+
+   uint32_t chain_database::find_block_num(fc::time_point_sec &time)const
+   { try {
+       uint32_t start = 1, end = get_head_block_num();
+       auto start_block_time = get_block_header( start ).timestamp;
+       if( start_block_time >= time ) {
+           return start;
+       }
+       auto end_block_time = get_block_header( end ).timestamp;
+       if( end_block_time <= time ) {
+           return end;
+       }
+       while( end > start + 1 ) {
+           double relative = double(time.sec_since_epoch() - start_block_time.sec_since_epoch())
+                             / (end_block_time.sec_since_epoch() - start_block_time.sec_since_epoch());
+           uint32_t mid = start + ((end - start) * relative);
+           if( mid == start ) { mid++; }
+           auto mid_block_time = get_block_header( mid ).timestamp;
+           if( mid_block_time > time )
+           {
+               end = mid;
+               end_block_time = mid_block_time;
+           }
+           else
+           {
+               start = mid;
+               start_block_time = mid_block_time;
+           }
+       }
+       return start;
+   } FC_CAPTURE_AND_RETHROW( (time) ) }
 
    /**
     *  Adds the block to the database and manages any reorganizations as a result.
@@ -3488,7 +3521,7 @@ namespace bts { namespace blockchain {
    vector<burn_record> chain_database::fetch_burn_records( const string& account_name )const
    { try {
       vector<burn_record> results;
-      auto opt_account_record = get_account_record( account_name );
+      const auto opt_account_record = get_account_record( account_name );
       FC_ASSERT( opt_account_record.valid() );
 
       auto itr = my->_burn_index_to_record.lower_bound( {opt_account_record->id} );
@@ -3499,11 +3532,12 @@ namespace bts { namespace blockchain {
       }
 
       itr = my->_burn_index_to_record.lower_bound( {-opt_account_record->id} );
-      while( itr.valid() && abs(itr.key().account_id) == opt_account_record->id )
+      while( itr.valid() && itr.key().account_id == -opt_account_record->id )
       {
          results.push_back( itr.value() );
          ++itr;
       }
+
       return results;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 

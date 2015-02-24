@@ -75,7 +75,7 @@ aliases: transfer_public
 default (unlocked) >>> wallet_transfer_to_public_account 100 XTS delegate0 test "to titan_account"
 {
   "index": 0,
-  "record_id": "023688a143505bb4741e6ffa496e0b6f4d0ba7f2",
+  "record_id": "949ea2052297350617dec1e7641c572165f274c8",
   "block_num": 0,
   "is_virtual": false,
   "is_confirmed": false,
@@ -107,7 +107,7 @@ default (unlocked) >>> wallet_transfer_to_public_account 100 XTS delegate0 test 
       }
     ],
     "signatures": [
-      "1f7f8eca8fdf9a300115a984e07b0e5ef80f33d704e58009cde1386bd6b8cef0fc7a5b024a22bc6fb2c755e411a860f3972dc862379e945e39e7feb03ecd665f13"
+      "201ccfbd17aff3dc4df5f22573b87ef22cedb950842ce34dc63b7a0c9c5d37059828125e6cbb9a8d4e7451f54db931846fe2d0332f42f94a7fa801e5103a828940"
     ]
   },
   "ledger_entries": [{
@@ -146,7 +146,7 @@ test                            100.00000 XTS
 default (unlocked) >>> wallet_transfer_to_public_account 101 XTS delegate0 account-public "to public_account"
 {
   "index": 0,
-  "record_id": "7326b570bd78a6f05090b12f218e7e7c0e363ff2",
+  "record_id": "f20dd7cc30b40bc027a0f3c86ed3867adf32ff9e",
   "block_num": 0,
   "is_virtual": false,
   "is_confirmed": false,
@@ -178,7 +178,7 @@ default (unlocked) >>> wallet_transfer_to_public_account 101 XTS delegate0 accou
       }
     ],
     "signatures": [
-      "2063614f772ecd2cc3dca6156f766e48d0fb3f17b53bb13fa40787167a2b60604054aaeac3c98a69d5b3dffbd33c76383c5602149a9c72484e3b894319c866ad0d"
+      "20545273f8ee5fc36bb460dc25a2784a99066f9f3a9b64e044a3fb3b5b9450a745369049f57826b7f4ec4505546619bcf3aa72edb9386e5b199a53d955b9e18335"
     ]
   },
   "ledger_entries": [{
@@ -220,13 +220,13 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 <d-ign></d-ign>0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    19,801,980.19801 XTS    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
 <d-ign></d-ign>2         delegate0           account-public      0.00000 XTS             register account-public                     19,801,979.69801 XTS    0.50000 XTS         <d-ign> 20179293</d-ign>
 <d-ign></d-ign>2         delegate0           test                0.00000 XTS             register test                               19,801,979.19801 XTS    0.50000 XTS         <d-ign> 2796d52d</d-ign>
-<d-ign></d-ign>3         delegate0           UNKNOWN             100.00000 XTS           to titan_account                            19,801,878.69801 XTS    0.50000 XTS         <d-ign> 023688a1</d-ign>
-<d-ign></d-ign>4         delegate0           UNKNOWN             101.00000 XTS           to public_account                           19,801,777.19801 XTS    0.50000 XTS         <d-ign> 7326b570</d-ign>
-default (unlocked) >>> wallet_scan_transaction 023688a1
+<d-ign></d-ign>3         delegate0           UNKNOWN             100.00000 XTS           to titan_account                            19,801,878.69801 XTS    0.50000 XTS         <d-ign> 949ea205</d-ign>
+<d-ign></d-ign>4         delegate0           UNKNOWN             101.00000 XTS           to public_account                           19,801,777.19801 XTS    0.50000 XTS         <d-ign> f20dd7cc</d-ign>
+default (unlocked) >>> wallet_scan_transaction 949ea205
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 <d-ign></d-ign>3         delegate0           test                100.00000 XTS           to titan_account                            100.50000 XTS       <d-ign></d-ign>
-default (unlocked) >>> wallet_scan_transaction 7326b570
+default (unlocked) >>> wallet_scan_transaction f20dd7cc
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 <d-ign></d-ign>4         delegate0           account-public      101.00000 XTS           to public_account                           101.50000 XTS       <d-ign></d-ign>

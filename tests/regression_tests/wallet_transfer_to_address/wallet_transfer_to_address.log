@@ -114,7 +114,7 @@ test                            100.00000 XTS
 default (unlocked) >>> wallet_transfer_to_address 101 XTS delegate0 XTSFtXy1oqCnZ5Sw5txgm2421smvzZ6jwVUM "to address"
 {
   "index": 0,
-  "record_id": "990edef4ee50761958d3677b36b7c470fb25d0a9",
+  "record_id": "6a0adc1d83e5775a8537360ccdf77c8714f88f7c",
   "block_num": 0,
   "is_virtual": false,
   "is_confirmed": false,
@@ -146,7 +146,7 @@ default (unlocked) >>> wallet_transfer_to_address 101 XTS delegate0 XTSFtXy1oqCn
       }
     ],
     "signatures": [
-      "20537bdfd3152f0bd46eea7fa57aeccd89719d238de14d8a22ac848b4e69e38d9f4af497f4a82728ca20c5de6cbeac332b91c6f9580697d131185f49fc566e01ec"
+      "1f7a101ede52c43d9e32ab851bdfb3ca727d28ed1dc25fa4466878a006d54ed27f04ea257a3154041d4f63af15db5f1ee03558667a95b7624290a5354aeec93e56"
     ]
   },
   "ledger_entries": [{
@@ -187,8 +187,8 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 ==============================================================================================================================================================================================
 <d-ign></d-ign>0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    19,801,980.19801 XTS    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
 <d-ign></d-ign>2         delegate0           UNKNOWN             100.00000 XTS           To: XTSFVXDo...                             19,801,879.69801 XTS    0.50000 XTS         <d-ign> d2a01e4d</d-ign>
-<d-ign></d-ign>3         delegate0           UNKNOWN             101.00000 XTS           to address                                  19,801,778.19801 XTS    0.50000 XTS         <d-ign> 990edef4</d-ign>
-default (unlocked) >>> wallet_scan_transaction 990edef4
+<d-ign></d-ign>3         delegate0           UNKNOWN             101.00000 XTS           to address                                  19,801,778.19801 XTS    0.50000 XTS         <d-ign> 6a0adc1d</d-ign>
+default (unlocked) >>> wallet_scan_transaction 6a0adc1d
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 <d-ign></d-ign>3         delegate0           test                101.00000 XTS           to address                                  101.50000 XTS       <d-ign></d-ign>

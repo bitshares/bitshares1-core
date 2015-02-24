@@ -169,9 +169,6 @@ namespace bts { namespace wallet {
 
          wallet_account_record get_account( const string& account_name )const;
 
-         /**
-          *  A contact is an account for which we do not have the private key.
-          */
          void     add_contact_account( const string& account_name,
                                        const public_key_type& key,
                                        const variant& private_data = variant() );
@@ -180,6 +177,13 @@ namespace bts { namespace wallet {
 
          void     rename_account( const string& old_contact_name,
                                   const string& new_contact_name );
+
+         vector<wallet_contact_record> list_contacts()const;
+         owallet_contact_record get_contact( const variant& data )const;
+         owallet_contact_record get_contact( const string& label )const;
+         wallet_contact_record add_contact( const contact_data& contact );
+         owallet_contact_record remove_contact( const variant& data );
+         owallet_contact_record remove_contact( const string& label );
 
          owallet_account_record  get_account_for_address( address addr )const;
          ///@}
@@ -583,6 +587,8 @@ namespace bts { namespace wallet {
                                                                             uint32_t start_block_num = 0,
                                                                             uint32_t end_block_num = -1,
                                                                             const string& asset_symbol = "" )const;
+         account_balance_summary_type       compute_historic_balance( const string &account_name,
+                                                                      uint32_t block_num )const;
 
          void                               remove_transaction_record( const string& record_id );
 
