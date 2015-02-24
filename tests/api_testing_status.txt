@@ -74,6 +74,7 @@ rpc_set_password [password]
 rpc_set_username [username]                                                                         
 rpc_start_server [port]                                                                             
 stop                                                                                                
+wallet_account_historic_balance <time> [account_name]                                               
 wallet_account_vesting_balances [account_name]                                                      
 wallet_account_yield [account_name]                                                                 
 wallet_add_contact <contact> [label]                                                                
@@ -124,7 +125,6 @@ wallet_set_preferred_mail_servers <account_name> <server_list> [paying_account]
 wallet_set_transaction_expiration_time <seconds>                                                    
 wallet_sign_hash <signer> <hash>                                                                    
 wallet_transaction_history_experimental [account_name]                                              
-wallet_transfer_to_public_account <amount_to_transfer> <asset_symbol> <from_account_name> <to_account_name> [memo_message] [strategy] 
 wallet_withdraw_from_address <amount> <symbol> <from_address> <to> [strategy] [sign_and_broadcast] [builder_path] 
 wallet_withdraw_from_legacy_address <amount> <symbol> <from_address> <to> [strategy] [sign_and_broadcast] [builder_path]
 
@@ -252,6 +252,7 @@ wallet_transfer_from <amount_to_transfer> <asset_symbol> <paying_account_name> <
 wallet_transfer_from_with_escrow <amount_to_transfer> <asset_symbol> <paying_account_name> <from_account_name> <to_account_name> <escrow_account_name> [agreement] [memo_message] [strategy] 
 wallet_transfer_to_address <amount_to_transfer> <asset_symbol> <from_account_name> <to_address> [memo_message] [strategy] 
 wallet_transfer_to_legacy_address <amount_to_transfer> <asset_symbol> <from_account_name> <to_address> [memo_message] [strategy] 
+wallet_transfer_to_public_account <amount_to_transfer> <asset_symbol> <from_account_name> <to_account_name> [memo_message] [strategy] 
 wallet_unlock <timeout> <passphrase>                                                                
 wallet_verify_titan_deposit <transaction_id_prefix>                                                 
 

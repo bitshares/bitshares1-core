@@ -1,25 +1,78 @@
->>> debug_advance_time 1 second
->>> debug_wait_for_block_by_number 1 rlast
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> debug_deterministic_private_keys 0 1 alice true alice true true
-
->>> debug_enable_output false
+default (unlocked) >>> debug_advance_time 1 second
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> debug_deterministic_private_keys 0 1 alice true alice true true
+[
+  "5HpUwrtzSztqQpJxVHLsrZkVzVjVv9nUXeauYeeSxguzcmpgRcK"
+]
+default (unlocked) >>> debug_enable_output false
 >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
 >>> debug_enable_output true
->>> wallet_market_submit_ask alice 15000 XTS 0.015 USD
->>> wallet_market_submit_short alice 30000 XTS 0 USD 0.015
->>> blockchain_market_order_book USD XTS
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> wallet_market_order_list USD XTS
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> balance alice
->>> wallet_market_order_list USD XTS
-
->>> quit
+OK
+default (unlocked) >>> wallet_market_submit_ask alice 15000 XTS 0.015 USD
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:40:41</d-ign>PENDING   alice               alice               15,000.00000 XTS        sell XTS @ 0.015 USD / XTS                  0.50000 XTS         <d-ign> 8e25c07d</d-ign>
+default (unlocked) >>> wallet_market_submit_short alice 30000 XTS 0 USD 0.015
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:40:41</d-ign>PENDING   alice               alice               30,000.00000 XTS        short USD @ 0.% APR                         0.50000 XTS         <d-ign> 42db2319</d-ign>
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+No Orders
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+225.0000 USD              15,000.00000 XTS                0.015000000000 USD*| 0.015000000000 USD                   15,000.00000 XTS              225.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> wallet_market_order_list USD XTS
+TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
+==================================================================================================================================================================
+ask_order           15,000.00000 XTS    0.015 USD / XTS               15,000.00000 XTS    225.0000 USD        N/A                 NONE                78114894d2c0fb4df6b412cb4bf96ab5da3a103b   XTS2kkRDv1kR94v3yjbdDpMxsDBgzKDqodUN
+short_order         30,000.00000 XTS    0. USD / XTS                  30,000.00000 XTS    0.0000 USD          N/A                 0.015 USD / XTS     fe2c0b9dc6855a8bdcc20758633da835a4af930f   XTSEmzHWn4av3PivK5x23Rqr1mpzFp9yPua9
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             |
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.010000000000 USD                   22,500.00000 XTS              225.0000 USD       2014-06-20T16:40:50   45,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+default (unlocked) >>> debug_advance_time 1 block
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
+OK
+default (unlocked) >>> balance alice
+ACCOUNT                         BALANCE                     
+============================================================
+alice                           54,999.00000 XTS            
+                                225.0000 USD                
+default (unlocked) >>> wallet_market_order_list USD XTS
+TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
+==================================================================================================================================================================
+cover_order         22,500.00000 XTS    0.01 USD / XTS                225.0000 USD        225.0000 USD        45,000.00000 XTS    NONE                0d9a7af0a56ad300d5282f82fbd171aea44e2b15   XTSEmzHWn4av3PivK5x23Rqr1mpzFp9yPua9
+default (unlocked) >>> quit

@@ -15,8 +15,8 @@ OK
 default (unlocked) >>> blockchain_list_blocks
 HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME  RANDOM SEED                             
 =============================================================================================================================================
-2       <d-ign></d-ign><d-ign></d-ign>0       385     <d-ign></d-ign><d-ign></d-ign><d-ign></d-ign>
-1       <d-ign></d-ign><d-ign></d-ign>0       410     <d-ign></d-ign><d-ign></d-ign><d-ign></d-ign>
+2       <d-ign></d-ign><d-ign></d-ign>1       385     <d-ign></d-ign><d-ign></d-ign><d-ign></d-ign>
+1       <d-ign></d-ign><d-ign></d-ign>1       410     <d-ign></d-ign><d-ign></d-ign><d-ign></d-ign>
 default (unlocked) >>> wallet_account_balance test
 ACCOUNT                         BALANCE                     
 ============================================================
