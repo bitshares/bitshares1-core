@@ -23,7 +23,7 @@ TransactionSummary::TransactionSummary(QString id, fc::time_point_sec timestamp,
    });
 }
 
-QString TransactionSummary::timestamp() const
+QString TransactionSummary::timeString() const
 {
    using bts::blockchain::now;
 
