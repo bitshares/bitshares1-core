@@ -1,0 +1,180 @@
+default (unlocked) >>> help wallet_add_contact
+Usage:
+wallet_add_contact <contact> [label]                                                                  Add a new contact entry or update the label for an existing entry
+Add a new contact entry or update the label for an existing entry
+
+Parameters:
+  contact (string, required): a registered account name, a public key, an address, or a btc address that represents this contact
+  label (string, optional, defaults to ""): an optional custom label to use when referring to this contact
+
+Returns:
+  wallet_contact_record
+
+aliases: add_contact, update_contact
+default (unlocked) >>> help wallet_add_contact_account
+Usage:
+wallet_add_contact_account <account_name> <account_key>                                               Add new account for sending payments
+Add new account for sending payments
+
+Parameters:
+  account_name (account_name, required): the name you will use to refer to this sending account
+  account_key (public_key, required): the key associated with this sending account
+
+Returns:
+  void
+default (unlocked) >>> help wallet_get_contact
+Usage:
+wallet_get_contact <contact>                                                                          Get the specified contact entry
+Get the specified contact entry
+
+Parameters:
+  contact (string, required): the value or label (prefixed by "label:") of the contact to query
+
+Returns:
+  owallet_contact_record
+
+aliases: contact, get_contact
+default (unlocked) >>> help wallet_list_contacts
+Usage:
+wallet_list_contacts                                                                                  List contact entries
+List contact entries
+
+Parameters:
+  (none)
+
+Returns:
+  wallet_contact_record_array
+
+aliases: contacts, get_contacts, list_contacts
+default (unlocked) >>> help wallet_remove_contact
+Usage:
+wallet_remove_contact <contact>                                                                       Remove a contact entry
+Remove a contact entry
+
+Parameters:
+  contact (string, required): the value or label (prefixed by "label:") of the contact to remove
+
+Returns:
+  owallet_contact_record
+
+aliases: remove_contact
+default (unlocked) >>> help wallet_remove_contact_account
+Usage:
+wallet_remove_contact_account <account_name>                                                          Remove a contact account from your wallet
+Remove a contact account from your wallet
+
+Parameters:
+  account_name (account_name, required): the name of the contact
+
+Returns:
+  void
+default (unlocked) >>> wallet_add_contact_account account-1 XTS5nkoz8qNcLPF8w7xSpnf6CCFcgioGMDqsvw7G7hgEvMAxL6fCc
+OK
+default (unlocked) >>> wallet_add_contact_account account-2 XTS5qLJBGDBFX7BpBgs17tynUfvDpQGiMJGoXafF3Ro5JjvdR1n1j
+OK
+default (unlocked) >>> wallet_list_contacts
+[]
+default (unlocked) >>> wallet_list_accounts
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
+account-1                          XTS5nkoz8qNcLPF8w7xSpnf6CCFcgioGMDqsvw7G7hgEvMAxL6fCc           NO                    NO             0         
+account-2                          XTS5qLJBGDBFX7BpBgs17tynUfvDpQGiMJGoXafF3Ro5JjvdR1n1j           NO                    NO             0         
+default (unlocked) >>> wallet_add_contact XTS5nkoz8qNcLPF8w7xSpnf6CCFcgioGMDqsvw7G7hgEvMAxL6fCc contact-1
+{
+  "index": 12,
+  "contact_type": "public_key",
+  "data": "XTS5nkoz8qNcLPF8w7xSpnf6CCFcgioGMDqsvw7G7hgEvMAxL6fCc",
+  "label": "contact-1",
+  "favorite": false
+}
+default (unlocked) >>> wallet_add_contact XTS5qLJBGDBFX7BpBgs17tynUfvDpQGiMJGoXafF3Ro5JjvdR1n1j contact-2
+{
+  "index": 13,
+  "contact_type": "public_key",
+  "data": "XTS5qLJBGDBFX7BpBgs17tynUfvDpQGiMJGoXafF3Ro5JjvdR1n1j",
+  "label": "contact-2",
+  "favorite": false
+}
+default (unlocked) >>> wallet_list_contacts
+[{
+    "index": 12,
+    "contact_type": "public_key",
+    "data": "XTS5nkoz8qNcLPF8w7xSpnf6CCFcgioGMDqsvw7G7hgEvMAxL6fCc",
+    "label": "contact-1",
+    "favorite": false
+  },{
+    "index": 13,
+    "contact_type": "public_key",
+    "data": "XTS5qLJBGDBFX7BpBgs17tynUfvDpQGiMJGoXafF3Ro5JjvdR1n1j",
+    "label": "contact-2",
+    "favorite": false
+  }
+]
+default (unlocked) >>> wallet_list_accounts
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
+account-1                          XTS5nkoz8qNcLPF8w7xSpnf6CCFcgioGMDqsvw7G7hgEvMAxL6fCc           NO                    NO             0         
+account-2                          XTS5qLJBGDBFX7BpBgs17tynUfvDpQGiMJGoXafF3Ro5JjvdR1n1j           NO                    NO             0         
+default (unlocked) >>> wallet_add_contact XTS5qLJBGDBFX7BpBgs17tynUfvDpQGiMJGoXafF3Ro5JjvdR1n1j contact-2-update
+{
+  "index": 13,
+  "contact_type": "public_key",
+  "data": "XTS5qLJBGDBFX7BpBgs17tynUfvDpQGiMJGoXafF3Ro5JjvdR1n1j",
+  "label": "contact-2-update",
+  "favorite": false
+}
+default (unlocked) >>> wallet_list_contacts
+[{
+    "index": 12,
+    "contact_type": "public_key",
+    "data": "XTS5nkoz8qNcLPF8w7xSpnf6CCFcgioGMDqsvw7G7hgEvMAxL6fCc",
+    "label": "contact-1",
+    "favorite": false
+  },{
+    "index": 13,
+    "contact_type": "public_key",
+    "data": "XTS5qLJBGDBFX7BpBgs17tynUfvDpQGiMJGoXafF3Ro5JjvdR1n1j",
+    "label": "contact-2-update",
+    "favorite": false
+  }
+]
+default (unlocked) >>> wallet_get_contact label:contact-1
+{
+  "index": 12,
+  "contact_type": "public_key",
+  "data": "XTS5nkoz8qNcLPF8w7xSpnf6CCFcgioGMDqsvw7G7hgEvMAxL6fCc",
+  "label": "contact-1",
+  "favorite": false
+}
+default (unlocked) >>> wallet_get_contact XTS5nkoz8qNcLPF8w7xSpnf6CCFcgioGMDqsvw7G7hgEvMAxL6fCc
+{
+  "index": 12,
+  "contact_type": "public_key",
+  "data": "XTS5nkoz8qNcLPF8w7xSpnf6CCFcgioGMDqsvw7G7hgEvMAxL6fCc",
+  "label": "contact-1",
+  "favorite": false
+}
+default (unlocked) >>> wallet_remove_contact contact-2-update
+null
+default (unlocked) >>> wallet_remove_contact label:contact-2-update
+{
+  "index": 13,
+  "contact_type": "public_key",
+  "data": "XTS5qLJBGDBFX7BpBgs17tynUfvDpQGiMJGoXafF3Ro5JjvdR1n1j",
+  "label": "contact-2-update",
+  "favorite": false
+}
+default (unlocked) >>> wallet_remove_contact XTS5nkoz8qNcLPF8w7xSpnf6CCFcgioGMDqsvw7G7hgEvMAxL6fCc
+{
+  "index": 12,
+  "contact_type": "public_key",
+  "data": "XTS5nkoz8qNcLPF8w7xSpnf6CCFcgioGMDqsvw7G7hgEvMAxL6fCc",
+  "label": "contact-1",
+  "favorite": false
+}
+default (unlocked) >>> wallet_list_contacts
+[]
+default (unlocked) >>> wallet_remove_contact_account account-1
+OK
+default (unlocked) >>> wallet_list_accounts
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
+account-2                          XTS5qLJBGDBFX7BpBgs17tynUfvDpQGiMJGoXafF3Ro5JjvdR1n1j           NO                    NO             0         
+default (unlocked) >>> quit
