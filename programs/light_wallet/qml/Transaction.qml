@@ -65,7 +65,7 @@ Rectangle {
          Item { Layout.preferredWidth: visuals.margins }
          Label {
             id: timestampLabel
-            text: trx.timestamp
+            text: timestampHoverBox.containsMouse? trx.timestamp.toLocaleString() : trx.timeString
             font.pixelSize: units.dp(12)
 
             Behavior on text {
@@ -83,6 +83,13 @@ Rectangle {
                   }
                }
             }
+            MouseArea {
+               id: timestampHoverBox
+               anchors.fill: parent
+               anchors.margins: units.dp(-10)
+               hoverEnabled: true
+               acceptedButtons: Qt.NoButton
+            }
          }
          Item { Layout.fillWidth: true }
          Label {
@@ -99,6 +106,7 @@ Rectangle {
    Ink {
       id: transactionInk
 
+      hoverEnabled: false
       anchors.fill: parent
       onClicked: {
          //Iterate ledger entries looking for one which contains the mouse

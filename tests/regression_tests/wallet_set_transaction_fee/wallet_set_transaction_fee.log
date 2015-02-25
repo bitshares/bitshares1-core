@@ -54,6 +54,20 @@ default (unlocked) >>> wallet_get_info
   "scan_progress": "100.00 %",
   "version": "<d-ign></d-ign>"
 }
+default (unlocked) >>> help wallet_get_transaction_fee
+Usage:
+wallet_get_transaction_fee [symbol]                                                                   Returns 
+Returns 
+
+Parameters:
+  symbol (asset_symbol, optional, defaults to ""): the wallet transaction if paid in the given asset type
+
+Returns:
+  asset
+
+aliases: wallet_get_priority_fee, get_priority_fee, gettrxfee, getfee, get_fee
+default (unlocked) >>> wallet_get_transaction_fee XTS
+0.00001 XTS
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
 Command failed with exception: insufficient relay fee (36005)
 
@@ -83,6 +97,8 @@ default (unlocked) >>> wallet_get_info
   "scan_progress": "100.00 %",
   "version": "<d-ign></d-ign>"
 }
+default (unlocked) >>> wallet_get_transaction_fee
+123.45600 XTS
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
@@ -107,6 +123,8 @@ default (unlocked) >>> wallet_get_info
   "scan_progress": "100.00 %",
   "version": "<d-ign></d-ign>"
 }
+default (unlocked) >>> wallet_get_transaction_fee
+0.10000 XTS
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
