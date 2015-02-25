@@ -93,7 +93,6 @@ wallet_generate_brain_seed
 wallet_get_account_public_address <account_name>                                                    
 wallet_get_pending_transaction_errors [filename]                                                    
 wallet_get_transaction <transaction_id>                                                             
-wallet_get_transaction_fee [symbol]                                                                 
 wallet_import_bitcoin <wallet_filename> <passphrase> <account_name>                                 
 wallet_import_electrum <wallet_filename> <passphrase> <account_name>                                
 wallet_import_keys_from_json <json_filename> <imported_wallet_passphrase> <account>                 
@@ -217,6 +216,7 @@ wallet_get_contact <contact>
 wallet_get_info                                                                                     
 wallet_get_name                                                                                     
 wallet_get_setting <name>                                                                           
+wallet_get_transaction_fee [symbol]                                                                 
 wallet_import_keyhotee <firstname> <middlename> <lastname> <brainkey> <keyhoteeid>                  
 wallet_import_private_key <wif_key> [account_name] [create_new_account] [rescan]                    
 wallet_list                                                                                         
