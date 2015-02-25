@@ -167,7 +167,10 @@ void LightWallet::connectToServer(QString host, quint16 port, QString serverKey,
       Q_EMIT connectedChanged(isConnected());
       Q_EMIT allAssetsChanged();
    } catch (fc::exception e) {
-      m_connectionError = convert(e.get_log().begin()->get_message()).replace("\n", " ");
+      if( e.get_log().size() )
+         m_connectionError = convert(e.get_log().begin()->get_message()).replace("\n", " ");
+      else
+         m_connectionError = tr("Unknown error");
       Q_EMIT errorConnecting(m_connectionError);
    }
    END_THREAD
