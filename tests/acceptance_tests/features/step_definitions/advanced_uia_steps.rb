@@ -1,4 +1,4 @@
-default_permissions = ["retractable","market_halt","balance_halt", "supply_unlimit"]
+default_permissions = ["restricted", "retractable","market_halt","balance_halt", "supply_unlimit"]
 default_state = ["retractable"]
 Given(/^I give default auth permissions for (\w+) to (\d+) of (\[.*\])$/) do |asset, m, addrs|
     addr_name_list = JSON.parse(addrs.gsub(/(\w+)/, '"\1"'))
@@ -6,7 +6,7 @@ Given(/^I give default auth permissions for (\w+) to (\d+) of (\[.*\])$/) do |as
     for name in addr_name_list
         addr_list << @addresses[name]
     end
-    @current_actor.node.exec 'wallet_asset_update', asset, nil, nil, nil, nil, nil, 0, default_state, default_permissions, "",  m, addr_list
+    @current_actor.node.exec('wallet_asset_update', asset, nil, nil, nil, nil, nil, 0, default_state, default_permissions, "",  m, addr_list)
 end
 
 Then(/^I set asset permissions for (\w+) to: (\[.*?\])$/) do |symbol, perm_list|

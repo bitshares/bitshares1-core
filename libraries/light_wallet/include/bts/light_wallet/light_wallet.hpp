@@ -26,7 +26,7 @@ namespace bts { namespace light_wallet {
    struct light_wallet_data
    {
        fc::time_point_sec                                last_balance_sync_time;
-       uint32_t                                          last_transaction_sync_block;
+       uint32_t                                          last_transaction_sync_block = 0;
        unordered_map<string,pair<price,fc::time_point>>  price_cache;
        unordered_map<string,account_data>                accounts;
    };

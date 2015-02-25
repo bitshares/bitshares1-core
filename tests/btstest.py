@@ -49,19 +49,19 @@ class RPCClient(object):
         return
 
     def call(self, method, *args):
-        logging.debug("calling URL:", self.rpc_url)
+        logging.debug("calling URL: "+str(self.rpc_url))
         # use the opener to fetch a URL
         o = { "method" : method, "params" : args, "id" : self.get_next_id() }
-        logging.debug("data:", o)
+        logging.debug("data: "+str(o))
         #post_data = urllib.parse.urlencode(o).encode("UTF-8")
         post_data = json.dumps(o).encode("UTF-8")
         req = urllib.request.Request(self.rpc_url, post_data)
         response = self.url_opener.open(req)
         response_content = response.read().decode("UTF-8")
         d = json.loads(response_content, parse_float=decimal.Decimal)
-        logging.debug("result:", d)
+        logging.debug("result: "+str(d))
         result = d["result"]
-        logging.debug("result:", result)
+        logging.debug("result: "+str(result))
         return result
 
     def get_next_request_id(self):
@@ -277,7 +277,7 @@ class ClientProcess(object):
             #"--log-commands", os.path.join(data_dir, "console.log"),
             ]
 
-        logging.debug("args: ", args)
+        logging.debug("args: "+str(args))
 
         self.stdout_file = open(os.path.join(data_dir, "stdout.txt"), "wb")
         self.stderr_file = open(os.path.join(data_dir, "stderr.txt"), "wb")
@@ -324,65 +324,95 @@ class TestClient(object):
         self.failure_count = 0
         return
 
-    def expect_fail(self, s):
-        dots = ""
-        if len(s) > 40:
-            s = s[:40]
-            dots = " ..."
+    def expect_fail(self, expected_value, fail_callback=None):
         m = self.last_command_pos
-        logging.error("expected: "+repr(s)+dots)
-
-        dots = ""
-        got = self.last_command_output[m:]
-        if len(got) > 40:
-            got = got[:40]
-            dots = " ..."
-        logging.error("got     : "+repr(got)+dots)
+        n = m
+        while ((n < len(self.last_command_output)) and
+               (self.last_command_output[n] not in " \t\f\v\r\n")):
+            n += 1
+        got_value = self.last_command_output[m:n]
         if not self.last_command_failed:
             self.last_command_failed = True
             self.failure_count += 1
+        self.last_command_pos = n
+        if fail_callback is not None:
+            fail_callback(expected_value, got_value)
         return
 
-    def expect_str(self, s):
+    def skip_whitespace(self):
+        m = self.last_command_pos
+        while ((m < len(self.last_command_output)) and
+               (self.last_command_output[m] in " \t\f\v\r\n")):
+            m += 1
+        self.last_command_pos = m
+        return
+
+    def expect_str(self, s, match_callback=None, fail_callback=None):
+        # forward past any whitespace
+        self.skip_whitespace()
         m = self.last_command_pos
         n = m+len(s)
         if self.last_command_output[m:n] == s:
+            logging.debug("set last_command_pos = {}".format(n))
             self.last_command_pos = n
+            if match_callback is not None:
+                match_callback(self.last_command_output[m:n])
         else:
-            self.expect_fail(s)
+            # try to resume match by skipping non-whitespace characters
+            self.expect_fail(s, fail_callback)
         return
 
-    def expect_regex(self, regex):
-        logging.debug("expecting regex:", regex)
+    def expect_regex(self, regex, match_callback=None, fail_callback=None):
+        logging.debug("expecting regex: {}".format(regex))
         logging.debug("matching at {} against {}".format(self.last_command_pos, repr(self.last_command_output)))
+        logging.debug("match str: "+repr(self.last_command_output[self.last_command_pos:]))
+        self.skip_whitespace()
         compiled_re = self.re_cache.get(regex)
         if compiled_re is None:
             compiled_re = re.compile(regex)
             self.re_cache[regex] = compiled_re
 
         m = compiled_re.match(self.last_command_output, self.last_command_pos)
-        if m is not None:
-            self.last_command_pos = m.end()
-        else:
-            self.expect_fail(regex)
+        if m is None:
+            self.expect_fail(regex, fail_callback)
+            return None
+        
+        self.last_command_pos = m.end()
+        logging.debug("set last_command_pos = {}".format(self.last_command_pos))
+
+        if match_callback is not None:
+            match_callback(self.last_command_output[m.start():m.end()])
         return m.groupdict()
 
     def reset_last_command(self, new_command_output=None):
-        # echo command output
-        print(new_command_output, end="", flush=True)
         self.last_command_output = new_command_output
         self.last_command_pos = 0
+        logging.debug("set last_command_pos = {}".format(self.last_command_pos))
         self.last_command_failed = False
         return
 
-    def execute_cmd(self, cmd, expect_enabled=True):
-        if expect_enabled and (self.last_command_pos != len(self.last_command_output)):
-            self.expect_fail("<end of command output>")
-
+    def execute_cmd(self, cmd, expect_enabled=True, extra_output_callback=None):
         # store result
         result = self.rpc_client.call("execute_command_line", cmd)
         self.reset_last_command(result)
         return
+
+    def finish_cmd(self):
+        m = self.last_command_pos
+        return self.last_command_output[self.last_command_pos:]
+
+def token_iterator(regex, s):
+    """
+    Returns match for regex, or non-matching characters
+    """
+    i = 0
+    for m in regex.finditer(s):
+        j = m.start()
+        if i < j:
+            yield s[i:j]
+        i = m.end()
+        yield m.group(0)
+    return
 
 class Test(object):
     def __init__(self):
@@ -395,7 +425,10 @@ class Test(object):
         self.context["regex"] = self.expect_regex
         self.context["register_client"] = self.register_client
         self.context["expect_enabled"] = True
+        self.context["showmatch_enabled"] = False
+        self.context["matchbuf"] = []
         self.context["_btstest"] = sys.modules[__name__]
+        self.last_command_client = None
         return
 
     def load_testenv(self, testenv_filename):
@@ -416,51 +449,57 @@ class Test(object):
         compiled_expr = compile(expr, filename, "eval")
         result = exec(compiled_expr, self.context)
         if isinstance(result, str):
-            self.expect_str(result)
-        return
-
-    def split_line(self, line, filename=""):
-        if filename == "":
-            error_file_info = ""
-        else:
-            error_file_info = " in file "+filename
-        start_pos = 0
-        logging.debug("splitting line:", repr(line))
-        while True:
-            begin_tag = line.find("${", start_pos)
-            end_tag = line.find("}$", start_pos)
-            if begin_tag < 0:
-                if end_tag < 0:
-                    self.expect_str(line[start_pos:])
-                    break
-                raise ParseError("mismatched tag ('}$' without beginning '${')"+error_file_info)
-            if end_tag < 0:
-                raise ParseError("mismatched tag ('${' without ending '}$')"+error_file_info)
-            if begin_tag > end_tag:
-                raise ParseError("mismatched tag ('}$' without beginning '${')"+error_file_info)
-            expr = line[begin_tag+2:end_tag]
-            self.interpret_expr(expr)
-            start_pos = end_tag+2
+            self.expect_str(result, match_callback=self.on_match)
         return
 
     def get_active_client(self):
-        return self.name2client[self.context["active_client"]]
+        return self.name2client.get(self.context.get("active_client"))
 
-    def expect_str(self, data):
-        if not self.context["expect_enabled"]:
-            return
-        if data == "":
-            return
-        client = self.get_active_client()
-        client.expect_str(data)
+    def on_fail_literal_str(self, expected_value, got_value):
+        # TODO: respect showmatch_enabled here
+        print("!{ " + expected_value + " }!~{ " + got_value + " }~", end="")
         return
 
-    def expect_regex(self, regex):
+    def on_pass_literal_str(self, s):
+        print(s, end="")
+        return
+
+    def expect_literal_str(self, data):
+        return self._expect_str(data,
+            match_callback=self.on_pass_literal_str,
+            fail_callback=self.on_fail_literal_str)
+
+    def expect_str(self, data, match_callback=None):
+        self._expect_str(data, match_callback)
+        return
+
+    def _expect_str(self, data, match_callback=None, fail_callback=None):
+        if not self.context["expect_enabled"]:
+            return True
+        if data == "":
+            return True
+        client = self.get_active_client()
+        client.expect_str(data,
+            match_callback=match_callback,
+            fail_callback=fail_callback)
+        return
+
+    def expect_regex(self, regex, match_callback=None):
         if not self.context["expect_enabled"]:
             return
         client = self.get_active_client()
-        client.expect_regex(regex)
+        client.expect_regex(regex, match_callback=self.on_match)
         # TODO:  write regex result
+        return
+
+    def on_match(self, s):
+        self.context["matchbuf"].append(s)
+        return
+
+    def dump_matchbuf(self, do_print=False):
+        if do_print:
+            print("~{"+"".join(self.context["matchbuf"])+"}~", end="")
+        del self.context["matchbuf"][:]
         return
 
     def parse_metacommand(self, cmd):
@@ -476,28 +515,97 @@ class Test(object):
             else:
                 raise RuntimeError("unknown keyword in expect command")
             return
+        elif cmd[0] == "!showmatch":
+            if cmd[1] == "enable":
+                self.context["showmatch_enabled"] = True
+            elif cmd[1] == "disable":
+                self.context["showmatch_enabled"] = False
+            else:
+                raise RuntimeError("unknown keyword in showmatch command")
+            return
+            
         # TODO: exception type
-        raise RuntimeError("unknown metacommand ", cmd)
+        raise RuntimeError("unknown metacommand " + repr(cmd))
 
     def execute_cmd(self, cmd):
+        logging.debug("execute_cmd "+repr(cmd))
         if cmd.startswith("!"):
             self.parse_metacommand(cmd)
             return
 
         client = self.get_active_client()
         client.execute_cmd(cmd, expect_enabled=self.context["expect_enabled"])
+        self.last_command_client = self.get_active_client()
         return
+
+    re_script_token = re.compile(
+        r"""
+# put it in one big group
+(
+    # universal newline
+    \r\n?|\n
+    # whitespace, possibly followed by newline
+    |[ \t\f\v]+(?:\r\n?|\n)?
+    # Python expression invocation
+    |[$][{].*?[}][$]
+    # with optional result
+     (?:[~][{].*?[}][~])?
+    # Command or metacommand invocation
+    |[>]{3}
+)
+""",
+        re.VERBOSE,
+        )
 
     def parse_script(self, filename):
         with open(filename, "r") as f:
-            for line in f:
-                p = line.find(">>> ")
-                if p < 0:
-                    self.split_line(line)
+            # read entire script into memory
+            script_str = f.read()
+            
+        in_command = False
+        cmd_text = []
+        
+        parse_pos = 0
+        
+        for t in token_iterator(self.re_script_token, script_str):
+
+            logging.debug("process token: "+repr(t[:40]))
+            if t == "":
+                # empty token
+                pass
+            elif t == ">>>":
+                # start of command
+                # process before echo so finish_cmd() echoes remaining
+                #    output first
+                self.finish_cmd()
+                in_command = True
+                # echo
+                print(t, end="", flush=True)
+            elif t[-1] in "\r\n":
+                # newline
+                if in_command:
+                    in_command = False
+                    self.execute_cmd("".join(cmd_text).strip())
+                    del cmd_text[:]
+                print(t, end="", flush=True)
+            elif t[0] in " \t\f\v":
+                # whitespace
+                if in_command:
+                    cmd_text.append(t)
+                print(t, end="", flush=True)
+            elif len(t) >= 4 and t[0:2] == "${" and t[-2:] == "}$":
+                # Python expression
+                self.interpret_expr(t[2:-2])
+                # TODO: cmd_text.append() function
+                print(t, end="", flush=True)
+                self.dump_matchbuf(self.context["showmatch_enabled"])
+            else:
+                if in_command:
+                    cmd_text.append(t)
+                    print(t, end="", flush=True)
                 else:
-                    # echo
-                    print(line, end="", flush=True)
-                    self.execute_cmd(line[p+4:])
+                    self.expect_literal_str(t)
+                self.dump_matchbuf(False)
         return
 
     def run_testdir(self, testdir):
@@ -510,6 +618,18 @@ class Test(object):
 
     def register_client(self, client=None):
         self.name2client[client.name] = client
+        return
+
+    def finish_cmd(self):
+        if self.last_command_client is None:
+            return
+        end_text = self.last_command_client.finish_cmd()
+        end_text = end_text.rstrip()
+        print(end_text, end="", flush=True)
+        end_text = end_text.strip()
+        if self.context["expect_enabled"] and (end_text != ""):
+            logging.error("unexpected command output: "+repr(end_text[:40]))
+        self.last_command_client = None
         return
 
 def main():

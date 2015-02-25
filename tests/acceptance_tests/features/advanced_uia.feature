@@ -17,7 +17,7 @@ Feature: Advanced User Issued Asset Functionality
         And I wait for one block
 
 
-    Scenario: authority can still issue shares because hasn't set "restricted" flag.
+    Scenario: authority can still issue shares because hasn't set "supply_unlimit" flag.
         When I'm Alice
         And I issue 100 ALICE to account: customer
         And I wait for one block
@@ -25,10 +25,10 @@ Feature: Advanced User Issued Asset Functionality
       | Symbol  | Name       | Current Share Supply | Maximum Share Supply | Precision |
       | ALICE   | alice_iou  | 100000               | 1000000000           | 1000      |
 
-    Scenario: Customer can send his asset to anyone and anybody can trade in the ALICE market.
     Scenario: Alice can make the asset restricted and whitelist only customer, meaning Bob can't receive or trade in ALICE markets
-    Scenario: Alice can unfreeze the market.
-    Scenario: Alice can spend Bob's funds.
-    Scenario: Alice can unfreeze funds and bob can spend them again.
-    Scenario: Alice can restrict issuer's ability to freeze funds again.
+        When I'm Alice
+        And I authorize customer for ALICE asset
+        And I traf
+    Scenario: Alice can spend customer's funds.
+    Scenario: Alice can freeze the market
 

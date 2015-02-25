@@ -1,0 +1,56 @@
+>>> !showmatch enable
+>>> !client alice
+>>> debug_start_simulated_time "20140620T144030.000000"
+OK
+>>> wallet_create default password
+OK
+>>> wallet_set_automatic_backups false
+false
+>>> debug_deterministic_private_keys 0 101 init true
+[ ${ expect_regex(r'(?:\s*"[a-zA-Z0-9]+"[,]?){101}') }$ ]
+>>> wallet_delegate_set_block_production ALL true
+OK
+>>> wallet_set_transaction_scanning true
+true
+>>> debug_wait_for_block_by_number 1
+OK
+>>> wallet_account_create myaccount
+"XTS   ${ expect_regex(r'[a-zA-Z0-9]+') }$   "
+>>> wallet_account_balance myaccount
+No balances found.
+>>> debug_deterministic_private_keys 0 1 alice true myaccount false true
+[
+  "${ expect_regex(r'[a-zA-Z0-9]+') }$"
+]
+>>> wallet_account_balance myaccount
+ACCOUNT                         BALANCE                     
+============================================================
+myaccount                       100,000.00000 XTS           
+>>> blockchain_get_account myaccount
+No account found.
+>>> wallet_account_register myaccount myaccount
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+2014-06-20T14:40:30 PENDING   myaccount           myaccount           0.00000 XTS             register myaccount                          0.50000 XTS         ${ regex(r'[0-9a-f]{8}') }$
+>>> blockchain_get_account myaccount
+No account found.
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> blockchain_get_account myaccount
+No account found.
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> blockchain_get_account myaccount
+Name: myaccount
+Registered: 2014-06-20T14:40:30
+Last Updated: ${ expect_regex(r'[^\n]*') }$
+Owner Key: ${ expect_regex(r'[a-zA-Z0-9]+') }$
+Active Key History:
+- XTS ${ expect_regex(r'[a-zA-Z0-9]+') }$, last used ${ expect_regex(r'[^\n]*') }$
+Not a delegate.
+>>> quit
+

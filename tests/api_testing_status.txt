@@ -77,7 +77,6 @@ stop
 wallet_account_historic_balance <time> [account_name]                                               
 wallet_account_vesting_balances [account_name]                                                      
 wallet_account_yield [account_name]                                                                 
-wallet_add_contact <contact> [label]                                                                
 wallet_add_transaction_note_experimental <transaction_id> <note>                                    
 wallet_address_create <account_name> [label] [legacy_network_byte]                                  
 wallet_asset_authorize_key <paying_account> <symbol> <address> [meta]                               
@@ -92,14 +91,11 @@ wallet_collect_vested_balances <account_name>
 wallet_delegate_update_signing_key <authorizing_account_name> <delegate_name> <signing_key>         
 wallet_generate_brain_seed                                                                          
 wallet_get_account_public_address <account_name>                                                    
-wallet_get_contact <contact>                                                                        
 wallet_get_pending_transaction_errors [filename]                                                    
 wallet_get_transaction <transaction_id>                                                             
-wallet_get_transaction_fee [symbol]                                                                 
 wallet_import_bitcoin <wallet_filename> <passphrase> <account_name>                                 
 wallet_import_electrum <wallet_filename> <passphrase> <account_name>                                
 wallet_import_keys_from_json <json_filename> <imported_wallet_passphrase> <account>                 
-wallet_list_contacts                                                                                
 wallet_login_finish <server_key> <client_key> <client_signature>                                    
 wallet_login_start <server_account>                                                                 
 wallet_mail_create <sender> <subject> <body> [reply_to]                                             
@@ -116,7 +112,6 @@ wallet_rebroadcast_transaction <transaction_id>
 wallet_recover_accounts <accounts_to_recover> [maximum_number_of_attempts]                          
 wallet_recover_titan_deposit_info <transaction_id_prefix> [recipient_account]                       
 wallet_regenerate_keys <account_name> <max_key_number>                                              
-wallet_remove_contact <contact>                                                                     
 wallet_remove_transaction <transaction_id>                                                          
 wallet_repair_records [collecting_account_name]                                                     
 wallet_scan_transaction <transaction_id> [overwrite_existing]                                       
@@ -200,6 +195,7 @@ wallet_account_update_active_key <account_to_update> <pay_from_account> [new_act
 wallet_account_update_private_data <account_name> [private_data]                                    
 wallet_account_update_registration <account_name> <pay_from_account> [public_data] [delegate_pay_rate] 
 wallet_account_vote_summary [account_name]                                                          
+wallet_add_contact <contact> [label]                                                                
 wallet_add_contact_account <account_name> <account_key>                                             
 wallet_asset_create <symbol> <asset_name> <issuer_name> <description> <maximum_share_supply> <precision> [public_data] [is_market_issued] 
 wallet_asset_issue <amount> <symbol> <to_account_name> [memo_message]                               
@@ -216,13 +212,16 @@ wallet_dump_account_private_key <account_name> <key_type>
 wallet_dump_private_key <input>                                                                     
 wallet_escrow_summary [account_name]                                                                
 wallet_get_account <account_name>                                                                   
+wallet_get_contact <contact>                                                                        
 wallet_get_info                                                                                     
 wallet_get_name                                                                                     
 wallet_get_setting <name>                                                                           
+wallet_get_transaction_fee [symbol]                                                                 
 wallet_import_keyhotee <firstname> <middlename> <lastname> <brainkey> <keyhoteeid>                  
 wallet_import_private_key <wif_key> [account_name] [create_new_account] [rescan]                    
 wallet_list                                                                                         
 wallet_list_accounts                                                                                
+wallet_list_contacts                                                                                
 wallet_list_favorite_accounts                                                                       
 wallet_list_my_accounts                                                                             
 wallet_list_unregistered_accounts                                                                   
@@ -241,6 +240,7 @@ wallet_publish_feeds_multi_experimental <symbol_to_price_map>
 wallet_publish_price_feed <delegate_account> <price> <asset_symbol>                                 
 wallet_publish_slate <publishing_account_name> [paying_account_name]                                
 wallet_release_escrow <pay_fee_with_account_name> <escrow_balance_id> <released_by_account> [amount_to_sender] [amount_to_receiver] 
+wallet_remove_contact <contact>                                                                     
 wallet_remove_contact_account <account_name>                                                        
 wallet_rescan_blockchain [start_block_num] [limit]                                                  
 wallet_set_automatic_backups <enabled>                                                              
