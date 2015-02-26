@@ -1332,19 +1332,6 @@ wallet_transaction_record client_impl::wallet_market_submit_ask(
   network_broadcast_transaction( record.trx );
   return record;
 }
-wallet_transaction_record client_impl::wallet_market_submit_relative_ask(
-           const string& from_account,
-           const string& quantity,
-           const string& quantity_symbol,
-           const string& relative_quote_price,
-           const string& quote_symbol,
-           const string& limit )
-{
-  auto record = _wallet->submit_relative_ask( from_account, quantity, quantity_symbol, relative_quote_price, quote_symbol, limit, true );
-  _wallet->cache_transaction( record );
-  network_broadcast_transaction( record.trx );
-  return record;
-}
 
 wallet_transaction_record client_impl::wallet_market_submit_short(
        const string& from_account,

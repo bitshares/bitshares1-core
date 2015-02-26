@@ -161,8 +161,6 @@ namespace bts { namespace blockchain {
 
           _ask_db.open( data_dir / "index/ask_db" );
           _bid_db.open( data_dir / "index/bid_db" );
-          _relative_ask_db.open( data_dir / "index/relative_ask_db" );
-          _relative_bid_db.open( data_dir / "index/relative_bid_db" );
           _short_db.open( data_dir / "index/short_db" );
           _collateral_db.open( data_dir / "index/collateral_db" );
 
@@ -1254,8 +1252,6 @@ namespace bts { namespace blockchain {
 
                   my->_ask_db.set_write_through( write_through );
                   my->_bid_db.set_write_through( write_through );
-                  my->_relative_ask_db.set_write_through( write_through );
-                  my->_relative_bid_db.set_write_through( write_through );
                   my->_short_db.set_write_through( write_through );
                   my->_collateral_db.set_write_through( write_through );
 
@@ -1438,8 +1434,6 @@ namespace bts { namespace blockchain {
 
       my->_ask_db.close();
       my->_bid_db.close();
-      my->_relative_ask_db.close();
-      my->_relative_bid_db.close();
       my->_short_db.close();
       my->_collateral_db.close();
 
@@ -2320,11 +2314,6 @@ namespace bts { namespace blockchain {
       return my->_bid_db.fetch_optional(key);
    }
 
-   oorder_record chain_database::get_relative_bid_record( const market_index_key&  key )const
-   {
-      return my->_relative_bid_db.fetch_optional(key);
-   }
-
    omarket_order chain_database::get_lowest_ask_record( const asset_id_type quote_id, const asset_id_type base_id )
    {
       omarket_order result;
@@ -2343,11 +2332,6 @@ namespace bts { namespace blockchain {
    {
       return my->_ask_db.fetch_optional(key);
    }
-   oorder_record chain_database::get_relative_ask_record( const market_index_key&  key )const
-   {
-      return my->_relative_ask_db.fetch_optional(key);
-   }
-
 
    oorder_record chain_database::get_short_record( const market_index_key& key )const
    {
@@ -2366,13 +2350,6 @@ namespace bts { namespace blockchain {
       else
          my->_bid_db.store( key, order );
    }
-   void chain_database::store_relative_bid_record( const market_index_key& key, const order_record& order )
-   {
-      if( order.is_null() )
-         my->_relative_bid_db.remove( key );
-      else
-         my->_relative_bid_db.store( key, order );
-   }
 
    void chain_database::store_ask_record( const market_index_key& key, const order_record& order )
    {
@@ -2380,14 +2357,6 @@ namespace bts { namespace blockchain {
          my->_ask_db.remove( key );
       else
          my->_ask_db.store( key, order );
-   }
-
-   void chain_database::store_relative_ask_record( const market_index_key& key, const order_record& order )
-   {
-      if( order.is_null() )
-         my->_relative_ask_db.remove( key );
-      else
-         my->_relative_ask_db.store( key, order );
    }
 
    void chain_database::store_short_record( const market_index_key& key, const order_record& order )
@@ -2593,12 +2562,6 @@ namespace bts { namespace blockchain {
           if( market_itr.valid() )
              return market_order { bid_order, market_itr.key(), market_itr.value() };
        }
-       { // relative bids
-          auto market_itr  = my->_relative_bid_db.find(key);
-          if( market_itr.valid() )
-             return market_order { relative_bid_order, market_itr.key(), market_itr.value() };
-       }
-
        return optional<market_order>();
    } FC_CAPTURE_AND_RETHROW( (key) ) }
 
@@ -2635,31 +2598,6 @@ namespace bts { namespace blockchain {
              --market_itr;
           }
        }
-       { // relative bids
-          const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );
-          auto market_itr = my->_relative_bid_db.lower_bound( market_index_key( next_pair ) );
-          if( market_itr.valid() )   --market_itr;
-          else market_itr = my->_relative_bid_db.last();
-
-          while( market_itr.valid() )
-          {
-             auto key = market_itr.key();
-             if( key.order_price.quote_asset_id == quote_id &&
-                 key.order_price.base_asset_id == base_id  )
-             {
-                results.push_back( {relative_bid_order, key, market_itr.value()} );
-             }
-             else break;
-
-
-             if( results.size() >= limit )
-                return results;
-
-             --market_itr;
-          }
-       }
-
-
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol)(limit) ) }
 
@@ -2756,12 +2694,6 @@ namespace bts { namespace blockchain {
           if( market_itr.valid() )
              return market_order { ask_order, market_itr.key(), market_itr.value() };
        }
-       { // relative asks
-          auto market_itr  = my->_relative_ask_db.find(key);
-          if( market_itr.valid() )
-             return market_order { relative_ask_order, market_itr.key(), market_itr.value() };
-       }
-
        return optional<market_order>();
    } FC_CAPTURE_AND_RETHROW( (key) ) }
 
@@ -2824,27 +2756,6 @@ namespace bts { namespace blockchain {
              ++market_itr;
           }
        }
-       { // relative asks
-          auto market_itr  = my->_relative_ask_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
-          while( market_itr.valid() )
-          {
-             auto key = market_itr.key();
-             if( key.order_price.quote_asset_id == quote_asset_id &&
-                 key.order_price.base_asset_id == base_asset_id  )
-             {
-                results.push_back( {relative_ask_order, key, market_itr.value()} );
-             }
-             else
-             {
-                break;
-             }
-
-             if( results.size() >= limit )
-                return results;
-
-             ++market_itr;
-          }
-       }
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol)(limit) ) }
 
@@ -2873,34 +2784,6 @@ namespace bts { namespace blockchain {
            for( auto itr = my->_bid_db.begin(); itr.valid(); ++itr )
            {
                const auto order = market_order( bid_order, itr.key(), itr.value() );
-               if( filter( order ) )
-               {
-                   orders.push_back( order );
-                   if( orders.size() >= limit )
-                       return orders;
-               }
-           }
-       }
-
-       if( type == null_order || type == relative_ask_order )
-       {
-           for( auto itr = my->_relative_ask_db.begin(); itr.valid(); ++itr )
-           {
-               const auto order = market_order( relative_ask_order, itr.key(), itr.value() );
-               if( filter( order ) )
-               {
-                   orders.push_back( order );
-                   if( orders.size() >= limit )
-                       return orders;
-               }
-           }
-       }
-
-       if( type == null_order || type == relative_bid_order )
-       {
-           for( auto itr = my->_relative_bid_db.begin(); itr.valid(); ++itr )
-           {
-               const auto order = market_order( relative_bid_order, itr.key(), itr.value() );
                if( filter( order ) )
                {
                    orders.push_back( order );
@@ -3277,21 +3160,6 @@ namespace bts { namespace blockchain {
            snapshot.initial_balances.push_back( balance );
        }
 
-       // Add outstanding relative ask order balances
-       for( auto iter = my->_relative_ask_db.begin(); iter.valid(); ++iter )
-       {
-           const market_index_key& market_index = iter.key();
-           if( market_index.order_price.base_asset_id != 0 ) continue;
-
-           const order_record& record = iter.value();
-
-           genesis_balance balance;
-           balance.raw_address = string( market_index.owner );
-           balance.balance = record.balance;
-
-           snapshot.initial_balances.push_back( balance );
-       }
-
        // Add outstanding short order balances
        for( auto iter = my->_short_db.begin(); iter.valid(); ++iter )
        {
@@ -3348,15 +3216,6 @@ namespace bts { namespace blockchain {
                total.amount += ask.balance;
            }
        }
-       for( auto ask_itr = my->_relative_ask_db.begin(); ask_itr.valid(); ++ask_itr )
-       {
-           const market_index_key market_index = ask_itr.key();
-           if( market_index.order_price.base_asset_id == total.asset_id )
-           {
-               const order_record ask = ask_itr.value();
-               total.amount += ask.balance;
-           }
-       }
 
        // If base asset
        if( asset_id == asset_id_type( 0 ) )
@@ -3388,15 +3247,6 @@ namespace bts { namespace blockchain {
        {
            // Add bid balances
            for( auto bid_itr = my->_bid_db.begin(); bid_itr.valid(); ++bid_itr )
-           {
-               const market_index_key market_index = bid_itr.key();
-               if( market_index.order_price.quote_asset_id == total.asset_id )
-               {
-                   const order_record bid = bid_itr.value();
-                   total.amount += bid.balance;
-               }
-           }
-           for( auto bid_itr = my->_relative_bid_db.begin(); bid_itr.valid(); ++bid_itr )
            {
                const market_index_key market_index = bid_itr.key();
                if( market_index.order_price.quote_asset_id == total.asset_id )

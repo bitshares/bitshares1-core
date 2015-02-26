@@ -185,9 +185,7 @@ namespace bts { namespace blockchain {
       bid_order,
       ask_order,
       short_order,
-      cover_order,
-      relative_bid_order,
-      relative_ask_order
+      cover_order
    };
 
    struct market_order
@@ -312,8 +310,6 @@ FC_REFLECT_ENUM( bts::blockchain::order_type_enum,
                  (ask_order)
                  (short_order)
                  (cover_order)
-                 (relative_bid_order)
-                 (relative_ask_order)
                )
 
 FC_REFLECT_ENUM( bts::blockchain::market_history_key::time_granularity_enum, (each_block)(each_hour)(each_day) )

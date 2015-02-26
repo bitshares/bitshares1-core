@@ -367,12 +367,6 @@ transaction_builder& transaction_builder::cancel_market_order( const order_id_ty
       case bid_order:
          trx.bid( -balance, order->market_index.order_price, owner_address );
          break;
-      case relative_ask_order:
-         trx.relative_ask( -balance, order->market_index.order_price, order->state.limit_price, owner_address );
-         break;
-      case relative_bid_order:
-         trx.relative_bid( -balance, order->market_index.order_price, order->state.limit_price, owner_address );
-         break;
       case short_order:
          trx.short_sell( -balance, order->market_index.order_price, owner_address );
          break;
@@ -437,37 +431,6 @@ transaction_builder& transaction_builder::submit_bid(const wallet_account_record
    return *this;
 } FC_CAPTURE_AND_RETHROW( (from_account.name)(real_quantity)(quote_price) ) }
 
-
-transaction_builder& transaction_builder::submit_relative_bid(const wallet_account_record& from_account,
-                                                     const asset& sell_quantity,
-                                                     const price& quote_price,
-                                                     const optional<price>& limit )
-{ try {
-   validate_market(quote_price.quote_asset_id, quote_price.base_asset_id);
-
-   auto order_key = order_key_for_account(from_account.owner_address(), from_account.name);
-
-   //Charge this account for the bid
-   deduct_balance(from_account.owner_address(), sell_quantity);
-   trx.relative_bid(sell_quantity, quote_price, limit, order_key);
-
-   if( trx.expiration == time_point_sec() )
-       trx.expiration = blockchain::now() + WALLET_DEFAULT_MARKET_TRANSACTION_EXPIRATION_SEC;
-
-   auto entry = ledger_entry();
-   entry.from_account = from_account.owner_key;
-   entry.to_account = order_key;
-   entry.amount = sell_quantity;
-   entry.memo = "relative buy " + _wimpl->_blockchain->get_asset_symbol(quote_price.base_asset_id) +
-                " @ delta " + _wimpl->_blockchain->to_pretty_price(quote_price);
-
-   transaction_record.is_market = true;
-   transaction_record.ledger_entries.push_back(entry);
-
-   required_signatures.insert(order_key);
-   return *this;
-} FC_CAPTURE_AND_RETHROW( (from_account.name)(sell_quantity)(quote_price) ) }
-
 transaction_builder& transaction_builder::submit_ask(const wallet_account_record& from_account,
                                                      const asset& cost,
                                                      const price& quote_price)
@@ -500,53 +463,23 @@ transaction_builder& transaction_builder::submit_ask(const wallet_account_record
    return *this;
 } FC_CAPTURE_AND_RETHROW( (from_account.name)(cost)(quote_price) ) }
 
-
-transaction_builder& transaction_builder::submit_relative_ask(const wallet_account_record& from_account,
-                                                     const asset& cost,
-                                                     const price& quote_price,
-                                                     const optional<price>& limit
-                                                     )
-{ try {
-   validate_market(quote_price.quote_asset_id, quote_price.base_asset_id);
-   FC_ASSERT(cost.asset_id == quote_price.base_asset_id);
-
-   public_key_type order_key;
-
-   order_key = order_key_for_account(from_account.owner_address(), from_account.name);
-
-   //Charge this account for the ask
-   deduct_balance(from_account.owner_address(), cost);
-   trx.relative_ask(cost, quote_price, limit, order_key);
-
-   if( trx.expiration == time_point_sec() )
-       trx.expiration = blockchain::now() + WALLET_DEFAULT_MARKET_TRANSACTION_EXPIRATION_SEC;
-
-   auto entry = ledger_entry();
-   entry.from_account = from_account.owner_key;
-   entry.to_account = order_key;
-   entry.amount = cost;
-   entry.memo = "relative sell " + _wimpl->_blockchain->get_asset_symbol(quote_price.base_asset_id) +
-                " @ delta " + _wimpl->_blockchain->to_pretty_price(quote_price);
-
-   transaction_record.is_market = true;
-   transaction_record.ledger_entries.push_back(entry);
-
-   required_signatures.insert(order_key);
-   return *this;
-} FC_CAPTURE_AND_RETHROW( (from_account.name)(cost)(quote_price) ) }
-
-
 transaction_builder& transaction_builder::submit_short(const wallet_account_record& from_account,
                                                        const asset& short_collateral_amount,
                                                        const price& interest_rate, // percent apr
                                                        const oprice& price_limit)
 { try {
    validate_market(interest_rate.quote_asset_id, interest_rate.base_asset_id);
-   FC_ASSERT(!price_limit ||
-             interest_rate.quote_asset_id == price_limit->quote_asset_id &&
-             interest_rate.base_asset_id == price_limit->base_asset_id,
+   if( price_limit )
+   {
+       FC_ASSERT(
+             (
+              (interest_rate.quote_asset_id == price_limit->quote_asset_id) &&
+              (interest_rate.base_asset_id == price_limit->base_asset_id)
+             ),
              "Interest rate ${rate} and price limit ${limit} do not have compatible units.",
-             ("rate", interest_rate)("limit", price_limit));
+             ("rate", interest_rate)("limit", price_limit)
+             );
+   }
 
    asset cost = short_collateral_amount;
    FC_ASSERT( cost.asset_id == asset_id_type( 0 ), "You can only use the base asset as collateral!" );

@@ -84,8 +84,6 @@ namespace bts { namespace blockchain {
                                                                    const asset_id_type base_id )           = 0;
          virtual oorder_record              get_bid_record( const market_index_key& )const                  = 0;
          virtual oorder_record              get_ask_record( const market_index_key& )const                  = 0;
-         virtual oorder_record              get_relative_bid_record( const market_index_key& )const         = 0;
-         virtual oorder_record              get_relative_ask_record( const market_index_key& )const         = 0;
          virtual oorder_record              get_short_record( const market_index_key& )const                = 0;
          virtual ocollateral_record         get_collateral_record( const market_index_key& )const           = 0;
 
@@ -94,12 +92,6 @@ namespace bts { namespace blockchain {
 
          virtual void                       store_ask_record( const market_index_key& key,
                                                               const order_record& )                         = 0;
-
-         virtual void                       store_relative_bid_record( const market_index_key& key,
-                                                                       const order_record& )                = 0;
-
-         virtual void                       store_relative_ask_record( const market_index_key& key,
-                                                                       const order_record& )                = 0;
 
          virtual void                       store_short_record( const market_index_key& key,
                                                                 const order_record& )                       = 0;

@@ -149,8 +149,6 @@ namespace bts { namespace blockchain {
 
             bts::db::cached_level_map<market_index_key, order_record>                   _ask_db;
             bts::db::cached_level_map<market_index_key, order_record>                   _bid_db;
-            bts::db::cached_level_map<market_index_key, order_record>                   _relative_ask_db;
-            bts::db::cached_level_map<market_index_key, order_record>                   _relative_bid_db;
 
             bts::db::cached_level_map<market_index_key, order_record>                   _short_db; // interest,owner => order
 
