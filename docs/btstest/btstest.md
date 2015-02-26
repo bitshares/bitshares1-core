@@ -104,6 +104,13 @@ The presence of `>>>` characters in a line flags that line as a command.  The re
 is a command that begins with `!`.  Metacommands are handled directly by the `btstest` framework.  In this case, the `!client` command addreses subsequent commands to the client named `alice` (which was specified in the testenv),
 and the `!expect disable` command disables the *expectation functionality* (checking of command output).  Disabling expectation is useful to run a test as a *batch script*, only executing the commands and not complaining about failure to match output.  Which is often useful for developing new tests or upgrading badly broken tests.
 
+Comments
+--------
+
+You can put a comment in a `.btstest` file as follows:
+
+    #{ this is a comment }#
+
 Expectation
 -----------
 
@@ -275,8 +282,6 @@ TODO:  Regex flags will be passed in, but this is not currently implemented.  Wi
 Improvements to btstest
 -----------------------
 
-- Document how to do comments in `.btstest` file
-- Custom comment syntax
 - When expected input doesn't match, display line number in `btstest` file
 - Command line option to toggle echo on/off
 - Have multiple `.btstest` in same directory do something meaningful

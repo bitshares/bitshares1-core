@@ -552,6 +552,8 @@ class Test(object):
      (?:[~][{].*?[}][~])?
     # Command or metacommand invocation
     |[>]{3}
+    # Comment
+    |[#][{].*?[}][#]
 )
 """,
         re.VERBOSE,
@@ -599,6 +601,9 @@ class Test(object):
                 # TODO: cmd_text.append() function
                 print(t, end="", flush=True)
                 self.dump_matchbuf(self.context["showmatch_enabled"])
+            elif len(t) >= 4 and t[0:2] == "#{" and t[-2:] == "}#":
+                # comment
+                print(t, end="", flush=True)
             else:
                 if in_command:
                     cmd_text.append(t)
