@@ -7,6 +7,7 @@ Grab input log.
 import argparse
 import contextlib
 import decimal
+import io
 import json
 import logging
 import os
@@ -384,6 +385,22 @@ class TestClient(object):
             match_callback(self.last_command_output[m.start():m.end()])
         return m.groupdict()
 
+    def expect_json(self, match_callback=None, fail_callback=None):
+        self.skip_whitespace()
+        # inefficient but we have no choice
+        m = self.last_command_pos
+        stream = io.StringIO(self.last_command_output[m:])
+        try:
+            json_object = json.load(stream)
+        except ValueError:
+            self.expect_fail("<json>", fail_callback)
+            return
+        n = m+stream.tell()
+        self.last_command_pos = n
+        if match_callback is not None:
+            match_callback(self.last_command_output[m:n])
+        return
+
     def reset_last_command(self, new_command_output=None):
         self.last_command_output = new_command_output
         self.last_command_pos = 0
@@ -421,6 +438,7 @@ class Test(object):
         self.context["active_client"] = ""
         self.context["expect_str"] = self.expect_str
         self.context["expect_regex"] = self.expect_regex
+        self.context["expect_json"] = self.expect_json
         self.context["run_testdir"] = self.run_testdir
         self.context["regex"] = self.expect_regex
         self.context["register_client"] = self.register_client
@@ -490,6 +508,13 @@ class Test(object):
         client = self.get_active_client()
         client.expect_regex(regex, match_callback=self.on_match)
         # TODO:  write regex result
+        return
+
+    def expect_json(self):
+        if not self.context["expect_enabled"]:
+            return
+        client = self.get_active_client()
+        client.expect_json(match_callback=self.on_match)
         return
 
     def on_match(self, s):

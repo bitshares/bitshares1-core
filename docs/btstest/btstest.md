@@ -279,6 +279,11 @@ You can see the regular expression match here:
 
 TODO:  Regex flags will be passed in, but this is not currently implemented.  Will likely require killing the compiled RE cache.
 
+Expecting JSON
+--------------
+
+The `expect_json()` function will expect a JSON object.  Currently no tests are performed on the object.
+
 Improvements to btstest
 -----------------------
 
@@ -294,6 +299,7 @@ Test API
 - `active_client` is a variable containing the name of the active client
 - `expect_str` will expect command output matching a string
 - `regex` or `expect_regex` will expect command output matching a regular expression
+- `expect_json` expects a JSON object
 - `run_testdir` will run all `.btstest` files in given directory
 - `register_client` will register a new `TestClient` object
 - `_btstest` directly exposes the `btstest.py` module content.  The API should evolve to a point where using this is unnecessary
