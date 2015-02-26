@@ -289,6 +289,11 @@ Expecting relative timestamps
 
 The `expect_reltime()` function will expect a relative time string as output by `fc::get_approximate_relative_time_string()`.
 
+Expecting ISO timestamps
+------------------------
+
+The `expect_isotime()` function will expect an ISO format timestamp in the format `yyyy-mm-ddThh:mm:ss`
+
 Improvements to btstest
 -----------------------
 
