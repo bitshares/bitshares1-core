@@ -295,6 +295,9 @@ namespace bts { namespace blockchain { namespace detail {
 
                 mtrx.bid_received = mtrx.ask_paid;
                 mtrx.bid_paid = mtrx.ask_received;
+                
+                ilog("mtrx going into pay_current_short, pay_current_ask");
+                idump( (mtrx) );
 
                 pay_current_short( mtrx, *quote_asset, *base_asset );
                 pay_current_ask( mtrx, *base_asset, *quote_asset );
