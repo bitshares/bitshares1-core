@@ -127,7 +127,7 @@ transaction_ledger_entry detail::wallet_impl::scan_transaction_experimental( con
     }
 
     set<string> account_names;
-    const vector<wallet_account_record> accounts = self->list_my_accounts();
+    const vector<wallet_account_record> accounts = self->list_accounts();
     for( const wallet_account_record& account : accounts )
         account_names.insert( account.name );
 
@@ -813,7 +813,7 @@ set<pretty_transaction_experimental> wallet::transaction_history_experimental( c
         history.insert( to_pretty_transaction_experimental( item.second ) );
     }
 
-    const auto account_records = list_my_accounts();
+    const auto account_records = list_accounts();
     // TODO: Merge this into to_pretty_trx
     map<string, map<asset_id_type, share_type>> balances;
     for( const auto& record : history )

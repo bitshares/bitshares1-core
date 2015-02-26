@@ -342,6 +342,7 @@ namespace detail {
        }
    }
 
+   // TODO:  Refactor sell API
    void wallet_impl::apply_sell_order_to_builder(
                                             transaction_builder_ptr builder,
                                             const string& from_account_name,
@@ -353,12 +354,7 @@ namespace detail {
                                             bool allow_stupid
                                             )
    {
-       // TODO:  Refactor sell API
-       if( !is_receive_account(from_account_name) )
-           FC_CAPTURE_AND_THROW( unknown_receive_account, (from_account_name) );
-
-	   const wallet_account_record from_account =
-	       self->get_account( from_account_name );
+	   const wallet_account_record from_account = self->get_account( from_account_name );
 
 	   // TODO:  allow_stupid
 	   oasset_record sell_arec = _blockchain->get_asset_record( sell_quantity_symbol );
@@ -500,8 +496,6 @@ namespace detail {
 	  if( !(is_ba | is_short) )
          FC_THROW_EXCEPTION( invalid_operation, "This function only supports bids, asks and shorts." );
 
-      if( !is_receive_account(account_name) )
-         FC_CAPTURE_AND_THROW( unknown_receive_account, (account_name) );
       asset quantity = _blockchain->to_ugly_asset(balance, base_symbol);
 
       // For reference, these are the available order types:
@@ -670,8 +664,6 @@ namespace detail {
    { try {
       if( NOT self->is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
       if( NOT self->is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
-      if( NOT is_receive_account(account_name) )
-          FC_CAPTURE_AND_THROW( unknown_receive_account, (account_name) );
 
       const auto current_account = _wallet_db.lookup_account( account_name );
       FC_ASSERT( current_account.valid() );
@@ -709,49 +701,6 @@ namespace detail {
    } FC_CAPTURE_AND_RETHROW( (transaction)(strategy) ) }
 
    /**
-    *  Any account for which this wallet owns the active private key.
-    */
-   bool wallet_impl::is_receive_account( const string& account_name )const
-   {
-      FC_ASSERT( self->is_open() );
-      if( !_blockchain->is_valid_account_name( account_name ) ) return false;
-      auto opt_account = _wallet_db.lookup_account( account_name );
-      if( !opt_account.valid() ) return false;
-      auto opt_key = _wallet_db.lookup_key( opt_account->active_address() );
-      if( !opt_key.valid() ) return false;
-      return opt_key->has_private_key();
-   }
-
-   bool wallet_impl::is_unique_account( const string& account_name )const
-   {
-      //There are two possibilities here. First, the wallet has multiple records named account_name
-      //Second, the wallet has a different record named account_name than the blockchain does.
-
-      //Check that the wallet has at most one account named account_name
-      auto known_accounts = _wallet_db.get_accounts();
-      bool found = false;
-      for( const auto& known_account : known_accounts )
-      {
-        if( known_account.second.name == account_name )
-        {
-          if( found ) return false;
-          found = true;
-        }
-      }
-
-      if( !found )
-        //The wallet does not contain an account with this name. No conflict is possible.
-        return true;
-
-      //The wallet has an account named account_name. Check that it matches with the blockchain
-      auto local_account      = _wallet_db.lookup_account( account_name );
-      auto registered_account = _blockchain->get_account_record( account_name );
-      if( local_account && registered_account )
-         return local_account->owner_key == registered_account->owner_key;
-      return local_account || registered_account;
-   }
-
-   /**
     *  Select a slate of delegates from those approved by this wallet. Specify
     *  strategy as vote_none, vote_all, or vote_random. The slate
     *  returned will contain no more than BTS_BLOCKCHAIN_MAX_SLATE_SIZE delegates.
@@ -763,14 +712,16 @@ namespace detail {
 
       vector<account_id_type> for_candidates;
 
-      const auto account_items = _wallet_db.get_accounts();
+      const auto account_items = _wallet_db.get_approvals();
       for( const auto& item : account_items )
       {
-          const auto account_record = item.second;
-          if( !account_record.is_delegate() && strategy != vote_recommended ) continue;
-          if( account_record.approved <= 0 ) continue;
-          for_candidates.push_back( account_record.id );
+          const wallet_approval_record& record = item.second;
+          const oaccount_record chain_record = _blockchain->get_account_record( record.name );
+          if( !chain_record.valid() ) continue;
+          if( record.approval > 0 )
+              for_candidates.push_back( chain_record->id );
       }
+
       std::random_shuffle( for_candidates.begin(), for_candidates.end() );
 
       size_t slate_size = 0;
@@ -818,9 +769,14 @@ namespace detail {
           }
 
           //Disqualify non-delegates and delegates I actively disapprove of
-          for( const auto& acct_rec : account_items )
-             if( !acct_rec.second.is_delegate() || acct_rec.second.approved < 0 )
-                recommended_candidate_ranks.erase(acct_rec.second.id);
+          for( const auto& item : account_items )
+          {
+              const wallet_approval_record& record = item.second;
+              const oaccount_record chain_record = _blockchain->get_account_record( record.name );
+              if( !chain_record.valid() ) continue;
+              if( chain_record->is_retracted() || !chain_record->is_delegate() || record.approval < 0 )
+                  recommended_candidate_ranks.erase( chain_record->id );
+          }
 
           //Remove from rankings candidates I already approve of
           for( const auto approved_id : for_candidates )
@@ -1136,7 +1092,7 @@ namespace detail {
    { try {
        FC_ASSERT( is_open() );
 
-       if( list_my_accounts().empty() )
+       if( list_accounts().empty() )
            return false;
 
        try
@@ -1270,7 +1226,7 @@ namespace detail {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
 
-      const auto num_accounts_before = list_my_accounts().size();
+      const auto num_accounts_before = list_accounts().size();
 
       const auto current_account = my->_wallet_db.lookup_account( account_name );
       if( current_account.valid() )
@@ -1295,102 +1251,11 @@ namespace detail {
    { try {
        FC_ASSERT( is_open() );
 
-       auto judged_account = my->_wallet_db.lookup_account( account_name );
-       if ( !judged_account.valid() )
-       {
-           const auto blockchain_acct = my->_blockchain->get_account_record( account_name );
-           if( !blockchain_acct.valid() )
-               FC_THROW_EXCEPTION( unknown_account, "Unknown account name!" );
-
-           add_contact_account( account_name, blockchain_acct->owner_key );
-           return account_set_favorite( account_name, is_favorite );
-       }
-       judged_account->is_favorite = is_favorite;
-       my->_wallet_db.store_account( *judged_account );
+       auto my_account = my->_wallet_db.lookup_account( account_name );
+       FC_ASSERT( my_account.valid() );
+       my_account->favorite = is_favorite;
+       my->_wallet_db.store_account( *my_account );
    } FC_CAPTURE_AND_RETHROW( (account_name)(is_favorite) ) }
-
-   /**
-    *  A contact is an account for which this wallet does not have the private
-    *  key. If account_name is globally registered then this call will assume
-    *  it is the same account and will fail if the key is not the same.
-    *
-    *  @param account_name - the name the account is known by to this wallet
-    *  @param key - the public key that will be used for sending TITAN transactions
-    *               to the account.
-    */
-   void wallet::add_contact_account( const string& account_name,
-                                     const public_key_type& key,
-                                     const variant& private_data )
-   { try {
-      FC_ASSERT( is_open() );
-
-      if( !my->_blockchain->is_valid_account_name( account_name ) )
-          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
-
-      auto current_registered_account = my->_blockchain->get_account_record( account_name );
-      if( current_registered_account.valid() && current_registered_account->owner_key != key )
-         FC_THROW_EXCEPTION( invalid_name,
-                             "Account name is already registered under a different key! Provided: ${p}, registered: ${r}",
-                             ("p",key)("r",current_registered_account->active_key()) );
-
-      if( current_registered_account.valid() && current_registered_account->is_retracted() )
-          FC_CAPTURE_AND_THROW( account_retracted, (current_registered_account) );
-
-      auto current_account = my->_wallet_db.lookup_account( account_name );
-      if( current_account.valid() )
-      {
-         wlog( "current account is valid... ${account}", ("account",*current_account) );
-         FC_ASSERT( current_account->owner_address() == address(key),
-                    "Account with ${name} already exists", ("name",account_name) );
-
-         if( current_registered_account.valid() )
-         {
-             blockchain::account_record& as_blockchain_account_record = *current_account;
-             as_blockchain_account_record = *current_registered_account;
-         }
-
-         if( !private_data.is_null() )
-            current_account->private_data = private_data;
-
-         my->_wallet_db.store_account( *current_account );
-         return;
-      }
-      else
-      {
-         current_account = my->_wallet_db.lookup_account( address( key ) );
-         if( current_account.valid() )
-         {
-             if( current_account->name != account_name )
-                 FC_THROW_EXCEPTION( duplicate_key,
-                         "Provided key already belongs to another wallet account! Provided: ${p}, existing: ${e}",
-                         ("p",account_name)("e",current_account->name) );
-
-             if( current_registered_account.valid() )
-             {
-                 blockchain::account_record& as_blockchain_account_record = *current_account;
-                 as_blockchain_account_record = *current_registered_account;
-             }
-
-             if( !private_data.is_null() )
-                current_account->private_data = private_data;
-
-             my->_wallet_db.store_account( *current_account );
-             return;
-         }
-
-         if( !current_registered_account.valid() )
-         {
-             const time_point_sec now = blockchain::now();
-             current_registered_account = account_record();
-             current_registered_account->name = account_name;
-             current_registered_account->owner_key = key;
-             current_registered_account->set_active_key( now, key );
-             current_registered_account->last_update = now;
-         }
-
-         my->_wallet_db.add_contact_account( *current_registered_account, private_data );
-      }
-   } FC_CAPTURE_AND_RETHROW( (account_name)(key) ) }
 
    // TODO: This function is sometimes used purely for error checking of the account_name; refactor
    wallet_account_record wallet::get_account( const string& account_name )const
@@ -1424,19 +1289,6 @@ namespace detail {
       FC_ASSERT( local_account.valid() );
       return *local_account;
    } FC_CAPTURE_AND_RETHROW() }
-
-   void wallet::remove_contact_account( const string& account_name )
-   { try {
-      if( !my->is_unique_account(account_name) )
-          FC_THROW_EXCEPTION( duplicate_account_name,
-                              "Local account name conflicts with registered name. Please rename your local account first.", ("account_name",account_name) );
-
-      const auto oaccount = my->_wallet_db.lookup_account( account_name );
-      if( my->_wallet_db.has_private_key( address( oaccount->owner_key ) ) )
-          FC_THROW_EXCEPTION( not_contact_account, "You can only remove contact accounts!", ("account_name",account_name) );
-
-      my->_wallet_db.remove_contact_account( account_name );
-   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
    void wallet::rename_account( const string& old_account_name,
                                  const string& new_account_name )
@@ -1520,7 +1372,7 @@ namespace detail {
 
    public_key_type wallet::import_private_key( const private_key_type& new_private_key,
                                                const optional<string>& account_name,
-                                               bool create_account )
+                                               bool create_new_account )
    { try {
       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
@@ -1583,19 +1435,22 @@ namespace detail {
       account_record = my->_wallet_db.lookup_account( *account_name );
       if( !account_record.valid() )
       {
-          FC_ASSERT( create_account,
+          FC_ASSERT( create_new_account,
                      "Could not find an account with that name!",
                      ("account_name",*account_name) );
 
-          // TODO: Replace with wallet_db.add_account
-          add_contact_account( *account_name, new_public_key );
+          create_account( *account_name );
           account_record = my->_wallet_db.lookup_account( *account_name );
           FC_ASSERT( account_record.valid(), "Error creating new account!" );
+          account_record->owner_key = new_public_key;
+          account_record->active_key_history.clear();
+          account_record->set_active_key( blockchain::now(), new_public_key );
+          my->_wallet_db.store_account( *account_record );
       }
 
       my->_wallet_db.import_key( my->_wallet_password, account_record->name, new_private_key, true );
       return new_public_key;
-   } FC_CAPTURE_AND_RETHROW( (account_name)(create_account) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_name)(create_new_account) ) }
 
    public_key_type wallet::import_wif_private_key( const string& wif_key,
                                                    const optional<string>& account_name,
@@ -1762,7 +1617,7 @@ namespace detail {
    {
       FC_ASSERT( is_open() );
       vector<wallet_account_record> delegate_records;
-      const auto& account_records = list_my_accounts();
+      const auto& account_records = list_accounts();
       for( const auto& account_record : account_records )
       {
           if( !account_record.is_delegate() ) continue;
@@ -1886,7 +1741,7 @@ namespace detail {
            bool sign )
    {
 	   vector<std::pair<string, wallet_transaction_record>> result;
-	   const vector<wallet_account_record> accounts = this->list_my_accounts();
+	   const vector<wallet_account_record> accounts = this->list_accounts();
 
 	   for( const auto& acct : accounts )
 	   {
@@ -1911,11 +1766,7 @@ namespace detail {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
 
-      if( !my->is_receive_account( account_to_publish_under ) )
-          FC_THROW_EXCEPTION( unknown_receive_account, "You cannot publish from this account!",
-                              ("delegate_account",account_to_publish_under) );
-
-      for( auto item : amount_per_xts )
+      for( const auto& item : amount_per_xts )
       {
          if( item.second < 0 )
              FC_THROW_EXCEPTION( invalid_price, "Invalid price!", ("amount_per_xts",item) );
@@ -1996,10 +1847,6 @@ namespace detail {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
 
-      if( !my->is_receive_account( account_to_publish_under ) )
-          FC_THROW_EXCEPTION( unknown_receive_account, "You cannot publish from this account!",
-                              ("delegate_account",account_to_publish_under) );
-
       if( amount_per_xts < 0 )
           FC_THROW_EXCEPTION( invalid_price, "Invalid price!", ("amount_per_xts",amount_per_xts) );
 
@@ -2076,9 +1923,6 @@ namespace detail {
       if( paying_account.empty() )
         paying_account = account_to_publish_under;
 
-      if( !my->is_receive_account( paying_account ) )
-          FC_THROW_EXCEPTION( unknown_receive_account, "Unknown paying account!", ("paying_account", paying_account) );
-
       auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
       if( !current_account.valid() )
           FC_THROW_EXCEPTION( unknown_account, "Unknown publishing account!", ("account_to_publish_under", account_to_publish_under) );
@@ -2151,9 +1995,6 @@ namespace detail {
       if( paying_account.empty() )
         paying_account = account_to_publish_under;
 
-      if( !my->is_receive_account( paying_account ) )
-          FC_THROW_EXCEPTION( unknown_receive_account, "Unknown paying account!", ("paying_account", paying_account) );
-
       auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
       if( !current_account.valid() )
           FC_THROW_EXCEPTION( unknown_account, "Unknown publishing account!", ("account_to_publish_under", account_to_publish_under) );
@@ -2218,7 +2059,7 @@ namespace detail {
       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
 
       const owallet_account_record account_record = my->_wallet_db.lookup_account( account_name );
-      if( !account_record.valid() || !account_record->is_my_account )
+      if( !account_record.valid() )
           FC_CAPTURE_AND_THROW( unknown_receive_account, (account_name) );
 
       account_balance_record_summary_type balance_records;
@@ -2711,7 +2552,6 @@ namespace detail {
    { try {
        FC_ASSERT( is_open() );
        FC_ASSERT( is_unlocked() );
-       FC_ASSERT( my->is_receive_account( delegate_name ) );
 
        auto asset_rec = my->_blockchain->get_asset_record( asset_id_type(0) );
        share_type amount_to_withdraw((share_type)(real_amount_to_withdraw * asset_rec->precision));
@@ -2780,7 +2620,6 @@ namespace detail {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
       FC_ASSERT( my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) );
-      FC_ASSERT( my->is_receive_account( paying_account_name ) );
 
       const auto asset_rec = my->_blockchain->get_asset_record( amount_to_transfer_symbol );
       FC_ASSERT( asset_rec.valid() );
@@ -2873,7 +2712,6 @@ namespace detail {
    {
        FC_ASSERT( is_open() );
        FC_ASSERT( is_unlocked() );
-       FC_ASSERT( my->is_receive_account( account_name ) );
        auto addr = my->get_new_address( account_name, label );
        return addr;
    }
@@ -2950,7 +2788,6 @@ namespace detail {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
       FC_ASSERT( my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) );
-      FC_ASSERT( my->is_receive_account( from_account_name ) );
 
       const auto asset_rec = my->_blockchain->get_asset_record( amount_to_transfer_symbol );
       FC_ASSERT( asset_rec.valid() );
@@ -3025,7 +2862,6 @@ namespace detail {
          FC_ASSERT( is_open() );
          FC_ASSERT( is_unlocked() );
          FC_ASSERT( my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) );
-         FC_ASSERT( my->is_receive_account( from_account_name ) );
          FC_ASSERT( to_address_amounts.size() > 0 );
 
          auto asset_rec = my->_blockchain->get_asset_record( amount_to_transfer_symbol );
@@ -3749,7 +3585,6 @@ namespace detail {
    { try {
        if (!is_open()) FC_CAPTURE_AND_THROW (wallet_closed);
        if (!is_unlocked()) FC_CAPTURE_AND_THROW (wallet_locked);
-       if (!my->is_receive_account(from_account_name)) FC_CAPTURE_AND_THROW (unknown_receive_account);
 
        const auto order = my->_blockchain->get_market_order( cover_id, cover_order );
        if( !order.valid() )
@@ -3991,45 +3826,6 @@ namespace detail {
       return accounts;
    } FC_CAPTURE_AND_RETHROW() }
 
-   vector<wallet_account_record> wallet::list_my_accounts() const
-   { try {
-      const auto& accs = my->_wallet_db.get_accounts();
-
-      vector<wallet_account_record> receive_accounts;
-      receive_accounts.reserve( accs.size() );
-      for( const auto& item : accs )
-         if ( item.second.is_my_account )
-            receive_accounts.push_back( item.second );
-
-      std::sort( receive_accounts.begin(), receive_accounts.end(),
-                 [](const wallet_account_record& a, const wallet_account_record& b) -> bool
-                 { return a.name.compare( b.name ) < 0; } );
-
-      return receive_accounts;
-   } FC_CAPTURE_AND_RETHROW() }
-
-
-   vector<wallet_account_record> wallet::list_favorite_accounts() const
-   { try {
-      const auto& accs = my->_wallet_db.get_accounts();
-
-      vector<wallet_account_record> receive_accounts;
-      receive_accounts.reserve( accs.size() );
-      for( const auto& item : accs )
-      {
-         if( item.second.is_favorite )
-         {
-            receive_accounts.push_back( item.second );
-         }
-      }
-
-      std::sort( receive_accounts.begin(), receive_accounts.end(),
-                 [](const wallet_account_record& a, const wallet_account_record& b) -> bool
-                 { return a.name.compare( b.name ) < 0; } );
-
-      return receive_accounts;
-   } FC_CAPTURE_AND_RETHROW() }
-
    vector<wallet_account_record> wallet::list_unregistered_accounts() const
    { try {
       const auto& accs = my->_wallet_db.get_accounts();
@@ -4093,7 +3889,6 @@ namespace detail {
    { try {
       if( !my->_blockchain->is_valid_account_name( account_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
-      FC_ASSERT( my->is_unique_account(account_name) );
 
       const auto registered_account = my->_blockchain->get_account_record( account_name );
       if( registered_account.valid() )
@@ -4116,7 +3911,6 @@ namespace detail {
    { try {
       if( !my->_blockchain->is_valid_account_name( account_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
-      FC_ASSERT( my->is_unique_account(account_name) );
 
       const auto registered_account = my->_blockchain->get_account_record( account_name );
       if( registered_account.valid() )
@@ -4139,33 +3933,26 @@ namespace detail {
    { try {
       FC_ASSERT( is_open() );
       const auto account_record = my->_blockchain->get_account_record( account_name );
-      auto war = my->_wallet_db.lookup_account( account_name );
+      if( !account_record.valid() )
+          FC_THROW_EXCEPTION( account_not_registered, "Unknown account name!", ("account_name",account_name) );
 
-      if( !account_record.valid() && !war.valid() )
-          FC_THROW_EXCEPTION( unknown_account, "Unknown account name!", ("account_name",account_name) );
+      owallet_approval_record record = my->_wallet_db.lookup_approval( account_name );
+      if( !record.valid() )
+          record = wallet_approval_record();
 
-      if( war.valid() )
-      {
-         war->approved = approval;
-         my->_wallet_db.store_account( *war );
-         return;
-      }
+      record->name = account_name;
+      record->approval = approval;
 
-      add_contact_account( account_name, account_record->owner_key );
-      set_account_approval( account_name, approval );
+      my->_wallet_db.store_approval( *record );
    } FC_CAPTURE_AND_RETHROW( (account_name)(approval) ) }
 
    int8_t wallet::get_account_approval( const string& account_name )const
    { try {
-      FC_ASSERT( is_open() );
-      const auto account_record = my->_blockchain->get_account_record( account_name );
-      auto war = my->_wallet_db.lookup_account( account_name );
+      const owallet_approval_record record = my->_wallet_db.lookup_approval( account_name );
+      if( !record.valid() )
+          return 0;
 
-      if( !account_record.valid() && !war.valid() )
-          FC_THROW_EXCEPTION( unknown_account, "Unknown account name!", ("account_name",account_name) );
-
-      if( !war.valid() ) return 0;
-      return war->approved;
+      return record->approval;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
    owallet_account_record wallet::get_account_for_address( address addr_in_account )const

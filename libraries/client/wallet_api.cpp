@@ -775,7 +775,6 @@ wallet_transaction_record detail::client_impl::wallet_asset_issue_to_addresses(
   return record;
 }
 
-
 vector<string> detail::client_impl::wallet_list() const
 {
   return _wallet->list();
@@ -786,24 +785,9 @@ vector<wallet_account_record> detail::client_impl::wallet_list_accounts() const
   return _wallet->list_accounts();
 }
 
-vector<wallet_account_record> detail::client_impl::wallet_list_my_accounts() const
-{
-  return _wallet->list_my_accounts();
-}
-
-vector<wallet_account_record> detail::client_impl::wallet_list_favorite_accounts() const
-{
-  return _wallet->list_favorite_accounts();
-}
-
 vector<wallet_account_record> detail::client_impl::wallet_list_unregistered_accounts() const
 {
   return _wallet->list_unregistered_accounts();
-}
-
-void detail::client_impl::wallet_remove_contact_account(const string& account_name)
-{
-  _wallet->remove_contact_account( account_name );
 }
 
 void detail::client_impl::wallet_account_rename(const string& current_account_name,
@@ -1021,13 +1005,6 @@ void detail::client_impl::wallet_set_preferred_mail_servers(const string& accoun
         FC_THROW_EXCEPTION( wallet_closed, "Wallet is not open; cannot set preferred mail servers." );
     //Skip unlock check here; wallet_account_update_registration below will check it.
 
-    //Sanity check account_name
-    wallet_account_record account_rec = _wallet->get_account(account_name);
-    if( !account_rec.is_my_account )
-        FC_THROW_EXCEPTION( unknown_receive_account,
-                            "Account ${name} is not owned by this wallet. Cannot set his mail servers.",
-                            ("name", account_name) );
-
     //Check that all names in server_list are valid accounts which publish mail server endpoints
     for( const string& server_name : server_list )
     {
@@ -1050,6 +1027,7 @@ void detail::client_impl::wallet_set_preferred_mail_servers(const string& accoun
     //Update the public_data
     fc::mutable_variant_object public_data;
     try {
+        wallet_account_record account_rec = _wallet->get_account(account_name);
         if( !account_rec.public_data.is_null() )
             public_data = account_rec.public_data.as<fc::mutable_variant_object>();
     } catch (fc::exception&) {
@@ -1059,13 +1037,6 @@ void detail::client_impl::wallet_set_preferred_mail_servers(const string& accoun
 
     //Commit the change
     wallet_account_update_registration(account_name, paying_account, public_data);
-}
-
-void client_impl::wallet_add_contact_account( const string& account_name,
-                                              const public_key_type& contact_key )
-{
-   _wallet->add_contact_account( account_name, contact_key );
-   _wallet->auto_backup( "account_add" );
 }
 
 public_key_type client_impl::wallet_account_create( const string& account_name,

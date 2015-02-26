@@ -204,7 +204,7 @@ void wallet_impl::scan_balances()
     scan_balances_experimental();
 
    /* Delete ledger entries for any genesis balances before we can reconstruct them */
-   const auto my_accounts = self->list_my_accounts();
+   const auto my_accounts = self->list_accounts();
    for( const auto& account : my_accounts )
    {
        const auto record_id = fc::ripemd160::hash( account.name );
@@ -675,9 +675,6 @@ bool wallet_impl::scan_update_account( const update_account_operation& op, walle
     wlog( "we detected an account update operation for ${name}", ("name",oaccount->name) );
     auto account_name_rec = _blockchain->get_account_record( oaccount->name );
     FC_ASSERT( account_name_rec.valid() );
-
-    if( !opt_account->is_my_account )
-      return false;
 
     for( auto& entry : trx_rec.ledger_entries )
     {
@@ -1469,7 +1466,7 @@ vector<pretty_transaction> wallet::get_pretty_transaction_history( const string&
     bool account_specified = !account_name.empty();
     if( !account_specified )
     {
-        const auto accounts = list_my_accounts();
+        const auto accounts = list_accounts();
         for( const auto& account : accounts )
             account_names.push_back( account.name );
     }

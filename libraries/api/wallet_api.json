@@ -511,25 +511,6 @@
         "aliases" : [ "approve", "set_approval", "wallet_approve_delegate", "wallet_approve" ]
       },
       {
-        "method_name": "wallet_add_contact_account",
-        "description": "Add new account for sending payments",
-        "return_type": "void",
-        "parameters" :
-          [
-            {
-              "name" : "account_name",
-              "type" : "account_name",
-              "description" : "the name you will use to refer to this sending account"
-            },
-            {
-              "name" : "account_key",
-              "type" : "public_key",
-              "description" : "the key associated with this sending account"
-            }
-          ],
-        "prerequisites" : ["wallet_open"]
-      },
-      {
         "method_name": "wallet_list_contacts",
         "description": "List contact entries",
         "return_type": "wallet_contact_record_array",
@@ -1491,24 +1472,8 @@
          "aliases" : [ "listaccounts" ]
       },
       {
-         "method_name" : "wallet_list_favorite_accounts",
-         "description" : "Lists all accounts which have been marked as favorites.",
-         "return_type" : "wallet_account_record_array",
-         "parameters"  : [],
-         "is_const" : true,
-         "prerequisites" : ["wallet_open"]
-      },
-      {
          "method_name" : "wallet_list_unregistered_accounts",
          "description" : "Lists all unregistered accounts belonging to this wallet",
-         "return_type" : "wallet_account_record_array",
-         "parameters"  : [],
-         "is_const" : true,
-         "prerequisites" : ["wallet_open"]
-      },
-      {
-         "method_name" : "wallet_list_my_accounts",
-         "description" : "Lists all accounts for which we have a private key in this wallet",
          "return_type" : "wallet_account_record_array",
          "parameters"  : [],
          "is_const" : true,
@@ -1540,19 +1505,6 @@
                }
             ],
          "is_const" : true,
-         "prerequisites" : ["wallet_open"]
-      },
-      {
-         "method_name" : "wallet_remove_contact_account",
-         "description" : "Remove a contact account from your wallet",
-         "return_type" : "void",
-         "parameters"  : [
-               {
-                  "name" : "account_name",
-                  "type" : "account_name",
-                  "description" : "the name of the contact"
-               }
-            ],
          "prerequisites" : ["wallet_open"]
       },
       {

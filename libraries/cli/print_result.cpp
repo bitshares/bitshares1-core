@@ -127,11 +127,8 @@ namespace bts { namespace cli {
     _command_to_function["blockchain_market_list_bids"] = &f_blockchain_market_list;
     _command_to_function["blockchain_market_list_shorts"] = &f_blockchain_market_short_list;
 
-    _command_to_function["wallet_list_my_accounts"] = &f_wallet_list_my_accounts;
-
-    _command_to_function["wallet_list_accounts"] = &f_wallet_list_accounts;
+    _command_to_function["wallet_list_accounts"] = &f_wallet_list_my_accounts;
     _command_to_function["wallet_list_unregistered_accounts"] = &f_wallet_list_accounts;
-    _command_to_function["wallet_list_favorite_accounts"] = &f_wallet_list_accounts;
 
     _command_to_function["wallet_account_balance"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
     {
@@ -365,7 +362,6 @@ namespace bts { namespace cli {
     out << std::setw(64) << "KEY";
     out << std::setw(22) << "REGISTERED";
     out << std::setw(15) << "FAVORITE";
-    out << std::setw(15) << "APPROVAL";
     out << std::setw(25) << "BLOCK PRODUCTION ENABLED";
     out << "\n";
 
@@ -391,12 +387,11 @@ namespace bts { namespace cli {
         out << std::setw(22) << pretty_timestamp(acct.registration_date);
       }
 
-      if(acct.is_favorite)
+      if(acct.favorite)
         out << std::setw(15) << "YES";
       else
         out << std::setw(15) << "NO";
 
-      out << std::setw(15) << std::to_string(acct.approved);
       if(acct.is_delegate())
         out << std::setw(25) << (acct.block_production_enabled ? "YES" : "NO");
       else
@@ -413,7 +408,6 @@ namespace bts { namespace cli {
     out << std::setw(64) << "KEY";
     out << std::setw(22) << "REGISTERED";
     out << std::setw(15) << "FAVORITE";
-    out << std::setw(15) << "APPROVAL";
     out << "\n";
 
     for(const auto& acct : accts)
@@ -430,12 +424,11 @@ namespace bts { namespace cli {
       else
         out << std::setw(22) << pretty_timestamp(acct.registration_date);
 
-      if(acct.is_favorite)
+      if(acct.favorite)
         out << std::setw(15) << "YES";
       else
         out << std::setw(15) << "NO";
 
-      out << std::setw(10) << std::to_string(acct.approved);
       out << "\n";
     }
   }

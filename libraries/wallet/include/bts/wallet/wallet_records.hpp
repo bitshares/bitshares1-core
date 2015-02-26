@@ -23,6 +23,7 @@ namespace bts { namespace wallet {
       key_record_type           = 2,
       transaction_record_type   = 3,
       contact_record_type       = 4,
+      approval_record_type      = 5,
       property_record_type      = 7,
       setting_record_type       = 9
    };
@@ -51,39 +52,37 @@ namespace bts { namespace wallet {
 
    struct master_key
    {
-       std::vector<char>              encrypted_key;
-       fc::sha512                     checksum;
+       std::vector<char>    encrypted_key;
+       fc::sha512           checksum;
 
-       bool                           validate_password( const fc::sha512& password )const;
-       extended_private_key           decrypt_key( const fc::sha512& password )const;
-       void                           encrypt_key( const fc::sha512& password,
-                                                   const extended_private_key& k );
+       bool                 validate_password( const fc::sha512& password )const;
+       extended_private_key decrypt_key( const fc::sha512& password )const;
+       void                 encrypt_key( const fc::sha512& password,
+                                         const extended_private_key& k );
    };
 
    struct account_data : public bts::blockchain::account_record
    {
-       bool                             is_my_account = false;
-       int8_t                           approved = 0;
-       bool                             is_favorite = false;
-       bool                             block_production_enabled = false;
-       uint32_t                         last_used_gen_sequence = 0;
-       variant                          private_data;
+       bool     block_production_enabled = false;
+       uint32_t last_used_gen_sequence = 0;
+       variant  private_data;
+       bool     favorite = false;
    };
 
    struct key_data
    {
-       address                          account_address;
-       public_key_type                  public_key;
-       std::vector<char>                encrypted_private_key;
-       bool                             valid_from_signature = false;
-       optional<string>                 memo; // this memo is not used for anything.
-       uint32_t                         gen_seq_number = 0;
+       address              account_address;
+       public_key_type      public_key;
+       std::vector<char>    encrypted_private_key;
+       bool                 valid_from_signature = false;
+       optional<string>     memo; // this memo is not used for anything.
+       uint32_t             gen_seq_number = 0;
 
-       address                          get_address()const { return address( public_key ); }
-       bool                             has_private_key()const;
-       void                             encrypt_private_key( const fc::sha512& password,
+       address              get_address()const { return address( public_key ); }
+       bool                 has_private_key()const;
+       void                 encrypt_private_key( const fc::sha512& password,
                                                              const private_key_type& );
-       private_key_type                 decrypt_private_key( const fc::sha512& password )const;
+       private_key_type     decrypt_private_key( const fc::sha512& password )const;
    };
 
    struct contact_data
@@ -116,6 +115,13 @@ namespace bts { namespace wallet {
        variant              data;
        string               label;
        bool                 favorite = false;
+   };
+
+   struct approval_data
+   {
+       string   name;
+       int8_t   approval;
+       bool     approve_recommended = false;
    };
 
    struct ledger_entry;
@@ -218,6 +224,7 @@ namespace bts { namespace wallet {
    typedef wallet_record<account_data,      account_record_type>        wallet_account_record;
    typedef wallet_record<key_data,          key_record_type>            wallet_key_record;
    typedef wallet_record<contact_data,      contact_record_type>        wallet_contact_record;
+   typedef wallet_record<approval_data,     approval_record_type>       wallet_approval_record;
    typedef wallet_record<transaction_data,  transaction_record_type>    wallet_transaction_record;
    typedef wallet_record<setting,           setting_record_type>        wallet_setting_record;
 
@@ -226,6 +233,7 @@ namespace bts { namespace wallet {
    typedef optional<wallet_account_record>                              owallet_account_record;
    typedef optional<wallet_key_record>                                  owallet_key_record;
    typedef optional<wallet_contact_record>                              owallet_contact_record;
+   typedef optional<wallet_approval_record>                             owallet_approval_record;
    typedef optional<wallet_transaction_record>                          owallet_transaction_record;
    typedef optional<wallet_setting_record>                              owallet_setting_record;
 
@@ -260,6 +268,7 @@ FC_REFLECT_ENUM( bts::wallet::wallet_record_type_enum,
         (key_record_type)
         (transaction_record_type)
         (contact_record_type)
+        (approval_record_type)
         (property_record_type)
         (setting_record_type)
         )
@@ -281,12 +290,10 @@ FC_REFLECT( bts::wallet::wallet_property,
         )
 
 FC_REFLECT_DERIVED( bts::wallet::account_data, (bts::blockchain::account_record),
-        (is_my_account)
-        (approved)
-        (is_favorite)
         (block_production_enabled)
         (last_used_gen_sequence)
         (private_data)
+        (favorite)
         )
 
 FC_REFLECT( bts::wallet::master_key,
@@ -315,6 +322,12 @@ FC_REFLECT( bts::wallet::contact_data,
         (data)
         (label)
         (favorite)
+        )
+
+FC_REFLECT( bts::wallet::approval_data,
+        (name)
+        (approval)
+        (approve_recommended)
         )
 
 FC_REFLECT( bts::wallet::transaction_data,

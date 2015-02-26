@@ -169,14 +169,8 @@ namespace bts { namespace wallet {
 
          wallet_account_record get_account( const string& account_name )const;
 
-         void     add_contact_account( const string& account_name,
-                                       const public_key_type& key,
-                                       const variant& private_data = variant() );
-
-         void     remove_contact_account( const string& account_name );
-
-         void     rename_account( const string& old_contact_name,
-                                  const string& new_contact_name );
+         void rename_account( const string& old_contact_name,
+                              const string& new_contact_name );
 
          vector<wallet_contact_record> list_contacts()const;
          owallet_contact_record get_contact( const variant& data )const;
@@ -217,9 +211,7 @@ namespace bts { namespace wallet {
          vector<string> list() const; // list wallets
 
          vector<wallet_account_record> list_accounts()const;
-         vector<wallet_account_record> list_favorite_accounts()const;
          vector<wallet_account_record> list_unregistered_accounts()const;
-         vector<wallet_account_record> list_my_accounts()const;
 
          uint32_t           import_bitcoin_wallet( const path& wallet_dat,
                                                    const string& wallet_dat_passphrase,
