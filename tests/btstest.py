@@ -572,13 +572,13 @@ class Test(object):
     # whitespace, possibly followed by newline
     |[ \t\f\v]+(?:\r\n?|\n)?
     # Python expression invocation
-    |[$][{].*?[}][$]
+    |[$][{](?:.|\n)*?[}][$]
     # with optional result
-     (?:[~][{].*?[}][~])?
+     (?:[~][{](?:.|\n)*?[}][~])?
     # Command or metacommand invocation
     |[>]{3}
     # Comment
-    |[#][{].*?[}][#]
+    |[#][{](?:.|\n)*?[}][#]
 )
 """,
         re.VERBOSE,
