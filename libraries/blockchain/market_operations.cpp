@@ -24,11 +24,9 @@ namespace bts { namespace blockchain {
       auto quote_asset_rec = eval_state._current_state->get_asset_record( bid_index.order_price.quote_asset_id );
       FC_ASSERT( base_asset_rec.valid() );
       FC_ASSERT( quote_asset_rec.valid() );
-      // TODO
-      //if( base_asset_rec->is_restricted() )
-         //FC_ASSERT( eval_state._current_state->get_authorization( base_asset_rec->id, owner ) );
-      //if( quote_asset_rec->is_restricted() )
-         //FC_ASSERT( eval_state._current_state->get_authorization( quote_asset_rec->id, owner ) );
+
+      FC_ASSERT( base_asset_rec->is_authorized( owner ) );
+      FC_ASSERT( quote_asset_rec->is_authorized( owner ) );
 
       const bool issuer_override = quote_asset_rec->is_retractable() && eval_state.verify_authority( quote_asset_rec->authority );
       if( !issuer_override && !eval_state.check_signature( owner ) )
@@ -140,11 +138,9 @@ namespace bts { namespace blockchain {
       auto quote_asset_rec = eval_state._current_state->get_asset_record( ask_index.order_price.quote_asset_id );
       FC_ASSERT( base_asset_rec.valid() );
       FC_ASSERT( quote_asset_rec.valid() );
-      // TODO
-      //if( base_asset_rec->is_restricted() )
-         //FC_ASSERT( eval_state._current_state->get_authorization( base_asset_rec->id, owner ) );
-      //if( quote_asset_rec->is_restricted() )
-         //FC_ASSERT( eval_state._current_state->get_authorization( quote_asset_rec->id, owner ) );
+
+      FC_ASSERT( base_asset_rec->is_authorized( owner ) );
+      FC_ASSERT( quote_asset_rec->is_authorized( owner ) );
 
       const bool issuer_override = base_asset_rec->is_retractable() && eval_state.verify_authority( base_asset_rec->authority );
       if( !issuer_override && !eval_state.check_signature( owner ) )

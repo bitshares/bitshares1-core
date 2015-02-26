@@ -901,14 +901,13 @@ transaction_builder& transaction_builder::deposit_to_balance(const balance_id_ty
 }
 
 transaction_builder& transaction_builder::asset_authorize_key( const string& symbol,
-                                                               const address& owner,
-                                                               object_id_type meta )
+                                                               const address& owner )
 { try {
    const oasset_record asset_record = _wimpl->_blockchain->get_asset_record( symbol );
    FC_ASSERT( asset_record.valid() );
-   trx.authorize_key( asset_record->id, owner, meta );
+   trx.authorize_key( asset_record->id, owner );
    return *this;
-} FC_CAPTURE_AND_RETHROW( (symbol)(owner)(meta) ) }
+} FC_CAPTURE_AND_RETHROW( (symbol)(owner) ) }
 
 //Most common case where the fee gets paid
 //Called when pay_fee doesn't find a positive balance in the trx to pay the fee with

@@ -147,7 +147,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( amount.amount > 0, "amount: ${amount}", ("amount",amount) );
       deposit_operation op;
       op.amount = amount.amount;
-      op.condition = withdraw_condition( withdraw_with_multisig{multsig_info.required,multsig_info.owners}, amount.asset_id );
+      op.condition = withdraw_condition( withdraw_with_multisig{ multsig_info.required,multsig_info.owners }, amount.asset_id );
       operations.emplace_back( std::move( op ) );
    }
 
@@ -388,12 +388,11 @@ namespace bts { namespace blockchain {
       return false;
    }
 
-    void transaction::authorize_key( asset_id_type asset_id, const address& owner, object_id_type meta )
+    void transaction::authorize_key( const asset_id_type asset_id, const address& owner )
     {
        authorize_operation op;
        op.asset_id = asset_id;
        op.owner = owner;
-       op.meta_id = meta;
        operations.emplace_back( std::move( op ) );
     }
 

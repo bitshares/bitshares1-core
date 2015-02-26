@@ -235,8 +235,7 @@ map<transaction_id_type, fc::exception> detail::client_impl::wallet_get_pending_
 }
 wallet_transaction_record detail::client_impl::wallet_asset_authorize_key( const string& paying_account_name,
                                                                            const string& symbol,
-                                                                           const string& key,
-                                                                           const object_id_type& meta )
+                                                                           const string& key )
 {
    address addr;
    try {
@@ -249,7 +248,7 @@ wallet_transaction_record detail::client_impl::wallet_asset_authorize_key( const
       FC_ASSERT( account.valid() );
       addr = account->active_key();
    }
-   auto record = _wallet->asset_authorize_key( paying_account_name, symbol, addr, meta, true );
+   auto record = _wallet->asset_authorize_key( paying_account_name, symbol, addr, true );
    _wallet->cache_transaction( record );
    network_broadcast_transaction( record.trx );
    return record;

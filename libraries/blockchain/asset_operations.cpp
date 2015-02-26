@@ -296,16 +296,18 @@ namespace bts { namespace blockchain {
 
    void authorize_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
-      oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->asset_id );
+      oasset_record current_asset_record = eval_state._current_state->get_asset_record( abs( this->asset_id ) );
+      if( !current_asset_record.valid() )
+          FC_CAPTURE_AND_THROW( unknown_asset_id, (this->asset_id) );
 
-      if( NOT current_asset_record.valid() ) FC_CAPTURE_AND_THROW( unknown_asset_id, (this->asset_id) );
+      FC_ASSERT( current_asset_record->is_restricted() );
 
-      FC_ASSERT( current_asset_record->is_user_issued() );
-      FC_ASSERT( current_asset_record->issuer_permissions & restricted );
+      if( this->asset_id > 0 )
+          current_asset_record->whitelist.insert( this->owner );
+      else
+          current_asset_record->whitelist.erase( this->owner );
 
-      // TODO
-      //eval_state._current_state->authorize( this->asset_id, this->owner, this->meta_id );
-
+      eval_state._current_state->store_asset_record( *current_asset_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 } } // bts::blockchain

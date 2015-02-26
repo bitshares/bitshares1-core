@@ -29,7 +29,6 @@ namespace bts { namespace blockchain {
    typedef fc::signed_int                     account_id_type;
    typedef int64_t                            share_type;
    typedef uint64_t                           slate_id_type;
-   typedef uint64_t                           object_id_type;
 
    using std::string;
    using std::function;

@@ -409,7 +409,6 @@ namespace bts { namespace wallet {
                  const string& paying_account_name,
                  const string& symbol,
                  const address& key,
-                 const object_id_type meta,
                  bool sign
                  );
          wallet_transaction_record update_signing_key(

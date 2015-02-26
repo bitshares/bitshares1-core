@@ -289,8 +289,7 @@ namespace bts { namespace wallet {
                                         const order_id_type& order_id);
 
       transaction_builder& asset_authorize_key( const string& symbol,
-                                                const address& owner,
-                                                object_id_type meta );
+                                                const address& owner );
 
       transaction_builder& update_signing_key( const string& authorizing_account_name,
                                                const string& delegate_name,

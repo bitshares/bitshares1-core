@@ -4700,14 +4700,14 @@ namespace detail {
    wallet_transaction_record wallet::asset_authorize_key( const string& paying_account_name,
                                                   const string& symbol,
                                                   const address& key,
-                                                  const object_id_type meta, bool sign )
+                                                  bool sign )
    {
       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
       auto payer_key = get_owner_public_key( paying_account_name );
 
       transaction_builder_ptr builder = create_transaction_builder();
-      builder->asset_authorize_key( symbol, key, meta );
+      builder->asset_authorize_key( symbol, key );
       builder->deduct_balance( payer_key, asset() );
       builder->finalize();
 

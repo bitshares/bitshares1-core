@@ -78,7 +78,7 @@ namespace bts { namespace blockchain {
         multisig_condition.required = m;
         multisig_condition.owners = set<address>(addrs.begin(), addrs.end());
         withdraw_condition condition( multisig_condition, asset_id, 0 );
-        auto balance = balance_record(condition);
+        const auto balance = balance_record( condition );
         return balance.id();
     } FC_CAPTURE_AND_RETHROW( (m)(addrs) ) }
 
