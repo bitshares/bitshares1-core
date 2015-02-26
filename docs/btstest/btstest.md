@@ -284,6 +284,11 @@ Expecting JSON
 
 The `expect_json()` function will expect a JSON object.  Currently no tests are performed on the object.
 
+Expecting relative timestamps
+-----------------------------
+
+The `expect_reltime()` function will expect a relative time string as output by `fc::get_approximate_relative_time_string()`.
+
 Improvements to btstest
 -----------------------
 
@@ -300,6 +305,7 @@ Test API
 - `expect_str` will expect command output matching a string
 - `regex` or `expect_regex` will expect command output matching a regular expression
 - `expect_json` expects a JSON object
+- `expect_json` expects a relative time string as output by `fc::get_approximate_relative_time_string()`
 - `run_testdir` will run all `.btstest` files in given directory
 - `register_client` will register a new `TestClient` object
 - `_btstest` directly exposes the `btstest.py` module content.  The API should evolve to a point where using this is unnecessary

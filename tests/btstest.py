@@ -401,6 +401,10 @@ class TestClient(object):
             match_callback(self.last_command_output[m:n])
         return
 
+    def expect_reltime(self, match_callback=None, fail_callback=None):
+        return self.expect_regex( r"[0-9]+\s+(?:second|minute|hour|day|week|month|year)[s]?\s+(?:ago|old|remaining|in\s+the\s+future)",
+            match_callback=match_callback, fail_callback=fail_callback )
+
     def reset_last_command(self, new_command_output=None):
         self.last_command_output = new_command_output
         self.last_command_pos = 0
@@ -439,6 +443,7 @@ class Test(object):
         self.context["expect_str"] = self.expect_str
         self.context["expect_regex"] = self.expect_regex
         self.context["expect_json"] = self.expect_json
+        self.context["expect_reltime"] = self.expect_reltime
         self.context["run_testdir"] = self.run_testdir
         self.context["regex"] = self.expect_regex
         self.context["register_client"] = self.register_client
@@ -515,6 +520,13 @@ class Test(object):
             return
         client = self.get_active_client()
         client.expect_json(match_callback=self.on_match)
+        return
+
+    def expect_reltime(self):
+        if not self.context["expect_enabled"]:
+            return
+        client = self.get_active_client()
+        client.expect_reltime(match_callback=self.on_match)
         return
 
     def on_match(self, s):
