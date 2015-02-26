@@ -1,6 +1,7 @@
 #include <bts/blockchain/asset_operations.hpp>
 #include <bts/blockchain/asset_record.hpp>
 #include <bts/blockchain/chain_interface.hpp>
+#include <bts/blockchain/exceptions.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -36,6 +37,9 @@ namespace bts { namespace blockchain {
 
     asset asset_record::asset_from_string( const string& amount )const
     { try {
+       if( amount.find( ',' ) != string::npos )
+           FC_CAPTURE_AND_THROW( invalid_asset_amount, (amount) );
+
        asset ugly_asset(0, id);
 
        // Multiply by the precision and truncate if there are extra digits.
