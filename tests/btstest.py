@@ -624,11 +624,12 @@ class Test(object):
         if self.last_command_client is None:
             return
         end_text = self.last_command_client.finish_cmd()
-        end_text = end_text.rstrip()
-        print(end_text, end="", flush=True)
-        end_text = end_text.strip()
-        if self.context["expect_enabled"] and (end_text != ""):
-            logging.error("unexpected command output: "+repr(end_text[:40]))
+        if end_text.strip() != "":
+            if self.context["expect_enabled"] and self.context["showmatch_enabled"]:
+                # TODO:  respect showmatch here
+                print("!{ }!~{ " + end_text.strip() + " }~")
+            else:
+                print(end_text, end="")
         self.last_command_client = None
         return
 
