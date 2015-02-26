@@ -596,6 +596,14 @@ class Test(object):
         re.VERBOSE,
         )
 
+    re_expr_invocation = re.compile(
+        r"""
+[$][{]((?:.|\n)*?)[}][$]
+[~][{]((?:.|\n)*?)[}][~]?
+""",
+        re.VERBOSE,
+        )
+
     def parse_script(self, filename):
         with open(filename, "r") as f:
             # read entire script into memory
@@ -632,11 +640,19 @@ class Test(object):
                 if in_command:
                     cmd_text.append(t)
                 print(t, end="", flush=True)
-            elif len(t) >= 4 and t[0:2] == "${" and t[-2:] == "}$":
+            elif len(t) >= 4 and t[0:2] == "${":
                 # Python expression
-                self.interpret_expr(t[2:-2])
+                if t[-2:] == "}$":
+                    expr = t[2:-2]
+                else:
+                    mo = self.re_expr_invocation.match(t)
+                    if mo is None:
+                        # TODO:  better error handling here
+                        raise RuntimeError("mismatched ${")
+                    expr = mo.group(1)
+                self.interpret_expr(expr)
                 # TODO: cmd_text.append() function
-                print(t, end="", flush=True)
+                print("${"+expr+"}$", end="", flush=True)
                 self.dump_matchbuf(self.context["showmatch_enabled"])
             elif len(t) >= 4 and t[0:2] == "#{" and t[-2:] == "}#":
                 # comment
