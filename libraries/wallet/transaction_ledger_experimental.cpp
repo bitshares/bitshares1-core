@@ -661,12 +661,6 @@ void detail::wallet_impl::scan_transaction_experimental( const transaction_evalu
             case update_signing_key_op_type:
                 result = scan_update_signing_key( op.as<update_signing_key_operation>() );
                 break;
-            case relative_bid_op_type:
-                // TODO
-                break;
-            case relative_ask_op_type:
-                // TODO
-                break;
             case update_balance_vote_op_type:
                 // TODO
                 break;

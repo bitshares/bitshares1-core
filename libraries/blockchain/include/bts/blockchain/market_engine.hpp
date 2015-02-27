@@ -60,8 +60,6 @@ namespace bts { namespace blockchain { namespace detail {
                                 const fc::time_point_sec timestamp );
 
     void cancel_current_short( market_transaction& mtrx, const asset_id_type quote_asset_id );
-    void cancel_current_relative_bid( market_transaction& mtrx );
-    void cancel_current_relative_ask( market_transaction& mtrx );
 
     transaction_evaluation_state  _eval_state;
     pending_chain_state_ptr       _pending_state;
@@ -84,8 +82,6 @@ namespace bts { namespace blockchain { namespace detail {
   private:
     bts::db::cached_level_map< market_index_key, order_record >::iterator         _bid_itr;
     bts::db::cached_level_map< market_index_key, order_record >::iterator         _ask_itr;
-    bts::db::cached_level_map< market_index_key, order_record >::iterator         _relative_bid_itr;
-    bts::db::cached_level_map< market_index_key, order_record >::iterator         _relative_ask_itr;
     bts::db::cached_level_map< market_index_key, order_record >::iterator         _short_itr;
     std::set< market_index_key >::reverse_iterator                                _short_at_feed_itr;
     std::set< pair<price,market_index_key> >::reverse_iterator                    _short_at_limit_itr;

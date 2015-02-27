@@ -129,8 +129,6 @@ class wallet_impl : public chain_observer
 
       bool scan_bid( const bid_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
       bool scan_ask( const ask_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
-      bool scan_relative_bid( const relative_bid_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
-      bool scan_relative_ask( const relative_ask_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
       bool scan_short( const short_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
 
       bool scan_burn( const burn_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
@@ -188,6 +186,7 @@ class wallet_impl : public chain_observer
                                        bool allow_stupid
                                       );
 
+      // TODO:  Refactor and move somewhere else
       price str_to_relative_price( const string& str, const string& base_symbol, const string& quote_symbol );
 };
 

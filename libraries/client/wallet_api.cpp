@@ -235,8 +235,7 @@ map<transaction_id_type, fc::exception> detail::client_impl::wallet_get_pending_
 }
 wallet_transaction_record detail::client_impl::wallet_asset_authorize_key( const string& paying_account_name,
                                                                            const string& symbol,
-                                                                           const string& key,
-                                                                           const object_id_type& meta )
+                                                                           const string& key )
 {
    address addr;
    try {
@@ -249,7 +248,7 @@ wallet_transaction_record detail::client_impl::wallet_asset_authorize_key( const
       FC_ASSERT( account.valid() );
       addr = account->active_key();
    }
-   auto record = _wallet->asset_authorize_key( paying_account_name, symbol, addr, meta, true );
+   auto record = _wallet->asset_authorize_key( paying_account_name, symbol, addr, true );
    _wallet->cache_transaction( record );
    network_broadcast_transaction( record.trx );
    return record;
@@ -1329,19 +1328,6 @@ wallet_transaction_record client_impl::wallet_market_submit_ask(
                                      "If you're sure you want to do this, place your ask again and set allow_stupid_ask to true.");
 
   auto record = _wallet->submit_ask( from_account, quantity, quantity_symbol, quote_price, quote_symbol, true );
-  _wallet->cache_transaction( record );
-  network_broadcast_transaction( record.trx );
-  return record;
-}
-wallet_transaction_record client_impl::wallet_market_submit_relative_ask(
-           const string& from_account,
-           const string& quantity,
-           const string& quantity_symbol,
-           const string& relative_quote_price,
-           const string& quote_symbol,
-           const string& limit )
-{
-  auto record = _wallet->submit_relative_ask( from_account, quantity, quantity_symbol, relative_quote_price, quote_symbol, limit, true );
   _wallet->cache_transaction( record );
   network_broadcast_transaction( record.trx );
   return record;

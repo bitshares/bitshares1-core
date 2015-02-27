@@ -353,6 +353,7 @@ namespace detail {
                                             bool allow_stupid
                                             )
    {
+       // TODO:  Refactor sell API
        if( !is_receive_account(from_account_name) )
            FC_CAPTURE_AND_THROW( unknown_receive_account, (from_account_name) );
 
@@ -379,13 +380,13 @@ namespace detail {
        if( is_bid )
        {
 		   // n.b. bid base/quote is opposite of ask
-		   const asset_id_type base_id = price_arec->id;
-		   const asset_id_type quote_id = sell_arec->id;
+		   // const asset_id_type base_id = price_arec->id;
+		   // const asset_id_type quote_id = sell_arec->id;
 		   const string& base_symbol = price_symbol;
 		   const string& quote_symbol = sell_quantity_symbol;
 
-   	       price relative_price = str_to_relative_price(
-   	           relative_price_str, base_symbol, quote_symbol );
+   	       // price relative_price = str_to_relative_price(
+   	       //     relative_price_str, base_symbol, quote_symbol );
 
            oprice limit_price;
 
@@ -399,6 +400,7 @@ namespace detail {
                     limit_price.reset();
            }
 
+           /*
 		   if( relative_price.ratio > 0 )
 		   {
 			   // relative bid.
@@ -413,6 +415,7 @@ namespace detail {
 
 		   }
 		   else
+		   */
 		   {
 			   FC_ASSERT( limit_price.valid(), "Must specify at least one of rel. price or limit price" );
 
@@ -426,13 +429,13 @@ namespace detail {
 	   else
 	   {
 		   // n.b. ask base/quote is opposite of bid
-		   const asset_id_type base_id = sell_arec->id;
-		   const asset_id_type quote_id = price_arec->id;
+		   // const asset_id_type base_id = sell_arec->id;
+		   // const asset_id_type quote_id = price_arec->id;
 		   const string& base_symbol = sell_quantity_symbol;
 		   const string& quote_symbol = price_symbol;
 
-   	       price relative_price = str_to_relative_price(
-   	           relative_price_str, base_symbol, quote_symbol );
+   	       // price relative_price = str_to_relative_price(
+   	       //     relative_price_str, base_symbol, quote_symbol );
 
            oprice limit_price;
 
@@ -446,6 +449,7 @@ namespace detail {
                     limit_price.reset();
            }
 
+           /*
 		   if( relative_price.ratio > 0 )
 		   {
 			   // relative ask.
@@ -459,6 +463,7 @@ namespace detail {
                    limit_price);
 		   }
 		   else
+		   */
 		   {
 			   FC_ASSERT( limit_price.valid(), "Must specify at least one of rel. price or limit price" );
 
@@ -483,23 +488,16 @@ namespace detail {
                                             const string& limit
                                             )
    {
-      FC_ASSERT( (order_type != relative_ask_order)
-              && (order_type != relative_bid_order),
-              "relative orders not supported by apply_order_to_builder"
-              );
-
 	  // description of "balance" parameter:
 	  // in the case of ask, relative ask, relative bid, "balance" is an existing balance to be sold
 	  // in the case of bid, "balance" is desired quantity to buy
 	  // TODO:  What is balance in case of short and cover?
 
       // is_ba : is bid or ask
-      // is_rel_ba : is relative bid or relative ask
       const bool is_ba       = ((order_type ==          bid_order) | (order_type ==          ask_order));
-      const bool is_rel_ba   = ((order_type == relative_bid_order) | (order_type == relative_ask_order));
       const bool is_short    =  (order_type ==        short_order);
 
-	  if( !(is_ba | is_rel_ba | is_short) )
+	  if( !(is_ba | is_short) )
          FC_THROW_EXCEPTION( invalid_operation, "This function only supports bids, asks and shorts." );
 
       if( !is_receive_account(account_name) )
@@ -511,9 +509,7 @@ namespace detail {
       // bid_order,
       // ask_order,
       // short_order,
-      // cover_order,
-      // relative_bid_order,
-      // relative_ask_order
+      // cover_order
 
       const bool is_zero_price_allowed = is_short;
 
@@ -538,7 +534,8 @@ namespace detail {
       //       0.02 USD / BTS * (1 BTS / 100000 BTS-satoshi) * (10000 USD-satoshi / 1 USD) = 0.002 USD-satoshi per BTS-satoshi.
       //
       // HOWEVER in the case of relative orders, the price is a percentage
-      //    which should not get converted.
+      //    which should not get converted.  (N.b. relative orders were
+      //    reverted.)
       //
       // And in the case of a short, the order_price is an APR which
       //    does not get converted, but the limit price is a price,
@@ -3590,8 +3587,6 @@ namespace detail {
             break;
          case bid_order:
          case ask_order:
-         case relative_bid_order:
-         case relative_ask_order:
          case short_order:
             //args: account_name, quantity, base_symbol, price, quote_symbol[, price_limit (for shorts)]
             FC_ASSERT(args.size() > 4, "Incorrect number of arguments.");
@@ -3684,59 +3679,6 @@ namespace detail {
                                 (price_limit)(price_symbol)
                                 (relative_percent)(sign) )
    }
-
-   wallet_transaction_record wallet::submit_relative_ask(
-           const string& from_account_name,
-           const string& real_quantity,
-           const string& quantity_symbol,
-           const string& relative_quote_price,
-           const string& quote_symbol,
-           const string& limit_price,
-           bool sign )
-   { try {
-      if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
-      if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
-
-      oasset_record quantity_arec = my->_blockchain->get_asset_record( quantity_symbol );
-      oasset_record quote_arec = my->_blockchain->get_asset_record( quote_symbol );
-
-      // TODO: Add symbol to error messages, use exception ID instead of assert
-	  FC_ASSERT( quantity_arec.valid(), "could not find record for asset being sold" );
-	  FC_ASSERT( quote_arec.valid(), "could not find record for asset being bought" );
-
-	  const asset_id_type quantity_id = quantity_arec->id;
-	  const asset_id_type quote_id = quote_arec->id;
-
-      if( quantity_id == quote_id )
-          FC_CAPTURE_AND_THROW( invalid_market, (quantity_symbol)(quote_symbol) );
-
-      const bool is_bid = (quantity_id > quote_id);
-      if( is_bid )
-          FC_CAPTURE_AND_THROW( invalid_market, (quantity_symbol)(quote_symbol) );
-
-      transaction_builder_ptr builder = create_transaction_builder();
-
-      // go through sell order, but yell if asset ID mismatch
-      my->apply_sell_order_to_builder(
-          builder,
-          from_account_name,
-          real_quantity,
-          quantity_symbol,
-          limit_price,
-          quote_symbol,
-          relative_quote_price,
-          true
-          );
-
-      builder->finalize();
-
-      if( sign )
-         return builder->sign();
-      return builder->transaction_record;
-   } FC_CAPTURE_AND_RETHROW( (from_account_name)
-                             (real_quantity)(quantity_symbol)
-                             (relative_quote_price)(quote_symbol)(limit_price)(sign) ) }
-
 
    wallet_transaction_record wallet::submit_ask(
            const string& from_account_name,
@@ -4700,14 +4642,14 @@ namespace detail {
    wallet_transaction_record wallet::asset_authorize_key( const string& paying_account_name,
                                                   const string& symbol,
                                                   const address& key,
-                                                  const object_id_type meta, bool sign )
+                                                  bool sign )
    {
       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
       auto payer_key = get_owner_public_key( paying_account_name );
 
       transaction_builder_ptr builder = create_transaction_builder();
-      builder->asset_authorize_key( symbol, key, meta );
+      builder->asset_authorize_key( symbol, key );
       builder->deduct_balance( payer_key, asset() );
       builder->finalize();
 

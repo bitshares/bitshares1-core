@@ -609,12 +609,6 @@
               "name" : "address",
               "type" : "string",
               "description" : "the address being granted permission, or the public key, or the account name"
-            },
-            {
-               "name" : "meta",
-               "type" : "object_id_type",
-               "description" : "-1 to remove authorization, otherwise a link to an object in the object graph",
-               "default_value" : 0
             }
            ],
         "prerequisites" : ["wallet_unlocked"]
@@ -2061,46 +2055,6 @@
          ],
          "prerequisites" : ["wallet_unlocked"],
          "aliases" : [ "ask" ]
-      },
-      {
-         "method_name" : "wallet_market_submit_relative_ask",
-         "description" : "Used to place a request to sell a quantity of assets at a price specified in another asset",
-         "return_type" : "transaction_record",
-         "parameters"  : [
-            {
-               "name" : "from_account_name",
-               "type" : "account_name",
-               "description" : "the account that will provide funds for the ask"
-            },
-            {
-               "name" : "sell_quantity",
-               "type" : "string",
-               "description" : "the quantity of items you would like to sell"
-            },
-            {
-               "name" : "sell_quantity_symbol",
-               "type" : "asset_symbol",
-               "description" : "the type of items you would like to sell"
-            },
-            {
-               "name" : "relative_ask_price",
-               "type" : "string",
-               "description" : "the relative price per unit sold."
-            },
-            {
-               "name" : "ask_price_symbol",
-               "type" : "asset_symbol",
-               "description" : "the type of asset you would like to be paid"
-            },
-            {
-               "name" : "limit_ask_price",
-               "type" : "string",
-               "description" : "the minimum price per unit sold.",
-               "default_value" : ""
-            }
-         ],
-         "prerequisites" : ["wallet_unlocked"],
-         "aliases" : [ "relative_ask" ]
       },
       {
          "method_name" : "wallet_market_submit_short",

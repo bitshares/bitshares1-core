@@ -29,7 +29,7 @@ namespace bts { namespace blockchain {
 
       void deposit( const address& addr, const asset& amount );
 
-      void authorize_key( asset_id_type asset_id, const address& owner, object_id_type meta );
+      void authorize_key( const asset_id_type asset_id, const address& owner );
 
       void deposit_multisig( const multisig_meta_info& info, const asset& amount );
 
@@ -109,18 +109,8 @@ namespace bts { namespace blockchain {
                 const price& price_per_unit,
                 const address& owner );
 
-      void relative_bid( const asset& quantity,
-                const price& price_per_unit,
-                const optional<price>& limit,
-                const address& owner );
-
       void ask( const asset& quantity,
                 const price& price_per_unit,
-                const address& owner );
-
-      void relative_ask( const asset& quantity,
-                const price& price_per_unit,
-                const optional<price>& limit,
                 const address& owner );
 
       void short_sell( const asset& quantity,

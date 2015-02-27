@@ -17,8 +17,8 @@ struct multisig_meta_info
 {
    static const account_type type = multisig_account;
 
-   uint32_t                required = 0;
-   std::set<address>       owners;
+   uint32_t     required = 0;
+   set<address> owners;
 };
 
 struct account_meta_info
