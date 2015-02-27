@@ -330,32 +330,70 @@ wallet_transaction_record detail::client_impl::wallet_transfer(
         const string& to_account_name,
         const string& memo_message,
         const vote_strategy& strategy )
-{
-    return wallet_transfer_from(amount_to_transfer, asset_symbol, from_account_name, from_account_name,
-                                to_account_name, memo_message, strategy);
-}
+{ try {
+    const asset amount = _chain_db->to_ugly_asset( amount_to_transfer, asset_symbol );
 
-wallet_transaction_record detail::client_impl::wallet_transfer_to_public_account(
-        double amount_to_transfer,
-        const string& asset_symbol,
-        const string& from_account_name,
-        const string& to_account_name,
-        const string& memo_message,
-        const vote_strategy& strategy )
-{
-    const oaccount_record account_record = _chain_db->get_account_record( to_account_name );
-    FC_ASSERT( account_record.valid() && !account_record->is_retracted() );
-    auto record = _wallet->transfer_asset_to_address(amount_to_transfer,
-                                                     asset_symbol,
-                                                     from_account_name,
-                                                     account_record->active_address(),
-                                                     memo_message,
-                                                     strategy,
-                                                     true );
-    _wallet->cache_transaction( record );
-    network_broadcast_transaction( record.trx );
-    return record;
-}
+    owallet_contact_record contact = wallet_get_contact( to_account_name );
+    if( !contact.valid() )
+        contact = contact_data( *_chain_db, to_account_name );
+
+    if( contact->contact_type == contact_data::contact_type_enum::account_name )
+    {
+        const auto sending_account = _wallet->get_account( from_account_name );
+        const auto receiving_account = _wallet->get_account( to_account_name );
+        transaction_builder_ptr builder = _wallet->create_transaction_builder();
+        auto record = builder->deposit_asset( sending_account,
+                                              receiving_account,
+                                              amount,
+                                              memo_message,
+                                              from_account_name )
+                                              .finalize( true, strategy )
+                                              .sign();
+
+        if( _mail_client )
+        {
+            for( auto&& notice : builder->encrypted_notifications() )
+            {
+                _mail_client->send_encrypted_message( std::move( notice ),
+                                                      from_account_name,
+                                                      to_account_name,
+                                                      receiving_account.owner_key );
+            }
+        }
+
+        _wallet->cache_transaction( record );
+        network_broadcast_transaction( record.trx );
+        return record;
+    }
+    else
+    {
+        address recipient_address;
+        switch( contact->contact_type )
+        {
+            case contact_data::contact_type_enum::public_key:
+                recipient_address = address( public_key_type( to_account_name ) );
+                break;
+            case contact_data::contact_type_enum::address:
+                recipient_address = address( to_account_name );
+                break;
+            case contact_data::contact_type_enum::btc_address:
+                recipient_address = address( pts_address( to_account_name ) );
+                break;
+            default:
+                FC_ASSERT( false, "Unsupported recipient format!" );
+        }
+
+        auto record =  _wallet->transfer_asset_to_address( amount,
+                                                           from_account_name,
+                                                           recipient_address,
+                                                           memo_message,
+                                                           strategy );
+
+        _wallet->cache_transaction( record );
+        network_broadcast_transaction( record.trx );
+        return record;
+    }
+} FC_CAPTURE_AND_RETHROW( (amount_to_transfer)(asset_symbol)(from_account_name)(to_account_name)(memo_message)(strategy) ) }
 
 wallet_transaction_record detail::client_impl::wallet_burn(
         double amount_to_transfer,
@@ -374,8 +412,7 @@ wallet_transaction_record detail::client_impl::wallet_burn(
     return record;
 }
 
-
-string  detail::client_impl::wallet_address_create( const string& account_name,
+string detail::client_impl::wallet_address_create( const string& account_name,
                                                     const string& label,
                                                     int legacy_network_byte )
 { try {
@@ -387,89 +424,6 @@ string  detail::client_impl::wallet_address_create( const string& account_name,
     else
         FC_ASSERT(false, "Unsupported network byte");
 } FC_CAPTURE_AND_RETHROW( (account_name)(label)(legacy_network_byte) ) }
-
-
-wallet_transaction_record detail::client_impl::wallet_transfer_to_legacy_address(
-        double amount_to_transfer,
-        const string& asset_symbol,
-        const string& from_account_name,
-        const pts_address& to_address,
-        const string& memo_message,
-        const vote_strategy& strategy )
-{
-    auto record =  _wallet->transfer_asset_to_address( amount_to_transfer,
-                                                       asset_symbol,
-                                                       from_account_name,
-                                                       address( to_address ),
-                                                       memo_message,
-                                                       strategy,
-                                                       true );
-    _wallet->cache_transaction( record );
-    network_broadcast_transaction( record.trx );
-    return record;
-
-}
-
-
-
-wallet_transaction_record detail::client_impl::wallet_transfer_to_address(
-        double amount_to_transfer,
-        const string& asset_symbol,
-        const string& from_account_name,
-        const string& to_address,
-        const string& memo_message,
-        const vote_strategy& strategy )
-{
-    address effective_address;
-    if( address::is_valid( to_address ) )
-        effective_address = address( to_address );
-    else
-        effective_address = address( public_key_type( to_address ) );
-    auto record =  _wallet->transfer_asset_to_address( amount_to_transfer,
-                                                       asset_symbol,
-                                                       from_account_name,
-                                                       effective_address,
-                                                       memo_message,
-                                                       strategy,
-                                                       true );
-    _wallet->cache_transaction( record );
-    network_broadcast_transaction( record.trx );
-    return record;
-
-}
-
-wallet_transaction_record detail::client_impl::wallet_transfer_from(
-        const string& amount_to_transfer,
-        const string& asset_symbol,
-        const string& paying_account_name,
-        const string& from_account_name,
-        const string& to_account_name,
-        const string& memo_message,
-        const vote_strategy& strategy )
-{
-    asset amount = _chain_db->to_ugly_asset(amount_to_transfer, asset_symbol);
-    auto payer = _wallet->get_account(paying_account_name);
-    auto recipient = _wallet->get_account(to_account_name);
-    transaction_builder_ptr builder = _wallet->create_transaction_builder();
-    auto record = builder->deposit_asset(payer, recipient, amount,
-                                         memo_message, from_account_name)
-                          .finalize( true, strategy )
-                          .sign();
-
-    _wallet->cache_transaction( record );
-    network_broadcast_transaction( record.trx );
-
-    if( _mail_client )
-    {
-        for( auto&& notice : builder->encrypted_notifications() )
-            _mail_client->send_encrypted_message(std::move(notice),
-                                                 from_account_name,
-                                                 to_account_name,
-                                                 recipient.owner_key);
-    }
-
-    return record;
-}
 
 balance_id_type detail::client_impl::wallet_multisig_get_balance_id(
                                         const string& asset_symbol,

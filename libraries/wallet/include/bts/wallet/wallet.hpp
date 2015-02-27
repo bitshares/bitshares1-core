@@ -260,44 +260,18 @@ namespace bts { namespace wallet {
          void cache_transaction( wallet_transaction_record& transaction_record );
 
          /**
-          *  Multi-Part transfers provide additional security by not combining inputs, but they
-          *  show up to the user as multiple unique transfers.  This is an advanced feature
-          *  that should probably have some user interface support to merge these transfers
-          *  into one logical transfer.
-          */
-         vector<signed_transaction> multipart_transfer(
-                 double real_amount_to_transfer,
-                 const string& amount_to_transfer_symbol,
-                 const string& from_account_name,
-                 const string& to_account_name,
-                 const string& memo_message,
-                 bool sign
-                 );
-         /**
           *  This transfer works like a bitcoin transaction combining multiple inputs
           *  and producing a single output. The only different aspect with transfer_asset is that
           *  this will send to a address.
           */
          wallet_transaction_record transfer_asset_to_address(
-                 double real_amount_to_transfer,
-                 const string& amount_to_transfer_symbol,
+                 const asset& amount,
                  const string& from_account_name,
                  const address& to_address,
                  const string& memo_message,
                  vote_strategy selection_method,
-                 bool sign
+                 bool sign = true
                  );
-         /*
-         transaction_builder builder_transfer_asset_to_address(
-                 double real_amount_to_transfer,
-                 const string& amount_to_transfer_symbol,
-                 const string& from_account_name,
-                 const address& to_address,
-                 const string& memo_message,
-                 vote_strategy selection_method
-                 );
-         */
-
          /**
           * This transfer works like a bitcoin sendmany transaction combining multiple inputs
           * and producing a single output.
@@ -309,10 +283,6 @@ namespace bts { namespace wallet {
                  const string& memo_message,
                  bool sign
                  );
-         /**
-          *  This transfer works like a bitcoin transaction combining multiple inputs
-          *  and producing a single output.
-          */
          wallet_transaction_record burn_asset(
                  double real_amount_to_transfer,
                  const string& amount_to_transfer_symbol,

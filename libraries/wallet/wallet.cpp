@@ -2777,25 +2777,15 @@ namespace detail {
    }
 
    wallet_transaction_record wallet::transfer_asset_to_address(
-           double real_amount_to_transfer,
-           const string& amount_to_transfer_symbol,
+           const asset& asset_to_transfer,
            const string& from_account_name,
            const address& to_address,
            const string& memo_message,
            vote_strategy strategy,
-           bool sign)
+           bool sign )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-      FC_ASSERT( my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) );
-
-      const auto asset_rec = my->_blockchain->get_asset_record( amount_to_transfer_symbol );
-      FC_ASSERT( asset_rec.valid() );
-      const auto asset_id = asset_rec->id;
-
-      const int64_t precision = asset_rec->precision ? asset_rec->precision : 1;
-      share_type amount_to_transfer = real_amount_to_transfer * precision;
-      asset asset_to_transfer( amount_to_transfer, asset_id );
 
       private_key_type sender_private_key  = get_active_private_key( from_account_name );
       public_key_type  sender_public_key   = sender_private_key.get_public_key();
@@ -2849,8 +2839,7 @@ namespace detail {
       if( sign ) my->sign_transaction( trx, required_signatures );
 
       return record;
-   } FC_CAPTURE_AND_RETHROW( (real_amount_to_transfer)(amount_to_transfer_symbol)(from_account_name)(to_address)(memo_message) ) }
-
+   } FC_CAPTURE_AND_RETHROW( (asset_to_transfer)(from_account_name)(to_address)(memo_message)(strategy)(sign) ) }
 
    wallet_transaction_record wallet::transfer_asset_to_many_address(
            const string& amount_to_transfer_symbol,
