@@ -91,7 +91,18 @@ namespace bts { namespace wallet {
         if( !label.empty() )
             record.label = label;
 
-        *this = record;
+        *this = std::move( record );
     } FC_CAPTURE_AND_RETHROW( (data)(label) ) }
+
+    approval_data::approval_data( const chain_interface& db, const string& name, const int8_t approval )
+    { try {
+        FC_ASSERT( db.get_account_record( name ).valid() );
+
+        approval_data record;
+        record.name = name;
+        record.approval = approval;
+
+        *this = std::move( record );
+    } FC_CAPTURE_AND_RETHROW( (name)(approval) ) }
 
 } } // bts::wallet

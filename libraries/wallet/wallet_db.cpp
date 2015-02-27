@@ -267,7 +267,7 @@ namespace bts { namespace wallet {
        return master_private_key.child( key_index );
    } FC_CAPTURE_AND_RETHROW( (key_index) ) }
 
-   public_key_type wallet_db::generate_new_account( const fc::sha512& password, const string& account_name, const variant& private_data )
+   public_key_type wallet_db::generate_new_account( const fc::sha512& password, const string& account_name )
    { try {
        FC_ASSERT( is_open() );
 
@@ -313,16 +313,15 @@ namespace bts { namespace wallet {
 
        key_data owner_key;
        owner_key.account_address = owner_address;
+       owner_key.child_key_index = key_index;
        owner_key.public_key = owner_public_key;
        owner_key.encrypt_private_key( password, owner_private_key );
-       owner_key.gen_seq_number = key_index;
 
        account_data account;
        account.name = account_name;
        account.owner_key = owner_public_key;
        account.set_active_key( blockchain::now(), active_public_key );
        account.last_update = blockchain::now();
-       account.private_data = private_data;
 
        store_key( active_key );
        set_last_wallet_child_key_index( key_index );
@@ -332,25 +331,25 @@ namespace bts { namespace wallet {
        return owner_public_key;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
-   private_key_type wallet_db::get_account_child_key( const private_key_type& active_private_key, uint32_t seq_num )const
+   private_key_type wallet_db::get_account_child_key( const private_key_type& active_private_key, uint32_t child_key_index )const
    { try {
        FC_ASSERT( is_open() );
        const extended_private_key extended_active_private_key = extended_private_key( active_private_key );
        fc::sha256::encoder enc;
-       fc::raw::pack( enc, seq_num );
+       fc::raw::pack( enc, child_key_index );
        return extended_active_private_key.child( enc.result() );
-   } FC_CAPTURE_AND_RETHROW( (seq_num) ) }
+   } FC_CAPTURE_AND_RETHROW( (child_key_index) ) }
 
    // Deprecated but kept for key regeneration
-   private_key_type wallet_db::get_account_child_key_v1( const fc::sha512& password, const address& account_address, uint32_t seq_num )const
+   private_key_type wallet_db::get_account_child_key_v1( const fc::sha512& password, const address& account_address, uint32_t child_key_index )const
    { try {
        FC_ASSERT( is_open() );
        const extended_private_key master_private_key = wallet_master_key->decrypt_key( password );
        fc::sha256::encoder enc;
        fc::raw::pack( enc, account_address );
-       fc::raw::pack( enc, seq_num );
+       fc::raw::pack( enc, child_key_index );
        return master_private_key.child( enc.result() );
-   } FC_CAPTURE_AND_RETHROW( (account_address)(seq_num) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_address)(child_key_index) ) }
 
    private_key_type wallet_db::generate_new_account_child_key( const fc::sha512& password, const string& account_name )
    { try {
@@ -365,16 +364,16 @@ namespace bts { namespace wallet {
        FC_ASSERT( key_record->has_private_key(), "Active private key not found!" );
 
        const private_key_type active_private_key = key_record->decrypt_private_key( password );
-       uint32_t seq_num = account_record->last_used_gen_sequence;
+       uint32_t child_key_index = account_record->last_child_key_index;
        private_key_type account_child_private_key;
        public_key_type account_child_public_key;
        address account_child_address;
        while( true )
        {
-           ++seq_num;
-           FC_ASSERT( seq_num != 0, "Overflow!" );
+           ++child_key_index;
+           FC_ASSERT( child_key_index != 0, "Overflow!" );
 
-           account_child_private_key = get_account_child_key( active_private_key, seq_num );
+           account_child_private_key = get_account_child_key( active_private_key, child_key_index );
            account_child_public_key = account_child_private_key.get_public_key();
            account_child_address = address( account_child_public_key );
 
@@ -384,13 +383,13 @@ namespace bts { namespace wallet {
            break;
        }
 
-       account_record->last_used_gen_sequence = seq_num;
+       account_record->last_child_key_index = child_key_index;
 
        key_data key;
        key.account_address = account_record->owner_address();
+       key.child_key_index = child_key_index;
        key.public_key = account_child_public_key;
        key.encrypt_private_key( password, account_child_private_key );
-       key.gen_seq_number = seq_num;
 
        store_account( *account_record );
        store_key( key );
@@ -449,7 +448,7 @@ namespace bts { namespace wallet {
        return owallet_account_record();
    } FC_CAPTURE_AND_RETHROW( (account_id) ) }
 
-   void wallet_db::store_account( const account_data& account )
+   wallet_account_record wallet_db::store_account( const account_data& account )
    { try {
        FC_ASSERT( is_open() );
        FC_ASSERT( account.name != string() );
@@ -502,9 +501,11 @@ namespace bts { namespace wallet {
                }
            }
        }
+
+       return *account_record;
    } FC_CAPTURE_AND_RETHROW( (account) ) }
 
-   void wallet_db::store_account( const blockchain::account_record& blockchain_account_record )
+   wallet_account_record wallet_db::store_account( const blockchain::account_record& blockchain_account_record )
    { try {
        FC_ASSERT( is_open() );
 
@@ -516,6 +517,7 @@ namespace bts { namespace wallet {
        temp = blockchain_account_record;
 
        store_account( *account_record );
+       return *account_record;
    } FC_CAPTURE_AND_RETHROW( (blockchain_account_record) ) }
 
    owallet_key_record wallet_db::lookup_key( const address& derived_address )const

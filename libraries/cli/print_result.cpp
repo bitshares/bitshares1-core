@@ -127,8 +127,7 @@ namespace bts { namespace cli {
     _command_to_function["blockchain_market_list_bids"] = &f_blockchain_market_list;
     _command_to_function["blockchain_market_list_shorts"] = &f_blockchain_market_short_list;
 
-    _command_to_function["wallet_list_accounts"] = &f_wallet_list_my_accounts;
-    _command_to_function["wallet_list_unregistered_accounts"] = &f_wallet_list_accounts;
+    _command_to_function["wallet_list_accounts"] = &f_wallet_list_accounts;
 
     _command_to_function["wallet_account_balance"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
     {
@@ -149,7 +148,6 @@ namespace bts { namespace cli {
     };
 
     _command_to_function["wallet_transfer"]                     = &f_wallet_transfer;
-    _command_to_function["wallet_transfer_from"]                = &f_wallet_transfer;
     _command_to_function["wallet_get_transaction"]              = &f_wallet_transfer;
     _command_to_function["wallet_account_register"]             = &f_wallet_transfer;
     _command_to_function["wallet_account_retract"]              = &f_wallet_transfer;
@@ -354,14 +352,13 @@ namespace bts { namespace cli {
     out << pretty_order_list( order_list, client );
   }
 
-  void print_result::f_wallet_list_my_accounts(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
+  void print_result::f_wallet_list_accounts(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
     auto accts = result.as<vector<wallet_account_record>>();
 
     out << std::setw(35) << std::left << "NAME (* delegate)";
     out << std::setw(64) << "KEY";
     out << std::setw(22) << "REGISTERED";
-    out << std::setw(15) << "FAVORITE";
     out << std::setw(25) << "BLOCK PRODUCTION ENABLED";
     out << "\n";
 
@@ -387,48 +384,10 @@ namespace bts { namespace cli {
         out << std::setw(22) << pretty_timestamp(acct.registration_date);
       }
 
-      if(acct.favorite)
-        out << std::setw(15) << "YES";
-      else
-        out << std::setw(15) << "NO";
-
       if(acct.is_delegate())
         out << std::setw(25) << (acct.block_production_enabled ? "YES" : "NO");
       else
         out << std::setw(25) << "N/A";
-      out << "\n";
-    }
-  }
-
-  void print_result::f_wallet_list_accounts(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
-  {
-    auto accts = result.as<vector<wallet_account_record>>();
-
-    out << std::setw(35) << std::left << "NAME (* delegate)";
-    out << std::setw(64) << "KEY";
-    out << std::setw(22) << "REGISTERED";
-    out << std::setw(15) << "FAVORITE";
-    out << "\n";
-
-    for(const auto& acct : accts)
-    {
-      if(acct.is_delegate())
-        out << std::setw(35) << pretty_shorten(acct.name, 33) + " *";
-      else
-        out << std::setw(35) << pretty_shorten(acct.name, 34);
-
-      out << std::setw(64) << string(acct.active_key());
-
-      if(acct.id == 0)
-        out << std::setw(22) << "NO";
-      else
-        out << std::setw(22) << pretty_timestamp(acct.registration_date);
-
-      if(acct.favorite)
-        out << std::setw(15) << "YES";
-      else
-        out << std::setw(15) << "NO";
-
       out << "\n";
     }
   }
@@ -516,7 +475,6 @@ namespace bts { namespace cli {
     out << std::setw(64) << "KEY";
     out << std::setw(22) << "REGISTERED";
     out << std::setw(15) << "VOTES FOR";
-    out << std::setw(15) << "APPROVAL";
 
     out << '\n';
     for(int i = 0; i < 151; ++i)
@@ -541,19 +499,9 @@ namespace bts { namespace cli {
       if(acct.is_delegate())
       {
         out << std::setw(15) << acct.delegate_info->votes_for;
-
-        try
-        {
-          out << std::setw(15) << std::to_string(client->get_wallet()->get_account_approval(acct.name));
-        }
-        catch(...)
-        {
-          out << std::setw(15) << false;
-        }
       }
       else
       {
-        out << std::setw(15) << "N/A";
         out << std::setw(15) << "N/A";
       }
 

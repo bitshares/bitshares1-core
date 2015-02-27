@@ -308,7 +308,6 @@ string pretty_delegate_list( const vector<account_record>& delegate_records, cpt
 
     out << std::setw(  6 ) << "ID";
     out << std::setw( 32 ) << "NAME (* next in line)";
-    out << std::setw( 15 ) << "APPROVAL";
     out << std::setw(  9 ) << "PRODUCED";
     out << std::setw(  9 ) << "MISSED";
     out << std::setw( 14 ) << "RELIABILITY";
@@ -908,7 +907,7 @@ string pretty_vote_summary( const account_vote_summary_type& votes, cptr client 
 
         out << std::setw( 32 ) << pretty_shorten( delegate_name, 31 );
         out << std::setw( 24 ) << client->get_chain()->to_pretty_asset( asset( votes_for ) );
-        out << std::setw(  8 ) << std::to_string( client->get_wallet()->get_account_approval( delegate_name ) );
+        //out << std::setw(  8 ) << std::to_string( client->get_wallet()->get_account_approval( delegate_name ) );
 
         out << "\n";
     }

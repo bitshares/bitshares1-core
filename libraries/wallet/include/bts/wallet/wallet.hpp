@@ -157,34 +157,28 @@ namespace bts { namespace wallet {
 
          vector<wallet_transaction_record> get_transactions( const string& transaction_id_prefix );
 
-         ///@{ account management
-         public_key_type  create_account( const string& account_name,
-                                          const variant& private_data = variant() );
+         vector<wallet_account_record> list_accounts()const;
+         owallet_account_record lookup_account( const string& account )const;
+         wallet_account_record store_account( const account_data& account );
 
-         void update_account_private_data( const string& account_to_update,
-                                           const variant& private_data );
-
-         void account_set_favorite ( const string& account_name,
-                                     const bool is_favorite );
-
-         wallet_account_record get_account( const string& account_name )const;
-
+         public_key_type create_account( const string& account_name );
          void rename_account( const string& old_contact_name,
                               const string& new_contact_name );
 
+         wallet_account_record get_account( const string& account_name )const;
+         owallet_account_record  get_account_for_address( address addr )const;
+
          vector<wallet_contact_record> list_contacts()const;
-         owallet_contact_record get_contact( const variant& data )const;
-         owallet_contact_record get_contact( const string& label )const;
-         wallet_contact_record add_contact( const contact_data& contact );
+         owallet_contact_record lookup_contact( const variant& data )const;
+         owallet_contact_record lookup_contact( const string& label )const;
+         wallet_contact_record store_contact( const contact_data& contact );
          owallet_contact_record remove_contact( const variant& data );
          owallet_contact_record remove_contact( const string& label );
 
-         owallet_account_record  get_account_for_address( address addr )const;
-         ///@}
+         vector<wallet_approval_record> list_approvals()const;
+         owallet_approval_record lookup_approval( const string& name )const;
+         wallet_approval_record store_approval( const approval_data& approval );
 
-         /**
-          * Return general information about the wallet
-          **/
          variant get_info()const;
 
          /**
@@ -208,10 +202,7 @@ namespace bts { namespace wallet {
           *  Account management API
           */
          ///@{
-         vector<string> list() const; // list wallets
-
-         vector<wallet_account_record> list_accounts()const;
-         vector<wallet_account_record> list_unregistered_accounts()const;
+         vector<string> list() const; // list wallet directories
 
          uint32_t           import_bitcoin_wallet( const path& wallet_dat,
                                                    const string& wallet_dat_passphrase,
@@ -503,9 +494,6 @@ namespace bts { namespace wallet {
          string                             get_key_label( const public_key_type& key )const;
          pretty_transaction                 to_pretty_trx( const wallet_transaction_record& trx_rec ) const;
 
-         void                               set_account_approval( const string& account_name, int8_t approval );
-         int8_t                             get_account_approval( const string& account_name )const;
-
          bool                               is_sending_address( const address& addr )const;
          bool                               is_receive_address( const address& addr )const;
 
@@ -546,8 +534,6 @@ namespace bts { namespace wallet {
 
          wallet_transaction_record          recover_transaction( const string& transaction_id_prefix, const string& recipient_account );
          optional<variant_object>           verify_titan_deposit( const string& transaction_id_prefix );
-
-         vote_summary get_vote_status( const string& account_name );
 
          private_key_type get_private_key( const address& addr )const;
          public_key_type get_public_key( const address& addr) const;

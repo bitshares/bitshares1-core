@@ -63,20 +63,19 @@ namespace bts { namespace wallet {
 
    struct account_data : public bts::blockchain::account_record
    {
-       bool     block_production_enabled = false;
-       uint32_t last_used_gen_sequence = 0;
-       variant  private_data;
-       bool     favorite = false;
+       uint32_t         last_child_key_index = 0;
+       bool             block_production_enabled = false;
+       variant_object   custom_data;
    };
 
    struct key_data
    {
        address              account_address;
+       uint32_t             child_key_index = 0;
        public_key_type      public_key;
        std::vector<char>    encrypted_private_key;
        bool                 valid_from_signature = false;
        optional<string>     memo; // this memo is not used for anything.
-       uint32_t             gen_seq_number = 0;
 
        address              get_address()const { return address( public_key ); }
        bool                 has_private_key()const;
@@ -95,6 +94,11 @@ namespace bts { namespace wallet {
            btc_address  = 3
        };
 
+       contact_type_enum    contact_type;
+       variant              data;
+       string               label;
+       variant_object       custom_data;
+
        contact_data() {}
 
        explicit contact_data( const string& name )
@@ -110,18 +114,16 @@ namespace bts { namespace wallet {
            : contact_type( contact_type_enum::btc_address ), data( variant( addr ) ), label( string( addr ) ) {}
 
        contact_data( const chain_interface& db, const string& data, const string& label = "" );
-
-       contact_type_enum    contact_type;
-       variant              data;
-       string               label;
-       bool                 favorite = false;
    };
 
    struct approval_data
    {
-       string   name;
-       int8_t   approval;
-       bool     approve_recommended = false;
+       string           name;
+       int8_t           approval;
+       variant_object   custom_data;
+
+       approval_data() {}
+       approval_data( const chain_interface& db, const string& name, const int8_t approval );
    };
 
    struct ledger_entry;
@@ -290,10 +292,9 @@ FC_REFLECT( bts::wallet::wallet_property,
         )
 
 FC_REFLECT_DERIVED( bts::wallet::account_data, (bts::blockchain::account_record),
+        (last_child_key_index)
         (block_production_enabled)
-        (last_used_gen_sequence)
-        (private_data)
-        (favorite)
+        (custom_data)
         )
 
 FC_REFLECT( bts::wallet::master_key,
@@ -303,11 +304,11 @@ FC_REFLECT( bts::wallet::master_key,
 
 FC_REFLECT( bts::wallet::key_data,
         (account_address)
+        (child_key_index)
         (public_key)
         (encrypted_private_key)
         (valid_from_signature)
         (memo)
-        (gen_seq_number)
         )
 
 FC_REFLECT_ENUM( bts::wallet::contact_data::contact_type_enum,
@@ -321,13 +322,13 @@ FC_REFLECT( bts::wallet::contact_data,
         (contact_type)
         (data)
         (label)
-        (favorite)
+        (custom_data)
         )
 
 FC_REFLECT( bts::wallet::approval_data,
         (name)
         (approval)
-        (approve_recommended)
+        (custom_data)
         )
 
 FC_REFLECT( bts::wallet::transaction_data,

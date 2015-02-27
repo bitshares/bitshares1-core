@@ -14,12 +14,6 @@
 
 namespace bts { namespace client { namespace detail {
 
-int8_t detail::client_impl::wallet_account_set_approval( const string& account_name, int8_t approval )
-{ try {
-  _wallet->set_account_approval( account_name, approval );
-  return _wallet->get_account_approval( account_name );
-} FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("approval",approval) ) }
-
 void detail::client_impl::wallet_open(const string& wallet_name)
 {
   _wallet->open(fc::trim(wallet_name));
@@ -45,11 +39,6 @@ void detail::client_impl::wallet_create(const string& wallet_name, const string&
   if( trimmed_name.size() == 0 ) FC_CAPTURE_AND_THROW( fc::invalid_arg_exception, (trimmed_name) );
   _wallet->create(trimmed_name,password, brain_key );
   reschedule_delegate_loop();
-}
-
-fc::optional<string> detail::client_impl::wallet_get_name() const
-{
-  return _wallet->is_open() ? _wallet->get_wallet_name() : fc::optional<string>();
 }
 
 void detail::client_impl::wallet_close()
@@ -739,29 +728,16 @@ vector<wallet_account_record> detail::client_impl::wallet_list_accounts() const
   return _wallet->list_accounts();
 }
 
-vector<wallet_account_record> detail::client_impl::wallet_list_unregistered_accounts() const
-{
-  return _wallet->list_unregistered_accounts();
-}
-
-void detail::client_impl::wallet_account_rename(const string& current_account_name,
-                                   const string& new_account_name)
+void detail::client_impl::wallet_account_rename( const string& current_account_name, const string& new_account_name )
 {
   _wallet->rename_account(current_account_name, new_account_name);
   _wallet->auto_backup( "account_rename" );
 }
 
-wallet_account_record detail::client_impl::wallet_get_account(const string& account_name) const
+owallet_account_record detail::client_impl::wallet_get_account( const string& account )const
 { try {
-  return _wallet->get_account( account_name );
-} FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
-
-address detail::client_impl::wallet_get_account_public_address(const string& account_name) const
-{ try {
-  auto acct = _wallet->get_account( account_name );
-  return acct.owner_address();
-} FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
-
+    return _wallet->lookup_account( account );
+} FC_CAPTURE_AND_RETHROW( (account) ) }
 
 vector<pretty_transaction> detail::client_impl::wallet_account_transaction_history( const string& account_name,
                                                                                     const string& asset_symbol,
@@ -993,18 +969,12 @@ void detail::client_impl::wallet_set_preferred_mail_servers(const string& accoun
     wallet_account_update_registration(account_name, paying_account, public_data);
 }
 
-public_key_type client_impl::wallet_account_create( const string& account_name,
-                                                    const variant& private_data )
-{
-   const auto result = _wallet->create_account( account_name, private_data );
+public_key_type client_impl::wallet_account_create( const string& account_name )
+{ try {
+   const auto result = _wallet->create_account( account_name );
    _wallet->auto_backup( "account_create" );
    return result;
-}
-
-void client_impl::wallet_account_set_favorite( const string& account_name, bool is_favorite )
-{
-    _wallet->account_set_favorite( account_name, is_favorite );
-}
+} FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
 void client_impl::wallet_rescan_blockchain( const uint32_t start_block_num, const uint32_t limit )
 { try {
@@ -1069,11 +1039,38 @@ variant_object client_impl::wallet_get_info()
    return _wallet->get_info().get_object();
 }
 
-void client_impl::wallet_account_update_private_data( const string& account_to_update,
-                                                      const variant& private_data )
-{
-   _wallet->update_account_private_data(account_to_update, private_data);
-}
+void client_impl::wallet_set_custom_data( const wallet_record_type_enum& type, const string& item, const variant_object& custom_data )
+{ try {
+    switch( type )
+    {
+        case account_record_type:
+        {
+            owallet_account_record record = wallet_get_account( item );
+            if( !record.valid() ) break;
+            record->custom_data = custom_data;
+            _wallet->store_account( *record );
+            break;
+        }
+        case contact_record_type:
+        {
+            owallet_contact_record record = wallet_get_contact( item );
+            if( !record.valid() ) break;
+            record->custom_data = custom_data;
+            _wallet->store_contact( *record );
+            break;
+        }
+        case approval_record_type:
+        {
+            owallet_approval_record record = wallet_get_approval( item );
+            if( !record.valid() ) break;
+            record->custom_data = custom_data;
+            _wallet->store_approval( *record );
+            break;
+        }
+        default:
+            break;
+    }
+} FC_CAPTURE_AND_RETHROW( (type)(item)(custom_data) ) }
 
 wallet_transaction_record client_impl::wallet_account_update_registration(
         const string& account_to_update,
@@ -1376,11 +1373,6 @@ account_vote_summary_type client_impl::wallet_account_vote_summary( const string
    return _wallet->get_account_vote_summary( account_name );
 }
 
-vote_summary   client_impl::wallet_check_vote_status( const string& account_name )
-{
-    return _wallet->get_vote_status( account_name );
-}
-
 void client_impl::wallet_delegate_set_block_production( const string& delegate_name, bool enabled )
 {
    _wallet->set_delegate_block_production( delegate_name, enabled );
@@ -1512,14 +1504,14 @@ vector<wallet_contact_record> client_impl::wallet_list_contacts()const
 owallet_contact_record client_impl::wallet_get_contact( const string& contact )const
 { try {
     if( contact.find( "label:" ) == 0 )
-        return _wallet->get_contact( contact.substr( string( "label:" ).size() ) );
+        return _wallet->lookup_contact( contact.substr( string( "label:" ).size() ) );
     else
-        return _wallet->get_contact( variant( contact ) );
+        return _wallet->lookup_contact( variant( contact ) );
 } FC_CAPTURE_AND_RETHROW( (contact) ) }
 
 wallet_contact_record client_impl::wallet_add_contact( const string& contact, const string& label )
 { try {
-    return _wallet->add_contact( contact_data( *_chain_db, contact, label) );
+    return _wallet->store_contact( contact_data( *_chain_db, contact, label) );
 } FC_CAPTURE_AND_RETHROW( (contact)(label) ) }
 
 owallet_contact_record client_impl::wallet_remove_contact( const string& contact )
@@ -1529,5 +1521,20 @@ owallet_contact_record client_impl::wallet_remove_contact( const string& contact
     else
         return _wallet->remove_contact( variant( contact ) );
 } FC_CAPTURE_AND_RETHROW( (contact) ) }
+
+vector<wallet_approval_record> client_impl::wallet_list_approvals()const
+{ try {
+    return _wallet->list_approvals();
+} FC_CAPTURE_AND_RETHROW() }
+
+owallet_approval_record client_impl::wallet_get_approval( const string& approval )const
+{ try {
+    return _wallet->lookup_approval( approval );
+} FC_CAPTURE_AND_RETHROW( (approval) ) }
+
+wallet_approval_record client_impl::wallet_approve( const string& name, int8_t approval )
+{ try {
+    return _wallet->store_approval( approval_data( *_chain_db, name, approval) );
+} FC_CAPTURE_AND_RETHROW( (name)(approval) ) }
 
 } } } // namespace bts::client::detail

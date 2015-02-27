@@ -378,8 +378,8 @@ namespace detail {
 		   // n.b. bid base/quote is opposite of ask
 		   // const asset_id_type base_id = price_arec->id;
 		   // const asset_id_type quote_id = sell_arec->id;
-		   const string& base_symbol = price_symbol;
-		   const string& quote_symbol = sell_quantity_symbol;
+		   //const string& base_symbol = price_symbol;
+		   //const string& quote_symbol = sell_quantity_symbol;
 
    	       // price relative_price = str_to_relative_price(
    	       //     relative_price_str, base_symbol, quote_symbol );
@@ -427,8 +427,8 @@ namespace detail {
 		   // n.b. ask base/quote is opposite of bid
 		   // const asset_id_type base_id = sell_arec->id;
 		   // const asset_id_type quote_id = price_arec->id;
-		   const string& base_symbol = sell_quantity_symbol;
-		   const string& quote_symbol = price_symbol;
+		   //const string& base_symbol = sell_quantity_symbol;
+		   //const string& quote_symbol = price_symbol;
 
    	       // price relative_price = str_to_relative_price(
    	       //     relative_price_str, base_symbol, quote_symbol );
@@ -752,7 +752,7 @@ namespace detail {
             if( !candidate_record->public_data.get_object()["slate_id"].is_uint64() )
             {
               //Delegate is doing something non-kosher with their slate_id. Disapprove of them.
-              self->set_account_approval( candidate_record->name, -1 );
+              //self->set_account_approval( candidate_record->name, -1 );
               continue;
             }
 
@@ -760,7 +760,7 @@ namespace detail {
             if( !recommendations.valid() )
             {
               //Delegate is doing something non-kosher with their slate_id. Disapprove of them.
-              self->set_account_approval( candidate_record->name, -1 );
+              //self->set_account_approval( candidate_record->name, -1 );
               continue;
             }
 
@@ -1217,8 +1217,7 @@ namespace detail {
        return my->_wallet_db.lookup_setting(name);
    }
 
-   public_key_type wallet::create_account( const string& account_name,
-                                           const variant& private_data )
+   public_key_type wallet::create_account( const string& account_name )
    { try {
       if( !my->_blockchain->is_valid_account_name( account_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
@@ -1236,7 +1235,7 @@ namespace detail {
       if( existing_registered_account.valid() )
           FC_THROW_EXCEPTION( invalid_name, "This name is already registered with the blockchain!" );
 
-      const public_key_type account_public_key = my->_wallet_db.generate_new_account( my->_wallet_password, account_name, private_data );
+      const public_key_type account_public_key = my->_wallet_db.generate_new_account( my->_wallet_password, account_name );
 
       if( num_accounts_before == 0 )
           set_last_scanned_block_number( my->_blockchain->get_head_block_num() );
@@ -1245,17 +1244,6 @@ namespace detail {
 
       return account_public_key;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
-
-   void wallet::account_set_favorite( const string& account_name,
-                                      const bool is_favorite )
-   { try {
-       FC_ASSERT( is_open() );
-
-       auto my_account = my->_wallet_db.lookup_account( account_name );
-       FC_ASSERT( my_account.valid() );
-       my_account->favorite = is_favorite;
-       my->_wallet_db.store_account( *my_account );
-   } FC_CAPTURE_AND_RETHROW( (account_name)(is_favorite) ) }
 
    // TODO: This function is sometimes used purely for error checking of the account_name; refactor
    wallet_account_record wallet::get_account( const string& account_name )const
@@ -1511,42 +1499,6 @@ namespace detail {
        }
        my->_scan_progress = 1;
    } FC_CAPTURE_AND_RETHROW() }
-
-   vote_summary wallet::get_vote_status( const string& account_name )
-   {
-       uint64_t total_possible = 0;
-       uint64_t total = 0;
-       auto summary = vote_summary();
-       summary.up_to_date_with_recommendation = true;
-
-       auto my_slate = my->get_delegate_slate( vote_recommended );
-
-       const account_balance_record_summary_type items = get_spendable_account_balance_records( account_name );
-       for( const auto& item : items )
-       {
-           const auto& records = item.second;
-           for( const auto& record : records )
-           {
-               if( record.asset_id() != 0 )
-                   continue;
-               if( record.slate_id() != my_slate.id() && record.balance > 1 * BTS_BLOCKCHAIN_PRECISION ) // ignore dust
-                   summary.up_to_date_with_recommendation = false;
-               auto oslate = my->_blockchain->get_slate_record( record.slate_id() );
-               if( oslate.valid() )
-                   total += record.get_spendable_balance( my->_blockchain->now() ).amount * oslate->slate.size();
-               total_possible += record.get_spendable_balance( my->_blockchain->now() ).amount * BTS_BLOCKCHAIN_MAX_SLATE_SIZE;
-           }
-       }
-
-       if( total_possible == 0 )
-           summary.utilization = 0;
-       else
-           summary.utilization = float(total) / float(total_possible);
-
-       summary.negative_utilization = 0;
-
-       return summary;
-   }
 
    private_key_type wallet::get_private_key( const address& addr )const
    { try {
@@ -2321,7 +2273,7 @@ namespace detail {
        }
 
        // Update account last used key sequence number
-       account_record->last_used_gen_sequence = std::max( account_record->last_used_gen_sequence, seq_num - 1 );
+       account_record->last_child_key_index = std::max( account_record->last_child_key_index, seq_num - 1 );
        my->_wallet_db.store_account( *account_record );
 
        ulog( "Successfully generated ${n} keys.", ("n",total_regenerated_key_count) );
@@ -3210,7 +3162,6 @@ namespace detail {
       return record;
    } FC_CAPTURE_AND_RETHROW() }
 
-
    wallet_transaction_record wallet::issue_asset_to_addresses(
            const string& symbol,
            const map<string, share_type>& addresses )
@@ -3270,19 +3221,6 @@ namespace detail {
       record.trx = trx;
       return record;
    } FC_CAPTURE_AND_RETHROW() }
-
-
-
-
-   void wallet::update_account_private_data( const string& account_to_update,
-                                             const variant& private_data )
-   {
-      get_account( account_to_update ); /* Just to check input */
-      auto oacct = my->_wallet_db.lookup_account( account_to_update );
-      FC_ASSERT( oacct.valid() );
-      oacct->private_data = private_data;
-      my->_wallet_db.store_account( *oacct );
-   }
 
    wallet_transaction_record wallet::update_registered_account(
            const string& account_to_update,
@@ -3815,27 +3753,6 @@ namespace detail {
       return accounts;
    } FC_CAPTURE_AND_RETHROW() }
 
-   vector<wallet_account_record> wallet::list_unregistered_accounts() const
-   { try {
-      const auto& accs = my->_wallet_db.get_accounts();
-
-      vector<wallet_account_record> receive_accounts;
-      receive_accounts.reserve( accs.size() );
-      for( const auto& item : accs )
-      {
-         if( item.second.id == 0 )
-         {
-            receive_accounts.push_back( item.second );
-         }
-      }
-
-      std::sort( receive_accounts.begin(), receive_accounts.end(),
-                 [](const wallet_account_record& a, const wallet_account_record& b) -> bool
-                 { return a.name.compare( b.name ) < 0; } );
-
-      return receive_accounts;
-   } FC_CAPTURE_AND_RETHROW() }
-
    vector<wallet_transaction_record> wallet::get_pending_transactions()const
    {
        return my->get_pending_transactions();
@@ -3916,32 +3833,6 @@ namespace detail {
                 ("name",account_name) );
 
       return opt_account->owner_key;
-   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
-
-   void wallet::set_account_approval( const string& account_name, int8_t approval )
-   { try {
-      FC_ASSERT( is_open() );
-      const auto account_record = my->_blockchain->get_account_record( account_name );
-      if( !account_record.valid() )
-          FC_THROW_EXCEPTION( account_not_registered, "Unknown account name!", ("account_name",account_name) );
-
-      owallet_approval_record record = my->_wallet_db.lookup_approval( account_name );
-      if( !record.valid() )
-          record = wallet_approval_record();
-
-      record->name = account_name;
-      record->approval = approval;
-
-      my->_wallet_db.store_approval( *record );
-   } FC_CAPTURE_AND_RETHROW( (account_name)(approval) ) }
-
-   int8_t wallet::get_account_approval( const string& account_name )const
-   { try {
-      const owallet_approval_record record = my->_wallet_db.lookup_approval( account_name );
-      if( !record.valid() )
-          return 0;
-
-      return record->approval;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
    owallet_account_record wallet::get_account_for_address( address addr_in_account )const
@@ -4446,6 +4337,18 @@ namespace detail {
 
    }
 
+   owallet_account_record wallet::lookup_account( const string& account )const
+   { try {
+       if( !is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
+       return my->_wallet_db.lookup_account( account );
+   } FC_CAPTURE_AND_RETHROW( (account) ) }
+
+   wallet_account_record wallet::store_account( const account_data& account )
+   { try {
+       if( !is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
+       return my->_wallet_db.store_account( account );
+   } FC_CAPTURE_AND_RETHROW( (account) ) }
+
    vector<wallet_contact_record> wallet::list_contacts()const
    { try {
        if( !is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
@@ -4465,19 +4368,19 @@ namespace detail {
        return contacts;
    } FC_CAPTURE_AND_RETHROW() }
 
-   owallet_contact_record wallet::get_contact( const variant& data )const
+   owallet_contact_record wallet::lookup_contact( const variant& data )const
    { try {
        if( !is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
        return my->_wallet_db.lookup_contact( data );
    } FC_CAPTURE_AND_RETHROW( (data) ) }
 
-   owallet_contact_record wallet::get_contact( const string& label )const
+   owallet_contact_record wallet::lookup_contact( const string& label )const
    { try {
        if( !is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
        return my->_wallet_db.lookup_contact( label );
    } FC_CAPTURE_AND_RETHROW( (label) ) }
 
-   wallet_contact_record wallet::add_contact( const contact_data& contact )
+   wallet_contact_record wallet::store_contact( const contact_data& contact )
    { try {
        if( !is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
        return my->_wallet_db.store_contact( contact );
@@ -4494,5 +4397,36 @@ namespace detail {
        if( !is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
        return my->_wallet_db.remove_contact( label );
    } FC_CAPTURE_AND_RETHROW( (label) ) }
+
+   vector<wallet_approval_record> wallet::list_approvals()const
+   { try {
+       if( !is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
+
+       vector<wallet_approval_record> approvals;
+
+       const auto& records = my->_wallet_db.get_approvals();
+       approvals.reserve( records.size() );
+
+       for( const auto& item : records )
+           approvals.push_back( item.second );
+
+       std::sort( approvals.begin(), approvals.end(),
+                  []( const wallet_approval_record& a, const wallet_approval_record& b ) -> bool
+                  { return a.name.compare( b.name ) < 0; } );
+
+       return approvals;
+   } FC_CAPTURE_AND_RETHROW() }
+
+   owallet_approval_record wallet::lookup_approval( const string& name )const
+   { try {
+       if( !is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
+       return my->_wallet_db.lookup_approval( name );
+   } FC_CAPTURE_AND_RETHROW( (name) ) }
+
+   wallet_approval_record wallet::store_approval( const approval_data& approval )
+   { try {
+       if( !is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
+       return my->_wallet_db.store_approval( approval );
+   } FC_CAPTURE_AND_RETHROW( (approval) ) }
 
 } } // bts::wallet
