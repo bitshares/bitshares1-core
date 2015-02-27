@@ -1479,11 +1479,17 @@ vector<pretty_transaction> wallet::get_pretty_transaction_history( const string&
     }
 
     /* Tally up running balances */
+    fc::time_point_sec now(fc::time_point::now());
     for( const auto& name : account_names )
     {
         map<asset_id_type, asset> running_balances;
         for( auto& trx : pretties )
         {
+            if( !trx.is_virtual && !trx.is_confirmed
+                    && trx.expiration_timestamp < now )
+            {
+                continue;
+            }
             const auto fee_asset_id = trx.fee.asset_id;
             if( running_balances.count( fee_asset_id ) <= 0 )
                 running_balances[ fee_asset_id ] = asset( 0, fee_asset_id );
