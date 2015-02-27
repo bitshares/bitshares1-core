@@ -316,20 +316,31 @@ wallet_transaction_record detail::client_impl::wallet_transfer(
         const string& amount_to_transfer,
         const string& asset_symbol,
         const string& from_account_name,
-        const string& to_account_name,
+        const string& recipient,
         const string& memo_message,
         const vote_strategy& strategy )
 { try {
     const asset amount = _chain_db->to_ugly_asset( amount_to_transfer, asset_symbol );
 
-    owallet_contact_record contact = wallet_get_contact( to_account_name );
+    owallet_contact_record contact = wallet_get_contact( recipient );
     if( !contact.valid() )
-        contact = contact_data( *_chain_db, to_account_name );
+    {
+        const owallet_account_record account = wallet_get_account( recipient );
+        if( account.valid() )
+        {
+            FC_ASSERT( !account->is_retracted() );
+            contact = contact_data( recipient );
+        }
+        else
+        {
+            contact = contact_data( *_chain_db, recipient );
+        }
+    }
 
     if( contact->contact_type == contact_data::contact_type_enum::account_name )
     {
         const auto sending_account = _wallet->get_account( from_account_name );
-        const auto receiving_account = _wallet->get_account( to_account_name );
+        const auto receiving_account = _wallet->get_account( recipient );
         transaction_builder_ptr builder = _wallet->create_transaction_builder();
         auto record = builder->deposit_asset( sending_account,
                                               receiving_account,
@@ -345,7 +356,7 @@ wallet_transaction_record detail::client_impl::wallet_transfer(
             {
                 _mail_client->send_encrypted_message( std::move( notice ),
                                                       from_account_name,
-                                                      to_account_name,
+                                                      recipient,
                                                       receiving_account.owner_key );
             }
         }
@@ -360,13 +371,13 @@ wallet_transaction_record detail::client_impl::wallet_transfer(
         switch( contact->contact_type )
         {
             case contact_data::contact_type_enum::public_key:
-                recipient_address = address( public_key_type( to_account_name ) );
+                recipient_address = address( public_key_type( recipient ) );
                 break;
             case contact_data::contact_type_enum::address:
-                recipient_address = address( to_account_name );
+                recipient_address = address( recipient );
                 break;
             case contact_data::contact_type_enum::btc_address:
-                recipient_address = address( pts_address( to_account_name ) );
+                recipient_address = address( pts_address( recipient ) );
                 break;
             default:
                 FC_ASSERT( false, "Unsupported recipient format!" );
@@ -382,7 +393,7 @@ wallet_transaction_record detail::client_impl::wallet_transfer(
         network_broadcast_transaction( record.trx );
         return record;
     }
-} FC_CAPTURE_AND_RETHROW( (amount_to_transfer)(asset_symbol)(from_account_name)(to_account_name)(memo_message)(strategy) ) }
+} FC_CAPTURE_AND_RETHROW( (amount_to_transfer)(asset_symbol)(from_account_name)(recipient)(memo_message)(strategy) ) }
 
 wallet_transaction_record detail::client_impl::wallet_burn(
         double amount_to_transfer,

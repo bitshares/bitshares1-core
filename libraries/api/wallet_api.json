@@ -679,9 +679,9 @@
               "description" : "the source account to draw the shares from"
             },
             {
-              "name" : "to_account_name",
-              "type" : "receive_account_name",
-              "description" : "the account to transfer the shares to"
+              "name" : "recipient",
+              "type" : "string",
+              "description" : "the account name, public key, address, or btc address which will receive the funds"
             },
             {
               "name" : "memo_message",
