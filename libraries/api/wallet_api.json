@@ -592,7 +592,7 @@
           [
             {
               "name" : "amount_to_burn",
-              "type" : "real_amount",
+              "type" : "string",
               "description" : "the amount of shares to burn"
             },
             {

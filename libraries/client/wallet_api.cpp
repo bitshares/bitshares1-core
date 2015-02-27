@@ -396,7 +396,7 @@ wallet_transaction_record detail::client_impl::wallet_transfer(
 } FC_CAPTURE_AND_RETHROW( (amount_to_transfer)(asset_symbol)(from_account_name)(recipient)(memo_message)(strategy) ) }
 
 wallet_transaction_record detail::client_impl::wallet_burn(
-        double amount_to_transfer,
+        const string& amount_to_transfer,
         const string& asset_symbol,
         const string& from_account_name,
         const string& for_or_against,
@@ -404,9 +404,10 @@ wallet_transaction_record detail::client_impl::wallet_burn(
         const string& public_message,
         bool anonymous )
 {
-    auto record = _wallet->burn_asset( amount_to_transfer, asset_symbol,
-                                             from_account_name, for_or_against, to_account_name,
-                                             public_message, anonymous, true );
+    const asset amount = _chain_db->to_ugly_asset( amount_to_transfer, asset_symbol );
+    auto record = _wallet->burn_asset( amount,
+                                       from_account_name, for_or_against, to_account_name,
+                                       public_message, anonymous, true );
     _wallet->cache_transaction( record );
     network_broadcast_transaction( record.trx );
     return record;
@@ -633,7 +634,7 @@ wallet_transaction_record detail::client_impl::wallet_transfer_from_with_escrow(
         const string& memo_message,
         const vote_strategy& strategy )
 {
-    asset amount = _chain_db->to_ugly_asset(amount_to_transfer, asset_symbol);
+    asset amount = _chain_db->to_ugly_asset( amount_to_transfer, asset_symbol );
     auto sender = _wallet->get_account(from_account_name);
     auto payer = _wallet->get_account(paying_account_name);
     auto recipient = _wallet->get_account(to_account_name);

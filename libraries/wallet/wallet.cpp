@@ -2559,8 +2559,7 @@ namespace detail {
    } FC_CAPTURE_AND_RETHROW( (delegate_name)(real_amount_to_withdraw) ) }
 
    wallet_transaction_record wallet::burn_asset(
-           double real_amount_to_transfer,
-           const string& amount_to_transfer_symbol,
+           const asset& asset_to_transfer,
            const string& paying_account_name,
            const string& for_or_against,
            const string& to_account_name,
@@ -2568,18 +2567,9 @@ namespace detail {
            bool anonymous,
            bool sign
            )
-   {
+   { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-      FC_ASSERT( my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) );
-
-      const auto asset_rec = my->_blockchain->get_asset_record( amount_to_transfer_symbol );
-      FC_ASSERT( asset_rec.valid() );
-      const auto asset_id = asset_rec->id;
-
-      const int64_t precision = asset_rec->precision ? asset_rec->precision : 1;
-      share_type amount_to_transfer = real_amount_to_transfer * precision;
-      asset asset_to_transfer( amount_to_transfer, asset_id );
 
       private_key_type sender_private_key  = get_active_private_key( paying_account_name );
       public_key_type  sender_public_key   = sender_private_key.get_public_key();
@@ -2653,7 +2643,7 @@ namespace detail {
 
       record.trx = trx;
       return record;
-   }
+   } FC_CAPTURE_AND_RETHROW( (asset_to_transfer)(paying_account_name)(for_or_against)(to_account_name)(public_message)(anonymous)(sign) ) }
 
    public_key_type wallet::get_new_public_key( const string& account_name )
    {

@@ -275,8 +275,7 @@ namespace bts { namespace wallet {
                  bool sign
                  );
          wallet_transaction_record burn_asset(
-                 double real_amount_to_transfer,
-                 const string& amount_to_transfer_symbol,
+                 const asset& asset_to_transfer,
                  const string& paying_account_name,
                  const string& for_or_against,
                  const string& to_account_name,
