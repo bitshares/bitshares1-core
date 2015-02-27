@@ -140,8 +140,10 @@ namespace bts { namespace blockchain {
        }
 
        const auto& owners = cur_record->owners();
-       for( const address& owner : owners )
-           FC_ASSERT( asset_rec->is_authorized( owner ) );
+       for(const address& owner : owners)
+       {
+           FC_ASSERT(asset_rec->is_authorized(owner));
+       }
 
        eval_state._current_state->store_balance_record( *cur_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
