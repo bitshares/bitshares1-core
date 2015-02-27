@@ -79,7 +79,7 @@ wallet_account_vesting_balances [account_name]
 wallet_account_yield [account_name]                                                                 
 wallet_add_transaction_note_experimental <transaction_id> <note>                                    
 wallet_address_create <account_name> [label] [legacy_network_byte]                                  
-wallet_asset_authorize_key <paying_account> <symbol> <address> [meta]                               
+wallet_asset_authorize_key <paying_account> <symbol> <address>                                      
 wallet_asset_issue_to_addresses <symbol> <addresses>                                                
 wallet_balance_set_vote_info <balance_id> [voter_address] [strategy] [sign_and_broadcast] [builder_path] 
 wallet_builder_add_signature <builder> [broadcast]                                                  
@@ -232,7 +232,6 @@ wallet_market_order_list <base_symbol> <quote_symbol> [limit] [account_name]
 wallet_market_sell <from_account_name> <sell_quantity> <sell_quantity_symbol> [price_limit] [price_symbol] [relative_price] [allow_stupid] 
 wallet_market_submit_ask <from_account_name> <sell_quantity> <sell_quantity_symbol> <ask_price> <ask_price_symbol> [allow_stupid_ask] 
 wallet_market_submit_bid <from_account_name> <quantity> <quantity_symbol> <base_price> <base_symbol> [allow_stupid_bid] 
-wallet_market_submit_relative_ask <from_account_name> <sell_quantity> <sell_quantity_symbol> <relative_ask_price> <ask_price_symbol> [limit_ask_price] 
 wallet_market_submit_short <from_account_name> <short_collateral> <collateral_symbol> <interest_rate> <quote_symbol> [short_price_limit] 
 wallet_open <wallet_name>                                                                           
 wallet_publish_feeds <delegate_account> <symbol_to_price_map>                                       

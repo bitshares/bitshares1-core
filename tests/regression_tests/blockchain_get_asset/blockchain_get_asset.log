@@ -31,7 +31,8 @@ aliases: get_asset
   "authority": {
     "required": 0,
     "owners": []
-  }
+  },
+  "whitelist": []
 }
 (wallet closed) >>> blockchain_get_asset 0
 {
@@ -54,6 +55,7 @@ aliases: get_asset
   "authority": {
     "required": 0,
     "owners": []
-  }
+  },
+  "whitelist": []
 }
 (wallet closed) >>> quit
