@@ -1479,14 +1479,16 @@ vector<pretty_transaction> wallet::get_pretty_transaction_history( const string&
     }
 
     /* Tally up running balances */
-    fc::time_point_sec now(fc::time_point::now());
+    const bool end_before_head = end_block_num != -1
+                                 && end_block_num <= my->_blockchain->get_head_block_num();
+    const fc::time_point_sec now( my->_blockchain->now() );
     for( const auto& name : account_names )
     {
         map<asset_id_type, asset> running_balances;
         for( auto& trx : pretties )
         {
             if( !trx.is_virtual && !trx.is_confirmed
-                    && trx.expiration_timestamp < now )
+                    && ( end_before_head || trx.expiration_timestamp < now ) )
             {
                 continue;
             }
