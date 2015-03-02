@@ -75,8 +75,7 @@ namespace bts { namespace blockchain { namespace detail {
           }
 
           price min_cover_ask;
-          price opening_price;
-          price closing_price;
+          price opening_price, closing_price, highest_price, lowest_price;
 
           const oprice median_feed_price = _db_impl.self->get_active_feed_price( quote_id, base_id );
           if( quote_asset->is_market_issued() )
@@ -319,6 +318,13 @@ namespace bts { namespace blockchain { namespace detail {
             if( opening_price == price() )
               opening_price = mtrx.bid_price;
             closing_price = mtrx.bid_price;
+            // Remark: only prices of matched orders be updated to market history
+            // TODO check here: since the orders have been sorted, maybe don't need the 2nd comparison
+            if( highest_price == price() || highest_price < mtrx.bid_price)
+              highest_price = mtrx.bid_price;
+            // TODO check here: store lowest ask price or lowest bid price?
+            if( lowest_price == price() || lowest_price > mtrx.ask_price)
+              lowest_price = mtrx.ask_price;
 
             if( mtrx.fees_collected.asset_id == base_asset->id )
                 base_asset->collected_fees += mtrx.fees_collected.amount;
@@ -368,8 +374,9 @@ namespace bts { namespace blockchain { namespace detail {
 
           // Update market status and market history
           _pending_state->store_market_status( _market_stat );
-          update_market_history( trading_volume, opening_price, closing_price, timestamp );
 
+          // Remark: only prices of matched orders be updated to market history
+          update_market_history( trading_volume, highest_price, lowest_price, opening_price, closing_price, timestamp );
 
           _pending_state->apply_changes();
           return true;
@@ -750,15 +757,18 @@ namespace bts { namespace blockchain { namespace detail {
     *  is for historical purposes only.
     */
   void market_engine_v5::update_market_history( const asset& trading_volume,
-                              const price& opening_price,
-                              const price& closing_price,
-                              const fc::time_point_sec timestamp )
+                                             const price& highest_price,
+                                             const price& lowest_price,
+                                             const price& opening_price,
+                                             const price& closing_price,
+                                             const fc::time_point_sec timestamp )
   {
-          if( trading_volume.amount > 0 && get_next_bid() && get_next_ask() )
+          // Remark: only prices of matched orders be updated to market history
+          if( trading_volume.amount > 0 )
           {
             market_history_key key(_quote_id, _base_id, market_history_key::each_block, _db_impl._head_block_header.timestamp);
-            market_history_record new_record(_current_bid->get_price(),
-                                            _current_ask->get_price(),
+            market_history_record new_record(highest_price,
+                                            lowest_price,
                                             opening_price,
                                             closing_price,
                                             trading_volume.amount);
@@ -773,11 +783,13 @@ namespace bts { namespace blockchain { namespace detail {
             key.timestamp = timestamp;
 
             //Unless the previous record for this market is the same as ours...
+            // TODO check here: the previous commit checks for volume and prices change here,
+            //                  I replaced them with key comparison, but looks odd as well.
+            //                  maybe need to remove the judgements at all? since volume info is
+            //                  always needed to be updated to market history,
+            //                  even if prices and volumes are same to last block.
             if( (!(last_key_itr.valid()
-                && last_key_itr.key().quote_id == _quote_id
-                && last_key_itr.key().base_id == _base_id
-                && last_key_itr.key().granularity == market_history_key::each_block
-                && last_key_itr.value() == new_record)) )
+                && last_key_itr.key() == key)) )
             {
               //...add a new entry to the history table.
               _pending_state->market_history[key] = new_record;
@@ -793,8 +805,9 @@ namespace bts { namespace blockchain { namespace detail {
               {
                 old_record.highest_bid = std::max(new_record.highest_bid, old_record.highest_bid);
                 old_record.lowest_ask = std::min(new_record.lowest_ask, old_record.lowest_ask);
-                _pending_state->market_history[old_key] = old_record;
               }
+              // always update old data since volume changed
+              _pending_state->market_history[old_key] = old_record;
             }
             else
               _pending_state->market_history[old_key] = new_record;
@@ -809,8 +822,9 @@ namespace bts { namespace blockchain { namespace detail {
               {
                 old_record.highest_bid = std::max(new_record.highest_bid, old_record.highest_bid);
                 old_record.lowest_ask = std::min(new_record.lowest_ask, old_record.lowest_ask);
-                _pending_state->market_history[old_key] = old_record;
               }
+              // always update old data since volume changed
+              _pending_state->market_history[old_key] = old_record;
             }
             else
               _pending_state->market_history[old_key] = new_record;
