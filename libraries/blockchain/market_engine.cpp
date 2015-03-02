@@ -148,7 +148,7 @@ namespace bts { namespace blockchain { namespace detail {
                 if( _current_collat_record.expiration < _pending_state->now() && mtrx.bid_price < *_feed_price )
                 {
                    /** make sure that expired *AND* margin called orders don't get skipped */
-                  
+
                    // if the call price < feed price then no margin call has occurred yet
                    // so we can skip it.
                    if( _current_ask->get_price() < *_feed_price )
@@ -360,7 +360,7 @@ namespace bts { namespace blockchain { namespace detail {
         if( !market_stat.valid() ) market_stat = market_status( _quote_id, _base_id );
         if( !(_feed_price == market_stat->current_feed_price) )
         {
-           // TODO: update shorts at feed 
+           // TODO: update shorts at feed
         }
         market_stat->update_feed_price( _feed_price );
         market_stat->last_error = e;
@@ -506,7 +506,7 @@ namespace bts { namespace blockchain { namespace detail {
       if( (_current_bid->get_quote_quantity() * mtrx.bid_price).amount == 0 )
       {
           //wdump( ("collected_fees")(_current_bid->get_quote_quantity().amount));
-          quote_asset.collected_fees +=_current_bid->get_quote_quantity().amount; 
+          quote_asset.collected_fees +=_current_bid->get_quote_quantity().amount;
           _current_bid->state.balance = 0;
       }
       _pending_state->store_bid_record( _current_bid->market_index, _current_bid->state );
@@ -586,7 +586,7 @@ namespace bts { namespace blockchain { namespace detail {
                                                _current_collat_record );
   } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
 
-  void market_engine::pay_current_ask( const market_transaction& mtrx, asset_record& base_asset, 
+  void market_engine::pay_current_ask( const market_transaction& mtrx, asset_record& base_asset,
                                                                        asset_record& quote_asset )
   { try {
       FC_ASSERT( _current_ask->type == ask_order );
@@ -632,7 +632,7 @@ namespace bts { namespace blockchain { namespace detail {
    *  if there are shorts at the feed take the next short
    *  if there are bids with prices above the limit of the current short they should take priority
    *       - shorts need to be ordered by limit first, then interest rate *WHEN* the limit is
-   *         lower than the feed price.   
+   *         lower than the feed price.
    */
   bool market_engine::get_next_bid()
   { try {
@@ -697,7 +697,7 @@ namespace bts { namespace blockchain { namespace detail {
              }
              else
              {
-                // if the limit price is better than a current bid 
+                // if the limit price is better than a current bid
                 if( !bid || (_short_at_limit_itr->first > bid->get_price(*_feed_price)) )
                 {
                    // then the short is game.
@@ -710,7 +710,7 @@ namespace bts { namespace blockchain { namespace detail {
                 }
              }
           }
-          // then consider shorts by limit 
+          // then consider shorts by limit
       }
 
       wlog( "." );
@@ -722,7 +722,7 @@ namespace bts { namespace blockchain { namespace detail {
               case bid_order:
                   --_bid_itr;
                   break;
-              case short_order: 
+              case short_order:
                   // shorts should already match and return above and are
                   // invalid here.
               default:
@@ -872,10 +872,10 @@ namespace bts { namespace blockchain { namespace detail {
             key.timestamp = timestamp;
 
             //Unless the previous record for this market is the same as ours...
-            // TODO check here: the previous commit checks for volume and prices change here, 
+            // TODO check here: the previous commit checks for volume and prices change here,
             //                  I replaced them with key comparison, but looks odd as well.
             //                  maybe need to remove the judgements at all? since volume info is
-            //                  always needed to be updated to market history, 
+            //                  always needed to be updated to market history,
             //                  even if prices and volumes are same to last block.
             if( (!(last_key_itr.valid()
                 && last_key_itr.key() == key)) )
