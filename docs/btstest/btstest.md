@@ -104,6 +104,13 @@ The presence of `>>>` characters in a line flags that line as a command.  The re
 is a command that begins with `!`.  Metacommands are handled directly by the `btstest` framework.  In this case, the `!client` command addreses subsequent commands to the client named `alice` (which was specified in the testenv),
 and the `!expect disable` command disables the *expectation functionality* (checking of command output).  Disabling expectation is useful to run a test as a *batch script*, only executing the commands and not complaining about failure to match output.  Which is often useful for developing new tests or upgrading badly broken tests.
 
+Comments
+--------
+
+You can put a comment in a `.btstest` file as follows:
+
+    #{ this is a comment }#
+
 Expectation
 -----------
 
@@ -272,11 +279,24 @@ You can see the regular expression match here:
 
 TODO:  Regex flags will be passed in, but this is not currently implemented.  Will likely require killing the compiled RE cache.
 
+Expecting JSON
+--------------
+
+The `expect_json()` function will expect a JSON object.  Currently no tests are performed on the object.
+
+Expecting relative timestamps
+-----------------------------
+
+The `expect_reltime()` function will expect a relative time string as output by `fc::get_approximate_relative_time_string()`.
+
+Expecting ISO timestamps
+------------------------
+
+The `expect_isotime()` function will expect an ISO format timestamp in the format `yyyy-mm-ddThh:mm:ss`
+
 Improvements to btstest
 -----------------------
 
-- Document how to do comments in `.btstest` file
-- Custom comment syntax
 - When expected input doesn't match, display line number in `btstest` file
 - Command line option to toggle echo on/off
 - Have multiple `.btstest` in same directory do something meaningful
@@ -289,6 +309,8 @@ Test API
 - `active_client` is a variable containing the name of the active client
 - `expect_str` will expect command output matching a string
 - `regex` or `expect_regex` will expect command output matching a regular expression
+- `expect_json` expects a JSON object
+- `expect_json` expects a relative time string as output by `fc::get_approximate_relative_time_string()`
 - `run_testdir` will run all `.btstest` files in given directory
 - `register_client` will register a new `TestClient` object
 - `_btstest` directly exposes the `btstest.py` module content.  The API should evolve to a point where using this is unnecessary

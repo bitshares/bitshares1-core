@@ -499,8 +499,11 @@
       },
       {
         "type_name" : "wallet_account_record",
-        "cpp_return_type" : "bts::wallet::wallet_account_record",
-        "cpp_include_file" : "bts/wallet/wallet_records.hpp"
+        "cpp_return_type" : "bts::wallet::wallet_account_record"
+      },
+      {
+        "type_name" : "owallet_account_record",
+        "cpp_return_type" : "bts::wallet::owallet_account_record"
       },
       {
         "type_name" : "wallet_account_record_array",
@@ -519,6 +522,19 @@
         "type_name" : "wallet_contact_record_array",
         "container_type" : "array",
         "contained_type" : "wallet_contact_record"
+      },
+      {
+        "type_name" : "wallet_approval_record",
+        "cpp_return_type" : "bts::wallet::wallet_approval_record"
+      },
+      {
+        "type_name" : "owallet_approval_record",
+        "cpp_return_type" : "bts::wallet::owallet_approval_record"
+      },
+      {
+        "type_name" : "wallet_approval_record_array",
+        "container_type" : "array",
+        "contained_type" : "wallet_approval_record"
       },
       {
         "type_name" : "address_list",
@@ -709,8 +725,8 @@
         "cpp_return_type" : "bts::wallet::account_key_type"
       },
       {
-        "type_name" : "vote_summary",
-        "cpp_return_type" : "bts::wallet::vote_summary"
+        "type_name" : "wallet_record_type",
+        "cpp_return_type" : "bts::wallet::wallet_record_type_enum"
       },
       {
         "type_name" : "feed_entry_list",
@@ -759,11 +775,6 @@
       {
         "type_name" : "optional_transaction_builder",
         "cpp_return_type" : "fc::optional<bts::wallet::transaction_builder>",
-        "cpp_include_file" : "bts/blockchain/types.hpp"
-      },
-      {
-        "type_name" : "object_id_type",
-        "cpp_return_type" : "bts::blockchain::object_id_type",
         "cpp_include_file" : "bts/blockchain/types.hpp"
       }
     ]

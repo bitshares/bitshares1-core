@@ -165,8 +165,6 @@ namespace bts { namespace blockchain {
 
             bts::db::cached_level_map<market_index_key, order_record>                   _ask_db;
             bts::db::cached_level_map<market_index_key, order_record>                   _bid_db;
-            bts::db::cached_level_map<market_index_key, order_record>                   _relative_ask_db;
-            bts::db::cached_level_map<market_index_key, order_record>                   _relative_bid_db;
 
             bts::db::cached_level_map<market_index_key, order_record>                   _short_db; // interest,owner => order
 
@@ -187,9 +185,6 @@ namespace bts { namespace blockchain {
 
             bts::db::level_map<slot_index, slot_record>                                 _slot_index_to_record;
             bts::db::level_map<time_point_sec, account_id_type>                         _slot_timestamp_to_delegate;
-
-            // TODO: Just store whitelist in asset_record
-            //bts::db::level_map<pair<asset_id_type,address>, object_id_type>             _auth_db;
 
             map<operation_type_enum, std::deque<operation>>                             _recent_operations;
       };

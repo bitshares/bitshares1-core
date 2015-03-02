@@ -40,9 +40,6 @@ namespace bts { namespace blockchain {
 
    const operation_type_enum update_signing_key_operation::type     = update_signing_key_op_type;
 
-   const operation_type_enum relative_bid_operation::type           = relative_bid_op_type;
-   const operation_type_enum relative_ask_operation::type           = relative_ask_op_type;
-
    const operation_type_enum update_balance_vote_operation::type    = update_balance_vote_op_type;
 
    const operation_type_enum data_operation::type                   = data_op_type;
@@ -82,9 +79,6 @@ namespace bts { namespace blockchain {
       bts::blockchain::operation_factory::instance().register_operation<release_escrow_operation>();
 
       bts::blockchain::operation_factory::instance().register_operation<update_signing_key_operation>();
-
-      bts::blockchain::operation_factory::instance().register_operation<relative_bid_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<relative_ask_operation>();
 
       bts::blockchain::operation_factory::instance().register_operation<update_balance_vote_operation>();
 

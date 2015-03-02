@@ -204,7 +204,7 @@ void wallet_impl::scan_balances()
     scan_balances_experimental();
 
    /* Delete ledger entries for any genesis balances before we can reconstruct them */
-   const auto my_accounts = self->list_my_accounts();
+   const auto my_accounts = self->list_accounts();
    for( const auto& account : my_accounts )
    {
        const auto record_id = fc::ripemd160::hash( account.name );
@@ -355,20 +355,6 @@ wallet_transaction_record wallet_impl::scan_transaction(
                     has_withdrawal |= scan_ask( ask_op, *transaction_record, total_fee );
                 break;
             }
-            case relative_bid_op_type:
-            {
-                const auto bid_op = op.as<relative_bid_operation>();
-                if( bid_op.amount < 0 )
-                    has_withdrawal |= scan_relative_bid( bid_op, *transaction_record, total_fee );
-                break;
-            }
-            case relative_ask_op_type:
-            {
-                const auto ask_op = op.as<relative_ask_operation>();
-                if( ask_op.amount < 0 )
-                    has_withdrawal |= scan_relative_ask( ask_op, *transaction_record, total_fee );
-                break;
-            }
             case short_op_v2_type:
             {
                 const auto short_op = op.as<short_operation>();
@@ -415,20 +401,6 @@ wallet_transaction_record wallet_impl::scan_transaction(
                 const auto ask_op = op.as<ask_operation>();
                 if( ask_op.amount >= 0 )
                     has_deposit |= scan_ask( ask_op, *transaction_record, total_fee );
-                break;
-            }
-            case relative_bid_op_type:
-            {
-                const auto bid_op = op.as<relative_bid_operation>();
-                if( bid_op.amount >= 0 )
-                    has_deposit |= scan_relative_bid( bid_op, *transaction_record, total_fee );
-                break;
-            }
-            case relative_ask_op_type:
-            {
-                const auto relative_ask_op = op.as<relative_ask_operation>();
-                if( relative_ask_op.amount >= 0 )
-                    has_deposit |= scan_relative_ask( relative_ask_op, *transaction_record, total_fee );
                 break;
             }
             case short_op_v2_type:
@@ -718,9 +690,6 @@ bool wallet_impl::scan_update_account( const update_account_operation& op, walle
     auto account_name_rec = _blockchain->get_account_record( oaccount->name );
     FC_ASSERT( account_name_rec.valid() );
 
-    if( !opt_account->is_my_account )
-      return false;
-
     for( auto& entry : trx_rec.ledger_entries )
     {
         if( !entry.to_account.valid() )
@@ -805,118 +774,6 @@ bool wallet_impl::scan_update_feed( const update_feed_operation& op, wallet_tran
    }
    return false;
 }
-// TODO: Refactor scan_{ask|ask|short}; exactly the same
-bool wallet_impl::scan_relative_ask( const relative_ask_operation& op,
-                                     wallet_transaction_record& trx_rec,
-                                     asset& total_fee )
-{ try {
-    const auto amount = op.get_amount();
-    if( amount.asset_id == total_fee.asset_id )
-        total_fee -= amount;
-
-    auto okey_rec = _wallet_db.lookup_key( op.ask_index.owner );
-    if( okey_rec.valid() && okey_rec->has_private_key() )
-    {
-       /* Restore key label */
-       const market_order order( relative_ask_order, op.ask_index, op.amount );
-       okey_rec->memo = order.get_small_id();
-       _wallet_db.store_key( *okey_rec );
-
-       for( auto& entry : trx_rec.ledger_entries )
-       {
-           if( amount.amount >= 0 )
-           {
-               if( !entry.to_account.valid() )
-               {
-                   entry.to_account = okey_rec->public_key;
-                   entry.amount = amount;
-                   //entry.memo =
-                   break;
-               }
-               else if( *entry.to_account == okey_rec->public_key )
-               {
-                   entry.amount = amount;
-                   break;
-               }
-           }
-           else /* Cancel order */
-           {
-               if( !entry.from_account.valid() )
-               {
-                   entry.from_account = okey_rec->public_key;
-                   entry.amount = amount;
-                   entry.memo = "cancel " + *okey_rec->memo;
-                   break;
-               }
-               else if( *entry.from_account == okey_rec->public_key )
-               {
-                   entry.amount = amount;
-                   entry.memo = "cancel " + *okey_rec->memo;
-                   break;
-               }
-           }
-       }
-
-       return true;
-    }
-    return false;
-} FC_CAPTURE_AND_RETHROW( (op) ) }
-// TODO: Refactor scan_{bid|ask|short}; exactly the same
-bool wallet_impl::scan_relative_bid( const relative_bid_operation& op,
-                                     wallet_transaction_record& trx_rec,
-                                     asset& total_fee )
-{ try {
-    const auto amount = op.get_amount();
-    if( amount.asset_id == total_fee.asset_id )
-        total_fee -= amount;
-
-    auto okey_rec = _wallet_db.lookup_key( op.bid_index.owner );
-    if( okey_rec.valid() && okey_rec->has_private_key() )
-    {
-       /* Restore key label */
-       const market_order order( relative_bid_order, op.bid_index, op.amount );
-       okey_rec->memo = order.get_small_id();
-       _wallet_db.store_key( *okey_rec );
-
-       for( auto& entry : trx_rec.ledger_entries )
-       {
-           if( amount.amount >= 0 )
-           {
-               if( !entry.to_account.valid() )
-               {
-                   entry.to_account = okey_rec->public_key;
-                   entry.amount = amount;
-                   //entry.memo =
-                   break;
-               }
-               else if( *entry.to_account == okey_rec->public_key )
-               {
-                   entry.amount = amount;
-                   break;
-               }
-           }
-           else /* Cancel order */
-           {
-               if( !entry.from_account.valid() )
-               {
-                   entry.from_account = okey_rec->public_key;
-                   entry.amount = amount;
-                   entry.memo = "cancel " + *okey_rec->memo;
-                   break;
-               }
-               else if( *entry.from_account == okey_rec->public_key )
-               {
-                   entry.amount = amount;
-                   entry.memo = "cancel " + *okey_rec->memo;
-                   break;
-               }
-           }
-       }
-
-       return true;
-    }
-    return false;
-} FC_CAPTURE_AND_RETHROW( (op) ) }
 
 // TODO: Refactor scan_{bid|ask|short}; exactly the same
 bool wallet_impl::scan_bid( const bid_operation& op, wallet_transaction_record& trx_rec, asset& total_fee )
@@ -1677,7 +1534,7 @@ vector<pretty_transaction> wallet::get_pretty_transaction_history( const string&
     bool account_specified = !account_name.empty();
     if( !account_specified )
     {
-        const auto accounts = list_my_accounts();
+        const auto accounts = list_accounts();
         for( const auto& account : accounts )
             account_names.push_back( account.name );
     }
@@ -1687,11 +1544,19 @@ vector<pretty_transaction> wallet::get_pretty_transaction_history( const string&
     }
 
     /* Tally up running balances */
+    const bool end_before_head = end_block_num != -1
+                                 && end_block_num <= my->_blockchain->get_head_block_num();
+    const fc::time_point_sec now( my->_blockchain->now() );
     for( const auto& name : account_names )
     {
         map<asset_id_type, asset> running_balances;
         for( auto& trx : pretties )
         {
+            if( !trx.is_virtual && !trx.is_confirmed
+                    && ( end_before_head || trx.expiration_timestamp < now ) )
+            {
+                continue;
+            }
             const auto fee_asset_id = trx.fee.asset_id;
             if( running_balances.count( fee_asset_id ) <= 0 )
                 running_balances[ fee_asset_id ] = asset( 0, fee_asset_id );

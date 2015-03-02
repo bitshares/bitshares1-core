@@ -80,33 +80,6 @@ namespace bts { namespace blockchain {
 
       operations.emplace_back( std::move( op ) );
    }
-   void transaction::relative_bid( const asset& quantity,
-                          const price& delta_price_per_unit,
-                          const optional<price>& limit,
-                          const address& owner )
-   {
-      relative_bid_operation op;
-      op.amount = quantity.amount;
-      op.bid_index.order_price = delta_price_per_unit;
-      op.bid_index.owner = owner;
-      op.limit_price = limit;
-
-      operations.emplace_back( std::move( op ) );
-   }
-
-   void transaction::relative_ask( const asset& quantity,
-                          const price& delta_price_per_unit,
-                          const optional<price>& limit,
-                          const address& owner )
-   {
-      relative_ask_operation op;
-      op.amount = quantity.amount;
-      op.ask_index.order_price = delta_price_per_unit;
-      op.ask_index.owner = owner;
-      op.limit_price = limit;
-
-      operations.emplace_back( std::move( op ) );
-   }
 
    void transaction::short_sell( const asset& quantity,
                                  const price& interest_rate,
@@ -147,7 +120,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( amount.amount > 0, "amount: ${amount}", ("amount",amount) );
       deposit_operation op;
       op.amount = amount.amount;
-      op.condition = withdraw_condition( withdraw_with_multisig{multsig_info.required,multsig_info.owners}, amount.asset_id );
+      op.condition = withdraw_condition( withdraw_with_multisig{ multsig_info.required,multsig_info.owners }, amount.asset_id );
       operations.emplace_back( std::move( op ) );
    }
 
@@ -391,12 +364,11 @@ namespace bts { namespace blockchain {
       return false;
    }
 
-    void transaction::authorize_key( asset_id_type asset_id, const address& owner, object_id_type meta )
+    void transaction::authorize_key( const asset_id_type asset_id, const address& owner )
     {
        authorize_operation op;
        op.asset_id = asset_id;
        op.owner = owner;
-       op.meta_id = meta;
        operations.emplace_back( std::move( op ) );
     }
 

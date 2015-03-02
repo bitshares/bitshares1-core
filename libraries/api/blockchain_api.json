@@ -234,14 +234,14 @@
       },
       {
         "method_name": "blockchain_get_block",
-        "description": "Retrieves the block record for the given block number or ID",
+        "description": "Retrieves the block record for the given block number, ID or timestamp",
         "cached"   : true,
         "return_type": "oblock_record",
         "parameters" : [
             {
               "name" : "block",
               "type" : "string",
-              "description" : "block number or ID to retrieve"
+              "description" : "timestamp, number or ID of the block to retrieve"
             }
         ],
         "is_const" : true,

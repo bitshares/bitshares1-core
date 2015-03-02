@@ -7,6 +7,7 @@ Grab input log.
 import argparse
 import contextlib
 import decimal
+import io
 import json
 import logging
 import os
@@ -384,6 +385,30 @@ class TestClient(object):
             match_callback(self.last_command_output[m.start():m.end()])
         return m.groupdict()
 
+    def expect_json(self, match_callback=None, fail_callback=None):
+        self.skip_whitespace()
+        # inefficient but we have no choice
+        m = self.last_command_pos
+        stream = io.StringIO(self.last_command_output[m:])
+        try:
+            json_object = json.load(stream)
+        except ValueError:
+            self.expect_fail("<json>", fail_callback)
+            return
+        n = m+stream.tell()
+        self.last_command_pos = n
+        if match_callback is not None:
+            match_callback(self.last_command_output[m:n])
+        return
+
+    def expect_reltime(self, match_callback=None, fail_callback=None):
+        return self.expect_regex( r"[0-9]+\s+(?:second|minute|hour|day|week|month|year)[s]?\s+(?:ago|old|remaining|in\s+the\s+future)",
+            match_callback=match_callback, fail_callback=fail_callback )
+
+    def expect_isotime(self, match_callback=None, fail_callback=None):
+        return self.expect_regex( r"[0-9]+[-][0-9]{2}[-][0-9]{2}[T][0-9]{2}[:][0-9]{2}[:][0-9]{2}",
+            match_callback=match_callback, fail_callback=fail_callback )
+
     def reset_last_command(self, new_command_output=None):
         self.last_command_output = new_command_output
         self.last_command_pos = 0
@@ -421,6 +446,9 @@ class Test(object):
         self.context["active_client"] = ""
         self.context["expect_str"] = self.expect_str
         self.context["expect_regex"] = self.expect_regex
+        self.context["expect_json"] = self.expect_json
+        self.context["expect_reltime"] = self.expect_reltime
+        self.context["expect_isotime"] = self.expect_isotime
         self.context["run_testdir"] = self.run_testdir
         self.context["regex"] = self.expect_regex
         self.context["register_client"] = self.register_client
@@ -492,6 +520,27 @@ class Test(object):
         # TODO:  write regex result
         return
 
+    def expect_json(self):
+        if not self.context["expect_enabled"]:
+            return
+        client = self.get_active_client()
+        client.expect_json(match_callback=self.on_match)
+        return
+
+    def expect_reltime(self):
+        if not self.context["expect_enabled"]:
+            return
+        client = self.get_active_client()
+        client.expect_reltime(match_callback=self.on_match)
+        return
+
+    def expect_isotime(self):
+        if not self.context["expect_enabled"]:
+            return
+        client = self.get_active_client()
+        client.expect_isotime(match_callback=self.on_match)
+        return
+
     def on_match(self, s):
         self.context["matchbuf"].append(s)
         return
@@ -547,12 +596,22 @@ class Test(object):
     # whitespace, possibly followed by newline
     |[ \t\f\v]+(?:\r\n?|\n)?
     # Python expression invocation
-    |[$][{].*?[}][$]
+    |[$][{](?:.|\n)*?[}][$]
     # with optional result
-     (?:[~][{].*?[}][~])?
+     (?:[~][{](?:.|\n)*?[}][~])?
     # Command or metacommand invocation
     |[>]{3}
+    # Comment
+    |[#][{](?:.|\n)*?[}][#]
 )
+""",
+        re.VERBOSE,
+        )
+
+    re_expr_invocation = re.compile(
+        r"""
+[$][{]((?:.|\n)*?)[}][$]
+[~][{]((?:.|\n)*?)[}][~]?
 """,
         re.VERBOSE,
         )
@@ -593,12 +652,23 @@ class Test(object):
                 if in_command:
                     cmd_text.append(t)
                 print(t, end="", flush=True)
-            elif len(t) >= 4 and t[0:2] == "${" and t[-2:] == "}$":
+            elif len(t) >= 4 and t[0:2] == "${":
                 # Python expression
-                self.interpret_expr(t[2:-2])
+                if t[-2:] == "}$":
+                    expr = t[2:-2]
+                else:
+                    mo = self.re_expr_invocation.match(t)
+                    if mo is None:
+                        # TODO:  better error handling here
+                        raise RuntimeError("mismatched ${")
+                    expr = mo.group(1)
+                self.interpret_expr(expr)
                 # TODO: cmd_text.append() function
-                print(t, end="", flush=True)
+                print("${"+expr+"}$", end="", flush=True)
                 self.dump_matchbuf(self.context["showmatch_enabled"])
+            elif len(t) >= 4 and t[0:2] == "#{" and t[-2:] == "}#":
+                # comment
+                print(t, end="", flush=True)
             else:
                 if in_command:
                     cmd_text.append(t)
@@ -624,11 +694,12 @@ class Test(object):
         if self.last_command_client is None:
             return
         end_text = self.last_command_client.finish_cmd()
-        end_text = end_text.rstrip()
-        print(end_text, end="", flush=True)
-        end_text = end_text.strip()
-        if self.context["expect_enabled"] and (end_text != ""):
-            logging.error("unexpected command output: "+repr(end_text[:40]))
+        if end_text.strip() != "":
+            if self.context["expect_enabled"] and self.context["showmatch_enabled"]:
+                # TODO:  respect showmatch here
+                print("!{ }!~{ " + end_text.strip() + " }~")
+            else:
+                print(end_text, end="")
         self.last_command_client = None
         return
 

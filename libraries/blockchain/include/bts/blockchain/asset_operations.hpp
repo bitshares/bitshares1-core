@@ -130,18 +130,12 @@ namespace bts { namespace blockchain {
 
       asset_id_type    asset_id = 0;
       address          owner;
-      object_id_type   meta_id = 0; /// extra data about this authorization
 
       void evaluate( transaction_evaluation_state& eval_state )const;
    };
 
 } } // bts::blockchain
 
-FC_REFLECT( bts::blockchain::authorize_operation,
-            (asset_id)
-            (owner)
-            (meta_id)
-            )
 FC_REFLECT( bts::blockchain::create_asset_operation,
             (symbol)
             (name)
@@ -169,4 +163,8 @@ FC_REFLECT_DERIVED( bts::blockchain::update_asset_ext_operation,
                     (authority) )
 FC_REFLECT( bts::blockchain::issue_asset_operation,
             (amount)
+            )
+FC_REFLECT( bts::blockchain::authorize_operation,
+            (asset_id)
+            (owner)
             )

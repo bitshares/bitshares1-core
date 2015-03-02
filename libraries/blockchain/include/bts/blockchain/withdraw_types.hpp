@@ -154,7 +154,7 @@ namespace bts { namespace blockchain {
       static const uint8_t    type;
 
       uint32_t                required;
-      std::set<address>       owners;
+      set<address>            owners;
       optional<titan_memo>    memo;
    };
 

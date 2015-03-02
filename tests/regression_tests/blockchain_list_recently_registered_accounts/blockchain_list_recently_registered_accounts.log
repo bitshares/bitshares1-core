@@ -265,7 +265,7 @@ Owner Key: XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra
 Active Key History:
 - XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX, last used <d-ign></d-ign>
 
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+ID    NAME (* next in line)           PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
 ==========================================================================================================================================
 102   testaccount1                    0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 
@@ -278,7 +278,7 @@ Owner Key: XTS5DBeMtFiZaive82nTRuZjBbfZMVFZbudCs86bDfh3XwkKSdUqw
 Active Key History:
 - XTS4vjfVZKusbLxknrEhVnqXSbbAZpzPU9yPmd48hAmeZrc1U1Eqq, last used <d-ign></d-ign>
 
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+ID    NAME (* next in line)           PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
 ==========================================================================================================================================
 103   testaccount2                    0.00000000 %   0        0        N/A           90 %     0.00000 XTS         NONE                    
 
@@ -291,7 +291,7 @@ Owner Key: XTS5W4ayhoWynsujeA8BZ1vMo3MXkTwpmegf3qVdtjzBUpo5DAxqi
 Active Key History:
 - XTS631H2Uz5E5LrH1QEeDkAj5ZWUNCWMCU6iJyVoeK3qc7JmpRibf, last used <d-ign></d-ign>
 
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+ID    NAME (* next in line)           PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
 ==========================================================================================================================================
 104   testaccount3                    0.00000000 %   0        0        N/A           10 %     0.00000 XTS         NONE                    
 
@@ -304,7 +304,7 @@ Owner Key: XTS6jzSPgDy5VP5qGAPswD5ZCfJk43eEetGXPfwSFvMxkNbhk8QQm
 Active Key History:
 - XTS5j9bSNzxRykrRCjB3SwFn7woVpcMVm461QxwNzxrsPxoL4zkyr, last used <d-ign></d-ign>
 
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+ID    NAME (* next in line)           PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
 ==========================================================================================================================================
 105   testaccount4                    0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 

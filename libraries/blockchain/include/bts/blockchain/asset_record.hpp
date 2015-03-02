@@ -42,6 +42,9 @@ namespace bts { namespace blockchain {
       bool can_issue( const share_type amount )const;
       share_type available_shares()const;
 
+      // TODO: Always allow issuer and/or authority (what's the difference?)
+      bool is_authorized( const address& addr )const;
+
       asset asset_from_string( const string& amount )const;
       string amount_to_string( share_type amount, bool append_symbol = true )const;
 
@@ -73,6 +76,8 @@ namespace bts { namespace blockchain {
        */
       uint16_t            market_fee = 0;
       multisig_meta_info  authority;
+
+      unordered_set<address> whitelist;
 
       void sanity_check( const chain_interface& )const;
       static oasset_record lookup( const chain_interface&, const asset_id_type );
@@ -123,4 +128,5 @@ FC_REFLECT( bts::blockchain::asset_record,
         (transaction_fee)
         (market_fee)
         (authority)
+        (whitelist)
         )

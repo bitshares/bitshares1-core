@@ -530,6 +530,7 @@ namespace bts { namespace cli {
                        this_parameter.type == "transaction_id" ||
                        this_parameter.type == "operation_type" ||
                        this_parameter.type == "withdraw_condition_type" ||
+                       this_parameter.type == "wallet_record_type" ||
                        this_parameter.type == "passphrase")
               {
                 string result;

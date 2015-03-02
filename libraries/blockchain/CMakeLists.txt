@@ -68,6 +68,7 @@ add_library( bts_blockchain
 
              time.cpp
              chain_interface_v1.cpp
+             chain_interface_v2.cpp
              chain_interface.cpp
              chain_database_v1.cpp
              chain_database_v2.cpp

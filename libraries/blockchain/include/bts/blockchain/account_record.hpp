@@ -6,6 +6,13 @@
 
 namespace bts { namespace blockchain {
 
+enum account_key_type
+{
+    owner_key    = 0,
+    active_key   = 1,
+    signing_key  = 2
+};
+
 enum account_type
 {
    titan_account    = 0,
@@ -17,8 +24,8 @@ struct multisig_meta_info
 {
    static const account_type type = multisig_account;
 
-   uint32_t                required = 0;
-   std::set<address>       owners;
+   uint32_t     required = 0;
+   set<address> owners;
 };
 
 struct account_meta_info
@@ -147,6 +154,11 @@ class account_db_interface
 
 } } // bts::blockchain
 
+FC_REFLECT_ENUM( bts::blockchain::account_key_type,
+                 (owner_key)
+                 (active_key)
+                 (signing_key)
+                 )
 FC_REFLECT_ENUM( bts::blockchain::account_type,
                  (titan_account)
                  (public_account)

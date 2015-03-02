@@ -34,13 +34,6 @@ namespace bts { namespace wallet {
        inactive_delegate_status = 1 << 3
    };
 
-   enum account_key_type
-   {
-       owner_key    = 0,
-       active_key   = 1,
-       signing_key  = 2
-   };
-
    class wallet
    {
       public:
@@ -157,40 +150,28 @@ namespace bts { namespace wallet {
 
          vector<wallet_transaction_record> get_transactions( const string& transaction_id_prefix );
 
-         ///@{ account management
-         public_key_type  create_account( const string& account_name,
-                                          const variant& private_data = variant() );
+         vector<wallet_account_record> list_accounts()const;
+         owallet_account_record lookup_account( const string& account )const;
+         wallet_account_record store_account( const account_data& account );
 
-         void update_account_private_data( const string& account_to_update,
-                                           const variant& private_data );
-
-         void account_set_favorite ( const string& account_name,
-                                     const bool is_favorite );
+         public_key_type create_account( const string& account_name );
+         void rename_account( const string& old_contact_name,
+                              const string& new_contact_name );
 
          wallet_account_record get_account( const string& account_name )const;
-
-         void     add_contact_account( const string& account_name,
-                                       const public_key_type& key,
-                                       const variant& private_data = variant() );
-
-         void     remove_contact_account( const string& account_name );
-
-         void     rename_account( const string& old_contact_name,
-                                  const string& new_contact_name );
+         owallet_account_record  get_account_for_address( address addr )const;
 
          vector<wallet_contact_record> list_contacts()const;
-         owallet_contact_record get_contact( const variant& data )const;
-         owallet_contact_record get_contact( const string& label )const;
-         wallet_contact_record add_contact( const contact_data& contact );
+         owallet_contact_record lookup_contact( const variant& data )const;
+         owallet_contact_record lookup_contact( const string& label )const;
+         wallet_contact_record store_contact( const contact_data& contact );
          owallet_contact_record remove_contact( const variant& data );
          owallet_contact_record remove_contact( const string& label );
 
-         owallet_account_record  get_account_for_address( address addr )const;
-         ///@}
+         vector<wallet_approval_record> list_approvals()const;
+         owallet_approval_record lookup_approval( const string& name )const;
+         wallet_approval_record store_approval( const approval_data& approval );
 
-         /**
-          * Return general information about the wallet
-          **/
          variant get_info()const;
 
          /**
@@ -214,12 +195,7 @@ namespace bts { namespace wallet {
           *  Account management API
           */
          ///@{
-         vector<string> list() const; // list wallets
-
-         vector<wallet_account_record> list_accounts()const;
-         vector<wallet_account_record> list_favorite_accounts()const;
-         vector<wallet_account_record> list_unregistered_accounts()const;
-         vector<wallet_account_record> list_my_accounts()const;
+         vector<string> list() const; // list wallet directories
 
          uint32_t           import_bitcoin_wallet( const path& wallet_dat,
                                                    const string& wallet_dat_passphrase,
@@ -247,7 +223,6 @@ namespace bts { namespace wallet {
          public_key_type    get_new_public_key( const string& account_name );
          address            create_new_address( const string& account_name, const string& label = "");
 
-
          void               set_address_label( const address& addr, const string& label );
          string             get_address_label( const address& addr );
          void               set_address_group_label( const address& addr, const string& group_label );
@@ -268,44 +243,18 @@ namespace bts { namespace wallet {
          void cache_transaction( wallet_transaction_record& transaction_record );
 
          /**
-          *  Multi-Part transfers provide additional security by not combining inputs, but they
-          *  show up to the user as multiple unique transfers.  This is an advanced feature
-          *  that should probably have some user interface support to merge these transfers
-          *  into one logical transfer.
-          */
-         vector<signed_transaction> multipart_transfer(
-                 double real_amount_to_transfer,
-                 const string& amount_to_transfer_symbol,
-                 const string& from_account_name,
-                 const string& to_account_name,
-                 const string& memo_message,
-                 bool sign
-                 );
-         /**
           *  This transfer works like a bitcoin transaction combining multiple inputs
           *  and producing a single output. The only different aspect with transfer_asset is that
           *  this will send to a address.
           */
          wallet_transaction_record transfer_asset_to_address(
-                 double real_amount_to_transfer,
-                 const string& amount_to_transfer_symbol,
+                 const asset& amount,
                  const string& from_account_name,
                  const address& to_address,
                  const string& memo_message,
                  vote_strategy selection_method,
-                 bool sign
+                 bool sign = true
                  );
-         /*
-         transaction_builder builder_transfer_asset_to_address(
-                 double real_amount_to_transfer,
-                 const string& amount_to_transfer_symbol,
-                 const string& from_account_name,
-                 const address& to_address,
-                 const string& memo_message,
-                 vote_strategy selection_method
-                 );
-         */
-
          /**
           * This transfer works like a bitcoin sendmany transaction combining multiple inputs
           * and producing a single output.
@@ -317,13 +266,8 @@ namespace bts { namespace wallet {
                  const string& memo_message,
                  bool sign
                  );
-         /**
-          *  This transfer works like a bitcoin transaction combining multiple inputs
-          *  and producing a single output.
-          */
          wallet_transaction_record burn_asset(
-                 double real_amount_to_transfer,
-                 const string& amount_to_transfer_symbol,
+                 const asset& asset_to_transfer,
                  const string& paying_account_name,
                  const string& for_or_against,
                  const string& to_account_name,
@@ -409,7 +353,6 @@ namespace bts { namespace wallet {
                  const string& paying_account_name,
                  const string& symbol,
                  const address& key,
-                 const object_id_type meta,
                  bool sign
                  );
          wallet_transaction_record update_signing_key(
@@ -496,19 +439,6 @@ namespace bts { namespace wallet {
                  const string& quote_symbol,
                  bool sign
                  );
-         /**
-          *  ie: submit_ask( 10 BTC at 600.34 USD per BTC )
-          *
-          *  Requires the user have 10 BTC + fees
-          */
-         wallet_transaction_record submit_relative_ask(const string& from_account_name,
-                 const string& real_quantity,
-                 const string& quantity_symbol,
-                 const string& relative_price_per_unit,
-                 const string& quote_symbol,
-                 const string& limit,
-                 bool sign
-                 );
          wallet_transaction_record submit_short(
                  const string& from_account_name,
                  const string& real_quantity_xts,
@@ -555,9 +485,6 @@ namespace bts { namespace wallet {
          string                             get_key_label( const public_key_type& key )const;
          pretty_transaction                 to_pretty_trx( const wallet_transaction_record& trx_rec ) const;
 
-         void                               set_account_approval( const string& account_name, int8_t approval );
-         int8_t                             get_account_approval( const string& account_name )const;
-
          bool                               is_sending_address( const address& addr )const;
          bool                               is_receive_address( const address& addr )const;
 
@@ -599,8 +526,6 @@ namespace bts { namespace wallet {
          wallet_transaction_record          recover_transaction( const string& transaction_id_prefix, const string& recipient_account );
          optional<variant_object>           verify_titan_deposit( const string& transaction_id_prefix );
 
-         vote_summary get_vote_status( const string& account_name );
-
          private_key_type get_private_key( const address& addr )const;
          public_key_type get_public_key( const address& addr) const;
 
@@ -625,9 +550,3 @@ namespace bts { namespace wallet {
    typedef std::weak_ptr<wallet> wallet_weak_ptr;
 
 } } // bts::wallet
-
-FC_REFLECT_ENUM( bts::wallet::account_key_type,
-        (owner_key)
-        (active_key)
-        (signing_key)
-        )

@@ -53,8 +53,6 @@ MainView {
       passwordField.password = ""
    }
 
-   Component.onCompleted: nameField.forceActiveFocus()
-
    Rectangle {
       anchors.fill: parent
       color: Theme.backgroundColor
@@ -223,6 +221,7 @@ MainView {
          placeholderText: qsTr("Account Name")
          helperText: qsTr("Must be the same as when you originally created your account.")
          floatingLabel: true
+         transform: ShakeAnimation { id: importNameFieldShaker }
       }
       TextField {
          id: importBrainKeyField
@@ -231,12 +230,13 @@ MainView {
          placeholderText: qsTr("Recovery Password")
          helperText: qsTr("This is the password you were asked to write down when you backed up your account.")
          floatingLabel: true
+         transform: ShakeAnimation { id: importBrainKeyFieldShaker }
       }
       PasswordField {
          id: importPasswordField
          anchors.horizontalCenter: parent.horizontalCenter
          width: parent.width - visuals.margins*2
-         placeholderText: qsTr("Unlocking Password")
+         placeholderText: qsTr("New Unlocking Password")
          helperText: qsTr("This password can be short and easy to remember.")
          onAccepted: finishImportButton.clicked()
       }
@@ -256,8 +256,16 @@ MainView {
             anchors.right: parent.right
             anchors.rightMargin: units.dp(16)
             text: qsTr("Import Account")
-            onClicked: if( wallet.recoverWallet(importNameField.text, importPasswordField.password, importBrainKeyField.text) )
-                          onboarder.finished()
+            onClicked: {
+               if( !importNameField.text )
+                  return importNameFieldShaker.shake()
+               if( !importBrainKeyField.text )
+                  return importBrainKeyFieldShaker.shake()
+               if( !importPasswordField.password )
+                  return importPasswordField.shake()
+               if( wallet.recoverWallet(importNameField.text, importPasswordField.password, importBrainKeyField.text) )
+                  onboarder.finished()
+            }
          }
       }
    }
@@ -298,10 +306,6 @@ MainView {
             anchors.top: undefined
             anchors.verticalCenter: onboarder.verticalCenter
          }
-         PropertyChanges {
-            target: importNameField
-            focus: true
-         }
       },
       State {
          name: "ERROR"
@@ -332,6 +336,9 @@ MainView {
             property: "opacity"
             from: 1; to: 0
          }
+         ScriptAction {
+            script: importNameField.forceActiveFocus()
+         }
       },
       Transition {
          from: "IMPORTING"
@@ -351,6 +358,9 @@ MainView {
             target: baseLayoutColumn
             property: "opacity"
             from: 0; to: 1
+         }
+         ScriptAction {
+            script: nameField.forceActiveFocus()
          }
       }
    ]
