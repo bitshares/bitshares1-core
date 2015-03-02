@@ -331,17 +331,18 @@ namespace bts { namespace wallet {
        return owner_public_key;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
-   private_key_type wallet_db::get_account_child_key( const private_key_type& active_private_key, uint32_t child_key_index )const
+   private_key_type wallet_db::get_account_child_key( const private_key_type& parent_private_key, uint32_t child_key_index )const
    { try {
        FC_ASSERT( is_open() );
-       const extended_private_key extended_active_private_key = extended_private_key( active_private_key );
+       const extended_private_key extended_parent_private_key = extended_private_key( parent_private_key );
        fc::sha256::encoder enc;
        fc::raw::pack( enc, child_key_index );
-       return extended_active_private_key.child( enc.result() );
+       return extended_parent_private_key.child( enc.result() );
    } FC_CAPTURE_AND_RETHROW( (child_key_index) ) }
 
    // Deprecated but kept for key regeneration
-   private_key_type wallet_db::get_account_child_key_v1( const fc::sha512& password, const address& account_address, uint32_t child_key_index )const
+   private_key_type wallet_db::get_account_child_key_v1( const fc::sha512& password, const address& account_address,
+                                                         uint32_t child_key_index )const
    { try {
        FC_ASSERT( is_open() );
        const extended_private_key master_private_key = wallet_master_key->decrypt_key( password );
