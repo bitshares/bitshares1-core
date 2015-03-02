@@ -245,9 +245,6 @@ namespace bts { namespace blockchain {
       if( !message.empty() )
           FC_ASSERT( amount.asset_id == 0 );
 
-#ifndef WIN32
-#warning [HARDFORK] Burning fee change
-#endif
       if( amount.asset_id == 0 )
       {
           const size_t message_kb = (message.size() / 1024) + 1;
