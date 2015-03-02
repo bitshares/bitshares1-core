@@ -21,13 +21,6 @@ struct public_key_summary
 
 };
 
-struct vote_summary
-{
-    bool      up_to_date_with_recommendation;  // Are my votes all voting for the result of "vote_recommended" ?
-    float     utilization;
-    float     negative_utilization;
-};
-
 struct pretty_ledger_entry
 {
    string                                   from_account;
@@ -85,8 +78,6 @@ struct pretty_vesting_balance
 }} // bts::wallet
 
 FC_REFLECT( bts::wallet::public_key_summary, (hex)(native_pubkey)(native_address)(pts_normal_address)(pts_compressed_address)(btc_normal_address)(btc_compressed_address) )
-
-FC_REFLECT( bts::wallet::vote_summary, (utilization)(negative_utilization)(up_to_date_with_recommendation) )
 
 FC_REFLECT( bts::wallet::pretty_ledger_entry,
             (from_account)

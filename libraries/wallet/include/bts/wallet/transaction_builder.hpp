@@ -238,11 +238,6 @@ namespace bts { namespace wallet {
                                       const asset& real_quantity,
                                       const price& quote_price);
 
-      transaction_builder& submit_relative_bid(const wallet_account_record& from_account,
-                                      const asset& real_quantity,
-                                      const price& delta_quote_price,
-                                      const optional<price>& limit
-                                      );
       /**
        * @brief Submit an ask order
        * @param from_account The account to place the ask
@@ -257,10 +252,6 @@ namespace bts { namespace wallet {
                                       const asset& cost,
                                       const price& quote_price);
 
-      transaction_builder& submit_relative_ask(const wallet_account_record& from_account,
-                                      const asset& cost,
-                                      const price& delta_quote_price,
-                                      const optional<price>& limit );
       /**
        * @brief Submit a short order
        * @param from_account The account to place the short

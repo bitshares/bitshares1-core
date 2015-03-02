@@ -1,0 +1,72 @@
+default (unlocked) >>> wallet_account_create test
+"XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
+default (unlocked) >>> wallet_account_balance test
+No balances found.
+default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate0           test                100.00000 XTS                                                       0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_account_balance test
+ACCOUNT                         BALANCE                     
+============================================================
+test                            100.00000 XTS               
+default (unlocked) >>> wallet_transfer 101 XTS delegate0 test
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate0           test                101.00000 XTS                                                       0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_account_balance test
+ACCOUNT                         BALANCE                     
+============================================================
+test                            201.00000 XTS               
+default (unlocked) >>> wallet_transfer 102 XTS delegate0 test
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate0           test                102.00000 XTS                                                       0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_account_balance test
+ACCOUNT                         BALANCE                     
+============================================================
+test                            303.00000 XTS               
+default (unlocked) >>> history test 
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+<d-ign></d-ign>2         delegate0           test                100.00000 XTS                                                       100.00000 XTS           0.00000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>3         delegate0           test                101.00000 XTS                                                       201.00000 XTS           0.00000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>4         delegate0           test                102.00000 XTS                                                       303.00000 XTS           0.00000 XTS         <d-ign></d-ign>
+default (unlocked) >>> help wallet_account_historic_balance
+Usage:
+wallet_account_historic_balance <time> [account_name]                                                 Lists wallet's balance at the given time
+Lists wallet's balance at the given time
+
+Parameters:
+  time (timestamp, required): the date and time for which the balance will be computed
+  account_name (string, optional, defaults to ""): the name of the account for which the historic balance will be returned, "" for all accounts
+
+Returns:
+  account_balance_summary_type
+default (unlocked) >>> wallet_account_historic_balance "2014-06-20T14:40:30.000000" test
+No balances found.
+default (unlocked) >>> wallet_account_historic_balance "2014-06-20T14:40:40.000000" test
+ACCOUNT                         BALANCE                     
+============================================================
+test                            100.00000 XTS               
+default (unlocked) >>> wallet_account_historic_balance "2014-06-20T14:40:50.000000" test
+ACCOUNT                         BALANCE                     
+============================================================
+test                            201.00000 XTS               
+default (unlocked) >>> wallet_account_historic_balance "2014-06-20T14:41:00.000000" test
+ACCOUNT                         BALANCE                     
+============================================================
+test                            303.00000 XTS               
+default (unlocked) >>> quit

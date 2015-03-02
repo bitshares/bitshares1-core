@@ -32,15 +32,11 @@ namespace bts { namespace blockchain {
                                                                const asset_id_type base_id )override;
          virtual oorder_record          get_bid_record( const market_index_key& )const override;
          virtual oorder_record          get_ask_record( const market_index_key& )const override;
-         virtual oorder_record          get_relative_bid_record( const market_index_key& )const override;
-         virtual oorder_record          get_relative_ask_record( const market_index_key& )const override;
          virtual oorder_record          get_short_record( const market_index_key& )const override;
          virtual ocollateral_record     get_collateral_record( const market_index_key& )const override;
 
          virtual void                   store_bid_record( const market_index_key& key, const order_record& ) override;
          virtual void                   store_ask_record( const market_index_key& key, const order_record& ) override;
-         virtual void                   store_relative_bid_record( const market_index_key& key, const order_record& ) override;
-         virtual void                   store_relative_ask_record( const market_index_key& key, const order_record& ) override;
          virtual void                   store_short_record( const market_index_key& key, const order_record& ) override;
          virtual void                   store_collateral_record( const market_index_key& key, const collateral_record& ) override;
 
@@ -126,8 +122,6 @@ namespace bts { namespace blockchain {
 
          map< market_index_key, order_record>                               asks;
          map< market_index_key, order_record>                               bids;
-         map< market_index_key, order_record>                               relative_asks;
-         map< market_index_key, order_record>                               relative_bids;
          map< market_index_key, order_record>                               shorts;
          map< market_index_key, collateral_record>                          collateral;
 
@@ -231,8 +225,6 @@ FC_REFLECT( bts::blockchain::pending_chain_state,
             (_slot_timestamp_to_delegate)
             (asks)
             (bids)
-            (relative_asks)
-            (relative_bids)
             (shorts)
             (collateral)
             (_dirty_markets)

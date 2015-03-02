@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
    app.setApplicationName(QStringLiteral("BitShares %1 Light Wallet").arg(BTS_BLOCKCHAIN_SYMBOL));
    app.setOrganizationName(BTS_BLOCKCHAIN_NAME);
    app.setOrganizationDomain("bitshares.org");
-   app.setApplicationVersion("1.0 Beta 2");
+   app.setApplicationVersion("1.0 Beta 3");
 
    //Fire up the NTP system
    bts::blockchain::now();

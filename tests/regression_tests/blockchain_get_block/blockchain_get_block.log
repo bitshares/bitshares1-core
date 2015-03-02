@@ -1,10 +1,10 @@
 default (unlocked) >>> help blockchain_get_block
 Usage:
-blockchain_get_block <block>                                                                          Retrieves the block record for the given block number or ID
-Retrieves the block record for the given block number or ID
+blockchain_get_block <block>                                                                          Retrieves the block record for the given block number, ID or timestamp
+Retrieves the block record for the given block number, ID or timestamp
 
 Parameters:
-  block (string, required): block number or ID to retrieve
+  block (string, required): timestamp, number or ID of the block to retrieve
 
 Returns:
   oblock_record

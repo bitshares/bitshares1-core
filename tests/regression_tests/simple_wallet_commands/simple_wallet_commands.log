@@ -22,12 +22,11 @@ wallet (unlocked) >>> wallet_set_automatic_backups false
 false
 wallet (unlocked) >>> help wallet_account_create
 Usage:
-wallet_account_create <account_name> [private_data]                                                   Add new account for receiving payments
+wallet_account_create <account_name>                                                                  Add new account for receiving payments
 Add new account for receiving payments
 
 Parameters:
   account_name (account_name, required): the name you will use to refer to this receive account
-  private_data (json_variant, optional, defaults to null): Extra data to store with this account record
 
 Returns:
   public_key
@@ -37,9 +36,9 @@ wallet (unlocked) >>> wallet_account_create testaccount
 "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
 wallet (unlocked) >>> wallet_account_balance testaccount
 No balances found.
-wallet (unlocked) >>> wallet_list_my_accounts 
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       BLOCK PRODUCTION ENABLED 
-testaccount                        XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX           NO                    NO             0              N/A                      
+wallet (unlocked) >>> wallet_list_accounts
+NAME (* delegate)                  KEY                                                             REGISTERED            BLOCK PRODUCTION ENABLED 
+testaccount                        XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX           NO                    N/A                      
 wallet (unlocked) >>> help wallet_account_list_public_keys
 Usage:
 wallet_account_list_public_keys <account_name>                                                        Lists all public keys in this account
@@ -92,41 +91,17 @@ wallet (unlocked) >>> wallet_account_list_public_keys myaccount
     "btc_compressed_address": "1PvfQe3LcWz952oikyiH24jBBT2NdN3Faq"
   }
 ]
-wallet (unlocked) >>> wallet_list_my_accounts
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       BLOCK PRODUCTION ENABLED 
-myaccount                          XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX           NO                    NO             0              N/A                      
+wallet (unlocked) >>> wallet_list_accounts
+NAME (* delegate)                  KEY                                                             REGISTERED            BLOCK PRODUCTION ENABLED 
+myaccount                          XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX           NO                    N/A                      
 wallet (unlocked) >>> wallet_account_transaction_history myaccount
 No transactions found.
-wallet (unlocked) >>> wallet_account_update_private_data myaccount "1234 test private data"
-OK
 wallet (unlocked) >>> wallet_dump_private_key XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra
 "5KV9x9uKC8DdWozG9NRC9ySRqgPGn9XgcZrgVWxntsh4msJF9zb"
 wallet (unlocked) >>> wallet_change_passphrase 87654321
 OK
-wallet (unlocked) >>> wallet_get_name 
-"wallet"
 wallet (unlocked) >>> wallet_set_priority_fee 99999
 99,999.00000 XTS
-wallet (unlocked) >>> wallet_account_set_favorite myaccount
-OK
-wallet (unlocked) >>> wallet_list_favorite_accounts 
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
-myaccount                          XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX           NO                    YES            0         
-wallet (unlocked) >>> wallet_account_set_favorite myaccount false
-OK
-wallet (unlocked) >>> wallet_list_favorite_accounts 
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
-wallet (unlocked) >>> wallet_add_contact_account test XTS5nkoz8qNcLPF8w7xSpnf6CCFcgioGMDqsvw7G7hgEvMAxL6fCc
-OK
-wallet (unlocked) >>> wallet_list_accounts
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
-myaccount                          XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX           NO                    NO             0         
-test                               XTS5nkoz8qNcLPF8w7xSpnf6CCFcgioGMDqsvw7G7hgEvMAxL6fCc           NO                    NO             0         
-wallet (unlocked) >>> wallet_remove_contact_account test
-OK
-wallet (unlocked) >>> wallet_list_accounts
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
-myaccount                          XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX           NO                    NO             0         
 wallet (unlocked) >>> wallet_set_setting t1 123456
 OK
 wallet (unlocked) >>> wallet_lock

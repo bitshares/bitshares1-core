@@ -80,33 +80,6 @@ namespace bts { namespace blockchain {
 
       operations.emplace_back( std::move( op ) );
    }
-   void transaction::relative_bid( const asset& quantity,
-                          const price& delta_price_per_unit,
-                          const optional<price>& limit,
-                          const address& owner )
-   {
-      relative_bid_operation op;
-      op.amount = quantity.amount;
-      op.bid_index.order_price = delta_price_per_unit;
-      op.bid_index.owner = owner;
-      op.limit_price = limit;
-
-      operations.emplace_back( std::move( op ) );
-   }
-
-   void transaction::relative_ask( const asset& quantity,
-                          const price& delta_price_per_unit,
-                          const optional<price>& limit,
-                          const address& owner )
-   {
-      relative_ask_operation op;
-      op.amount = quantity.amount;
-      op.ask_index.order_price = delta_price_per_unit;
-      op.ask_index.owner = owner;
-      op.limit_price = limit;
-
-      operations.emplace_back( std::move( op ) );
-   }
 
    void transaction::short_sell( const asset& quantity,
                                  const price& interest_rate,

@@ -132,7 +132,8 @@ Page {
                var fee = wallet.getFee(assetSymbolField.selectedText)
                if( fee.symbol === assetSymbolField.selectedText )
                   return canProceed()
-               return fee.amount <= wallet.accounts[accountName].balance(fee.symbol)
+               console.log("BTS balance: " + wallet.accounts[accountName].balance(fee.symbol).total + fee.symbol)
+               return fee.amount <= wallet.accounts[accountName].balance(fee.symbol).total
             }
          }
          MenuField {

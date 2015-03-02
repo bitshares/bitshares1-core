@@ -63,9 +63,9 @@ namespace bts { namespace blockchain {
 
       update_signing_key_op_type    = 24,
 
-      // relative orders
-      relative_bid_op_type          = 25,
-      relative_ask_op_type          = 26,
+      // reserved (reverted relative orders feature)
+      reserved_op_6_type            = 25,
+      reserved_op_7_type            = 26,
 
       update_balance_vote_op_type   = 27,
 
@@ -157,8 +157,8 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (reserved_op_5_type)
                  (release_escrow_op_type)
                  (update_signing_key_op_type)
-                 (relative_bid_op_type)
-                 (relative_ask_op_type)
+                 (reserved_op_6_type)
+                 (reserved_op_7_type)
                  (update_balance_vote_op_type)
                  (data_op_type)
                  (authorize_op_type)

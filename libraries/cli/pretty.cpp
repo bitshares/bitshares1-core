@@ -308,7 +308,6 @@ string pretty_delegate_list( const vector<account_record>& delegate_records, cpt
 
     out << std::setw(  6 ) << "ID";
     out << std::setw( 32 ) << "NAME (* next in line)";
-    out << std::setw( 15 ) << "APPROVAL";
     out << std::setw(  9 ) << "PRODUCED";
     out << std::setw(  9 ) << "MISSED";
     out << std::setw( 14 ) << "RELIABILITY";
@@ -908,7 +907,7 @@ string pretty_vote_summary( const account_vote_summary_type& votes, cptr client 
 
         out << std::setw( 32 ) << pretty_shorten( delegate_name, 31 );
         out << std::setw( 24 ) << client->get_chain()->to_pretty_asset( asset( votes_for ) );
-        out << std::setw(  8 ) << std::to_string( client->get_wallet()->get_account_approval( delegate_name ) );
+        //out << std::setw(  8 ) << std::to_string( client->get_wallet()->get_account_approval( delegate_name ) );
 
         out << "\n";
     }
@@ -955,10 +954,7 @@ string pretty_order_list( const vector<std::pair<order_id_type, market_order>>& 
 
         out << std::setw( 20 ) << variant( order.type ).as_string();
         out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_quantity( feed_price ) );
-        if( order.type == relative_ask_order || order.type == relative_bid_order )
-           out << std::setw( 30 ) << (client->get_chain()->to_pretty_price( feed_price ) + "*" + order.get_price().ratio_string());
-        else
-           out << std::setw( 30 ) << client->get_chain()->to_pretty_price( order.get_price( feed_price ) );
+        out << std::setw( 30 ) << client->get_chain()->to_pretty_price( order.get_price( feed_price ) );
         out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_balance() );
         out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_quantity( feed_price ) * order.get_price( feed_price ) );
         if( order.type != cover_order )

@@ -290,8 +290,14 @@ oblock_record detail::client_impl::blockchain_get_block( const string& block )co
       ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
       if( block.size() == string( block_id_type() ).size() )
          return _chain_db->get_block_record( block_id_type( block ) );
-      else
-         return _chain_db->get_block_record( std::stoi( block ) );
+      uint32_t num;
+      try {
+          fc::time_point_sec time(fc::time_point_sec::from_iso_string( block ));
+          num = _chain_db->find_block_num( time );
+      } catch( ... ) {
+          num = std::stoi( block );
+      }
+      return _chain_db->get_block_record( num );
    }
    catch( ... )
    {

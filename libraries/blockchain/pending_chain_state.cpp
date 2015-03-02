@@ -52,9 +52,7 @@ namespace bts { namespace blockchain {
       apply_records( prev_state, _slot_index_to_record, _slot_index_remove );
 
       for( const auto& item : bids )            prev_state->store_bid_record( item.first, item.second );
-      for( const auto& item : relative_bids )   prev_state->store_relative_bid_record( item.first, item.second );
       for( const auto& item : asks )            prev_state->store_ask_record( item.first, item.second );
-      for( const auto& item : relative_asks )   prev_state->store_relative_ask_record( item.first, item.second );
       for( const auto& item : shorts )          prev_state->store_short_record( item.first, item.second );
       for( const auto& item : collateral )      prev_state->store_collateral_record( item.first, item.second );
       for( const auto& item : market_history )  prev_state->store_market_history_record( item.first, item.second );
@@ -112,23 +110,11 @@ namespace bts { namespace blockchain {
          if( prev_value.valid() ) undo_state->store_bid_record( item.first, *prev_value );
          else  undo_state->store_bid_record( item.first, order_record() );
       }
-      for( const auto& item : relative_bids )
-      {
-         auto prev_value = prev_state->get_relative_bid_record( item.first );
-         if( prev_value.valid() ) undo_state->store_relative_bid_record( item.first, *prev_value );
-         else  undo_state->store_relative_bid_record( item.first, order_record() );
-      }
       for( const auto& item : asks )
       {
          auto prev_value = prev_state->get_ask_record( item.first );
          if( prev_value.valid() ) undo_state->store_ask_record( item.first, *prev_value );
          else  undo_state->store_ask_record( item.first, order_record() );
-      }
-      for( const auto& item : relative_asks )
-      {
-         auto prev_value = prev_state->get_relative_ask_record( item.first );
-         if( prev_value.valid() ) undo_state->store_relative_ask_record( item.first, *prev_value );
-         else  undo_state->store_relative_ask_record( item.first, order_record() );
       }
       for( const auto& item : shorts )
       {
@@ -178,14 +164,6 @@ namespace bts { namespace blockchain {
       else if( prev_state ) return prev_state->get_bid_record( key );
       return oorder_record();
    }
-   oorder_record pending_chain_state::get_relative_bid_record( const market_index_key& key )const
-   {
-      chain_interface_ptr prev_state = _prev_state.lock();
-      auto rec_itr = relative_bids.find( key );
-      if( rec_itr != relative_bids.end() ) return rec_itr->second;
-      else if( prev_state ) return prev_state->get_relative_bid_record( key );
-      return oorder_record();
-   }
 
    omarket_order pending_chain_state::get_lowest_ask_record( const asset_id_type quote_id, const asset_id_type base_id )
    {
@@ -209,15 +187,6 @@ namespace bts { namespace blockchain {
       auto rec_itr = asks.find( key );
       if( rec_itr != asks.end() ) return rec_itr->second;
       else if( prev_state ) return prev_state->get_ask_record( key );
-      return oorder_record();
-   }
-
-   oorder_record pending_chain_state::get_relative_ask_record( const market_index_key& key )const
-   {
-      chain_interface_ptr prev_state = _prev_state.lock();
-      auto rec_itr = relative_asks.find( key );
-      if( rec_itr != relative_asks.end() ) return rec_itr->second;
-      else if( prev_state ) return prev_state->get_relative_ask_record( key );
       return oorder_record();
    }
 
@@ -248,18 +217,6 @@ namespace bts { namespace blockchain {
    void pending_chain_state::store_ask_record( const market_index_key& key, const order_record& rec )
    {
       asks[ key ] = rec;
-      _dirty_markets.insert( key.order_price.asset_pair() );
-   }
-
-   void pending_chain_state::store_relative_bid_record( const market_index_key& key, const order_record& rec )
-   {
-      relative_bids[ key ] = rec;
-      _dirty_markets.insert( key.order_price.asset_pair() );
-   }
-
-   void pending_chain_state::store_relative_ask_record( const market_index_key& key, const order_record& rec )
-   {
-      relative_asks[ key ] = rec;
       _dirty_markets.insert( key.order_price.asset_pair() );
    }
 

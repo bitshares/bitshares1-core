@@ -12,7 +12,7 @@ Returns:
 
 aliases: blockchain_get_active_delegates
 (wallet closed) >>> blockchain_list_active_delegates
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+ID    NAME (* next in line)           PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
 ==========================================================================================================================================
 1     delegate0                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 2     delegate1                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
@@ -35,7 +35,7 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 19    delegate18                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 20    delegate19                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 (wallet closed) >>> blockchain_list_active_delegates 1 5
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+ID    NAME (* next in line)           PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
 ==========================================================================================================================================
 1     delegate0                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 2     delegate1                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
@@ -43,7 +43,7 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 4     delegate3                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 5     delegate4                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 (wallet closed) >>> blockchain_list_active_delegates 4 9
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+ID    NAME (* next in line)           PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
 ==========================================================================================================================================
 4     delegate3                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 5     delegate4                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
@@ -55,7 +55,7 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 11    delegate10                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 12    delegate11                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 (wallet closed) >>> blockchain_list_active_delegates 1 100
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+ID    NAME (* next in line)           PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
 ==========================================================================================================================================
 1     delegate0                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 2     delegate1                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    

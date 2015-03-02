@@ -156,8 +156,10 @@ namespace bts { namespace blockchain {
        }
 
        const auto& owners = cur_record->owners();
-       for( const address& owner : owners )
-           FC_ASSERT( asset_rec->is_authorized( owner ) );
+       for(const address& owner : owners)
+       {
+           FC_ASSERT(asset_rec->is_authorized(owner));
+       }
 
        eval_state._current_state->store_balance_record( *cur_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
@@ -259,14 +261,19 @@ namespace bts { namespace blockchain {
       if( this->amount.amount <= 0 )
          FC_CAPTURE_AND_THROW( negative_deposit, (amount) );
 
-      if( message.size() )
+      if( !message.empty() )
           FC_ASSERT( amount.asset_id == 0 );
 
+#ifndef WIN32
+#warning [HARDFORK] Burning fee change
+#endif
       if( amount.asset_id == 0 )
       {
-          FC_ASSERT( amount.amount >= BTS_BLOCKCHAIN_MIN_BURN_FEE, "",
-                     ("amount",amount)
-                     ("BTS_BLOCKCHAIN_MIN_BURN_FEE",BTS_BLOCKCHAIN_MIN_BURN_FEE) );
+          const size_t message_kb = (message.size() / 1024) + 1;
+          const share_type required_fee = message_kb * BTS_BLOCKCHAIN_MIN_BURN_FEE;
+
+          FC_ASSERT( amount.amount >= required_fee, "Message of size ${s} KiB requires at least ${a} satoshis to be burned!",
+                     ("s",message_kb)("a",required_fee) );
       }
 
       oasset_record asset_rec = eval_state._current_state->get_asset_record( amount.asset_id );
