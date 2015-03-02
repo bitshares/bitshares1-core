@@ -2187,8 +2187,8 @@ namespace detail {
 
    uint32_t wallet::regenerate_keys( const string& account_name, uint32_t num_keys_to_regenerate )
    { try {
-       FC_ASSERT( is_open() );
-       FC_ASSERT( is_unlocked() );
+       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
        FC_ASSERT( num_keys_to_regenerate > 0 );
 
        owallet_account_record account_record = my->_wallet_db.lookup_account( account_name );
@@ -2209,7 +2209,7 @@ namespace detail {
            try
            {
                const private_key_type private_key = my->_wallet_db.get_wallet_child_key( my->_wallet_password, key_index );
-               import_private_key( private_key, account_name );
+               friendly_import_private_key( private_key, account_name );
                ++total_regenerated_key_count;
            }
            catch( const fc::exception& e )
@@ -2234,7 +2234,7 @@ namespace detail {
            {
                const private_key_type private_key = my->_wallet_db.get_account_child_key_v1( my->_wallet_password,
                                                                                              account_record->owner_address(), seq_num );
-               import_private_key( private_key, account_name );
+               friendly_import_private_key( private_key, account_name );
                ++total_regenerated_key_count;
            }
            catch( const fc::exception& e )
@@ -2246,11 +2246,37 @@ namespace detail {
                ulog( "${e}", ("e",regenerate_key_error->to_detail_string()) );
        }
 
-       // Regenerate v2 account child keys
-       const owallet_key_record key_record = my->_wallet_db.lookup_key( address( account_record->active_key() ) );
+       // Regenerate v2 account owner child keys
+       owallet_key_record key_record = my->_wallet_db.lookup_key( address( account_record->owner_key ) );
        if( key_record.valid() && key_record->has_private_key() )
        {
-           ulog( "Regenerating type 2 account child keys for account: ${name}", ("name",account_name) );
+           ulog( "Regenerating type 2 account owner child keys for account: ${name}", ("name",account_name) );
+           const private_key_type owner_private_key = key_record->decrypt_private_key( my->_wallet_password );
+           seq_num = 0;
+           for( ; seq_num < num_keys_to_regenerate; ++seq_num )
+           {
+               fc::oexception regenerate_key_error;
+               try
+               {
+                   const private_key_type private_key = my->_wallet_db.get_account_child_key( owner_private_key, seq_num );
+                   friendly_import_private_key( private_key, account_name );
+                   ++total_regenerated_key_count;
+               }
+               catch( const fc::exception& e )
+               {
+                   regenerate_key_error = e;
+               }
+
+               if( regenerate_key_error.valid() )
+                   ulog( "${e}", ("e",regenerate_key_error->to_detail_string()) );
+           }
+       }
+
+       // Regenerate v2 account active child keys
+       key_record = my->_wallet_db.lookup_key( address( account_record->active_key() ) );
+       if( key_record.valid() && key_record->has_private_key() )
+       {
+           ulog( "Regenerating type 2 account active child keys for account: ${name}", ("name",account_name) );
            const private_key_type active_private_key = key_record->decrypt_private_key( my->_wallet_password );
            seq_num = 0;
            for( ; seq_num < num_keys_to_regenerate; ++seq_num )
@@ -2259,7 +2285,7 @@ namespace detail {
                try
                {
                    const private_key_type private_key = my->_wallet_db.get_account_child_key( active_private_key, seq_num );
-                   import_private_key( private_key, account_name );
+                   friendly_import_private_key( private_key, account_name );
                    ++total_regenerated_key_count;
                }
                catch( const fc::exception& e )
@@ -3243,22 +3269,26 @@ namespace detail {
            const std::string& new_active_key,
            bool sign )
    { try {
-      FC_ASSERT( is_unlocked() );
+      if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+      if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
 
-      auto account = get_account(account_to_update);
+      const auto account = get_account( account_to_update );
       owallet_account_record payer;
-      if( !pay_from_account.empty() ) payer = get_account(pay_from_account);
+      if( !pay_from_account.empty() ) payer = get_account( pay_from_account );
 
       public_key_type new_public_key;
       if( new_active_key.empty() )
       {
-        new_public_key = my->get_new_public_key( account_to_update );
+          const private_key_type new_private_key = my->_wallet_db.generate_new_account_child_key( my->_wallet_password,
+                                                                                                  account_to_update,
+                                                                                                  account_key_type::owner_key );
+          new_public_key = new_private_key.get_public_key();
       }
       else
       {
-        const optional<private_key_type> new_private_key = utilities::wif_to_key(new_active_key);
-        FC_ASSERT(new_private_key.valid(), "Unable to parse new active key.");
-        new_public_key = import_private_key( *new_private_key, account_to_update, false );
+          const optional<private_key_type> new_private_key = utilities::wif_to_key(new_active_key);
+          FC_ASSERT(new_private_key.valid(), "Unable to parse new active key.");
+          new_public_key = import_private_key( *new_private_key, account_to_update, false );
       }
 
       transaction_builder_ptr builder = create_transaction_builder();

@@ -34,13 +34,6 @@ namespace bts { namespace wallet {
        inactive_delegate_status = 1 << 3
    };
 
-   enum account_key_type
-   {
-       owner_key    = 0,
-       active_key   = 1,
-       signing_key  = 2
-   };
-
    class wallet
    {
       public:
@@ -229,7 +222,6 @@ namespace bts { namespace wallet {
 
          public_key_type    get_new_public_key( const string& account_name );
          address            create_new_address( const string& account_name, const string& label = "");
-
 
          void               set_address_label( const address& addr, const string& label );
          string             get_address_label( const address& addr );
@@ -558,9 +550,3 @@ namespace bts { namespace wallet {
    typedef std::weak_ptr<wallet> wallet_weak_ptr;
 
 } } // bts::wallet
-
-FC_REFLECT_ENUM( bts::wallet::account_key_type,
-        (owner_key)
-        (active_key)
-        (signing_key)
-        )

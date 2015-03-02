@@ -351,7 +351,8 @@ namespace bts { namespace wallet {
        return master_private_key.child( enc.result() );
    } FC_CAPTURE_AND_RETHROW( (account_address)(child_key_index) ) }
 
-   private_key_type wallet_db::generate_new_account_child_key( const fc::sha512& password, const string& account_name )
+   private_key_type wallet_db::generate_new_account_child_key( const fc::sha512& password, const string& account_name,
+                                                               const account_key_type parent_key_type )
    { try {
        FC_ASSERT( is_open() );
 
@@ -359,11 +360,27 @@ namespace bts { namespace wallet {
        FC_ASSERT( account_record.valid(), "Account not found!" );
        FC_ASSERT( !account_record->is_retracted(), "Account has been retracted!" );
 
-       const owallet_key_record key_record = lookup_key( address( account_record->active_key() ) );
-       FC_ASSERT( key_record.valid(), "Active key not found!" );
-       FC_ASSERT( key_record->has_private_key(), "Active private key not found!" );
+       public_key_type parent_public_key;
+       switch( parent_key_type )
+       {
+           case account_key_type::owner_key:
+               parent_public_key = account_record->owner_key;
+               break;
+           case account_key_type::active_key:
+               parent_public_key = account_record->active_key();
+               break;
+           case account_key_type::signing_key:
+               FC_ASSERT( account_record->is_delegate() );
+               parent_public_key = account_record->signing_key();
+               break;
+           // No default to force compiler warning
+       }
 
-       const private_key_type active_private_key = key_record->decrypt_private_key( password );
+       const owallet_key_record parent_key_record = lookup_key( address( parent_public_key ) );
+       FC_ASSERT( parent_key_record.valid(), "Parent key not found!" );
+       FC_ASSERT( parent_key_record->has_private_key(), "Parent private key not found!" );
+
+       const private_key_type parent_private_key = parent_key_record->decrypt_private_key( password );
        uint32_t child_key_index = account_record->last_child_key_index;
        private_key_type account_child_private_key;
        public_key_type account_child_public_key;
@@ -373,26 +390,26 @@ namespace bts { namespace wallet {
            ++child_key_index;
            FC_ASSERT( child_key_index != 0, "Overflow!" );
 
-           account_child_private_key = get_account_child_key( active_private_key, child_key_index );
+           account_child_private_key = get_account_child_key( parent_private_key, child_key_index );
            account_child_public_key = account_child_private_key.get_public_key();
            account_child_address = address( account_child_public_key );
 
-           owallet_key_record key_record = lookup_key( account_child_address );
-           if( key_record.valid() && key_record->has_private_key() ) continue;
+           owallet_key_record child_key_record = lookup_key( account_child_address );
+           if( child_key_record.valid() && child_key_record->has_private_key() ) continue;
 
            break;
        }
 
        account_record->last_child_key_index = child_key_index;
 
-       key_data key;
-       key.account_address = account_record->owner_address();
-       key.child_key_index = child_key_index;
-       key.public_key = account_child_public_key;
-       key.encrypt_private_key( password, account_child_private_key );
+       key_data child_key;
+       child_key.account_address = account_record->owner_address();
+       child_key.child_key_index = child_key_index;
+       child_key.public_key = account_child_public_key;
+       child_key.encrypt_private_key( password, account_child_private_key );
 
        store_account( *account_record );
-       store_key( key );
+       store_key( child_key );
 
        return account_child_private_key;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
