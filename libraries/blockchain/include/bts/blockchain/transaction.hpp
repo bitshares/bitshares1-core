@@ -29,7 +29,7 @@ namespace bts { namespace blockchain {
 
       void deposit( const address& addr, const asset& amount );
 
-      void authorize_key( asset_id_type asset_id, const address& owner, object_id_type meta );
+      void authorize_key( const asset_id_type asset_id, const address& owner );
 
       void deposit_multisig( const multisig_meta_info& info, const asset& amount );
 

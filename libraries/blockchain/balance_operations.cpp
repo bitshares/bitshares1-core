@@ -149,17 +149,15 @@ namespace bts { namespace blockchain {
 
        if( eval_state._current_state->get_head_block_num() >= BTS_V0_5_0_FORK_BLOCK_NUM )
        {
-           if( asset_rec->is_market_issued() ) FC_ASSERT( cur_record->condition.slate_id == 0 );
+           if( asset_rec->is_market_issued() )
+           {
+               FC_ASSERT( cur_record->condition.slate_id == 0 );
+           }
        }
 
-       if( asset_rec->is_restricted() )
-       {
-         for( const auto& owner : cur_record->owners() )
-         {
-           // TODO
-           //FC_ASSERT( eval_state._current_state->get_authorization(asset_rec->id, owner) );
-         }
-       }
+       const auto& owners = cur_record->owners();
+       for( const address& owner : owners )
+           FC_ASSERT( asset_rec->is_authorized( owner ) );
 
        eval_state._current_state->store_balance_record( *cur_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
@@ -193,11 +191,9 @@ namespace bts { namespace blockchain {
             {
                 const withdraw_with_signature condition = current_balance_record->condition.as<withdraw_with_signature>();
                 const address owner = condition.owner;
+                FC_ASSERT( asset_rec->is_authorized( owner ) );
                 if( !eval_state.check_signature( owner ) )
                     FC_CAPTURE_AND_THROW( missing_signature, (owner) );
-                // TODO
-                //if( asset_rec->is_restricted() )
-                    //FC_ASSERT( eval_state._current_state->get_authorization(asset_rec->id, owner) );
                 break;
             }
 
@@ -205,14 +201,9 @@ namespace bts { namespace blockchain {
             {
                 const withdraw_vesting condition = current_balance_record->condition.as<withdraw_vesting>();
                 const address owner = condition.owner;
+                FC_ASSERT( asset_rec->is_authorized( owner ) );
                 if( !eval_state.check_signature( owner ) )
                     FC_CAPTURE_AND_THROW( missing_signature, (owner) );
-                if( asset_rec->is_restricted() )
-                {
-                    wlog( "This is a case I do not expect." );
-                    // TODO
-                    //FC_ASSERT( eval_state._current_state->get_authorization(asset_rec->id, owner) );
-                }
                 break;
             }
 
@@ -222,13 +213,11 @@ namespace bts { namespace blockchain {
                uint32_t valid_signatures = 0;
                for( const auto& sig : multisig.owners )
                {
-                   // TODO
-                   //if( asset_rec->is_restricted() && NOT eval_state._current_state->get_authorization(asset_rec->id, owner) )
-                       //continue;
-                   valid_signatures += eval_state.check_signature( sig );
+                    FC_ASSERT( asset_rec->is_authorized( sig ) );
+                    valid_signatures += eval_state.check_signature( sig );
                }
                if( valid_signatures < multisig.required )
-                  FC_CAPTURE_AND_THROW( missing_signature, (valid_signatures)(multisig) );
+                   FC_CAPTURE_AND_THROW( missing_signature, (valid_signatures)(multisig) );
                break;
             }
 
@@ -331,14 +320,10 @@ namespace bts { namespace blockchain {
       escrow_balance_record->balance -= total_released;
       auto asset_rec = eval_state._current_state->get_asset_record( escrow_balance_record->condition.asset_id );
 
-      if( asset_rec->is_restricted() )
-      {
-          // TODO
-          //if( amount_to_sender > 0 )
-              //FC_ASSERT( eval_state._current_state->get_authorization( escrow_balance_record->condition.asset_id, escrow_condition.sender ) );
-          //if( amount_to_receiver > 0 )
-              //FC_ASSERT( eval_state._current_state->get_authorization( escrow_balance_record->condition.asset_id, escrow_condition.receiver ) );
-      }
+      if( amount_to_sender > 0 )
+          FC_ASSERT( asset_rec->is_authorized( escrow_condition.sender ) );
+      if( amount_to_receiver > 0 )
+          FC_ASSERT( asset_rec->is_authorized( escrow_condition.receiver ) );
 
       bool retracting = false;
       if( asset_rec->is_retractable() )
@@ -468,10 +453,6 @@ namespace bts { namespace blockchain {
       FC_ASSERT( current_balance_record->condition.asset_id == 0, "Only BTS balances can have restricted owners." );
       FC_ASSERT( current_balance_record->condition.type == withdraw_signature_type, "Restricted owners not enabled for anything but basic balances" );
 
-      // TODO
-      //if( asset_rec->is_restricted() )
-          //FC_ASSERT( eval_state._current_state->get_authorization(asset_rec->id, owner) );
-
       auto last_update_secs = current_balance_record->last_update.sec_since_epoch();
       ilog("last_update_secs is: ${secs}", ("secs", last_update_secs) );
 
@@ -494,7 +475,6 @@ namespace bts { namespace blockchain {
 
       auto new_restricted_owner = current_balance_record->restricted_owner;
       auto new_slate = current_balance_record->condition.slate_id;
-
 
       if( this->new_restricted_owner.valid() && (this->new_restricted_owner != new_restricted_owner) )
       {
@@ -522,7 +502,8 @@ namespace bts { namespace blockchain {
 
           if( NOT eval_state.check_signature( *restricted_owner ) )
           {
-              for( const auto& owner : current_balance_record->owners() ) //eventually maybe multisig can delegate vote
+              const auto& owners = current_balance_record->owners();
+              for( const auto& owner : owners ) //eventually maybe multisig can delegate vote
               {
                   if( NOT eval_state.check_signature( owner ) )
                       FC_CAPTURE_AND_THROW( missing_signature, (owner) );

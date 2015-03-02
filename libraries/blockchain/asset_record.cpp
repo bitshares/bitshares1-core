@@ -5,26 +5,37 @@
 namespace bts { namespace blockchain {
 
     share_type asset_record::available_shares()const
-    {
+    { try {
         return maximum_share_supply - current_share_supply;
-    }
+    } FC_CAPTURE_AND_RETHROW() }
 
     bool asset_record::can_issue( const asset& amount )const
-    {
+    { try {
         if( id != amount.asset_id ) return false;
         return can_issue( amount.amount );
-    }
+    } FC_CAPTURE_AND_RETHROW( (amount) ) }
 
     bool asset_record::can_issue( const share_type amount )const
-    {
+    { try {
         if( amount <= 0 ) return false;
         auto new_share_supply = current_share_supply + amount;
         // catch overflow conditions
         return (new_share_supply > current_share_supply) && (new_share_supply <= maximum_share_supply);
-    }
+    } FC_CAPTURE_AND_RETHROW( (amount) ) }
+
+    bool asset_record::is_authorized( const address& addr )const
+    { try {
+        if( !is_restricted() )
+            return true;
+
+        if( authority.owners.count( addr ) > 0 )
+            return true;
+
+        return whitelist.count( addr ) > 0;
+    } FC_CAPTURE_AND_RETHROW( (addr) ) }
 
     asset asset_record::asset_from_string( const string& amount )const
-    {
+    { try {
        asset ugly_asset(0, id);
 
        // Multiply by the precision and truncate if there are extra digits.
@@ -57,10 +68,10 @@ namespace bts { namespace blockchain {
        }
 
        return ugly_asset;
-    }
+    } FC_CAPTURE_AND_RETHROW( (amount) ) }
 
     string asset_record::amount_to_string( share_type amount, bool append_symbol )const
-    {
+    { try {
        const share_type shares = ( amount >= 0 ) ? amount : -amount;
        string decimal = fc::to_string( precision + ( shares % precision ) );
        decimal[0] = '.';
@@ -68,7 +79,7 @@ namespace bts { namespace blockchain {
        if( append_symbol ) str += " " + symbol;
        if( amount < 0 ) return "-" + str;
        return str;
-    }
+    } FC_CAPTURE_AND_RETHROW( (amount)(append_symbol) ) }
 
     void asset_record::sanity_check( const chain_interface& db )const
     { try {

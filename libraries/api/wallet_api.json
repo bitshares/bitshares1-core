@@ -609,12 +609,6 @@
               "name" : "address",
               "type" : "string",
               "description" : "the address being granted permission, or the public key, or the account name"
-            },
-            {
-               "name" : "meta",
-               "type" : "object_id_type",
-               "description" : "-1 to remove authorization, otherwise a link to an object in the object graph",
-               "default_value" : 0
             }
            ],
         "prerequisites" : ["wallet_unlocked"]
