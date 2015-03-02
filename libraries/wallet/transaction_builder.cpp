@@ -119,9 +119,6 @@ transaction_builder& transaction_builder::update_account_registration(const wall
       if( (!account.is_delegate() && *delegate_pay <= 100) ||
            (account.is_delegate() && *delegate_pay != account.delegate_pay_rate()) )
       {
-         if( !paying_account->is_my_account )
-            FC_THROW_EXCEPTION( unknown_account, "Unknown paying account!", ("paying_account", paying_account) );
-
          asset fee(_wimpl->_blockchain->get_delegate_registration_fee( *delegate_pay ));
          if( paying_account->is_delegate() && paying_account->delegate_pay_balance() >= fee.amount )
          {
@@ -191,7 +188,7 @@ transaction_builder& transaction_builder::deposit_asset(const bts::wallet::walle
    if( !memo_sender.valid() )
        memo_sender = payer.name;
    const owallet_account_record memo_account = _wimpl->_wallet_db.lookup_account( *memo_sender );
-   FC_ASSERT( memo_account.valid() && memo_account->is_my_account );
+   FC_ASSERT( memo_account.valid() );
 
    public_key_type memo_key = memo_account->owner_key;
    if( !_wimpl->_wallet_db.has_private_key( memo_key ) )

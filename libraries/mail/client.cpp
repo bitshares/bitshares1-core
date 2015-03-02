@@ -633,7 +633,7 @@ public:
     }
 
     int check_new_mail(bool get_old_messages) {
-        auto accounts = _wallet->list_my_accounts();
+        auto accounts = _wallet->list_accounts();
         _messages_in = 0;
 
         for (wallet_account_record account : accounts) {

@@ -14,12 +14,6 @@
 
 namespace bts { namespace client { namespace detail {
 
-int8_t detail::client_impl::wallet_account_set_approval( const string& account_name, int8_t approval )
-{ try {
-  _wallet->set_account_approval( account_name, approval );
-  return _wallet->get_account_approval( account_name );
-} FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("approval",approval) ) }
-
 void detail::client_impl::wallet_open(const string& wallet_name)
 {
   _wallet->open(fc::trim(wallet_name));
@@ -45,11 +39,6 @@ void detail::client_impl::wallet_create(const string& wallet_name, const string&
   if( trimmed_name.size() == 0 ) FC_CAPTURE_AND_THROW( fc::invalid_arg_exception, (trimmed_name) );
   _wallet->create(trimmed_name,password, brain_key );
   reschedule_delegate_loop();
-}
-
-fc::optional<string> detail::client_impl::wallet_get_name() const
-{
-  return _wallet->is_open() ? _wallet->get_wallet_name() : fc::optional<string>();
 }
 
 void detail::client_impl::wallet_close()
@@ -327,38 +316,87 @@ wallet_transaction_record detail::client_impl::wallet_transfer(
         const string& amount_to_transfer,
         const string& asset_symbol,
         const string& from_account_name,
-        const string& to_account_name,
+        const string& recipient,
         const string& memo_message,
         const vote_strategy& strategy )
-{
-    return wallet_transfer_from(amount_to_transfer, asset_symbol, from_account_name, from_account_name,
-                                to_account_name, memo_message, strategy);
-}
+{ try {
+    const asset amount = _chain_db->to_ugly_asset( amount_to_transfer, asset_symbol );
 
-wallet_transaction_record detail::client_impl::wallet_transfer_to_public_account(
-        double amount_to_transfer,
-        const string& asset_symbol,
-        const string& from_account_name,
-        const string& to_account_name,
-        const string& memo_message,
-        const vote_strategy& strategy )
-{
-    const oaccount_record account_record = _chain_db->get_account_record( to_account_name );
-    FC_ASSERT( account_record.valid() && !account_record->is_retracted() );
-    auto record = _wallet->transfer_asset_to_address(amount_to_transfer,
-                                                     asset_symbol,
-                                                     from_account_name,
-                                                     account_record->active_address(),
-                                                     memo_message,
-                                                     strategy,
-                                                     true );
-    _wallet->cache_transaction( record );
-    network_broadcast_transaction( record.trx );
-    return record;
-}
+    owallet_contact_record contact = wallet_get_contact( recipient );
+    if( !contact.valid() )
+    {
+        const owallet_account_record account = wallet_get_account( recipient );
+        if( account.valid() )
+        {
+            FC_ASSERT( !account->is_retracted() );
+            contact = contact_data( recipient );
+        }
+        else
+        {
+            contact = contact_data( *_chain_db, recipient );
+        }
+    }
+
+    if( contact->contact_type == contact_data::contact_type_enum::account_name )
+    {
+        const auto sending_account = _wallet->get_account( from_account_name );
+        const auto receiving_account = _wallet->get_account( recipient );
+        transaction_builder_ptr builder = _wallet->create_transaction_builder();
+        auto record = builder->deposit_asset( sending_account,
+                                              receiving_account,
+                                              amount,
+                                              memo_message,
+                                              from_account_name )
+                                              .finalize( true, strategy )
+                                              .sign();
+
+        if( _mail_client )
+        {
+            for( auto&& notice : builder->encrypted_notifications() )
+            {
+                _mail_client->send_encrypted_message( std::move( notice ),
+                                                      from_account_name,
+                                                      recipient,
+                                                      receiving_account.owner_key );
+            }
+        }
+
+        _wallet->cache_transaction( record );
+        network_broadcast_transaction( record.trx );
+        return record;
+    }
+    else
+    {
+        address recipient_address;
+        switch( contact->contact_type )
+        {
+            case contact_data::contact_type_enum::public_key:
+                recipient_address = address( public_key_type( recipient ) );
+                break;
+            case contact_data::contact_type_enum::address:
+                recipient_address = address( recipient );
+                break;
+            case contact_data::contact_type_enum::btc_address:
+                recipient_address = address( pts_address( recipient ) );
+                break;
+            default:
+                FC_ASSERT( false, "Unsupported recipient format!" );
+        }
+
+        auto record =  _wallet->transfer_asset_to_address( amount,
+                                                           from_account_name,
+                                                           recipient_address,
+                                                           memo_message,
+                                                           strategy );
+
+        _wallet->cache_transaction( record );
+        network_broadcast_transaction( record.trx );
+        return record;
+    }
+} FC_CAPTURE_AND_RETHROW( (amount_to_transfer)(asset_symbol)(from_account_name)(recipient)(memo_message)(strategy) ) }
 
 wallet_transaction_record detail::client_impl::wallet_burn(
-        double amount_to_transfer,
+        const string& amount_to_transfer,
         const string& asset_symbol,
         const string& from_account_name,
         const string& for_or_against,
@@ -366,16 +404,16 @@ wallet_transaction_record detail::client_impl::wallet_burn(
         const string& public_message,
         bool anonymous )
 {
-    auto record = _wallet->burn_asset( amount_to_transfer, asset_symbol,
-                                             from_account_name, for_or_against, to_account_name,
-                                             public_message, anonymous, true );
+    const asset amount = _chain_db->to_ugly_asset( amount_to_transfer, asset_symbol );
+    auto record = _wallet->burn_asset( amount,
+                                       from_account_name, for_or_against, to_account_name,
+                                       public_message, anonymous, true );
     _wallet->cache_transaction( record );
     network_broadcast_transaction( record.trx );
     return record;
 }
 
-
-string  detail::client_impl::wallet_address_create( const string& account_name,
+string detail::client_impl::wallet_address_create( const string& account_name,
                                                     const string& label,
                                                     int legacy_network_byte )
 { try {
@@ -387,89 +425,6 @@ string  detail::client_impl::wallet_address_create( const string& account_name,
     else
         FC_ASSERT(false, "Unsupported network byte");
 } FC_CAPTURE_AND_RETHROW( (account_name)(label)(legacy_network_byte) ) }
-
-
-wallet_transaction_record detail::client_impl::wallet_transfer_to_legacy_address(
-        double amount_to_transfer,
-        const string& asset_symbol,
-        const string& from_account_name,
-        const pts_address& to_address,
-        const string& memo_message,
-        const vote_strategy& strategy )
-{
-    auto record =  _wallet->transfer_asset_to_address( amount_to_transfer,
-                                                       asset_symbol,
-                                                       from_account_name,
-                                                       address( to_address ),
-                                                       memo_message,
-                                                       strategy,
-                                                       true );
-    _wallet->cache_transaction( record );
-    network_broadcast_transaction( record.trx );
-    return record;
-
-}
-
-
-
-wallet_transaction_record detail::client_impl::wallet_transfer_to_address(
-        double amount_to_transfer,
-        const string& asset_symbol,
-        const string& from_account_name,
-        const string& to_address,
-        const string& memo_message,
-        const vote_strategy& strategy )
-{
-    address effective_address;
-    if( address::is_valid( to_address ) )
-        effective_address = address( to_address );
-    else
-        effective_address = address( public_key_type( to_address ) );
-    auto record =  _wallet->transfer_asset_to_address( amount_to_transfer,
-                                                       asset_symbol,
-                                                       from_account_name,
-                                                       effective_address,
-                                                       memo_message,
-                                                       strategy,
-                                                       true );
-    _wallet->cache_transaction( record );
-    network_broadcast_transaction( record.trx );
-    return record;
-
-}
-
-wallet_transaction_record detail::client_impl::wallet_transfer_from(
-        const string& amount_to_transfer,
-        const string& asset_symbol,
-        const string& paying_account_name,
-        const string& from_account_name,
-        const string& to_account_name,
-        const string& memo_message,
-        const vote_strategy& strategy )
-{
-    asset amount = _chain_db->to_ugly_asset(amount_to_transfer, asset_symbol);
-    auto payer = _wallet->get_account(paying_account_name);
-    auto recipient = _wallet->get_account(to_account_name);
-    transaction_builder_ptr builder = _wallet->create_transaction_builder();
-    auto record = builder->deposit_asset(payer, recipient, amount,
-                                         memo_message, from_account_name)
-                          .finalize( true, strategy )
-                          .sign();
-
-    _wallet->cache_transaction( record );
-    network_broadcast_transaction( record.trx );
-
-    if( _mail_client )
-    {
-        for( auto&& notice : builder->encrypted_notifications() )
-            _mail_client->send_encrypted_message(std::move(notice),
-                                                 from_account_name,
-                                                 to_account_name,
-                                                 recipient.owner_key);
-    }
-
-    return record;
-}
 
 balance_id_type detail::client_impl::wallet_multisig_get_balance_id(
                                         const string& asset_symbol,
@@ -679,7 +634,7 @@ wallet_transaction_record detail::client_impl::wallet_transfer_from_with_escrow(
         const string& memo_message,
         const vote_strategy& strategy )
 {
-    asset amount = _chain_db->to_ugly_asset(amount_to_transfer, asset_symbol);
+    asset amount = _chain_db->to_ugly_asset( amount_to_transfer, asset_symbol );
     auto sender = _wallet->get_account(from_account_name);
     auto payer = _wallet->get_account(paying_account_name);
     auto recipient = _wallet->get_account(to_account_name);
@@ -775,7 +730,6 @@ wallet_transaction_record detail::client_impl::wallet_asset_issue_to_addresses(
   return record;
 }
 
-
 vector<string> detail::client_impl::wallet_list() const
 {
   return _wallet->list();
@@ -786,44 +740,16 @@ vector<wallet_account_record> detail::client_impl::wallet_list_accounts() const
   return _wallet->list_accounts();
 }
 
-vector<wallet_account_record> detail::client_impl::wallet_list_my_accounts() const
-{
-  return _wallet->list_my_accounts();
-}
-
-vector<wallet_account_record> detail::client_impl::wallet_list_favorite_accounts() const
-{
-  return _wallet->list_favorite_accounts();
-}
-
-vector<wallet_account_record> detail::client_impl::wallet_list_unregistered_accounts() const
-{
-  return _wallet->list_unregistered_accounts();
-}
-
-void detail::client_impl::wallet_remove_contact_account(const string& account_name)
-{
-  _wallet->remove_contact_account( account_name );
-}
-
-void detail::client_impl::wallet_account_rename(const string& current_account_name,
-                                   const string& new_account_name)
+void detail::client_impl::wallet_account_rename( const string& current_account_name, const string& new_account_name )
 {
   _wallet->rename_account(current_account_name, new_account_name);
   _wallet->auto_backup( "account_rename" );
 }
 
-wallet_account_record detail::client_impl::wallet_get_account(const string& account_name) const
+owallet_account_record detail::client_impl::wallet_get_account( const string& account )const
 { try {
-  return _wallet->get_account( account_name );
-} FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
-
-address detail::client_impl::wallet_get_account_public_address(const string& account_name) const
-{ try {
-  auto acct = _wallet->get_account( account_name );
-  return acct.owner_address();
-} FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
-
+    return _wallet->lookup_account( account );
+} FC_CAPTURE_AND_RETHROW( (account) ) }
 
 vector<pretty_transaction> detail::client_impl::wallet_account_transaction_history( const string& account_name,
                                                                                     const string& asset_symbol,
@@ -1021,13 +947,6 @@ void detail::client_impl::wallet_set_preferred_mail_servers(const string& accoun
         FC_THROW_EXCEPTION( wallet_closed, "Wallet is not open; cannot set preferred mail servers." );
     //Skip unlock check here; wallet_account_update_registration below will check it.
 
-    //Sanity check account_name
-    wallet_account_record account_rec = _wallet->get_account(account_name);
-    if( !account_rec.is_my_account )
-        FC_THROW_EXCEPTION( unknown_receive_account,
-                            "Account ${name} is not owned by this wallet. Cannot set his mail servers.",
-                            ("name", account_name) );
-
     //Check that all names in server_list are valid accounts which publish mail server endpoints
     for( const string& server_name : server_list )
     {
@@ -1050,6 +969,7 @@ void detail::client_impl::wallet_set_preferred_mail_servers(const string& accoun
     //Update the public_data
     fc::mutable_variant_object public_data;
     try {
+        wallet_account_record account_rec = _wallet->get_account(account_name);
         if( !account_rec.public_data.is_null() )
             public_data = account_rec.public_data.as<fc::mutable_variant_object>();
     } catch (fc::exception&) {
@@ -1061,25 +981,12 @@ void detail::client_impl::wallet_set_preferred_mail_servers(const string& accoun
     wallet_account_update_registration(account_name, paying_account, public_data);
 }
 
-void client_impl::wallet_add_contact_account( const string& account_name,
-                                              const public_key_type& contact_key )
-{
-   _wallet->add_contact_account( account_name, contact_key );
-   _wallet->auto_backup( "account_add" );
-}
-
-public_key_type client_impl::wallet_account_create( const string& account_name,
-                                                    const variant& private_data )
-{
-   const auto result = _wallet->create_account( account_name, private_data );
+public_key_type client_impl::wallet_account_create( const string& account_name )
+{ try {
+   const auto result = _wallet->create_account( account_name );
    _wallet->auto_backup( "account_create" );
    return result;
-}
-
-void client_impl::wallet_account_set_favorite( const string& account_name, bool is_favorite )
-{
-    _wallet->account_set_favorite( account_name, is_favorite );
-}
+} FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
 void client_impl::wallet_rescan_blockchain( const uint32_t start_block_num, const uint32_t limit )
 { try {
@@ -1144,11 +1051,38 @@ variant_object client_impl::wallet_get_info()
    return _wallet->get_info().get_object();
 }
 
-void client_impl::wallet_account_update_private_data( const string& account_to_update,
-                                                      const variant& private_data )
-{
-   _wallet->update_account_private_data(account_to_update, private_data);
-}
+void client_impl::wallet_set_custom_data( const wallet_record_type_enum& type, const string& item, const variant_object& custom_data )
+{ try {
+    switch( type )
+    {
+        case account_record_type:
+        {
+            owallet_account_record record = wallet_get_account( item );
+            if( !record.valid() ) break;
+            record->custom_data = custom_data;
+            _wallet->store_account( *record );
+            break;
+        }
+        case contact_record_type:
+        {
+            owallet_contact_record record = wallet_get_contact( item );
+            if( !record.valid() ) break;
+            record->custom_data = custom_data;
+            _wallet->store_contact( *record );
+            break;
+        }
+        case approval_record_type:
+        {
+            owallet_approval_record record = wallet_get_approval( item );
+            if( !record.valid() ) break;
+            record->custom_data = custom_data;
+            _wallet->store_approval( *record );
+            break;
+        }
+        default:
+            break;
+    }
+} FC_CAPTURE_AND_RETHROW( (type)(item)(custom_data) ) }
 
 wallet_transaction_record client_impl::wallet_account_update_registration(
         const string& account_to_update,
@@ -1451,11 +1385,6 @@ account_vote_summary_type client_impl::wallet_account_vote_summary( const string
    return _wallet->get_account_vote_summary( account_name );
 }
 
-vote_summary   client_impl::wallet_check_vote_status( const string& account_name )
-{
-    return _wallet->get_vote_status( account_name );
-}
-
 void client_impl::wallet_delegate_set_block_production( const string& delegate_name, bool enabled )
 {
    _wallet->set_delegate_block_production( delegate_name, enabled );
@@ -1587,14 +1516,14 @@ vector<wallet_contact_record> client_impl::wallet_list_contacts()const
 owallet_contact_record client_impl::wallet_get_contact( const string& contact )const
 { try {
     if( contact.find( "label:" ) == 0 )
-        return _wallet->get_contact( contact.substr( string( "label:" ).size() ) );
+        return _wallet->lookup_contact( contact.substr( string( "label:" ).size() ) );
     else
-        return _wallet->get_contact( variant( contact ) );
+        return _wallet->lookup_contact( variant( contact ) );
 } FC_CAPTURE_AND_RETHROW( (contact) ) }
 
 wallet_contact_record client_impl::wallet_add_contact( const string& contact, const string& label )
 { try {
-    return _wallet->add_contact( contact_data( *_chain_db, contact, label) );
+    return _wallet->store_contact( contact_data( *_chain_db, contact, label) );
 } FC_CAPTURE_AND_RETHROW( (contact)(label) ) }
 
 owallet_contact_record client_impl::wallet_remove_contact( const string& contact )
@@ -1604,5 +1533,20 @@ owallet_contact_record client_impl::wallet_remove_contact( const string& contact
     else
         return _wallet->remove_contact( variant( contact ) );
 } FC_CAPTURE_AND_RETHROW( (contact) ) }
+
+vector<wallet_approval_record> client_impl::wallet_list_approvals()const
+{ try {
+    return _wallet->list_approvals();
+} FC_CAPTURE_AND_RETHROW() }
+
+owallet_approval_record client_impl::wallet_get_approval( const string& approval )const
+{ try {
+    return _wallet->lookup_approval( approval );
+} FC_CAPTURE_AND_RETHROW( (approval) ) }
+
+wallet_approval_record client_impl::wallet_approve( const string& name, int8_t approval )
+{ try {
+    return _wallet->store_approval( approval_data( *_chain_db, name, approval) );
+} FC_CAPTURE_AND_RETHROW( (name)(approval) ) }
 
 } } } // namespace bts::client::detail
