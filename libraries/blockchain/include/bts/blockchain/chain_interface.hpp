@@ -47,6 +47,7 @@ namespace bts { namespace blockchain {
          share_type                         get_asset_registration_fee( uint8_t symbol_length )const;
 
          share_type                         get_delegate_registration_fee_v1( uint8_t pay_rate )const;
+         share_type                         get_asset_registration_fee_v2( uint8_t symbol_length )const;
          share_type                         get_asset_registration_fee_v1()const;
          share_type                         get_delegate_pay_rate_v1()const;
 

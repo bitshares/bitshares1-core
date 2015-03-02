@@ -156,12 +156,12 @@ namespace bts { namespace blockchain {
 
    share_type chain_interface::get_asset_registration_fee( uint8_t symbol_length )const
    {
-       if( get_head_block_num() < BTS_V0_4_24_FORK_BLOCK_NUM )
-           return get_asset_registration_fee_v1();
+       if( get_head_block_num() < BTS_V0_7_0_FORK_BLOCK_NUM )
+           return get_asset_registration_fee_v2( symbol_length );
 
        // TODO: Add #define's for these fixed prices
-       static const share_type long_symbol_price = 5000 * BTS_BLOCKCHAIN_PRECISION;
-       static const share_type short_symbol_price = 1000 * long_symbol_price;
+       static const share_type long_symbol_price = 5000 * BTS_BLOCKCHAIN_PRECISION; // $100 at $0.02/share
+       static const share_type short_symbol_price = 100 * long_symbol_price; // $10,000 at same price
        FC_ASSERT( long_symbol_price > 0 );
        FC_ASSERT( short_symbol_price > long_symbol_price );
        return symbol_length <= 5 ? short_symbol_price : long_symbol_price;
