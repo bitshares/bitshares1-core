@@ -264,16 +264,20 @@ namespace bts { namespace blockchain {
       if( !message.empty() )
           FC_ASSERT( amount.asset_id == 0 );
 
-#ifndef WIN32
-#warning [HARDFORK] Burning fee change
-#endif
       if( amount.asset_id == 0 )
       {
-          const size_t message_kb = (message.size() / 1024) + 1;
-          const share_type required_fee = message_kb * BTS_BLOCKCHAIN_MIN_BURN_FEE;
+          if( eval_state._current_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM )
+          {
+              const size_t message_kb = (message.size() / 1024) + 1;
+              const share_type required_fee = message_kb * BTS_BLOCKCHAIN_MIN_BURN_FEE;
 
-          FC_ASSERT( amount.amount >= required_fee, "Message of size ${s} KiB requires at least ${a} satoshis to be burned!",
-                     ("s",message_kb)("a",required_fee) );
+              FC_ASSERT( amount.amount >= required_fee, "Message of size ${s} KiB requires at least ${a} satoshis to be burned!",
+                         ("s",message_kb)("a",required_fee) );
+          }
+          else
+          {
+              FC_ASSERT( amount.amount >= BTS_BLOCKCHAIN_MIN_BURN_FEE );
+          }
       }
 
       oasset_record asset_rec = eval_state._current_state->get_asset_record( amount.asset_id );
