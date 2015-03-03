@@ -13,7 +13,7 @@
 >>> blockchain_get_account alice
 >>> wallet_close
 >>> debug_enable_output false
->>> wallet_create wbob password
+>>> wallet_create wbob "password"
 >>> wallet_set_automatic_backups false
 >>> debug_enable_output true
 >>> debug_deterministic_private_keys 0 1 bob true bob true true
@@ -42,7 +42,7 @@
 >>> debug_wait_for_block_by_number 1 rlast
 >>> wallet_close
 >>> debug_enable_output false
->>> wallet_create walice2 password
+>>> wallet_create walice2 "password"
 >>> wallet_set_automatic_backups false
 >>> debug_enable_output true
 >>> wallet_import_private_key "5KQ152uzrbwtWfj58WGKREtVsik3poVnNGnU1QxJEZjW7VVZca9"

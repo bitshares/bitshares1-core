@@ -31,22 +31,32 @@ void detail::client_impl::wallet_set_setting(const string& name, const variant& 
 }
 
 
-void detail::client_impl::wallet_create(const string& wallet_name, const string& password, const string& brain_key)
+void detail::client_impl::wallet_create( const string& wallet_name, const string& new_passphrase, const string& brain_key,
+                                         const string& new_passphrase_verify )
 {
-  string trimmed_name = fc::trim(wallet_name);
-  if( brain_key.size() && brain_key.size() < BTS_WALLET_MIN_BRAINKEY_LENGTH ) FC_CAPTURE_AND_THROW( brain_key_too_short );
-  if( password.size() < BTS_WALLET_MIN_PASSWORD_LENGTH ) FC_CAPTURE_AND_THROW( password_too_short );
-  if( trimmed_name.size() == 0 ) FC_CAPTURE_AND_THROW( fc::invalid_arg_exception, (trimmed_name) );
-  _wallet->create(trimmed_name,password, brain_key );
-  reschedule_delegate_loop();
+    if( !new_passphrase_verify.empty() )
+        FC_ASSERT( new_passphrase_verify == new_passphrase );
+
+    string trimmed_name = fc::trim( wallet_name );
+    if( trimmed_name.size() == 0 )
+        FC_CAPTURE_AND_THROW( fc::invalid_arg_exception, (trimmed_name) );
+
+    if( new_passphrase.size() < BTS_WALLET_MIN_PASSWORD_LENGTH )
+        FC_CAPTURE_AND_THROW( password_too_short );
+
+    if( brain_key.size() && brain_key.size() < BTS_WALLET_MIN_BRAINKEY_LENGTH )
+        FC_CAPTURE_AND_THROW( brain_key_too_short );
+
+    _wallet->create( trimmed_name, new_passphrase, brain_key );
+
+    reschedule_delegate_loop();
 }
 
 void detail::client_impl::wallet_close()
 {
-    if (_wallet) {
-        _wallet->close();
-        reschedule_delegate_loop();
-    }
+    if( !_wallet ) return;
+    _wallet->close();
+    reschedule_delegate_loop();
 }
 
 void detail::client_impl::wallet_backup_create( const fc::path& json_filename )const
@@ -204,11 +214,14 @@ void detail::client_impl::wallet_http_callback( const string& url, const ledger_
 }
 
 
-void detail::client_impl::wallet_change_passphrase(const string& new_password)
+void detail::client_impl::wallet_change_passphrase( const string& new_passphrase, const string& new_passphrase_verify )
 {
-  _wallet->auto_backup( "passphrase_change" );
-  _wallet->change_passphrase(new_password);
-  reschedule_delegate_loop();
+    if( !new_passphrase_verify.empty() )
+        FC_ASSERT( new_passphrase_verify == new_passphrase );
+
+    _wallet->auto_backup( "passphrase_change" );
+    _wallet->change_passphrase( new_passphrase );
+    reschedule_delegate_loop();
 }
 
 map<transaction_id_type, fc::exception> detail::client_impl::wallet_get_pending_transaction_errors( const string& filename )const

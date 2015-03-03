@@ -516,12 +516,10 @@ namespace bts { namespace cli {
                        this_parameter.type == "sending_account_name" ||
                        this_parameter.type == "asset_symbol" ||
                        this_parameter.type == "name" ||
-                       this_parameter.type == "brainkey" ||
                        this_parameter.type == "keyhoteeid" ||
                        this_parameter.type == "account_name" ||
                        this_parameter.type == "new_account_name" ||
                        this_parameter.type == "method_name" ||
-                       this_parameter.type == "new_passphrase" ||
                        this_parameter.type == "filename" ||
                        this_parameter.type == "public_key" ||
                        this_parameter.type == "order_id" ||

@@ -652,7 +652,7 @@
       },
       {
         "method_name": "blockchain_market_price_history",
-        "description": "Returns a list of price spreads in the given timeframe for the specified market.",
+        "description": "Returns historical data on orders matched within the given timeframe for the specified market",
         "cached"     : true,
         "return_type": "market_history_points",
         "parameters" : [

@@ -292,6 +292,7 @@ namespace bts { namespace blockchain {
              rec.delegate_info = delegate_stats();
              rec.delegate_info->pay_rate = 100;
              rec.set_signing_key( 0, delegate.owner );
+             rec.meta_data = account_meta_info( titan_account );
              self->store_account_record( rec );
          }
 
@@ -1046,6 +1047,10 @@ namespace bts { namespace blockchain {
 
             update_random_seed( block_data.previous_secret, pending_state, block_record );
 
+#ifdef BTS_TEST_NETWORK
+            pending_state->check_supplies();
+#endif
+
             save_undo_state( block_data.block_num, block_id, pending_state );
 
             // TODO: Verify idempotency
@@ -1059,12 +1064,13 @@ namespace bts { namespace blockchain {
 
             _block_num_to_id_db.store( block_data.block_num, block_id );
 
-            // NOTE: The following hardforks cannot be rewound
+            // NOTE: None of the following hardfork changes can be rewound
+
             if( block_data.block_num == BTS_V0_4_16_FORK_BLOCK_NUM )
             {
-                auto base_asset_record = self->get_asset_record( asset_id_type( 0 ) );
+                oasset_record base_asset_record = self->get_asset_record( asset_id_type( 0 ) );
                 FC_ASSERT( base_asset_record.valid() );
-                base_asset_record->current_share_supply = self->calculate_supply( asset_id_type( 0 ) ).amount;
+                base_asset_record->current_share_supply = self->calculate_supplies().at( 0 );
                 self->store_asset_record( *base_asset_record );
             }
             else if( block_data.block_num == BTS_V0_4_17_FORK_BLOCK_NUM
@@ -1072,32 +1078,30 @@ namespace bts { namespace blockchain {
                      || block_data.block_num == BTS_V0_4_24_FORK_BLOCK_NUM )
             {
                 vector<asset_record> records;
-                records.reserve( _asset_id_to_record.size() );
+                for( auto iter = _asset_id_to_record.unordered_begin(); iter != _asset_id_to_record.unordered_end(); ++iter )
+                    records.push_back( iter->second );
 
-                const auto scan_asset = [ &records ]( const asset_record& record )
-                {
-                    records.push_back( record );
-                };
-                self->scan_unordered_assets( scan_asset );
+                const auto supplies = self->calculate_supplies();
+                const auto debts = self->calculate_debts( false );
 
                 wlog( "Recalculating supply for ${x} assets", ("x",records.size()) );
                 for( auto& record : records )
                 {
-                    asset supply = self->calculate_supply( record.id );
+                    share_type supply = supplies.at( record.id );
                     share_type fees = record.collected_fees;
 
                     if( record.is_market_issued() )
                     {
-                        asset debt = self->calculate_debt( record.id );
+                        share_type debt = debts.at( record.id );
                         if( supply != debt )
                         {
-                            const share_type difference = debt.amount - supply.amount;
-                            supply.amount += difference;
+                            const share_type difference = debt - supply;
+                            supply += difference;
                             fees += difference;
                         }
                     }
 
-                    record.current_share_supply = supply.amount;
+                    record.current_share_supply = supply;
                     record.collected_fees = fees;
                     self->store_asset_record( record );
                 }
@@ -1106,14 +1110,12 @@ namespace bts { namespace blockchain {
             if( block_data.block_num == BTS_V0_4_24_FORK_BLOCK_NUM )
             {
                 vector<account_record> records;
-                records.reserve( 5343 );
-
-                const auto scan_account = [ &records ]( const account_record& record )
+                for( auto iter = _account_id_to_record.unordered_begin(); iter != _account_id_to_record.unordered_end(); ++iter )
                 {
+                    const auto& record = iter->second;
                     if( record.is_delegate() )
                         records.push_back( record );
-                };
-                self->scan_unordered_accounts( scan_account );
+                }
 
                 wlog( "Resetting pay rates for ${x} delegates", ("x",records.size()) );
                 for( auto& record : records )
@@ -3283,102 +3285,82 @@ namespace bts { namespace blockchain {
        fc::json::save_to_file( snapshot, filename );
    } FC_CAPTURE_AND_RETHROW( (filename) ) }
 
-   asset chain_database::calculate_supply( const asset_id_type asset_id )const
-   {
-       const auto record = get_asset_record( asset_id );
-       FC_ASSERT( record.valid() );
+   unordered_map<asset_id_type, share_type> chain_database::calculate_supplies()const
+   { try {
+       unordered_map<asset_id_type, share_type> totals;
 
-       // Add fees
-       asset total( record->collected_fees, asset_id );
+       for( auto iter = my->_account_id_to_record.unordered_begin(); iter != my->_account_id_to_record.unordered_end(); ++iter )
+       {
+           const account_record& account = iter->second;
+           if( account.delegate_info.valid() )
+               totals[ 0 ] += account.delegate_info->pay_balance;
+       }
 
-       // Add balances
-       for( auto iter = my->_balance_id_to_record.unordered_begin();
-            iter != my->_balance_id_to_record.unordered_end(); ++iter )
+       for( auto iter = my->_asset_id_to_record.unordered_begin(); iter != my->_asset_id_to_record.unordered_end(); ++iter )
+       {
+           const asset_record& asset = iter->second;
+           totals[ asset.id ] += asset.collected_fees;
+       }
+
+       for( auto iter = my->_balance_id_to_record.unordered_begin(); iter != my->_balance_id_to_record.unordered_end(); ++iter )
        {
            const balance_record& balance = iter->second;
-           if( balance.asset_id() == total.asset_id )
-               total.amount += balance.balance;
+           totals[ balance.asset_id() ] += balance.balance;
        }
 
-       // Add ask balances
-       for( auto ask_itr = my->_ask_db.begin(); ask_itr.valid(); ++ask_itr )
+       for( auto iter = my->_ask_db.begin(); iter.valid(); ++iter )
        {
-           const market_index_key market_index = ask_itr.key();
-           if( market_index.order_price.base_asset_id == total.asset_id )
-           {
-               const order_record ask = ask_itr.value();
-               total.amount += ask.balance;
-           }
+           const market_index_key& index = iter.key();
+           const order_record& ask = iter.value();
+           totals[ index.order_price.base_asset_id ] += ask.balance;
        }
 
-       // If base asset
-       if( asset_id == asset_id_type( 0 ) )
+       for( auto iter = my->_bid_db.begin(); iter.valid(); ++iter )
        {
-           // Add short balances
-           for( auto short_itr = my->_short_db.begin(); short_itr.valid(); ++short_itr )
-           {
-               const order_record sh = short_itr.value();
-               total.amount += sh.balance;
-           }
-
-           // Add collateral balances
-           for( auto collateral_itr = my->_collateral_db.begin(); collateral_itr.valid(); ++collateral_itr )
-           {
-               const collateral_record collateral = collateral_itr.value();
-               total.amount += collateral.collateral_balance;
-           }
-
-           // Add pay balances
-           for( auto account_itr = my->_account_id_to_record.unordered_begin();
-                account_itr != my->_account_id_to_record.unordered_end(); ++account_itr )
-           {
-               const account_record& account = account_itr->second;
-               if( account.delegate_info.valid() )
-                   total.amount += account.delegate_info->pay_balance;
-           }
+           const market_index_key& index = iter.key();
+           const order_record& bid = iter.value();
+           totals[ index.order_price.quote_asset_id ] += bid.balance;
        }
-       else // If non-base asset
+
+       for( auto iter = my->_short_db.begin(); iter.valid(); ++iter )
        {
-           // Add bid balances
-           for( auto bid_itr = my->_bid_db.begin(); bid_itr.valid(); ++bid_itr )
+           const order_record& sh = iter.value();
+           totals[ 0 ] += sh.balance;
+       }
+
+       for( auto iter = my->_collateral_db.begin(); iter.valid(); ++iter )
+       {
+           const collateral_record& collateral = iter.value();
+           totals[ 0 ] += collateral.collateral_balance;
+       }
+
+       return totals;
+   } FC_CAPTURE_AND_RETHROW() }
+
+   unordered_map<asset_id_type, share_type> chain_database::calculate_debts( bool include_interest )const
+   { try {
+       unordered_map<asset_id_type, share_type> totals;
+
+       for( auto iter = my->_collateral_db.begin(); iter.valid(); ++iter )
+       {
+           const market_index_key& index = iter.key();
+           const collateral_record& collateral = iter.value();
+           const asset principle = asset( collateral.payoff_balance, index.order_price.quote_asset_id );
+           totals[ principle.asset_id ] += principle.amount;
+
+           if( include_interest )
            {
-               const market_index_key market_index = bid_itr.key();
-               if( market_index.order_price.quote_asset_id == total.asset_id )
-               {
-                   const order_record bid = bid_itr.value();
-                   total.amount += bid.balance;
-               }
+               const time_point_sec position_start_time = collateral.expiration - BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC;
+               const uint32_t position_age = (now() - position_start_time).to_seconds();
+               const asset interest = detail::market_engine::get_interest_owed( principle,
+                                                                                collateral.interest_rate,
+                                                                                position_age );
+               totals[ interest.asset_id ] += interest.amount;
            }
        }
 
-       return total;
-   }
-
-   asset chain_database::calculate_debt( const asset_id_type asset_id, bool include_interest )const
-   {
-       const auto record = get_asset_record( asset_id );
-       FC_ASSERT( record.valid() && record->is_market_issued() );
-
-       asset total( 0, asset_id );
-
-       for( auto itr = my->_collateral_db.begin(); itr.valid(); ++itr )
-       {
-           const market_index_key& market_index = itr.key();
-           if( market_index.order_price.quote_asset_id != asset_id ) continue;
-           FC_ASSERT( market_index.order_price.base_asset_id == asset_id_type( 0 ) );
-
-           const collateral_record& record = itr.value();
-           const asset principle( record.payoff_balance, asset_id );
-           total += principle;
-           if( !include_interest ) continue;
-
-           const time_point_sec position_start_time = record.expiration - BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC;
-           const uint32_t position_age = (now() - position_start_time).to_seconds();
-           total += detail::market_engine::get_interest_owed( principle, record.interest_rate, position_age );
-       }
-
-       return total;
-   }
+       return totals;
+   } FC_CAPTURE_AND_RETHROW( (include_interest) ) }
 
    asset chain_database::unclaimed_genesis()
    { try {

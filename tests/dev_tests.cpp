@@ -492,7 +492,7 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "blockchain_market_list_bids USD XTS" );
    exec( clientb, "wallet_account_transaction_history" );
    exec( clientb, "balance" );
-   exec( clientb, "wallet_change_passphrase newmasterpassword" );
+   exec( clientb, "wallet_change_passphrase \"newmasterpassword\"" );
    exec( clientb, "close" );
    exec( clientb, "open walletb" );
    exec( clientb, "unlock 99999999 newmasterpassword" );

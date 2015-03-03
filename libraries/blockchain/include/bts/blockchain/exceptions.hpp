@@ -20,7 +20,6 @@ namespace bts { namespace blockchain {
    FC_DECLARE_DERIVED_EXCEPTION( new_database_version,              bts::blockchain::blockchain_exception, 30012, "new database version" );
    FC_DECLARE_DERIVED_EXCEPTION( unlinkable_block,                  bts::blockchain::blockchain_exception, 30013, "unlinkable block" );
    FC_DECLARE_DERIVED_EXCEPTION( price_out_of_range,                bts::blockchain::blockchain_exception, 30014, "price out of range" );
-
    FC_DECLARE_DERIVED_EXCEPTION( block_numbers_not_sequential,      bts::blockchain::blockchain_exception, 30015, "block numbers not sequential" );
    FC_DECLARE_DERIVED_EXCEPTION( invalid_previous_block_id,         bts::blockchain::blockchain_exception, 30016, "invalid previous block" );
    FC_DECLARE_DERIVED_EXCEPTION( invalid_block_time,                bts::blockchain::blockchain_exception, 30017, "invalid block time" );
@@ -32,6 +31,7 @@ namespace bts { namespace blockchain {
    FC_DECLARE_DERIVED_EXCEPTION( wrong_chain_id,                    bts::blockchain::blockchain_exception, 30023, "wrong chain id" );
    FC_DECLARE_DERIVED_EXCEPTION( unknown_block,                     bts::blockchain::blockchain_exception, 30024, "unknown block" );
    FC_DECLARE_DERIVED_EXCEPTION( block_older_than_undo_history,     bts::blockchain::blockchain_exception, 30025, "block is older than our undo history allows us to process" );
+   FC_DECLARE_DERIVED_EXCEPTION( unexpected_supply_change,          bts::blockchain::blockchain_exception, 30026, "unexpected supply change" );
 
    FC_DECLARE_EXCEPTION( evaluation_error, 31000, "Evaluation Error" );
    FC_DECLARE_DERIVED_EXCEPTION( negative_deposit,                  bts::blockchain::evaluation_error, 31001, "negative deposit" );

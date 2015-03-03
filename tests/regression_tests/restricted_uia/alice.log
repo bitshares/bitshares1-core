@@ -4,7 +4,7 @@ default (unlocked) >>> debug_enable_output false
 >>> debug_enable_output true
 OK
 default (unlocked) >>> debug_enable_output false
->>> wallet_create default password
+>>> wallet_create default "password"
 >>> wallet_set_automatic_backups false
 >>> debug_enable_output true
 OK

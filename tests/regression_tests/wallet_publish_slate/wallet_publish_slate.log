@@ -1,7 +1,17 @@
-default (unlocked) >>> wallet_account_set_approval delegate0 1
-1
-default (unlocked) >>> wallet_account_set_approval delegate1 1
-1
+default (unlocked) >>> wallet_approve delegate0
+{
+  "index": 311,
+  "name": "delegate0",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate1
+{
+  "index": 312,
+  "name": "delegate1",
+  "approval": 1,
+  "custom_data": {}
+}
 default (unlocked) >>> help wallet_publish_slate
 Usage:
 wallet_publish_slate <publishing_account_name> [paying_account_name]                                  Publishes the current wallet delegate slate to the public data associated with the account
@@ -26,4 +36,5 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 ==============================================================================================================================================================================================
 <d-ign></d-ign>0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    19,801,980.19801 XTS    0.00000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>2         delegate0           delegate0           0.00000 XTS             publish slate 13761713000375254272          19,801,979.69801 XTS    0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> blockchain_get_slate delegate0
 default (unlocked) >>> quit
