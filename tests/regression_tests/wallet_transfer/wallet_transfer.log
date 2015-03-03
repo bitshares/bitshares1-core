@@ -8,14 +8,14 @@ default (unlocked) >>> wallet_account_balance test
 No balances found.
 default (unlocked) >>> help wallet_transfer
 Usage:
-wallet_transfer <amount_to_transfer> <asset_symbol> <from_account_name> <to_account_name> [memo_message] [strategy]   Sends given amount to the given account, with the from field set to the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.
+wallet_transfer <amount_to_transfer> <asset_symbol> <from_account_name> <recipient> [memo_message] [strategy]   Sends given amount to the given account, with the from field set to the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.
 Sends given amount to the given account, with the from field set to the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.
 
 Parameters:
   amount_to_transfer (string, required): the amount of shares to transfer
   asset_symbol (asset_symbol, required): the asset to transfer
   from_account_name (sending_account_name, required): the source account to draw the shares from
-  to_account_name (receive_account_name, required): the account to transfer the shares to
+  recipient (string, required): the account name, public key, address, or btc address which will receive the funds
   memo_message (string, optional, defaults to ""): a memo to store with the transaction
   strategy (vote_strategy, optional, defaults to "vote_recommended"): enumeration [vote_none | vote_all | vote_random | vote_recommended] 
 
@@ -99,12 +99,9 @@ default (unlocked) >>> wallet_get_account test
     "type": "titan_account",
     "data": ""
   },
-  "is_my_account": true,
-  "approved": 0,
-  "is_favorite": false,
+  "last_child_key_index": 0,
   "block_production_enabled": false,
-  "last_used_gen_sequence": 0,
-  "private_data": null
+  "custom_data": {}
 }
 default (unlocked) >>> wallet_transfer 103 XTS delegate0 test "a long memo to a registered titan account"
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      

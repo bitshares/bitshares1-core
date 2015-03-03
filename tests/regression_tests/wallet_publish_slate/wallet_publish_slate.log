@@ -1,7 +1,17 @@
-default (unlocked) >>> wallet_account_set_approval delegate0 1
-1
-default (unlocked) >>> wallet_account_set_approval delegate1 1
-1
+default (unlocked) >>> wallet_approve delegate0
+{
+  "index": 311,
+  "name": "delegate0",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate1
+{
+  "index": 312,
+  "name": "delegate1",
+  "approval": 1,
+  "custom_data": {}
+}
 default (unlocked) >>> help wallet_publish_slate
 Usage:
 wallet_publish_slate <publishing_account_name> [paying_account_name]                                  Publishes the current wallet delegate slate to the public data associated with the account

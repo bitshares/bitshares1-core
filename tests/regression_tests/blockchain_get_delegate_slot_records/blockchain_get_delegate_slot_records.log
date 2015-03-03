@@ -37,7 +37,7 @@ default (unlocked) >>> config
   "symbol_size_min": 3,
   "asset_shares_max": 1000000000000000,
   "short_symbol_asset_reg_fee": "500,000.00000 XTS",
-  "long_symbol_asset_reg_fee": "500.00000 XTS",
+  "long_symbol_asset_reg_fee": "5,000.00000 XTS",
   "statistics_enabled": true,
   "relay_fee": "0.10000 XTS",
   "max_pending_queue_size": 10,
