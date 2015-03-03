@@ -105,6 +105,7 @@ namespace bts { namespace net
          * it is sitting on the queue
          */
         virtual size_t get_size_in_queue() = 0;
+        virtual ~queued_message() {}
       };
 
       /* when you queue up a 'real_queued_message', a full copy of the message is

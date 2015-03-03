@@ -280,7 +280,7 @@ namespace bts { namespace blockchain {
       if( NOT current_asset_record.valid() )
           FC_CAPTURE_AND_THROW( unknown_asset_id, (amount.asset_id) );
 
-      if( current_asset_record->is_market_issued() )
+      if( !current_asset_record->is_user_issued() )
           FC_CAPTURE_AND_THROW( not_user_issued, (*current_asset_record) );
 
       if( !eval_state.verify_authority( current_asset_record->authority ) )
