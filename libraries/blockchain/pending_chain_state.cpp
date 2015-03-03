@@ -36,7 +36,6 @@ namespace bts { namespace blockchain {
       return prev_state->get_active_feed_price( quote_id, base_id );
    }
 
-   /** Apply changes from this pending state to the previous state */
    void pending_chain_state::apply_changes()const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
@@ -142,13 +141,11 @@ namespace bts { namespace blockchain {
       undo_state->set_dirty_markets( dirty_markets );
    }
 
-   /** load the state from a variant */
    void pending_chain_state::from_variant( const fc::variant& v )
    {
       fc::from_variant( v, *this );
    }
 
-   /** convert the state to a variant */
    fc::variant pending_chain_state::to_variant()const
    {
       fc::variant v;
@@ -266,6 +263,138 @@ namespace bts { namespace blockchain {
    void pending_chain_state::store_market_status( const market_status& s )
    {
       market_statuses[std::make_pair(s.quote_id,s.base_id)] = s;
+   }
+
+   void pending_chain_state::check_supplies()const
+   {
+       unordered_map<asset_id_type, share_type> deltas;
+
+       const chain_interface_ptr prev_state = _prev_state.lock();
+       FC_ASSERT( prev_state );
+
+       for( const auto& item : _account_id_to_record )
+       {
+           const account_id_type id = item.first;
+           const oaccount_record prev_record = prev_state->get_account_record( id );
+           if( prev_record.valid() )
+           {
+               if( prev_record->delegate_info.valid() )
+                   deltas[ 0 ] -= prev_record->delegate_info->pay_balance;
+           }
+
+           const account_record& record = item.second;
+           if( record.delegate_info.valid() )
+               deltas[ 0 ] += record.delegate_info->pay_balance;
+       }
+       for( const account_id_type id : _account_id_remove )
+       {
+           const oaccount_record prev_record = prev_state->get_account_record( id );
+           if( prev_record.valid() )
+           {
+               if( prev_record->delegate_info.valid() )
+                   deltas[ 0 ] -= prev_record->delegate_info->pay_balance;
+           }
+       }
+
+       for( const auto& item : _asset_id_to_record )
+       {
+           const asset_id_type id = item.first;
+           const oasset_record prev_record = prev_state->get_asset_record( id );
+           if( prev_record.valid() )
+               deltas[ prev_record->id ] -= prev_record->collected_fees;
+
+           const asset_record& record = item.second;
+           deltas[ record.id ] += record.collected_fees;
+       }
+       for( const asset_id_type id : _asset_id_remove )
+       {
+           const oasset_record prev_record = prev_state->get_asset_record( id );
+           if( prev_record.valid() )
+               deltas[ prev_record->id ] -= prev_record->collected_fees;
+       }
+
+       for( const auto& item : _balance_id_to_record )
+       {
+           const balance_id_type& id = item.first;
+           const obalance_record prev_record = prev_state->get_balance_record( id );
+           if( prev_record.valid() )
+               deltas[ prev_record->asset_id() ] -= prev_record->balance;
+
+           const balance_record& record = item.second;
+           deltas[ record.asset_id() ] += record.balance;
+       }
+       for( const balance_id_type& id : _balance_id_remove )
+       {
+           const obalance_record prev_record = prev_state->get_balance_record( id );
+           if( prev_record.valid() )
+               deltas[ prev_record->asset_id() ] -= prev_record->balance;
+       }
+
+       for( const auto& item : asks )
+       {
+           const market_index_key& index = item.first;
+           const oorder_record prev_record = prev_state->get_ask_record( index );
+           if( prev_record.valid() )
+               deltas[ index.order_price.base_asset_id ] -= prev_record->balance;
+
+           const order_record& record = item.second;
+           if( !record.is_null() )
+               deltas[ index.order_price.base_asset_id ] += record.balance;
+       }
+
+       for( const auto& item : bids )
+       {
+           const market_index_key& index = item.first;
+           const oorder_record prev_record = prev_state->get_bid_record( index );
+           if( prev_record.valid() )
+               deltas[ index.order_price.quote_asset_id ] -= prev_record->balance;
+
+           const order_record& record = item.second;
+           if( !record.is_null() )
+               deltas[ index.order_price.quote_asset_id ] += record.balance;
+       }
+
+       for( const auto& item : shorts )
+       {
+           const market_index_key& index = item.first;
+           const oorder_record prev_record = prev_state->get_short_record( index );
+           if( prev_record.valid() )
+               deltas[ 0 ] -= prev_record->balance;
+
+           const order_record& record = item.second;
+           if( !record.is_null() )
+               deltas[ 0 ] += record.balance;
+       }
+
+       for( const auto& item : collateral )
+       {
+           const market_index_key& index = item.first;
+           const ocollateral_record prev_record = prev_state->get_collateral_record( index );
+           if( prev_record.valid() )
+               deltas[ 0 ] -= prev_record->collateral_balance;
+
+           const collateral_record& record = item.second;
+           if( !record.is_null() )
+               deltas[ 0 ] += record.collateral_balance;
+       }
+
+       for( const auto& item : deltas )
+       {
+           const asset_id_type id = item.first;
+           const share_type actual_delta = item.second;
+           share_type reported_delta = 0;
+
+           const oasset_record prev_record = prev_state->get_asset_record( id );
+           if( prev_record.valid() )
+               reported_delta -= prev_record->current_share_supply;
+
+           const oasset_record record = get_asset_record( id );
+           if( record.valid() )
+               reported_delta += record->current_share_supply;
+
+           if( reported_delta != actual_delta )
+               FC_CAPTURE_AND_THROW( unexpected_supply_change, (id)(actual_delta)(reported_delta) );
+       }
    }
 
    oproperty_record pending_chain_state::property_lookup_by_id( const property_id_type id )const

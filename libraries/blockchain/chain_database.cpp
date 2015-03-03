@@ -1026,6 +1026,10 @@ namespace bts { namespace blockchain {
 
             update_random_seed( block_data.previous_secret, pending_state, block_record );
 
+#ifdef BTS_TEST_NETWORK
+            pending_state->check_supplies();
+#endif
+
             save_undo_state( block_data.block_num, block_id, pending_state );
 
             // TODO: Verify idempotency
