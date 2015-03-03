@@ -810,10 +810,9 @@ string pretty_account( const oaccount_record& record, cptr client )
     out << std::left;
 
     out << "Name: " << record->name << "\n";
-    bool founder = record->registration_date == client->get_chain()->get_genesis_timestamp();
-    string registered = !founder ? pretty_timestamp( record->registration_date ) : "Genesis (Keyhotee Founder)";
-    out << "Registered: " << registered << "\n";
+    out << "Registered: " << pretty_timestamp( record->registration_date ) << "\n";
     out << "Last Updated: " << pretty_age( record->last_update ) << "\n";
+    out << "Prefers TITAN: " << std::boolalpha << record->is_titan_account() << "\n";
     out << "Owner Key: " << std::string( record->owner_key ) << "\n";
 
     out << "Active Key History:\n";

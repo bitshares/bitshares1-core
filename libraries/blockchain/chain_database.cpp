@@ -287,6 +287,7 @@ namespace bts { namespace blockchain {
              rec.delegate_info = delegate_stats();
              rec.delegate_info->pay_rate = 100;
              rec.set_signing_key( 0, delegate.owner );
+             rec.meta_data = account_meta_info( titan_account );
              self->store_account_record( rec );
          }
 
