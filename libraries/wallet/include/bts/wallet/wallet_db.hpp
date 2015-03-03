@@ -29,6 +29,8 @@ namespace bts { namespace wallet {
          void                   set_last_wallet_child_key_index( uint32_t key_index );
          private_key_type       get_wallet_child_key( const fc::sha512& password, uint32_t key_index )const;
          public_key_type        generate_new_account( const fc::sha512& password, const string& account_name );
+         public_key_type        generate_new_account( const fc::sha512& password, const string& account_name,
+                                                      const private_key_type& owner_private_key );
 
          // Account child keys
          private_key_type       get_account_child_key( const private_key_type& parent_private_key, uint32_t child_key_index )const;
