@@ -1064,12 +1064,13 @@ namespace bts { namespace blockchain {
 
             _block_num_to_id_db.store( block_data.block_num, block_id );
 
-            // NOTE: The following hardforks cannot be rewound
+            // NOTE: None of the following hardfork changes can be rewound
+
             if( block_data.block_num == BTS_V0_4_16_FORK_BLOCK_NUM )
             {
-                auto base_asset_record = self->get_asset_record( asset_id_type( 0 ) );
+                oasset_record base_asset_record = self->get_asset_record( asset_id_type( 0 ) );
                 FC_ASSERT( base_asset_record.valid() );
-                base_asset_record->current_share_supply = self->calculate_supply( asset_id_type( 0 ) ).amount;
+                base_asset_record->current_share_supply = self->calculate_supplies().at( 0 );
                 self->store_asset_record( *base_asset_record );
             }
             else if( block_data.block_num == BTS_V0_4_17_FORK_BLOCK_NUM
@@ -1077,32 +1078,30 @@ namespace bts { namespace blockchain {
                      || block_data.block_num == BTS_V0_4_24_FORK_BLOCK_NUM )
             {
                 vector<asset_record> records;
-                records.reserve( _asset_id_to_record.size() );
+                for( auto iter = _asset_id_to_record.unordered_begin(); iter != _asset_id_to_record.unordered_end(); ++iter )
+                    records.push_back( iter->second );
 
-                const auto scan_asset = [ &records ]( const asset_record& record )
-                {
-                    records.push_back( record );
-                };
-                self->scan_unordered_assets( scan_asset );
+                const auto supplies = self->calculate_supplies();
+                const auto debts = self->calculate_debts( false );
 
                 wlog( "Recalculating supply for ${x} assets", ("x",records.size()) );
                 for( auto& record : records )
                 {
-                    asset supply = self->calculate_supply( record.id );
+                    share_type supply = supplies.at( record.id );
                     share_type fees = record.collected_fees;
 
                     if( record.is_market_issued() )
                     {
-                        asset debt = self->calculate_debt( record.id );
+                        share_type debt = debts.at( record.id );
                         if( supply != debt )
                         {
-                            const share_type difference = debt.amount - supply.amount;
-                            supply.amount += difference;
+                            const share_type difference = debt - supply;
+                            supply += difference;
                             fees += difference;
                         }
                     }
 
-                    record.current_share_supply = supply.amount;
+                    record.current_share_supply = supply;
                     record.collected_fees = fees;
                     self->store_asset_record( record );
                 }
@@ -1111,14 +1110,12 @@ namespace bts { namespace blockchain {
             if( block_data.block_num == BTS_V0_4_24_FORK_BLOCK_NUM )
             {
                 vector<account_record> records;
-                records.reserve( 5343 );
-
-                const auto scan_account = [ &records ]( const account_record& record )
+                for( auto iter = _account_id_to_record.unordered_begin(); iter != _account_id_to_record.unordered_end(); ++iter )
                 {
+                    const auto& record = iter->second;
                     if( record.is_delegate() )
                         records.push_back( record );
-                };
-                self->scan_unordered_accounts( scan_account );
+                }
 
                 wlog( "Resetting pay rates for ${x} delegates", ("x",records.size()) );
                 for( auto& record : records )
