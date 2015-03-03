@@ -1,4 +1,4 @@
-(wallet closed) >>> wallet_create wallet 12345678
+(wallet closed) >>> wallet_create wallet "12345678"
 OK
 wallet (unlocked) >>> wallet_get_info
 {
@@ -98,7 +98,7 @@ wallet (unlocked) >>> wallet_account_transaction_history myaccount
 No transactions found.
 wallet (unlocked) >>> wallet_dump_private_key XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra
 "5KV9x9uKC8DdWozG9NRC9ySRqgPGn9XgcZrgVWxntsh4msJF9zb"
-wallet (unlocked) >>> wallet_change_passphrase 87654321
+wallet (unlocked) >>> wallet_change_passphrase "87654321"
 OK
 wallet (unlocked) >>> wallet_set_priority_fee 99999
 99,999.00000 XTS

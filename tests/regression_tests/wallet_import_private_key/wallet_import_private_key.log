@@ -1,8 +1,8 @@
-(wallet closed) >>> wallet_create testwallet1 password
+(wallet closed) >>> wallet_create testwallet1 "password"
 OK
 testwallet1 (unlocked) >>> wallet_set_automatic_backups false
 false
-testwallet1 (unlocked) >>> wallet_create testwallet2 password
+testwallet1 (unlocked) >>> wallet_create testwallet2 "password"
 OK
 testwallet2 (unlocked) >>> wallet_set_automatic_backups false
 false
