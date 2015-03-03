@@ -871,8 +871,7 @@ namespace bts { namespace wallet {
        for( auto iter = my->_records.begin(); iter.valid(); ++iter )
            records.push_back( iter.value() );
 
-
-       // Repair account_data.is_my_account and key_data.account_address
+       // Repair key_data.account_address when possible
        uint32_t count = 0;
        for( generic_wallet_record& record : records )
        {
@@ -885,13 +884,12 @@ namespace bts { namespace wallet {
                    store_account( account_record );
                }
            }
-           catch( ... )
+           catch( const fc::exception& )
            {
            }
        }
 
-       // Repair key_data.public_key when I have the private key and
-       // repair key_data.account_address and account_data.is_my_account
+       // Repair key_data.public_key when I have the private key and remove if I don't have the private key
        count = 0;
        for( generic_wallet_record& record : records )
        {
@@ -901,13 +899,13 @@ namespace bts { namespace wallet {
                {
                    std::cout << "\rRepairing key record     " << std::to_string( ++count ) << std::flush;
                    wallet_key_record key_record = record.as<wallet_key_record>();
+                   const address key_address = key_record.get_address();
                    if( key_record.has_private_key() )
                    {
                        const private_key_type private_key = key_record.decrypt_private_key( password );
                        const public_key_type public_key = private_key.get_public_key();
                        if( key_record.public_key != public_key )
                        {
-                           const address key_address = key_record.get_address();
                            keys.erase( key_address );
                            btc_to_bts_address.erase( key_address );
                            btc_to_bts_address.erase( address( pts_address( key_record.public_key, false, 0  ) ) );
@@ -919,10 +917,21 @@ namespace bts { namespace wallet {
                            my->load_key_record( key_record );
                        }
                    }
+                   else
+                   {
+                       keys.erase( key_address );
+                       btc_to_bts_address.erase( key_address );
+                       btc_to_bts_address.erase( address( pts_address( key_record.public_key, false, 0  ) ) );
+                       btc_to_bts_address.erase( address( pts_address( key_record.public_key, true,  0  ) ) );
+                       btc_to_bts_address.erase( address( pts_address( key_record.public_key, false, 56 ) ) );
+                       btc_to_bts_address.erase( address( pts_address( key_record.public_key, true,  56 ) ) );
+                       remove_item( key_record.wallet_record_index );
+                       continue;
+                   }
                    store_key( key_record );
                }
            }
-           catch( ... )
+           catch( const fc::exception& )
            {
            }
        }
@@ -952,7 +961,7 @@ namespace bts { namespace wallet {
                    store_transaction( transaction_record );
                }
            }
-           catch( ... )
+           catch( const fc::exception& )
            {
            }
        }
