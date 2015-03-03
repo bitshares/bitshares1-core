@@ -487,28 +487,27 @@ void client_impl::blockchain_generate_issuance_map( const string& symbol, const 
     _chain_db->generate_issuance_map( symbol, fc::path( filename ) );
 } FC_CAPTURE_AND_RETHROW( (filename) ) }
 
-
-asset client_impl::blockchain_calculate_supply( const string& asset )const
-{
+asset client_impl::blockchain_calculate_supply( const string& which_asset )const
+{ try {
    asset_id_type asset_id;
-   if( std::all_of( asset.begin(), asset.end(), ::isdigit ) )
-      asset_id = std::stoi( asset );
+   if( std::all_of( which_asset.begin(), which_asset.end(), ::isdigit ) )
+      asset_id = std::stoi( which_asset );
    else
-      asset_id = _chain_db->get_asset_id( asset );
+      asset_id = _chain_db->get_asset_id( which_asset );
 
-   return _chain_db->calculate_supply( asset_id );
-}
+   return asset( _chain_db->calculate_supplies().at( asset_id ), asset_id );
+} FC_CAPTURE_AND_RETHROW( (which_asset) ) }
 
-asset client_impl::blockchain_calculate_debt( const string& asset, bool include_interest )const
-{
+asset client_impl::blockchain_calculate_debt( const string& which_asset, bool include_interest )const
+{ try {
    asset_id_type asset_id;
-   if( std::all_of( asset.begin(), asset.end(), ::isdigit ) )
-      asset_id = std::stoi( asset );
+   if( std::all_of( which_asset.begin(), which_asset.end(), ::isdigit ) )
+      asset_id = std::stoi( which_asset );
    else
-      asset_id = _chain_db->get_asset_id( asset );
+      asset_id = _chain_db->get_asset_id( which_asset );
 
-   return _chain_db->calculate_debt( asset_id, include_interest );
-}
+   return asset( _chain_db->calculate_debts( include_interest ).at( asset_id ), asset_id );
+} FC_CAPTURE_AND_RETHROW( (which_asset)(include_interest) ) }
 
 bts::blockchain::blockchain_security_state client_impl::blockchain_get_security_state()const
 {

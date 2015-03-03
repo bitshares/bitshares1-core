@@ -40,12 +40,18 @@
             {
               "name" : "new_passphrase",
               "type" : "new_passphrase",
-              "description" : "a passphrase for encrypting the wallet"
+              "description" : "a passphrase for encrypting the wallet; must be surrounded with quotes if contains spaces"
             },
             {
               "name" : "brain_key",
               "type" : "brainkey",
               "description" : "a strong passphrase that will be used to generate all private keys, defaults to a large random number",
+              "default_value" : ""
+            },
+            {
+              "name" : "new_passphrase_verify",
+              "type" : "passphrase",
+              "description" : "optionally provide passphrase again to double-check",
               "default_value" : ""
             }
           ],
@@ -421,9 +427,15 @@
         "parameters" :
           [
             {
-              "name" : "passphrase",
+              "name" : "new_passphrase",
+              "type" : "new_passphrase",
+              "description" : "the new passphrase for encrypting the wallet; must be surrounded with quotes if contains spaces"
+            },
+            {
+              "name" : "new_passphrase_verify",
               "type" : "passphrase",
-              "description" : "the passphrase for encrypting the wallet"
+              "description" : "optionally provide passphrase again to double-check",
+              "default_value" : ""
             }
           ],
         "prerequisites" : ["wallet_unlocked"],

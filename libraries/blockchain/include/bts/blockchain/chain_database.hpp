@@ -285,8 +285,10 @@ namespace bts { namespace blockchain {
 
          void                               generate_snapshot( const fc::path& filename )const;
          void                               generate_issuance_map( const string& symbol, const fc::path& filename )const;
-         asset                              calculate_supply( const asset_id_type asset_id )const;
-         asset                              calculate_debt( const asset_id_type asset_id, bool include_interest = false )const;
+
+         unordered_map<asset_id_type, share_type> calculate_supplies()const;
+         unordered_map<asset_id_type, share_type> calculate_debts( bool include_interest )const;
+
          asset                              unclaimed_genesis();
 
          // XXX: Only call on pending chain state

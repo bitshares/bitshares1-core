@@ -75,7 +75,7 @@ Here is an example of a `.btstest` file with no output:
     >>> !client alice
     >>> !expect disable
     >>> debug_start_simulated_time "20140620T144030.000000"
-    >>> wallet_create default password
+    >>> wallet_create default "password"
     >>> wallet_set_automatic_backups false
     >>> debug_deterministic_private_keys 0 101 init true
     >>> wallet_delegate_set_block_production ALL true
@@ -120,7 +120,7 @@ Like `regression_tests`, the `btstest` framework has the capability to test that
     >>> !client alice
     >>> debug_start_simulated_time "20140620T144030.000000"
     OK
-    >>> wallet_create default password
+    >>> wallet_create default "password"
     OK
     >>> wallet_set_automatic_backups false
     false
@@ -155,7 +155,7 @@ Again, this file is present in `tests/btstests/tutorial/register_account_1` dire
     >>> !client alice
     >>> debug_start_simulated_time "20140620T144030.000000"
     OK
-    >>> wallet_create default password
+    >>> wallet_create default "password"
     OK
     >>> wallet_set_automatic_backups false
     false
@@ -202,7 +202,7 @@ Here is an example:
     >>> !client alice
     >>> debug_start_simulated_time "20140620T144030.000000"
     OK
-    >>> wallet_create default password
+    >>> wallet_create default "password"
     OK
     >>> wallet_set_automatic_backups false
     false

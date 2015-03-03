@@ -1515,16 +1515,7 @@ namespace detail {
                      "Could not find an account with that name!",
                      ("account_name",*account_name) );
 
-          create_account( *account_name );
-          account_record = my->_wallet_db.lookup_account( *account_name );
-          FC_ASSERT( account_record.valid(), "Error creating new account!" );
-
-          account_record->owner_key = new_public_key;
-          const private_key_type active_private_key = my->_wallet_db.get_account_child_key( new_private_key, 0 );
-          account_record->active_key_history.clear();
-          account_record->set_active_key( blockchain::now(), active_private_key.get_public_key() );
-
-          my->_wallet_db.store_account( *account_record );
+          return my->_wallet_db.generate_new_account( my->_wallet_password, *account_name, new_private_key );
       }
 
       my->_wallet_db.import_key( my->_wallet_password, account_record->name, new_private_key, true );

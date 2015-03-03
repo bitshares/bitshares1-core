@@ -16,7 +16,7 @@ if n == "n":
 
 input_log = []
 
-input_log.append(">>> wallet_create default password")
+input_log.append(">>> wallet_create default \"password\"")
 input_log.append(">>> wallet_set_automatic_backups false ")
 
 new_genesis = {}
