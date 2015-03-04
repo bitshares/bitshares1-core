@@ -17,24 +17,24 @@ OK
 default (unlocked) >>> wallet_import_keyhotee F M L "Hello World123$$$" tk
 OK
 default (unlocked) >>> wallet_list_accounts
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
-t                                  XTS6XzybdQrxwJ55UpRrrr6QSEFPFmYSqSzeDhiTnkrhJDy7Dh38Y           NO                    NO             0         
-tk                                 XTS5BxdForQtZ33z1nuvXeNVsappJ9J7MHibzd1XyvbmxezsdZpxz           NO                    NO             0         
+NAME (* delegate)                  KEY                                                             REGISTERED            BLOCK PRODUCTION ENABLED 
+t                                  XTS7oMboDBn8pTZogfNzExSChkoi3Hu5PVDsxZ2JfUVMtm3HPMmZA           NO                    N/A                      
+tk                                 XTS6uwp4C9NjmmrELUrV6a6Ppu52L7kfJVFxeUx8Legpu7iTNoPiL           NO                    N/A                      
 default (unlocked) >>> wallet_import_keyhotee F M L "Hello World123$$$" tk
 OK
 default (unlocked) >>> wallet_list_accounts
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
-t                                  XTS6XzybdQrxwJ55UpRrrr6QSEFPFmYSqSzeDhiTnkrhJDy7Dh38Y           NO                    NO             0         
-tk                                 XTS5BxdForQtZ33z1nuvXeNVsappJ9J7MHibzd1XyvbmxezsdZpxz           NO                    NO             0         
+NAME (* delegate)                  KEY                                                             REGISTERED            BLOCK PRODUCTION ENABLED 
+t                                  XTS7oMboDBn8pTZogfNzExSChkoi3Hu5PVDsxZ2JfUVMtm3HPMmZA           NO                    N/A                      
+tk                                 XTS6uwp4C9NjmmrELUrV6a6Ppu52L7kfJVFxeUx8Legpu7iTNoPiL           NO                    N/A                      
 default (unlocked) >>> wallet_import_keyhotee F M L "Hello World123$$$" tk
 OK
 default (unlocked) >>> wallet_import_keyhotee F M L "Hello World123$$$" tk1
 OK
 default (unlocked) >>> wallet_list_accounts
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
-t                                  XTS6XzybdQrxwJ55UpRrrr6QSEFPFmYSqSzeDhiTnkrhJDy7Dh38Y           NO                    NO             0         
-tk                                 XTS5BxdForQtZ33z1nuvXeNVsappJ9J7MHibzd1XyvbmxezsdZpxz           NO                    NO             0         
-tk1                                XTS5Vv5BDUdGhqxh7bsKt71QDpo5vFuJFM3nMu3izoMBG6caCPW55           NO                    NO             0         
+NAME (* delegate)                  KEY                                                             REGISTERED            BLOCK PRODUCTION ENABLED 
+t                                  XTS7oMboDBn8pTZogfNzExSChkoi3Hu5PVDsxZ2JfUVMtm3HPMmZA           NO                    N/A                      
+tk                                 XTS6uwp4C9NjmmrELUrV6a6Ppu52L7kfJVFxeUx8Legpu7iTNoPiL           NO                    N/A                      
+tk1                                XTS5qYY4voJHZwBPSoy7GaE8zyiABApqk6MjMpdesRryk4cNC3HN2           NO                    N/A                      
 default (unlocked) >>> wallet_import_keyhotee F M L "Hello World123$$$" tk1*
 Command failed with exception: invalid account name (20017)
 Invalid Keyhotee name!
@@ -50,8 +50,8 @@ Invalid Keyhotee name!
 
 
 default (unlocked) >>> wallet_list_accounts
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
-t                                  XTS6XzybdQrxwJ55UpRrrr6QSEFPFmYSqSzeDhiTnkrhJDy7Dh38Y           NO                    NO             0         
-tk                                 XTS5BxdForQtZ33z1nuvXeNVsappJ9J7MHibzd1XyvbmxezsdZpxz           NO                    NO             0         
-tk1                                XTS5Vv5BDUdGhqxh7bsKt71QDpo5vFuJFM3nMu3izoMBG6caCPW55           NO                    NO             0         
+NAME (* delegate)                  KEY                                                             REGISTERED            BLOCK PRODUCTION ENABLED 
+t                                  XTS7oMboDBn8pTZogfNzExSChkoi3Hu5PVDsxZ2JfUVMtm3HPMmZA           NO                    N/A                      
+tk                                 XTS6uwp4C9NjmmrELUrV6a6Ppu52L7kfJVFxeUx8Legpu7iTNoPiL           NO                    N/A                      
+tk1                                XTS5qYY4voJHZwBPSoy7GaE8zyiABApqk6MjMpdesRryk4cNC3HN2           NO                    N/A                      
 default (unlocked) >>> quit

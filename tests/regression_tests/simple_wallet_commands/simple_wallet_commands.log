@@ -36,6 +36,18 @@ wallet (unlocked) >>> wallet_account_create testaccount
 "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
 wallet (unlocked) >>> wallet_account_balance testaccount
 No balances found.
+wallet (unlocked) >>> help wallet_list_accounts
+Usage:
+wallet_list_accounts                                                                                  Lists all account entries
+Lists all account entries
+
+Parameters:
+  (none)
+
+Returns:
+  wallet_account_record_array
+
+aliases: accounts, get_accounts, list_accounts, listaccounts
 wallet (unlocked) >>> wallet_list_accounts
 NAME (* delegate)                  KEY                                                             REGISTERED            BLOCK PRODUCTION ENABLED 
 testaccount                        XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX           NO                    N/A                      

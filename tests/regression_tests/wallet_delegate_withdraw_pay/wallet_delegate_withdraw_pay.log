@@ -12,8 +12,9 @@ HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATE
 1       <d-ign></d-ign><d-ign></d-ign>0       166     <d-ign></d-ign><d-ign></d-ign><d-ign></d-ign>
 default (unlocked) >>> blockchain_get_account delegate42
 Name: delegate42
-Registered: Genesis (Keyhotee Founder)
+Registered: <d-ign></d-ign>
 Last Updated: <d-ign></d-ign>
+Prefers TITAN: true
 Owner Key: XTS6rPKwuYBhyU2wtqC4AuxQp1EGGP5To3uVz5qTj2S4w59mQViDv
 Active Key History:
 - XTS6rPKwuYBhyU2wtqC4AuxQp1EGGP5To3uVz5qTj2S4w59mQViDv, last used <d-ign></d-ign>
@@ -55,8 +56,9 @@ ACCOUNT                         BALANCE
 delegate42                      19,801,980.19801 XTS        
 default (unlocked) >>> blockchain_get_account delegate42
 Name: delegate42
-Registered: Genesis (Keyhotee Founder)
+Registered: <d-ign></d-ign>
 Last Updated: <d-ign></d-ign>
+Prefers TITAN: true
 Owner Key: XTS6rPKwuYBhyU2wtqC4AuxQp1EGGP5To3uVz5qTj2S4w59mQViDv
 Active Key History:
 - XTS6rPKwuYBhyU2wtqC4AuxQp1EGGP5To3uVz5qTj2S4w59mQViDv, last used <d-ign></d-ign>
