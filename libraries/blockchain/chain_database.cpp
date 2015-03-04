@@ -1053,7 +1053,6 @@ namespace bts { namespace blockchain {
 
             save_undo_state( block_data.block_num, block_id, pending_state );
 
-            // TODO: Verify idempotency
             pending_state->apply_changes();
 
             mark_included( block_id, true );
@@ -1068,6 +1067,7 @@ namespace bts { namespace blockchain {
 
             if( block_data.block_num == BTS_V0_4_16_FORK_BLOCK_NUM )
             {
+                wlog( "Block ${n} Hardfork: Recalculating supply for base asset", ("n",block_data.block_num) );
                 oasset_record base_asset_record = self->get_asset_record( asset_id_type( 0 ) );
                 FC_ASSERT( base_asset_record.valid() );
                 base_asset_record->current_share_supply = self->calculate_supplies().at( 0 );
@@ -1075,24 +1075,26 @@ namespace bts { namespace blockchain {
             }
             else if( block_data.block_num == BTS_V0_4_17_FORK_BLOCK_NUM
                      || block_data.block_num == BTS_V0_4_21_FORK_BLOCK_NUM
-                     || block_data.block_num == BTS_V0_4_24_FORK_BLOCK_NUM )
+                     || block_data.block_num == BTS_V0_4_24_FORK_BLOCK_NUM
+                     || block_data.block_num == BTS_V0_7_0_FORK_BLOCK_NUM )
             {
                 vector<asset_record> records;
                 for( auto iter = _asset_id_to_record.unordered_begin(); iter != _asset_id_to_record.unordered_end(); ++iter )
                     records.push_back( iter->second );
 
-                const auto supplies = self->calculate_supplies();
-                const auto debts = self->calculate_debts( false );
+                wlog( "Block ${n} Hardfork: Recalculating supply for ${x} assets", ("n",block_data.block_num)("x",records.size()) );
 
-                wlog( "Recalculating supply for ${x} assets", ("x",records.size()) );
+                auto supplies = self->calculate_supplies();
+                auto debts = self->calculate_debts( false );
+
                 for( auto& record : records )
                 {
-                    share_type supply = supplies.at( record.id );
+                    share_type supply = supplies[ record.id ];
                     share_type fees = record.collected_fees;
 
                     if( record.is_market_issued() )
                     {
-                        share_type debt = debts.at( record.id );
+                        share_type debt = debts[ record.id ];
                         if( supply != debt )
                         {
                             const share_type difference = debt - supply;
@@ -1117,7 +1119,8 @@ namespace bts { namespace blockchain {
                         records.push_back( record );
                 }
 
-                wlog( "Resetting pay rates for ${x} delegates", ("x",records.size()) );
+                wlog( "Block ${n} Hardfork: Resetting pay rates for ${x} delegates", ("n",block_data.block_num)("x",records.size()) );
+
                 for( auto& record : records )
                 {
                     record.delegate_info->pay_rate = 3;
