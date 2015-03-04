@@ -509,64 +509,32 @@ asset client_impl::blockchain_calculate_debt( const string& which_asset, bool in
    return asset( _chain_db->calculate_debts( include_interest ).at( asset_id ), asset_id );
 } FC_CAPTURE_AND_RETHROW( (which_asset)(include_interest) ) }
 
-bts::blockchain::blockchain_security_state client_impl::blockchain_get_security_state()const
-{
-   blockchain_security_state state;
-   double participation_rate = _chain_db->get_average_delegate_participation();
-   if( participation_rate > 100 ) participation_rate = 100;
-
-   state.participation_rate = participation_rate;
-   if (!blockchain_is_synced())
-   {
-      state.alert_level = bts::blockchain::blockchain_security_state::grey;
-   }
-   else if (participation_rate > 80)
-   {
-      state.alert_level = bts::blockchain::blockchain_security_state::green;
-   }
-   else if (participation_rate < 60)
-   {
-      state.alert_level = bts::blockchain::blockchain_security_state::red;
-   }
-   else
-   {
-      state.alert_level = bts::blockchain::blockchain_security_state::yellow;
-   }
-
-   return state;
-}
-
-bool client_impl::blockchain_is_synced() const
-{
-   return (blockchain::now() - _chain_db->get_head_block().timestamp) < fc::seconds(BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
-}
-
-vector<market_order>    client_impl::blockchain_market_list_bids( const string& quote_symbol,
+vector<market_order> client_impl::blockchain_market_list_bids( const string& quote_symbol,
                                                                   const string& base_symbol,
-                                                                  uint32_t limit  )
+                                                                  uint32_t limit )
 {
    return _chain_db->get_market_bids( quote_symbol, base_symbol, limit );
 }
-vector<market_order>    client_impl::blockchain_market_list_asks( const string& quote_symbol,
+vector<market_order> client_impl::blockchain_market_list_asks( const string& quote_symbol,
                                                                   const string& base_symbol,
-                                                                  uint32_t limit  )
+                                                                  uint32_t limit )
 {
    return _chain_db->get_market_asks( quote_symbol, base_symbol, limit );
 }
 
-vector<market_order>    client_impl::blockchain_market_list_shorts( const string& quote_symbol,
-                                                                    uint32_t limit  )const
+vector<market_order> client_impl::blockchain_market_list_shorts( const string& quote_symbol,
+                                                                    uint32_t limit )const
 {
    return _chain_db->get_market_shorts( quote_symbol, limit );
 }
-vector<market_order>    client_impl::blockchain_market_list_covers( const string& quote_symbol,
+vector<market_order> client_impl::blockchain_market_list_covers( const string& quote_symbol,
                                                                     const string& base_symbol,
-                                                                    uint32_t limit  )
+                                                                    uint32_t limit )
 {
    return _chain_db->get_market_covers( quote_symbol, base_symbol, limit );
 }
 
-share_type              client_impl::blockchain_market_get_asset_collateral( const string& symbol )
+share_type client_impl::blockchain_market_get_asset_collateral( const string& symbol )
 {
    return _chain_db->get_asset_collateral( symbol );
 }

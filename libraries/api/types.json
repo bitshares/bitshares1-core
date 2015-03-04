@@ -7,11 +7,6 @@
         "cpp_include_file" : "bts/blockchain/types.hpp"
       },
       {
-        "type_name" : "blockchain_security_state",
-        "cpp_return_type" : "bts::blockchain::blockchain_security_state",
-        "cpp_include_file" : "bts/blockchain/types.hpp"
-      },
-      {
          "type_name" : "asset_permission",
          "cpp_return_type" : "asset_permissions"
       },
