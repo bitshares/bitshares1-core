@@ -251,7 +251,7 @@ namespace bts { namespace blockchain {
       market_transactions = std::move(trxs);
    }
 
-   omarket_status pending_chain_state::get_market_status( const asset_id_type quote_id, const asset_id_type base_id )
+   omarket_status pending_chain_state::get_market_status( const asset_id_type quote_id, const asset_id_type base_id )const
    {
       auto itr = market_statuses.find( std::make_pair(quote_id,base_id) );
       if( itr != market_statuses.end() )

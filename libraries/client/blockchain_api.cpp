@@ -509,39 +509,37 @@ asset client_impl::blockchain_calculate_debt( const string& which_asset, bool in
    return asset( _chain_db->calculate_debts( include_interest ).at( asset_id ), asset_id );
 } FC_CAPTURE_AND_RETHROW( (which_asset)(include_interest) ) }
 
-vector<market_order> client_impl::blockchain_market_list_bids( const string& quote_symbol,
-                                                                  const string& base_symbol,
-                                                                  uint32_t limit )
+vector<market_order> client_impl::blockchain_market_list_bids( const string& quote_symbol, const string& base_symbol,
+                                                               uint32_t limit )const
 {
    return _chain_db->get_market_bids( quote_symbol, base_symbol, limit );
 }
-vector<market_order> client_impl::blockchain_market_list_asks( const string& quote_symbol,
-                                                                  const string& base_symbol,
-                                                                  uint32_t limit )
+
+vector<market_order> client_impl::blockchain_market_list_asks( const string& quote_symbol, const string& base_symbol,
+                                                               uint32_t limit )const
 {
    return _chain_db->get_market_asks( quote_symbol, base_symbol, limit );
 }
 
 vector<market_order> client_impl::blockchain_market_list_shorts( const string& quote_symbol,
-                                                                    uint32_t limit )const
+                                                                 uint32_t limit )const
 {
    return _chain_db->get_market_shorts( quote_symbol, limit );
 }
-vector<market_order> client_impl::blockchain_market_list_covers( const string& quote_symbol,
-                                                                    const string& base_symbol,
-                                                                    uint32_t limit )
+vector<market_order> client_impl::blockchain_market_list_covers( const string& quote_symbol, const string& base_symbol,
+                                                                 uint32_t limit )const
 {
    return _chain_db->get_market_covers( quote_symbol, base_symbol, limit );
 }
 
-share_type client_impl::blockchain_market_get_asset_collateral( const string& symbol )
+share_type client_impl::blockchain_market_get_asset_collateral( const string& symbol )const
 {
    return _chain_db->get_asset_collateral( symbol );
 }
 
 std::pair<vector<market_order>,vector<market_order>> client_impl::blockchain_market_order_book( const string& quote_symbol,
                                                                                                 const string& base_symbol,
-                                                                                                uint32_t limit  )
+                                                                                                uint32_t limit )const
 {
    auto bids = blockchain_market_list_bids(quote_symbol, base_symbol, limit);
    auto asks = blockchain_market_list_asks(quote_symbol, base_symbol, limit);

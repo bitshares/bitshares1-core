@@ -474,6 +474,7 @@
               "default_value" : "-1"
            }
         ],
+        "is_const" : true,
         "prerequisites" : ["no_prerequisites"],
         "aliases" : ["market_bids"]
       },
@@ -500,6 +501,7 @@
               "default_value" : "-1"
            }
         ],
+        "is_const" : true,
         "prerequisites" : ["no_prerequisites"],
         "aliases" : ["market_asks"]
       },
@@ -549,6 +551,7 @@
               "default_value" : "-1"
            }
         ],
+        "is_const" : true,
         "prerequisites" : ["no_prerequisites"],
         "aliases" : ["market_covers"]
       },
@@ -564,6 +567,7 @@
               "description" : "the symbol for the asset to count collateral for"
            }
         ],
+        "is_const" : true,
         "prerequisites" : ["no_prerequisites"],
         "aliases" : ["collateral"]
       },
@@ -590,6 +594,7 @@
               "default_value" : "10"
            }
         ],
+        "is_const" : true,
         "prerequisites" : ["no_prerequisites"],
         "aliases" : ["market_book"]
       },

@@ -2556,7 +2556,7 @@ namespace bts { namespace blockchain {
        return optional<market_order>();
    } FC_CAPTURE_AND_RETHROW( (key) ) }
 
-   vector<market_order> chain_database::get_market_bids( const string& quote_symbol, const string& base_symbol, uint32_t limit  )
+   vector<market_order> chain_database::get_market_bids( const string& quote_symbol, const string& base_symbol, uint32_t limit )const
    { try {
        auto quote_id = get_asset_id( quote_symbol );
        auto base_id  = get_asset_id( base_symbol );
@@ -2601,7 +2601,7 @@ namespace bts { namespace blockchain {
        return optional<market_order>();
    } FC_CAPTURE_AND_RETHROW( (key) ) }
 
-   vector<market_order> chain_database::get_market_shorts( const string& quote_symbol, uint32_t limit )
+   vector<market_order> chain_database::get_market_shorts( const string& quote_symbol, uint32_t limit )const
    { try {
        asset_id_type quote_id = get_asset_id( quote_symbol );
        asset_id_type base_id  = 0;
@@ -2637,8 +2637,7 @@ namespace bts { namespace blockchain {
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(limit) ) }
 
-   vector<market_order> chain_database::get_market_covers( const string& quote_symbol,
-                                                           const string& base_symbol, uint32_t limit )
+   vector<market_order> chain_database::get_market_covers( const string& quote_symbol, const string& base_symbol, uint32_t limit )const
    { try {
        asset_id_type quote_asset_id = get_asset_id( quote_symbol );
        asset_id_type base_asset_id = get_asset_id( base_symbol );
@@ -2715,9 +2714,7 @@ namespace bts { namespace blockchain {
 
    } FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
-   vector<market_order> chain_database::get_market_asks( const string& quote_symbol,
-                                                         const string& base_symbol,
-                                                         uint32_t limit )
+   vector<market_order> chain_database::get_market_asks( const string& quote_symbol, const string& base_symbol, uint32_t limit )const
 
    { try {
        auto quote_asset_id = get_asset_id( quote_symbol );
@@ -2863,7 +2860,7 @@ namespace bts { namespace blockchain {
        return pairs;
    }
 
-   omarket_status chain_database::get_market_status( const asset_id_type quote_id, const asset_id_type base_id )
+   omarket_status chain_database::get_market_status( const asset_id_type quote_id, const asset_id_type base_id )const
    {
       return my->_market_status_db.fetch_optional( std::make_pair(quote_id,base_id) );
    }
@@ -2884,7 +2881,7 @@ namespace bts { namespace blockchain {
                                                                    const asset_id_type base_id,
                                                                    const fc::time_point start_time,
                                                                    const fc::microseconds duration,
-                                                                   market_history_key::time_granularity_enum granularity)
+                                                                   market_history_key::time_granularity_enum granularity )const
    {
       time_point_sec end_time = start_time + duration;
       auto record_itr = my->_market_history_db.lower_bound( market_history_key(quote_id, base_id, granularity, start_time) );
