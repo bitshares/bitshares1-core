@@ -1,0 +1,582 @@
+default (unlocked) >>> help wallet_list_approvals
+Usage:
+wallet_list_approvals                                                                                 List all approval entries
+List all approval entries
+
+Parameters:
+  (none)
+
+Returns:
+  wallet_approval_record_array
+
+aliases: approvals, get_approvals, list_approvals
+default (unlocked) >>> wallet_list_approvals
+[]
+default (unlocked) >>> help wallet_approve
+Usage:
+wallet_approve <name> [approval]                                                                      Approve or disapprove the specified account or proposal
+Approve or disapprove the specified account or proposal
+
+Parameters:
+  name (string, required): a registered account or proposal name to set approval for
+  approval (int8_t, optional, defaults to 1): 1, 0, or -1 respectively for approve, neutral, or disapprove
+
+Returns:
+  wallet_approval_record
+
+aliases: approve, add_approval, update_approval
+default (unlocked) >>> wallet_approve delegate0 1
+{
+  "index": 8,
+  "name": "delegate0",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate1 1
+{
+  "index": 9,
+  "name": "delegate1",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate2 1
+{
+  "index": 10,
+  "name": "delegate2",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate3 1
+{
+  "index": 11,
+  "name": "delegate3",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate4 1
+{
+  "index": 12,
+  "name": "delegate4",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate5 1
+{
+  "index": 13,
+  "name": "delegate5",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate6 1
+{
+  "index": 14,
+  "name": "delegate6",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate7 1
+{
+  "index": 15,
+  "name": "delegate7",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate8 1
+{
+  "index": 16,
+  "name": "delegate8",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate9 1
+{
+  "index": 17,
+  "name": "delegate9",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate10 1
+{
+  "index": 18,
+  "name": "delegate10",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate20 1
+{
+  "index": 19,
+  "name": "delegate20",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate30 1
+{
+  "index": 20,
+  "name": "delegate30",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate40 1
+{
+  "index": 21,
+  "name": "delegate40",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate50 1
+{
+  "index": 22,
+  "name": "delegate50",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate60 1
+{
+  "index": 23,
+  "name": "delegate60",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate70 1
+{
+  "index": 24,
+  "name": "delegate70",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate80 1
+{
+  "index": 25,
+  "name": "delegate80",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate90 1
+{
+  "index": 26,
+  "name": "delegate90",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate100 1
+{
+  "index": 27,
+  "name": "delegate100",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_list_approvals
+[{
+    "index": 8,
+    "name": "delegate0",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 9,
+    "name": "delegate1",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 18,
+    "name": "delegate10",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 27,
+    "name": "delegate100",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 10,
+    "name": "delegate2",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 19,
+    "name": "delegate20",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 11,
+    "name": "delegate3",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 20,
+    "name": "delegate30",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 12,
+    "name": "delegate4",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 21,
+    "name": "delegate40",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 13,
+    "name": "delegate5",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 22,
+    "name": "delegate50",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 14,
+    "name": "delegate6",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 23,
+    "name": "delegate60",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 15,
+    "name": "delegate7",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 24,
+    "name": "delegate70",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 16,
+    "name": "delegate8",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 25,
+    "name": "delegate80",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 17,
+    "name": "delegate9",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 26,
+    "name": "delegate90",
+    "approval": 1,
+    "custom_data": {}
+  }
+]
+default (unlocked) >>> wallet_approve delegate1 0
+{
+  "index": 9,
+  "name": "delegate1",
+  "approval": 0,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate3 0
+{
+  "index": 11,
+  "name": "delegate3",
+  "approval": 0,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate5 0
+{
+  "index": 13,
+  "name": "delegate5",
+  "approval": 0,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate7 0
+{
+  "index": 15,
+  "name": "delegate7",
+  "approval": 0,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate9 0
+{
+  "index": 17,
+  "name": "delegate9",
+  "approval": 0,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate20 0
+{
+  "index": 19,
+  "name": "delegate20",
+  "approval": 0,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate40 0
+{
+  "index": 21,
+  "name": "delegate40",
+  "approval": 0,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate60 0
+{
+  "index": 23,
+  "name": "delegate60",
+  "approval": 0,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate80 0
+{
+  "index": 25,
+  "name": "delegate80",
+  "approval": 0,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate100 0
+{
+  "index": 27,
+  "name": "delegate100",
+  "approval": 0,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_list_approvals
+[{
+    "index": 8,
+    "name": "delegate0",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 9,
+    "name": "delegate1",
+    "approval": 0,
+    "custom_data": {}
+  },{
+    "index": 18,
+    "name": "delegate10",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 27,
+    "name": "delegate100",
+    "approval": 0,
+    "custom_data": {}
+  },{
+    "index": 10,
+    "name": "delegate2",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 19,
+    "name": "delegate20",
+    "approval": 0,
+    "custom_data": {}
+  },{
+    "index": 11,
+    "name": "delegate3",
+    "approval": 0,
+    "custom_data": {}
+  },{
+    "index": 20,
+    "name": "delegate30",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 12,
+    "name": "delegate4",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 21,
+    "name": "delegate40",
+    "approval": 0,
+    "custom_data": {}
+  },{
+    "index": 13,
+    "name": "delegate5",
+    "approval": 0,
+    "custom_data": {}
+  },{
+    "index": 22,
+    "name": "delegate50",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 14,
+    "name": "delegate6",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 23,
+    "name": "delegate60",
+    "approval": 0,
+    "custom_data": {}
+  },{
+    "index": 15,
+    "name": "delegate7",
+    "approval": 0,
+    "custom_data": {}
+  },{
+    "index": 24,
+    "name": "delegate70",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 16,
+    "name": "delegate8",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 25,
+    "name": "delegate80",
+    "approval": 0,
+    "custom_data": {}
+  },{
+    "index": 17,
+    "name": "delegate9",
+    "approval": 0,
+    "custom_data": {}
+  },{
+    "index": 26,
+    "name": "delegate90",
+    "approval": 1,
+    "custom_data": {}
+  }
+]
+default (unlocked) >>> wallet_approve delegate4 -1
+{
+  "index": 12,
+  "name": "delegate4",
+  "approval": -1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate8 -1
+{
+  "index": 16,
+  "name": "delegate8",
+  "approval": -1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate10 -1
+{
+  "index": 18,
+  "name": "delegate10",
+  "approval": -1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate30 -1
+{
+  "index": 20,
+  "name": "delegate30",
+  "approval": -1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate70 -1
+{
+  "index": 24,
+  "name": "delegate70",
+  "approval": -1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_list_approvals
+[{
+    "index": 8,
+    "name": "delegate0",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 9,
+    "name": "delegate1",
+    "approval": 0,
+    "custom_data": {}
+  },{
+    "index": 18,
+    "name": "delegate10",
+    "approval": -1,
+    "custom_data": {}
+  },{
+    "index": 27,
+    "name": "delegate100",
+    "approval": 0,
+    "custom_data": {}
+  },{
+    "index": 10,
+    "name": "delegate2",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 19,
+    "name": "delegate20",
+    "approval": 0,
+    "custom_data": {}
+  },{
+    "index": 11,
+    "name": "delegate3",
+    "approval": 0,
+    "custom_data": {}
+  },{
+    "index": 20,
+    "name": "delegate30",
+    "approval": -1,
+    "custom_data": {}
+  },{
+    "index": 12,
+    "name": "delegate4",
+    "approval": -1,
+    "custom_data": {}
+  },{
+    "index": 21,
+    "name": "delegate40",
+    "approval": 0,
+    "custom_data": {}
+  },{
+    "index": 13,
+    "name": "delegate5",
+    "approval": 0,
+    "custom_data": {}
+  },{
+    "index": 22,
+    "name": "delegate50",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 14,
+    "name": "delegate6",
+    "approval": 1,
+    "custom_data": {}
+  },{
+    "index": 23,
+    "name": "delegate60",
+    "approval": 0,
+    "custom_data": {}
+  },{
+    "index": 15,
+    "name": "delegate7",
+    "approval": 0,
+    "custom_data": {}
+  },{
+    "index": 24,
+    "name": "delegate70",
+    "approval": -1,
+    "custom_data": {}
+  },{
+    "index": 16,
+    "name": "delegate8",
+    "approval": -1,
+    "custom_data": {}
+  },{
+    "index": 25,
+    "name": "delegate80",
+    "approval": 0,
+    "custom_data": {}
+  },{
+    "index": 17,
+    "name": "delegate9",
+    "approval": 0,
+    "custom_data": {}
+  },{
+    "index": 26,
+    "name": "delegate90",
+    "approval": 1,
+    "custom_data": {}
+  }
+]
+default (unlocked) >>> quit

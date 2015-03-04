@@ -261,6 +261,7 @@ default (unlocked) >>> blockchain_get_account testaccount1
 Name: testaccount1
 Registered: <d-ign></d-ign>
 Last Updated: <d-ign></d-ign>
+Prefers TITAN: true
 Owner Key: XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra
 Active Key History:
 - XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX, last used <d-ign></d-ign>
@@ -274,6 +275,7 @@ default (unlocked) >>> blockchain_get_account testaccount2
 Name: testaccount2
 Registered: <d-ign></d-ign>
 Last Updated: <d-ign></d-ign>
+Prefers TITAN: true
 Owner Key: XTS5DBeMtFiZaive82nTRuZjBbfZMVFZbudCs86bDfh3XwkKSdUqw
 Active Key History:
 - XTS4vjfVZKusbLxknrEhVnqXSbbAZpzPU9yPmd48hAmeZrc1U1Eqq, last used <d-ign></d-ign>
@@ -287,6 +289,7 @@ default (unlocked) >>> blockchain_get_account testaccount3
 Name: testaccount3
 Registered: <d-ign></d-ign>
 Last Updated: <d-ign></d-ign>
+Prefers TITAN: true
 Owner Key: XTS5W4ayhoWynsujeA8BZ1vMo3MXkTwpmegf3qVdtjzBUpo5DAxqi
 Active Key History:
 - XTS631H2Uz5E5LrH1QEeDkAj5ZWUNCWMCU6iJyVoeK3qc7JmpRibf, last used <d-ign></d-ign>
@@ -300,6 +303,7 @@ default (unlocked) >>> blockchain_get_account testaccount4
 Name: testaccount4
 Registered: <d-ign></d-ign>
 Last Updated: <d-ign></d-ign>
+Prefers TITAN: true
 Owner Key: XTS6jzSPgDy5VP5qGAPswD5ZCfJk43eEetGXPfwSFvMxkNbhk8QQm
 Active Key History:
 - XTS5j9bSNzxRykrRCjB3SwFn7woVpcMVm461QxwNzxrsPxoL4zkyr, last used <d-ign></d-ign>

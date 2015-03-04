@@ -8,6 +8,7 @@ default (unlocked) >>> blockchain_get_account thief
 Name: thief
 Registered: <d-ign></d-ign>
 Last Updated: <d-ign></d-ign>
+Prefers TITAN: true
 Owner Key: XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra
 Active Key History:
 - XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX, last used <d-ign></d-ign>
