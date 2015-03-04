@@ -374,13 +374,55 @@ namespace detail {
                }
            }
 
-           if( current_version < 109 )
+           if( current_version < 110 )
            {
-               const function<void( void )> repair = [&]()
+               const function<void( void )> repair = [ & ]()
                {
                    _wallet_db.repair_records( _wallet_password );
                };
                _unlocked_upgrade_tasks.push_back( repair );
+
+               const function<void( void )> split_accounts = [ & ]()
+               {
+                   unordered_map<address, wallet_account_record> contacts;
+
+                   const auto& accounts = _wallet_db.get_accounts();
+                   for( const auto& item : accounts )
+                   {
+                       const wallet_account_record& account = item.second;
+
+                       if( account.approved != 0 )
+                       {
+                           approval_data approval;
+                           approval.name = account.name;
+                           approval.approval = account.approved;
+                           _wallet_db.store_approval( approval );
+                       }
+
+                       contacts[ account.owner_address() ] = account;
+                   }
+
+                   const auto& keys = _wallet_db.get_keys();
+                   for( const auto& item : keys )
+                   {
+                       const wallet_key_record& key = item.second;
+                       contacts.erase( key.account_address );
+                   }
+
+                   for( const auto& item : contacts )
+                   {
+                       const address& account_address = item.first;
+                       const wallet_account_record& account = item.second;
+
+                       if( _blockchain->get_account_record( account.name ).valid() )
+                           _wallet_db.store_contact( contact_data( account.name ) );
+                       else if( !account.is_retracted() )
+                           _wallet_db.store_contact( contact_data( account.active_key() ) );
+
+                       _wallet_db.remove_account( account_address );
+                   }
+               };
+               _unlocked_upgrade_tasks.push_back( split_accounts );
            }
 
            if( _unlocked_upgrade_tasks.empty() )

@@ -66,6 +66,9 @@ namespace bts { namespace wallet {
        uint32_t         last_child_key_index = 0;
        bool             block_production_enabled = false;
        variant_object   custom_data;
+
+       // Kept in BTS for upgrading old wallet versions; remove after 1.0
+       int8_t           approved = 0;
    };
 
    struct key_data
@@ -295,6 +298,7 @@ FC_REFLECT_DERIVED( bts::wallet::account_data, (bts::blockchain::account_record)
         (last_child_key_index)
         (block_production_enabled)
         (custom_data)
+        (approved)
         )
 
 FC_REFLECT( bts::wallet::master_key,
