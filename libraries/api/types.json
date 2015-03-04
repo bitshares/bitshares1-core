@@ -493,6 +493,10 @@
         "cpp_include_file" : "bts/blockchain/types.hpp"
       },
       {
+        "type_name" : "asset_balance_map",
+        "cpp_return_type" : "std::map<bts::blockchain::asset_id_type, bts::blockchain::share_type>"
+      },
+      {
         "type_name" : "wallet_account_record",
         "cpp_return_type" : "bts::wallet::wallet_account_record"
       },

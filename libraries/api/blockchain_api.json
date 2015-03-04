@@ -361,18 +361,18 @@
       },
       {
          "method_name" : "blockchain_get_account_public_balance",
-         "description" : "Get the account record for a given name",
-        "cached"   : true,
-         "return_type" : "account_balance_summary_type",
+         "description" : "Get the public balances associated with the specified account name; this command can take a long time",
+         "return_type" : "asset_balance_map",
          "parameters"  : [
                {
                   "name" : "account_name",
                   "type" : "account_name",
-                  "description" : "the name of the account whose public address you want"
+                  "description" : "the account name to query public balances for"
                }
             ],
          "is_const" : true,
-         "prerequisites" : ["wallet_open"]
+         "prerequisites" : ["no_prerequisites"],
+         "cached"   : true
       },
       {
          "method_name" : "blockchain_median_feed_price",

@@ -313,15 +313,25 @@ unordered_map<balance_id_type, balance_record> detail::client_impl::blockchain_l
     return _chain_db->get_balances( id, limit );
 } FC_CAPTURE_AND_RETHROW( (first)(limit) ) }
 
-account_balance_summary_type detail::client_impl::blockchain_get_account_public_balance( const string& account_name ) const
+map<asset_id_type, share_type> detail::client_impl::blockchain_get_account_public_balance( const string& account_name )const
 { try {
-  const auto& acct = _wallet->get_account( account_name );
-  map<asset_id_type, share_type> balances;
-  for( const auto& pair : _chain_db->get_balances_for_key( acct.active_key() ) )
-      balances[pair.second.asset_id()] = pair.second.balance;
-  account_balance_summary_type ret;
-  ret[account_name] = balances;
-  return ret;
+    const oaccount_record account_record = _chain_db->get_account_record( account_name );
+    FC_ASSERT( account_record.valid() );
+
+    map<asset_id_type, share_type> result;
+
+    const auto scan_key = [ & ]( const public_key_type& key )
+    {
+        const auto& balances = _chain_db->get_balances_for_key( key );
+        for( const auto& item : balances )
+        {
+            const balance_record& balance = item.second;
+            result[ balance.asset_id() ] += balance.balance;
+        }
+    };
+    account_record->scan_public_keys( scan_key );
+
+    return result;
 } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
 unordered_map<balance_id_type, balance_record> detail::client_impl::blockchain_list_address_balances( const string& raw_addr,
