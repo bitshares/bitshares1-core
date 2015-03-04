@@ -867,19 +867,15 @@ namespace bts { namespace blockchain {
 
           /* Update production info for missing delegates */
 
-          uint64_t required_confirmations = self->get_required_confirmations();
-
           time_point_sec block_timestamp;
           auto head_block = self->get_head_block();
           if( head_block.block_num > 0 ) block_timestamp = head_block.timestamp + BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
           else block_timestamp = block_header.timestamp;
           const auto& active_delegates = self->get_active_delegates();
 
-          for( ; block_timestamp < block_header.timestamp;
-                 block_timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC,
-                 required_confirmations += 2 )
+          for( ; block_timestamp < block_header.timestamp; block_timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC )
           {
-              /* Note: Active delegate list has not been updated yet so we can use the timestamp */
+              /* Note: Active delegate list has not been updated yet so we can safely use the timestamp */
               delegate_id = self->get_slot_signee( block_timestamp, active_delegates ).id;
               delegate_record = pending_state->get_account_record( delegate_id );
               FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
@@ -890,15 +886,6 @@ namespace bts { namespace blockchain {
               if( self->get_statistics_enabled() )
                   pending_state->store_slot_record( slot_record( block_timestamp, delegate_id )  );
           }
-
-          /* Update required confirmation count */
-
-          required_confirmations -= 1;
-          if( required_confirmations < 1 ) required_confirmations = 1;
-          if( required_confirmations > BTS_BLOCKCHAIN_NUM_DELEGATES*3 )
-             required_confirmations = 3*BTS_BLOCKCHAIN_NUM_DELEGATES;
-
-          pending_state->set_required_confirmations( required_confirmations );
       } FC_CAPTURE_AND_RETHROW( (block_header)(block_id)(block_signee) ) }
 
       void chain_database_impl::update_random_seed( const secret_hash_type& new_secret,

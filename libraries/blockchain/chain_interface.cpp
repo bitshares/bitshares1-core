@@ -296,18 +296,6 @@ namespace bts { namespace blockchain {
        return *value;
    } FC_CAPTURE_AND_RETHROW() }
 
-   void chain_interface::set_required_confirmations( uint64_t count )
-   { try {
-       store_property_record( property_id_type::confirmation_requirement, variant( count ) );
-   } FC_CAPTURE_AND_RETHROW( (count) ) }
-
-   uint64_t chain_interface::get_required_confirmations()const
-   { try {
-       const oproperty_record record = get_property_record( property_id_type::confirmation_requirement );
-       if( record.valid() ) return record->value.as_uint64();
-       return BTS_BLOCKCHAIN_NUM_DELEGATES * 3;
-   } FC_CAPTURE_AND_RETHROW() }
-
    void chain_interface::set_dirty_markets( const std::set<std::pair<asset_id_type, asset_id_type>>& markets )
    { try {
        store_property_record( property_id_type::dirty_markets, variant( markets ) );

@@ -84,7 +84,6 @@ namespace bts { namespace blockchain {
            grey = 3
        };
        alert_level_enum    alert_level;
-       uint32_t            estimated_confirmation_seconds;
        double              participation_rate;
    };
 
@@ -100,4 +99,4 @@ namespace fc
 FC_REFLECT( bts::blockchain::public_key_type, (key_data) )
 FC_REFLECT( bts::blockchain::public_key_type::binary_key, (data)(check) );
 FC_REFLECT_ENUM( bts::blockchain::blockchain_security_state::alert_level_enum, (green)(yellow)(red)(grey) );
-FC_REFLECT( bts::blockchain::blockchain_security_state, (alert_level)(estimated_confirmation_seconds)(participation_rate) )
+FC_REFLECT( bts::blockchain::blockchain_security_state, (alert_level)(participation_rate) )

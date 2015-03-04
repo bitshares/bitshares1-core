@@ -512,23 +512,19 @@ asset client_impl::blockchain_calculate_debt( const string& which_asset, bool in
 bts::blockchain::blockchain_security_state client_impl::blockchain_get_security_state()const
 {
    blockchain_security_state state;
-   int64_t required_confirmations = _chain_db->get_required_confirmations();
    double participation_rate = _chain_db->get_average_delegate_participation();
    if( participation_rate > 100 ) participation_rate = 100;
 
-   state.estimated_confirmation_seconds = (uint32_t)(required_confirmations * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
    state.participation_rate = participation_rate;
    if (!blockchain_is_synced())
    {
       state.alert_level = bts::blockchain::blockchain_security_state::grey;
    }
-   else if (required_confirmations <= BTS_BLOCKCHAIN_NUM_DELEGATES / 2
-            && participation_rate > 80)
+   else if (participation_rate > 80)
    {
       state.alert_level = bts::blockchain::blockchain_security_state::green;
    }
-   else if (required_confirmations > BTS_BLOCKCHAIN_NUM_DELEGATES
-            || participation_rate < 60)
+   else if (participation_rate < 60)
    {
       state.alert_level = bts::blockchain::blockchain_security_state::red;
    }

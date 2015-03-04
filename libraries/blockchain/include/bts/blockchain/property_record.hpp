@@ -13,21 +13,7 @@ enum class property_id_type : uint8_t
     active_delegate_list_id     = 4,
     last_random_seed_id         = 5,
     statistics_enabled          = 6,
-    /**
-    *  N = num delegates
-    *  Initial condition = 2N
-    *  Every time a block is produced subtract 1
-    *  Every time a block is missed add 2
-    *  Maximum value is 2N, Min value is 0
-    *
-    *  Defines how many blocks you must wait to
-    *  be 'confirmed' assuming that at least
-    *  60% of the blocks in the last 2 rounds
-    *  are present. Less than 60% and you
-    *  are on the minority chain.
-    */
-    confirmation_requirement    = 7,
-    dirty_markets               = 8
+    dirty_markets               = 7
 };
 
 struct property_record;
@@ -65,7 +51,6 @@ FC_REFLECT_ENUM( bts::blockchain::property_id_type,
         (active_delegate_list_id)
         (last_random_seed_id)
         (statistics_enabled)
-        (confirmation_requirement)
         (dirty_markets)
         );
 FC_REFLECT( bts::blockchain::property_record,

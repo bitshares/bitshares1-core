@@ -73,9 +73,6 @@ namespace bts { namespace blockchain {
 
          fc::ripemd160                      get_current_random_seed()const;
 
-         void                               set_required_confirmations( uint64_t count );
-         uint64_t                           get_required_confirmations()const;
-
          virtual omarket_status             get_market_status( const asset_id_type quote_id,
                                                                const asset_id_type base_id )               = 0;
          virtual void                       store_market_status( const market_status& s )                   = 0;
