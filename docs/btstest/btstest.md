@@ -302,6 +302,9 @@ Improvements to btstest
 - Have multiple `.btstest` in same directory do something meaningful
 - Create `!include` command to allow common functionality to be split off
 - Specify include path from command line or environment variable
+- REPL mode for directly talking to client(s)
+- Instructions for using gdb
+- Example(s) of tests that work with mainnet and testnet
 
 Test API
 --------
