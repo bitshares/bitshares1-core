@@ -1032,7 +1032,6 @@ namespace bts { namespace blockchain {
 
             save_undo_state( block_data.block_num, block_id, pending_state );
 
-            // TODO: Verify idempotency
             pending_state->apply_changes();
 
             mark_included( block_id, true );
