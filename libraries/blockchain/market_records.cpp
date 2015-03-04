@@ -54,7 +54,7 @@ price market_order::get_price( const price& relative )const
       case short_order:
         if( relative == price() )
            return market_index.order_price;
-        if( state.limit_price ) 
+        if( state.limit_price )
            return std::min( *state.limit_price, relative );
         return relative;
       case bid_order:

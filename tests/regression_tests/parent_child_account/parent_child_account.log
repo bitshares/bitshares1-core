@@ -24,6 +24,7 @@ default (unlocked) >>> blockchain_get_account parent
 Name: parent
 Registered: <d-ign></d-ign>
 Last Updated: <d-ign></d-ign>
+Prefers TITAN: true
 Owner Key: XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra
 Active Key History:
 - XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX, last used <d-ign></d-ign>
@@ -41,6 +42,7 @@ default (unlocked) >>> blockchain_get_account testaccount1.parent
 Name: testaccount1.parent
 Registered: <d-ign></d-ign>
 Last Updated: <d-ign></d-ign>
+Prefers TITAN: true
 Owner Key: XTS5DBeMtFiZaive82nTRuZjBbfZMVFZbudCs86bDfh3XwkKSdUqw
 Active Key History:
 - XTS4vjfVZKusbLxknrEhVnqXSbbAZpzPU9yPmd48hAmeZrc1U1Eqq, last used <d-ign></d-ign>
@@ -49,6 +51,7 @@ default (unlocked) >>> blockchain_get_account testaccount2.parent
 Name: testaccount2.parent
 Registered: <d-ign></d-ign>
 Last Updated: <d-ign></d-ign>
+Prefers TITAN: true
 Owner Key: XTS5W4ayhoWynsujeA8BZ1vMo3MXkTwpmegf3qVdtjzBUpo5DAxqi
 Active Key History:
 - XTS631H2Uz5E5LrH1QEeDkAj5ZWUNCWMCU6iJyVoeK3qc7JmpRibf, last used <d-ign></d-ign>
@@ -57,6 +60,7 @@ default (unlocked) >>> blockchain_get_account testaccount3.parent
 Name: testaccount3.parent
 Registered: <d-ign></d-ign>
 Last Updated: <d-ign></d-ign>
+Prefers TITAN: true
 Owner Key: XTS6jzSPgDy5VP5qGAPswD5ZCfJk43eEetGXPfwSFvMxkNbhk8QQm
 Active Key History:
 - XTS5j9bSNzxRykrRCjB3SwFn7woVpcMVm461QxwNzxrsPxoL4zkyr, last used <d-ign></d-ign>
@@ -81,6 +85,7 @@ default (unlocked) >>> blockchain_get_account test1.testaccount1.parent
 Name: test1.testaccount1.parent
 Registered: <d-ign></d-ign>
 Last Updated: <d-ign></d-ign>
+Prefers TITAN: true
 Owner Key: XTS5b87BU2kxsKGZMJyo5Vmq6XRcawoUnR8jb6K5ZLaHwt47p3v5P
 Active Key History:
 - XTS5XMmkkwGDq8xXUu9PWVX3y7Ha3PvhsGaiPqqEfaSibhy5L8QCg, last used <d-ign></d-ign>
@@ -89,6 +94,7 @@ default (unlocked) >>> blockchain_get_account test2.testaccount1.parent
 Name: test2.testaccount1.parent
 Registered: <d-ign></d-ign>
 Last Updated: <d-ign></d-ign>
+Prefers TITAN: true
 Owner Key: XTS6Pm82RqMbVkfjRYstTDpem913pzURN5kak2JtSZR1ysaPEfQ8N
 Active Key History:
 - XTS7H4uyMQmVNjVPKAJfFVJ35PUiuv3Dkcenp1ExLncyhgFPwXMho, last used <d-ign></d-ign>

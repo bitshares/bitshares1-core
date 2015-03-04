@@ -40,8 +40,8 @@ namespace bts { namespace blockchain { namespace detail {
           _short_at_limit_itr = _db_impl._short_limit_index.rend();
           _collateral_itr     = _db_impl._collateral_db.lower_bound( market_index_key( next_pair ) );
 
-          edump( (_db_impl._shorts_at_feed) );
-          edump( (_db_impl._short_limit_index) );
+          //edump( (_db_impl._shorts_at_feed) );
+          //edump( (_db_impl._short_limit_index) );
 
           _collateral_expiration_itr  = _db_impl._collateral_expiration_index.lower_bound( { quote_id, time_point(), market_index_key( price(0,quote_id,base_id) ) } );
 
@@ -77,11 +77,8 @@ namespace bts { namespace blockchain { namespace detail {
 
           // prime the pump, to make sure that margin calls (asks) have a bid to check against.
           get_next_bid(); get_next_ask();
-          idump( (_current_bid)(_current_ask) );
           while( get_next_bid() && get_next_ask() )
           {
-            idump( (_current_bid)(_current_ask) );
-
             // Make sure that at least one order was matched every time we enter the loop
             FC_ASSERT( _orders_filled != last_orders_filled, "We appear caught in an order matching loop!" );
             last_orders_filled = _orders_filled;
@@ -102,8 +99,6 @@ namespace bts { namespace blockchain { namespace detail {
             }
             mtrx.bid_type  = _current_bid->type;
             mtrx.ask_type  = _current_ask->type;
-
-            wdump( (mtrx) );
 
             if( _current_bid->type == short_order )
             {
@@ -168,9 +163,8 @@ namespace bts { namespace blockchain { namespace detail {
 
             if( _current_ask->type == cover_order && _current_bid->type == short_order )
             {
-                //price collateral_rate                = *_feed_price; // Asserted valid above
-                price collateral_rate                = mtrx.bid_price; //*_feed_price; // Asserted valid above
-                collateral_rate.ratio               /= 2; // 2x from short, 1 x from long == 3x default collateral
+                price collateral_rate                = mtrx.bid_price;
+                collateral_rate.ratio                /= 2; // 2x from short, 1 x from long == 3x default collateral
                 const asset cover_collateral         = asset( *_current_ask->collateral, _base_id );
                 const asset max_usd_cover_can_afford = cover_collateral * mtrx.bid_price;
                 const asset cover_debt               = get_current_cover_debt();
@@ -184,7 +178,6 @@ namespace bts { namespace blockchain { namespace detail {
                     break;
                 }
 
-
                 //Actual quote to purchase is the minimum of what's for sale, what can I possibly buy, and what I owe
                 const asset usd_exchanged = std::min( {usd_for_short_sale, max_usd_cover_can_afford, cover_debt} );
 
@@ -193,13 +186,12 @@ namespace bts { namespace blockchain { namespace detail {
                 /** handle rounding errors */
                 // if cover collateral was completely consumed without paying off all USD
                 if( usd_exchanged == max_usd_cover_can_afford )
-                   mtrx.ask_paid       = cover_collateral;
+                   mtrx.ask_paid = cover_collateral;
                 else  // the short was completely consumed
-                   mtrx.ask_paid       = mtrx.ask_received * mtrx.ask_price;
+                   mtrx.ask_paid = mtrx.ask_received * mtrx.ask_price;
 
-
-                mtrx.bid_received   = mtrx.ask_paid;
-                mtrx.bid_paid       = mtrx.ask_received;
+                mtrx.bid_received = mtrx.ask_paid;
+                mtrx.bid_paid = mtrx.ask_received;
 
                 /** handle rounding errors */
                 if( usd_exchanged == usd_for_short_sale ) // filled full short, consume all collateral
@@ -225,8 +217,7 @@ namespace bts { namespace blockchain { namespace detail {
                     break;
                 }
 
-
-                asset usd_exchanged = std::min( {usd_for_sale, max_usd_cover_can_afford, cover_debt} );
+                const asset usd_exchanged = std::min( {usd_for_sale, max_usd_cover_can_afford, cover_debt} );
 
                 mtrx.ask_received = usd_exchanged;
 
@@ -238,7 +229,7 @@ namespace bts { namespace blockchain { namespace detail {
                    mtrx.ask_paid = mtrx.ask_received * mtrx.ask_price;
 
                 mtrx.bid_received = mtrx.ask_paid;
-                mtrx.bid_paid     = mtrx.ask_received;
+                mtrx.bid_paid = mtrx.ask_received;
 
                 pay_current_bid( mtrx, *base_asset, *quote_asset );
                 pay_current_cover( mtrx, *quote_asset );
@@ -248,30 +239,27 @@ namespace bts { namespace blockchain { namespace detail {
                 FC_ASSERT( _feed_price.valid() );
 
                 // Bound collateral ratio (maximizes collateral of new margin position)
-                price collateral_rate          = mtrx.bid_price; //*_feed_price; // Asserted valid above
+                price collateral_rate          = mtrx.bid_price;
                 collateral_rate.ratio          /= 2; // 2x from short, 1 x from long == 3x default collateral
                 const asset ask_quantity_usd   = _current_ask->get_quote_quantity(*_feed_price);
                 const asset short_quantity_usd = _current_bid->get_balance() * collateral_rate;
                 const asset usd_exchanged      = std::min( short_quantity_usd, ask_quantity_usd );
 
-                //wdump( (ask_quantity_usd)(short_quantity_usd)(usd_exchanged) );
-
-                mtrx.ask_received   = usd_exchanged;
+                mtrx.ask_received = usd_exchanged;
 
                 /** handle rounding errors */
-                if( usd_exchanged == short_quantity_usd )
-                {
-                   mtrx.ask_paid       = mtrx.ask_received * mtrx.ask_price;
-                   mtrx.short_collateral = _current_bid->get_balance();
-                }
-                else // filled the complete ask
-                {
-                   mtrx.ask_paid       = _current_ask->get_balance();
-                   mtrx.short_collateral = usd_exchanged * collateral_rate;
-                }
+                if( usd_exchanged == ask_quantity_usd )
+                    mtrx.ask_paid = _current_ask->get_balance();
+                else
+                    mtrx.ask_paid = mtrx.ask_received * mtrx.ask_price;
 
-                mtrx.bid_received   = mtrx.ask_paid;
-                mtrx.bid_paid       = mtrx.ask_received;
+                if( usd_exchanged == short_quantity_usd )
+                    mtrx.short_collateral = _current_bid->get_balance();
+                else
+                    mtrx.short_collateral = usd_exchanged * collateral_rate;
+
+                mtrx.bid_received = mtrx.ask_paid;
+                mtrx.bid_paid = mtrx.ask_received;
 
                 pay_current_short( mtrx, *quote_asset, *base_asset );
                 pay_current_ask( mtrx, *base_asset, *quote_asset );
@@ -281,7 +269,6 @@ namespace bts { namespace blockchain { namespace detail {
                 const asset bid_quantity_xts = _current_bid->get_quantity( _feed_price ? *_feed_price : price() );
                 const asset ask_quantity_xts = _current_ask->get_quantity( _feed_price ? *_feed_price : price() );
                 const asset quantity_xts = std::min( bid_quantity_xts, ask_quantity_xts );
-                //wdump( (bid_quantity_xts)(ask_quantity_xts)(quantity_xts) );
 
                 // Everyone gets the price they asked for
                 mtrx.ask_received   = quantity_xts * mtrx.ask_price;
@@ -290,16 +277,12 @@ namespace bts { namespace blockchain { namespace detail {
                 mtrx.ask_paid       = quantity_xts;
                 mtrx.bid_received   = quantity_xts;
 
-                //wdump((mtrx));
-
                 // Handle rounding errors
                 if( quantity_xts == bid_quantity_xts )
                    mtrx.bid_paid = _current_bid->get_balance();
 
                 if( quantity_xts == ask_quantity_xts )
                    mtrx.ask_paid = _current_ask->get_balance();
-
-                //wdump((mtrx));
 
                 mtrx.fees_collected = mtrx.bid_paid - mtrx.ask_received;
 
@@ -346,9 +329,6 @@ namespace bts { namespace blockchain { namespace detail {
               update_market_history( trading_volume, highest_price, lowest_price, opening_price, closing_price, timestamp );
           }
 
-          wlog( "done matching orders" );
-          idump( (_current_bid)(_current_ask) );
-
           _eval_state.update_delegate_votes();
           _pending_state->apply_changes();
           return true;
@@ -386,8 +366,6 @@ namespace bts { namespace blockchain { namespace detail {
           FC_ASSERT( mtrx.fees_collected.amount >= 0 );
       }
 
-      wlog( "${trx}", ("trx", fc::json::to_pretty_string( mtrx ) ) );
-
       _market_transactions.push_back(mtrx);
   } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
 
@@ -397,7 +375,6 @@ namespace bts { namespace blockchain { namespace detail {
       FC_ASSERT( mtrx.bid_type == short_order );
 
       elog( "Canceling current short" );
-      edump( (mtrx) );
 
       // Create automatic market cancel transaction
       mtrx.ask_paid       = asset();
@@ -492,7 +469,6 @@ namespace bts { namespace blockchain { namespace detail {
       {
          issuer_fee = mtrx.bid_received.amount * base_asset.market_fee;
          issuer_fee /= BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE;
-         //wdump( (base_asset.symbol)(base_asset.collected_fees)(issuer_fee) );
          base_asset.collected_fees += issuer_fee;
       }
 
@@ -505,7 +481,6 @@ namespace bts { namespace blockchain { namespace detail {
       // if the balance is less than 1 XTS then it gets collected as fees.
       if( (_current_bid->get_quote_quantity() * mtrx.bid_price).amount == 0 )
       {
-          //wdump( ("collected_fees")(_current_bid->get_quote_quantity().amount));
           quote_asset.collected_fees +=_current_bid->get_quote_quantity().amount;
           _current_bid->state.balance = 0;
       }
@@ -592,7 +567,6 @@ namespace bts { namespace blockchain { namespace detail {
       FC_ASSERT( _current_ask->type == ask_order );
       FC_ASSERT( mtrx.ask_type == ask_order );
 
-      //wdump( (_current_ask->state.balance)(mtrx.ask_paid.amount) );
       _current_ask->state.balance -= mtrx.ask_paid.amount;
       FC_ASSERT( _current_ask->state.balance >= 0, "balance: ${b}", ("b",_current_ask->state.balance) );
 
@@ -606,10 +580,8 @@ namespace bts { namespace blockchain { namespace detail {
       {
          issuer_fee = mtrx.ask_received.amount * quote_asset.market_fee;
          issuer_fee /= BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE;
-         //wdump( (quote_asset.collected_fees)(issuer_fee) );
          quote_asset.collected_fees += issuer_fee;
       }
-
 
       ask_payout->balance += mtrx.ask_received.amount - issuer_fee;
       ask_payout->last_update = _pending_state->now();
@@ -689,7 +661,7 @@ namespace bts { namespace blockchain { namespace detail {
           // if we have a short with a limit below the feed
           if( _short_at_limit_itr != _db_impl._short_limit_index.rend() )
           {
-             wdump((*_short_at_limit_itr) );
+             //wdump((*_short_at_limit_itr) );
              if( _short_at_limit_itr->first.quote_asset_id != _quote_id ||
                  _short_at_limit_itr->first.base_asset_id != _base_id  )
              {
@@ -713,7 +685,6 @@ namespace bts { namespace blockchain { namespace detail {
           // then consider shorts by limit
       }
 
-      wlog( "." );
       if( bid )
       {
           _current_bid = bid;
@@ -726,9 +697,7 @@ namespace bts { namespace blockchain { namespace detail {
                   // shorts should already match and return above and are
                   // invalid here.
               default:
-                  FC_ASSERT( "Unknown Bid Type" );
-                  // TODO:  Warning or something goes here?
-                  ;
+                  FC_ASSERT( false, "Unknown Bid Type" );
           }
       }
 

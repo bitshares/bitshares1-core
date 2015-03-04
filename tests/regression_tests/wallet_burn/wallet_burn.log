@@ -22,7 +22,7 @@ wallet_burn <amount_to_burn> <asset_symbol> <from_account_name> <for_or_against>
 Burns given amount to the given account.  This will allow you to post message and +/- sentiment on someones account as a form of reputation.
 
 Parameters:
-  amount_to_burn (real_amount, required): the amount of shares to burn
+  amount_to_burn (string, required): the amount of shares to burn
   asset_symbol (asset_symbol, required): the asset to burn
   from_account_name (sending_account_name, required): the source account to draw the shares from
   for_or_against (string, required): the value 'for' or 'against'

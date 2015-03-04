@@ -177,13 +177,12 @@ namespace bts { namespace blockchain { namespace detail {
                 /** handle rounding errors */
                 // if cover collateral was completely consumed without paying off all USD
                 if( usd_exchanged == max_usd_cover_can_afford )
-                   mtrx.ask_paid       = cover_collateral;
+                   mtrx.ask_paid = cover_collateral;
                 else  // the short was completely consumed
-                   mtrx.ask_paid       = mtrx.ask_received * mtrx.ask_price;
+                   mtrx.ask_paid = mtrx.ask_received * mtrx.ask_price;
 
-
-                mtrx.bid_received   = mtrx.ask_paid;
-                mtrx.bid_paid       = mtrx.ask_received;
+                mtrx.bid_received = mtrx.ask_paid;
+                mtrx.bid_paid = mtrx.ask_received;
 
                 /** handle rounding errors */
                 if( usd_exchanged == usd_for_short_sale ) // filled full short, consume all collateral
@@ -201,7 +200,7 @@ namespace bts { namespace blockchain { namespace detail {
                 const asset cover_debt                = get_current_cover_debt();
                 const asset usd_for_sale              = _current_bid->get_balance();
 
-                asset usd_exchanged = std::min( {usd_for_sale, max_usd_cover_can_afford, cover_debt} );
+                const asset usd_exchanged = std::min( {usd_for_sale, max_usd_cover_can_afford, cover_debt} );
 
                 mtrx.ask_received = usd_exchanged;
 
@@ -213,7 +212,7 @@ namespace bts { namespace blockchain { namespace detail {
                    mtrx.ask_paid = mtrx.ask_received * mtrx.ask_price;
 
                 mtrx.bid_received = mtrx.ask_paid;
-                mtrx.bid_paid     = mtrx.ask_received;
+                mtrx.bid_paid = mtrx.ask_received;
 
                 pay_current_bid( mtrx, *quote_asset );
                 pay_current_cover( mtrx, *quote_asset );
@@ -227,22 +226,37 @@ namespace bts { namespace blockchain { namespace detail {
                 const asset short_quantity_usd = _current_bid->get_balance() * collateral_rate;
                 const asset usd_exchanged      = std::min( short_quantity_usd, ask_quantity_usd );
 
-                mtrx.ask_received   = usd_exchanged;
+                mtrx.ask_received = usd_exchanged;
 
                 /** handle rounding errors */
-                if( usd_exchanged == short_quantity_usd )
+                if( _pending_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM )
                 {
-                   mtrx.ask_paid       = mtrx.ask_received * mtrx.ask_price;
-                   mtrx.short_collateral = _current_bid->get_balance();
+                    if( usd_exchanged == ask_quantity_usd )
+                        mtrx.ask_paid = _current_ask->get_balance();
+                    else
+                        mtrx.ask_paid = mtrx.ask_received * mtrx.ask_price;
+
+                    if( usd_exchanged == short_quantity_usd )
+                        mtrx.short_collateral = _current_bid->get_balance();
+                    else
+                        mtrx.short_collateral = usd_exchanged * collateral_rate;
                 }
-                else // filled the complete ask
+                else
                 {
-                   mtrx.ask_paid       = _current_ask->get_balance();
-                   mtrx.short_collateral = usd_exchanged * collateral_rate;
+                    if( usd_exchanged == short_quantity_usd )
+                    {
+                       mtrx.ask_paid = mtrx.ask_received * mtrx.ask_price;
+                       mtrx.short_collateral = _current_bid->get_balance();
+                    }
+                    else // filled the complete ask
+                    {
+                       mtrx.ask_paid = _current_ask->get_balance();
+                       mtrx.short_collateral = usd_exchanged * collateral_rate;
+                    }
                 }
 
-                mtrx.bid_received   = mtrx.ask_paid;
-                mtrx.bid_paid       = mtrx.ask_received;
+                mtrx.bid_received = mtrx.ask_paid;
+                mtrx.bid_paid = mtrx.ask_received;
 
                 pay_current_short( mtrx, *quote_asset, *base_asset );
                 pay_current_ask( mtrx, *quote_asset );

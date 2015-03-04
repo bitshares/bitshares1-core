@@ -5,8 +5,8 @@ OK
 default (unlocked) >>> debug_wait 1
 OK
 default (unlocked) >>> wallet_list_accounts
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
-test                               XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX           NO                    NO             0         
+NAME (* delegate)                  KEY                                                             REGISTERED            BLOCK PRODUCTION ENABLED 
+test                               XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX           NO                    N/A                      
 default (unlocked) >>> wallet_account_list_public_keys test
 [{
     "hex": "02d6a0351c151cf57938e0f540830cb390305081aed4a6f01ec42668d7b85f03eb",

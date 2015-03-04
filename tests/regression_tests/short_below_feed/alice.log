@@ -45,8 +45,8 @@ Maximum Short Price: 0.02 USD / XTS
 default (unlocked) >>> wallet_market_order_list USD XTS
 TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
-ask_order           15,000.00000 XTS    0.015 USD / XTS               15,000.00000 XTS    225.0000 USD        N/A                 NONE                78114894d2c0fb4df6b412cb4bf96ab5da3a103b   XTS2kkRDv1kR94v3yjbdDpMxsDBgzKDqodUN
-short_order         30,000.00000 XTS    0. USD / XTS                  30,000.00000 XTS    0.0000 USD          N/A                 0.015 USD / XTS     fe2c0b9dc6855a8bdcc20758633da835a4af930f   XTSEmzHWn4av3PivK5x23Rqr1mpzFp9yPua9
+ask_order           15,000.00000 XTS    0.015 USD / XTS               15,000.00000 XTS    225.0000 USD        N/A                 NONE                4649334e8c1783788e55b2310d1bcee4a416ec99   XTSF7h3cJZ5sojtdDtDr28bZs4nNQWE9cZC4
+short_order         30,000.00000 XTS    0. USD / XTS                  30,000.00000 XTS    0.0000 USD          N/A                 0.015 USD / XTS     93698ec46f514fea3d307e8e6cd42cdac69833e8   XTSBBkP3sXyKXCrZua6e9iWp5y2J5yJL1ccq
 default (unlocked) >>> debug_advance_time 1 block
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
@@ -74,5 +74,20 @@ alice                           54,999.00000 XTS
 default (unlocked) >>> wallet_market_order_list USD XTS
 TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
-cover_order         22,500.00000 XTS    0.01 USD / XTS                225.0000 USD        225.0000 USD        45,000.00000 XTS    NONE                0d9a7af0a56ad300d5282f82fbd171aea44e2b15   XTSEmzHWn4av3PivK5x23Rqr1mpzFp9yPua9
+cover_order         22,500.00000 XTS    0.01 USD / XTS                225.0000 USD        225.0000 USD        45,000.00000 XTS    NONE                f5639ab914618cb18c9c115b40a5e9b8bc9e90e6   XTSBBkP3sXyKXCrZua6e9iWp5y2J5yJL1ccq
+default (unlocked) >>> help blockchain_calculate_debt
+Usage:
+blockchain_calculate_debt <asset> [include_interest]                                                  Calculate the total amount of a market-issued asset that is owed to the network by open short positions
+Calculate the total amount of a market-issued asset that is owed to the network by open short positions
+
+Parameters:
+  asset (string, required): asset ticker symbol or ID to calculate debt for
+  include_interest (bool, optional, defaults to "false"): true to include current outstanding interest and false otherwise
+
+Returns:
+  asset
+
+aliases: debt, calculate_debt
+default (unlocked) >>> blockchain_calculate_debt USD true
+225.0000 USD
 default (unlocked) >>> quit

@@ -2,14 +2,14 @@ default (unlocked) >>> wallet_account_create testaccount
 "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
 default (unlocked) >>> help wallet_get_account
 Usage:
-wallet_get_account <account_name>                                                                     Get the account record for a given name
-Get the account record for a given name
+wallet_get_account <account>                                                                          Get the specified account entry
+Get the specified account entry
 
 Parameters:
-  account_name (account_name, required): the name of the account to retrieve
+  account (string, required): the name, key, address, or id of the account to query
 
 Returns:
-  wallet_account_record
+  owallet_account_record
 default (unlocked) >>> wallet_get_account testaccount
 {
   "index": 314,
@@ -26,11 +26,8 @@ default (unlocked) >>> wallet_get_account testaccount
   "last_update": "2014-06-20T14:40:30",
   "delegate_info": null,
   "meta_data": null,
-  "is_my_account": true,
-  "approved": 0,
-  "is_favorite": false,
+  "last_child_key_index": 0,
   "block_production_enabled": false,
-  "last_used_gen_sequence": 0,
-  "private_data": null
+  "custom_data": {}
 }
 default (unlocked) >>> quit
