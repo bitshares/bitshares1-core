@@ -96,24 +96,26 @@ typedef fc::optional<account_record> oaccount_record;
 class chain_interface;
 struct account_record
 {
-    address           owner_address()const { return address( owner_key ); }
+    address         owner_address()const { return address( owner_key ); }
 
-    void              set_active_key( const time_point_sec now, const public_key_type& new_key );
-    public_key_type   active_key()const;
-    address           active_address()const;
-    bool              is_retracted()const;
+    void            set_active_key( const time_point_sec now, const public_key_type& new_key );
+    public_key_type active_key()const;
+    address         active_address()const;
+    bool            is_retracted()const;
 
-    bool              is_delegate()const;
-    uint8_t           delegate_pay_rate()const;
-    void              adjust_votes_for( const share_type delta );
-    share_type        net_votes()const;
-    share_type        delegate_pay_balance()const;
+    bool            is_delegate()const;
+    uint8_t         delegate_pay_rate()const;
+    void            adjust_votes_for( const share_type delta );
+    share_type      net_votes()const;
+    share_type      delegate_pay_balance()const;
 
-    void              set_signing_key( uint32_t block_num, const public_key_type& signing_key );
-    public_key_type   signing_key()const;
-    address           signing_address()const;
+    void            set_signing_key( uint32_t block_num, const public_key_type& signing_key );
+    public_key_type signing_key()const;
+    address         signing_address()const;
 
-    bool              is_titan_account()const { return meta_data.valid() && meta_data->type == titan_account; }
+    bool            is_titan_account()const { return meta_data.valid() && meta_data->type == titan_account; }
+
+    void            scan_public_keys( const function<void( const public_key_type& )> )const;
 
     account_id_type                        id = 0;
     std::string                            name;

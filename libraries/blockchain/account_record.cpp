@@ -74,6 +74,25 @@ namespace bts { namespace blockchain {
         return address( signing_key() );
     }
 
+    void account_record::scan_public_keys( const function<void( const public_key_type& )> scan )const
+    { try {
+        scan( owner_key );
+        for( const auto& item : active_key_history )
+        {
+            const public_key_type& active_key = item.second;
+            if( active_key == public_key_type() ) continue;
+            scan( active_key );
+        }
+        if( is_delegate() )
+        {
+            for( const auto& item : delegate_info->signing_key_history )
+            {
+                const public_key_type& signing_key = item.second;
+                scan( signing_key );
+            }
+        }
+    } FC_CAPTURE_AND_RETHROW() }
+
     void account_record::sanity_check( const chain_interface& db )const
     { try {
         FC_ASSERT( id > 0 );
