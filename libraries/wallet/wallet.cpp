@@ -223,7 +223,7 @@ namespace detail {
                scan_accounts();
            }
 
-           while( current_block_num <= head_block_num && count < limit && !_scan_in_progress.canceled() )
+           while( current_block_num <= head_block_num && count < limit )
            {
                try
                {
@@ -1453,27 +1453,35 @@ namespace detail {
 
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
-   void wallet::start_scan( const uint32_t start_block_num, const uint32_t limit )
+   void wallet::start_scan( const uint32_t start_block_num, const uint32_t limit, const bool async )
    { try {
        if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
        if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
 
-       if( my->_scan_in_progress.valid() && !my->_scan_in_progress.ready() )
-           return;
-
-       if( !get_transaction_scanning() )
+       if( async )
        {
-           my->_scan_progress = 1;
-           ulog( "Wallet transaction scanning is disabled!" );
-           return;
+           if( my->_scan_in_progress.valid() && !my->_scan_in_progress.ready() )
+               return;
+
+           if( !get_transaction_scanning() )
+           {
+               my->_scan_progress = 1;
+               ulog( "Wallet transaction scanning is disabled!" );
+               return;
+           }
+
+           const auto scan_chain_task = [=]() { my->start_scan_task( start_block_num, limit ); };
+           my->_scan_in_progress = fc::async( scan_chain_task, "scan_chain_task" );
+
+           my->_scan_in_progress.on_complete( []( fc::exception_ptr ep )
+           { if( ep ) elog( "Error during scanning: ${e}", ("e",ep->to_detail_string()) ); } );
        }
-
-       const auto scan_chain_task = [=]() { my->start_scan_task( start_block_num, limit ); };
-       my->_scan_in_progress = fc::async( scan_chain_task, "scan_chain_task" );
-
-       my->_scan_in_progress.on_complete( []( fc::exception_ptr ep )
-       { if( ep ) elog( "Error during scanning: ${e}", ("e",ep->to_detail_string()) ); } );
-   } FC_CAPTURE_AND_RETHROW( (start_block_num)(limit) ) }
+       else
+       {
+           cancel_scan();
+           my->start_scan_task( start_block_num, limit );
+       }
+   } FC_CAPTURE_AND_RETHROW( (start_block_num)(limit)(async) ) }
 
    void wallet::cancel_scan()
    { try {
