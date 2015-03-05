@@ -54,30 +54,24 @@ ID    NAME (* next in line)           PRODUCED MISSED   RELIABILITY   PAY RATE P
 Block Signing Key: XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX
 default (unlocked) >>> help blockchain_get_account_public_balance
 Usage:
-blockchain_get_account_public_balance <account_name>                                                  Get the account record for a given name
-Get the account record for a given name
+blockchain_get_account_public_balance <account_name>                                                  Get the public balances associated with the specified account name; this command can take a long time
+Get the public balances associated with the specified account name; this command can take a long time
 
 Parameters:
-  account_name (account_name, required): the name of the account whose public address you want
+  account_name (account_name, required): the account name to query public balances for
 
 Returns:
-  account_balance_summary_type
+  asset_balance_map
 default (unlocked) >>> blockchain_get_account_public_balance test
 [[
-    "test",[[
-        0,
-        4011831189
-      ]
-    ]
+    0,
+    4011831189
   ]
 ]
 default (unlocked) >>> blockchain_get_account_public_balance delegate0
 [[
-    "delegate0",[[
-        0,
-        1970197969801
-      ]
-    ]
+    0,
+    1970197969801
   ]
 ]
 default (unlocked) >>> quit

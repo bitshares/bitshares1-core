@@ -17,10 +17,7 @@ void ask_operation::evaluate_v1( transaction_evaluation_state& eval_state )const
 
    asset delta_amount  = this->get_amount();
 
-   eval_state.validate_asset( delta_amount );
-
    auto current_ask   = eval_state._current_state->get_ask_record( this->ask_index );
-
 
    if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
    if( this->amount <  0 ) // withdraw
@@ -39,7 +36,7 @@ void ask_operation::evaluate_v1( transaction_evaluation_state& eval_state )const
        if( NOT current_ask )  // then initialize to 0
          current_ask = order_record();
        // sub the delta amount from the eval state that we deposited to the ask
-       eval_state.sub_balance( balance_id_type(), delta_amount );
+       eval_state.sub_balance( delta_amount );
    }
 
    current_ask->last_update = eval_state._current_state->now();
@@ -75,7 +72,6 @@ void short_operation::evaluate_v1( transaction_evaluation_state& eval_state )con
    /** if the USD amount of the order is effectively then don't bother */
    FC_ASSERT( llabs( delta_quote.amount ) > 0, "", ("delta_quote",delta_quote)("order",*this));
 
-   eval_state.validate_asset( delta_amount );
    auto  asset_to_short = eval_state._current_state->get_asset_record( short_index.order_price.quote_asset_id );
    FC_ASSERT( asset_to_short.valid() );
    FC_ASSERT( asset_to_short->is_market_issued(), "${symbol} is not a market issued asset", ("symbol",asset_to_short->symbol) );
@@ -108,7 +104,7 @@ void short_operation::evaluate_v1( transaction_evaluation_state& eval_state )con
        if( NOT current_short )  // then initialize to 0
          current_short = order_record();
        // sub the delta amount from the eval state that we deposited to the short
-       eval_state.sub_balance( balance_id_type(), delta_amount );
+       eval_state.sub_balance( delta_amount );
    }
    current_short->limit_price = this->short_index.limit_price;
    current_short->last_update = eval_state._current_state->now();
@@ -138,7 +134,7 @@ void add_collateral_operation::evaluate_v1( transaction_evaluation_state& eval_s
       FC_CAPTURE_AND_THROW( negative_deposit );
 
    asset delta_amount  = this->get_amount();
-   eval_state.sub_balance( address(), delta_amount );
+   eval_state.sub_balance( delta_amount );
 
    // update collateral and call price
    auto current_cover   = eval_state._current_state->get_collateral_record( this->cover_index );
@@ -189,11 +185,9 @@ void short_operation_v1::evaluate( transaction_evaluation_state& eval_state )con
    /** if the USD amount of the order is effectively then don't bother */
    FC_ASSERT( llabs(delta_quote.amount) > 0, "", ("delta_quote",delta_quote)("order",*this));
 
-   eval_state.validate_asset( delta_amount );
    auto  asset_to_short = eval_state._current_state->get_asset_record( short_index.order_price.quote_asset_id );
    FC_ASSERT( asset_to_short.valid() );
    FC_ASSERT( asset_to_short->is_market_issued(), "${symbol} is not a market issued asset", ("symbol",asset_to_short->symbol) );
-
 
    auto current_short   = eval_state._current_state->get_short_record( this->short_index );
 
@@ -215,7 +209,7 @@ void short_operation_v1::evaluate( transaction_evaluation_state& eval_state )con
        if( NOT current_short )  // then initialize to 0
          current_short = order_record();
        // sub the delta amount from the eval state that we deposited to the short
-       eval_state.sub_balance( balance_id_type(), delta_amount );
+       eval_state.sub_balance( delta_amount );
    }
 
    current_short->balance     += this->amount;
@@ -267,8 +261,7 @@ void short_operation_v1::evaluate_v1( transaction_evaluation_state& eval_state )
    /** if the USD amount of the order is effectively then don't bother */
    FC_ASSERT( llabs(delta_quote.amount) > 0, "", ("delta_quote",delta_quote)("order",*this));
 
-   eval_state.validate_asset( delta_amount );
-   auto  asset_to_short = eval_state._current_state->get_asset_record( short_index.order_price.quote_asset_id );
+   auto asset_to_short = eval_state._current_state->get_asset_record( short_index.order_price.quote_asset_id );
    FC_ASSERT( asset_to_short.valid() );
    FC_ASSERT( asset_to_short->is_market_issued(), "${symbol} is not a market issued asset", ("symbol",asset_to_short->symbol) );
 
@@ -316,7 +309,7 @@ void short_operation_v1::evaluate_v1( transaction_evaluation_state& eval_state )
        if( NOT current_short )  // then initialize to 0
          current_short = order_record();
        // sub the delta amount from the eval state that we deposited to the short
-       eval_state.sub_balance( balance_id_type(), delta_amount );
+       eval_state.sub_balance( delta_amount );
    }
 
    current_short->balance     += this->amount;
@@ -348,7 +341,7 @@ void cover_operation::evaluate_v1( transaction_evaluation_state& eval_state )con
       FC_CAPTURE_AND_THROW( missing_signature, (cover_index.owner) );
 
    // subtract this from the transaction
-   eval_state.sub_balance( address(), delta_amount );
+   eval_state.sub_balance( delta_amount );
 
    auto current_cover   = eval_state._current_state->get_collateral_record( this->cover_index );
    if( NOT current_cover )

@@ -45,6 +45,7 @@ namespace bts { namespace wallet {
          owallet_account_record lookup_account( const account_id_type account_id )const;
          wallet_account_record  store_account( const account_data& account );
          wallet_account_record  store_account( const blockchain::account_record& blockchain_account_record );
+         owallet_account_record remove_account( const address& account_address );
 
          // Key getters and setters
          owallet_key_record     lookup_key( const address& derived_address )const;

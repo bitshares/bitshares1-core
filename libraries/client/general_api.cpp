@@ -44,8 +44,6 @@ variant_object client_impl::get_info()const
    if( participation <= 100 )
       info["blockchain_average_delegate_participation"]         = participation;
 
-   info["blockchain_confirmation_requirement"]                  = _chain_db->get_required_confirmations();
-
    info["blockchain_share_supply"]                              = variant();
    const auto share_record                                      = _chain_db->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
    if( share_record.valid() )

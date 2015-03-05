@@ -75,7 +75,7 @@ namespace bts { namespace blockchain {
           FC_CAPTURE_AND_THROW( invalid_precision, (this->precision) );
 
       const asset reg_fee( eval_state._current_state->get_asset_registration_fee( this->symbol.size() ), 0 );
-      eval_state.required_fees += reg_fee;
+      eval_state.min_fees[ reg_fee.asset_id ] += reg_fee.amount;
 
       asset_record new_record;
       new_record.id                     = eval_state._current_state->new_asset_id();
@@ -167,7 +167,8 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_asset_record( *current_asset_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-
+   // TODO: Merge with above
+#if 0
    void update_asset_ext_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
       FC_ASSERT( !"This operation is not enabled yet!" );
@@ -273,6 +274,7 @@ namespace bts { namespace blockchain {
 
       eval_state._current_state->store_asset_record( *current_asset_record );
    }
+#endif
 
    void issue_asset_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {

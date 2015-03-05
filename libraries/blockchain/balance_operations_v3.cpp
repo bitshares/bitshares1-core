@@ -56,7 +56,7 @@ void withdraw_operation::evaluate_v3( transaction_evaluation_state& eval_state )
          asset_rec->collected_fees       -= yield.amount;
          current_balance_record->balance += yield.amount;
          current_balance_record->deposit_date = eval_state._current_state->now();
-         eval_state.yield[current_balance_record->condition.asset_id] += yield.amount;
+         eval_state.yield_claimed[current_balance_record->condition.asset_id] += yield.amount;
          eval_state._current_state->store_asset_record( *asset_rec );
       }
    }

@@ -26,7 +26,7 @@ void cover_operation::evaluate_v2( transaction_evaluation_state& eval_state )con
       FC_CAPTURE_AND_THROW( missing_signature, (cover_index.owner) );
 
    // subtract this from the transaction
-   eval_state.sub_balance( address(), delta_amount );
+   eval_state.sub_balance( delta_amount );
 
    auto current_cover   = eval_state._current_state->get_collateral_record( this->cover_index );
    if( NOT current_cover )

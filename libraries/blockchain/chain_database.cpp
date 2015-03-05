@@ -43,7 +43,7 @@ namespace bts { namespace blockchain {
                 try
                 {
                   transaction_evaluation_state_ptr eval_state = self->evaluate_transaction( trx, _relay_fee );
-                  share_type fees = eval_state->get_fees();
+                  share_type fees = eval_state->calculate_base_fees();
                   _pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
                   ilog( "revalidated pending transaction id ${id}", ("id", trx_id) );
                 }
@@ -878,19 +878,15 @@ namespace bts { namespace blockchain {
 
           /* Update production info for missing delegates */
 
-          uint64_t required_confirmations = self->get_required_confirmations();
-
           time_point_sec block_timestamp;
           auto head_block = self->get_head_block();
           if( head_block.block_num > 0 ) block_timestamp = head_block.timestamp + BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
           else block_timestamp = block_header.timestamp;
           const auto& active_delegates = self->get_active_delegates();
 
-          for( ; block_timestamp < block_header.timestamp;
-                 block_timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC,
-                 required_confirmations += 2 )
+          for( ; block_timestamp < block_header.timestamp; block_timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC )
           {
-              /* Note: Active delegate list has not been updated yet so we can use the timestamp */
+              /* Note: Active delegate list has not been updated yet so we can safely use the timestamp */
               delegate_id = self->get_slot_signee( block_timestamp, active_delegates ).id;
               delegate_record = pending_state->get_account_record( delegate_id );
               FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
@@ -901,15 +897,6 @@ namespace bts { namespace blockchain {
               if( self->get_statistics_enabled() )
                   pending_state->store_slot_record( slot_record( block_timestamp, delegate_id )  );
           }
-
-          /* Update required confirmation count */
-
-          required_confirmations -= 1;
-          if( required_confirmations < 1 ) required_confirmations = 1;
-          if( required_confirmations > BTS_BLOCKCHAIN_NUM_DELEGATES*3 )
-             required_confirmations = 3*BTS_BLOCKCHAIN_NUM_DELEGATES;
-
-          pending_state->set_required_confirmations( required_confirmations );
       } FC_CAPTURE_AND_RETHROW( (block_header)(block_id)(block_signee) ) }
 
       void chain_database_impl::update_random_seed( const secret_hash_type& new_secret,
@@ -1462,7 +1449,7 @@ namespace bts { namespace blockchain {
                 const auto trx = pending_itr.value();
                 const auto trx_id = trx.id();
                 const auto eval_state = evaluate_transaction( trx, my->_relay_fee );
-                share_type fees = eval_state->get_fees();
+                share_type fees = eval_state->calculate_base_fees();
                 my->_pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
                 my->_pending_transaction_db.store( trx_id, trx );
              }
@@ -1598,7 +1585,7 @@ namespace bts { namespace blockchain {
       transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>( pend_state.get() );
 
       trx_eval_state->evaluate( trx );
-      const share_type fees = trx_eval_state->get_fees() + trx_eval_state->alt_fees_paid.amount;
+      const share_type fees = trx_eval_state->calculate_base_fees();
       if( fees < required_fees )
       {
           ilog("Transaction ${id} needed relay fee ${required_fees} but only had ${fees}", ("id", trx.id())("required_fees",required_fees)("fees",fees));
@@ -1618,7 +1605,7 @@ namespace bts { namespace blockchain {
           transaction_evaluation_state_ptr eval_state = std::make_shared<transaction_evaluation_state>( pending_state.get() );
 
           eval_state->evaluate( transaction );
-          const share_type fees = eval_state->get_fees() + eval_state->alt_fees_paid.amount;
+          const share_type fees = eval_state->calculate_base_fees();
           if( fees < min_fee )
              FC_CAPTURE_AND_THROW( insufficient_relay_fee, (fees)(min_fee) );
        }
@@ -1992,7 +1979,7 @@ namespace bts { namespace blockchain {
       }
 
       transaction_evaluation_state_ptr eval_state = evaluate_transaction( trx, relay_fee );
-      const share_type fees = eval_state->get_fees() + eval_state->alt_fees_paid.amount;
+      const share_type fees = eval_state->calculate_base_fees();
 
       //if( fees < my->_relay_fee )
       //   FC_CAPTURE_AND_THROW( insufficient_relay_fee, (fees)(my->_relay_fee) );
@@ -2094,7 +2081,7 @@ namespace bts { namespace blockchain {
                       trx_eval_state->evaluate( new_transaction );
 
                       // Check transaction fee limit
-                      const share_type transaction_fee = trx_eval_state->get_fees( 0 ) + trx_eval_state->alt_fees_paid.amount;
+                      const share_type transaction_fee = trx_eval_state->calculate_base_fees();
                       if( transaction_fee < config.transaction_min_fee )
                       {
                           wlog( "Excluding transaction ${id} with fee ${fee} because it does not meet transaction fee limit ${limit}",
@@ -2664,7 +2651,7 @@ namespace bts { namespace blockchain {
        return optional<market_order>();
    } FC_CAPTURE_AND_RETHROW( (key) ) }
 
-   vector<market_order> chain_database::get_market_bids( const string& quote_symbol, const string& base_symbol, uint32_t limit  )
+   vector<market_order> chain_database::get_market_bids( const string& quote_symbol, const string& base_symbol, uint32_t limit )const
    { try {
        auto quote_id = get_asset_id( quote_symbol );
        auto base_id  = get_asset_id( base_symbol );
@@ -2709,7 +2696,7 @@ namespace bts { namespace blockchain {
        return optional<market_order>();
    } FC_CAPTURE_AND_RETHROW( (key) ) }
 
-   vector<market_order> chain_database::get_market_shorts( const string& quote_symbol, uint32_t limit )
+   vector<market_order> chain_database::get_market_shorts( const string& quote_symbol, uint32_t limit )const
    { try {
        asset_id_type quote_id = get_asset_id( quote_symbol );
        asset_id_type base_id  = 0;
@@ -2745,8 +2732,7 @@ namespace bts { namespace blockchain {
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(limit) ) }
 
-   vector<market_order> chain_database::get_market_covers( const string& quote_symbol,
-                                                           const string& base_symbol, uint32_t limit )
+   vector<market_order> chain_database::get_market_covers( const string& quote_symbol, const string& base_symbol, uint32_t limit )const
    { try {
        asset_id_type quote_asset_id = get_asset_id( quote_symbol );
        asset_id_type base_asset_id = get_asset_id( base_symbol );
@@ -2823,9 +2809,7 @@ namespace bts { namespace blockchain {
 
    } FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
-   vector<market_order> chain_database::get_market_asks( const string& quote_symbol,
-                                                         const string& base_symbol,
-                                                         uint32_t limit )
+   vector<market_order> chain_database::get_market_asks( const string& quote_symbol, const string& base_symbol, uint32_t limit )const
 
    { try {
        auto quote_asset_id = get_asset_id( quote_symbol );
@@ -2971,7 +2955,7 @@ namespace bts { namespace blockchain {
        return pairs;
    }
 
-   omarket_status chain_database::get_market_status( const asset_id_type quote_id, const asset_id_type base_id )
+   omarket_status chain_database::get_market_status( const asset_id_type quote_id, const asset_id_type base_id )const
    {
       return my->_market_status_db.fetch_optional( std::make_pair(quote_id,base_id) );
    }
@@ -2992,7 +2976,7 @@ namespace bts { namespace blockchain {
                                                                    const asset_id_type base_id,
                                                                    const fc::time_point start_time,
                                                                    const fc::microseconds duration,
-                                                                   market_history_key::time_granularity_enum granularity)
+                                                                   market_history_key::time_granularity_enum granularity )const
    {
       time_point_sec end_time = start_time + duration;
       auto record_itr = my->_market_history_db.lower_bound( market_history_key(quote_id, base_id, granularity, start_time) );

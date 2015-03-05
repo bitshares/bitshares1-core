@@ -225,7 +225,7 @@ namespace detail {
                scan_accounts();
            }
 
-           while( current_block_num <= head_block_num && count < limit && !_scan_in_progress.canceled() )
+           while( current_block_num <= head_block_num && count < limit )
            {
                try
                {
@@ -374,13 +374,55 @@ namespace detail {
                }
            }
 
-           if( current_version < 109 )
+           if( current_version < 110 )
            {
-               const function<void( void )> repair = [&]()
+               const function<void( void )> repair = [ & ]()
                {
                    _wallet_db.repair_records( _wallet_password );
                };
                _unlocked_upgrade_tasks.push_back( repair );
+
+               const function<void( void )> split_accounts = [ & ]()
+               {
+                   unordered_map<address, wallet_account_record> contacts;
+
+                   const auto& accounts = _wallet_db.get_accounts();
+                   for( const auto& item : accounts )
+                   {
+                       const wallet_account_record& account = item.second;
+
+                       if( account.approved != 0 )
+                       {
+                           approval_data approval;
+                           approval.name = account.name;
+                           approval.approval = account.approved;
+                           _wallet_db.store_approval( approval );
+                       }
+
+                       contacts[ account.owner_address() ] = account;
+                   }
+
+                   const auto& keys = _wallet_db.get_keys();
+                   for( const auto& item : keys )
+                   {
+                       const wallet_key_record& key = item.second;
+                       contacts.erase( key.account_address );
+                   }
+
+                   for( const auto& item : contacts )
+                   {
+                       const address& account_address = item.first;
+                       const wallet_account_record& account = item.second;
+
+                       if( _blockchain->get_account_record( account.name ).valid() )
+                           _wallet_db.store_contact( contact_data( account.name ) );
+                       else if( !account.is_retracted() )
+                           _wallet_db.store_contact( contact_data( account.active_key() ) );
+
+                       _wallet_db.remove_account( account_address );
+                   }
+               };
+               _unlocked_upgrade_tasks.push_back( split_accounts );
            }
 
            if( _unlocked_upgrade_tasks.empty() )
@@ -1541,27 +1583,35 @@ namespace detail {
 
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
-   void wallet::start_scan( const uint32_t start_block_num, const uint32_t limit )
+   void wallet::start_scan( const uint32_t start_block_num, const uint32_t limit, const bool async )
    { try {
        if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
        if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
 
-       if( my->_scan_in_progress.valid() && !my->_scan_in_progress.ready() )
-           return;
-
-       if( !get_transaction_scanning() )
+       if( async )
        {
-           my->_scan_progress = 1;
-           ulog( "Wallet transaction scanning is disabled!" );
-           return;
+           if( my->_scan_in_progress.valid() && !my->_scan_in_progress.ready() )
+               return;
+
+           if( !get_transaction_scanning() )
+           {
+               my->_scan_progress = 1;
+               ulog( "Wallet transaction scanning is disabled!" );
+               return;
+           }
+
+           const auto scan_chain_task = [=]() { my->start_scan_task( start_block_num, limit ); };
+           my->_scan_in_progress = fc::async( scan_chain_task, "scan_chain_task" );
+
+           my->_scan_in_progress.on_complete( []( fc::exception_ptr ep )
+           { if( ep ) elog( "Error during scanning: ${e}", ("e",ep->to_detail_string()) ); } );
        }
-
-       const auto scan_chain_task = [=]() { my->start_scan_task( start_block_num, limit ); };
-       my->_scan_in_progress = fc::async( scan_chain_task, "scan_chain_task" );
-
-       my->_scan_in_progress.on_complete( []( fc::exception_ptr ep )
-       { if( ep ) elog( "Error during scanning: ${e}", ("e",ep->to_detail_string()) ); } );
-   } FC_CAPTURE_AND_RETHROW( (start_block_num)(limit) ) }
+       else
+       {
+           cancel_scan();
+           my->start_scan_task( start_block_num, limit );
+       }
+   } FC_CAPTURE_AND_RETHROW( (start_block_num)(limit)(async) ) }
 
    void wallet::cancel_scan()
    { try {
@@ -3183,8 +3233,11 @@ namespace detail {
 	  }
 
       transaction_builder_ptr builder = create_transaction_builder();
+      // TODO
+      /*
       builder->update_asset( symbol, name, description, public_data, maximum_share_supply, precision,
                              issuer_fee, market_fee, flags, issuer_perms, issuer_account_id, required_sigs, authority );
+                             */
       builder->finalize();
 
       if( sign )

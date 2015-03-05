@@ -638,6 +638,8 @@ transaction_builder& transaction_builder::update_signing_key( const string& auth
     return *this;
 } FC_CAPTURE_AND_RETHROW( (authorizing_account_name)(delegate_name)(signing_key) ) }
 
+// TODO
+/*
 transaction_builder& transaction_builder::update_asset( const string& symbol,
                                                         const optional<string>& name,
                                                         const optional<string>& description,
@@ -686,6 +688,7 @@ transaction_builder& transaction_builder::update_asset( const string& symbol,
        required_signatures.insert( owner );
     return *this;
 } FC_CAPTURE_AND_RETHROW( (symbol)(name)(description)(public_data)(maximum_share_supply)(precision) ) }
+*/
 
 transaction_builder& transaction_builder::finalize( const bool pay_fee, const vote_strategy strategy )
 { try {

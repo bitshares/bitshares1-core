@@ -7,11 +7,6 @@
         "cpp_include_file" : "bts/blockchain/types.hpp"
       },
       {
-        "type_name" : "blockchain_security_state",
-        "cpp_return_type" : "bts::blockchain::blockchain_security_state",
-        "cpp_include_file" : "bts/blockchain/types.hpp"
-      },
-      {
          "type_name" : "asset_permission",
          "cpp_return_type" : "asset_permissions"
       },
@@ -496,6 +491,10 @@
         "type_name" : "asset_id_type",
         "cpp_return_type" : "bts::blockchain::asset_id_type",
         "cpp_include_file" : "bts/blockchain/types.hpp"
+      },
+      {
+        "type_name" : "asset_balance_map",
+        "cpp_return_type" : "std::map<bts::blockchain::asset_id_type, bts::blockchain::share_type>"
       },
       {
         "type_name" : "wallet_account_record",

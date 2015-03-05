@@ -31,6 +31,10 @@ namespace bts { namespace blockchain { namespace detail {
 
     bool get_next_bid();
     bool get_next_ask();
+    bool get_next_ask_margin_call();
+    bool get_next_ask_expired_cover();
+    bool get_next_ask_order();
+
     asset get_current_cover_debt()const;
     uint32_t get_current_cover_age()const
     {

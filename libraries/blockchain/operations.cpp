@@ -45,9 +45,8 @@ namespace bts { namespace blockchain {
    const operation_type_enum data_operation::type                   = data_op_type;
 
    const operation_type_enum authorize_operation::type              = authorize_op_type;
-   const operation_type_enum update_asset_ext_operation::type       = update_asset_ext_op_type;
 
-   const operation_type_enum pay_fee_operation::type                = pay_fee_op_type;
+   const operation_type_enum limit_fee_operation::type              = limit_fee_op_type;
 
    const operation_type_enum update_cover_operation::type           = update_cover_op_type;
 
@@ -85,9 +84,8 @@ namespace bts { namespace blockchain {
       bts::blockchain::operation_factory::instance().register_operation<data_operation>();
 
       bts::blockchain::operation_factory::instance().register_operation<authorize_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<update_asset_ext_operation>();
 
-      bts::blockchain::operation_factory::instance().register_operation<pay_fee_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<limit_fee_operation>();
 
       bts::blockchain::operation_factory::instance().register_operation<update_cover_operation>();
 

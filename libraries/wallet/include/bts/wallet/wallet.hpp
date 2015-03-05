@@ -138,7 +138,7 @@ namespace bts { namespace wallet {
          vector<wallet_transaction_record>          get_pending_transactions()const;
          map<transaction_id_type, fc::exception>    get_pending_transaction_errors()const;
 
-         void start_scan( const uint32_t start_block_num, const uint32_t limit );
+         void start_scan( const uint32_t start_block_num, const uint32_t limit, const bool async = true );
          void cancel_scan();
 
          wallet_transaction_record         scan_transaction( const string& transaction_id_prefix, bool overwrite_existing );

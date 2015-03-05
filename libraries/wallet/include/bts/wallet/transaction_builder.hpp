@@ -286,6 +286,8 @@ namespace bts { namespace wallet {
                                                const string& delegate_name,
                                                const public_key_type& signing_key );
 
+      // TODO
+      /*
       transaction_builder& update_asset( const string& symbol,
                                          const optional<string>& name,
                                          const optional<string>& description,
@@ -300,6 +302,7 @@ namespace bts { namespace wallet {
                                          uint32_t required_sigs,
                                          const vector<address>& authority
                                        );
+      */
 
       /**
        * @brief Balance the books and pay the fees
