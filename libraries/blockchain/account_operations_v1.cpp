@@ -1,6 +1,6 @@
 #include <bts/blockchain/account_operations.hpp>
-#include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/exceptions.hpp>
+#include <bts/blockchain/pending_chain_state.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
 #include <fc/time.hpp>
 
@@ -60,7 +60,7 @@ void update_account_operation::evaluate_v1( transaction_evaluation_state& eval_s
            current_record->set_signing_key( eval_state._current_state->get_head_block_num(), current_record->active_key() );
 
            const asset reg_fee( eval_state._current_state->get_delegate_registration_fee( this->delegate_pay_rate ), 0 );
-           eval_state.required_fees += reg_fee;
+           eval_state.min_fees[ reg_fee.asset_id ] += reg_fee.amount;
        }
    }
 

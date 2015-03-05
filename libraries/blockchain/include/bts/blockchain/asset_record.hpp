@@ -69,6 +69,7 @@ namespace bts { namespace blockchain {
        *  references this asset type.
        */
       share_type          transaction_fee = 0;
+
       /**
        * 0 for no fee, 10000 for 100% fee.
        * This is used for gateways that want to continue earning market trading fees

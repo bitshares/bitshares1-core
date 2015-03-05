@@ -7,15 +7,6 @@
 
 namespace bts { namespace blockchain {
 
-   transaction_evaluation_state::transaction_evaluation_state( pending_chain_state* current_state )
-   :_current_state( current_state )
-   {
-   }
-
-   transaction_evaluation_state::~transaction_evaluation_state()
-   {
-   }
-
    bool transaction_evaluation_state::verify_authority( const multisig_meta_info& siginfo )
    { try {
       uint32_t sig_count = 0;
@@ -31,7 +22,7 @@ namespace bts { namespace blockchain {
 
    bool transaction_evaluation_state::check_signature( const address& a )const
    { try {
-      return _skip_signature_check || signed_keys.find( a ) != signed_keys.end();
+      return _skip_signature_check || signed_addresses.find( a ) != signed_addresses.end();
    } FC_CAPTURE_AND_RETHROW( (a) ) }
 
    bool transaction_evaluation_state::check_multisig( const multisig_condition& condition )const
@@ -92,85 +83,41 @@ namespace bts { namespace blockchain {
       }
    } FC_CAPTURE_AND_RETHROW() }
 
-   void transaction_evaluation_state::validate_required_fee()
+   void transaction_evaluation_state::validate_fees()
    { try {
-      asset xts_fees;
-      auto fee_itr = balance.find( 0 );
-      if( fee_itr != balance.end() ) xts_fees += asset( fee_itr->second, 0);
+       for( const auto& item : fees_paid )
+       {
+           const asset fee( item.second, item.first );
+           if( fee.amount < 0 )
+               FC_CAPTURE_AND_THROW( negative_fee, (fee) );
 
-      auto max_fee_itr = _max_fee.find( 0 );
-      if( max_fee_itr != _max_fee.end() )
-      {
-         FC_ASSERT( xts_fees.amount <= max_fee_itr->second, "", ("max_fee",_max_fee)("xts_fees",xts_fees) );
-      }
+           auto iter = min_fees.find( fee.asset_id );
+           if( iter != min_fees.end() )
+           {
+               if( fee.amount < iter->second )
+                   FC_CAPTURE_AND_THROW( insufficient_fee, (fee)(min_fees) );
+           }
 
-      xts_fees += alt_fees_paid;
+           iter = max_fees.find( fee.asset_id );
+           if( iter != max_fees.end() )
+           {
+               if( fee.amount > iter->second )
+                   FC_CAPTURE_AND_THROW( fee_greater_than_max, (fee)(max_fees) );
+           }
 
-      if( required_fees > xts_fees )
-      {
-         FC_CAPTURE_AND_THROW( insufficient_fee, (required_fees)(alt_fees_paid)(xts_fees)  );
-      }
-   } FC_CAPTURE_AND_RETHROW() }
+           oasset_record asset_record = _current_state->get_asset_record( fee.asset_id );
+           if( !asset_record.valid() )
+               FC_CAPTURE_AND_THROW( unknown_asset_id, (fee) );
 
-   /**
-    *  Process all fees and update the asset records.
-    */
-   void transaction_evaluation_state::post_evaluate()
-   { try {
-      for( const auto& item : withdraws )
-      {
-         auto asset_rec = _current_state->get_asset_record( item.first );
-         if( !asset_rec.valid() ) FC_CAPTURE_AND_THROW( unknown_asset_id, (item) );
-         if( asset_rec->id > 0 && asset_rec->is_market_issued() && asset_rec->transaction_fee > 0 )
-         {
-            sub_balance( address(), asset(asset_rec->transaction_fee, asset_rec->id) );
-         }
-      }
+           if( fee.amount < asset_record->transaction_fee )
+               FC_CAPTURE_AND_THROW( insufficient_fee, (fee)(asset_record->transaction_fee) );
 
-      balance[0]; // make sure we have something for this.
-      for( const auto& fee : balance )
-      {
-         if( fee.second < 0 ) FC_CAPTURE_AND_THROW( negative_fee, (fee) );
-         // if the fee is already in XTS or the fee balance is zero, move along...
-         if( fee.first == 0 || fee.second == 0 )
-           continue;
-
-         auto asset_record = _current_state->get_asset_record( fee.first );
-         if( !asset_record.valid() ) FC_CAPTURE_AND_THROW( unknown_asset_id, (fee.first) );
-
-         if( !asset_record->is_market_issued() )
-           continue;
-
-         // lowest ask is someone with XTS offered at a price of USD / XTS, fee.first
-         // is an amount of USD which can be converted to price*USD XTS provided we
-         // send lowest_ask.index.owner the USD
-         const oprice median_price = _current_state->get_active_feed_price( fee.first );
-         if( median_price.valid() )
-         {
-            // fees paid in something other than XTS are discounted 50%
-            alt_fees_paid += (asset( fee.second * 2, fee.first ) * *median_price) / 3;
-
-            auto max_fee_itr = _max_fee.find( fee.first );
-            if( max_fee_itr != _max_fee.end() )
-            {
-               FC_ASSERT( fee.second <= max_fee_itr->second );
-            }
-         }
-      }
-
-      for( const auto& fee : balance )
-      {
-         if( fee.second < 0 ) FC_CAPTURE_AND_THROW( negative_fee, (fee) );
-         if( fee.second > 0 ) // if a fee was paid...
-         {
-            auto asset_record = _current_state->get_asset_record( fee.first );
-            if( !asset_record )
-              FC_CAPTURE_AND_THROW( unknown_asset_id, (fee.first) );
-
-            asset_record->collected_fees += fee.second;
-            _current_state->store_asset_record( *asset_record );
-         }
-      }
+           if( fee.amount > 0 )
+           {
+               asset_record->collected_fees += fee.amount;
+               _current_state->store_asset_record( *asset_record );
+           }
+       }
    } FC_CAPTURE_AND_RETHROW() }
 
    void transaction_evaluation_state::evaluate( const signed_transaction& trx_arg )
@@ -200,21 +147,22 @@ namespace bts { namespace blockchain {
            for( const auto& sig : trx_arg.signatures )
            {
               const auto key = fc::ecc::public_key( sig, trx_digest, _enforce_canonical_signatures ).serialize();
-              signed_keys.insert( address(key) );
-              signed_keys.insert( address(pts_address(key,false,56) ) );
-              signed_keys.insert( address(pts_address(key,true,56) )  );
-              signed_keys.insert( address(pts_address(key,false,0) )  );
-              signed_keys.insert( address(pts_address(key,true,0) )   );
+              signed_addresses.insert( address( key ) );
+              signed_addresses.insert( address( pts_address( key, false, 56 ) ) );
+              signed_addresses.insert( address( pts_address( key, true, 56 ) ) );
+              signed_addresses.insert( address( pts_address( key, false, 0 ) ) );
+              signed_addresses.insert( address( pts_address( key, true, 0 ) ) );
            }
         }
-        current_op_index = 0;
+
+        _current_op_index = 0;
         for( const auto& op : trx_arg.operations )
         {
            evaluate_operation( op );
-           ++current_op_index;
+           ++_current_op_index;
         }
-        post_evaluate();
-        validate_required_fee();
+
+        validate_fees();
         update_delegate_votes();
 
         _current_state->store_transaction( trx.id(), transaction_record( transaction_location(), *this ) );
@@ -255,42 +203,53 @@ namespace bts { namespace blockchain {
        }
    } FC_CAPTURE_AND_RETHROW( (slate_id)(amount) ) }
 
-   share_type transaction_evaluation_state::get_fees( asset_id_type id )const
+   share_type transaction_evaluation_state::calculate_base_fees()const
    { try {
-      auto itr = balance.find(id);
-      if( itr != balance.end() )
-         return itr->second;
-      return 0;
-   } FC_CAPTURE_AND_RETHROW( (id) ) }
+       FC_ASSERT( _current_state != nullptr );
 
-   void transaction_evaluation_state::sub_balance( const balance_id_type& balance_id, const asset& amount )
+       share_type base_fees = 0;
+
+       for( const auto& item : fees_paid )
+       {
+           const asset fee( item.second, item.first );
+           if( fee.asset_id == 0 )
+           {
+               base_fees += fee.amount;
+           }
+           else
+           {
+               const oasset_record asset_record = _current_state->get_asset_record( fee.asset_id );
+               FC_ASSERT( asset_record.valid() );
+
+               // Tally BitAsset fees using feed price discounted by 33%
+               if( asset_record->is_market_issued() )
+               {
+                   const oprice feed_price = _current_state->get_active_feed_price( fee.asset_id );
+                   if( feed_price.valid() )
+                       base_fees += (asset( fee.amount * 2, fee.asset_id ) * *feed_price).amount / 3;
+               }
+           }
+       }
+
+       return base_fees;
+   } FC_CAPTURE_AND_RETHROW() }
+
+   void transaction_evaluation_state::sub_balance( const asset& amount )
    { try {
-      balance[ amount.asset_id ] -= amount.amount;
-      deposits[ amount.asset_id ] += amount.amount;
-      deltas[ current_op_index ][ amount.asset_id ] += amount.amount;
-   } FC_CAPTURE_AND_RETHROW( (balance_id)(amount) ) }
+      fees_paid[ amount.asset_id ] -= amount.amount;
+      op_deltas[ _current_op_index ][ amount.asset_id ] += amount.amount;
+   } FC_CAPTURE_AND_RETHROW( (amount) ) }
 
    void transaction_evaluation_state::add_balance( const asset& amount )
    { try {
-      balance[ amount.asset_id ] += amount.amount;
-      withdraws[ amount.asset_id ] += amount.amount;
-      deltas[ current_op_index ][ amount.asset_id ] -= amount.amount;
+      fees_paid[ amount.asset_id ] += amount.amount;
+      op_deltas[ _current_op_index ][ amount.asset_id ] -= amount.amount;
    } FC_CAPTURE_AND_RETHROW( (amount) ) }
 
-   /**
-    *  Throws if the asset is not known to the blockchain.
-    */
-   void transaction_evaluation_state::validate_asset( const asset& asset_to_validate )const
-   { try {
-      auto asset_rec = _current_state->get_asset_record( asset_to_validate.asset_id );
-      if( NOT asset_rec )
-         FC_CAPTURE_AND_THROW( unknown_asset_id, (asset_to_validate) );
-   } FC_CAPTURE_AND_RETHROW( (asset_to_validate) ) }
-
-   bool transaction_evaluation_state::scan_deltas( const uint32_t op_index, const function<bool( const asset& )> callback )const
+   bool transaction_evaluation_state::scan_op_deltas( const uint32_t op_index, const function<bool( const asset& )> callback )const
    { try {
        bool ret = false;
-       for( const auto& item : deltas )
+       for( const auto& item : op_deltas )
        {
            const uint32_t index = item.first;
            if( index != op_index ) continue;

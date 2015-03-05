@@ -36,11 +36,9 @@ namespace bts { namespace blockchain {
 
       FC_ASSERT( !issuer_override && !quote_asset_rec->is_balance_frozen() );
 
-      asset delta_amount  = this->get_amount();
+      asset delta_amount = this->get_amount();
 
-      eval_state.validate_asset( delta_amount );
-
-      auto current_bid   = eval_state._current_state->get_bid_record( this->bid_index );
+      auto current_bid = eval_state._current_state->get_bid_record( this->bid_index );
 
       if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
       if( this->amount <  0 ) // withdraw
@@ -59,7 +57,7 @@ namespace bts { namespace blockchain {
           if( NOT current_bid )  // then initialize to 0
             current_bid = order_record();
           // sub the delta amount from the eval state that we deposited to the bid
-          eval_state.sub_balance( balance_id_type(), delta_amount );
+          eval_state.sub_balance( delta_amount );
       }
 
       current_bid->last_update = eval_state._current_state->now();
@@ -102,8 +100,6 @@ namespace bts { namespace blockchain {
 
       asset delta_amount  = this->get_amount();
 
-      eval_state.validate_asset( delta_amount );
-
       auto current_ask   = eval_state._current_state->get_ask_record( this->ask_index );
 
       if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
@@ -123,7 +119,7 @@ namespace bts { namespace blockchain {
           if( NOT current_ask )  // then initialize to 0
             current_ask = order_record();
           // sub the delta amount from the eval state that we deposited to the ask
-          eval_state.sub_balance( balance_id_type(), delta_amount );
+          eval_state.sub_balance( delta_amount );
       }
 
       current_ask->last_update = eval_state._current_state->now();
@@ -138,17 +134,21 @@ namespace bts { namespace blockchain {
       if( eval_state._current_state->get_head_block_num() < BTS_V0_4_21_FORK_BLOCK_NUM )
          return evaluate_v1( eval_state );
 
+      const auto base_asset_rec = eval_state._current_state->get_asset_record( short_index.order_price.base_asset_id );
+      const auto quote_asset_rec = eval_state._current_state->get_asset_record( short_index.order_price.quote_asset_id );
+      FC_ASSERT( base_asset_rec.valid() );
+      FC_ASSERT( quote_asset_rec.valid() );
+
       auto owner = this->short_index.owner;
       FC_ASSERT( short_index.order_price.ratio < fc::uint128( 10, 0 ), "Interest rate must be less than 1000% APR" );
       FC_ASSERT( short_index.order_price.quote_asset_id > short_index.order_price.base_asset_id,
                  "Interest rate price must have valid base and quote IDs" );
 
-      asset delta_amount  = this->get_amount();
+      asset delta_amount = this->get_amount();
 
       // Only allow using the base asset as collateral
       FC_ASSERT( delta_amount.asset_id == 0 );
 
-      eval_state.validate_asset( delta_amount );
       auto  asset_to_short = eval_state._current_state->get_asset_record( short_index.order_price.quote_asset_id );
       FC_ASSERT( asset_to_short.valid() );
       FC_ASSERT( asset_to_short->is_market_issued(), "${symbol} is not a market issued asset", ("symbol",asset_to_short->symbol) );
@@ -177,7 +177,7 @@ namespace bts { namespace blockchain {
           if( NOT current_short )  // then initialize to 0
             current_short = order_record();
           // sub the delta amount from the eval state that we deposited to the short
-          eval_state.sub_balance( balance_id_type(), delta_amount );
+          eval_state.sub_balance( delta_amount );
       }
       current_short->limit_price = this->short_index.limit_price;
       current_short->last_update = eval_state._current_state->now();
@@ -197,6 +197,11 @@ namespace bts { namespace blockchain {
       if( eval_state._current_state->get_head_block_num() < BTS_V0_4_23_FORK_BLOCK_NUM )
          return evaluate_v4( eval_state );
 
+      const auto base_asset_rec = eval_state._current_state->get_asset_record( cover_index.order_price.base_asset_id );
+      const auto quote_asset_rec = eval_state._current_state->get_asset_record( cover_index.order_price.quote_asset_id );
+      FC_ASSERT( base_asset_rec.valid() );
+      FC_ASSERT( quote_asset_rec.valid() );
+
       if( this->cover_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );
 
@@ -212,7 +217,7 @@ namespace bts { namespace blockchain {
          FC_CAPTURE_AND_THROW( missing_signature, (cover_index.owner) );
 
       // subtract this from the transaction
-      eval_state.sub_balance( balance_id_type(), delta_amount );
+      eval_state.sub_balance( delta_amount );
 
       auto current_cover   = eval_state._current_state->get_collateral_record( this->cover_index );
       if( NOT current_cover )
@@ -295,6 +300,11 @@ namespace bts { namespace blockchain {
       if( eval_state._current_state->get_head_block_num() < BTS_V0_4_21_FORK_BLOCK_NUM )
          return evaluate_v1( eval_state );
 
+      const auto base_asset_rec = eval_state._current_state->get_asset_record( cover_index.order_price.base_asset_id );
+      const auto quote_asset_rec = eval_state._current_state->get_asset_record( cover_index.order_price.quote_asset_id );
+      FC_ASSERT( base_asset_rec.valid() );
+      FC_ASSERT( quote_asset_rec.valid() );
+
       if( this->cover_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );
 
@@ -305,7 +315,7 @@ namespace bts { namespace blockchain {
          FC_CAPTURE_AND_THROW( negative_deposit );
 
       asset delta_amount  = this->get_amount();
-      eval_state.sub_balance( balance_id_type(), delta_amount );
+      eval_state.sub_balance( delta_amount );
 
       // update collateral and call price
       auto current_cover = eval_state._current_state->get_collateral_record( this->cover_index );
@@ -337,10 +347,7 @@ namespace bts { namespace blockchain {
 
    void update_cover_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
-#ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_8_0_FORK_BLOCK_NUM has passed
-#endif
-      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_8_0_FORK_BLOCK_NUM );
+      FC_ASSERT( !"This operation is not enabled yet!" );
 
       if( this->cover_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );

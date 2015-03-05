@@ -75,7 +75,7 @@ namespace bts { namespace blockchain {
           FC_CAPTURE_AND_THROW( invalid_precision, (this->precision) );
 
       const asset reg_fee( eval_state._current_state->get_asset_registration_fee( this->symbol.size() ), 0 );
-      eval_state.required_fees += reg_fee;
+      eval_state.min_fees[ reg_fee.asset_id ] += reg_fee.amount;
 
       asset_record new_record;
       new_record.id                     = eval_state._current_state->new_asset_id();

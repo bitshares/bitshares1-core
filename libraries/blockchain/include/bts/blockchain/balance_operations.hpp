@@ -110,7 +110,7 @@ struct update_balance_vote_operation
 
 /**
 *  This operation enforces the expected fee for a
-*  transaction.  If the transaction evaluation shows
+*  transaction. If the transaction evaluation shows
 *  that more than the expected fee would be paid then
 *  it fails.
 *
@@ -118,14 +118,15 @@ struct update_balance_vote_operation
 *  fee is not entirely deterministic from the withdraws
 *  and deposits. This happens if there is interest,
 *  yield, or market operations that effect the
-*  result.  It is also a way for the creator of a
+*  result. It is also a way for the creator of a
 *  transaction to protect against malformed transactions
 *  that pay excessively high fees.
 */
-struct pay_fee_operation
+struct limit_fee_operation
 {
     static const operation_type_enum type;
-    asset amount;
+
+    asset max_fee;
 
     void evaluate( transaction_evaluation_state& eval_state )const;
 };
@@ -137,4 +138,4 @@ FC_REFLECT( bts::blockchain::deposit_operation, (amount)(condition) )
 FC_REFLECT( bts::blockchain::burn_operation, (amount)(account_id)(message)(message_signature) )
 FC_REFLECT( bts::blockchain::release_escrow_operation, (escrow_id)(released_by)(amount_to_receiver)(amount_to_sender) )
 FC_REFLECT( bts::blockchain::update_balance_vote_operation, (balance_id)(new_restricted_owner)(new_slate) )
-FC_REFLECT( bts::blockchain::pay_fee_operation, (amount) )
+FC_REFLECT( bts::blockchain::limit_fee_operation, (max_fee) )
