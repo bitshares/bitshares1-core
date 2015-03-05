@@ -183,7 +183,15 @@ namespace bts { namespace blockchain { namespace detail {
                     FC_ASSERT(false, "get_next_ask() returned inactive cover");
                 }
             }
-            else if( mtrx.bid_price < mtrx.ask_price )
+            
+            //
+            // get_next_bid() always returns the best bid
+            // get_next_ask() always returns the next ask
+            //
+            // by "best" I mean that no other order can match (in the current pass) if the best order does not match
+            // so we can terminate the current pass as soon as the best orders don't match each other
+            //
+            if( mtrx.bid_price < mtrx.ask_price )
             {
                wlog( "bid_price ${b} < ask_price ${a}; exit market loop", ("b",mtrx.bid_price)("a",mtrx.ask_price) );
                break;
