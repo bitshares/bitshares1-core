@@ -151,39 +151,38 @@ namespace bts { namespace blockchain { namespace detail {
             if( _current_ask->type == cover_order )
             {
                 FC_ASSERT( quote_asset->is_market_issued() );
-                if( !_feed_price.valid() ) { _current_ask.reset(); continue; }
+                // get_next_ask() shouldn't return covers if there's no feed
+                FC_ASSERT( _feed_price.valid() );
 
                 /**
-                *  If call price is not reached AND cover has not expired, he lives to fight another day.
-                *  Also don't allow margin calls to be executed too far below
+                *  Don't allow margin calls to be executed too far below
                 *  the minimum ask, this could lead to an attack where someone
                 *  walks the whole book to steal the collateral.
                 */
-                if( (mtrx.ask_price < mtrx.bid_price && _current_collat_record.expiration > _pending_state->now()) ||
-                    mtrx.bid_price < minimum_ask() )
+                if( mtrx.bid_price < minimum_cover_ask_price() )
                 {
-                   _current_ask.reset(); continue;
+                    ilog("terminating cover match iteration because bid doesn't meet minimum_cover_ask_price()");
+                    break;
                 }
-                /**
-                 *  Protect expired cover orders from over-paying to exit their position.  If there are no bids at
-                 *  or above the price feed then the expired cover creates a buy wall at the price feed.  No
-                 *  need to punish them.
-                 */
-                if( _current_collat_record.expiration < _pending_state->now() && mtrx.bid_price < *_feed_price )
-                {
-                   /** make sure that expired *AND* margin called orders don't get skipped */
 
-                   // if the call price < feed price then no margin call has occurred yet
-                   // so we can skip it.
-                   if( _current_ask->get_price() < *_feed_price )
-                      _current_ask.reset(); continue;
+                if( mtrx.ask_price > *_feed_price )
+                {
+                    // margin called cover
+                    mtrx.ask_price = mtrx.bid_price;
+                    ilog("cover is margin call executing at price ${p}", ("p",mtrx.ask_price));
                 }
-                //This is a forced cover. He's gonna sell at whatever price a buyer wants. No choice.
-                mtrx.ask_price = mtrx.bid_price;
+                else if( (*_current_ask->expiration) <= _pending_state->now() )
+                {
+                    // expired cover which has not been margin called
+                    mtrx.ask_price = *_feed_price;
+                    ilog("cover is executing at feed price ${p}", ("p",mtrx.ask_price));
+                }
+                else
+                {
+                    // inactive cover
+                    FC_ASSERT(false, "get_next_ask() returned inactive cover");
+                }
             }
-            // get_next_ask() will return all covers first after checking expiration... which means
-            // if it is not a cover then we can stop matching orders as soon as there exists a spread
-            //// The ask price hasn't been reached
             else if( mtrx.bid_price < mtrx.ask_price )
             {
                wlog( "bid_price ${b} < ask_price ${a}; exit market loop", ("b",mtrx.bid_price)("a",mtrx.ask_price) );

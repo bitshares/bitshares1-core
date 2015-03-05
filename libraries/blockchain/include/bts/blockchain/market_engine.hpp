@@ -42,7 +42,7 @@ namespace bts { namespace blockchain { namespace detail {
         return BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC - (*_current_ask->expiration - _pending_state->now()).to_seconds();
     }
 
-    price minimum_ask()const
+    price minimum_cover_ask_price()const
     {
         FC_ASSERT( _feed_price.valid() );
         price min_ask = *_feed_price;
