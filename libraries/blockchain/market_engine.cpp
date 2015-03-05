@@ -681,7 +681,7 @@ namespace bts { namespace blockchain { namespace detail {
               }
               else // fetch the order
               {
-                 auto oshort = _db_impl._short_db.fetch_optional( *_short_at_feed_itr );
+                 optional<order_record> oshort = _pending_state->get_short_record( *_short_at_feed_itr );
                  FC_ASSERT( oshort.valid() );
                  bid =  market_order( short_order, *_short_at_feed_itr, *oshort );
                  _current_bid = bid;
@@ -709,7 +709,7 @@ namespace bts { namespace blockchain { namespace detail {
                 if( !bid || (_short_at_limit_itr->first > bid->get_price(*_feed_price)) )
                 {
                    // then the short is game.
-                   auto oshort = _db_impl._short_db.fetch_optional( _short_at_limit_itr->second );
+                   optional<order_record> oshort = _pending_state->get_short_record( _short_at_limit_itr->second );
                    FC_ASSERT( oshort );
                    bid =  market_order( short_order, _short_at_limit_itr->second, *oshort );
                    _current_bid = bid;
