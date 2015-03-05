@@ -34,6 +34,7 @@ namespace bts { namespace blockchain { namespace detail {
 
           // The order book is sorted from low to high price. So to get the last item (highest bid),
           // we need to go to the first item in the next market class and then back up one
+          const price current_pair = price( 0, quote_id, base_id );
           const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );
           _bid_itr           = _db_impl._bid_db.lower_bound( market_index_key( next_pair ) );
           _ask_itr           = _db_impl._ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
@@ -44,7 +45,7 @@ namespace bts { namespace blockchain { namespace detail {
           //edump( (_db_impl._shorts_at_feed) );
           //edump( (_db_impl._short_limit_index) );
 
-          _collateral_expiration_itr  = _db_impl._collateral_expiration_index.lower_bound( { quote_id, time_point(), market_index_key( price(0,quote_id,base_id) ) } );
+          _collateral_expiration_itr  = _db_impl._collateral_expiration_index.lower_bound( { quote_id, time_point(), market_index_key( current_pair ) } );
 
           int last_orders_filled = -1;
           asset trading_volume(0, base_id);
@@ -68,9 +69,11 @@ namespace bts { namespace blockchain { namespace detail {
                   FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id)(base_id) );
           }
 
-          // TODO: enable this
-          if( _feed_price )
-             _short_at_limit_itr = decltype(_short_at_limit_itr)(_db_impl._short_limit_index.lower_bound( std::make_pair( *_feed_price, market_index_key( next_pair )) ));
+          if( _feed_price.valid() )
+             _short_at_limit_itr = std::set< pair<price,market_index_key> >::reverse_iterator(
+                 _db_impl._short_limit_index.lower_bound(
+                 std::make_pair( *_feed_price, market_index_key( current_pair ))
+                 ));
 
           _current_bid.reset();
           for( _current_pass=0; _current_pass<MARKET_ENGINE_PASS_COUNT; _current_pass++ )
