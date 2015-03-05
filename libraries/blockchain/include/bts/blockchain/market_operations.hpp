@@ -5,105 +5,105 @@
 
 namespace bts { namespace blockchain {
 
-   #include "market_operations_v1.hpp"
+#include "market_operations_v1.hpp"
 
-   struct bid_operation
-   {
-        static const operation_type_enum type;
-        bid_operation():amount(0){}
+struct bid_operation
+{
+    static const operation_type_enum type;
+    bid_operation():amount(0){}
 
-        /** bid amount is in the quote unit */
-        asset            get_amount()const { return asset( amount, bid_index.order_price.quote_asset_id ); }
-        share_type       amount;
-        market_index_key bid_index;
+    /** bid amount is in the quote unit */
+    asset            get_amount()const { return asset( amount, bid_index.order_price.quote_asset_id ); }
+    share_type       amount;
+    market_index_key bid_index;
 
-        void evaluate( transaction_evaluation_state& eval_state )const;
-   };
+    void evaluate( transaction_evaluation_state& eval_state )const;
+};
 
-   struct ask_operation
-   {
-        static const operation_type_enum type;
-        ask_operation():amount(0){}
+struct ask_operation
+{
+    static const operation_type_enum type;
+    ask_operation():amount(0){}
 
-        asset             get_amount()const { return asset( amount, ask_index.order_price.base_asset_id ); }
-        share_type        amount;
-        market_index_key  ask_index;
+    asset             get_amount()const { return asset( amount, ask_index.order_price.base_asset_id ); }
+    share_type        amount;
+    market_index_key  ask_index;
 
-        void evaluate( transaction_evaluation_state& eval_state )const;
-        void evaluate_v1( transaction_evaluation_state& eval_state )const;
-   };
+    void evaluate( transaction_evaluation_state& eval_state )const;
+    void evaluate_v1( transaction_evaluation_state& eval_state )const;
+};
 
-   struct short_operation
-   {
-        static const operation_type_enum type;
-        short_operation():amount(0){}
+struct short_operation
+{
+    static const operation_type_enum type;
+    short_operation():amount(0){}
 
-        asset            get_amount()const { return asset( amount, short_index.order_price.base_asset_id ); }
+    asset            get_amount()const { return asset( amount, short_index.order_price.base_asset_id ); }
 
-        share_type             amount;
-        market_index_key_ext   short_index;
+    share_type             amount;
+    market_index_key_ext   short_index;
 
-        void evaluate( transaction_evaluation_state& eval_state )const;
-        void evaluate_v1( transaction_evaluation_state& eval_state )const;
-   };
+    void evaluate( transaction_evaluation_state& eval_state )const;
+    void evaluate_v1( transaction_evaluation_state& eval_state )const;
+};
 
-   struct cover_operation
-   {
-        static const operation_type_enum type;
-        cover_operation():amount(0){}
-        cover_operation( share_type a, const market_index_key& idx )
-        :amount(a),cover_index(idx){}
+struct cover_operation
+{
+    static const operation_type_enum type;
+    cover_operation():amount(0){}
+    cover_operation( share_type a, const market_index_key& idx )
+    :amount(a),cover_index(idx){}
 
-        asset               get_amount()const { return asset( amount, cover_index.order_price.quote_asset_id ); }
-        share_type          amount;
-        market_index_key    cover_index;
-        fc::optional<price> new_cover_price;
+    asset               get_amount()const { return asset( amount, cover_index.order_price.quote_asset_id ); }
+    share_type          amount;
+    market_index_key    cover_index;
+    fc::optional<price> new_cover_price;
 
-        void evaluate( transaction_evaluation_state& eval_state )const;
-        void evaluate_v4( transaction_evaluation_state& eval_state )const;
-        void evaluate_v3( transaction_evaluation_state& eval_state )const;
-        void evaluate_v2( transaction_evaluation_state& eval_state )const;
-        void evaluate_v1( transaction_evaluation_state& eval_state )const;
-   };
+    void evaluate( transaction_evaluation_state& eval_state )const;
+    void evaluate_v4( transaction_evaluation_state& eval_state )const;
+    void evaluate_v3( transaction_evaluation_state& eval_state )const;
+    void evaluate_v2( transaction_evaluation_state& eval_state )const;
+    void evaluate_v1( transaction_evaluation_state& eval_state )const;
+};
 
-   /**
-    *  Increases the collateral and lowers call price *if* the
-    *  new minimal call price is higher than the old call price.
-    */
-   struct add_collateral_operation
-   {
-        static const operation_type_enum type;
-        add_collateral_operation(share_type amount = 0, market_index_key cover_index = market_index_key())
-          : amount(amount), cover_index(cover_index){}
+/**
+*  Increases the collateral and lowers call price *if* the
+*  new minimal call price is higher than the old call price.
+*/
+struct add_collateral_operation
+{
+    static const operation_type_enum type;
+    add_collateral_operation(share_type amount = 0, market_index_key cover_index = market_index_key())
+        : amount(amount), cover_index(cover_index){}
 
-        asset            get_amount()const { return asset( amount, cover_index.order_price.base_asset_id ); }
-        share_type       amount;
-        market_index_key cover_index;
+    asset            get_amount()const { return asset( amount, cover_index.order_price.base_asset_id ); }
+    share_type       amount;
+    market_index_key cover_index;
 
-        void evaluate( transaction_evaluation_state& eval_state )const;
-        void evaluate_v1( transaction_evaluation_state& eval_state )const;
-   };
+    void evaluate( transaction_evaluation_state& eval_state )const;
+    void evaluate_v1( transaction_evaluation_state& eval_state )const;
+};
 
-   /**
-    *  The call price can be set to any price above the minimum call
-    *  price which is defined as 50% of the collateral being required
-    *  to cover 100% of the debt.  
-    *
-    *  This can be used to protect the short as a "stop loss" and to
-    *  allow the short to exit their position without having to keep
-    *  extra BTS on the side to buy USD to cover the order.
-    */
-   struct update_cover_operation
-   {
-      static const operation_type_enum type;
+/**
+*  The call price can be set to any price above the minimum call
+*  price which is defined as 50% of the collateral being required
+*  to cover 100% of the debt.
+*
+*  This can be used to protect the short as a "stop loss" and to
+*  allow the short to exit their position without having to keep
+*  extra BTS on the side to buy USD to cover the order.
+*/
+struct update_cover_operation
+{
+    static const operation_type_enum type;
 
-      market_index_key        cover_index;
-      price                   new_call_price;
-      optional<address>       new_owner;
-      optional<slate_id_type> new_slate;
+    market_index_key        cover_index;
+    price                   new_call_price;
+    optional<address>       new_owner;
+    optional<slate_id_type> new_slate;
 
-      void evaluate( transaction_evaluation_state& eval_state )const;
-   };
+    void evaluate( transaction_evaluation_state& eval_state )const;
+};
 
 } } // bts::blockchain
 

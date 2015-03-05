@@ -167,7 +167,8 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_asset_record( *current_asset_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-
+   // TODO: Merge with above
+#if 0
    void update_asset_ext_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
       FC_ASSERT( !"This operation is not enabled yet!" );
@@ -273,6 +274,7 @@ namespace bts { namespace blockchain {
 
       eval_state._current_state->store_asset_record( *current_asset_record );
    }
+#endif
 
    void issue_asset_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {

@@ -628,9 +628,6 @@ void detail::wallet_impl::scan_transaction_experimental( const transaction_evalu
             case issue_asset_op_type:
                 result = scan_issue_asset( op.as<issue_asset_operation>() );
                 break;
-            case create_asset_prop_op_type:
-                // TODO
-                break;
             case bid_op_type:
                 result = scan_bid( op.as<bid_operation>() );
                 break;
