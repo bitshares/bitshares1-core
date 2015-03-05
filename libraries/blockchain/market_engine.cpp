@@ -37,7 +37,6 @@ namespace bts { namespace blockchain { namespace detail {
           const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );
           _bid_itr           = _db_impl._bid_db.lower_bound( market_index_key( next_pair ) );
           _ask_itr           = _db_impl._ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
-          _short_itr         = _db_impl._short_db.lower_bound( market_index_key_ext( next_pair ) );
           _short_at_feed_itr  = std::set<market_index_key>::reverse_iterator(_db_impl._shorts_at_feed.lower_bound( market_index_key_ext( next_pair ) ));
           _short_at_limit_itr = _db_impl._short_limit_index.rend();
           _collateral_itr     = _db_impl._collateral_db.lower_bound( market_index_key( next_pair ) );
@@ -59,9 +58,6 @@ namespace bts { namespace blockchain { namespace detail {
 
           if( _collateral_itr.valid() )   --_collateral_itr;
           else _collateral_itr = _db_impl._collateral_db.last();
-
-          if( _short_itr.valid() )   --_short_itr;
-          else _short_itr = _db_impl._short_db.last();
 
           // Market issued assets cannot match until the first time there is a median feed; assume feed price base id 0
           if( quote_asset->is_market_issued() && base_asset->id == 0 )
