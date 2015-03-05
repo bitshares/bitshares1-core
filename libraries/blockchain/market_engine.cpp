@@ -100,19 +100,22 @@ namespace bts { namespace blockchain { namespace detail {
             if( _current_bid->type == short_order )
             {
                 FC_ASSERT( quote_asset->is_market_issued() );
-                if( !_feed_price.valid() ) { _current_bid.reset(); continue; }
-
-                // Always execute shorts at the feed price
-                mtrx.bid_price = *_feed_price;
+                // get_next_bid() shouldn't return shorts if there's no feed
+                FC_ASSERT( _feed_price.valid() );
 
                 // Skip shorts that are over the price limit
                 if( _current_bid->state.limit_price.valid() )
                 {
+                  // TODO:  Move this termination check elsewhere
                   if( *_current_bid->state.limit_price < mtrx.ask_price )
                   {
                       _current_bid.reset(); continue;
                   }
-                  mtrx.bid_price = std::min( *_current_bid->state.limit_price, mtrx.bid_price );
+                  mtrx.bid_price = std::min( *_current_bid->state.limit_price, *_feed_price );
+                }
+                else
+                {
+                  mtrx.bid_price = *_feed_price;
                 }
             }
 
