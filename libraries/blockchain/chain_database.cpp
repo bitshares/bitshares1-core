@@ -214,7 +214,7 @@ namespace bts { namespace blockchain {
               else
               {
                   auto status = self->get_market_status( key.order_price.quote_asset_id, key.order_price.base_asset_id );
-                  if( status && status->current_feed_price && *status->current_feed_price <= *order.limit_price )
+                  if( status && (*order.limit_price >= *status->current_feed_price) )
                      _shorts_at_feed.insert( key );
                  _short_limit_index.insert( std::make_pair( *order.limit_price, key ) );
               }
@@ -2371,7 +2371,7 @@ namespace bts { namespace blockchain {
          else
          {
             auto status = get_market_status( key.order_price.quote_asset_id, key.order_price.base_asset_id );
-            if( status && status->current_feed_price && *status->current_feed_price <= *order.limit_price )
+            if( status && status->current_feed_price && (*order.limit_price >= *status->current_feed_price) )
                my->_shorts_at_feed.insert( key );
             // get feed and if feed insert into shorts at feed
             my->_short_limit_index.insert( std::make_pair( *order.limit_price, key ) );
@@ -2440,7 +2440,7 @@ namespace bts { namespace blockchain {
                 key.order_price.base_asset_id == base_id  )
             {
                const order_record& value = market_itr.value();
-               if( !value.limit_price || *value.limit_price >  *new_feed )
+               if( !value.limit_price || (*value.limit_price >= *new_feed) )
                   my->_shorts_at_feed.insert( market_itr.key() );
             }
             else
@@ -2460,7 +2460,7 @@ namespace bts { namespace blockchain {
          {
             if( itr->first.quote_asset_id != quote_id ) break;
             if( itr->first.base_asset_id != base_id ) break;
-            if( itr->first <= *new_feed )
+            if( itr->first >= *new_feed )
                my->_shorts_at_feed.insert( itr->second );
             else
                break;
@@ -2476,7 +2476,7 @@ namespace bts { namespace blockchain {
          {
             if( itr->first.quote_asset_id != quote_id ) break;
             if( itr->first.base_asset_id != base_id ) break;
-            if( itr->first > *new_feed )
+            if( itr->first < *new_feed )
                my->_shorts_at_feed.erase( itr->second );
             else break;
             ++itr;
