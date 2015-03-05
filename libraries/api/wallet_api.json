@@ -1456,7 +1456,7 @@
                   "name" : "issuer_permissions",
                   "type" : "asset_permission_array",
                   "description" : "a set of permissions an issuer retains",
-                  "default_value" : ["restricted", "retractable","market_halt","balance_halt","supply_limit"]
+                  "default_value" : ["restricted", "retractable","market_halt","balance_halt","supply_unlimit"]
                },
                {
                   "name" : "issuer_account_name",
