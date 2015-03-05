@@ -706,7 +706,7 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const string& acco
                if( _relay_fee_collector && condition.owner == _relay_fee_collector->active_address() && !condition.memo )
                {
                   //Tally it up as fees, and don't show it in ledger
-                  record.balance[deposit.condition.asset_id] += deposit.amount;
+                  record.fees_paid[deposit.condition.asset_id] += deposit.amount;
                   continue;
                }
 
@@ -728,7 +728,7 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const string& acco
                }
 
                //Record any yield
-               if( record.yield.count(asset_id) )
+               if( record.yield_claimed.count(asset_id) )
                {
                   auto& yields = summary.delta_amounts["Yield"];
                   auto asset_yield = std::find_if(yields.begin(), yields.end(),
@@ -736,9 +736,9 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const string& acco
                                                      return a.asset_id == asset_id;
                                                   });
                   if( asset_yield != yields.end() )
-                     asset_yield->amount += record.yield[asset_id];
+                     asset_yield->amount += record.yield_claimed[asset_id];
                   else
-                     yields.emplace_back(record.yield[asset_id], asset_id);
+                     yields.emplace_back(record.yield_claimed[asset_id], asset_id);
                }
 
                raw_delta_amounts[summary.delta_labels[i]][asset_id] -= deposit.amount;
@@ -754,7 +754,7 @@ bts::wallet::transaction_ledger_entry light_wallet::summarize(const string& acco
       for( auto asset : delta.second )
          summary.delta_amounts[delta.first].emplace_back(asset.second, asset.first);
    if( tally_fees )
-      for( auto fee : record.balance )
+      for( auto fee : record.fees_paid )
          if( fee.second )
             summary.delta_amounts["Fee"].emplace_back(fee.second, fee.first);
 

@@ -56,7 +56,7 @@ namespace bts { namespace blockchain {
           new_record.set_signing_key( eval_state._current_state->get_head_block_num(), this->active_key );
 
           const asset reg_fee( eval_state._current_state->get_delegate_registration_fee( this->delegate_pay_rate ), 0 );
-          eval_state.required_fees += reg_fee;
+          eval_state.min_fees[ reg_fee.asset_id ] += reg_fee.amount;
       }
 
       eval_state._current_state->store_account_record( new_record );
@@ -129,7 +129,7 @@ namespace bts { namespace blockchain {
               current_record->set_signing_key( eval_state._current_state->get_head_block_num(), current_record->active_key() );
 
               const asset reg_fee( eval_state._current_state->get_delegate_registration_fee( this->delegate_pay_rate ), 0 );
-              eval_state.required_fees += reg_fee;
+              eval_state.min_fees[ reg_fee.asset_id ] += reg_fee.amount;
           }
       }
 

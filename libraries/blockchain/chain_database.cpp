@@ -41,7 +41,7 @@ namespace bts { namespace blockchain {
                 try
                 {
                   transaction_evaluation_state_ptr eval_state = self->evaluate_transaction( trx, _relay_fee );
-                  share_type fees = eval_state->get_fees();
+                  share_type fees = eval_state->calculate_base_fees();
                   _pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
                   ilog( "revalidated pending transaction id ${id}", ("id", trx_id) );
                 }
@@ -1363,7 +1363,7 @@ namespace bts { namespace blockchain {
                 const auto trx = pending_itr.value();
                 const auto trx_id = trx.id();
                 const auto eval_state = evaluate_transaction( trx, my->_relay_fee );
-                share_type fees = eval_state->get_fees();
+                share_type fees = eval_state->calculate_base_fees();
                 my->_pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
                 my->_pending_transaction_db.store( trx_id, trx );
              }
@@ -1499,7 +1499,7 @@ namespace bts { namespace blockchain {
       transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>( pend_state.get() );
 
       trx_eval_state->evaluate( trx );
-      const share_type fees = trx_eval_state->get_fees() + trx_eval_state->alt_fees_paid.amount;
+      const share_type fees = trx_eval_state->calculate_base_fees();
       if( fees < required_fees )
       {
           ilog("Transaction ${id} needed relay fee ${required_fees} but only had ${fees}", ("id", trx.id())("required_fees",required_fees)("fees",fees));
@@ -1519,7 +1519,7 @@ namespace bts { namespace blockchain {
           transaction_evaluation_state_ptr eval_state = std::make_shared<transaction_evaluation_state>( pending_state.get() );
 
           eval_state->evaluate( transaction );
-          const share_type fees = eval_state->get_fees() + eval_state->alt_fees_paid.amount;
+          const share_type fees = eval_state->calculate_base_fees();
           if( fees < min_fee )
              FC_CAPTURE_AND_THROW( insufficient_relay_fee, (fees)(min_fee) );
        }
@@ -1893,7 +1893,7 @@ namespace bts { namespace blockchain {
       }
 
       transaction_evaluation_state_ptr eval_state = evaluate_transaction( trx, relay_fee );
-      const share_type fees = eval_state->get_fees() + eval_state->alt_fees_paid.amount;
+      const share_type fees = eval_state->calculate_base_fees();
 
       //if( fees < my->_relay_fee )
       //   FC_CAPTURE_AND_THROW( insufficient_relay_fee, (fees)(my->_relay_fee) );
@@ -1994,7 +1994,7 @@ namespace bts { namespace blockchain {
                       trx_eval_state->evaluate( new_transaction );
 
                       // Check transaction fee limit
-                      const share_type transaction_fee = trx_eval_state->get_fees( 0 ) + trx_eval_state->alt_fees_paid.amount;
+                      const share_type transaction_fee = trx_eval_state->calculate_base_fees();
                       if( transaction_fee < config.transaction_min_fee )
                       {
                           wlog( "Excluding transaction ${id} with fee ${fee} because it does not meet transaction fee limit ${limit}",

@@ -1,5 +1,5 @@
-#include <bts/blockchain/transaction_creation_state.hpp>
 #include <bts/blockchain/balance_operations.hpp>
+#include <bts/blockchain/transaction_creation_state.hpp>
 
 #include <algorithm>
 
@@ -19,7 +19,7 @@ namespace bts { namespace blockchain {
           if( item.second.asset_id() == amount_to_withdraw.asset_id )
           {
              auto owner = item.second.owner();
-             if( owner && eval_state.signed_keys.find(*owner) != eval_state.signed_keys.end() &&
+             if( owner && eval_state.signed_addresses.find(*owner) != eval_state.signed_addresses.end() &&
                  item.second.balance > 0 )
              {
                 auto withdraw_from_balance = std::min<share_type>( item.second.balance, left_to_withdraw );
@@ -40,12 +40,12 @@ namespace bts { namespace blockchain {
        FC_ASSERT( left_to_withdraw == 0, "Unable to withdraw requested amount.",
                   ("left_to_withdraw", left_to_withdraw)
                   ("all_balances", pending_state._balance_id_to_record)
-                  ("available_keys", eval_state.signed_keys) );
+                  ("available_keys", eval_state.signed_addresses) );
     }
 
     void transaction_creation_state::add_known_key( const address& key )
     {
-      eval_state.signed_keys.insert(key);
+      eval_state.signed_addresses.insert(key);
     }
 
     public_key_type transaction_creation_state::deposit( const asset&           amount,

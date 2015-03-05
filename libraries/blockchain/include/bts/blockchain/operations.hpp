@@ -73,7 +73,7 @@ namespace bts { namespace blockchain {
 
       authorize_op_type             = 29,
 
-      pay_fee_op_type               = 30,
+      limit_fee_op_type             = 30,
 
       update_cover_op_type          = 31
    };
@@ -159,7 +159,7 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (update_balance_vote_op_type)
                  (data_op_type)
                  (authorize_op_type)
-                 (pay_fee_op_type)
+                 (limit_fee_op_type)
                  (update_cover_op_type)
                  )
 

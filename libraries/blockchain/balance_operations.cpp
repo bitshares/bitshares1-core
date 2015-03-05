@@ -124,7 +124,7 @@ namespace bts { namespace blockchain {
        }
 
        cur_record->balance += this->amount;
-       eval_state.sub_balance( deposit_balance_id, asset( this->amount, cur_record->condition.asset_id ) );
+       eval_state.sub_balance( asset( this->amount, cur_record->asset_id() ) );
 
        if( cur_record->condition.asset_id == 0 && cur_record->condition.slate_id )
           eval_state.adjust_vote( cur_record->condition.slate_id, this->amount );
@@ -224,17 +224,16 @@ namespace bts { namespace blockchain {
             asset_rec->collected_fees       -= yield.amount;
             current_balance_record->balance += yield.amount;
             current_balance_record->deposit_date = eval_state._current_state->now();
-            eval_state.yield[current_balance_record->condition.asset_id] += yield.amount;
+            eval_state.yield_claimed[ current_balance_record->asset_id() ] += yield.amount;
             eval_state._current_state->store_asset_record( *asset_rec );
          }
       }
 
       current_balance_record->balance -= this->amount;
-      eval_state.add_balance( asset(this->amount, current_balance_record->condition.asset_id) );
-
       current_balance_record->last_update = eval_state._current_state->now();
-
       eval_state._current_state->store_balance_record( *current_balance_record );
+
+      eval_state.add_balance( asset( this->amount, current_balance_record->condition.asset_id ) );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
    void burn_operation::evaluate( transaction_evaluation_state& eval_state )const
@@ -259,7 +258,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( !asset_rec->is_market_issued() );
 
       asset_rec->current_share_supply -= this->amount.amount;
-      eval_state.sub_balance( address(), this->amount );
+      eval_state.sub_balance( this->amount );
 
       eval_state._current_state->store_asset_record( *asset_rec );
 
@@ -536,9 +535,10 @@ namespace bts { namespace blockchain {
 
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-   void pay_fee_operation::evaluate( transaction_evaluation_state& eval_state )const
+   void limit_fee_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
-      eval_state._max_fee[this->amount.asset_id] += this->amount.amount;
+       FC_ASSERT( eval_state.max_fees.count( this->max_fee.asset_id ) == 0 );
+       eval_state.max_fees[ this->max_fee.asset_id ] = this->max_fee.amount;
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 } } // bts::blockchain

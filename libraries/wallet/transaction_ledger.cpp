@@ -483,7 +483,7 @@ wallet_transaction_record wallet_impl::scan_transaction(
                   transaction_record->ledger_entries.pop_back();
               }
 
-              for( const auto& yield_item : blockchain_trx_state->yield )
+              for( const auto& yield_item : blockchain_trx_state->yield_claimed )
               {
                  auto entry = ledger_entry();
                  entry.amount = asset( yield_item.second, yield_item.first );
@@ -494,7 +494,7 @@ wallet_transaction_record wallet_impl::scan_transaction(
                  self->wallet_claimed_transaction( transaction_record->ledger_entries.back() );
               }
 
-              if( !blockchain_trx_state->yield.empty() )
+              if( !blockchain_trx_state->yield_claimed.empty() )
                  _wallet_db.store_transaction( *transaction_record );
           }
        }
