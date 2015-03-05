@@ -79,6 +79,7 @@ namespace bts { namespace blockchain { namespace detail {
     oprice                        _feed_price;
 
     int                           _orders_filled = 0;
+    int                           _current_pass;
 
   public:
     vector<market_transaction>    _market_transactions;

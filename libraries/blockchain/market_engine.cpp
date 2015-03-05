@@ -5,6 +5,11 @@
 
 namespace bts { namespace blockchain { namespace detail {
 
+#define MARKET_ENGINE_PASS_PROCESS_MARGIN_CALLS   0
+#define MARKET_ENGINE_PASS_PROCESS_EXPIRED_COVERS 1
+#define MARKET_ENGINE_PASS_PROCESS_ASK_ORDERS     2
+#define MARKET_ENGINE_PASS_COUNT                  3
+
   market_engine::market_engine( const pending_chain_state_ptr ps, const chain_database_impl& cdi )
   :_pending_state(ps),_db_impl(cdi)
   {
@@ -48,6 +53,7 @@ namespace bts { namespace blockchain { namespace detail {
 
           if( !_ask_itr.valid() ) _ask_itr = _db_impl._ask_db.begin();
 
+          // TODO:  does this really work if iterator is begin()?
           if( _bid_itr.valid() )   --_bid_itr;
           else _bid_itr = _db_impl._bid_db.last();
 
@@ -56,7 +62,6 @@ namespace bts { namespace blockchain { namespace detail {
 
           if( _short_itr.valid() )   --_short_itr;
           else _short_itr = _db_impl._short_db.last();
-
 
           // Market issued assets cannot match until the first time there is a median feed; assume feed price base id 0
           if( quote_asset->is_market_issued() && base_asset->id == 0 )
@@ -71,11 +76,35 @@ namespace bts { namespace blockchain { namespace detail {
           if( _feed_price )
              _short_at_limit_itr = decltype(_short_at_limit_itr)(_db_impl._short_limit_index.lower_bound( std::make_pair( *_feed_price, market_index_key( next_pair )) ));
 
-
-          // prime the pump, to make sure that margin calls (asks) have a bid to check against.
-          get_next_bid(); get_next_ask();
-          while( get_next_bid() && get_next_ask() )
+          _current_bid.reset();
+          for( _current_pass=0; _current_pass<MARKET_ENGINE_PASS_COUNT; _current_pass++ )
           {
+           _current_ask.reset();
+           while( true )
+           {
+            if( (!_current_bid.valid()) || (_current_bid->get_balance().amount <= 0) )
+            {
+                ilog("getting next bid");
+                get_next_bid();
+                if( (!_current_bid.valid()) )
+                {
+                    ilog("market engine terminating due to no more bids");
+                    break;
+                }
+                idump( (_current_bid) );
+            }
+            if( (!_current_ask.valid()) || (_current_ask->get_balance().amount <= 0) )
+            {
+                ilog("getting next ask");
+                get_next_ask();
+                if( (!_current_ask.valid()) )
+                {
+                    ilog("market engine terminating due to no more asks");
+                    break;
+                }
+                idump( (_current_ask) );
+            }
+            
             // Make sure that at least one order was matched every time we enter the loop
             FC_ASSERT( _orders_filled != last_orders_filled, "We appear caught in an order matching loop!" );
             last_orders_filled = _orders_filled;
@@ -311,7 +340,8 @@ namespace bts { namespace blockchain { namespace detail {
                 base_asset->collected_fees += mtrx.fees_collected.amount;
             else if( mtrx.fees_collected.asset_id == quote_asset->id )
                 quote_asset->collected_fees += mtrx.fees_collected.amount;
-          } // while( next bid && next ask )
+           }
+          }
 
           // update any fees collected
           _pending_state->store_asset_record( *quote_asset );
@@ -711,18 +741,21 @@ namespace bts { namespace blockchain { namespace detail {
 
       _current_ask.reset();
       ++_orders_filled;
-      
-      if( get_next_ask_margin_call() )
-          return true;
-          
-      if( get_next_ask_expired_cover() )
-          return true;
-      
-      if( get_next_ask_order() )
-          return true;
-          
+
+      switch( _current_pass )
+      {      
+      case MARKET_ENGINE_PASS_PROCESS_MARGIN_CALLS:
+          return get_next_ask_margin_call();
+      case MARKET_ENGINE_PASS_PROCESS_EXPIRED_COVERS:
+          return get_next_ask_expired_cover();
+      case MARKET_ENGINE_PASS_PROCESS_ASK_ORDERS:
+          return get_next_ask_order();
+      default:          
+          FC_ASSERT( false, "_current_pass value is unknown" );
+      }
+      // unreachable, but necessary to silence gcc compiler warning
       return false;
-      } FC_CAPTURE_AND_RETHROW()
+    } FC_CAPTURE_AND_RETHROW()
   }
           
   bool market_engine::get_next_ask_margin_call()
