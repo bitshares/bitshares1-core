@@ -103,19 +103,22 @@ namespace bts { namespace blockchain { namespace detail {
             if( _current_bid->type == short_order )
             {
                 FC_ASSERT( quote_asset->is_market_issued() );
-                if( !_feed_price.valid() ) { _current_bid.reset(); continue; }
-
-                // Always execute shorts at the feed price
-                mtrx.bid_price = *_feed_price;
+                // get_next_bid() shouldn't return shorts if there's no feed
+                FC_ASSERT( _feed_price.valid() );
 
                 // Skip shorts that are over the price limit
                 if( _current_bid->state.limit_price.valid() )
                 {
+                  // TODO:  Move this termination check elsewhere
                   if( *_current_bid->state.limit_price < mtrx.ask_price )
                   {
                       _current_bid.reset(); continue;
                   }
-                  mtrx.bid_price = std::min( *_current_bid->state.limit_price, mtrx.bid_price );
+                  mtrx.bid_price = std::min( *_current_bid->state.limit_price, *_feed_price );
+                }
+                else
+                {
+                  mtrx.bid_price = *_feed_price;
                 }
             }
 
@@ -711,7 +714,22 @@ namespace bts { namespace blockchain { namespace detail {
 
       _current_ask.reset();
       ++_orders_filled;
-
+      
+      if( get_next_ask_margin_call() )
+          return true;
+          
+      if( get_next_ask_expired_cover() )
+          return true;
+      
+      if( get_next_ask_order() )
+          return true;
+          
+      return false;
+      } FC_CAPTURE_AND_RETHROW()
+  }
+          
+  bool market_engine::get_next_ask_margin_call()
+  {
       /**
       *  Margin calls take priority over all other ask orders
       */
@@ -733,7 +751,7 @@ namespace bts { namespace blockchain { namespace detail {
             {
                 _current_ask = cover_ask;
                 --_collateral_itr;
-                return _current_ask.valid();
+                return true;
             }
             --_collateral_itr;
             break;
@@ -741,7 +759,11 @@ namespace bts { namespace blockchain { namespace detail {
         _collateral_itr.reset();
         break;
       }
+      return false;
+  }
 
+  bool market_engine::get_next_ask_expired_cover()
+  {
       /**
        *  Process expired collateral positions.
        *  Expired margin positions take second priority based upon age
@@ -777,38 +799,27 @@ namespace bts { namespace blockchain { namespace detail {
             return true;
          } // else continue to next item
       }
+      return false;
+  }
 
+  bool market_engine::get_next_ask_order()
+  {
       /**
        *  Process asks.
        */
 
-      optional<market_order> ask;
+      if( !_ask_itr.valid() )
+          return false;
 
-      if( _ask_itr.valid() )
-      {
-        market_order abs_ask = market_order( ask_order, _ask_itr.key(), _ask_itr.value() );
-        if( (abs_ask.get_price().quote_asset_id == _quote_id && abs_ask.get_price().base_asset_id == _base_id)
-            && ((!ask.valid()) || (abs_ask.get_price() < ask->get_price( *_feed_price))) )
-            ask = abs_ask;
-      }
+      market_order abs_ask = market_order( ask_order, _ask_itr.key(), _ask_itr.value() );
+      if( (abs_ask.get_price().quote_asset_id != _quote_id) || (abs_ask.get_price().base_asset_id != _base_id) )
+          return false;
 
-      if( ask )
-      {
-          _current_ask = ask;
-          switch( uint8_t(ask->type) )
-          {
-              case ask_order:
-                  ++_ask_itr;
-                  break;
-              default:
-                  // TODO:  Warning or something goes here?
-                  ;
-          }
-      }
+      _current_ask = abs_ask;
+      ++_ask_itr;
 
-      return _current_ask.valid();
-  } FC_CAPTURE_AND_RETHROW() }
-
+      return true;
+  }
 
   /**
     *  This method should not affect market execution or validation and

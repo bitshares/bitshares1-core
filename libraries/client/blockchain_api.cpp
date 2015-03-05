@@ -313,15 +313,25 @@ unordered_map<balance_id_type, balance_record> detail::client_impl::blockchain_l
     return _chain_db->get_balances( id, limit );
 } FC_CAPTURE_AND_RETHROW( (first)(limit) ) }
 
-account_balance_summary_type detail::client_impl::blockchain_get_account_public_balance( const string& account_name ) const
+map<asset_id_type, share_type> detail::client_impl::blockchain_get_account_public_balance( const string& account_name )const
 { try {
-  const auto& acct = _wallet->get_account( account_name );
-  map<asset_id_type, share_type> balances;
-  for( const auto& pair : _chain_db->get_balances_for_key( acct.active_key() ) )
-      balances[pair.second.asset_id()] = pair.second.balance;
-  account_balance_summary_type ret;
-  ret[account_name] = balances;
-  return ret;
+    const oaccount_record account_record = _chain_db->get_account_record( account_name );
+    FC_ASSERT( account_record.valid() );
+
+    map<asset_id_type, share_type> result;
+
+    const auto scan_key = [ & ]( const public_key_type& key )
+    {
+        const auto& balances = _chain_db->get_balances_for_key( key );
+        for( const auto& item : balances )
+        {
+            const balance_record& balance = item.second;
+            result[ balance.asset_id() ] += balance.balance;
+        }
+    };
+    account_record->scan_public_keys( scan_key );
+
+    return result;
 } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
 unordered_map<balance_id_type, balance_record> detail::client_impl::blockchain_list_address_balances( const string& raw_addr,
@@ -509,75 +519,37 @@ asset client_impl::blockchain_calculate_debt( const string& which_asset, bool in
    return asset( _chain_db->calculate_debts( include_interest ).at( asset_id ), asset_id );
 } FC_CAPTURE_AND_RETHROW( (which_asset)(include_interest) ) }
 
-bts::blockchain::blockchain_security_state client_impl::blockchain_get_security_state()const
-{
-   blockchain_security_state state;
-   int64_t required_confirmations = _chain_db->get_required_confirmations();
-   double participation_rate = _chain_db->get_average_delegate_participation();
-   if( participation_rate > 100 ) participation_rate = 100;
-
-   state.estimated_confirmation_seconds = (uint32_t)(required_confirmations * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
-   state.participation_rate = participation_rate;
-   if (!blockchain_is_synced())
-   {
-      state.alert_level = bts::blockchain::blockchain_security_state::grey;
-   }
-   else if (required_confirmations <= BTS_BLOCKCHAIN_NUM_DELEGATES / 2
-            && participation_rate > 80)
-   {
-      state.alert_level = bts::blockchain::blockchain_security_state::green;
-   }
-   else if (required_confirmations > BTS_BLOCKCHAIN_NUM_DELEGATES
-            || participation_rate < 60)
-   {
-      state.alert_level = bts::blockchain::blockchain_security_state::red;
-   }
-   else
-   {
-      state.alert_level = bts::blockchain::blockchain_security_state::yellow;
-   }
-
-   return state;
-}
-
-bool client_impl::blockchain_is_synced() const
-{
-   return (blockchain::now() - _chain_db->get_head_block().timestamp) < fc::seconds(BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
-}
-
-vector<market_order>    client_impl::blockchain_market_list_bids( const string& quote_symbol,
-                                                                  const string& base_symbol,
-                                                                  uint32_t limit  )
+vector<market_order> client_impl::blockchain_market_list_bids( const string& quote_symbol, const string& base_symbol,
+                                                               uint32_t limit )const
 {
    return _chain_db->get_market_bids( quote_symbol, base_symbol, limit );
 }
-vector<market_order>    client_impl::blockchain_market_list_asks( const string& quote_symbol,
-                                                                  const string& base_symbol,
-                                                                  uint32_t limit  )
+
+vector<market_order> client_impl::blockchain_market_list_asks( const string& quote_symbol, const string& base_symbol,
+                                                               uint32_t limit )const
 {
    return _chain_db->get_market_asks( quote_symbol, base_symbol, limit );
 }
 
-vector<market_order>    client_impl::blockchain_market_list_shorts( const string& quote_symbol,
-                                                                    uint32_t limit  )const
+vector<market_order> client_impl::blockchain_market_list_shorts( const string& quote_symbol,
+                                                                 uint32_t limit )const
 {
    return _chain_db->get_market_shorts( quote_symbol, limit );
 }
-vector<market_order>    client_impl::blockchain_market_list_covers( const string& quote_symbol,
-                                                                    const string& base_symbol,
-                                                                    uint32_t limit  )
+vector<market_order> client_impl::blockchain_market_list_covers( const string& quote_symbol, const string& base_symbol,
+                                                                 uint32_t limit )const
 {
    return _chain_db->get_market_covers( quote_symbol, base_symbol, limit );
 }
 
-share_type              client_impl::blockchain_market_get_asset_collateral( const string& symbol )
+share_type client_impl::blockchain_market_get_asset_collateral( const string& symbol )const
 {
    return _chain_db->get_asset_collateral( symbol );
 }
 
 std::pair<vector<market_order>,vector<market_order>> client_impl::blockchain_market_order_book( const string& quote_symbol,
                                                                                                 const string& base_symbol,
-                                                                                                uint32_t limit  )
+                                                                                                uint32_t limit )const
 {
    auto bids = blockchain_market_list_bids(quote_symbol, base_symbol, limit);
    auto asks = blockchain_market_list_asks(quote_symbol, base_symbol, limit);

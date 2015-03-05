@@ -1079,6 +1079,12 @@
               "type" : "uint32_t",
               "description" : "the maximum number of blocks to scan",
               "default_value" : -1
+            },
+            {
+              "name" : "scan_in_background",
+              "type" : "bool",
+              "description" : "if true then scan asynchronously in the background, otherwise block until scan is done",
+              "default_value" : true
             }
           ],
         "prerequisites" : ["wallet_unlocked"],

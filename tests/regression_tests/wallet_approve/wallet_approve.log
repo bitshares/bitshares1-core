@@ -579,4 +579,30 @@ default (unlocked) >>> wallet_list_approvals
     "custom_data": {}
   }
 ]
+default (unlocked) >>> help wallet_get_approval
+Usage:
+wallet_get_approval <approval>                                                                        Get the specified approval entry
+Get the specified approval entry
+
+Parameters:
+  approval (string, required): the name of the approval to query
+
+Returns:
+  owallet_approval_record
+
+aliases: approval, get_approval
+default (unlocked) >>> wallet_get_approval delegate1
+{
+  "index": 9,
+  "name": "delegate1",
+  "approval": 0,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_get_approval delegate30
+{
+  "index": 20,
+  "name": "delegate30",
+  "approval": -1,
+  "custom_data": {}
+}
 default (unlocked) >>> quit

@@ -215,14 +215,14 @@ namespace bts { namespace blockchain {
          optional<market_order>             get_market_bid( const market_index_key& )const;
          vector<market_order>               get_market_bids( const string& quote_symbol,
                                                              const string& base_symbol,
-                                                             uint32_t limit = uint32_t(-1) );
+                                                             uint32_t limit = uint32_t(-1) )const;
 
          optional<market_order>             get_market_short( const market_index_key& )const;
          vector<market_order>               get_market_shorts( const string& quote_symbol,
-                                                               uint32_t limit = uint32_t(-1) );
+                                                               uint32_t limit = uint32_t(-1) )const;
          vector<market_order>               get_market_covers( const string& quote_symbol,
                                                                const string& base_symbol = BTS_BLOCKCHAIN_SYMBOL,
-                                                               uint32_t limit = uint32_t(-1) );
+                                                               uint32_t limit = uint32_t(-1) )const;
 
          share_type                         get_asset_collateral( const string& symbol );
 
@@ -231,7 +231,7 @@ namespace bts { namespace blockchain {
          optional<market_order>             get_market_ask( const market_index_key& )const;
          vector<market_order>               get_market_asks( const string& quote_symbol,
                                                              const string& base_symbol,
-                                                             uint32_t limit = uint32_t(-1) );
+                                                             uint32_t limit = uint32_t(-1) )const;
 
          optional<market_order>             get_market_order( const order_id_type& order_id, order_type_enum type = null_order )const;
 
@@ -262,15 +262,15 @@ namespace bts { namespace blockchain {
          virtual void                       store_short_record( const market_index_key& key, const order_record& ) override;
          virtual void                       store_collateral_record( const market_index_key& key, const collateral_record& ) override;
 
-         virtual omarket_status             get_market_status( const asset_id_type quote_id, const asset_id_type base_id )override;
+         virtual omarket_status             get_market_status( const asset_id_type quote_id, const asset_id_type base_id )const override;
          virtual void                       store_market_status( const market_status& s ) override;
          virtual void                       store_market_history_record( const market_history_key &key, const market_history_record &record ) override;
-         virtual omarket_history_record     get_market_history_record( const market_history_key &key ) const override;
+         virtual omarket_history_record     get_market_history_record( const market_history_key &key )const override;
          market_history_points              get_market_price_history( const asset_id_type quote_id,
                                                                       const asset_id_type base_id,
                                                                       const fc::time_point start_time,
                                                                       const fc::microseconds duration,
-                                                                      market_history_key::time_granularity_enum granularity );
+                                                                      market_history_key::time_granularity_enum granularity )const;
 
          virtual void                       set_market_transactions( vector<market_transaction> trxs )override;
          vector<market_transaction>         get_market_transactions( uint32_t block_num  )const;

@@ -1001,10 +1001,10 @@ public_key_type client_impl::wallet_account_create( const string& account_name )
    return result;
 } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
-void client_impl::wallet_rescan_blockchain( const uint32_t start_block_num, const uint32_t limit )
+void client_impl::wallet_rescan_blockchain( const uint32_t start_block_num, const uint32_t limit, const bool scan_in_background )
 { try {
-    _wallet->start_scan( start_block_num, limit );
-} FC_CAPTURE_AND_RETHROW( (start_block_num)(limit) ) }
+    _wallet->start_scan( start_block_num, limit, scan_in_background );
+} FC_CAPTURE_AND_RETHROW( (start_block_num)(limit)(scan_in_background) ) }
 
 void client_impl::wallet_cancel_scan()
 { try {

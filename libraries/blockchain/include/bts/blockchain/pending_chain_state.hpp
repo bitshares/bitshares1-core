@@ -25,7 +25,7 @@ namespace bts { namespace blockchain {
 
          virtual void                   store_transaction( const transaction_id_type&, const transaction_record&  ) override;
 
-         virtual omarket_status         get_market_status( const asset_id_type quote_id, const asset_id_type base_id )override;
+         virtual omarket_status         get_market_status( const asset_id_type quote_id, const asset_id_type base_id )const override;
          virtual void                   store_market_status( const market_status& s ) override;
 
          virtual omarket_order          get_lowest_ask_record( const asset_id_type quote_id,

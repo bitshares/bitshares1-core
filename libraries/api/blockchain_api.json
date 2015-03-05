@@ -86,15 +86,6 @@
         "aliases" : ["debt", "calculate_debt"]
       },
       {
-        "method_name": "blockchain_is_synced",
-        "description": "Returns true if the local blockchain is synced with the network; false otherwise",
-        "return_type": "bool",
-        "parameters" : [],
-        "is_const" : true,
-        "prerequisites" : ["no_prerequisites"],
-        "aliases" : ["synced"]
-      },
-      {
         "method_name": "blockchain_get_block_count",
         "description": "Returns the current head block number",
         "return_type": "uint32_t",
@@ -103,16 +94,6 @@
         "is_const" : true,
         "prerequisites" : ["no_prerequisites"],
         "aliases" : ["blockchain_get_blockcount", "getblockcount"]
-      },
-      {
-        "method_name": "blockchain_get_security_state",
-        "description": "Returns information about blockchain security level",
-        "return_type": "blockchain_security_state",
-        "cached"   : true,
-        "parameters" : [],
-        "is_const" : true,
-        "prerequisites" : ["no_prerequisites"],
-        "aliases" : ["alert_state", "security_state"]
       },
       {
         "method_name": "blockchain_list_accounts",
@@ -380,18 +361,18 @@
       },
       {
          "method_name" : "blockchain_get_account_public_balance",
-         "description" : "Get the account record for a given name",
-        "cached"   : true,
-         "return_type" : "account_balance_summary_type",
+         "description" : "Get the public balances associated with the specified account name; this command can take a long time",
+         "return_type" : "asset_balance_map",
          "parameters"  : [
                {
                   "name" : "account_name",
                   "type" : "account_name",
-                  "description" : "the name of the account whose public address you want"
+                  "description" : "the account name to query public balances for"
                }
             ],
          "is_const" : true,
-         "prerequisites" : ["wallet_open"]
+         "prerequisites" : ["no_prerequisites"],
+         "cached"   : true
       },
       {
          "method_name" : "blockchain_median_feed_price",
@@ -493,6 +474,7 @@
               "default_value" : "-1"
            }
         ],
+        "is_const" : true,
         "prerequisites" : ["no_prerequisites"],
         "aliases" : ["market_bids"]
       },
@@ -519,6 +501,7 @@
               "default_value" : "-1"
            }
         ],
+        "is_const" : true,
         "prerequisites" : ["no_prerequisites"],
         "aliases" : ["market_asks"]
       },
@@ -568,6 +551,7 @@
               "default_value" : "-1"
            }
         ],
+        "is_const" : true,
         "prerequisites" : ["no_prerequisites"],
         "aliases" : ["market_covers"]
       },
@@ -583,6 +567,7 @@
               "description" : "the symbol for the asset to count collateral for"
            }
         ],
+        "is_const" : true,
         "prerequisites" : ["no_prerequisites"],
         "aliases" : ["collateral"]
       },
@@ -609,6 +594,7 @@
               "default_value" : "10"
            }
         ],
+        "is_const" : true,
         "prerequisites" : ["no_prerequisites"],
         "aliases" : ["market_book"]
       },
