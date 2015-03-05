@@ -78,6 +78,8 @@ namespace bts { namespace blockchain {
                          share_type max_share_supply,
                          uint64_t precision );
 
+      // TODO: merge these two
+      /*
       void update_asset( const asset_id_type asset_id,
                          const optional<string>& name,
                          const optional<string>& description,
@@ -99,6 +101,7 @@ namespace bts { namespace blockchain {
                          uint32_t required_sigs,
                          const vector<address>& authority
                          );
+                         */
 
       void burn( const asset& quantity,
                  account_id_type for_or_against,

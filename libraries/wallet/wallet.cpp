@@ -3103,8 +3103,11 @@ namespace detail {
 	  }
 
       transaction_builder_ptr builder = create_transaction_builder();
+      // TODO
+      /*
       builder->update_asset( symbol, name, description, public_data, maximum_share_supply, precision,
                              issuer_fee, market_fee, flags, issuer_perms, issuer_account_id, required_sigs, authority );
+                             */
       builder->finalize();
 
       if( sign )

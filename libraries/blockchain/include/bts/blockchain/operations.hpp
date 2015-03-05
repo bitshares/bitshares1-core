@@ -16,6 +16,7 @@ namespace bts { namespace blockchain {
 
    class transaction_evaluation_state;
 
+   // NOTE: Avoid changing these to ease downstream merges
    enum operation_type_enum
    {
       null_op_type                  = 0,
@@ -33,9 +34,9 @@ namespace bts { namespace blockchain {
       create_asset_op_type          = 6,
       update_asset_op_type          = 7,
       issue_asset_op_type           = 8,
-      create_asset_prop_op_type     = 9,
 
       // reserved
+      reserved_op_0_type            = 9,
       reserved_op_1_type            = 10,
       reserved_op_2_type            = 11,
 
@@ -62,7 +63,7 @@ namespace bts { namespace blockchain {
 
       update_signing_key_op_type    = 24,
 
-      // reserved (reverted relative orders feature)
+      // reserved
       reserved_op_6_type            = 25,
       reserved_op_7_type            = 26,
 
@@ -70,14 +71,11 @@ namespace bts { namespace blockchain {
 
       data_op_type                  = 28,
 
-      // assets
       authorize_op_type             = 29,
-      update_asset_ext_op_type      = 30,
 
-      pay_fee_op_type               = 44,
+      pay_fee_op_type               = 30,
 
-      update_cover_op_type          = 45
-
+      update_cover_op_type          = 31
    };
 
    /**
@@ -140,7 +138,7 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (create_asset_op_type)
                  (update_asset_op_type)
                  (issue_asset_op_type)
-                 (create_asset_prop_op_type)
+                 (reserved_op_0_type)
                  (reserved_op_1_type)
                  (reserved_op_2_type)
                  (bid_op_type)
@@ -161,7 +159,6 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (update_balance_vote_op_type)
                  (data_op_type)
                  (authorize_op_type)
-                 (update_asset_ext_op_type)
                  (pay_fee_op_type)
                  (update_cover_op_type)
                  )

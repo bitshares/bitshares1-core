@@ -239,6 +239,8 @@ namespace bts { namespace blockchain {
       operations.emplace_back( std::move( op ) );
    }
 
+   // TODO: merge these two
+#if 0
    void transaction::update_asset( const asset_id_type asset_id,
                                    const optional<string>& name,
                                    const optional<string>& description,
@@ -275,6 +277,7 @@ namespace bts { namespace blockchain {
        op.authority = auth_info;
        operations.emplace_back( std::move( op ) );
    }
+#endif
 
    void transaction::issue( const asset& amount_to_issue )
    {
