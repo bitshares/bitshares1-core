@@ -745,7 +745,7 @@ namespace bts { namespace blockchain { namespace detail {
             {
                 _current_ask = cover_ask;
                 --_collateral_itr;
-                return _current_ask.valid();
+                return true;
             }
             --_collateral_itr;
             break;
@@ -802,31 +802,17 @@ namespace bts { namespace blockchain { namespace detail {
        *  Process asks.
        */
 
-      optional<market_order> ask;
+      if( !_ask_itr.valid() )
+          return false;
 
-      if( _ask_itr.valid() )
-      {
-        market_order abs_ask = market_order( ask_order, _ask_itr.key(), _ask_itr.value() );
-        if( (abs_ask.get_price().quote_asset_id == _quote_id && abs_ask.get_price().base_asset_id == _base_id)
-            && ((!ask.valid()) || (abs_ask.get_price() < ask->get_price( *_feed_price))) )
-            ask = abs_ask;
-      }
+      market_order abs_ask = market_order( ask_order, _ask_itr.key(), _ask_itr.value() );
+      if( (abs_ask.get_price().quote_asset_id != _quote_id) || (abs_ask.get_price().base_asset_id != _base_id) )
+          return false;
 
-      if( ask )
-      {
-          _current_ask = ask;
-          switch( uint8_t(ask->type) )
-          {
-              case ask_order:
-                  ++_ask_itr;
-                  break;
-              default:
-                  // TODO:  Warning or something goes here?
-                  ;
-          }
-      }
+      _current_ask = abs_ask;
+      ++_ask_itr;
 
-      return _current_ask.valid();
+      return true;
   }
 
   /**
