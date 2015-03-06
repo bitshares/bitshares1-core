@@ -596,6 +596,11 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
    deduct_balance(from_account.owner_address(), cover_amount);
    trx.cover(cover_amount, order->market_index);
 
+#ifndef WIN32
+#warning Handle this as a softfork
+#endif
+   trx.limit_fee( _wimpl->self->get_transaction_fee() );
+
    if( trx.expiration == time_point_sec() )
        trx.expiration = blockchain::now() + WALLET_DEFAULT_MARKET_TRANSACTION_EXPIRATION_SEC;
 

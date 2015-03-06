@@ -137,6 +137,8 @@ namespace bts { namespace blockchain {
 
       void set_slates( const slate_id_type slate_id );
 
+      void limit_fee( const asset& max_fee );
+
       bool is_cancel()const;
    }; // transaction
 

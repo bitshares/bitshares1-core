@@ -186,6 +186,7 @@ class ClientProcess(object):
         genesis_config=None,
         testdir=None,
         rpc_client=None,
+        debug_stop=False,
         ):
         self.name = name
 
@@ -227,6 +228,8 @@ class ClientProcess(object):
         self.stderr_file = None
 
         self.rpc_client = rpc_client
+
+        self.debug_stop = debug_stop
 
         return
 
@@ -278,6 +281,9 @@ class ClientProcess(object):
             #"--log-commands", os.path.join(data_dir, "console.log"),
             ]
 
+        if self.debug_stop:
+            args.append("--debug-stop")
+
         logging.debug("args: "+str(args))
 
         self.stdout_file = open(os.path.join(data_dir, "stdout.txt"), "wb")
@@ -290,7 +296,14 @@ class ClientProcess(object):
             stdin=subprocess.PIPE,
             cwd=data_dir,
             )
+
+        with open(self.get_pid_filename(), "w") as pidfile:
+            pidfile.write(str(self.process_object.pid)+"\n")
+
         return
+
+    def get_pid_filename(self):
+        return os.path.join(self.testdir, self.name + ".pid")
 
     def stop(self):
         if self.process_object is None:
@@ -311,6 +324,11 @@ class ClientProcess(object):
             self.stdout_file.close()
         if self.stderr_file is not None:
             self.stderr_file.close()
+
+        try:
+            os.remove(self.get_pid_filename())
+        except OSError as e:
+            pass
 
         return
 

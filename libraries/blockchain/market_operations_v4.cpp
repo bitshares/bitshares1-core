@@ -9,7 +9,7 @@ namespace bts { namespace blockchain {
 
 void cover_operation::evaluate_v4( transaction_evaluation_state& eval_state )const
 {
-   if( eval_state._current_state->get_head_block_num() < BTS_V0_4_21_FORK_BLOCK_NUM )
+   if( eval_state._pending_state->get_head_block_num() < BTS_V0_4_21_FORK_BLOCK_NUM )
       return evaluate_v3( eval_state );
 
    if( this->cover_index.order_price == price() )
@@ -29,22 +29,22 @@ void cover_operation::evaluate_v4( transaction_evaluation_state& eval_state )con
    // subtract this from the transaction
    eval_state.sub_balance( delta_amount );
 
-   auto current_cover   = eval_state._current_state->get_collateral_record( this->cover_index );
+   auto current_cover   = eval_state._pending_state->get_collateral_record( this->cover_index );
    if( NOT current_cover )
       FC_CAPTURE_AND_THROW( unknown_market_order, (cover_index) );
 
-   auto  asset_to_cover = eval_state._current_state->get_asset_record( cover_index.order_price.quote_asset_id );
+   auto  asset_to_cover = eval_state._pending_state->get_asset_record( cover_index.order_price.quote_asset_id );
    FC_ASSERT( asset_to_cover.valid() );
 
    const auto start_time = current_cover->expiration - fc::seconds( BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC );
-   auto elapsed_sec = ( eval_state._current_state->now() - start_time ).to_seconds();
+   auto elapsed_sec = ( eval_state._pending_state->now() - start_time ).to_seconds();
    if( elapsed_sec < 0 ) elapsed_sec = 0;
 
    const asset principle = asset( current_cover->payoff_balance, delta_amount.asset_id );
    asset total_debt = detail::market_engine::get_interest_owed( principle, current_cover->interest_rate,
                                                                 elapsed_sec ) + principle;
 
-   if( eval_state._current_state->get_head_block_num() < BTS_V0_4_23_FORK_BLOCK_NUM )
+   if( eval_state._pending_state->get_head_block_num() < BTS_V0_4_23_FORK_BLOCK_NUM )
    {
        total_debt = detail::market_engine_v7::get_interest_owed_v1( principle, current_cover->interest_rate,
                                                                     elapsed_sec ) + principle;
@@ -64,7 +64,7 @@ void cover_operation::evaluate_v4( transaction_evaluation_state& eval_state )con
        // Partial cover
        interest_paid = detail::market_engine::get_interest_paid( delta_amount, current_cover->interest_rate, elapsed_sec );
 
-       if( eval_state._current_state->get_head_block_num() < BTS_V0_4_23_FORK_BLOCK_NUM )
+       if( eval_state._pending_state->get_head_block_num() < BTS_V0_4_23_FORK_BLOCK_NUM )
        {
            interest_paid = detail::market_engine_v7::get_interest_paid_v1( delta_amount, current_cover->interest_rate, elapsed_sec );
        }
@@ -79,11 +79,11 @@ void cover_operation::evaluate_v4( transaction_evaluation_state& eval_state )con
    //Covered asset is destroyed, interest pays to fees
    asset_to_cover->current_share_supply -= principle_paid.amount;
    asset_to_cover->collected_fees += interest_paid.amount;
-   eval_state._current_state->store_asset_record( *asset_to_cover );
+   eval_state._pending_state->store_asset_record( *asset_to_cover );
 
    // changing the payoff balance changes the call price... so we need to remove the old record
    // and insert a new one.
-   eval_state._current_state->store_collateral_record( this->cover_index, collateral_record() );
+   eval_state._pending_state->store_collateral_record( this->cover_index, collateral_record() );
 
    FC_ASSERT( current_cover->interest_rate.quote_asset_id > current_cover->interest_rate.base_asset_id,
               "Rejecting cover order with invalid interest rate.", ("cover", *current_cover) );
@@ -94,10 +94,10 @@ void cover_operation::evaluate_v4( transaction_evaluation_state& eval_state )con
                                   / asset( (current_cover->collateral_balance*2)/3, cover_index.order_price.base_asset_id );
 
       if( this->new_cover_price && (*this->new_cover_price > new_call_price) )
-         eval_state._current_state->store_collateral_record( market_index_key( *this->new_cover_price, this->cover_index.owner ),
+         eval_state._pending_state->store_collateral_record( market_index_key( *this->new_cover_price, this->cover_index.owner ),
                                                              *current_cover );
       else
-         eval_state._current_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner ),
+         eval_state._pending_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner ),
                                                              *current_cover );
    }
    else // withdraw the collateral to the transaction to be deposited at owners discretion / cover fees

@@ -30,6 +30,8 @@ libraries/rpc_stubs
 libraries/utilities/git_revision.cpp
 libraries/wallet/include/bts/wallet/url.hpp
 
+programs/client/bitsharestestnet_client
+programs/client/devshares_client
 programs/client/bitshares_client
 
 programs/utils/btc_wallet_dump

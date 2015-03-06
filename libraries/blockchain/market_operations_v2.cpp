@@ -8,7 +8,7 @@ namespace bts { namespace blockchain {
 
 void cover_operation::evaluate_v2( transaction_evaluation_state& eval_state )const
 {
-   if( eval_state._current_state->get_head_block_num() < BTS_V0_4_16_FORK_BLOCK_NUM )
+   if( eval_state._pending_state->get_head_block_num() < BTS_V0_4_16_FORK_BLOCK_NUM )
       return evaluate_v1( eval_state );
 
    if( this->cover_index.order_price == price() )
@@ -28,14 +28,14 @@ void cover_operation::evaluate_v2( transaction_evaluation_state& eval_state )con
    // subtract this from the transaction
    eval_state.sub_balance( delta_amount );
 
-   auto current_cover   = eval_state._current_state->get_collateral_record( this->cover_index );
+   auto current_cover   = eval_state._pending_state->get_collateral_record( this->cover_index );
    if( NOT current_cover )
       FC_CAPTURE_AND_THROW( unknown_market_order, (cover_index) );
 
    current_cover->payoff_balance -= delta_amount.amount;
    // changing the payoff balance changes the call price... so we need to remove the old record
    // and insert a new one.
-   eval_state._current_state->store_collateral_record( this->cover_index, collateral_record() );
+   eval_state._pending_state->store_collateral_record( this->cover_index, collateral_record() );
 
    if( current_cover->payoff_balance > 0 )
    {
@@ -43,21 +43,21 @@ void cover_operation::evaluate_v2( transaction_evaluation_state& eval_state )con
                             asset((current_cover->collateral_balance*2)/3, 0);
 
       if( this->new_cover_price && (*this->new_cover_price > new_call_price) )
-         eval_state._current_state->store_collateral_record( market_index_key( *this->new_cover_price, this->cover_index.owner),
+         eval_state._pending_state->store_collateral_record( market_index_key( *this->new_cover_price, this->cover_index.owner),
                                                              *current_cover );
       else
-         eval_state._current_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
+         eval_state._pending_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
                                                              *current_cover );
    }
    else // withdraw the collateral to the transaction to be deposited at owners discretion / cover fees
    {
       eval_state.add_balance( asset( current_cover->collateral_balance, 0 ) );
 
-      auto market_stat = eval_state._current_state->get_market_status( cover_index.order_price.quote_asset_id, cover_index.order_price.base_asset_id );
+      auto market_stat = eval_state._pending_state->get_market_status( cover_index.order_price.quote_asset_id, cover_index.order_price.base_asset_id );
       FC_ASSERT( market_stat, "this should be valid for there to even be a position to cover" );
       market_stat->ask_depth -= current_cover->collateral_balance;
 
-      eval_state._current_state->store_market_status( *market_stat );
+      eval_state._pending_state->store_market_status( *market_stat );
    }
 }
 

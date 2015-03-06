@@ -342,6 +342,11 @@ namespace bts { namespace blockchain {
        }
    }
 
+   void transaction::limit_fee( const asset& max_fee )
+   {
+       operations.emplace_back( limit_fee_operation{ max_fee } );
+   }
+
    bool transaction::is_cancel()const
    {
       for( const auto& op : operations )
