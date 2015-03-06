@@ -59,6 +59,12 @@
 #include <iomanip>
 #include <set>
 
+#ifndef WIN32
+// Supports UNIX specific --debug-stop CLI option
+#include <signal.h>
+#include <unistd.h>
+#endif
+
 using namespace boost;
 using std::string;
 
@@ -147,6 +153,8 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
          ("growl", program_options::value<std::string>()->implicit_value("127.0.0.1"), "Send notifications about potential problems to Growl")
          ("growl-password", program_options::value<std::string>(), "Password for authenticating to a Growl server")
          ("growl-identifier", program_options::value<std::string>(), "A name displayed in growl messages to identify this bitshares_client instance")
+
+         ("debug-stop", "Raise SIGSTOP on startup (UNIX only)")
          ;
 
    program_options::variables_map option_variables;
@@ -1452,6 +1460,16 @@ void client::configure_from_command_line(int argc, char** argv)
    }
    // parse command-line options
    auto option_variables = parse_option_variables(argc,argv);
+   
+   if( option_variables.count("debug-stop") )
+   {
+#ifdef WIN32
+      std::cout << "--debug-stop option is not supported on Windows\n\nPatches welcome!\n\n";
+      exit(1);
+#else
+      raise(SIGSTOP);
+#endif
+   }
 
    fc::path datadir = bts::client::get_data_dir(option_variables);
    if( !fc::exists( datadir ) )
