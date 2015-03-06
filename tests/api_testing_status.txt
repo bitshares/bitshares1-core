@@ -233,7 +233,7 @@ wallet_publish_price_feed <delegate_account> <price> <asset_symbol>
 wallet_publish_slate <publishing_account_name> [paying_account_name] 
 wallet_release_escrow <pay_fee_with_account_name> <escrow_balance_id> <released_by_account> [amount_to_sender] [amount_to_receiver] 
 wallet_remove_contact <contact> 
-wallet_rescan_blockchain [start_block_num] [limit] 
+wallet_rescan_blockchain [start_block_num] [limit] [scan_in_background]
 wallet_set_automatic_backups <enabled> 
 wallet_set_setting <name> <value> 
 wallet_set_transaction_fee <fee> 

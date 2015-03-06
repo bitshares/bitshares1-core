@@ -54,26 +54,23 @@ default (unlocked) >>> blockchain_get_block_transactions 2
           "1f07787593e6158df2ab1559f42a5dc9d8f2a9e0e0a60f519372e83ad3051bce4c3ae76cb0739f7bf71d5d4735bfa485bc8e0b04c6d44d7be56a5aafbe0370d1f3"
         ]
       },
-      "signed_keys": [
+      "signed_addresses": [
         "XTSA5wQqHYd93W65JzCZ1wtmBq9DbtTRyqD",
         "XTSDG4CLPoePEPHaRaDszT4ix8gA1ghTb6FF",
         "XTSEbFjCRUUsoN3FUJTeBbWX7SZx1bMrFzUH",
         "XTSF4Bjx9KdtUChuTn8wL9T6aBFrLBq6wyDJ",
         "XTSPcpRoTjhdb9KBYXmsFB3nfe2BYiZV88Be"
       ],
-      "validation_error": null,
-      "deposits": [[
+      "min_fees": [],
+      "max_fees": [],
+      "fees_paid": [[
           0,
-          10000000
+          50000
         ]
       ],
-      "withdraws": [[
-          0,
-          10050000
-        ]
-      ],
-      "yield": [],
-      "deltas": [[
+      "delegate_vote_deltas": [],
+      "yield_claimed": [],
+      "op_deltas": [[
           0,[[
               0,
               10000000
@@ -87,20 +84,7 @@ default (unlocked) >>> blockchain_get_block_transactions 2
           ]
         ]
       ],
-      "required_fees": {
-        "amount": 0,
-        "asset_id": 0
-      },
-      "alt_fees_paid": {
-        "amount": 0,
-        "asset_id": 0
-      },
-      "balance": [[
-          0,
-          50000
-        ]
-      ],
-      "delegate_vote_deltas": [],
+      "validation_error": null,
       "chain_location": {
         "block_num": 2,
         "trx_num": 0
