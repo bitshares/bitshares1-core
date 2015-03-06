@@ -63,6 +63,9 @@
 // Supports UNIX specific --debug-stop CLI option
 #include <signal.h>
 #include <unistd.h>
+#ifdef __linux__
+#include <sys/prctl.h>
+#endif
 #endif
 
 using namespace boost;
@@ -154,7 +157,7 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
          ("growl-password", program_options::value<std::string>(), "Password for authenticating to a Growl server")
          ("growl-identifier", program_options::value<std::string>(), "A name displayed in growl messages to identify this bitshares_client instance")
 
-         ("debug-stop", "Raise SIGSTOP on startup (UNIX only)")
+         ("debug-stop", "Raise SIGSTOP on startup (UNIX only) and disable trace protection (Linux 3.4+ only)")
          ;
 
    program_options::variables_map option_variables;
@@ -1467,6 +1470,23 @@ void client::configure_from_command_line(int argc, char** argv)
       std::cout << "--debug-stop option is not supported on Windows\n\nPatches welcome!\n\n";
       exit(1);
 #else
+#ifdef __linux__
+#ifdef PR_SET_PTRACER
+      //
+      // on Ubuntu, you can only debug direct child processes
+      // due to /proc/sys/kernel/yama/ptrace_scope setting.
+      //
+      // this is good for security, but inconvenient for debugging.
+      //
+      // if the user is requesting --debug-stop, they probably
+      // intend to attach with GDB (e.g. btstests recommended GDB usage)
+      //
+      // so this call simply requests the kernel to allow any process
+      // owned by the same user to debug us
+      //
+      prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY, 0, 0, 0);
+#endif
+#endif
       raise(SIGSTOP);
 #endif
    }
