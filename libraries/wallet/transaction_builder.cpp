@@ -8,6 +8,8 @@
 
 #include <fc/crypto/sha256.hpp>
 
+#include <bts/blockchain/fork_blocks.hpp>
+
 using namespace bts::wallet;
 using namespace bts::wallet::detail;
 
@@ -597,9 +599,10 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
    trx.cover(cover_amount, order->market_index);
 
 #ifndef WIN32
-#warning Handle this as a softfork
+#warning [SOFTFORK] Remove this check after BTS_V0_7_0_FORK_BLOCK_NUM has passed
 #endif
-   trx.limit_fee( _wimpl->self->get_transaction_fee() );
+   if( _wimpl->_blockchain->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM )
+       trx.limit_fee( _wimpl->self->get_transaction_fee() );
 
    if( trx.expiration == time_point_sec() )
        trx.expiration = blockchain::now() + WALLET_DEFAULT_MARKET_TRANSACTION_EXPIRATION_SEC;
