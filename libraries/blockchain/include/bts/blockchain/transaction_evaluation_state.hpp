@@ -6,72 +6,73 @@
 
 namespace bts { namespace blockchain {
 
-    class pending_chain_state;
+class pending_chain_state;
+typedef std::shared_ptr<pending_chain_state> pending_chain_state_ptr;
 
-   /**
-    *  While evaluating a transaction there is a lot of intermediate
-    *  state that must be tracked.  Any shares withdrawn from the
-    *  database must be stored in the transaction state until they
-    *  are sent back to the database as either new balances or
-    *  as fees collected.
-    *
-    *  Some outputs such as markets, options, etc require certain
-    *  payments to be made.  So payments made are tracked and
-    *  compared against payments required.
-    *
-    */
-   class transaction_evaluation_state
-   {
-      public:
-         transaction_evaluation_state( pending_chain_state* current_state = nullptr ) : _current_state( current_state ) {}
+/**
+*  While evaluating a transaction there is a lot of intermediate
+*  state that must be tracked.  Any shares withdrawn from the
+*  database must be stored in the transaction state until they
+*  are sent back to the database as either new balances or
+*  as fees collected.
+*
+*  Some outputs such as markets, options, etc require certain
+*  payments to be made.  So payments made are tracked and
+*  compared against payments required.
+*
+*/
+struct transaction_evaluation_state
+{
+    transaction_evaluation_state( pending_chain_state_ptr pending_state = nullptr ) : _pending_state( pending_state ) {}
 
-         void evaluate( const signed_transaction& trx );
-         void evaluate_operation( const operation& op );
-         void validate_fees();
-         void update_delegate_votes();
+    void evaluate( const signed_transaction& trx );
+    void evaluate_operation( const operation& op );
+    void validate_fees();
+    void update_delegate_votes();
 
-         void sub_balance( const asset& amount );
-         void add_balance( const asset& amount );
-         void adjust_vote( slate_id_type slate, share_type amount );
+    void sub_balance( const asset& amount );
+    void add_balance( const asset& amount );
+    void adjust_vote( slate_id_type slate, share_type amount );
 
-         bool check_signature( const address& a )const;
-         bool check_multisig( const multisig_condition& a )const;
-         bool verify_authority( const multisig_meta_info& siginfo );
+    bool check_signature( const address& a )const;
+    bool check_multisig( const multisig_condition& a )const;
+    bool verify_authority( const multisig_meta_info& siginfo );
 
-         bool any_parent_has_signed( const string& account_name )const;
-         bool account_or_any_parent_has_signed( const account_record& record )const;
+    bool any_parent_has_signed( const string& account_name )const;
+    bool account_or_any_parent_has_signed( const account_record& record )const;
 
-         share_type calculate_base_fees()const;
+    share_type calculate_base_fees()const;
 
-         bool scan_op_deltas( const uint32_t op_index, const function<bool( const asset& )> callback )const;
-         void scan_addresses( const chain_interface&, const function<void( const address& )> callback )const;
+    bool scan_op_deltas( const uint32_t op_index, const function<bool( const asset& )> callback )const;
+    void scan_addresses( const chain_interface&, const function<void( const address& )> callback )const;
 
-         signed_transaction                             trx;
-         set<address>                                   signed_addresses;
+    signed_transaction                             trx;
+    set<address>                                   signed_addresses;
 
-         map<asset_id_type, share_type>                 min_fees; // For asset and delegate registration
-         map<asset_id_type, share_type>                 max_fees; // For pay_fee op
+    map<asset_id_type, share_type>                 min_fees; // For asset and delegate registration
+    map<asset_id_type, share_type>                 max_fees; // For pay_fee op
 
-         map<asset_id_type, share_type>                 fees_paid;
-         map<account_id_type, share_type>               delegate_vote_deltas;
+    map<asset_id_type, share_type>                 fees_paid;
+    map<account_id_type, share_type>               delegate_vote_deltas;
 
-         // Used for transaction scanning
-         map<asset_id_type, share_type>                 yield_claimed;
-         map<uint32_t, map<asset_id_type, share_type>>  op_deltas;
+    // Used for transaction scanning
+    map<asset_id_type, share_type>                 yield_claimed;
+    map<uint32_t, map<asset_id_type, share_type>>  op_deltas;
 
-         optional<fc::exception>                        validation_error;
+    optional<fc::exception>                        validation_error;
 
-         // Below not serialized
+    // Below not serialized
 
-         pending_chain_state*                           _current_state = nullptr;
+    pending_chain_state_ptr                        _pending_state = nullptr;
 
-         bool                                           _skip_signature_check = false;
-         bool                                           _enforce_canonical_signatures = false;
-         bool                                           _skip_vote_adjustment = false;
+    bool                                           _skip_signature_check = false;
+    bool                                           _enforce_canonical_signatures = false;
+    bool                                           _skip_vote_adjustment = false;
 
-         uint32_t                                       _current_op_index = 0;
-   };
-   typedef shared_ptr<transaction_evaluation_state> transaction_evaluation_state_ptr;
+private:
+    uint32_t                                       _current_op_index = 0;
+};
+typedef shared_ptr<transaction_evaluation_state> transaction_evaluation_state_ptr;
 
 } } // bts::blockchain
 

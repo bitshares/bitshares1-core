@@ -7,7 +7,7 @@ namespace bts { namespace blockchain {
 
    void update_feed_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
-      const oaccount_record account_record = eval_state._current_state->get_account_record( index.delegate_id );
+      const oaccount_record account_record = eval_state._pending_state->get_account_record( index.delegate_id );
       if( !account_record.valid() )
           FC_CAPTURE_AND_THROW( unknown_account_id, (index.delegate_id) );
 
@@ -36,15 +36,15 @@ namespace bts { namespace blockchain {
       if( feed_price.quote_asset_id != index.quote_id || feed_price.base_asset_id != asset_id_type( 0 ) )
           FC_CAPTURE_AND_THROW( invalid_feed_price, (feed_price) );
 
-      const oasset_record asset_record = eval_state._current_state->get_asset_record( index.quote_id );
+      const oasset_record asset_record = eval_state._pending_state->get_asset_record( index.quote_id );
       if( !asset_record.valid() )
           FC_CAPTURE_AND_THROW( unknown_asset_id, (index.quote_id) );
 
       if( !asset_record->is_market_issued() )
           FC_CAPTURE_AND_THROW( invalid_market, (index.quote_id) );
 
-      eval_state._current_state->store_feed_record( feed_record{ index, feed_price, eval_state._current_state->now() } );
-      eval_state._current_state->set_market_dirty( feed_price.quote_asset_id, feed_price.base_asset_id );
+      eval_state._pending_state->store_feed_record( feed_record{ index, feed_price, eval_state._pending_state->now() } );
+      eval_state._pending_state->set_market_dirty( feed_price.quote_asset_id, feed_price.base_asset_id );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 } }  // bts::blockchain

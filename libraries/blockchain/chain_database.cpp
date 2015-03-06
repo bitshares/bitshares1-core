@@ -703,7 +703,7 @@ namespace bts { namespace blockchain {
          uint32_t trx_num = 0;
          for( const auto& trx : block_data.user_transactions )
          {
-            transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_state.get() );
+            transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_state );
             trx_eval_state->_skip_signature_check = !self->_verify_transaction_signatures;
             trx_eval_state->evaluate( trx );
 
@@ -1496,7 +1496,7 @@ namespace bts { namespace blockchain {
          my->_pending_trx_state = std::make_shared<pending_chain_state>( shared_from_this() );
 
       pending_chain_state_ptr          pend_state = std::make_shared<pending_chain_state>(my->_pending_trx_state);
-      transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>( pend_state.get() );
+      transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>( pend_state );
 
       trx_eval_state->evaluate( trx );
       const share_type fees = trx_eval_state->calculate_base_fees();
@@ -1516,7 +1516,7 @@ namespace bts { namespace blockchain {
        try
        {
           auto pending_state = std::make_shared<pending_chain_state>( shared_from_this() );
-          transaction_evaluation_state_ptr eval_state = std::make_shared<transaction_evaluation_state>( pending_state.get() );
+          transaction_evaluation_state_ptr eval_state = std::make_shared<transaction_evaluation_state>( pending_state );
 
           eval_state->evaluate( transaction );
           const share_type fees = eval_state->calculate_base_fees();
@@ -1989,7 +1989,7 @@ namespace bts { namespace blockchain {
                   // Validate transaction
                   auto pending_trx_state = std::make_shared<pending_chain_state>( pending_state );
                   {
-                      auto trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_trx_state.get() );
+                      auto trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_trx_state );
                       trx_eval_state->_enforce_canonical_signatures = config.transaction_canonical_signatures_required;
                       trx_eval_state->evaluate( new_transaction );
 

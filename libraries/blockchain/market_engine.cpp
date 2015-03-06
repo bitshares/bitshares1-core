@@ -15,7 +15,7 @@ namespace bts { namespace blockchain { namespace detail {
   {
       _pending_state = std::make_shared<pending_chain_state>( ps );
       _prior_state = ps;
-      _eval_state._current_state = _pending_state.get();
+      _eval_state._pending_state = _pending_state;
   }
 
   bool market_engine::execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec timestamp )
@@ -103,7 +103,7 @@ namespace bts { namespace blockchain { namespace detail {
                 }
                 idump( (_current_ask) );
             }
-            
+
             // Make sure that at least one order was matched every time we enter the loop
             FC_ASSERT( _orders_filled != last_orders_filled, "We appear caught in an order matching loop!" );
             last_orders_filled = _orders_filled;
@@ -182,7 +182,7 @@ namespace bts { namespace blockchain { namespace detail {
                     FC_ASSERT(false, "get_next_ask() returned inactive cover");
                 }
             }
-            
+
             //
             // get_next_bid() always returns the best bid
             // get_next_ask() always returns the next ask
@@ -295,7 +295,7 @@ namespace bts { namespace blockchain { namespace detail {
 
                 mtrx.bid_received = mtrx.ask_paid;
                 mtrx.bid_paid = mtrx.ask_received;
-                
+
                 ilog("mtrx going into pay_current_short, pay_current_ask");
                 idump( (mtrx) );
 
@@ -752,21 +752,21 @@ namespace bts { namespace blockchain { namespace detail {
       ++_orders_filled;
 
       switch( _current_pass )
-      {      
+      {
       case MARKET_ENGINE_PASS_PROCESS_MARGIN_CALLS:
           return get_next_ask_margin_call();
       case MARKET_ENGINE_PASS_PROCESS_EXPIRED_COVERS:
           return get_next_ask_expired_cover();
       case MARKET_ENGINE_PASS_PROCESS_ASK_ORDERS:
           return get_next_ask_order();
-      default:          
+      default:
           FC_ASSERT( false, "_current_pass value is unknown" );
       }
       // unreachable, but necessary to silence gcc compiler warning
       return false;
     } FC_CAPTURE_AND_RETHROW()
   }
-          
+
   bool market_engine::get_next_ask_margin_call()
   {
       /**

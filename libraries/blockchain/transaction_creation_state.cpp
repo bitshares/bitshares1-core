@@ -4,9 +4,9 @@
 #include <algorithm>
 
 namespace bts { namespace blockchain {
- 
+
     transaction_creation_state::transaction_creation_state( chain_interface_ptr prev_state )
-    :pending_state(prev_state),required_signatures(1),eval_state(&pending_state)
+    :pending_state(prev_state),required_signatures(1),eval_state(pending_chain_state_ptr(&pending_state))
     {
        eval_state._skip_vote_adjustment = true;
     }

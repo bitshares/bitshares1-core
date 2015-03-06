@@ -14,7 +14,7 @@
 
 namespace bts { namespace blockchain {
 
-   class transaction_evaluation_state;
+   struct transaction_evaluation_state;
 
    // NOTE: Avoid changing these to ease downstream merges
    enum operation_type_enum
