@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bts/blockchain/types.hpp>
+#include <fc/uint128.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -36,7 +37,7 @@ namespace bts { namespace blockchain {
    *  A price is the result of dividing 2 asset classes.  It is
    *  a 128-bit decimal fraction with denominator FC_REAL128_PRECISION
    *  together with units specifying the two asset ID's.
-   * 
+   *
    *  -1 is considered to be infinity.
    */
   struct price
