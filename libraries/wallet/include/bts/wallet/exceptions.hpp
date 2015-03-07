@@ -9,7 +9,7 @@ FC_DECLARE_DERIVED_EXCEPTION( invalid_password,             bts::wallet::wallet_
 FC_DECLARE_DERIVED_EXCEPTION( wallet_locked,                bts::wallet::wallet_exception, 20002, "wallet locked" );
 FC_DECLARE_DERIVED_EXCEPTION( wallet_already_exists,        bts::wallet::wallet_exception, 20003, "wallet already exists" );
 FC_DECLARE_DERIVED_EXCEPTION( no_such_wallet,               bts::wallet::wallet_exception, 20004, "wallet does not exist" );
-FC_DECLARE_DERIVED_EXCEPTION( unknown_receive_account,      bts::wallet::wallet_exception, 20005, "unknown receive account" );
+FC_DECLARE_DERIVED_EXCEPTION( unknown_wallet_account,        bts::wallet::wallet_exception, 20005, "unknown local account" );
 FC_DECLARE_DERIVED_EXCEPTION( unknown_account,              bts::wallet::wallet_exception, 20006, "unknown account" );
 FC_DECLARE_DERIVED_EXCEPTION( wallet_closed,                bts::wallet::wallet_exception, 20007, "wallet closed" );
 FC_DECLARE_DERIVED_EXCEPTION( negative_bid,                 bts::wallet::wallet_exception, 20008, "negative bid" );
@@ -50,5 +50,7 @@ FC_DECLARE_DERIVED_EXCEPTION( invalid_cancel,               bts::wallet::wallet_
 FC_DECLARE_DERIVED_EXCEPTION( account_not_registered,       bts::wallet::wallet_exception, 20043, "account not registered" );
 FC_DECLARE_DERIVED_EXCEPTION( invalid_contact,              bts::wallet::wallet_exception, 20044, "invalid contact" );
 FC_DECLARE_DERIVED_EXCEPTION( label_already_in_use,         bts::wallet::wallet_exception, 20045, "label already in use" );
+FC_DECLARE_DERIVED_EXCEPTION( account_retracted,            bts::wallet::wallet_exception, 20046, "account retracted" );
+FC_DECLARE_DERIVED_EXCEPTION( issuer_not_found,             bts::wallet::wallet_exception, 20047, "asset issuer not found" );
 
 } } // bts::wallet

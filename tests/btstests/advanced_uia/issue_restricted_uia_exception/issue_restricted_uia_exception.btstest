@@ -35,7 +35,7 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 OK
 >>> debug_wait_for_block_by_number 2
 OK
->>> wallet_asset_create ASSET "Test Asset" issuer "A test asset" 10000000 1000 {} false
+>>> wallet_uia_create issuer ASSET "Test Asset" "A test asset" 10000.000
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID
 ======================================================================================================================================================================
 2015-06-20T14:40:40 PENDING   issuer              issuer              0.00000 XTS             create ASSET (Test Asset)                   500,000.50000 XTS   d2faa4a6
@@ -43,8 +43,6 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 OK
 >>> debug_wait_for_block_by_number 3
 OK
->>> wallet_asset_update ASSET null null null null null 0 -1 ["restricted"] ["restricted","retractable","market_halt","balance_halt"] "" 0 []
-${ expect_json() }$
 >>> debug_advance_time 1 block
 OK
 >>> debug_wait_for_block_by_number 4
@@ -63,34 +61,38 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 OK
 >>> debug_wait_for_block_by_number 6
 OK
-#{ inserts owner address into the whitelist }#
->>> wallet_asset_authorize_key issuer ASSET customer
+>>> blockchain_get_account customer
+${ expect_json() }$
+>>> wallet_uia_issue 123 ASSET customer "this should succeed"
+${ expect_json() }$
+>>> wallet_uia_update_active_flags issuer ASSET restricted_deposits true
+${ expect_json() }$
+>>> wallet_uia_issue 124 ASSET customer "this should fail"
+${ expect_json() }$
+>>> wallet_uia_issue 125 ASSET XTS83XY1B31esQX72NE233b54mURybGqA66qqJvKjGqr5izCK4epH "this should fail"
+${ expect_json() }$
+>>> wallet_uia_update_whitelist issuer ASSET XTS83XY1B31esQX72NE233b54mURybGqA66qqJvKjGqr5izCK4epH true
 ${ expect_json() }$
 >>> debug_advance_time 1 block
 OK
 >>> debug_wait_for_block_by_number 7
 OK
-#{
-   issuing a restricted asset to authorized account name throws an Assert Exception
-   is_authorized() fails at balance_records::deposit_operation:145
-   looking up the using the memory address of addr always fails. Even for the ASSET issuer
-   Is it possibly because type address is inserted into whitelist in authorize_operation
-   but the whitelist.count comparison on line 145 uses type &address?
-}#
->>> wallet_asset_issue 1111 ASSET customer
-10 assert_exception: Assert Exception
-asset_rec->is_authorized(owner):
-    {}
-    th_a  balance_operations.cpp:145 evaluate
+>>> wallet_uia_issue 126 ASSET XTS83XY1B31esQX72NE233b54mURybGqA66qqJvKjGqr5izCK4epH "this should succeed"
+${ expect_json() }$
 >>> debug_advance_time 1 block
 OK
 >>> debug_wait_for_block_by_number 8
-#{ ASSET issuer cant issue restricted to self either }#
->>> wallet_asset_issue 1111 ASSET issuer
-10 assert_exception: Assert Exception
-asset_rec->is_authorized(owner):
-    {}
-    th_a  balance_operations.cpp:145 evaluate
+>>> wallet_uia_update_whitelist issuer ASSET XTS83XY1B31esQX72NE233b54mURybGqA66qqJvKjGqr5izCK4epH false
+${ expect_json() }$
+>>> wallet_uia_issue 127 ASSET XTS83XY1B31esQX72NE233b54mURybGqA66qqJvKjGqr5izCK4epH "this should fail"
+${ expect_json() }$
+>>> blockchain_get_account issuer
+${ expect_json() }$
+>>> wallet_uia_issue 128 ASSET issuer "this should fail"
+${ expect_json() }$
+>>> wallet_uia_issue 129 ASSET XTS8SwjoEtxaFAan2Qj5bn28kQvSfaSprptA2Qyq32uhzotvkkyng "this should succeed"
+${ expect_json() }$
+
 #{ set state to "restricted" and whitelist a customer }#
 #{  set state to "retractable" and retract his balance }#
 #{  set state to "market_halt" and make sure the market is halted }#

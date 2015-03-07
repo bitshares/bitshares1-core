@@ -140,8 +140,6 @@ namespace bts { namespace blockchain {
                                                               const fc::ecc::public_key& to_public_key,
                                                               const fc::ecc::private_key& from_private_key,
                                                               const std::string& memo_message,
-                                                              const fc::ecc::public_key& memo_pub_key,
-                                                              memo_flags_enum memo_type,
                                                               bool use_stealth_address)
    {
       memo = titan_memo();
@@ -160,9 +158,8 @@ namespace bts { namespace blockchain {
       {
          memo_data memo_content;
          memo_content.set_message( memo_message );
-         memo_content.from = memo_pub_key;
+         memo_content.from = from_private_key.get_public_key();
          memo_content.from_signature = check_secret._hash[0];
-         memo_content.memo_flags = memo_type;
          memo->one_time_key = one_time_private_key.get_public_key();
          encrypt_memo_data( secret, memo_content );
       }
@@ -170,9 +167,8 @@ namespace bts { namespace blockchain {
       {
          extended_memo_data memo_content;
          memo_content.set_message( memo_message );
-         memo_content.from = memo_pub_key;
+         memo_content.from = from_private_key.get_public_key();
          memo_content.from_signature = check_secret._hash[0];
-         memo_content.memo_flags = memo_type;
          memo->one_time_key = one_time_private_key.get_public_key();
          encrypt_memo_data( secret, memo_content );
       }
@@ -253,9 +249,7 @@ namespace bts { namespace blockchain {
            const fc::ecc::private_key& one_time_private_key,
            const fc::ecc::public_key&  to_public_key,
            const fc::ecc::private_key& from_private_key,
-           const std::string& memo_message,
-           const fc::ecc::public_key&  memo_pub_key,
-           memo_flags_enum memo_type )
+           const std::string& memo_message )
    {
       memo = titan_memo();
       const auto secret = one_time_private_key.get_shared_secret( to_public_key );
@@ -272,9 +266,8 @@ namespace bts { namespace blockchain {
 
       memo_data memo_content;
       memo_content.set_message( memo_message );
-      memo_content.from = memo_pub_key;
+      memo_content.from = from_private_key.get_public_key();
       memo_content.from_signature = check_secret._hash[0];
-      memo_content.memo_flags = memo_type;
 
       memo->one_time_key = one_time_private_key.get_public_key();
 

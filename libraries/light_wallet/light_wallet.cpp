@@ -75,7 +75,7 @@ void light_wallet::fetch_welcome_package()
    {
       //Caveat: we need to already have cached the issuer's account if dealing with a UIA
       if( record.is_user_issued() )
-         get_account_record(fc::to_string(record.issuer_account_id));
+         get_account_record(fc::to_string(record.issuer_id));
       _chain_cache->store_asset_record(std::move(record));
    }
 }
@@ -418,7 +418,7 @@ map<string, pair<double,double>> light_wallet::balance(const string& account_nam
          balances[record->symbol].second += balance.second.calculate_yield(blockchain::now(),
                                                                            balance.second.balance,
                                                                            record->collected_fees,
-                                                                           record->current_share_supply).amount / double(record->precision);
+                                                                           record->current_supply).amount / double(record->precision);
       }
    }
    return balances;

@@ -359,18 +359,15 @@ namespace bts { namespace blockchain {
          asset_record base_asset;
          base_asset.id = asset_id;
          base_asset.symbol = BTS_BLOCKCHAIN_SYMBOL;
+         base_asset.issuer_id = asset_record::god_issuer_id;
          base_asset.name = BTS_BLOCKCHAIN_NAME;
          base_asset.description = BTS_BLOCKCHAIN_DESCRIPTION;
-         base_asset.public_data = variant("");
-         base_asset.issuer_account_id = 0;
          base_asset.precision = BTS_BLOCKCHAIN_PRECISION;
+         base_asset.max_supply = BTS_BLOCKCHAIN_MAX_SHARES;
+         base_asset.current_supply = total_base_supply;
+         base_asset.authority_flag_permissions = 0;
          base_asset.registration_date = timestamp;
          base_asset.last_update = timestamp;
-         base_asset.current_share_supply = total_base_supply;
-         base_asset.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
-         base_asset.collected_fees = 0;
-         base_asset.flags = asset_permissions::none;
-         base_asset.issuer_permissions = asset_permissions::none;
          self->store_asset_record( base_asset );
 
          // Initialize initial market assets
@@ -380,16 +377,14 @@ namespace bts { namespace blockchain {
              asset_record rec;
              rec.id = asset_id;
              rec.symbol = asset.symbol;
+             rec.issuer_id = asset_record::market_issuer_id;
              rec.name = asset.name;
              rec.description = asset.description;
-             rec.public_data = variant("");
-             rec.issuer_account_id = asset_record::market_issuer_id;
              rec.precision = asset.precision;
+             rec.max_supply = BTS_BLOCKCHAIN_MAX_SHARES;
+             rec.authority_flag_permissions = 0;
              rec.registration_date = timestamp;
              rec.last_update = timestamp;
-             rec.current_share_supply = 0;
-             rec.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
-             rec.collected_fees = 0;
              self->store_asset_record( rec );
          }
 
@@ -739,7 +734,7 @@ namespace bts { namespace blockchain {
           const share_type max_new_shares = self->get_max_delegate_pay_issued_per_block();
           const share_type accepted_new_shares = (max_new_shares * pay_rate_percent) / 100;
           FC_ASSERT( max_new_shares >= 0 && accepted_new_shares >= 0 );
-          base_asset_record->current_share_supply += accepted_new_shares;
+          base_asset_record->current_supply += accepted_new_shares;
 
           static const uint32_t blocks_per_two_weeks = 14 * BTS_BLOCKCHAIN_BLOCKS_PER_DAY;
           const share_type max_collected_fees = base_asset_record->collected_fees / blocks_per_two_weeks;
@@ -747,7 +742,7 @@ namespace bts { namespace blockchain {
           const share_type destroyed_collected_fees = max_collected_fees - accepted_collected_fees;
           FC_ASSERT( max_collected_fees >= 0 && accepted_collected_fees >= 0 && destroyed_collected_fees >= 0 );
           base_asset_record->collected_fees -= max_collected_fees;
-          base_asset_record->current_share_supply -= destroyed_collected_fees;
+          base_asset_record->current_supply -= destroyed_collected_fees;
 
           const share_type accepted_paycheck = accepted_new_shares + accepted_collected_fees;
           FC_ASSERT( accepted_paycheck >= 0 );

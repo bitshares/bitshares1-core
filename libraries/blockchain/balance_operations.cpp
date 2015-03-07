@@ -140,9 +140,9 @@ namespace bts { namespace blockchain {
        }
 
        const auto& owners = cur_record->owners();
-       for(const address& owner : owners)
+       for( const address& owner : owners )
        {
-           FC_ASSERT(asset_rec->is_authorized(owner));
+           FC_ASSERT( asset_rec->address_is_whitelisted( owner ) );
        }
 
        eval_state._pending_state->store_balance_record( *cur_record );
@@ -162,11 +162,13 @@ namespace bts { namespace blockchain {
 
       auto asset_rec = eval_state._pending_state->get_asset_record( current_balance_record->condition.asset_id );
       FC_ASSERT( asset_rec.valid() );
-      bool issuer_override = asset_rec->is_retractable() && eval_state.verify_authority( asset_rec->authority );
 
-      if( !issuer_override )
+      const bool authority_is_retracting = asset_rec->flag_is_active( asset_record::retractable_balances )
+                                           && eval_state.verify_authority( asset_rec->authority );
+
+      if( !authority_is_retracting )
       {
-         FC_ASSERT( !asset_rec->is_balance_frozen() );
+         FC_ASSERT( !asset_rec->flag_is_active( asset_record::halted_withdrawals ) );
 
          switch( (withdraw_condition_types)current_balance_record->condition.type )
          {
@@ -174,7 +176,6 @@ namespace bts { namespace blockchain {
             {
                 const withdraw_with_signature condition = current_balance_record->condition.as<withdraw_with_signature>();
                 const address owner = condition.owner;
-                FC_ASSERT( asset_rec->is_authorized( owner ) );
                 if( !eval_state.check_signature( owner ) )
                     FC_CAPTURE_AND_THROW( missing_signature, (owner) );
                 break;
@@ -184,7 +185,6 @@ namespace bts { namespace blockchain {
             {
                 const withdraw_vesting condition = current_balance_record->condition.as<withdraw_vesting>();
                 const address owner = condition.owner;
-                FC_ASSERT( asset_rec->is_authorized( owner ) );
                 if( !eval_state.check_signature( owner ) )
                     FC_CAPTURE_AND_THROW( missing_signature, (owner) );
                 break;
@@ -193,12 +193,11 @@ namespace bts { namespace blockchain {
             case withdraw_multisig_type:
             {
                auto multisig = current_balance_record->condition.as<withdraw_with_multisig>();
+
                uint32_t valid_signatures = 0;
                for( const auto& sig : multisig.owners )
-               {
-                    FC_ASSERT( asset_rec->is_authorized( sig ) );
                     valid_signatures += eval_state.check_signature( sig );
-               }
+
                if( valid_signatures < multisig.required )
                    FC_CAPTURE_AND_THROW( missing_signature, (valid_signatures)(multisig) );
                break;
@@ -218,7 +217,7 @@ namespace bts { namespace blockchain {
          auto yield = current_balance_record->calculate_yield( eval_state._pending_state->now(),
                                                                current_balance_record->balance,
                                                                asset_rec->collected_fees,
-                                                               asset_rec->current_share_supply );
+                                                               asset_rec->current_supply );
          if( yield.amount > 0 )
          {
             asset_rec->collected_fees       -= yield.amount;
@@ -232,6 +231,9 @@ namespace bts { namespace blockchain {
       current_balance_record->balance -= this->amount;
       current_balance_record->last_update = eval_state._pending_state->now();
       eval_state._pending_state->store_balance_record( *current_balance_record );
+
+      if( asset_rec->withdrawal_fee != 0 && !eval_state.verify_authority( asset_rec->authority ) )
+          eval_state.min_fees[ asset_rec->id ] = std::max( asset_rec->withdrawal_fee, eval_state.min_fees[ asset_rec->id ] );
 
       eval_state.add_balance( asset( this->amount, current_balance_record->condition.asset_id ) );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
@@ -257,7 +259,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( asset_rec.valid() );
       FC_ASSERT( !asset_rec->is_market_issued() );
 
-      asset_rec->current_share_supply -= this->amount.amount;
+      asset_rec->current_supply -= this->amount.amount;
       eval_state.sub_balance( this->amount );
 
       eval_state._pending_state->store_asset_record( *asset_rec );
@@ -305,25 +307,19 @@ namespace bts { namespace blockchain {
       auto asset_rec = eval_state._pending_state->get_asset_record( escrow_balance_record->condition.asset_id );
 
       if( amount_to_sender > 0 )
-          FC_ASSERT( asset_rec->is_authorized( escrow_condition.sender ) );
+          FC_ASSERT( asset_rec->address_is_whitelisted( escrow_condition.sender ) );
       if( amount_to_receiver > 0 )
-          FC_ASSERT( asset_rec->is_authorized( escrow_condition.receiver ) );
+          FC_ASSERT( asset_rec->address_is_whitelisted( escrow_condition.receiver ) );
 
-      bool retracting = false;
-      if( asset_rec->is_retractable() )
-      {
-         if( eval_state.verify_authority( asset_rec->authority ) )
-         {
-            retracting = true;
-         }
-      }
+      const bool authority_is_retracting = asset_rec->flag_is_active( asset_record::retractable_balances )
+                                           && eval_state.verify_authority( asset_rec->authority );
 
       if( escrow_condition.sender == this->released_by )
       {
          FC_ASSERT( amount_to_sender == 0 );
          FC_ASSERT( amount_to_receiver <= escrow_balance_record->balance );
 
-         if( !eval_state.check_signature( escrow_condition.sender ) && !retracting)
+         if( !eval_state.check_signature( escrow_condition.sender ) && !authority_is_retracting)
              FC_CAPTURE_AND_THROW( missing_signature, (escrow_condition.sender) );
 
          balance_record new_balance_record( escrow_condition.receiver,
@@ -343,7 +339,7 @@ namespace bts { namespace blockchain {
          FC_ASSERT( amount_to_receiver == 0 );
          FC_ASSERT( amount_to_sender <= escrow_balance_record->balance );
 
-         if( !eval_state.check_signature( escrow_condition.receiver ) && !retracting)
+         if( !eval_state.check_signature( escrow_condition.receiver ) && !authority_is_retracting)
              FC_CAPTURE_AND_THROW( missing_signature, (escrow_condition.receiver) );
 
          balance_record new_balance_record( escrow_condition.sender,
@@ -360,7 +356,7 @@ namespace bts { namespace blockchain {
       }
       else if( escrow_condition.escrow == this->released_by )
       {
-         if( !eval_state.check_signature( escrow_condition.escrow ) && !retracting )
+         if( !eval_state.check_signature( escrow_condition.escrow ) && !authority_is_retracting )
              FC_CAPTURE_AND_THROW( missing_signature, (escrow_condition.escrow) );
          // get a balance record for the receiver, create it if necessary and deposit funds
          {
@@ -391,9 +387,9 @@ namespace bts { namespace blockchain {
       }
       else if( address() == this->released_by )
       {
-         if( !eval_state.check_signature( escrow_condition.sender ) && !retracting)
+         if( !eval_state.check_signature( escrow_condition.sender ) && !authority_is_retracting)
              FC_CAPTURE_AND_THROW( missing_signature, (escrow_condition.sender) );
-         if( !eval_state.check_signature( escrow_condition.receiver ) && !retracting)
+         if( !eval_state.check_signature( escrow_condition.receiver ) && !authority_is_retracting)
              FC_CAPTURE_AND_THROW( missing_signature, (escrow_condition.receiver) );
          // get a balance record for the receiver, create it if necessary and deposit funds
          {

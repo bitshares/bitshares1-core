@@ -25,14 +25,14 @@ namespace bts { namespace blockchain {
       FC_ASSERT( base_asset_rec.valid() );
       FC_ASSERT( quote_asset_rec.valid() );
 
-      FC_ASSERT( base_asset_rec->is_authorized( owner ) );
-      FC_ASSERT( quote_asset_rec->is_authorized( owner ) );
+      FC_ASSERT( base_asset_rec->address_is_whitelisted( owner ) );
+      FC_ASSERT( quote_asset_rec->address_is_whitelisted( owner ) );
 
-      const bool issuer_override = quote_asset_rec->is_retractable() && eval_state.verify_authority( quote_asset_rec->authority );
-      if( !issuer_override && !eval_state.check_signature( owner ) )
+      const bool authority_is_retracting = quote_asset_rec->flag_is_active( asset_record::retractable_balances )
+                                           && eval_state.verify_authority( quote_asset_rec->authority );
+
+      if( !authority_is_retracting && !eval_state.check_signature( owner ) )
          FC_CAPTURE_AND_THROW( missing_signature, (bid_index.owner) );
-
-      FC_ASSERT( !issuer_override && !quote_asset_rec->is_balance_frozen() );
 
       asset delta_amount = this->get_amount();
 
@@ -84,14 +84,14 @@ namespace bts { namespace blockchain {
       FC_ASSERT( base_asset_rec.valid() );
       FC_ASSERT( quote_asset_rec.valid() );
 
-      FC_ASSERT( base_asset_rec->is_authorized( owner ) );
-      FC_ASSERT( quote_asset_rec->is_authorized( owner ) );
+      FC_ASSERT( base_asset_rec->address_is_whitelisted( owner ) );
+      FC_ASSERT( quote_asset_rec->address_is_whitelisted( owner ) );
 
-      const bool issuer_override = base_asset_rec->is_retractable() && eval_state.verify_authority( base_asset_rec->authority );
-      if( !issuer_override && !eval_state.check_signature( owner ) )
+      const bool authority_is_retracting = base_asset_rec->flag_is_active( asset_record::retractable_balances )
+                                           && eval_state.verify_authority( base_asset_rec->authority );
+
+      if( !authority_is_retracting && !eval_state.check_signature( owner ) )
          FC_CAPTURE_AND_THROW( missing_signature, (ask_index.owner) );
-
-      FC_ASSERT( !issuer_override && !base_asset_rec->is_balance_frozen() );
 
       asset delta_amount  = this->get_amount();
 
@@ -243,7 +243,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( current_cover->payoff_balance >= 0 );
 
       //Covered asset is destroyed, interest pays to fees
-      asset_to_cover->current_share_supply -= principle_paid.amount;
+      asset_to_cover->current_supply -= principle_paid.amount;
       asset_to_cover->collected_fees += interest_paid.amount;
       eval_state._pending_state->store_asset_record( *asset_to_cover );
 

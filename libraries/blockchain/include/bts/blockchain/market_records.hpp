@@ -12,7 +12,7 @@
 
 namespace bts { namespace blockchain {
 
-   /** 
+   /**
     *  Note: this data structure is used for operation serialization, modifications
     *        will break existing operations.
     */
@@ -37,7 +37,7 @@ namespace bts { namespace blockchain {
 
    struct market_index_key_ext : public market_index_key
    {
-      market_index_key_ext( const market_index_key b = market_index_key(), 
+      market_index_key_ext( const market_index_key b = market_index_key(),
                             optional<price> limit = optional<price>() )
       :market_index_key(b),limit_price(limit){}
 
@@ -238,7 +238,8 @@ namespace bts { namespace blockchain {
       optional<asset>                           returned_collateral;
       fc::enum_type<uint8_t, order_type_enum>   bid_type = null_order;
       fc::enum_type<uint8_t, order_type_enum>   ask_type = null_order;
-      asset                                     fees_collected;
+      asset                                     quote_fees;
+      asset                                     base_fees;
    };
    typedef optional<market_order> omarket_order;
 
@@ -338,6 +339,7 @@ FC_REFLECT( bts::blockchain::market_transaction,
             (returned_collateral)
             (bid_type)
             (ask_type)
-            (fees_collected)
+            (quote_fees)
+            (base_fees)
           )
 FC_REFLECT_DERIVED( bts::blockchain::order_history_record, (bts::blockchain::market_transaction), (timestamp) )

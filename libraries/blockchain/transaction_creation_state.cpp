@@ -59,7 +59,7 @@ namespace bts { namespace blockchain {
        public_key_type receive_key = to;
        if( !one_time_key )
        {
-          trx.deposit( to, amount );
+          trx.deposit_to_address( amount, to );
        }
        else
        {
@@ -69,9 +69,6 @@ namespace bts { namespace blockchain {
                                                       from ? *from
                                                            : fc::ecc::private_key(),
                                                       memo,
-                                                      from ? from->get_public_key()
-                                                           : one_time_key->get_public_key(),
-                                                      from_memo,
                                                       stealth );
 
           deposit_operation op;

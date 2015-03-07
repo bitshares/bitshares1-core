@@ -235,26 +235,6 @@ map<transaction_id_type, fc::exception> detail::client_impl::wallet_get_pending_
   }
   return errors;
 }
-wallet_transaction_record detail::client_impl::wallet_asset_authorize_key( const string& paying_account_name,
-                                                                           const string& symbol,
-                                                                           const string& key )
-{
-   address addr;
-   try {
-      try { addr = address( public_key_type( key ) ); }
-      catch ( ... ) { addr = address( key ); }
-   }
-   catch ( ... )
-   {
-      auto account = _chain_db->get_account_record( key );
-      FC_ASSERT( account.valid() );
-      addr = account->active_key();
-   }
-   auto record = _wallet->asset_authorize_key( paying_account_name, symbol, addr, true );
-   _wallet->cache_transaction( record );
-   network_broadcast_transaction( record.trx );
-   return record;
-}
 
 wallet_transaction_record detail::client_impl::wallet_publish_slate( const string& publishing_account_name,
                                                                      const string& paying_account_name )
@@ -335,77 +315,11 @@ wallet_transaction_record detail::client_impl::wallet_transfer(
 { try {
     const asset amount = _chain_db->to_ugly_asset( amount_to_transfer, asset_symbol );
 
-    owallet_contact_record contact = wallet_get_contact( recipient );
-    if( !contact.valid() )
-    {
-        const owallet_account_record account = wallet_get_account( recipient );
-        if( account.valid() )
-        {
-            FC_ASSERT( !account->is_retracted() );
-            contact = contact_data( recipient );
-        }
-        else
-        {
-            contact = contact_data( *_chain_db, recipient );
-        }
-    }
+    auto record = _wallet->transfer( amount, from_account_name, recipient, memo_message, strategy, true );
+    _wallet->cache_transaction( record );
+    network_broadcast_transaction( record.trx );
 
-    if( contact->contact_type == contact_data::contact_type_enum::account_name )
-    {
-        const auto sending_account = _wallet->get_account( from_account_name );
-        const auto receiving_account = _wallet->get_account( recipient );
-        transaction_builder_ptr builder = _wallet->create_transaction_builder();
-        auto record = builder->deposit_asset( sending_account,
-                                              receiving_account,
-                                              amount,
-                                              memo_message,
-                                              from_account_name )
-                                              .finalize( true, strategy )
-                                              .sign();
-
-        if( _mail_client )
-        {
-            for( auto&& notice : builder->encrypted_notifications() )
-            {
-                _mail_client->send_encrypted_message( std::move( notice ),
-                                                      from_account_name,
-                                                      recipient,
-                                                      receiving_account.owner_key );
-            }
-        }
-
-        _wallet->cache_transaction( record );
-        network_broadcast_transaction( record.trx );
-        return record;
-    }
-    else
-    {
-        address recipient_address;
-        switch( contact->contact_type )
-        {
-            case contact_data::contact_type_enum::public_key:
-                recipient_address = address( public_key_type( recipient ) );
-                break;
-            case contact_data::contact_type_enum::address:
-                recipient_address = address( recipient );
-                break;
-            case contact_data::contact_type_enum::btc_address:
-                recipient_address = address( pts_address( recipient ) );
-                break;
-            default:
-                FC_ASSERT( false, "Unsupported recipient format!" );
-        }
-
-        auto record =  _wallet->transfer_asset_to_address( amount,
-                                                           from_account_name,
-                                                           recipient_address,
-                                                           memo_message,
-                                                           strategy );
-
-        _wallet->cache_transaction( record );
-        network_broadcast_transaction( record.trx );
-        return record;
-    }
+    return record;
 } FC_CAPTURE_AND_RETHROW( (amount_to_transfer)(asset_symbol)(from_account_name)(recipient)(memo_message)(strategy) ) }
 
 wallet_transaction_record detail::client_impl::wallet_burn(
@@ -674,74 +588,217 @@ wallet_transaction_record detail::client_impl::wallet_transfer_from_with_escrow(
     return record;
 }
 
-wallet_transaction_record detail::client_impl::wallet_asset_create(
+wallet_transaction_record detail::client_impl::wallet_mia_create(
+        const string& payer_account,
         const string& symbol,
-        const string& asset_name,
-        const string& issuer_name,
+        const string& name,
         const string& description,
-        double maximum_share_supply ,
-        uint64_t precision,
-        const variant& public_data,
-        bool is_market_issued /* = false */ )
+        const string& max_divisibility
+        )
+{ try {
+    const uint64_t precision = asset_record::share_string_to_precision_unsafe( max_divisibility );
+    const share_type max_supply = BTS_BLOCKCHAIN_MAX_SHARES;
+
+    auto record = _wallet->asset_register( payer_account, symbol, name, description, max_supply, precision, false, true );
+    _wallet->cache_transaction( record );
+    network_broadcast_transaction( record.trx );
+
+    return record;
+} FC_CAPTURE_AND_RETHROW( (payer_account)(symbol)(name)(description)(max_divisibility) ) }
+
+wallet_transaction_record detail::client_impl::wallet_uia_create(
+        const string& issuer_account,
+        const string& symbol,
+        const string& name,
+        const string& description,
+        const string& max_supply_with_trailing_decimals
+        )
+{ try {
+    const uint64_t precision = asset_record::share_string_to_precision_unsafe( max_supply_with_trailing_decimals );
+    const share_type max_supply = asset_record::share_string_to_satoshi( max_supply_with_trailing_decimals, precision );
+
+    auto record = _wallet->asset_register( issuer_account, symbol, name, description, max_supply, precision, true, true );
+    _wallet->cache_transaction( record );
+    network_broadcast_transaction( record.trx );
+
+    return record;
+} FC_CAPTURE_AND_RETHROW( (issuer_account)(symbol)(name)(description)(max_supply_with_trailing_decimals) ) }
+
+wallet_transaction_record detail::client_impl::wallet_uia_issue(
+        const string& asset_amount,
+        const string& asset_symbol,
+        const string& recipient,
+        const string& memo_message
+        )
+{ try {
+    const asset amount = _chain_db->to_ugly_asset( asset_amount, asset_symbol );
+
+    auto record = _wallet->uia_issue_or_collect_fees( true, amount, recipient, memo_message, true );
+    _wallet->cache_transaction( record );
+    network_broadcast_transaction( record.trx );
+
+    return record;
+} FC_CAPTURE_AND_RETHROW( (asset_amount)(asset_symbol)(recipient)(memo_message) ) }
+
+wallet_transaction_record detail::client_impl::wallet_uia_issue_to_addresses(
+        const string& symbol,
+        const map<string, share_type>& addresses
+        )
 {
-  auto record = _wallet->create_asset( symbol, asset_name, description, public_data, issuer_name,
-                                             maximum_share_supply, precision, is_market_issued, true );
+  auto record = _wallet->uia_issue_to_many( symbol, addresses );
   _wallet->cache_transaction( record );
   network_broadcast_transaction( record.trx );
   return record;
 }
 
-wallet_transaction_record detail::client_impl::wallet_asset_update(
-        const string& symbol,
-        const optional<string>& name,
-        const optional<string>& description,
-        const optional<variant>& public_data,
-        const optional<double>& maximum_share_supply,
-        const optional<uint64_t>& precision,
-        const share_type& issuer_fee,
-        double issuer_market_fee,
-        const vector<asset_permissions>& flags,
-        const vector<asset_permissions>& issuer_permissions,
-        const string& issuer_account_name,
-        uint32_t required_sigs,
-        const vector<address>& authority
-      )
-{
-   uint32_t flags_int = 0;
-   uint32_t issuer_perms_int = 0;
-   for( auto item : flags ) flags_int |= item;
-   for( auto item : issuer_permissions ) issuer_perms_int |= item;
-   auto record = _wallet->update_asset( symbol, name, description, public_data, maximum_share_supply,
-                                        precision, issuer_fee, issuer_market_fee, flags_int,
-                                        issuer_perms_int, issuer_account_name,
-                                        required_sigs, authority, true );
+wallet_transaction_record detail::client_impl::wallet_uia_collect_fees(
+        const string& asset_symbol,
+        const string& recipient,
+        const string& memo_message
+        )
+{ try {
+    const oasset_record asset_record = _chain_db->get_asset_record( asset_symbol );
+    FC_ASSERT( asset_record.valid() );
 
-   _wallet->cache_transaction( record );
-   network_broadcast_transaction( record.trx );
-   return record;
-}
+    const asset amount = asset( asset_record->collected_fees, asset_record->id );
 
-wallet_transaction_record detail::client_impl::wallet_asset_issue(
-        double real_amount,
-        const string& symbol,
-        const string& to_account_name,
-        const string& memo_message )
-{
-  auto record = _wallet->issue_asset( real_amount, symbol, to_account_name, memo_message, true );
-  _wallet->cache_transaction( record );
-  network_broadcast_transaction( record.trx );
-  return record;
-}
+    auto record = _wallet->uia_issue_or_collect_fees( false, amount, recipient, memo_message, true );
+    _wallet->cache_transaction( record );
+    network_broadcast_transaction( record.trx );
 
-wallet_transaction_record detail::client_impl::wallet_asset_issue_to_addresses(
-        const string& symbol,
-        const map<string, share_type>& addresses )
-{
-  auto record = _wallet->issue_asset_to_addresses( symbol, addresses );
-  _wallet->cache_transaction( record );
-  network_broadcast_transaction( record.trx );
-  return record;
-}
+    return record;
+} FC_CAPTURE_AND_RETHROW( (asset_symbol)(recipient)(memo_message) ) }
+
+wallet_transaction_record detail::client_impl::wallet_uia_update_description(
+        const string& paying_account,
+        const string& asset_symbol,
+        const string& name,
+        const string& description,
+        const variant& public_data
+        )
+{ try {
+    const oasset_record asset_record = _chain_db->get_asset_record( asset_symbol );
+    FC_ASSERT( asset_record.valid() );
+
+    asset_update_properties_operation update_op;
+    update_op.asset_id = asset_record->id;
+
+    if( !name.empty() ) update_op.name = name;
+    if( !description.empty() ) update_op.description = description;
+    if( !public_data.is_null() ) update_op.public_data = public_data;
+
+    auto record = _wallet->uia_update_properties( paying_account, asset_symbol, update_op, true );
+    _wallet->cache_transaction( record );
+    network_broadcast_transaction( record.trx );
+    return record;
+} FC_CAPTURE_AND_RETHROW( (paying_account)(asset_symbol)(name)(description)(public_data) ) }
+
+wallet_transaction_record detail::client_impl::wallet_uia_update_supply(
+        const string& paying_account,
+        const string& asset_symbol,
+        const string& max_supply_with_trailing_decimals
+        )
+{ try {
+    FC_ASSERT( !max_supply_with_trailing_decimals.empty() );
+
+    const uint64_t precision = asset_record::share_string_to_precision_unsafe( max_supply_with_trailing_decimals );
+    const share_type max_supply = asset_record::share_string_to_satoshi( max_supply_with_trailing_decimals, precision );
+
+    const oasset_record asset_record = _chain_db->get_asset_record( asset_symbol );
+    FC_ASSERT( asset_record.valid() );
+
+    asset_update_properties_operation update_op;
+    update_op.asset_id = asset_record->id;
+
+    if( precision != asset_record->precision ) update_op.precision = precision;
+    if( max_supply != asset_record->max_supply ) update_op.max_supply = max_supply;
+
+    auto record = _wallet->uia_update_properties( paying_account, asset_symbol, update_op, true );
+    _wallet->cache_transaction( record );
+    network_broadcast_transaction( record.trx );
+    return record;
+} FC_CAPTURE_AND_RETHROW( (paying_account)(asset_symbol)(max_supply_with_trailing_decimals) ) }
+
+wallet_transaction_record detail::client_impl::wallet_uia_update_fees(
+        const string& paying_account,
+        const string& asset_symbol,
+        const string& withdrawal_fee_string,
+        const string& market_fee_rate_string
+        )
+{ try {
+    const oasset_record asset_record = _chain_db->get_asset_record( asset_symbol );
+    FC_ASSERT( asset_record.valid() );
+
+    asset_update_properties_operation update_op;
+    update_op.asset_id = asset_record->id;
+
+    if( !withdrawal_fee_string.empty() )
+    {
+        const share_type withdrawal_fee = asset_record::share_string_to_satoshi( withdrawal_fee_string, asset_record->precision );
+        if( withdrawal_fee != asset_record->withdrawal_fee ) update_op.withdrawal_fee = withdrawal_fee;
+    }
+
+    if( !market_fee_rate_string.empty() )
+    {
+        const uint16_t market_fee_rate = uint16_t( asset_record::share_string_to_satoshi( market_fee_rate_string, 100 ) );
+        if( market_fee_rate != asset_record->market_fee_rate ) update_op.market_fee_rate = market_fee_rate;
+    }
+
+    auto record = _wallet->uia_update_properties( paying_account, asset_symbol, update_op, true );
+    _wallet->cache_transaction( record );
+    network_broadcast_transaction( record.trx );
+    return record;
+} FC_CAPTURE_AND_RETHROW( (paying_account)(asset_symbol)(withdrawal_fee_string)(market_fee_rate_string) ) }
+
+wallet_transaction_record detail::client_impl::wallet_uia_update_active_flags(
+        const string& paying_account,
+        const string& asset_symbol,
+        const asset_record::flag_enum& flag,
+        const bool enable_instead_of_disable
+        )
+{ try {
+    auto record = _wallet->uia_update_permission_or_flag( paying_account, asset_symbol, flag, enable_instead_of_disable, false, true );
+    _wallet->cache_transaction( record );
+    network_broadcast_transaction( record.trx );
+    return record;
+} FC_CAPTURE_AND_RETHROW( (paying_account)(asset_symbol)(flag)(enable_instead_of_disable) ) }
+
+wallet_transaction_record detail::client_impl::wallet_uia_update_authority_permissions(
+        const string& paying_account,
+        const string& asset_symbol,
+        const asset_record::flag_enum& permission,
+        const bool add_instead_of_remove
+        )
+{ try {
+    auto record = _wallet->uia_update_permission_or_flag( paying_account, asset_symbol, permission, add_instead_of_remove, true, true );
+    _wallet->cache_transaction( record );
+    network_broadcast_transaction( record.trx );
+    return record;
+} FC_CAPTURE_AND_RETHROW( (paying_account)(asset_symbol)(permission)(add_instead_of_remove) ) }
+
+wallet_transaction_record detail::client_impl::wallet_uia_update_whitelist(
+        const string& paying_account,
+        const string& asset_symbol,
+        const string& address_or_public_key,
+        const bool add_to_whitelist
+        )
+{ try {
+    address addr;
+    try
+    {
+        addr = address( public_key_type( address_or_public_key ) );
+    }
+    catch( const fc::exception& )
+    {
+        addr = address( address_or_public_key );
+    }
+
+    auto record = _wallet->uia_update_whitelist( paying_account, asset_symbol, addr, add_to_whitelist, true );
+    _wallet->cache_transaction( record );
+    network_broadcast_transaction( record.trx );
+
+    return record;
+} FC_CAPTURE_AND_RETHROW( (paying_account)(asset_symbol)(address_or_public_key)(add_to_whitelist) ) }
 
 vector<string> detail::client_impl::wallet_list() const
 {

@@ -1,4 +1,3 @@
-
 with _btstest.ClientProcess(name="alice", testname=testname) as p_alice:
     # create client process
     rpc_client = _btstest.RPCClient(dict(

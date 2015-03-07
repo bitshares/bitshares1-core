@@ -194,7 +194,7 @@
       },
       {
         "method_name": "blockchain_get_transaction",
-        "description": "Get detailed information about an in-wallet transaction",
+        "description": "Get detailed information about the specified transaction in the blockchain",
         "cached"   : true,
         "return_type": "transaction_record_pair",
         "parameters" : [

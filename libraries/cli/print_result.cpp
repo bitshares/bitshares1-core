@@ -179,28 +179,36 @@ namespace bts { namespace cli {
       out << pretty_balances( balances, client );
     };
 
-    _command_to_function["wallet_transfer"]                     = &f_wallet_transfer;
-    _command_to_function["wallet_get_transaction"]              = &f_wallet_transfer;
-    _command_to_function["wallet_account_register"]             = &f_wallet_transfer;
-    _command_to_function["wallet_account_retract"]              = &f_wallet_transfer;
-    _command_to_function["wallet_account_update_registration"]  = &f_wallet_transfer;
-    _command_to_function["wallet_account_update_active_key"]    = &f_wallet_transfer;
-    _command_to_function["wallet_asset_create"]                 = &f_wallet_transfer;
-    _command_to_function["wallet_asset_issue"]                  = &f_wallet_transfer;
-    _command_to_function["wallet_delegate_withdraw_pay"]        = &f_wallet_transfer;
-    _command_to_function["wallet_market_submit_bid"]            = &f_wallet_transfer;
-    _command_to_function["wallet_market_submit_ask"]            = &f_wallet_transfer;
-    _command_to_function["wallet_market_submit_short"]          = &f_wallet_transfer;
-    _command_to_function["wallet_market_cover"]                 = &f_wallet_transfer;
-    _command_to_function["wallet_market_add_collateral"]        = &f_wallet_transfer;
-    _command_to_function["wallet_market_cancel_order"]          = &f_wallet_transfer;
-    _command_to_function["wallet_publish_version"]              = &f_wallet_transfer;
-    _command_to_function["wallet_publish_slate"]                = &f_wallet_transfer;
-    _command_to_function["wallet_publish_price_feed"]           = &f_wallet_transfer;
-    _command_to_function["wallet_publish_feeds"]                = &f_wallet_transfer;
-    _command_to_function["wallet_scan_transaction"]             = &f_wallet_transfer;
-    _command_to_function["wallet_recover_transaction"]          = &f_wallet_transfer;
-    _command_to_function["wallet_burn"]                         = &f_wallet_transfer;
+    _command_to_function["wallet_transfer"]                         = &f_wallet_transfer;
+    _command_to_function["wallet_get_transaction"]                  = &f_wallet_transfer;
+    _command_to_function["wallet_account_register"]                 = &f_wallet_transfer;
+    _command_to_function["wallet_account_retract"]                  = &f_wallet_transfer;
+    _command_to_function["wallet_account_update_registration"]      = &f_wallet_transfer;
+    _command_to_function["wallet_account_update_active_key"]        = &f_wallet_transfer;
+    _command_to_function["wallet_mia_create"]                       = &f_wallet_transfer;
+    _command_to_function["wallet_uia_create"]                       = &f_wallet_transfer;
+    _command_to_function["wallet_uia_issue"]                        = &f_wallet_transfer;
+    _command_to_function["wallet_uia_collect_fees"]                 = &f_wallet_transfer;
+    _command_to_function["wallet_uia_update_description"]           = &f_wallet_transfer;
+    _command_to_function["wallet_uia_update_supply"]                = &f_wallet_transfer;
+    _command_to_function["wallet_uia_update_fees"]                  = &f_wallet_transfer;
+    _command_to_function["wallet_uia_update_active_flags"]          = &f_wallet_transfer;
+    _command_to_function["wallet_uia_update_authority_permissions"] = &f_wallet_transfer;
+    _command_to_function["wallet_uia_update_whitelist"]             = &f_wallet_transfer;
+    _command_to_function["wallet_delegate_withdraw_pay"]            = &f_wallet_transfer;
+    _command_to_function["wallet_market_submit_bid"]                = &f_wallet_transfer;
+    _command_to_function["wallet_market_submit_ask"]                = &f_wallet_transfer;
+    _command_to_function["wallet_market_submit_short"]              = &f_wallet_transfer;
+    _command_to_function["wallet_market_cover"]                     = &f_wallet_transfer;
+    _command_to_function["wallet_market_add_collateral"]            = &f_wallet_transfer;
+    _command_to_function["wallet_market_cancel_order"]              = &f_wallet_transfer;
+    _command_to_function["wallet_publish_version"]                  = &f_wallet_transfer;
+    _command_to_function["wallet_publish_slate"]                    = &f_wallet_transfer;
+    _command_to_function["wallet_publish_price_feed"]               = &f_wallet_transfer;
+    _command_to_function["wallet_publish_feeds"]                    = &f_wallet_transfer;
+    _command_to_function["wallet_scan_transaction"]                 = &f_wallet_transfer;
+    _command_to_function["wallet_recover_transaction"]              = &f_wallet_transfer;
+    _command_to_function["wallet_burn"]                             = &f_wallet_transfer;
 
     _command_to_function["wallet_list"] = &f_wallet_list;
 
@@ -667,7 +675,7 @@ namespace bts { namespace cli {
   { try {
     auto bids_asks = result.as<std::pair<vector<market_order>, vector<market_order>>>();
 
-    out << std::string(5, ' ') << "BIDS (* Short, + Relative, - Relative Limit)"
+    out << std::string(5, ' ') << "BIDS (* Short)"
       << std::string(27, ' ') << " | "
       << std::string(34, ' ') << "ASKS"
       << std::string(34, ' ') << "\n"

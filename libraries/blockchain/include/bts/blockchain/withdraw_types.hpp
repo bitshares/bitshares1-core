@@ -78,7 +78,7 @@ namespace bts { namespace blockchain {
        * transactions with the same length memo_data
        */
       fc::array<char,BTS_BLOCKCHAIN_MAX_MEMO_SIZE>     message;
-      fc::enum_type<uint8_t,memo_flags_enum>           memo_flags;
+      fc::enum_type<uint8_t,memo_flags_enum>           memo_flags = from_memo;
    };
    typedef fc::optional<memo_data>         omemo_data;
 
@@ -98,7 +98,7 @@ namespace bts { namespace blockchain {
        * transactions with the same length memo_data
        */
       fc::array<char,BTS_BLOCKCHAIN_MAX_MEMO_SIZE>      message;
-      fc::enum_type<uint8_t,memo_flags_enum>            memo_flags;
+      fc::enum_type<uint8_t,memo_flags_enum>            memo_flags = from_memo;
       fc::array<char,BTS_BLOCKCHAIN_EXTENDED_MEMO_SIZE> extra_message;
    };
    typedef fc::optional<extended_memo_data> oextended_memo_data;
@@ -127,9 +127,7 @@ namespace bts { namespace blockchain {
                                           const fc::ecc::public_key&  to_public_key,
                                           const fc::ecc::private_key& from_private_key,
                                           const std::string& memo_message,
-                                          const fc::ecc::public_key&  memo_pub_key,
-                                          memo_flags_enum memo_type = from_memo,
-                                          bool use_stealth_address = true);
+                                          bool use_stealth_address = false );
 
       extended_memo_data decrypt_memo_data( const fc::sha512& secret )const;
       void         encrypt_memo_data( const fc::sha512& secret, const memo_data& );
@@ -169,11 +167,9 @@ namespace bts { namespace blockchain {
 
       omemo_status decrypt_memo_data( const fc::ecc::private_key& receiver_key, bool ignore_owner = false )const;
       public_key_type encrypt_memo_data( const fc::ecc::private_key& one_time_private_key,
-                                      const fc::ecc::public_key&  to_public_key,
-                                      const fc::ecc::private_key& from_private_key,
-                                      const std::string& memo_message,
-                                      const fc::ecc::public_key&  memo_pub_key,
-                                      memo_flags_enum memo_type = from_memo);
+                                         const fc::ecc::public_key&  to_public_key,
+                                         const fc::ecc::private_key& from_private_key,
+                                         const std::string& memo_message );
 
       extended_memo_data    decrypt_memo_data( const fc::sha512& secret )const;
       void                  encrypt_memo_data( const fc::sha512& secret, const extended_memo_data& );

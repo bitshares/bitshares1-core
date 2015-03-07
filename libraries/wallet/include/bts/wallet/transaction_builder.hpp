@@ -279,30 +279,9 @@ namespace bts { namespace wallet {
                                         asset cover_amount,
                                         const order_id_type& order_id);
 
-      transaction_builder& asset_authorize_key( const string& symbol,
-                                                const address& owner );
-
       transaction_builder& update_signing_key( const string& authorizing_account_name,
                                                const string& delegate_name,
                                                const public_key_type& signing_key );
-
-      // TODO
-      /*
-      transaction_builder& update_asset( const string& symbol,
-                                         const optional<string>& name,
-                                         const optional<string>& description,
-                                         const optional<variant>& public_data,
-                                         const optional<double>& maximum_share_supply,
-                                         const optional<uint64_t>& precision,
-                                         const share_type issuer_fee,
-                                         double market_fee,
-                                         uint32_t flags,
-                                         uint32_t issuer_perms,
-                                         const optional<account_id_type> issuer_account_id,
-                                         uint32_t required_sigs,
-                                         const vector<address>& authority
-                                       );
-      */
 
       /**
        * @brief Balance the books and pay the fees

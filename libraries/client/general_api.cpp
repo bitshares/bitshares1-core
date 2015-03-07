@@ -47,7 +47,7 @@ variant_object client_impl::get_info()const
    info["blockchain_share_supply"]                              = variant();
    const auto share_record                                      = _chain_db->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
    if( share_record.valid() )
-      info["blockchain_share_supply"]                           = share_record->current_share_supply;
+      info["blockchain_share_supply"]                           = share_record->current_supply;
 
    const auto blocks_left                                       = BTS_BLOCKCHAIN_NUM_DELEGATES - (head_block_num % BTS_BLOCKCHAIN_NUM_DELEGATES);
    info["blockchain_blocks_left_in_round"]                      = blocks_left;

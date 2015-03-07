@@ -377,8 +377,8 @@ void detail::wallet_impl::scan_transaction_experimental( const transaction_evalu
             string account_name = "GOD";
             if( asset_record.valid() )
             {
-                const oaccount_record account_record = _blockchain->get_account_record( asset_record->issuer_account_id );
-                account_name = account_record.valid() ? account_record->name : std::to_string( asset_record->issuer_account_id );
+                const oaccount_record account_record = _blockchain->get_account_record( asset_record->issuer_id );
+                account_name = account_record.valid() ? account_record->name : std::to_string( asset_record->issuer_id );
             }
 
             const string delta_label = "ISSUER-" + account_name;
@@ -621,9 +621,6 @@ void detail::wallet_impl::scan_transaction_experimental( const transaction_evalu
                 break;
             case create_asset_op_type:
                 result = scan_create_asset( op.as<create_asset_operation>() );
-                break;
-            case update_asset_op_type:
-                // TODO
                 break;
             case issue_asset_op_type:
                 result = scan_issue_asset( op.as<issue_asset_operation>() );

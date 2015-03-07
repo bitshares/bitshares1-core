@@ -27,7 +27,7 @@ OK
 OK
 >>> debug_wait_for_block_by_number 1 rlast
 OK
->>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "AN ASSET" 5000000 100
+>>> wallet_uia_create delegate0 XMO DIGITAL_DEVICE1 "CREATING AN ASSET" 50000.00
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 ${ expect_isotime() }$ PENDING   delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.50000 XTS   ${ regex(r"[0-9a-f]{8}") }$
@@ -77,7 +77,7 @@ testaccount1                    100.00000 XTS
 ACCOUNT                         BALANCE                     
 ============================================================
 testaccount2                    10,000.00000 XTS            
->>> wallet_asset_issue 10000 XMO testaccount1 "Sending some assets"
+>>> wallet_uia_issue 10000 XMO testaccount1 "Sending some assets"
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 ${ expect_isotime() }$ PENDING   delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS      ${ regex(r"[0-9a-f]{8}") }$

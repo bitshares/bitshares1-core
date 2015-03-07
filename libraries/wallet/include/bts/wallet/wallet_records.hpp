@@ -66,6 +66,8 @@ namespace bts { namespace wallet {
        uint32_t         last_child_key_index = 0;
        bool             block_production_enabled = false;
        variant_object   custom_data;
+
+       bool             is_registered()const { return id > 0; }
    };
 
    struct key_data

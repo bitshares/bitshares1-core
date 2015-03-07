@@ -7,14 +7,6 @@
         "cpp_include_file" : "bts/blockchain/types.hpp"
       },
       {
-         "type_name" : "asset_permission",
-         "cpp_return_type" : "asset_permissions"
-      },
-      {
-         "type_name" : "asset_permission_array",
-         "cpp_return_type" : "std::vector<bts::blockchain::asset_permissions>"
-      },
-      {
         "type_name": "float",
         "cpp_return_type" : "float",
         "cpp_include_file" : "bts/blockchain/types.hpp"
@@ -726,6 +718,10 @@
       {
         "type_name" : "wallet_record_type",
         "cpp_return_type" : "bts::wallet::wallet_record_type_enum"
+      },
+      {
+        "type_name" : "asset_flag_enum",
+        "cpp_return_type" : "bts::blockchain::asset_record::flag_enum"
       },
       {
         "type_name" : "feed_entry_list",

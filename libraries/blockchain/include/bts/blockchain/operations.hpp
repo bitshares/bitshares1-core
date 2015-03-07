@@ -14,158 +14,146 @@
 
 namespace bts { namespace blockchain {
 
-   struct transaction_evaluation_state;
+struct transaction_evaluation_state;
 
-   // NOTE: Avoid changing these to ease downstream merges
-   enum operation_type_enum
-   {
-      null_op_type                  = 0,
+// NOTE: Avoid changing these to ease downstream merges
+enum operation_type_enum
+{
+    null_op_type                        = 0,
 
-      // balances
-      withdraw_op_type              = 1,
-      deposit_op_type               = 2,
+    withdraw_op_type                    = 1,
+    deposit_op_type                     = 2,
 
-      // accounts
-      register_account_op_type      = 3,
-      update_account_op_type        = 4,
-      withdraw_pay_op_type          = 5,
+    register_account_op_type            = 3,
+    update_account_op_type              = 4,
+    withdraw_pay_op_type                = 5,
 
-      // assets
-      create_asset_op_type          = 6,
-      update_asset_op_type          = 7,
-      issue_asset_op_type           = 8,
+    create_asset_op_type                = 6,
 
-      // reserved
-      reserved_op_0_type            = 9,
-      reserved_op_1_type            = 10,
-      reserved_op_2_type            = 11,
+    reserved_0_op_type                  = 7,
 
-      // market
-      bid_op_type                   = 12,
-      ask_op_type                   = 13,
-      short_op_type                 = 14,
-      cover_op_type                 = 15,
-      add_collateral_op_type        = 16,
+    issue_asset_op_type                 = 8,
 
-      reserved_op_3_type            = 17,
+    asset_update_properties_op_type     = 9,
+    asset_update_permissions_op_type    = 10,
+    asset_update_whitelist_op_type      = 11,
 
-      define_slate_op_type          = 18,
+    bid_op_type                         = 12,
+    ask_op_type                         = 13,
+    short_op_type                       = 14,
+    cover_op_type                       = 15,
+    add_collateral_op_type              = 16,
+    update_cover_op_type                = 17,
 
-      update_feed_op_type           = 19,
+    define_slate_op_type                = 18,
 
-      burn_op_type                  = 20,
+    update_feed_op_type                 = 19,
 
-      // reserved
-      reserved_op_4_type            = 21,
-      reserved_op_5_type            = 22,
+    burn_op_type                        = 20,
 
-      release_escrow_op_type        = 23,
+    reserved_1_op_type                  = 21,
+    reserved_2_op_type                  = 22,
 
-      update_signing_key_op_type    = 24,
+    release_escrow_op_type              = 23,
 
-      // reserved
-      reserved_op_6_type            = 25,
-      reserved_op_7_type            = 26,
+    update_signing_key_op_type          = 24,
 
-      update_balance_vote_op_type   = 27,
+    reserved_3_op_type                  = 25,
+    reserved_4_op_type                  = 26,
 
-      data_op_type                  = 28,
+    update_balance_vote_op_type         = 27,
+    limit_fee_op_type                   = 28,
 
-      authorize_op_type             = 29,
+    data_op_type                        = 29
+};
 
-      limit_fee_op_type             = 30,
+/**
+*  A poly-morphic operator that modifies the blockchain database
+*  is some manner.
+*/
+struct operation
+{
+    operation():type(null_op_type){}
 
-      update_cover_op_type          = 31
-   };
+    operation( const operation& o )
+        :type(o.type),data(o.data){}
 
-   /**
-    *  A poly-morphic operator that modifies the blockchain database
-    *  is some manner.
-    */
-   struct operation
-   {
-      operation():type(null_op_type){}
+    operation( operation&& o )
+        :type(o.type),data(std::move(o.data)){}
 
-      operation( const operation& o )
-      :type(o.type),data(o.data){}
+    template<typename OperationType>
+    operation( const OperationType& t )
+    {
+        type = OperationType::type;
+        data = fc::raw::pack( t );
+    }
 
-      operation( operation&& o )
-      :type(o.type),data(std::move(o.data)){}
+    template<typename OperationType>
+    OperationType as()const
+    {
+        FC_ASSERT( (operation_type_enum)type == OperationType::type, "", ("type",type)("OperationType",OperationType::type) );
+        return fc::raw::unpack<OperationType>(data);
+    }
 
-      template<typename OperationType>
-      operation( const OperationType& t )
-      {
-         type = OperationType::type;
-         data = fc::raw::pack( t );
-      }
+    operation& operator=( const operation& o )
+    {
+        if( this == &o ) return *this;
+        type = o.type;
+        data = o.data;
+        return *this;
+    }
 
-      template<typename OperationType>
-      OperationType as()const
-      {
-         FC_ASSERT( (operation_type_enum)type == OperationType::type, "", ("type",type)("OperationType",OperationType::type) );
-         return fc::raw::unpack<OperationType>(data);
-      }
+    operation& operator=( operation&& o )
+    {
+        if( this == &o ) return *this;
+        type = o.type;
+        data = std::move(o.data);
+        return *this;
+    }
 
-      operation& operator=( const operation& o )
-      {
-         if( this == &o ) return *this;
-         type = o.type;
-         data = o.data;
-         return *this;
-      }
-
-      operation& operator=( operation&& o )
-      {
-         if( this == &o ) return *this;
-         type = o.type;
-         data = std::move(o.data);
-         return *this;
-      }
-
-      fc::enum_type<uint8_t,operation_type_enum> type;
-      std::vector<char> data;
-   };
+    fc::enum_type<uint8_t,operation_type_enum> type;
+    std::vector<char> data;
+};
 
 } } // bts::blockchain
 
 FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
-                 (null_op_type)
-                 (withdraw_op_type)
-                 (deposit_op_type)
-                 (register_account_op_type)
-                 (update_account_op_type)
-                 (withdraw_pay_op_type)
-                 (create_asset_op_type)
-                 (update_asset_op_type)
-                 (issue_asset_op_type)
-                 (reserved_op_0_type)
-                 (reserved_op_1_type)
-                 (reserved_op_2_type)
-                 (bid_op_type)
-                 (ask_op_type)
-                 (short_op_type)
-                 (cover_op_type)
-                 (add_collateral_op_type)
-                 (reserved_op_3_type)
-                 (define_slate_op_type)
-                 (update_feed_op_type)
-                 (burn_op_type)
-                 (reserved_op_4_type)
-                 (reserved_op_5_type)
-                 (release_escrow_op_type)
-                 (update_signing_key_op_type)
-                 (reserved_op_6_type)
-                 (reserved_op_7_type)
-                 (update_balance_vote_op_type)
-                 (data_op_type)
-                 (authorize_op_type)
-                 (limit_fee_op_type)
-                 (update_cover_op_type)
-                 )
+        (null_op_type)
+        (withdraw_op_type)
+        (deposit_op_type)
+        (register_account_op_type)
+        (update_account_op_type)
+        (withdraw_pay_op_type)
+        (create_asset_op_type)
+        (reserved_0_op_type)
+        (issue_asset_op_type)
+        (asset_update_properties_op_type)
+        (asset_update_permissions_op_type)
+        (asset_update_whitelist_op_type)
+        (bid_op_type)
+        (ask_op_type)
+        (short_op_type)
+        (cover_op_type)
+        (add_collateral_op_type)
+        (update_cover_op_type)
+        (define_slate_op_type)
+        (update_feed_op_type)
+        (burn_op_type)
+        (reserved_1_op_type)
+        (reserved_2_op_type)
+        (release_escrow_op_type)
+        (update_signing_key_op_type)
+        (reserved_3_op_type)
+        (reserved_4_op_type)
+        (update_balance_vote_op_type)
+        (limit_fee_op_type)
+        (data_op_type)
+    )
 
 FC_REFLECT( bts::blockchain::operation, (type)(data) )
 
-namespace fc {
-   void to_variant( const bts::blockchain::operation& var,  variant& vo );
-   void from_variant( const variant& var,  bts::blockchain::operation& vo );
+namespace fc
+{
+    void to_variant( const bts::blockchain::operation& var, variant& vo );
+    void from_variant( const variant& var, bts::blockchain::operation& vo );
 }
