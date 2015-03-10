@@ -456,7 +456,14 @@ class TestClient(object):
         m = self.last_command_pos
         return self.last_command_output[self.last_command_pos:]
 
-def token_iterator(regex, s):
+class Token(object):
+    def __init__(self, text="", lineno=-1, col=-1):
+        self.text = text
+        self.lineno = lineno
+        self.col = col
+        return
+
+def _token_iterator(regex, s):
     """
     Returns match for regex, or non-matching characters
     """
@@ -467,6 +474,37 @@ def token_iterator(regex, s):
             yield s[i:j]
         i = m.end()
         yield m.group(0)
+    return
+
+re_nl = re.compile(r"\r\n?|\n")
+
+def _line_start_iter(s):
+    yield 0
+    for m in re_nl.finditer(s):
+        yield m.end()
+    return
+
+def token_iterator(regex, s):
+    """
+    Returns match for regex, or non-matching characters
+    """
+    ls_iter = _line_start_iter(s)
+    ls_index = -1
+    
+    lineno = 0
+    col = 1
+    
+    char_offset = 0
+    for t in _token_iterator(regex, s):
+        while char_offset >= ls_index:
+            lineno += 1
+            try:
+                ls_index = next(ls_iter)
+            except StopIteration:
+                ls_index = len(s)+1
+        col = char_offset-ls_index+1
+        yield Token(t, lineno, col)
+        char_offset += len(t)
     return
 
 class Test(object):
@@ -484,6 +522,7 @@ class Test(object):
         self.context["register_client"] = self.register_client
         self.context["expect_enabled"] = True
         self.context["showmatch_enabled"] = False
+        self.context["showlineno_enabled"] = False
         self.context["matchbuf"] = []
         self.context["_btstest"] = sys.modules[__name__]
         self.last_command_client = None
@@ -603,6 +642,14 @@ class Test(object):
             else:
                 raise RuntimeError("unknown keyword in showmatch command")
             return
+        elif cmd[0] == "!showlineno":
+            if cmd[1] == "enable":
+                self.context["showlineno_enabled"] = True
+            elif cmd[1] == "disable":
+                self.context["showlineno_enabled"] = False
+            else:
+                raise RuntimeError("unknown keyword in showlineno command")
+            return
             
         # TODO: exception type
         raise RuntimeError("unknown metacommand " + repr(cmd))
@@ -657,8 +704,9 @@ class Test(object):
         
         parse_pos = 0
         
-        for t in token_iterator(self.re_script_token, script_str):
+        for tok in token_iterator(self.re_script_token, script_str):
 
+            t = tok.text
             logging.debug("process token: "+repr(t[:40]))
             if t == "":
                 # empty token
@@ -670,6 +718,8 @@ class Test(object):
                 self.finish_cmd()
                 in_command = True
                 # echo
+                if self.context["showlineno_enabled"]:
+                    self.print_output("L"+str(tok.lineno)+": ")
                 self.print_output(t)
             elif t[-1] in "\r\n":
                 # newline
