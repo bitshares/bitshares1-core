@@ -109,4 +109,29 @@ default (unlocked) >>> blockchain_calculate_supply XMO
 30.00 XMO
 default (unlocked) >>> blockchain_calculate_supply XTS
 2,000,000,199.99901 XTS
+default (unlocked) >>> help blockchain_generate_issuance_map
+Usage:
+blockchain_generate_issuance_map <symbol> <filename>                                                  A utility to help verify UIA distribution. Returns a snapshot map of all issuances for a particular UIA.
+A utility to help verify UIA distribution. Returns a snapshot map of all issuances for a particular UIA.
+
+Parameters:
+  symbol (string, required): the UIA for which to compute issuance map
+  filename (string, required): filename to save snapshot to
+
+Returns:
+  void
+default (unlocked) >>> blockchain_generate_issuance_map XMO snapshot_map.json
+OK
+default (unlocked) >>> help blockchain_generate_snapshot
+Usage:
+blockchain_generate_snapshot <filename>                                                               Save snapshot of current base asset balances to specified file
+Save snapshot of current base asset balances to specified file
+
+Parameters:
+  filename (string, required): filename to save snapshot to
+
+Returns:
+  void
+default (unlocked) >>> blockchain_generate_snapshot snapshot_base.json
+OK
 default (unlocked) >>> quit
