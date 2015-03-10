@@ -516,11 +516,11 @@ class Test(object):
 
     def on_fail_literal_str(self, expected_value, got_value):
         # TODO: respect showmatch_enabled here
-        print("!{ " + expected_value + " }!~{ " + got_value + " }~", end="")
+        self.print_output("!{ " + expected_value + " }!~{ " + got_value + " }~")
         return
 
     def on_pass_literal_str(self, s):
-        print(s, end="")
+        self.print_output(s)
         return
 
     def expect_literal_str(self, data):
@@ -578,7 +578,7 @@ class Test(object):
 
     def dump_matchbuf(self, do_print=False):
         if do_print:
-            print("~{"+"".join(self.context["matchbuf"])+"}~", end="")
+            self.print_output("~{"+"".join(self.context["matchbuf"])+"}~")
         del self.context["matchbuf"][:]
         return
 
@@ -670,19 +670,19 @@ class Test(object):
                 self.finish_cmd()
                 in_command = True
                 # echo
-                print(t, end="", flush=True)
+                self.print_output(t)
             elif t[-1] in "\r\n":
                 # newline
                 if in_command:
                     in_command = False
                     self.execute_cmd("".join(cmd_text).strip())
                     del cmd_text[:]
-                print(t, end="", flush=True)
+                self.print_output(t)
             elif t[0] in " \t\f\v":
                 # whitespace
                 if in_command:
                     cmd_text.append(t)
-                print(t, end="", flush=True)
+                self.print_output(t)
             elif len(t) >= 4 and t[0:2] == "${":
                 # Python expression
                 if t[-2:] == "}$":
@@ -695,7 +695,7 @@ class Test(object):
                     expr = mo.group(1)
                 self.interpret_expr(expr)
                 # TODO: cmd_text.append() function
-                print("${"+expr+"}$", end="", flush=True)
+                self.print_output("${"+expr+"}$")
                 self.dump_matchbuf(self.context["showmatch_enabled"])
             elif len(t) >= 4 and t[0:2] == "#{" and t[-2:] == "}#":
                 # comment
@@ -728,10 +728,14 @@ class Test(object):
         if end_text.strip() != "":
             if self.context["expect_enabled"] and self.context["showmatch_enabled"]:
                 # TODO:  respect showmatch here
-                print("!{ }!~{ " + end_text.strip() + " }~")
+                self.print_output("!{ }!~{ " + end_text.strip() + " }~\n")
             else:
-                print(end_text, end="")
+                self.print_output(end_text)
         self.last_command_client = None
+        return
+
+    def print_output(self, text):
+        print(text, end="", flush=True)
         return
 
 def main():
