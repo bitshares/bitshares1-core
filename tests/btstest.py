@@ -172,11 +172,11 @@ class ClientProcess(object):
     default_p2p_port = default_rpc_port
     default_username = "username"
     default_password = "password"
-    default_testdir = os.path.join(os.path.dirname(__file__), "btstests", "out")
     default_genesis_config = os.path.join(os.path.dirname(__file__), "drltc_tests", "genesis.json")
 
     def __init__(self,
         name="default",
+        testname=None,
         client_exe=None,
         p2p_port=None,
         rpc_port=None,
@@ -189,6 +189,10 @@ class ClientProcess(object):
         debug_stop=False,
         ):
         self.name = name
+
+        if testname is None:
+            raise RuntimeError("Must set testname when creating ClientProcess")
+        self.testname = testname
 
         if client_exe is None:
             client_exe = self.default_client_exe
@@ -219,7 +223,7 @@ class ClientProcess(object):
         self.genesis_config = genesis_config
 
         if testdir is None:
-            testdir = self.default_testdir
+            testdir = self.get_default_testdir()
         self.testdir = testdir
 
         self.process_object = None
@@ -240,6 +244,14 @@ class ClientProcess(object):
     def __exit__(self, exc_type, exc_value, traceback):
         self.stop()
         return
+
+    def get_default_testdir(self):
+        return os.path.join(
+            os.path.dirname(__file__),
+            "btstests",
+            "out",
+            self.testname,
+            )
 
     def start(self):
         # execute process object and wait for RPC to become available
@@ -485,6 +497,7 @@ class Test(object):
 
         self.context["my_filename"] = testenv_filename
         self.context["my_path"] = os.path.dirname(testenv_filename)
+        self.context["testname"] = os.path.basename(self.context["my_path"])
 
         with add_to_sys_path([os.path.dirname(testenv_filename)]):
             exec(compiled_testenv, self.context)
