@@ -10,85 +10,102 @@
 >>> wallet_set_transaction_scanning true
 >>> debug_wait_for_block_by_number 1
 >>> debug_deterministic_private_keys 0 1 angel true delegate0 true true
+>>> !expect enable
 >>> wallet_account_create testaccount1
-"XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
+${ regex(r'"XTS[0-9a-zA-Z]+"') }$
 >>> wallet_account_create testaccount2
-"XTS56gEKGQjqxWuEF7umuaaFbPTYQ1kP9LWRQHsyoojVmWML1yoNM"
+${ regex(r'"XTS[0-9a-zA-Z]+"') }$
 >>> wallet_account_register delegate0 delegate0
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID
+======================================================================================================================================================================
+${ expect_isotime() }$ PENDING   delegate0           delegate0           0.00000 XTS             register delegate0                          0.50000 XTS         ${ regex(r"[0-9a-f]{8}") }$
 >>> debug_advance_time 1 block
+OK
 >>> debug_wait_for_block_by_number 1 rlast
 OK
 >>> debug_advance_time 1 block
+OK
 >>> debug_wait_for_block_by_number 1 rlast
 OK
 >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "AN ASSET" 5000000 100
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.50000 XTS   <d-ign></d-ign>
+${ expect_isotime() }$ PENDING   delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.50000 XTS   ${ regex(r"[0-9a-f]{8}") }$
 >>> debug_advance_time 1 block
+OK
 >>> debug_wait_for_block_by_number 1 rlast
 OK
 >>> wallet_transfer 100 XTS delegate0 testaccount1
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         <d-ign></d-ign>
+${ expect_isotime() }$ PENDING   delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         ${ regex(r"[0-9a-f]{8}") }$
 >>> debug_advance_time 1 block
+OK
 >>> debug_wait_for_block_by_number 1 rlast
 OK
 >>> wallet_transfer 10000 XTS delegate0 testaccount2
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         <d-ign></d-ign>
+${ expect_isotime() }$ PENDING   delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         ${ regex(r"[0-9a-f]{8}") }$
 >>> debug_advance_time 1 block
+OK
 >>> debug_wait_for_block_by_number 1 rlast
 OK
 >>> debug_advance_time 1 block
+OK
 >>> debug_wait_for_block_by_number 1 rlast
 OK
 >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
-1     XMO    DIGITAL_DEVICE1         AN ASSET                                        delegate0                       0.00 %    0.00 XMO                    
-0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,199.99901 XTS     
+2     BTC    Bitcoin                 This is an internet cryptocurrency.  All cra... MARKET                          N/A       0.00000000 BTC              
+3     GAS    Gasoline                Secondary fuel source used by some electric ... MARKET                          N/A       0.0000 GAS                  
+1     USD    United States Dollar    Federally Reserved, Inflation Guaranteed        MARKET                          N/A       0.0000 USD                  
+4     XMO    DIGITAL_DEVICE1         AN ASSET                                        delegate0                       0.00 %    0.00 XMO                    
+0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,300.00000 XTS     
 >>> blockchain_list_pending_transactions
 No pending transactions.
->>> balance delegate0 testaccount1 testaccount2
+>>> balance delegate0
+  ACCOUNT                         BALANCE
+============================================================
+delegate0                       19,489,898.00000 XTS
+>>> balance testaccount1
+  ACCOUNT                         BALANCE
+============================================================
+testaccount1                    100.00000 XTS               
+>>> balance testaccount2
 ACCOUNT                         BALANCE                     
 ============================================================
-delegate0                       19,291,878.69801 XTS        
-delegate1                       19,801,980.19801 XTS        
-delegate2                       19,801,980.19801 XTS        
-delegate3                       19,801,980.19801 XTS        
-delegate4                       19,801,980.19801 XTS        
-testaccount1                    100.00000 XTS               
 testaccount2                    10,000.00000 XTS            
 >>> wallet_asset_issue 10000 XMO testaccount1 "Sending some assets"
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         <d-ign></d-ign>
+${ expect_isotime() }$ PENDING   delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS      ${ regex(r"[0-9a-f]{8}") }$
 >>> debug_advance_time 1 block
+OK
 >>> debug_wait_for_block_by_number 1 rlast
 OK
 >>> debug_advance_time 1 block
+OK
 >>> debug_wait_for_block_by_number 1 rlast
 OK
 >>> history delegate0
-TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
-======================================================================================================================================================================
-<d-ign></d-ign>0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    0.00000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>0         GENESIS             delegate4           19,801,980.19801 XTS    claim PkrWFQgshsBX5YGkPm581QT1NL7nfNhzpc    0.00000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>0         GENESIS             delegate3           19,801,980.19801 XTS    claim PrAqJzqCULC3guyYGpQmggCDkQepFkLYmt    0.00000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>0         GENESIS             delegate2           19,801,980.19801 XTS    claim PpTMxwrSXcGKVMwmF9MptTN9tFDhhxfVLV    0.00000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>1         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.50000 XTS   <d-ign></d-ign>
-<d-ign></d-ign>2         delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>3         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>5         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         <d-ign></d-ign>
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+${ expect_isotime() }$ 0       GENESIS             delegate0           20,000,000.00000 XTS    claim Pfyf3E2129Wp1NLSmsrKXBcx7ShKyevdmX    20,000,000.00000 XTS          0.00000 XTS         VIRTUAL
+${ expect_isotime() }$ 2       delegate0           delegate0           0.00000 XTS             register delegate0                          19,999,999.50000 XTS          0.50000 XTS         ${ regex(r"[0-9a-f]{8}") }$
+${ expect_isotime() }$ 3       delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                19,499,999.00000 XTS    500,000.50000 XTS         ${ regex(r"[0-9a-f]{8}") }$
+${ expect_isotime() }$ 4       delegate0           testaccount1        100.00000 XTS                                                       19,499,898.50000 XTS          0.50000 XTS         ${ regex(r"[0-9a-f]{8}") }$
+${ expect_isotime() }$ 5       delegate0           testaccount2        10,000.00000 XTS                                                    19,489,898.00000 XTS          0.50000 XTS         ${ regex(r"[0-9a-f]{8}") }$
+${ expect_isotime() }$ 7       delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.00 XMO                      0.50000 XTS         ${ regex(r"[0-9a-f]{8}") }$
 >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
-1     XMO    DIGITAL_DEVICE1         AN ASSET                                        delegate0                       0.20 %    10,000.00 XMO               
-0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,299.99901 XTS     
+2     BTC    Bitcoin                 This is an internet cryptocurrency.  All cra... MARKET                          N/A       0.00000000 BTC              
+3     GAS    Gasoline                Secondary fuel source used by some electric ... MARKET                          N/A       0.0000 GAS                  
+1     USD    United States Dollar    Federally Reserved, Inflation Guaranteed        MARKET                          N/A       0.0000 USD                  
+4     XMO    DIGITAL_DEVICE1         AN ASSET                                        delegate0                       0.20 %    10,000.00 XMO               
+0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,400.00000 XTS     
 >>> help wallet_market_submit_bid 
 Usage:
 wallet_market_submit_bid <from_account_name> <quantity> <quantity_symbol> <base_price> <base_symbol> [allow_stupid_bid]   Used to place a request to buy a quantity of assets at a price specified in another asset
@@ -109,45 +126,50 @@ aliases: bid
 >>> wallet_market_submit_bid testaccount1 500 XTS 3 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   testaccount1        testaccount1        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         <d-ign></d-ign>
+${ expect_isotime() }$ PENDING   testaccount1        testaccount1        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS      ${ regex("[0-9a-f]{8}") }$
 >>> debug_advance_time 1 block
+OK
 >>> debug_wait_for_block_by_number 1 rlast
 OK
 >>> debug_advance_time 1 block
+OK
 >>> debug_wait_for_block_by_number 1 rlast
 OK
->>> balance delegate0 testaccount1 testaccount2
+>>> balance delegate0
 ACCOUNT                         BALANCE                     
 ============================================================
-delegate0                       19,291,878.19801 XTS        
-delegate1                       19,801,980.19801 XTS        
-delegate2                       19,801,980.19801 XTS        
-delegate3                       19,801,980.19801 XTS        
-delegate4                       19,801,980.19801 XTS        
+delegate0                       19,489,897.50000 XTS
+>>> balance testaccount1
+ACCOUNT                         BALANCE                     
+============================================================
 testaccount1                    99.50000 XTS                
                                 8,500.00 XMO                
+>>> balance testaccount2
+ACCOUNT                         BALANCE                     
+============================================================
 testaccount2                    10,000.00000 XTS            
 >>> history testaccount1
-TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
-======================================================================================================================================================================
-<d-ign></d-ign>0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    0.00000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>0         GENESIS             delegate4           19,801,980.19801 XTS    claim PkrWFQgshsBX5YGkPm581QT1NL7nfNhzpc    0.00000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>0         GENESIS             delegate3           19,801,980.19801 XTS    claim PrAqJzqCULC3guyYGpQmggCDkQepFkLYmt    0.00000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>0         GENESIS             delegate2           19,801,980.19801 XTS    claim PpTMxwrSXcGKVMwmF9MptTN9tFDhhxfVLV    0.00000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>1         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.50000 XTS   <d-ign></d-ign>
-<d-ign></d-ign>2         delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>3         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>5         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>7         testaccount1        BID-ee62e3ce        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         <d-ign></d-ign>
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID
+==============================================================================================================================================================================================
+${ expect_isotime() }$ 4      delegate0           testaccount1        100.00000 XTS                                                       100.00000 XTS           0.00000 XTS         ${ regex("[0-9a-f]{8}") }$
+${ expect_isotime() }$ 7      delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         10,000.00 XMO           0.00000 XTS         ${ regex("[0-9a-f]{8}") }$
+${ expect_isotime() }$ 9      testaccount1        ${ regex(r"BID-[0-9a-f]{8}") }$
+                                                                       1,500.00 XMO            buy XTS @ 3. XMO / XTS                      8,500.00 XMO           0.50000 XTS         ${ regex("[0-9a-f]{8}") }$
+
+#{ #####################################
+   #
+   # TODO:  assert owners here are same as above
+   #
+   ##################################### }#
+
 >>> blockchain_market_list_bids XMO XTS
 TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
-bid_order           500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 NONE                ee62e3cee425e0410eae3a3b614020fa70cd0e21   XTSGeRFZj44f4X6wLZnMjF8JgccYcL2tM3rr
+bid_order           500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 NONE                ${ regex("[0-9a-f]{40}") }$                ${ regex(r"XTS[0-9a-zA-Z]+") }$
 >>> wallet_market_order_list XMO XTS
 TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
-bid_order           500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 NONE                ee62e3cee425e0410eae3a3b614020fa70cd0e21   XTSGeRFZj44f4X6wLZnMjF8JgccYcL2tM3rr
+bid_order           500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 NONE                ${ regex("[0-9a-f]{40}") }$                ${ regex(r"XTS[0-9a-zA-Z]+") }$
 >>> help wallet_market_submit_ask
 Usage:
 wallet_market_submit_ask <from_account_name> <sell_quantity> <sell_quantity_symbol> <ask_price> <ask_price_symbol> [allow_stupid_ask]   Used to place a request to sell a quantity of assets at a price specified in another asset
@@ -168,47 +190,43 @@ aliases: ask
 >>> wallet_market_submit_ask testaccount2 100 XTS 4 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   testaccount2        testaccount2        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.50000 XTS         <d-ign></d-ign>
+${ expect_isotime() }$ PENDING   testaccount2        testaccount2        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.50000 XTS         ${ regex("[0-9a-f]{8}") }$
 >>> debug_advance_time 1 block
+OK
 >>> debug_wait_for_block_by_number 1 rlast
 OK
 >>> debug_advance_time 1 block
+OK
 >>> debug_wait_for_block_by_number 1 rlast
 OK
->>> balance delegate0 testaccount1 testaccount2
+>>> balance delegate0
 ACCOUNT                         BALANCE                     
 ============================================================
-delegate0                       19,291,878.19801 XTS        
-delegate1                       19,801,980.19801 XTS        
-delegate2                       19,801,980.19801 XTS        
-delegate3                       19,801,980.19801 XTS        
-delegate4                       19,801,980.19801 XTS        
+delegate0                       19,489,897.50000 XTS
+>>> balance testaccount1
+ACCOUNT                         BALANCE                     
+============================================================
 testaccount1                    99.50000 XTS                
                                 8,500.00 XMO                
+>>> balance testaccount2
+ACCOUNT                         BALANCE                     
+============================================================
 testaccount2                    9,899.50000 XTS             
 >>> history testaccount2
-TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
-======================================================================================================================================================================
-<d-ign></d-ign>0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    0.00000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>0         GENESIS             delegate4           19,801,980.19801 XTS    claim PkrWFQgshsBX5YGkPm581QT1NL7nfNhzpc    0.00000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>0         GENESIS             delegate3           19,801,980.19801 XTS    claim PrAqJzqCULC3guyYGpQmggCDkQepFkLYmt    0.00000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>0         GENESIS             delegate2           19,801,980.19801 XTS    claim PpTMxwrSXcGKVMwmF9MptTN9tFDhhxfVLV    0.00000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>1         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.50000 XTS   <d-ign></d-ign>
-<d-ign></d-ign>2         delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>3         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>5         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>7         testaccount1        BID-ee62e3ce        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>9         testaccount2        ASK-24ee3224        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.50000 XTS         <d-ign></d-ign>
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID
+==============================================================================================================================================================================================
+${ expect_isotime() }$  5     delegate0           testaccount2        10,000.00000 XTS                                                    10,000.00000 XTS        0.00000 XTS         ${ regex(r"[0-9a-f]{8}") }$ 
+${ expect_isotime() }$ 11     testaccount2        ${ regex(r"ASK-[0-9a-f]{8}") }$
+                                                                         100.00000 XTS        sell XTS @ 4. XMO / XTS                      9,899.50000 XTS        0.50000 XTS        ${ regex(r"[0-9a-f]{8}") }$ 
 >>> blockchain_market_list_asks XMO XTS
 TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
-ask_order           100.00000 XTS       4. XMO / XTS                  100.00000 XTS       400.00 XMO          N/A                 NONE                24ee32246f71d9b941f2a5cc1ef09e62c1946e87   XTSAHX84FNdwfdPKyqkxmJTn4juqUANfxVQT
+ask_order           100.00000 XTS       4. XMO / XTS                  100.00000 XTS       400.00 XMO          N/A                 NONE                ${ regex("[0-9a-f]{40}") }$                ${ regex(r"XTS[0-9a-zA-Z]+") }$
 >>> wallet_market_order_list XMO XTS
 TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
-ask_order           100.00000 XTS       4. XMO / XTS                  100.00000 XTS       400.00 XMO          N/A                 NONE                24ee32246f71d9b941f2a5cc1ef09e62c1946e87   XTSAHX84FNdwfdPKyqkxmJTn4juqUANfxVQT
-bid_order           500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 NONE                ee62e3cee425e0410eae3a3b614020fa70cd0e21   XTSGeRFZj44f4X6wLZnMjF8JgccYcL2tM3rr
+bid_order           500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 NONE                ${ regex("[0-9a-f]{40}") }$                ${ regex(r"XTS[0-9a-zA-Z]+") }$
+ask_order           100.00000 XTS       4. XMO / XTS                  100.00000 XTS       400.00 XMO          N/A                 NONE                ${ regex("[0-9a-f]{40}") }$                ${ regex(r"XTS[0-9a-zA-Z]+") }$
 >>> help blockchain_market_order_book
 Usage:
 blockchain_market_order_book <quote_symbol> <base_symbol> [limit]                                     Returns the long and short sides of the order book for a given market
@@ -241,7 +259,7 @@ Returns:
   market_status
 >>> blockchain_market_status XMO XTS
 {
-  "quote_id": 1,
+  "quote_id": 4,
   "base_id": 0,
   "current_feed_price": 0,
   "last_valid_feed_price": 0,
