@@ -793,6 +793,7 @@ def main():
     parser.add_argument("testdirs", metavar="TEST", type=str, nargs="+", help="Test directory")
     parser.add_argument("--testenv", metavar="ENV", type=str, action="append", help="Specify a global testenv")
     parser.add_argument("--loglevel", metavar="LOGLEVEL", type=str, default="INFO")
+    parser.add_argument("--client", metavar="CLIENT", type=str, default="", help="Path to BitShares client")
     
     args = parser.parse_args()
 
@@ -800,6 +801,9 @@ def main():
     if not isinstance(numeric_loglevel, int):
         raise ValueError("Invalid log level {}".format(repr(numeric_loglevel)))
     logging.basicConfig(level=numeric_loglevel)
+
+    if args.client != "":
+        ClientProcess.default_client_exe = args.client
 
     for d in args.testdirs:
         local_testenv_filename = os.path.join(d, "testenv")
