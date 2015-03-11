@@ -120,6 +120,38 @@ namespace bts { namespace cli {
       for( const auto& order_item : order_map )
           order_list.push_back( std::make_pair( order_item.first, order_item.second ) );
 
+      // sort them in a useful order before display
+      std::sort( order_list.begin(), order_list.end(),
+         []( const std::pair<order_id_type, market_order>& a,
+             const std::pair<order_id_type, market_order>& b ) -> bool
+         {
+             // sort by base_id, then quote_id, then order type, then price
+             asset_id_type a_base_id  = a.second.market_index.order_price.base_asset_id;
+             asset_id_type a_quote_id = a.second.market_index.order_price.quote_asset_id;
+             asset_id_type b_base_id  = b.second.market_index.order_price.base_asset_id;
+             asset_id_type b_quote_id = b.second.market_index.order_price.quote_asset_id;
+             
+             if( a_base_id < b_base_id )
+                 return true;
+             if( a_base_id > b_base_id )
+                 return false;
+             FC_ASSERT( a_base_id == b_base_id );          // trichotomy
+             
+             if( a_quote_id < b_quote_id )
+                 return true;
+             if( a_quote_id > b_quote_id )
+                 return false;
+             FC_ASSERT( a_quote_id == b_quote_id );        // trichotomy
+             
+             if( a.second.type < b.second.type )
+                 return true;
+             if( a.second.type > b.second.type )
+                 return false;
+             FC_ASSERT( a.second.type == b.second.type );  // trichotomy
+             return (a.second.market_index < b.second.market_index);
+         }
+         );
+
       out << pretty_order_list( order_list, client );
     };
 
