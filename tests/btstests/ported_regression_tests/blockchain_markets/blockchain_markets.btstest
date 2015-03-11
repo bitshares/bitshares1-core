@@ -52,7 +52,7 @@ ID    SYMBOL NAME                    DESCRIPTION                                
 0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,199.99901 XTS     
 default (unlocked) >>> blockchain_list_pending_transactions
 No pending transactions.
-default (unlocked) >>> balance
+default (unlocked) >>> balance delegate0 testaccount1 testaccount2
 ACCOUNT                         BALANCE                     
 ============================================================
 delegate0                       19,291,878.69801 XTS        
@@ -116,7 +116,7 @@ OK
 >>> debug_advance_time 1 block
 default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
 OK
-default (unlocked) >>> balance
+default (unlocked) >>> balance delegate0 testaccount1 testaccount2
 ACCOUNT                         BALANCE                     
 ============================================================
 delegate0                       19,291,878.19801 XTS        
@@ -175,7 +175,7 @@ OK
 >>> debug_advance_time 1 block
 default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
 OK
-default (unlocked) >>> balance
+default (unlocked) >>> balance delegate0 testaccount1 testaccount2
 ACCOUNT                         BALANCE                     
 ============================================================
 delegate0                       19,291,878.19801 XTS        
