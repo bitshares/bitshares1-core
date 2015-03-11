@@ -1,3 +1,15 @@
+>>> !client alice
+>>> !expect disable
+>>> !showmatch enable
+>>> !showlineno enable
+>>> debug_start_simulated_time "20140620T144030.000000"
+>>> wallet_create default "password"
+>>> wallet_set_automatic_backups false
+>>> debug_deterministic_private_keys 0 101 init true
+>>> wallet_delegate_set_block_production ALL true
+>>> wallet_set_transaction_scanning true
+>>> debug_wait_for_block_by_number 1
+>>> debug_deterministic_private_keys 0 1 alice true delegate0 true true
 default (unlocked) >>> wallet_account_create testaccount1
 "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
 default (unlocked) >>> wallet_account_create testaccount2
