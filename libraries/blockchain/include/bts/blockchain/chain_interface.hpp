@@ -49,8 +49,7 @@ namespace bts { namespace blockchain {
 
          /** converts an asset + asset_id to a more friendly representation using the symbol name */
          string                             to_pretty_asset( const asset& a )const;
-         double                             to_pretty_price_double( const price& a )const;
-         string                             to_pretty_price( const price& a )const;
+         string                             to_pretty_price( const price& a, const bool include_units = true )const;
          /** converts a numeric string + asset symbol to an asset */
          asset                              to_ugly_asset( const string& amount, const string& symbol )const;
          /** converts a numeric string and two asset symbols to a price */

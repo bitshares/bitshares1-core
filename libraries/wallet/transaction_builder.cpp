@@ -30,8 +30,8 @@ public_key_type transaction_builder::order_key_for_account(const address& accoun
 transaction_builder& transaction_builder::release_escrow( const account_record& payer,
                                                           const address& escrow_account,
                                                           const address& released_by_address,
-                                                          share_type     amount_to_sender,
-                                                          share_type     amount_to_receiver )
+                                                          const asset& amount_to_sender,
+                                                          const asset& amount_to_receiver )
 { try {
    auto escrow_record = _wimpl->_blockchain->get_balance_record( escrow_account );
    FC_ASSERT( escrow_record.valid() );
@@ -45,7 +45,7 @@ transaction_builder& transaction_builder::release_escrow( const account_record& 
                                  trx,
                                  required_signatures );
    // fetch balance record, assert that released_by_address is a party to the contract
-   trx.release_escrow( escrow_account, released_by_address, amount_to_sender, amount_to_receiver );
+   trx.release_escrow( escrow_account, released_by_address, amount_to_sender.amount, amount_to_receiver.amount );
    if( released_by_address == address() )
    {
       required_signatures.insert( escrow_condition.sender );

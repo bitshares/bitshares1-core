@@ -293,24 +293,23 @@ namespace bts { namespace wallet {
                  );
          wallet_transaction_record withdraw_delegate_pay(
                  const string& delegate_name,
-                 double amount_to_withdraw,
+                 const asset& amount,
                  const string& withdraw_to_account_name,
                  bool sign
                  );
          wallet_transaction_record publish_feeds(
                  const string& account,
-                 map<string,double> amount_per_xts,
+                 map<string,string> amount_per_xts,
                  bool sign
                  );
          vector<std::pair<string, wallet_transaction_record>>
                  publish_feeds_multi_experimental(
-                 map<string,double> amount_per_xts,
+                 map<string,string> amount_per_xts,
                  bool sign
                  );
          wallet_transaction_record publish_price(
                  const string& account,
-                 double amount_per_xts,
-                 const string& amount_asset_symbol,
+                 const price& new_price,
                  bool sign
                  );
          transaction_builder set_vote_info(

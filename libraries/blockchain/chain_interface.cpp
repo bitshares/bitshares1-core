@@ -200,18 +200,7 @@ namespace bts { namespace blockchain {
        return std::count( active_delegates.begin(), active_delegates.end(), id ) > 0;
    } FC_CAPTURE_AND_RETHROW( (id) ) }
 
-   double chain_interface::to_pretty_price_double( const price& price_to_pretty_print )const
-   {
-      auto obase_asset = get_asset_record( price_to_pretty_print.base_asset_id );
-      if( !obase_asset ) FC_CAPTURE_AND_THROW( unknown_asset_id, (price_to_pretty_print.base_asset_id) );
-
-      auto oquote_asset = get_asset_record( price_to_pretty_print.quote_asset_id );
-      if( !oquote_asset ) FC_CAPTURE_AND_THROW( unknown_asset_id, (price_to_pretty_print.quote_asset_id) );
-
-      return fc::variant(string(price_to_pretty_print.ratio * obase_asset->precision / oquote_asset->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000);
-   }
-
-   string chain_interface::to_pretty_price( const price& price_to_pretty_print )const
+   string chain_interface::to_pretty_price( const price& price_to_pretty_print, const bool include_units )const
    { try {
       auto obase_asset = get_asset_record( price_to_pretty_print.base_asset_id );
       if( !obase_asset ) FC_CAPTURE_AND_THROW( unknown_asset_id, (price_to_pretty_print.base_asset_id) );
@@ -223,8 +212,13 @@ namespace bts { namespace blockchain {
       tmp.ratio *= obase_asset->precision;
       tmp.ratio /= oquote_asset->precision;
 
-      return tmp.ratio_string() + " " + oquote_asset->symbol + " / " + obase_asset->symbol;
-   } FC_CAPTURE_AND_RETHROW( (price_to_pretty_print) ) }
+      string pretty_price = tmp.ratio_string();
+
+      if( include_units )
+          pretty_price += " " + oquote_asset->symbol + " / " + obase_asset->symbol;
+
+      return pretty_price;
+   } FC_CAPTURE_AND_RETHROW( (price_to_pretty_print)(include_units) ) }
 
    asset chain_interface::to_ugly_asset(const std::string& amount, const std::string& symbol) const
    { try {

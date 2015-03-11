@@ -205,8 +205,8 @@ namespace bts { namespace wallet {
       transaction_builder& release_escrow( const account_record& payer,
                                            const address& escrow_account,
                                            const address& released_by_address,
-                                           share_type amount_to_sender,
-                                           share_type amount_to_receiver );
+                                           const asset& amount_to_sender,
+                                           const asset& amount_to_receiver );
 
       transaction_builder& deposit_asset_to_multisig(const asset& amount,
                                                      const string& from_name,

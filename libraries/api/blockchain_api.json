@@ -161,7 +161,7 @@
         "method_name": "blockchain_list_feed_prices",
         "description": "Returns a list of all currently valid feed prices",
         "cached"   : true,
-        "return_type": "price_map",
+        "return_type": "string_map",
         "parameters" : [],
         "is_const" : true,
         "prerequisites" : ["no_prerequisites"]
@@ -378,7 +378,7 @@
          "method_name" : "blockchain_median_feed_price",
          "description" : "Get the account record for a given name",
          "cached"   : true,
-         "return_type" : "real_amount",
+         "return_type" : "string",
          "parameters"  : [
                {
                   "name" : "symbol",

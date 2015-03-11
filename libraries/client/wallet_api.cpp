@@ -75,7 +75,6 @@ void detail::client_impl::wallet_backup_restore( const fc::path& json_filename,
 // This should be able to get an encrypted private key or WIF key out of any reasonable JSON object
 void read_keys( const fc::variant& vo, vector<private_key_type>& keys, const string& password )
 {
-    ilog("@n read_keys");
     try
     {
       const auto wif_key = vo.as_string();
@@ -501,8 +500,8 @@ transaction_builder detail::client_impl::wallet_builder_file_add_signature(
 wallet_transaction_record detail::client_impl::wallet_release_escrow( const string& paying_account_name,
                                                                       const address& escrow_balance_id,
                                                                       const string& released_by,
-                                                                      double amount_to_sender,
-                                                                      double amount_to_receiver )
+                                                                      const string& amount_to_sender_string,
+                                                                      const string& amount_to_receiver_string )
 {
     auto payer = _wallet->get_account(paying_account_name);
     auto balance_rec = _chain_db->get_balance_record( escrow_balance_id );
@@ -514,11 +513,9 @@ wallet_transaction_record detail::client_impl::wallet_release_escrow( const stri
 
     auto asset_rec = _chain_db->get_asset_record( balance_rec->asset_id() );
     FC_ASSERT( asset_rec.valid() );
-    if( asset_rec->precision )
-    {
-       amount_to_sender   *= asset_rec->precision;
-       amount_to_receiver *= asset_rec->precision;
-    }
+
+    const asset amount_to_sender = _chain_db->to_ugly_asset( amount_to_sender_string, asset_rec->symbol );
+    const asset amount_to_receiver = _chain_db->to_ugly_asset( amount_to_receiver_string, asset_rec->symbol );
 
     auto escrow_cond = balance_rec->condition.as<withdraw_with_escrow>();
     address release_by_address;
@@ -534,19 +531,6 @@ wallet_transaction_record detail::client_impl::wallet_release_escrow( const stri
 
     _wallet->cache_transaction( record );
     network_broadcast_transaction( record.trx );
-
-    if( _mail_client )
-    {
-        /* TODO: notify other parties of the transaction.
-        for( auto&& notice : builder->encrypted_notifications() )
-            _mail_client->send_encrypted_message(std::move(notice),
-                                                 from_account_name,
-                                                 to_account_name,
-                                                 recipient.owner_key);
-
-        */
-    }
-
     return record;
 }
 
@@ -884,7 +868,7 @@ uint32_t detail::client_impl::wallet_import_bitcoin(
   }
   catch( const fc::exception& e )
   {
-      ilog( "import_bitcoin_wallet failed with empty password: ${e}", ("e",e.to_detail_string() ) );
+      wlog( "import_bitcoin_wallet failed with empty password: ${e}", ("e",e.to_detail_string() ) );
   }
 
   const auto count = _wallet->import_bitcoin_wallet(filename, passphrase, account_name);
@@ -1283,16 +1267,20 @@ wallet_transaction_record client_impl::wallet_market_submit_bid(
        const string& quote_symbol,
        bool allow_stupid_bid )
 {
-  wdump((quote_symbol)(quantity_symbol));
   vector<market_order> lowest_ask = blockchain_market_order_book(quote_symbol, quantity_symbol, 1).second;
-  wdump((lowest_ask));
 
-  if (!allow_stupid_bid && lowest_ask.size()
-      && fc::variant(quote_price).as_double() > _chain_db->to_pretty_price_double(lowest_ask.front().get_price()) * 1.05)
-    FC_THROW_EXCEPTION(stupid_order, "You are attempting to bid at more than 5% above the buy price. "
-                                     "This bid is based on economically unsound principles, and is ill-advised. "
-                                     "If you're sure you want to do this, place your bid again and set allow_stupid_bid to true. ${lowest_ask}",
-                                     ("lowest_ask",lowest_ask.front()));
+  if( !lowest_ask.empty() )
+  {
+      const double requested_price = variant( quote_price ).as_double();
+      const double lowest_ask_price = variant( _chain_db->to_pretty_price( lowest_ask.front().get_price(), false ) ).as_double();
+      if( requested_price > lowest_ask_price * 1.05 )
+      {
+          FC_THROW_EXCEPTION(stupid_order, "You are attempting to bid at more than 5% above the buy price. "
+                                           "This bid is based on economically unsound principles, and is ill-advised. "
+                                           "If you're sure you want to do this, place your bid again and set allow_stupid_bid to true. ${lowest_ask}",
+                                           ("lowest_ask",lowest_ask.front()));
+      }
+  }
 
   auto record = _wallet->submit_bid( from_account, quantity, quantity_symbol, quote_price, quote_symbol, true );
   _wallet->cache_transaction( record );
@@ -1325,11 +1313,17 @@ wallet_transaction_record client_impl::wallet_market_submit_ask(
 {
   vector<market_order> highest_bid = blockchain_market_order_book(quote_symbol, quantity_symbol, 1).first;
 
-  if (!allow_stupid_ask && highest_bid.size()
-      && fc::variant(quote_price).as_double() < _chain_db->to_pretty_price_double(highest_bid.front().get_price()) * .95)
-    FC_THROW_EXCEPTION(stupid_order, "You are attempting to ask at more than 5% below the buy price. "
-                                     "This ask is based on economically unsound principles, and is ill-advised. "
-                                     "If you're sure you want to do this, place your ask again and set allow_stupid_ask to true.");
+  if( !highest_bid.empty() )
+  {
+      const double requested_price = variant( quote_price ).as_double();
+      const double highest_bid_price = variant( _chain_db->to_pretty_price( highest_bid.front().get_price(), false ) ).as_double();
+      if( requested_price < highest_bid_price * 0.95 )
+      {
+          FC_THROW_EXCEPTION(stupid_order, "You are attempting to ask at more than 5% below the buy price. "
+                                           "This ask is based on economically unsound principles, and is ill-advised. "
+                                           "If you're sure you want to do this, place your ask again and set allow_stupid_ask to true.");
+      }
+  }
 
   auto record = _wallet->submit_ask( from_account, quantity, quantity_symbol, quote_price, quote_symbol, true );
   _wallet->cache_transaction( record );
@@ -1383,20 +1377,24 @@ wallet_transaction_record client_impl::wallet_market_cover(
 }
 
 wallet_transaction_record client_impl::wallet_delegate_withdraw_pay( const string& delegate_name,
-                                                                    const string& to_account_name,
-                                                                    double amount_to_withdraw )
+                                                                     const string& to_account_name,
+                                                                     const string& amount_to_withdraw )
 {
-  auto record = _wallet->withdraw_delegate_pay( delegate_name, amount_to_withdraw, to_account_name, true );
+  const oasset_record base_record = _chain_db->get_asset_record( asset_id_type( 0 ) );
+  FC_ASSERT( base_record.valid() );
+  const asset amount = _chain_db->to_ugly_asset( amount_to_withdraw, base_record->symbol );
+  auto record = _wallet->withdraw_delegate_pay( delegate_name, amount, to_account_name, true );
   _wallet->cache_transaction( record );
   network_broadcast_transaction( record.trx );
   return record;
 }
 
-asset client_impl::wallet_set_transaction_fee( double fee )
+asset client_impl::wallet_set_transaction_fee( const string& fee )
 { try {
   oasset_record asset_record = _chain_db->get_asset_record( asset_id_type() );
   FC_ASSERT( asset_record.valid() );
-  _wallet->set_transaction_fee( asset( fee * asset_record->precision ) );
+  const asset amount = _chain_db->to_ugly_asset( fee, asset_record->symbol );
+  _wallet->set_transaction_fee( amount );
   return _wallet->get_transaction_fee();
 } FC_CAPTURE_AND_RETHROW( (fee) ) }
 
@@ -1516,20 +1514,27 @@ transaction_builder client_impl::wallet_balance_set_vote_info(const balance_id_t
 }
 
 
-wallet_transaction_record client_impl::wallet_publish_price_feed( const std::string& delegate_account,
-                                                                  double real_amount_per_xts,
-                                                                  const std::string& real_amount_symbol )
+wallet_transaction_record client_impl::wallet_publish_price_feed( const string& delegate_account,
+                                                                  const string& real_amount_per_xts,
+                                                                  const string& real_amount_symbol )
 {
-   auto record = _wallet->publish_price( delegate_account, real_amount_per_xts, real_amount_symbol, true );
+   const oasset_record base_record = _chain_db->get_asset_record( asset_id_type( 0 ) );
+   FC_ASSERT( base_record.valid() );
+
+   const price new_price = _chain_db->to_ugly_price( real_amount_per_xts, base_record->symbol, real_amount_symbol );
+
+   auto record = _wallet->publish_price( delegate_account, new_price, true );
    _wallet->cache_transaction( record );
    network_broadcast_transaction( record.trx );
+
    return record;
 }
 
-vector<std::pair<string, wallet_transaction_record>> client_impl::wallet_publish_feeds_multi_experimental( const map<string,double>& real_amount_per_xts )
+vector<std::pair<string, wallet_transaction_record>> client_impl::wallet_publish_feeds_multi_experimental(
+        const map<string,string>& amount_per_xts )
 {
    vector<std::pair<string, wallet_transaction_record>> record_list =
-      _wallet->publish_feeds_multi_experimental( real_amount_per_xts, true );
+      _wallet->publish_feeds_multi_experimental( amount_per_xts, true );
 
    for( std::pair<string, wallet_transaction_record>& record_pair : record_list )
    {
@@ -1541,9 +1546,9 @@ vector<std::pair<string, wallet_transaction_record>> client_impl::wallet_publish
 }
 
 wallet_transaction_record client_impl::wallet_publish_feeds( const std::string& delegate_account,
-                                                             const map<string,double>& real_amount_per_xts )
+                                                             const map<string,string>& amount_per_xts )
 {
-   auto record = _wallet->publish_feeds( delegate_account, real_amount_per_xts, true );
+   auto record = _wallet->publish_feeds( delegate_account, amount_per_xts, true );
    _wallet->cache_transaction( record );
    network_broadcast_transaction( record.trx );
    return record;

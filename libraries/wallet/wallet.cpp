@@ -1791,7 +1791,7 @@ namespace detail {
 
 
    vector<std::pair<string, wallet_transaction_record>> wallet::publish_feeds_multi_experimental(
-           map<string,double> amount_per_xts, // map symbol to amount per xts
+           map<string,string> amount_per_xts, // map symbol to amount per xts
            bool sign )
    {
 	   vector<std::pair<string, wallet_transaction_record>> result;
@@ -1814,17 +1814,11 @@ namespace detail {
 
    wallet_transaction_record wallet::publish_feeds(
            const string& account_to_publish_under,
-           map<string,double> amount_per_xts, // map symbol to amount per xts
+           map<string,string> amount_per_xts, // map symbol to amount per xts
            bool sign )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-
-      for( const auto& item : amount_per_xts )
-      {
-         if( item.second < 0 )
-             FC_THROW_EXCEPTION( invalid_price, "Invalid price!", ("amount_per_xts",item) );
-      }
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
@@ -1835,29 +1829,15 @@ namespace detail {
       FC_ASSERT( current_account.valid() );
       auto payer_public_key = get_owner_public_key( account_to_publish_under );
 
+      const auto base_asset_record = my->_blockchain->get_asset_record( asset_id_type( 0 ) );
+      FC_ASSERT( base_asset_record.valid() );
+
       for( const auto& item : amount_per_xts )
       {
-         auto quote_asset_record = my->_blockchain->get_asset_record( item.first );
-         auto base_asset_record  = my->_blockchain->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
-         FC_ASSERT( quote_asset_record.valid(), "Invalid Symbol '${symbol}'", ("symbol",item.first) );
+         const price new_price = my->_blockchain->to_ugly_price( item.second, base_asset_record->symbol, item.first );
 
-
-         asset price_shares( item.second *  quote_asset_record->precision, quote_asset_record->id );
-         asset base_one_quantity( base_asset_record->precision, 0 );
-
-         // auto quote_price_shares = price_shares / base_one_quantity;
-         price quote_price_shares( (item.second * quote_asset_record->precision) / base_asset_record->precision, quote_asset_record->id, base_asset_record->id );
-
-         if( item.second > 0 )
-         {
-            trx.publish_feed( my->_blockchain->get_asset_id( item.first ),
-                              current_account->id, fc::variant( quote_price_shares )  );
-         }
-         else
-         {
-            trx.publish_feed( my->_blockchain->get_asset_id( item.first ),
-                              current_account->id, fc::variant()  );
-         }
+         trx.publish_feed( my->_blockchain->get_asset_id( item.first ),
+                           current_account->id, variant( new_price )  );
       }
 
       auto required_fees = get_transaction_fee();
@@ -1894,15 +1874,11 @@ namespace detail {
 
    wallet_transaction_record wallet::publish_price(
            const string& account_to_publish_under,
-           double amount_per_xts,
-           const string& amount_asset_symbol,
+           const price& new_price,
            bool sign )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-
-      if( amount_per_xts < 0 )
-          FC_THROW_EXCEPTION( invalid_price, "Invalid price!", ("amount_per_xts",amount_per_xts) );
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
@@ -1913,24 +1889,8 @@ namespace detail {
       FC_ASSERT( current_account.valid() );
       auto payer_public_key = get_owner_public_key( account_to_publish_under );
 
-      auto quote_asset_record = my->_blockchain->get_asset_record( amount_asset_symbol );
-      auto base_asset_record  = my->_blockchain->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
-      FC_ASSERT( base_asset_record.valid() );
-      FC_ASSERT( quote_asset_record.valid() );
-
-      const double ratio = (amount_per_xts * quote_asset_record->precision) / base_asset_record->precision;
-      const price quote_price_shares( ratio, quote_asset_record->id, base_asset_record->id );
-
-      if( amount_per_xts > 0 )
-      {
-         trx.publish_feed( my->_blockchain->get_asset_id( amount_asset_symbol ),
-                           current_account->id, fc::variant( quote_price_shares ) );
-      }
-      else
-      {
-         trx.publish_feed( my->_blockchain->get_asset_id( amount_asset_symbol ),
-                           current_account->id, fc::variant()  );
-      }
+      trx.publish_feed( new_price.quote_asset_id,
+                        current_account->id, variant( new_price ) );
 
       auto required_fees = get_transaction_fee();
 
@@ -1951,7 +1911,7 @@ namespace detail {
       auto entry = ledger_entry();
       entry.from_account = payer_public_key;
       entry.to_account = payer_public_key;
-      entry.memo = "publish price " + my->_blockchain->to_pretty_price( quote_price_shares );
+      entry.memo = "publish price " + my->_blockchain->to_pretty_price( new_price );
 
       auto record = wallet_transaction_record();
       record.ledger_entries.push_back( entry );
@@ -1962,7 +1922,7 @@ namespace detail {
 
       record.trx = trx;
       return record;
-   } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(amount_per_xts)(amount_asset_symbol)(sign) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(new_price)(sign) ) }
 
    // TODO: Refactor publish_{slate|version} are exactly the same
    wallet_transaction_record wallet::publish_slate(
@@ -2623,23 +2583,18 @@ namespace detail {
 
    wallet_transaction_record wallet::withdraw_delegate_pay(
            const string& delegate_name,
-           double real_amount_to_withdraw,
+           const asset& amount,
            const string& withdraw_to_account_name,
            bool sign )
    { try {
        FC_ASSERT( is_open() );
        FC_ASSERT( is_unlocked() );
 
-       auto asset_rec = my->_blockchain->get_asset_record( asset_id_type(0) );
-       share_type amount_to_withdraw((share_type)(real_amount_to_withdraw * asset_rec->precision));
-
        auto delegate_account_record = my->_blockchain->get_account_record( delegate_name );
        FC_ASSERT( delegate_account_record.valid() );
        FC_ASSERT( delegate_account_record->is_delegate() );
 
-       auto required_fees = get_transaction_fee();
-       FC_ASSERT( delegate_account_record->delegate_info->pay_balance >= (amount_to_withdraw + required_fees.amount), "",
-                  ("delegate_account_record",delegate_account_record));
+       const auto required_fees = get_transaction_fee();
 
        signed_transaction trx;
        unordered_set<address> required_signatures;
@@ -2655,9 +2610,9 @@ namespace detail {
        const wallet_account_record receiver_account = get_account( withdraw_to_account_name );
        const string memo_message = "withdraw pay";
 
-       trx.withdraw_pay( delegate_account_record->id, amount_to_withdraw + required_fees.amount );
+       trx.withdraw_pay( delegate_account_record->id, amount.amount );
 
-       trx.deposit_with_encrypted_memo( asset( amount_to_withdraw, 0 ),
+       trx.deposit_with_encrypted_memo( amount - required_fees,
                                         delegate_private_key,
                                         receiver_account.active_key(),
                                         my->get_new_private_key( delegate_name ),
@@ -2667,7 +2622,7 @@ namespace detail {
        auto entry = ledger_entry();
        entry.from_account = delegate_public_key;
        entry.to_account = receiver_account.active_key(),
-       entry.amount = asset( amount_to_withdraw );
+       entry.amount = amount - required_fees;
        entry.memo = memo_message;
 
        auto record = wallet_transaction_record();
@@ -2679,7 +2634,7 @@ namespace detail {
 
        record.trx = trx;
        return record;
-   } FC_CAPTURE_AND_RETHROW( (delegate_name)(real_amount_to_withdraw) ) }
+   } FC_CAPTURE_AND_RETHROW( (delegate_name)(amount)(sign) ) }
 
    wallet_transaction_record wallet::burn_asset(
            const asset& asset_to_transfer,

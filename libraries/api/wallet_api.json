@@ -968,13 +968,13 @@
             },
             {
                 "name": "amount_to_sender",
-                "type": "real_amount",
+                "type": "string",
                 "description": "Amount to release back to the sender.",
                 "default_value": 0
             },
             {
                 "name": "amount_to_receiver",
-                "type": "real_amount",
+                "type": "string",
                 "description": "Amount to release to receiver.",
                 "default_value": 0
             }
@@ -1771,7 +1771,7 @@
             },
             {
                "name" : "amount_to_withdraw",
-               "type" : "real_amount",
+               "type" : "string",
                "description" : "the amount to withdraw"
             }
          ],
@@ -1785,7 +1785,7 @@
          "parameters"   : [
          {
             "name" : "fee",
-            "type" : "real_amount",
+            "type" : "string",
             "description" : "the wallet transaction fee to set"
          }
          ],
@@ -2489,7 +2489,7 @@
              },
              {
                 "name" : "price",
-                "type" : "real_amount",
+                "type" : "string",
                 "description" : "the number of this asset per XTS"
              },
              {
@@ -2512,7 +2512,7 @@
              },
              {
                 "name" : "symbol_to_price_map",
-                "type" : "price_map",
+                "type" : "string_map",
                 "description" : "maps the BitAsset symbol to its price per share"
              }
          ],
@@ -2525,7 +2525,7 @@
          "parameters"  : [
              {
                 "name" : "symbol_to_price_map",
-                "type" : "price_map",
+                "type" : "string_map",
                 "description" : "maps the BitAsset symbol to its price per share"
              }
          ],

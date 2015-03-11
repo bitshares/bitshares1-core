@@ -209,7 +209,7 @@ oasset_record detail::client_impl::blockchain_get_asset( const string& asset )co
 }
 
 //TODO: Refactor: most of these next two functions are identical. Should extract a function.
-vector<feed_entry> detail::client_impl::blockchain_get_feeds_for_asset(const std::string &asset) const
+vector<feed_entry> detail::client_impl::blockchain_get_feeds_for_asset( const string& asset )const
 { try {
       asset_id_type asset_id;
       if( !std::all_of( asset.begin(), asset.end(), ::isdigit) )
@@ -224,29 +224,35 @@ vector<feed_entry> detail::client_impl::blockchain_get_feeds_for_asset(const std
          auto delegate = _chain_db->get_account_record(feed.index.delegate_id);
          if( !delegate )
             FC_THROW_EXCEPTION(unknown_account_id , "Unknown delegate", ("delegate_id", feed.index.delegate_id) );
-         double price = _chain_db->to_pretty_price_double(feed.value);
+
+         const string price = _chain_db->to_pretty_price( feed.value, false );
 
          result_feeds.push_back({delegate->name, price, feed.last_update});
       }
 
       const auto omedian_price = _chain_db->get_active_feed_price( asset_id );
-      if( omedian_price )
-         result_feeds.push_back({"MARKET", 0, _chain_db->now(), _chain_db->get_asset_symbol(asset_id), _chain_db->to_pretty_price_double(*omedian_price)});
+      if( omedian_price.valid() )
+      {
+          const string feed_price = _chain_db->to_pretty_price( *omedian_price, false );
+          result_feeds.push_back( { "MARKET", "0", _chain_db->now(), _chain_db->get_asset_symbol(asset_id), feed_price } );
+      }
 
       return result_feeds;
-} FC_RETHROW_EXCEPTIONS( warn, "", ("asset",asset) ) }
+} FC_CAPTURE_AND_RETHROW( (asset) ) }
 
-double detail::client_impl::blockchain_median_feed_price( const string& asset )const
+string detail::client_impl::blockchain_median_feed_price( const string& asset )const
 {
    asset_id_type asset_id;
    if( !std::all_of( asset.begin(), asset.end(), ::isdigit) )
       asset_id = _chain_db->get_asset_id(asset);
    else
       asset_id = std::stoi( asset );
-   const auto omedian_price = _chain_db->get_active_feed_price( asset_id );
-   if( omedian_price )
-      return _chain_db->to_pretty_price_double( *omedian_price );
-   return 0;
+
+   const oprice feed_price = _chain_db->get_active_feed_price( asset_id );
+   if( feed_price.valid() )
+       return _chain_db->to_pretty_price( *feed_price, false );
+
+   return "";
 }
 
 vector<feed_entry> detail::client_impl::blockchain_get_feeds_from_delegate( const string& delegate_name )const
@@ -261,18 +267,18 @@ vector<feed_entry> detail::client_impl::blockchain_get_feeds_from_delegate( cons
 
       for( const auto& raw_feed : raw_feeds )
       {
-         const double price = _chain_db->to_pretty_price_double( raw_feed.value );
+         const string price = _chain_db->to_pretty_price( raw_feed.value, false );
          const string asset_symbol = _chain_db->get_asset_symbol( raw_feed.index.quote_id );
-         const auto omedian_price = _chain_db->get_active_feed_price( raw_feed.index.quote_id );
-         fc::optional<double> median_price;
-         if( omedian_price )
-            median_price = _chain_db->to_pretty_price_double( *omedian_price );
+         const oprice feed_price = _chain_db->get_active_feed_price( raw_feed.index.quote_id );
+         optional<string> pretty_feed_price;
+         if( feed_price.valid() )
+             pretty_feed_price = _chain_db->to_pretty_price( *feed_price, false );
 
-         result_feeds.push_back( feed_entry{ delegate_name, price, raw_feed.last_update, asset_symbol, median_price } );
+         result_feeds.push_back( feed_entry{ delegate_name, price, raw_feed.last_update, asset_symbol, pretty_feed_price } );
       }
 
       return result_feeds;
-} FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name", delegate_name) ) }
+} FC_CAPTURE_AND_RETHROW( (delegate_name) ) }
 
 pair<transaction_id_type, transaction_record> detail::client_impl::blockchain_get_transaction( const string& transaction_id_prefix,
                                                                                                bool exact )const
@@ -438,14 +444,14 @@ vector<asset_record> detail::client_impl::blockchain_list_assets( const string& 
    return _chain_db->get_assets( first, limit );
 }
 
-map<string, double> detail::client_impl::blockchain_list_feed_prices()const
+map<string, string> detail::client_impl::blockchain_list_feed_prices()const
 {
-    map<string, double> feed_prices;
+    map<string, string> feed_prices;
     const auto scan_asset = [&]( const asset_record& record )
     {
         const auto median_price = _chain_db->get_active_feed_price( record.id );
         if( !median_price.valid() ) return;
-        feed_prices.emplace( record.symbol, _chain_db->to_pretty_price_double( *median_price ) );
+        feed_prices.emplace( record.symbol, _chain_db->to_pretty_price( *median_price, false ) );
     };
     _chain_db->scan_ordered_assets( scan_asset );
     return feed_prices;
@@ -670,16 +676,12 @@ vector<bts::blockchain::api_market_status> client_impl::blockchain_list_markets(
       FC_ASSERT( status.valid() );
 
       api_market_status api_status( *status );
-      price current_feed_price;
-      price last_valid_feed_price;
 
       if( status->current_feed_price.valid() )
-         current_feed_price = *status->current_feed_price;
-      if( status->last_valid_feed_price.valid() )
-         last_valid_feed_price = *status->last_valid_feed_price;
+          api_status.current_feed_price = _chain_db->to_pretty_price( *status->current_feed_price, false );
 
-      api_status.current_feed_price = _chain_db->to_pretty_price_double( current_feed_price );
-      api_status.last_valid_feed_price = _chain_db->to_pretty_price_double( last_valid_feed_price );
+      if( status->last_valid_feed_price.valid() )
+          api_status.last_valid_feed_price = _chain_db->to_pretty_price( *status->last_valid_feed_price, false );
 
       statuses.push_back( api_status );
    }
@@ -698,20 +700,17 @@ bts::blockchain::api_market_status client_impl::blockchain_market_status( const 
    auto qrec = _chain_db->get_asset_record(quote);
    auto brec = _chain_db->get_asset_record(base);
    FC_ASSERT( qrec && brec );
-   auto oresult = _chain_db->get_market_status( qrec->id, brec->id );
-   FC_ASSERT( oresult, "The ${q}/${b} market has not yet been initialized.", ("q", quote)("b", base));
+   auto status = _chain_db->get_market_status( qrec->id, brec->id );
+   FC_ASSERT( status, "The ${q}/${b} market has not yet been initialized.", ("q", quote)("b", base));
 
-   api_market_status result(*oresult);
-   price current_feed_price;
-   price last_valid_feed_price;
+   api_market_status result( *status );
 
-   if( oresult->current_feed_price.valid() )
-      current_feed_price = *oresult->current_feed_price;
-   if( oresult->last_valid_feed_price.valid() )
-      last_valid_feed_price = *oresult->last_valid_feed_price;
+   if( status->current_feed_price.valid() )
+       result.current_feed_price = _chain_db->to_pretty_price( *status->current_feed_price, false );
 
-   result.current_feed_price = _chain_db->to_pretty_price_double( current_feed_price );
-   result.last_valid_feed_price = _chain_db->to_pretty_price_double( last_valid_feed_price );
+   if( status->last_valid_feed_price.valid() )
+       result.last_valid_feed_price = _chain_db->to_pretty_price( *status->last_valid_feed_price, false );
+
    return result;
 }
 

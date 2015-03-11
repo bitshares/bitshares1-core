@@ -50,11 +50,9 @@ namespace bts { namespace blockchain {
       :ratio(r),base_asset_id(base),quote_asset_id(quote){}
 
       price( const std::string& s );
-      price( double a, asset_id_type quote, asset_id_type base );
       int set_ratio_from_string( const std::string& ratio_str );
       std::string ratio_string()const;
       operator std::string()const;
-      explicit operator double()const;
       bool is_infinite() const;
 
       fc::uint128_t ratio; // This is a DECIMAL FRACTION with denominator equal to BTS_PRICE_PRECISION

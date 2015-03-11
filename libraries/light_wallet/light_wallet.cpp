@@ -315,7 +315,7 @@ fc::variant_object light_wallet::prepare_transfer(const string& amount,
                    create_one_time_key(from_account_name, fc::to_string(expiration.sec_since_epoch())),
                    memo, active_key(from_account_name));
 
-   creator.pay_fee(fee);
+   //creator.pay_fee(fee);
 
    creator.trx.expiration = expiration;
 
@@ -374,16 +374,18 @@ oprice light_wallet::get_median_feed_price( const string& symbol )
             _data->price_cache.erase( cached_price_itr );
       }
    }
-   double price_ratio = _rpc.blockchain_median_feed_price( symbol );
+   const string price_ratio = _rpc.blockchain_median_feed_price( symbol );
    oprice opt;
-   if( price_ratio != 0 )
+   if( price_ratio != "" )
    {
       auto base_rec = get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
       auto quote_rec = get_asset_record( symbol );
       FC_ASSERT( base_rec && quote_rec );
 
-      opt = price( price_ratio * (double(quote_rec->precision) / base_rec->precision),
-                   quote_rec->id, base_rec->id );
+      opt = price();
+      opt->base_asset_id = base_rec->id;
+      opt->quote_asset_id = quote_rec->id;
+      opt->set_ratio_from_string( price_ratio );
    }
 
    if( opt && is_open() )

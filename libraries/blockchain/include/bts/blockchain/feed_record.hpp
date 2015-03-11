@@ -49,10 +49,10 @@ class feed_db_interface
 struct feed_entry
 {
     string                         delegate_name;
-    double                         price;
+    string                         price;
     time_point_sec                 last_update;
     fc::optional<string>           asset_symbol;
-    fc::optional<double>           median_price;
+    fc::optional<string>           median_price;
 };
 
 } } // bts::blockchain

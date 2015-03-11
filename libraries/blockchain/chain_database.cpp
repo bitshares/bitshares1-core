@@ -2894,10 +2894,10 @@ namespace bts { namespace blockchain {
       {
         history.push_back( {
                              record_itr.key().timestamp,
-                             fc::variant(string(record_itr.value().highest_bid.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
-                             fc::variant(string(record_itr.value().lowest_ask.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
-                             fc::variant(string(record_itr.value().opening_price.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
-                             fc::variant(string(record_itr.value().closing_price.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
+                             to_pretty_price( record_itr.value().highest_bid, false ),
+                             to_pretty_price( record_itr.value().lowest_ask, false ),
+                             to_pretty_price( record_itr.value().opening_price, false ),
+                             to_pretty_price( record_itr.value().closing_price, false ),
                              record_itr.value().volume
                            } );
         ++record_itr;

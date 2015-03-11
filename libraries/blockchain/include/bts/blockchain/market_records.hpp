@@ -157,10 +157,10 @@ namespace bts { namespace blockchain {
    struct market_history_point
    {
        fc::time_point_sec timestamp;
-       double highest_bid;
-       double lowest_ask;
-       double opening_price;
-       double closing_price;
+       string highest_bid;
+       string lowest_ask;
+       string opening_price;
+       string closing_price;
        share_type volume;
    };
    typedef vector<market_history_point> market_history_points;
@@ -299,8 +299,8 @@ namespace bts { namespace blockchain {
        api_market_status(const market_status& market_stat = market_status())
          : market_status(market_stat)
        {}
-       double                   current_feed_price;
-       double                   last_valid_feed_price;
+       optional<string>         current_feed_price;
+       optional<string>         last_valid_feed_price;
    };
 
 } } // bts::blockchain
