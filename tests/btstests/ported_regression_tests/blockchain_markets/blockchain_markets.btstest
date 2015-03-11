@@ -9,7 +9,7 @@
 >>> wallet_delegate_set_block_production ALL true
 >>> wallet_set_transaction_scanning true
 >>> debug_wait_for_block_by_number 1
->>> debug_deterministic_private_keys 0 1 alice true delegate0 true true
+>>> debug_deterministic_private_keys 0 1 angel true delegate0 true true
 default (unlocked) >>> wallet_account_create testaccount1
 "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
 default (unlocked) >>> wallet_account_create testaccount2
