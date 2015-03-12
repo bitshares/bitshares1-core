@@ -170,8 +170,8 @@ ask_order           100.00000 XTS       4. XMO / XTS                  100.00000 
 default (unlocked) >>> wallet_market_order_list XMO XTS
 TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
-ask_order           100.00000 XTS       4. XMO / XTS                  100.00000 XTS       400.00 XMO          N/A                 NONE                24ee32246f71d9b941f2a5cc1ef09e62c1946e87   XTSAHX84FNdwfdPKyqkxmJTn4juqUANfxVQT
 bid_order           500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 NONE                ee62e3cee425e0410eae3a3b614020fa70cd0e21   XTSGeRFZj44f4X6wLZnMjF8JgccYcL2tM3rr
+ask_order           100.00000 XTS       4. XMO / XTS                  100.00000 XTS       400.00 XMO          N/A                 NONE                24ee32246f71d9b941f2a5cc1ef09e62c1946e87   XTSAHX84FNdwfdPKyqkxmJTn4juqUANfxVQT
 default (unlocked) >>> help blockchain_market_order_book
 Usage:
 blockchain_market_order_book <quote_symbol> <base_symbol> [limit]                                     Returns the long and short sides of the order book for a given market
@@ -190,7 +190,7 @@ default (unlocked) >>> blockchain_market_order_book XMO XTS
      BIDS (* Short)                            |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-1,500.00 XMO              500.00000 XTS                   3.000000000000 XMO | 4.000000000000 XMO                      100.00000 XTS                400.00 XMO
+1,500.00 XMO              500.00000 XTS                               3. XMO | 4. XMO                                  100.00000 XTS                400.00 XMO
 default (unlocked) >>> help blockchain_market_status 
 Usage:
 blockchain_market_status <quote_symbol> <base_symbol>                                                 Returns the status of a particular market, including any trading errors.
@@ -206,8 +206,8 @@ default (unlocked) >>> blockchain_market_status XMO XTS
 {
   "quote_id": 1,
   "base_id": 0,
-  "current_feed_price": 0,
-  "last_valid_feed_price": 0,
+  "current_feed_price": null,
+  "last_valid_feed_price": null,
   "last_error": null
 }
 default (unlocked) >>> quit

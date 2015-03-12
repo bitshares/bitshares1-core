@@ -36,8 +36,9 @@ namespace bts { namespace blockchain { namespace detail {
           // we need to go to the first item in the next market class and then back up one
           const price current_pair = price( 0, quote_id, base_id );
           const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );
+
           _bid_itr           = _db_impl._bid_db.lower_bound( market_index_key( next_pair ) );
-          _ask_itr           = _db_impl._ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
+          _ask_itr           = _db_impl._ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id ) ) );
           _short_at_feed_itr  = std::set<market_index_key>::reverse_iterator(_db_impl._shorts_at_feed.lower_bound( market_index_key_ext( next_pair ) ));
           _short_at_limit_itr = _db_impl._short_limit_index.rend();
           _collateral_itr     = _db_impl._collateral_db.lower_bound( market_index_key( next_pair ) );

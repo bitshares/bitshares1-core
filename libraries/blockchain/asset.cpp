@@ -54,8 +54,7 @@ namespace bts { namespace blockchain {
 
      // NB we throw away the low bits, thus this function always rounds down
 
-     price result( fc::uint128( product ),
-                   l.base_asset_id, l.quote_asset_id );
+     price result( fc::uint128( product ), l.quote_asset_id, l.base_asset_id );
      return result;
   } FC_CAPTURE_AND_RETHROW( (l)(r) ) }
 

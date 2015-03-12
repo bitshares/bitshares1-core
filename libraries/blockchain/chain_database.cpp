@@ -2303,7 +2303,7 @@ namespace bts { namespace blockchain {
    omarket_order chain_database::get_lowest_ask_record( const asset_id_type quote_id, const asset_id_type base_id )
    {
       omarket_order result;
-      auto itr = my->_ask_db.lower_bound( market_index_key( price(0,quote_id,base_id) ) );
+      auto itr = my->_ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id ) ) );
       if( itr.valid() )
       {
          auto market_index = itr.key();
@@ -2392,10 +2392,7 @@ namespace bts { namespace blockchain {
       if( !new_feed )
       {
          // remove all shorts with limit
-         const price next_pair = (base_id+1 == quote_id)   ?
-                                 price( 0, quote_id+1, 0 ) :
-                                 price( 0, quote_id, base_id+1 );
-
+         const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );
          auto market_itr = my->_short_db.lower_bound( market_index_key( next_pair ) );
          if( market_itr.valid() )   --market_itr;
          else market_itr = my->_short_db.last();
@@ -2420,10 +2417,7 @@ namespace bts { namespace blockchain {
       if( !old_feed )
       {
          // insert all shorts with limit >= feed
-         const price next_pair = (base_id+1 == quote_id)   ?
-                                 price( 0, quote_id+1, 0 ) :
-                                 price( 0, quote_id, base_id+1 );
-
+         const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );
          auto market_itr = my->_short_db.lower_bound( market_index_key( next_pair ) );
          if( market_itr.valid() )   --market_itr;
          else market_itr = my->_short_db.last();
