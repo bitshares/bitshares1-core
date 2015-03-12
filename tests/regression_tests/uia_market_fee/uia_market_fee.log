@@ -5,7 +5,7 @@ default (unlocked) >>> wallet_account_create testaccount2
 default (unlocked) >>> wallet_uia_create delegate0 XMO DIGITAL_DEVICE1 "CREATING AN ASSET" 50000.00
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:40:30</d-ign>PENDING   delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.00000 XTS   <d-ign> 4fd83fd1</d-ign>
+<d-ign></d-ign>PENDING   delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.00000 XTS   <d-ign> 4fd83fd1</d-ign>
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> blockchain_get_asset XMO
@@ -27,7 +27,7 @@ default (unlocked) >>> blockchain_get_asset XMO
   "public_data": null,
   "precision": 100,
   "max_supply": 5000000,
-  "transaction_fee": 0,
+  "withdrawal_fee": 0,
   "market_fee_rate": 0,
   "collected_fees": 0,
   "current_supply": 0,
@@ -36,21 +36,21 @@ default (unlocked) >>> blockchain_get_asset XMO
 }
 default (unlocked) >>> help wallet_uia_update_fees
 Usage:
-wallet_uia_update_fees <paying_account> <asset_symbol> [transaction_fee] [market_fee_rate]            Update the transaction fee, market fee rate for the specified user-issued asset if permitted
+wallet_uia_update_fees <paying_account> <asset_symbol> [withdrawal_fee] [market_fee_rate]             Update the transaction fee, market fee rate for the specified user-issued asset if permitted
 Update the transaction fee, market fee rate for the specified user-issued asset if permitted
 
 Parameters:
   paying_account (account_name, required): the account that will pay the transaction fee
   asset_symbol (asset_symbol, required): the user-issued asset to update
-  transaction_fee (string, optional, defaults to ""): the transaction fee for the asset in shares of the asset
-  market_fee_rate (string, optional, defaults to ""): the market fee rate for the asset as a percentage between "0.01" and "100", or 0
+  withdrawal_fee (string, optional, defaults to ""): the transaction fee for the asset in shares of the asset
+  market_fee_rate (string, optional, defaults to ""): the market fee rate for the asset as a percentage between 0.01 and 100, or 0
 
 Returns:
   transaction_record
 default (unlocked) >>> wallet_uia_update_fees delegate0 XMO "" 23
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:40:30</d-ign>PENDING   delegate0           UNKNOWN             0.00000 XTS             update properties for XMO                   0.50000 XTS         <d-ign> 8383eb51</d-ign>
+<d-ign></d-ign>PENDING   delegate0           UNKNOWN             0.00000 XTS             update properties for XMO                   0.50000 XTS         <d-ign> 8383eb51</d-ign>
 default (unlocked) >>> blockchain_get_asset XMO
 {
   "id": 1,
@@ -70,7 +70,7 @@ default (unlocked) >>> blockchain_get_asset XMO
   "public_data": null,
   "precision": 100,
   "max_supply": 5000000,
-  "transaction_fee": 0,
+  "withdrawal_fee": 0,
   "market_fee_rate": 0,
   "collected_fees": 0,
   "current_supply": 0,
@@ -98,7 +98,7 @@ default (unlocked) >>> blockchain_get_asset XMO
   "public_data": null,
   "precision": 100,
   "max_supply": 5000000,
-  "transaction_fee": 0,
+  "withdrawal_fee": 0,
   "market_fee_rate": 2300,
   "collected_fees": 0,
   "current_supply": 0,
@@ -108,19 +108,19 @@ default (unlocked) >>> blockchain_get_asset XMO
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 testaccount1
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:40:50</d-ign>PENDING   delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         <d-ign> c9b8a19f</d-ign>
+<d-ign></d-ign>PENDING   delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         <d-ign> c9b8a19f</d-ign>
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> wallet_transfer 10000 XTS delegate0 testaccount2
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:41:00</d-ign>PENDING   delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         <d-ign> c2bcc706</d-ign>
+<d-ign></d-ign>PENDING   delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         <d-ign> c2bcc706</d-ign>
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> wallet_uia_issue 10000 XMO testaccount1 "Sending some assets"
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:41:00</d-ign>PENDING   delegate0           testaccount1        10,000.00 XMO           Sending some assets                         0.50000 XTS         <d-ign> 4f4ac46a</d-ign>
+<d-ign></d-ign>PENDING   delegate0           testaccount1        10,000.00 XMO           Sending some assets                         0.50000 XTS         <d-ign> 4f4ac46a</d-ign>
 default (unlocked) >>> debug_wait_for_block_by_number 2 relative
 OK
 default (unlocked) >>> blockchain_list_assets
@@ -142,7 +142,7 @@ testaccount2                    10,000.00000 XTS
 default (unlocked) >>> wallet_market_submit_bid testaccount1 500 XTS 3 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:41:20</d-ign>PENDING   testaccount1        testaccount1        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         <d-ign> b56d37be</d-ign>
+<d-ign></d-ign>PENDING   testaccount1        testaccount1        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         <d-ign> b56d37be</d-ign>
 default (unlocked) >>> debug_wait_for_block_by_number 2 relative
 OK
 default (unlocked) >>> balance
@@ -172,21 +172,21 @@ TOTAL                     QUANTITY                                     PRICE | P
 default (unlocked) >>> history
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:40:27</d-ign>0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
-<d-ign>2014-06-20T14:40:27</d-ign>0         GENESIS             delegate4           19,801,980.19801 XTS    claim PkrWFQgshsBX5YGkPm581QT1NL7nfNhzpc    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
-<d-ign>2014-06-20T14:40:27</d-ign>0         GENESIS             delegate3           19,801,980.19801 XTS    claim PrAqJzqCULC3guyYGpQmggCDkQepFkLYmt    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
-<d-ign>2014-06-20T14:40:27</d-ign>0         GENESIS             delegate2           19,801,980.19801 XTS    claim PpTMxwrSXcGKVMwmF9MptTN9tFDhhxfVLV    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
-<d-ign>2014-06-20T14:40:27</d-ign>0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
-<d-ign>2014-06-20T14:40:30</d-ign>1         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.00000 XTS   <d-ign> 4fd83fd1</d-ign>
-<d-ign>2014-06-20T14:40:30</d-ign>2         delegate0           UNKNOWN             0.00000 XTS             update properties for XMO                   0.50000 XTS         <d-ign> 8383eb51</d-ign>
-<d-ign>2014-06-20T14:40:50</d-ign>3         delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         <d-ign> c9b8a19f</d-ign>
-<d-ign>2014-06-20T14:41:00</d-ign>4         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         <d-ign> c2bcc706</d-ign>
-<d-ign>2014-06-20T14:41:00</d-ign>5         delegate0           testaccount1        10,000.00 XMO           Sending some assets                         0.50000 XTS         <d-ign> 4f4ac46a</d-ign>
-<d-ign>2014-06-20T14:41:20</d-ign>7         testaccount1        BID-ee62e3ce        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         <d-ign> b56d37be</d-ign>
+<d-ign></d-ign>0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+<d-ign></d-ign>0         GENESIS             delegate4           19,801,980.19801 XTS    claim PkrWFQgshsBX5YGkPm581QT1NL7nfNhzpc    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+<d-ign></d-ign>0         GENESIS             delegate3           19,801,980.19801 XTS    claim PrAqJzqCULC3guyYGpQmggCDkQepFkLYmt    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+<d-ign></d-ign>0         GENESIS             delegate2           19,801,980.19801 XTS    claim PpTMxwrSXcGKVMwmF9MptTN9tFDhhxfVLV    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+<d-ign></d-ign>0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+<d-ign></d-ign>1         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.00000 XTS   <d-ign> 4fd83fd1</d-ign>
+<d-ign></d-ign>2         delegate0           UNKNOWN             0.00000 XTS             update properties for XMO                   0.50000 XTS         <d-ign> 8383eb51</d-ign>
+<d-ign></d-ign>3         delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         <d-ign> c9b8a19f</d-ign>
+<d-ign></d-ign>4         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         <d-ign> c2bcc706</d-ign>
+<d-ign></d-ign>5         delegate0           testaccount1        10,000.00 XMO           Sending some assets                         0.50000 XTS         <d-ign> 4f4ac46a</d-ign>
+<d-ign></d-ign>7         testaccount1        BID-ee62e3ce        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         <d-ign> b56d37be</d-ign>
 default (unlocked) >>> wallet_market_submit_ask testaccount2 100 XTS 2.9 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:41:50</d-ign>PENDING   testaccount2        testaccount2        100.00000 XTS           sell XTS @ 2.9 XMO / XTS                    0.50000 XTS         <d-ign> 42a6d464</d-ign>
+<d-ign></d-ign>PENDING   testaccount2        testaccount2        100.00000 XTS           sell XTS @ 2.9 XMO / XTS                    0.50000 XTS         <d-ign> 42a6d464</d-ign>
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> blockchain_market_list_bids XMO XTS
@@ -232,23 +232,23 @@ testaccount2                    9,899.50000 XTS
 default (unlocked) >>> history
  TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ========================================================================================================================================================================
- <d-ign>2014-06-20T14:40:27</d-ign>0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
- <d-ign>2014-06-20T14:40:27</d-ign>0         GENESIS             delegate4           19,801,980.19801 XTS    claim PkrWFQgshsBX5YGkPm581QT1NL7nfNhzpc    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
- <d-ign>2014-06-20T14:40:27</d-ign>0         GENESIS             delegate3           19,801,980.19801 XTS    claim PrAqJzqCULC3guyYGpQmggCDkQepFkLYmt    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
- <d-ign>2014-06-20T14:40:27</d-ign>0         GENESIS             delegate2           19,801,980.19801 XTS    claim PpTMxwrSXcGKVMwmF9MptTN9tFDhhxfVLV    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
- <d-ign>2014-06-20T14:40:27</d-ign>0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
- <d-ign>2014-06-20T14:40:30</d-ign>1         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.00000 XTS   <d-ign> 4fd83fd1</d-ign>
- <d-ign>2014-06-20T14:40:30</d-ign>2         delegate0           UNKNOWN             0.00000 XTS             update properties for XMO                   0.50000 XTS         <d-ign> 8383eb51</d-ign>
- <d-ign>2014-06-20T14:40:50</d-ign>3         delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         <d-ign> c9b8a19f</d-ign>
- <d-ign>2014-06-20T14:41:00</d-ign>4         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         <d-ign> c2bcc706</d-ign>
- <d-ign>2014-06-20T14:41:00</d-ign>5         delegate0           testaccount1        10,000.00 XMO           Sending some assets                         0.50000 XTS         <d-ign> 4f4ac46a</d-ign>
- <d-ign>2014-06-20T14:41:20</d-ign>7         testaccount1        BID-ee62e3ce        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         <d-ign> b56d37be</d-ign>
- <d-ign>2014-06-20T14:41:50</d-ign>9         testaccount2        ASK-c2c88fbf        100.00000 XTS           sell XTS @ 2.9 XMO / XTS                    0.50000 XTS         <d-ign> 42a6d464</d-ign>
+ <d-ign></d-ign>0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign></d-ign>0         GENESIS             delegate4           19,801,980.19801 XTS    claim PkrWFQgshsBX5YGkPm581QT1NL7nfNhzpc    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign></d-ign>0         GENESIS             delegate3           19,801,980.19801 XTS    claim PrAqJzqCULC3guyYGpQmggCDkQepFkLYmt    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign></d-ign>0         GENESIS             delegate2           19,801,980.19801 XTS    claim PpTMxwrSXcGKVMwmF9MptTN9tFDhhxfVLV    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign></d-ign>0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+ <d-ign></d-ign>1         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.00000 XTS   <d-ign> 4fd83fd1</d-ign>
+ <d-ign></d-ign>2         delegate0           UNKNOWN             0.00000 XTS             update properties for XMO                   0.50000 XTS         <d-ign> 8383eb51</d-ign>
+ <d-ign></d-ign>3         delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         <d-ign> c9b8a19f</d-ign>
+ <d-ign></d-ign>4         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         <d-ign> c2bcc706</d-ign>
+ <d-ign></d-ign>5         delegate0           testaccount1        10,000.00 XMO           Sending some assets                         0.50000 XTS         <d-ign> 4f4ac46a</d-ign>
+ <d-ign></d-ign>7         testaccount1        BID-ee62e3ce        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         <d-ign> b56d37be</d-ign>
+ <d-ign></d-ign>9         testaccount2        ASK-c2c88fbf        100.00000 XTS           sell XTS @ 2.9 XMO / XTS                    0.50000 XTS         <d-ign> 42a6d464</d-ign>
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|<d-ign>2014-06-20T14:42:00</d-ign>10        ASK-c2c88fbf        MARKET              100.00000 XTS           fill ask @ 2.9 XMO / XTS                    0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
+|<d-ign></d-ign>10        ASK-c2c88fbf        MARKET              100.00000 XTS           fill ask @ 2.9 XMO / XTS                    0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
 |                              ASK-c2c88fbf        testaccount2        223.30 XMO              ask proceeds @ 2.9 XMO / XTS                                            |
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|<d-ign>2014-06-20T14:42:00</d-ign>10        BID-ee62e3ce        MARKET              300.00 XMO              pay bid @ 3. XMO / XTS                      0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
+|<d-ign></d-ign>10        BID-ee62e3ce        MARKET              300.00 XMO              pay bid @ 3. XMO / XTS                      0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
 |                              BID-ee62e3ce        testaccount1        100.00000 XTS           bid proceeds @ 3. XMO / XTS                                             |
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 default (unlocked) >>> blockchain_market_list_bids XMO XTS
@@ -285,7 +285,7 @@ default (unlocked) >>> blockchain_get_asset XMO
   "public_data": null,
   "precision": 100,
   "max_supply": 5000000,
-  "transaction_fee": 0,
+  "withdrawal_fee": 0,
   "market_fee_rate": 2300,
   "collected_fees": 7670,
   "current_supply": 1000000,
@@ -295,17 +295,15 @@ default (unlocked) >>> blockchain_get_asset XMO
 default (unlocked) >>> wallet_uia_collect_fees XMO delegate0 "collect the fees"
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:42:10</d-ign>PENDING   delegate0           delegate0           76.70 XMO               collect the fees                            0.50000 XTS         <d-ign> 3851555d</d-ign>
-default (unlocked) >>> debug_wait_for_block_by_number 1 relative
-OK
+<d-ign></d-ign>PENDING   delegate0           delegate0           76.70 XMO               collect the fees                            0.50000 XTS         <d-ign> 3851555d</d-ign>
 default (unlocked) >>> history delegate0
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
 ==============================================================================================================================================================================================
-<d-ign>2014-06-20T14:40:27</d-ign>0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    19,801,980.19801 XTS    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
-<d-ign>2014-06-20T14:40:30</d-ign>1         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                19,301,980.19801 XTS    500,000.00000 XTS   <d-ign> 4fd83fd1</d-ign>
-<d-ign>2014-06-20T14:40:30</d-ign>2         delegate0           UNKNOWN             0.00000 XTS             update properties for XMO                   19,301,979.69801 XTS    0.50000 XTS         <d-ign> 8383eb51</d-ign>
-<d-ign>2014-06-20T14:40:50</d-ign>3         delegate0           testaccount1        100.00000 XTS                                                       19,301,879.19801 XTS    0.50000 XTS         <d-ign> c9b8a19f</d-ign>
-<d-ign>2014-06-20T14:41:00</d-ign>4         delegate0           testaccount2        10,000.00000 XTS                                                    19,291,878.69801 XTS    0.50000 XTS         <d-ign> c2bcc706</d-ign>
-<d-ign>2014-06-20T14:41:00</d-ign>5         delegate0           testaccount1        10,000.00 XMO           Sending some assets                         0.00 XMO                0.50000 XTS         <d-ign> 4f4ac46a</d-ign>
-<d-ign>2014-06-20T14:42:10</d-ign>11        delegate0           delegate0           76.70 XMO               collect the fees                            76.70 XMO               0.50000 XTS         <d-ign> 3851555d</d-ign>
+<d-ign></d-ign>0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    19,801,980.19801 XTS    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+<d-ign></d-ign>1         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                19,301,980.19801 XTS    500,000.00000 XTS   <d-ign> 4fd83fd1</d-ign>
+<d-ign></d-ign>2         delegate0           UNKNOWN             0.00000 XTS             update properties for XMO                   19,301,979.69801 XTS    0.50000 XTS         <d-ign> 8383eb51</d-ign>
+<d-ign></d-ign>3         delegate0           testaccount1        100.00000 XTS                                                       19,301,879.19801 XTS    0.50000 XTS         <d-ign> c9b8a19f</d-ign>
+<d-ign></d-ign>4         delegate0           testaccount2        10,000.00000 XTS                                                    19,291,878.69801 XTS    0.50000 XTS         <d-ign> c2bcc706</d-ign>
+<d-ign></d-ign>5         delegate0           testaccount1        10,000.00 XMO           Sending some assets                         0.00 XMO                0.50000 XTS         <d-ign> 4f4ac46a</d-ign>
+<d-ign></d-ign>11        delegate0           delegate0           76.70 XMO               collect the fees                            76.70 XMO               0.50000 XTS         <d-ign> 3851555d</d-ign>
 default (unlocked) >>> quit
