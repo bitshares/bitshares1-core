@@ -49,7 +49,7 @@ Parameters:
   issuer_transaction_fee (share_type, optional, defaults to 0): an additional fee (denominated in issued asset) charged by the issuer on every transaction that uses this asset type
   issuer_market_fee (real_amount, optional, defaults to -1): an additional fee (denominated in percent) charged by the issuer on every order that is matched
   flags (asset_permission_array, optional, defaults to []): a set of flags set by the issuer (if they have permission to set them)
-  issuer_permissions (asset_permission_array, optional, defaults to ["restricted","retractable","market_halt","balance_halt","supply_limit"]): a set of permissions an issuer retains
+  issuer_permissions (asset_permission_array, optional, defaults to ["restricted","retractable","market_halt","balance_halt","supply_unlimit"]): a set of permissions an issuer retains
   issuer_account_name (account_name, optional, defaults to ""): used to transfer the asset to a new user
   required_sigs (uint32_t, optional, defaults to 0): number of signatures from the authority required to control this asset record
   authority (address_list, optional, defaults to []): owner keys that control this asset record
