@@ -1349,29 +1349,26 @@ namespace detail {
    { try {
       FC_ASSERT( is_open() );
 
-      if( !my->_blockchain->is_valid_account_name( account_name ) )
-          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
-
-      auto local_account = my->_wallet_db.lookup_account( account_name );
-      auto chain_account = my->_blockchain->get_account_record( account_name );
+      owallet_account_record local_account = my->_wallet_db.lookup_account( account_name );
+      oaccount_record chain_account = my->_blockchain->get_account_record( account_name );
 
       if( !local_account.valid() && !chain_account.valid() )
           FC_THROW_EXCEPTION( unknown_account, "Unknown account name!", ("account_name",account_name) );
 
-      if( local_account.valid() && chain_account.valid() )
-      {
-         if( local_account->owner_key != chain_account->owner_key )
-         {
-            wlog( "local account is owned by someone different public key than blockchain account" );
-            wdump( (local_account)(chain_account) );
-         }
-      }
-
-      if( !local_account.valid() )
-          local_account = wallet_account_record();
-
       if( chain_account.valid() )
       {
+          if( local_account.valid() )
+          {
+              if( local_account->owner_key != chain_account->owner_key )
+                  FC_CAPTURE_AND_THROW( duplicate_account_name, (*local_account)(*chain_account) );
+
+              my->_wallet_db.store_account( *chain_account );
+          }
+          else
+          {
+              local_account = wallet_account_record();
+          }
+
           account_record& temp = *local_account;
           temp = *chain_account;
       }
