@@ -18,7 +18,7 @@ Parameters:
   symbol (asset_symbol, required): A unique symbol that will represent the new asset. Short symbols are very expensive!
   name (string, required): A human-readable name for the new asset
   description (string, required): A human-readable description of the new asset
-  max_supply_with_trailing_decimals (string, required): Choose the max share supply and max share divisibility for the new asset. For example: "10000000000.00000" or "12345.6789"
+  max_supply_with_trailing_decimals (string, required): Choose the max share supply and max share divisibility for the new asset. For example: 10000000000.00000 or 12345.6789
 
 Returns:
   transaction_record
@@ -61,7 +61,7 @@ default (unlocked) >>> blockchain_get_asset XMO
   "public_data": null,
   "precision": 100,
   "max_supply": 50000,
-  "transaction_fee": 0,
+  "withdrawal_fee": 0,
   "market_fee_rate": 0,
   "collected_fees": 0,
   "current_supply": 0,

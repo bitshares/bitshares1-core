@@ -5803,7 +5803,7 @@ OK
 default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> blockchain_market_order_book USD XTS
-     BIDS (* Short)                            |                                   ASKS                                  
+                             BIDS (* Short)                                  |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 No Orders
@@ -5816,10 +5816,10 @@ OK
 default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> blockchain_market_order_book USD XTS
-     BIDS (* Short)                            |                                   ASKS                                  
+                             BIDS (* Short)                                  |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 4.000000000000 USD                      100.00000 XTS                400.00 USD
+                                                                             | 4. USD                                  100.00000 XTS                400.00 USD
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
@@ -5830,8 +5830,8 @@ default (unlocked) >>> blockchain_market_status USD XTS
 {
   "quote_id": 1,
   "base_id": 0,
-  "current_feed_price": 0.02,
-  "last_valid_feed_price": 0.02,
+  "current_feed_price": "0.02",
+  "last_valid_feed_price": "0.02",
   "last_error": null
 }
 default (unlocked) >>> help wallet_market_submit_relative_ask
@@ -5865,11 +5865,11 @@ OK
 default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> blockchain_market_order_book USD XTS
-     BIDS (* Short)                            |                                   ASKS                                  
+                             BIDS (* Short)                                  |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-1.00 USD                  50.00000 XTS                    0.020000000000 USD*| 4.000000000000 USD                      100.00000 XTS                400.00 USD
-0.15 USD                  50.00000 XTS                    0.003000000000 USD*|
+1.00 USD                  50.00000 XTS                              0.02 USD*| 4. USD                                  100.00000 XTS                400.00 USD
+0.15 USD                  50.00000 XTS                             0.003 USD*|
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
@@ -5892,11 +5892,11 @@ OK
 default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> blockchain_market_order_book USD XTS
-     BIDS (* Short)                            |                                   ASKS                                  
+                             BIDS (* Short)                                  |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-1.00 USD                  50.00000 XTS                    0.020000000000 USD*| 4.000000000000 USD                      100.00000 XTS                400.00 USD
-0.15 USD                  50.00000 XTS                    0.003000000000 USD*|
+1.00 USD                  50.00000 XTS                              0.02 USD*| 4. USD                                  100.00000 XTS                400.00 USD
+0.15 USD                  50.00000 XTS                             0.003 USD*|
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
@@ -5923,11 +5923,11 @@ OK
 default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> blockchain_market_order_book USD XTS
-     BIDS (* Short)                            |                                   ASKS                                  
+                             BIDS (* Short)                                  |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-11.00 USD                 550.00000 XTS                   0.020000000000 USD*| 4.000000000000 USD                      100.00000 XTS                400.00 USD
-0.15 USD                  50.00000 XTS                    0.003000000000 USD*|
+11.00 USD                 550.00000 XTS                             0.02 USD*| 4. USD                                  100.00000 XTS                400.00 USD
+0.15 USD                  50.00000 XTS                             0.003 USD*|
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
@@ -5941,11 +5941,11 @@ OK
 default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> blockchain_market_order_book USD XTS
-     BIDS (* Short)                            |                                   ASKS                                  
+                             BIDS (* Short)                                  |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-11.00 USD                 550.00000 XTS                   0.020000000000 USD*| 4.000000000000 USD                      100.00000 XTS                400.00 USD
-0.15 USD                  50.00000 XTS                    0.003000000000 USD*|
+11.00 USD                 550.00000 XTS                             0.02 USD*| 4. USD                                  100.00000 XTS                400.00 USD
+0.15 USD                  50.00000 XTS                             0.003 USD*|
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
@@ -5979,11 +5979,11 @@ OK
 default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> blockchain_market_order_book USD XTS
-     BIDS (* Short)                            |                                   ASKS                                  
+                             BIDS (* Short)                                  |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-11.00 USD                 550.00000 XTS                   0.020000000000 USD*| 4.000000000000 USD                      100.00000 XTS                400.00 USD
-0.15 USD                  50.00000 XTS                    0.003000000000 USD*|
+11.00 USD                 550.00000 XTS                             0.02 USD*| 4. USD                                  100.00000 XTS                400.00 USD
+0.15 USD                  50.00000 XTS                             0.003 USD*|
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
@@ -5997,11 +5997,11 @@ OK
 default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> blockchain_market_order_book USD XTS
-     BIDS (* Short)                            |                                   ASKS                                  
+                             BIDS (* Short)                                  |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-11.00 USD                 550.00000 XTS                   0.020000000000 USD*| 4.000000000000 USD                      100.00000 XTS                400.00 USD
-0.15 USD                  50.00000 XTS                    0.003000000000 USD*|
+11.00 USD                 550.00000 XTS                             0.02 USD*| 4. USD                                  100.00000 XTS                400.00 USD
+0.15 USD                  50.00000 XTS                             0.003 USD*|
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
