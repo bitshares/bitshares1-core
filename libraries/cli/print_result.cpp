@@ -675,8 +675,8 @@ namespace bts { namespace cli {
   { try {
     auto bids_asks = result.as<std::pair<vector<market_order>, vector<market_order>>>();
 
-    out << std::string(5, ' ') << "BIDS (* Short)"
-      << std::string(27, ' ') << " | "
+    out << std::string(29, ' ') << "BIDS (* Short)"
+      << std::string(33, ' ') << " | "
       << std::string(34, ' ') << "ASKS"
       << std::string(34, ' ') << "\n"
       << std::left << std::setw(26) << "TOTAL"
