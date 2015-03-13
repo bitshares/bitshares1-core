@@ -67,6 +67,7 @@
 #else
 #define BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC                 (30*24*60*60) // 1 month
 #endif
+#define BTS_BLOCKCHAIN_MAX_SHORT_APR_PCT                    (uint64_t(1000))
 
 #define BTS_BLOCKCHAIN_MCALL_D2C_NUMERATOR                  1
 #define BTS_BLOCKCHAIN_MCALL_D2C_DENOMINATOR                2
