@@ -334,7 +334,7 @@ OK
 OK
 
 #{ try issuing restricted shares to issuer }#
->>> wallet_uia_issue 5555 ASSSET issuer
+>>> wallet_uia_issue 55555 ASSSET issuer
 10 assert_exception: Assert Exception
 asset_rec->address_is_whitelisted( owner ):
 
@@ -350,12 +350,12 @@ OK
 OK
 
 #{ try issuing to account name of whitelisted public key }#
->>> wallet_uia_issue 5555 ASSSET issuer
+>>> wallet_uia_issue 55555 ASSSET issuer
 10 assert_exception: Assert Exception
 asset_rec->address_is_whitelisted( owner ):
 
 #{ issue to pub key of issuer }#
->>> wallet_uia_issue 5555 ASSSET XTS6MztcCwGPciDNLrodkGdXf33S6raovWDfVieYdNTg92eC45PDf
+>>> wallet_uia_issue 55555 ASSSET XTS6MztcCwGPciDNLrodkGdXf33S6raovWDfVieYdNTg92eC45PDf
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID
 ======================================================================================================================================================================
 2014-06-20T14:44:00 PENDING   issuer              ANONYMOUS           5,555.000 ASSSET                                                    0.50000 XTS         ${ expect_regex(r'[0-9a-f]*') }$
@@ -368,7 +368,8 @@ OK
 ACCOUNT                         BALANCE
 ============================================================
 issuer                          94,994.50000 XTS
-                                5,555.000 ASSSET
+                                55,555.000 ASSSET
+
 #{ send to unauthorized account }#
 >>> wallet_transfer 100 ASSSET issuer someone
 10 assert_exception: Assert Exception
@@ -419,92 +420,147 @@ OK
 >>> debug_wait_for_block_by_number 25
 OK
 
-#{ try sending to authorized using wallet_transfer }#
->>> wallet_transfer 100 ASSSET XTS6MztcCwGPciDNLrodkGdXf33S6raovWDfVieYdNTg92eC45PDf XTS59zAznbyRDBZDzKSDXjxwbbuge2W7heUajH3q7ChuyMoENQBNX
-20005 unknown_wallet_account: unknown local account
+#{ try sending to account with public key in whitelist }#
+>>> wallet_transfer 100 ASSSET issuer someone
+asset_rec->address_is_whitelisted( owner ):
+    {}
+    th_a  balance_operations.cpp:145 evaluate
+${ expect_regex(r'(?s).*') }$
 
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 26
+OK
+
+#{ try sending to public key of someone. Fee handling bugged?  }#
 >>> wallet_transfer 100 ASSSET issuer XTS59zAznbyRDBZDzKSDXjxwbbuge2W7heUajH3q7ChuyMoENQBNX
 36005 insufficient_relay_fee: insufficient relay fee
+${ expect_regex(r'(?s).*') }$
 
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 27
+OK
+
+#{ get balance ids for issuer }#
 >>> wallet_account_balance_ids issuer
 ${ expect_json() }$
+
 #{ try sending to authorized via withdraw address to account authorized by public key }#
 >>> wallet_withdraw_from_address 100 ASSSET XTSEUci2GH1cjDvCireCmeoukCitp8aru725 someone
 10 assert_exception: Assert Exception
 asset_rec->address_is_whitelisted( owner ):
-#{ issue to authorized }#
+
+#{ issue to someone authorized via public key }#
+>>> wallet_uia_issue 5555 ASSSET XTS59zAznbyRDBZDzKSDXjxwbbuge2W7heUajH3q7ChuyMoENQBNX
+
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 28
+OK
+
 #{ authorize someone else }#
+
 #{ send from authorized to unauthorized }#
 #{ send from authorized to authorized }#
 
 #{ set "retractable" flag }#
->>> wallet_asset_update ASSSET null null null null null null null ["restricted","retractable","supply_unlimit"]
-${ expect_json() }$
+>>> wallet_uia_update_active_flags issuer ASSSET retractable_balances true
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID
+======================================================================================================================================================================
+2014-06-20T14:45:00 PENDING   issuer              UNKNOWN             0.00000 XTS             add retractable_balances to authority pe... 0.50000 XTS         ${ expect_regex(r'[0-9a-f]*') }$
+
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 29
+OK
+
 #{ retract someone's balance }#
 
+
 #{ set "market_halt" flag }#
->>> wallet_asset_update ASSSET null null null null null null null ["restricted","retractable","market_halt","supply_unlimit"]
-${ expect_json() }$
-#{ create ask + bid txs }#
-#{ wait }#
+>>> wallet_uia_update_active_flags issuer ASSSET halted_markets true
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID
+======================================================================================================================================================================
+2014-06-20T14:45:20 PENDING   issuer              UNKNOWN             0.00000 XTS             add halted_markets to authority permsfor... 0.50000 XTS         ${ expect_regex(r'[0-9a-f]*') }$
+
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 30
+OK
+
+#{ create ask }#
+>>> wallet_market_submit_ask issuer  1 XTS 100 ASSSET
+10 assert_exception: Assert Exception
+quote_asset_rec->address_is_whitelisted( owner ):
+
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 31
+OK
+
+#{ create bid }#
+>>> wallet_market_submit_bid issuer  1.1 XTS 100 ASSSET
+10 assert_exception: Assert Exception
+quote_asset_rec->address_is_whitelisted( owner ):
+
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 32
+OK
+
 #{ ensure orders weren't executed }#
+>>> wallet_market_order_list XTS ASSSET
+
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 33
+OK
 
 #{ set "balance_halt" flag }#
->>> wallet_asset_update ASSSET null null null null null null null ["restricted","retractable","market_halt","balance_halt","supply_unlimit"]
-${ expect_json() }$
+>>> wallet_uia_update_active_flags issuer ASSSET halted_withdrawals true
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID
+======================================================================================================================================================================
+2014-06-20T14:45:30 PENDING   issuer              UNKNOWN             0.00000 XTS             add halted_withdrawals to authority perm... 0.50000 XTS         ${ expect_regex(r'[0-9a-f]*') }$
 #{ send to unauthorized }#
 #{ sent to authorized }#
 #{ create ask + bid }#
 #{ burn }#
 #{ issue }#
 
->>> debug_advance_time 1 block
-OK
->>> debug_wait_for_block_by_number 4
-OK
->>> wallet_account_balance someone
-ACCOUNT                         BALANCE                     
-============================================================
-someone                         100,000.00000 XTS           
-                                2,000.000 ASSSET            
-
 #{ remove "balance_halt" flag }#
->>> wallet_asset_update ASSSET null null null null null null null ["restricted","retractable","market_halt","supply_unlimit"]
+>>> wallet_uia_update_authority_permissions issuer ASSSET halted_withdrawals false
 ${ expect_json() }$
 
 #{ remove "restricted" flag }#
->>> wallet_asset_update ASSSET null null null null null null null ["retractable","market_halt","supply_unlimit"]
+>>> wallet_uia_update_authority_permissions issuer ASSSET restricted_deposits false
 ${ expect_json() }$
 #{ send to unauthorized }#
 #{ issue to unauthorized }#
 
 #{ remove "retractable" flag }#
->>> wallet_asset_update ASSSET null null null null null null null ["market_halt","supply_unlimit"]
+>>> wallet_uia_update_authority_permissions issuer ASSSET retractable_balances false
 ${ expect_json() }$
 #{ retract someone's balance }#
 
 #{ remove "supply_unlimit" flag }#
->>> wallet_asset_update ASSSET null null null null null null null ["market_halt"]
+>>> wallet_uia_update_authority_permissions issuer ASSSET dynamic_max_supply false
 ${ expect_json() }$
 #{ issue }#
 #{ issue to someone }#
 
 #{ remove "market_halt" flag }#
->>> wallet_asset_update ASSSET null null null null null null null []
+>>> wallet_uia_update_authority_permissions issuer ASSSET halted_markets false
 ${ expect_json() }$
 #{ wait }#
 #{ ensure orders were executed }#
 
->>> debug_advance_time 1 block
-OK
->>> debug_wait_for_block_by_number 4
-OK
 
 #{ issuer_permission can be unset (but not set) when supply > 0 }#
 #{ flags can only be set when issuer_permission is set }#
 >>> wallet_asset_update ASSSET null null null null null null null [] ["retractable","market_halt","balance_halt","supply_unlimit"]
 ${ expect_json() }$
->>> wallet_asset_update ASSSET null null null null null null null [] ["restricted","retractable","market_halt","balance_halt","supply_unlimit"]
+>>> wallet_asset_update ASSSET null null null null null null null [] ["","retractable","market_halt","balance_halt","supply_unlimit"]
 10 assert_exception: Assert Exception
 current_asset_record->issuer_permissions & restricted: 
 ${ expect_regex(r'(?s).*') }$
