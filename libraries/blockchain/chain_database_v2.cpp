@@ -29,8 +29,8 @@ void chain_database_impl::pay_delegate_v2( const block_id_type& block_id,
       oasset_record base_asset_record = pending_state->get_asset_record( asset_id_type( 0 ) );
       FC_ASSERT( base_asset_record.valid() );
       const share_type destroyed_collected_fees = base_asset_record->collected_fees;
-      base_asset_record->current_share_supply += accepted_paycheck;
-      base_asset_record->current_share_supply -= destroyed_collected_fees;
+      base_asset_record->current_supply += accepted_paycheck;
+      base_asset_record->current_supply -= destroyed_collected_fees;
       base_asset_record->collected_fees = 0;
       pending_state->store_asset_record( *base_asset_record );
 

@@ -75,8 +75,6 @@ wallet_account_vesting_balances [account_name]
 wallet_account_yield [account_name] 
 wallet_add_transaction_note_experimental <transaction_id> <note> 
 wallet_address_create <account_name> [label] [legacy_network_byte] 
-wallet_asset_authorize_key <paying_account> <symbol> <address> 
-wallet_asset_issue_to_addresses <symbol> <addresses> 
 wallet_balance_set_vote_info <balance_id> [voter_address] [strategy] [sign_and_broadcast] [builder_path] 
 wallet_builder_add_signature <builder> [broadcast] 
 wallet_builder_file_add_signature [builder_path] [broadcast] 
@@ -115,6 +113,12 @@ wallet_set_preferred_mail_servers <account_name> <server_list> [paying_account]
 wallet_set_transaction_expiration_time <seconds> 
 wallet_sign_hash <signer> <hash> 
 wallet_transaction_history_experimental [account_name] 
+wallet_uia_issue_to_addresses <symbol> <addresses>
+wallet_uia_update_active_flags <paying_account> <asset_symbol> <flag> <enable_instead_of_disable>
+wallet_uia_update_authority_permissions <paying_account> <asset_symbol> <permission> <add_instead_of_remove>
+wallet_uia_update_description <paying_account> <asset_symbol> [name] [description] [public_data]
+wallet_uia_update_supply <paying_account> <asset_symbol> <max_supply_with_trailing_decimals>
+wallet_uia_update_whitelist <paying_account> <asset_symbol> <address_or_public_key> <add_to_whitelist>
 wallet_withdraw_from_address <amount> <symbol> <from_address> <to> [strategy] [sign_and_broadcast] [builder_path] 
 wallet_withdraw_from_legacy_address <amount> <symbol> <from_address> <to> [strategy] [sign_and_broadcast] [builder_path]
 
@@ -191,9 +195,6 @@ wallet_account_update_registration <account_name> <pay_from_account> [public_dat
 wallet_account_vote_summary [account_name] 
 wallet_add_contact <contact> [label]
 wallet_approve <name> [approval]
-wallet_asset_create <symbol> <asset_name> <issuer_name> <description> <maximum_share_supply> <precision> [public_data] [is_market_issued] 
-wallet_asset_issue <amount> <symbol> <to_account_name> [memo_message] 
-wallet_asset_update <symbol> [name] [description] [public_data] [maximum_share_supply] [precision] [issuer_transaction_fee] [issuer_market_fee] [flags] [issuer_permissions] [issuer_account_name] [required_sigs] [authority] 
 wallet_approve
 wallet_backup_create <json_filename> 
 wallet_backup_restore <json_filename> <wallet_name> <imported_wallet_passphrase> 
@@ -226,6 +227,7 @@ wallet_market_sell <from_account_name> <sell_quantity> <sell_quantity_symbol> [p
 wallet_market_submit_ask <from_account_name> <sell_quantity> <sell_quantity_symbol> <ask_price> <ask_price_symbol> [allow_stupid_ask] 
 wallet_market_submit_bid <from_account_name> <quantity> <quantity_symbol> <base_price> <base_symbol> [allow_stupid_bid] 
 wallet_market_submit_short <from_account_name> <short_collateral> <collateral_symbol> <interest_rate> <quote_symbol> [short_price_limit] 
+wallet_mia_create <payer_account> <symbol> <name> <description> <max_divisibility>                  
 wallet_open <wallet_name> 
 wallet_publish_feeds <delegate_account> <symbol_to_price_map> 
 wallet_publish_feeds_multi_experimental <symbol_to_price_map> 
@@ -240,8 +242,12 @@ wallet_set_transaction_fee <fee>
 wallet_set_transaction_scanning <enabled> 
 wallet_transfer <amount_to_transfer> <asset_symbol> <from_account_name> <recipient> [memo_message] [strategy]
 wallet_transfer_from_with_escrow <amount_to_transfer> <asset_symbol> <paying_account_name> <from_account_name> <to_account_name> <escrow_account_name> [agreement] [memo_message] [strategy] 
-wallet_unlock <timeout> <passphrase> 
-wallet_verify_titan_deposit <transaction_id_prefix> 
+wallet_uia_collect_fees <asset_symbol> <recipient> [memo_message]
+wallet_uia_create <issuer_account> <symbol> <name> <description> <max_supply_with_trailing_decimals>
+wallet_uia_issue <asset_amount> <asset_symbol> <recipient> [memo_message]
+wallet_uia_update_fees <paying_account> <asset_symbol> [withdrawal_fee] [market_fee_rate]
+wallet_unlock <timeout> <passphrase>
+wallet_verify_titan_deposit <transaction_id_prefix>
 
 
 		DIFFICULT TO TEST COMMANDS

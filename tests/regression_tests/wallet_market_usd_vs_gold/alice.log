@@ -9,11 +9,11 @@ default (unlocked) >>> wallet_account_create scott
 default (unlocked) >>> wallet_account_register dan delegate0 
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:40:30</d-ign>PENDING   delegate0           dan                 0.00000 XTS             register dan                                0.50000 XTS         <d-ign> 1e8f51e2</d-ign>
+<d-ign>2014-06-20T14:40:30</d-ign>PENDING   delegate0           dan                 0.00000 XTS             register dan                                0.50000 XTS         <d-ign> 2fd5b0f5</d-ign>
 default (unlocked) >>> wallet_account_register scott delegate0 
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:40:30</d-ign>PENDING   delegate0           scott               0.00000 XTS             register scott                              0.50000 XTS         <d-ign> 17fd72ab</d-ign>
+<d-ign>2014-06-20T14:40:30</d-ign>PENDING   delegate0           scott               0.00000 XTS             register scott                              0.50000 XTS         <d-ign> 2ff488aa</d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4
@@ -21,11 +21,11 @@ OK
 default (unlocked) >>> wallet_transfer 200000 XTS delegate0 dan
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate0           dan                 200,000.00000 XTS                                                   0.50000 XTS         <d-ign> 0d4c90c8</d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate0           dan                 200,000.00000 XTS                                                   0.50000 XTS         <d-ign> bdd96c6f</d-ign>
 default (unlocked) >>> wallet_transfer 200000 XTS delegate0 scott
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate0           scott               200,000.00000 XTS                                                   0.50000 XTS         <d-ign> 0a0def17</d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate0           scott               200,000.00000 XTS                                                   0.50000 XTS         <d-ign> e0e2e65b</d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4
@@ -38,14 +38,14 @@ default (unlocked) >>> balance scott
 ACCOUNT                         BALANCE                     
 ============================================================
 scott                           200,000.00000 XTS           
-default (unlocked) >>> wallet_asset_create USD Dollar delegate0 "CREATING AN BITASSET" 500    100000 null true
+default (unlocked) >>> wallet_mia_create delegate0 USD Dollar "CREATING A BITASSET" 0.00001
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:40:50</d-ign>PENDING   delegate0           delegate0           0.00000 XTS             create USD (Dollar)                         500,000.50000 XTS   <d-ign> c6856d69</d-ign>
-default (unlocked) >>> wallet_asset_create GLD Gold delegate0 "CREATING AN GOLD BITASSET" 500 100000 null true
+<d-ign>2014-06-20T14:40:50</d-ign>PENDING   delegate0           delegate0           0.00000 XTS             create USD (Dollar)                         500,000.00000 XTS   <d-ign> fd8c6ce7</d-ign>
+default (unlocked) >>> wallet_mia_create delegate0 GLD Gold "CREATING A BITASSET" 0.00001
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:40:50</d-ign>PENDING   delegate0           delegate0           0.00000 XTS             create GLD (Gold)                           500,000.50000 XTS   <d-ign> e1a658ec</d-ign>
+<d-ign>2014-06-20T14:40:50</d-ign>PENDING   delegate0           delegate0           0.00000 XTS             create GLD (Gold)                           500,000.00000 XTS   <d-ign> 98e2dc93</d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4
@@ -54,7 +54,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
 [[
     "delegate0",{
       "index": 0,
-      "record_id": "f220df19e26e4dbd9330db963db4108bad0ea49d",
+      "record_id": "1c9181a36c9bef4af630ab12acdb877658d042a9",
       "block_num": 0,
       "is_virtual": false,
       "is_confirmed": false,
@@ -85,8 +85,8 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
           }
         ],
         "signatures": [
-          "2010b638aa1c66ef7bf53c7958b1f02bdd1e638811976fa01d852a3765020fb5347138ae51453b18480ceed4bf1f0d85733ebd6b6978d2763ce3bdf1c523461b5f",
-          "1f6e07b9a8f6e319f8f5c2745a4e5df5a66a287b4b0902db908815e30693f10c160fc6e2a8e93358f4208608a8917bb6bb24082c90cbb8d58709533ef75fa48f03"
+          "1f16d836531cf769675c83f90344b20a041b57f8e8c0d84b9a42c1e10a21e02b155c4605f2639aeafb6e4d4dd4226c7b12a0a94c1a232361be1bc0cf0da5f82383",
+          "2010b638aa1c66ef7bf53c7958b1f02bdd1e638811976fa01d852a3765020fb5347138ae51453b18480ceed4bf1f0d85733ebd6b6978d2763ce3bdf1c523461b5f"
         ]
       },
       "ledger_entries": [{
@@ -5810,7 +5810,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
 [[
     "delegate0",{
       "index": 0,
-      "record_id": "33eb69d9a088f1d79ecdf9faa8b1067c0ec42016",
+      "record_id": "48ca1c0b3124fc793149e8fccc999167df575778",
       "block_num": 0,
       "is_virtual": false,
       "is_confirmed": false,
@@ -5841,8 +5841,8 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
           }
         ],
         "signatures": [
-          "1f7e5bc309c23a24655267cc3ee79f9eb12d84e2a1baa210c311099ef6bb5b76dc2409a4a627406235c1ea06ceb33a14b759df3a1ea2a3701105145413c04f6277",
-          "20789549f16875fd12927ae24ecf4827cb4d7a8519d033ced0a896fdeab41b7cff1fbf9884cd901d1ebf876cf389d197d4994ba0f3180bb66403cb799e6da8410a"
+          "1f0c5d940a729394a11a0f39f22ca6fd5cd8954bc4aa4feae189d72e6de4143f95404c3ecc0fd29fc3735c8100da5621bd38a07b2f9fa330db4440a7153f5d7636",
+          "2077e7f1f38c01fdb7e7f8922cbc68972fb416aa1cfc9d877dd9ec52d0275e6647390b86177bd0ff3e4850388e85ae9ae0d18b501546d9a1b0c87614ded0eb1d03"
         ]
       },
       "ledger_entries": [{
@@ -5867,7 +5867,7 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
   ],[
     "delegate1",{
       "index": 0,
-      "record_id": "b65ec6219a47dad22efe4d8979425705787e4da9",
+      "record_id": "11a3ca3b73ebf4a29a276f22702247c0677a8fc6",
       "block_num": 0,
       "is_virtual": false,
       "is_confirmed": false,
@@ -5898,8 +5898,8 @@ default (unlocked) >>> wallet_publish_feeds_multi_experimental [["GLD", "0.0001"
           }
         ],
         "signatures": [
-          "2077e7f1f38c01fdb7e7f8922cbc68972fb416aa1cfc9d877dd9ec52d0275e6647191e3e0e9099d72c25723d85ab897fd2513cf114f0c4882018a2d046b823071c",
-          "1f10665bf90df3db87aeecfd5945ba1bc4c1da80aeaa74266e8070e2aedb82320223523351050ab0d801b380ad975b802f5e7715a8c01b48925036596ab55b8204"
+          "1f10665bf90df3db87aeecfd5945ba1bc4c1da80aeaa74266e8070e2aedb82320223523351050ab0d801b380ad975b802f5e7715a8c01b48925036596ab55b8204",
+          "1f00c1a4581a5e783fd36770f63250f1d257d1d1e2cedc398148b4561bbddb1c055b17ae30922d570bfd6262130c574558f4dae869c50e7ec80cdb25db4d554519"
         ]
       },
       "ledger_entries": [{
@@ -11561,23 +11561,23 @@ OK
 default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> blockchain_market_order_book USD XTS
-     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+                             BIDS (* Short)                                  |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 No Orders
 default (unlocked) >>> wallet_market_submit_ask dan 100 XTS 4 USD
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:41:20</d-ign>PENDING   dan                 dan                 100.00000 XTS           sell XTS @ 4. USD / XTS                     0.50000 XTS         <d-ign> 3b3e8ab1</d-ign>
+<d-ign>2014-06-20T14:41:20</d-ign>PENDING   dan                 dan                 100.00000 XTS           sell XTS @ 4. USD / XTS                     0.50000 XTS         <d-ign> d5f8a796</d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> blockchain_market_order_book USD XTS
-     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+                             BIDS (* Short)                                  |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 4.000000000000 USD                      100.00000 XTS             400.00000 USD
+                                                                             | 4. USD                                  100.00000 XTS             400.00000 USD
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
@@ -11588,354 +11588,52 @@ default (unlocked) >>> blockchain_market_status USD XTS
 {
   "quote_id": 1,
   "base_id": 0,
-  "current_feed_price": 0.02,
-  "last_valid_feed_price": 0.02,
+  "current_feed_price": "0.02",
+  "last_valid_feed_price": "0.02",
   "last_error": null
 }
 default (unlocked) >>> help wallet_market_submit_relative_ask
-Usage:
-wallet_market_submit_relative_ask <from_account_name> <sell_quantity> <sell_quantity_symbol> <relative_ask_price> <ask_price_symbol> [limit_ask_price]   Used to place a request to sell a quantity of assets at a price specified in another asset
-Used to place a request to sell a quantity of assets at a price specified in another asset
+Command failed with exception: std::exception is thrown during command handling (0)
+No help available for command "wallet_market_submit_relative_ask"
 
-Parameters:
-  from_account_name (account_name, required): the account that will provide funds for the ask
-  sell_quantity (string, required): the quantity of items you would like to sell
-  sell_quantity_symbol (asset_symbol, required): the type of items you would like to sell
-  relative_ask_price (string, required): the relative price per unit sold.
-  ask_price_symbol (asset_symbol, required): the type of asset you would like to be paid
-  limit_ask_price (string, optional, defaults to ""): the minimum price per unit sold.
 
-Returns:
-  transaction_record
 
-aliases: relative_ask
 default (unlocked) >>> wallet_market_submit_relative_ask scott 1000 XTS 1 GLD 
-{
-  "index": 0,
-  "record_id": "3847864aba1e501f81a4d9ea601ae97fcab94f32",
-  "block_num": 0,
-  "is_virtual": false,
-  "is_confirmed": false,
-  "is_market": true,
-  "trx": {
-    "expiration": "2014-06-20T14:51:30",
-    "reserved": null,
-    "operations": [{
-        "type": "relative_ask_op_type",
-        "data": {
-          "amount": 100000000,
-          "ask_index": {
-            "order_price": {
-              "ratio": "1.",
-              "quote_asset_id": 2,
-              "base_asset_id": 0
-            },
-            "owner": "XTSHwwoVcBQ6mUsjUsCZ1SZHReQxfaSCiY53"
-          },
-          "limit_price": null
-        }
-      },{
-        "type": "withdraw_op_type",
-        "data": {
-          "balance_id": "XTSKSVkCHrQRmyjsNousv89K1aQX2tDrUMVj",
-          "amount": 100050000,
-          "claim_input_data": ""
-        }
-      }
-    ],
-    "signatures": [
-      "2042dd681e87b6a011860be0ecc25a8b913673bcbbac7557f4ed438a5bbfcc1b4b7b988725cc9d4f08ae5529698afc9388ff1c5811d291e401d07e37b9f923482a",
-      "1f56271f0bb5f99887ac27097abe4dc9c53d0d1ec9ba5b8f1352a483500c49a99061a53420cceaa981fa71c4a2901ce8fdb54c412b197cc4068c9150b99874e6a9"
-    ]
-  },
-  "ledger_entries": [{
-      "from_account": "XTS5DBeMtFiZaive82nTRuZjBbfZMVFZbudCs86bDfh3XwkKSdUqw",
-      "to_account": "XTS76oLvSdYgbMdhiv8d9EvqVRdGpg8HswSbEMduWt9e7PLFvQXvm",
-      "amount": {
-        "amount": 100000000,
-        "asset_id": 0
-      },
-      "memo": "relative sell XTS @ delta 1. GLD / XTS",
-      "memo_from_account": null
-    }
-  ],
-  "fee": {
-    "amount": 50000,
-    "asset_id": 0
-  },
-  "created_time": "2014-06-20T14:41:30",
-  "received_time": "2014-06-20T14:41:30",
-  "extra_addresses": []
-}
+Error: invalid command "wallet_market_submit_relative_ask"
 default (unlocked) >>> wallet_market_submit_relative_ask dan 60 XTS 1.2 USD 
-{
-  "index": 0,
-  "record_id": "e20fd39418bcb06b9179460bdee75e3218bb15ee",
-  "block_num": 0,
-  "is_virtual": false,
-  "is_confirmed": false,
-  "is_market": true,
-  "trx": {
-    "expiration": "2014-06-20T14:51:30",
-    "reserved": null,
-    "operations": [{
-        "type": "relative_ask_op_type",
-        "data": {
-          "amount": 6000000,
-          "ask_index": {
-            "order_price": {
-              "ratio": "1.2",
-              "quote_asset_id": 1,
-              "base_asset_id": 0
-            },
-            "owner": "XTS859xhxdgYesJ1AhJVwXuvnYKDyUQkHFsj"
-          },
-          "limit_price": null
-        }
-      },{
-        "type": "withdraw_op_type",
-        "data": {
-          "balance_id": "XTSQ64zpSJuFzNuDMp1ThGz9tgudPYUYwtsH",
-          "amount": 6050000,
-          "claim_input_data": ""
-        }
-      }
-    ],
-    "signatures": [
-      "1f7d9582845d040d7d60538a21eae39cf147033c9aa48a566f7f2fa05a45847b8d124503485a3f52cc5adf6b4b28342855415a0ee334a7fc48ecd031e88946191f",
-      "1f15ab90430e7afb55603cc424201a64083bb28c27ffda7d6dcc74ada66645c5647f0861c0607f5645041f46518612859cf82db405dc8b52cc92d9715a8feac4e0"
-    ]
-  },
-  "ledger_entries": [{
-      "from_account": "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra",
-      "to_account": "XTS5KsP4WCTjHiGvVMjRWUoHZek3e8iJWowprVuA2s7BgdXKpUAK5",
-      "amount": {
-        "amount": 6000000,
-        "asset_id": 0
-      },
-      "memo": "relative sell XTS @ delta 1.2 USD / XTS",
-      "memo_from_account": null
-    }
-  ],
-  "fee": {
-    "amount": 50000,
-    "asset_id": 0
-  },
-  "created_time": "2014-06-20T14:41:30",
-  "received_time": "2014-06-20T14:41:30",
-  "extra_addresses": []
-}
+Error: invalid command "wallet_market_submit_relative_ask"
 default (unlocked) >>> wallet_market_submit_relative_ask dan 60 XTS .99 USD 
-{
-  "index": 0,
-  "record_id": "5f9e46d9a0bc4df30a7ab4d28e85a67e1470a568",
-  "block_num": 0,
-  "is_virtual": false,
-  "is_confirmed": false,
-  "is_market": true,
-  "trx": {
-    "expiration": "2014-06-20T14:51:30",
-    "reserved": null,
-    "operations": [{
-        "type": "relative_ask_op_type",
-        "data": {
-          "amount": 6000000,
-          "ask_index": {
-            "order_price": {
-              "ratio": "0.99",
-              "quote_asset_id": 1,
-              "base_asset_id": 0
-            },
-            "owner": "XTS6QvSqvCBQNgLHsDXHFPGnxnSDtAaDGKYy"
-          },
-          "limit_price": null
-        }
-      },{
-        "type": "withdraw_op_type",
-        "data": {
-          "balance_id": "XTSQ64zpSJuFzNuDMp1ThGz9tgudPYUYwtsH",
-          "amount": 6050000,
-          "claim_input_data": ""
-        }
-      }
-    ],
-    "signatures": [
-      "20197504ccc94b8b763b1ed1cff629691bb10118153f7eaff462f175a7479352b34be0e6cf56bc33498c5500e7c782028967e3baa4dd3eee4a39e649e2a5d05c11",
-      "202472e1f48365dd6ccd7eff6cdc2a42daec8a9c7b520fbd1094211b0fac53219b0da1eb7567c4e7110eaf0b04d05309272b9d6fb9f4bbf07e3c02f98348e8e9c8"
-    ]
-  },
-  "ledger_entries": [{
-      "from_account": "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra",
-      "to_account": "XTS6cYUB3W5L7kCGrauZeVZZVe8bgTtuKoEZubA4zNMW9RyPWsPN3",
-      "amount": {
-        "amount": 6000000,
-        "asset_id": 0
-      },
-      "memo": "relative sell XTS @ delta 0.99 USD / XTS",
-      "memo_from_account": null
-    }
-  ],
-  "fee": {
-    "amount": 50000,
-    "asset_id": 0
-  },
-  "created_time": "2014-06-20T14:41:30",
-  "received_time": "2014-06-20T14:41:30",
-  "extra_addresses": []
-}
+Error: invalid command "wallet_market_submit_relative_ask"
 default (unlocked) >>> wallet_market_submit_relative_ask dan 50 XTS 1.1  USD .05
-{
-  "index": 0,
-  "record_id": "aabe2b546c92bb9d7210990c5bb4a9054b623b3d",
-  "block_num": 0,
-  "is_virtual": false,
-  "is_confirmed": false,
-  "is_market": true,
-  "trx": {
-    "expiration": "2014-06-20T14:51:30",
-    "reserved": null,
-    "operations": [{
-        "type": "relative_ask_op_type",
-        "data": {
-          "amount": 5000000,
-          "ask_index": {
-            "order_price": {
-              "ratio": "1.1",
-              "quote_asset_id": 1,
-              "base_asset_id": 0
-            },
-            "owner": "XTS6r8ixjvonTXvjHc66GNG12ayTEX7SibtX"
-          },
-          "limit_price": {
-            "ratio": "0.05",
-            "quote_asset_id": 1,
-            "base_asset_id": 0
-          }
-        }
-      },{
-        "type": "withdraw_op_type",
-        "data": {
-          "balance_id": "XTSQ64zpSJuFzNuDMp1ThGz9tgudPYUYwtsH",
-          "amount": 5050000,
-          "claim_input_data": ""
-        }
-      }
-    ],
-    "signatures": [
-      "200ac3bf03849727f75af33fb975fd9470728bcc731bcdfabe13a502115a2f07ff53dd93e3c893c23b31d84d3b8d9da97e2ad4f637a4b98f7e3bb88489b613b2bc",
-      "1f5bab40fe2e8012216c046a885884d4eba9e5dafd944fbfa85297929b73ed231d423bc6ebaf553645a5ae0d25a0c98855a12e3db90dc69dedaa8f92a308d1304f"
-    ]
-  },
-  "ledger_entries": [{
-      "from_account": "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra",
-      "to_account": "XTS8WuakX49Vqk7muHb1qkzP4x4eZ19gsTD4PU3weiziPu2r98L5U",
-      "amount": {
-        "amount": 5000000,
-        "asset_id": 0
-      },
-      "memo": "relative sell XTS @ delta 1.1 USD / XTS",
-      "memo_from_account": null
-    }
-  ],
-  "fee": {
-    "amount": 50000,
-    "asset_id": 0
-  },
-  "created_time": "2014-06-20T14:41:30",
-  "received_time": "2014-06-20T14:41:30",
-  "extra_addresses": []
-}
+Error: invalid command "wallet_market_submit_relative_ask"
 default (unlocked) >>> wallet_market_submit_short dan 1000 XTS .001 GLD 
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:41:30</d-ign>PENDING   dan                 dan                 1,000.00000 XTS         short GLD @ 0.001% APR                      0.50000 XTS         <d-ign> 8f1dabae</d-ign>
+<d-ign>2014-06-20T14:41:30</d-ign>PENDING   dan                 dan                 1,000.00000 XTS         short GLD @ 0.001% APR                      0.50000 XTS         <d-ign> 5a242423</d-ign>
 default (unlocked) >>> wallet_market_submit_short scott 50 XTS .1 USD .8
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:41:30</d-ign>PENDING   scott               scott               50.00000 XTS            short USD @ 0.1% APR                        0.50000 XTS         <d-ign> 43d8a916</d-ign>
+<d-ign>2014-06-20T14:41:30</d-ign>PENDING   scott               scott               50.00000 XTS            short USD @ 0.1% APR                        0.50000 XTS         <d-ign> a57ad988</d-ign>
 default (unlocked) >>> wallet_market_submit_short scott 50 XTS .1 USD 
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:41:30</d-ign>PENDING   scott               scott               50.00000 XTS            short USD @ 0.1% APR                        0.50000 XTS         <d-ign> ead5e901</d-ign>
+<d-ign>2014-06-20T14:41:30</d-ign>PENDING   scott               scott               50.00000 XTS            short USD @ 0.1% APR                        0.50000 XTS         <d-ign> d812a2ab</d-ign>
 default (unlocked) >>> wallet_market_submit_short scott 100 XTS .1 USD .003
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:41:30</d-ign>PENDING   scott               scott               100.00000 XTS           short USD @ 0.1% APR                        0.50000 XTS         <d-ign> 05f80515</d-ign>
+<d-ign>2014-06-20T14:41:30</d-ign>PENDING   scott               scott               100.00000 XTS           short USD @ 0.1% APR                        0.50000 XTS         <d-ign> 511c6b4d</d-ign>
 default (unlocked) >>> wallet_market_submit_relative_ask dan 40 XTS 1.11 USD .0041
-{
-  "index": 0,
-  "record_id": "5d6f7a37a050c75c0567a627d3efd7c3f5881c8b",
-  "block_num": 0,
-  "is_virtual": false,
-  "is_confirmed": false,
-  "is_market": true,
-  "trx": {
-    "expiration": "2014-06-20T14:51:30",
-    "reserved": null,
-    "operations": [{
-        "type": "relative_ask_op_type",
-        "data": {
-          "amount": 4000000,
-          "ask_index": {
-            "order_price": {
-              "ratio": "1.11",
-              "quote_asset_id": 1,
-              "base_asset_id": 0
-            },
-            "owner": "XTSLvhadm78je5Er9dEFhgTWkKiVqRQimdLK"
-          },
-          "limit_price": {
-            "ratio": "0.0041",
-            "quote_asset_id": 1,
-            "base_asset_id": 0
-          }
-        }
-      },{
-        "type": "withdraw_op_type",
-        "data": {
-          "balance_id": "XTSQ64zpSJuFzNuDMp1ThGz9tgudPYUYwtsH",
-          "amount": 4050000,
-          "claim_input_data": ""
-        }
-      }
-    ],
-    "signatures": [
-      "1f1902635e0c9baafc182c9cb3118343fb7cf2cf8406f3533edddbe7be79d27b0c34e5af49198f52bd710c54c61fbc3e7a60c081c3e8795d1bd90a4094167fe870",
-      "2017aa9e2782313aa1b0a1319690a04bfc8276bb7762d71837615693c19cf2c127209936dcd96e82680e985bf13e1fc8ac8145c3e10cd812601032e44696fdfd87"
-    ]
-  },
-  "ledger_entries": [{
-      "from_account": "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra",
-      "to_account": "XTS8iK8PbtibiVZ22Dfj3vBHo86XbDaHPsfK1RERYZDRJJydP6n3J",
-      "amount": {
-        "amount": 4000000,
-        "asset_id": 0
-      },
-      "memo": "relative sell XTS @ delta 1.11 USD / XTS",
-      "memo_from_account": null
-    }
-  ],
-  "fee": {
-    "amount": 50000,
-    "asset_id": 0
-  },
-  "created_time": "2014-06-20T14:41:30",
-  "received_time": "2014-06-20T14:41:30",
-  "extra_addresses": []
-}
+Error: invalid command "wallet_market_submit_relative_ask"
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> blockchain_market_order_book USD XTS
-     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+                             BIDS (* Short)                                  |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-1.00000 USD               50.00000 XTS                    0.020000000000 USD*|+0.019800000000 USD                       60.00000 XTS               1.18800 USD
-0.15000 USD               50.00000 XTS                    0.003000000000 USD*|+0.022200000000 USD                       40.00000 XTS               0.88800 USD
-                                                                             |+0.024000000000 USD                       60.00000 XTS               1.44000 USD
-                                                                             |-0.050000000000 USD                       50.00000 XTS               2.50000 USD
-                                                                             | 4.000000000000 USD                      100.00000 XTS             400.00000 USD
+1.00000 USD               50.00000 XTS                              0.02 USD*| 4. USD                                  100.00000 XTS             400.00000 USD
+0.15000 USD               50.00000 XTS                             0.003 USD*|
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
@@ -11944,10 +11642,10 @@ TOTAL                     QUANTITY                       INTEREST RATE (APR) | C
 0.50000 USD               25.00000 XTS                            0.100000 % | 
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> blockchain_market_order_book GLD XTS
-     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+                             BIDS (* Short)                                  |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-0.05000 GLD               500.00000 XTS                   0.000100000000 GLD*|+0.000100000000 GLD                    1,000.00000 XTS               0.10000 GLD
+0.05000 GLD               500.00000 XTS                           0.0001 GLD*|
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
@@ -11957,169 +11655,124 @@ Maximum Short Price: 0.0001 GLD / XTS
 default (unlocked) >>> history dan
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
 ==============================================================================================================================================================================================
-<d-ign>2014-06-20T14:40:30</d-ign>2         delegate0           dan                 0.00000 XTS             register dan                                0.00000 XTS             0.00000 XTS         <d-ign> 1e8f51e2</d-ign>
-<d-ign>2014-06-20T14:40:40</d-ign>3         delegate0           dan                 200,000.00000 XTS                                                   200,000.00000 XTS       0.00000 XTS         <d-ign> 0d4c90c8</d-ign>
-<d-ign>2014-06-20T14:41:20</d-ign>7         dan                 ASK-05db7896        100.00000 XTS           sell XTS @ 4. USD / XTS                     199,899.50000 XTS       0.50000 XTS         <d-ign> 3b3e8ab1</d-ign>
-<d-ign>2014-06-20T14:41:30</d-ign>8         dan                 RELATIVE-d7832810   40.00000 XTS            relative sell XTS @ delta 1.11 USD / XTS    199,859.00000 XTS       0.50000 XTS         <d-ign> 5d6f7a37</d-ign>
-<d-ign>2014-06-20T14:41:30</d-ign>8         dan                 RELATIVE-81ef7826   60.00000 XTS            relative sell XTS @ delta 0.99 USD / XTS    199,798.50000 XTS       0.50000 XTS         <d-ign> 5f9e46d9</d-ign>
-<d-ign>2014-06-20T14:41:30</d-ign>8         dan                 SHORT-cdfc7e25      1,000.00000 XTS         short GLD @ 0.001% APR                      198,798.00000 XTS       0.50000 XTS         <d-ign> 8f1dabae</d-ign>
-<d-ign>2014-06-20T14:41:30</d-ign>8         dan                 RELATIVE-ef15557a   50.00000 XTS            relative sell XTS @ delta 1.1 USD / XTS     198,747.50000 XTS       0.50000 XTS         <d-ign> aabe2b54</d-ign>
-<d-ign>2014-06-20T14:41:30</d-ign>8         dan                 RELATIVE-8ab5c002   60.00000 XTS            relative sell XTS @ delta 1.2 USD / XTS     198,687.00000 XTS       0.50000 XTS         <d-ign> e20fd394</d-ign>
+<d-ign>2014-06-20T14:40:30</d-ign>2         delegate0           dan                 0.00000 XTS             register dan                                0.00000 XTS             0.00000 XTS         <d-ign> 2fd5b0f5</d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>3         delegate0           dan                 200,000.00000 XTS                                                   200,000.00000 XTS       0.00000 XTS         <d-ign> bdd96c6f</d-ign>
+<d-ign>2014-06-20T14:41:20</d-ign>7         dan                 ASK-05db7896        100.00000 XTS           sell XTS @ 4. USD / XTS                     199,899.50000 XTS       0.50000 XTS         <d-ign> d5f8a796</d-ign>
+<d-ign>2014-06-20T14:41:30</d-ign>8         dan                 SHORT-e547c2de      1,000.00000 XTS         short GLD @ 0.001% APR                      198,899.00000 XTS       0.50000 XTS         <d-ign> 5a242423</d-ign>
 default (unlocked) >>> wallet_market_order_list USD XTS -1 dan
 TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
 ask_order           100.00000 XTS       4. USD / XTS                  100.00000 XTS       400.00000 USD       N/A                 NONE                05db7896838e25ebed6172a48e8a37bc9d1b1847   XTS2HLJKuZVHs9FqGR5TEREnBcJ8bnfMAHAD
-relative_ask_order  60.00000 XTS        0.02 USD / XTS*0.99           60.00000 XTS        1.18800 USD         N/A                 NONE                81ef7826a4fdff9fd11fa8124f5432b8fa878f04   XTS6QvSqvCBQNgLHsDXHFPGnxnSDtAaDGKYy
-relative_ask_order  60.00000 XTS        0.02 USD / XTS*1.2            60.00000 XTS        1.44000 USD         N/A                 NONE                8ab5c0020d8d126fef75ca130ecfe6c3e1370c77   XTS859xhxdgYesJ1AhJVwXuvnYKDyUQkHFsj
-relative_ask_order  40.00000 XTS        0.02 USD / XTS*1.11           40.00000 XTS        0.88800 USD         N/A                 0.0041 USD / XTS    d7832810fd37ec25c747bd77ffad5c213ab45742   XTSLvhadm78je5Er9dEFhgTWkKiVqRQimdLK
-relative_ask_order  50.00000 XTS        0.02 USD / XTS*1.1            50.00000 XTS        2.50000 USD         N/A                 0.05 USD / XTS      ef15557af0d7f103c1438dce76c8bf97ab4aa0b1   XTS6r8ixjvonTXvjHc66GNG12ayTEX7SibtX
 default (unlocked) >>> wallet_market_order_list USD XTS -1 scott
 TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
-short_order         100.00000 XTS       0.003 USD / XTS               100.00000 XTS       0.30000 USD         N/A                 0.003 USD / XTS     7809ac958cb8aca549e4a32dcb9753996508b62d   XTS23rYmTv4jkaf7UooXPdGzY8DGxtw5tmv1
-short_order         50.00000 XTS        0.02 USD / XTS                50.00000 XTS        1.00000 USD         N/A                 0.8 USD / XTS       b2587651ebf593b90fed5c512425af4a9b3a1542   XTS2Jnp9pLARLLSpikWgXijUUkfGbmYRtFbJ
-short_order         50.00000 XTS        0.02 USD / XTS                50.00000 XTS        1.00000 USD         N/A                 NONE                d23037e4a547089572a4a1a6f26cc77af1c9b2ec   XTSPwNVpo6HmayVNBjraRTJ8GeZEkz8fCyPt
+short_order         50.00000 XTS        0.02 USD / XTS                50.00000 XTS        1.00000 USD         N/A                 NONE                b2587651ebf593b90fed5c512425af4a9b3a1542   XTS2Jnp9pLARLLSpikWgXijUUkfGbmYRtFbJ
+short_order         50.00000 XTS        0.02 USD / XTS                50.00000 XTS        1.00000 USD         N/A                 0.8 USD / XTS       9e40463f735a6f8f0e73a8b48e15cd91cd2e58a5   XTSHwwoVcBQ6mUsjUsCZ1SZHReQxfaSCiY53
+short_order         100.00000 XTS       0.003 USD / XTS               100.00000 XTS       0.30000 USD         N/A                 0.003 USD / XTS     d23037e4a547089572a4a1a6f26cc77af1c9b2ec   XTSPwNVpo6HmayVNBjraRTJ8GeZEkz8fCyPt
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> blockchain_market_order_book USD XTS
-     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+                             BIDS (* Short)                                  |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-0.15000 USD               50.00000 XTS                    0.003000000000 USD*|+0.019800000000 USD                        9.49496 XTS               0.18800 USD
-                                                                             |+0.022200000000 USD                       40.00000 XTS               0.88800 USD
-                                                                             |+0.024000000000 USD                       60.00000 XTS               1.44000 USD
-                                                                             |-0.050000000000 USD                       50.00000 XTS               2.50000 USD
-                                                                             | 4.000000000000 USD                      100.00000 XTS             400.00000 USD
+1.00000 USD               50.00000 XTS                              0.02 USD*| 4. USD                                  100.00000 XTS             400.00000 USD
+0.15000 USD               50.00000 XTS                             0.003 USD*|
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.013288591532 USD                       37.62626 XTS               0.50000 USD       2014-06-20T16:41:40   75.25252 XTS
-                                                                             | 0.013288591532 USD                       37.62626 XTS               0.50000 USD       2014-06-20T16:41:40   75.25252 XTS
+0.50000 USD               25.00000 XTS                            0.100000 % | 
+0.50000 USD               25.00000 XTS                            0.100000 % | 
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> blockchain_market_order_book GLD XTS
-     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+                             BIDS (* Short)                                  |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             |+0.000100000000 GLD                      500.00000 XTS               0.05000 GLD
+0.05000 GLD               500.00000 XTS                           0.0001 GLD*|
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.000066666667 GLD                      750.00000 XTS               0.05000 GLD       2014-06-20T16:41:40   1,500.00000 XTS
+0.05000 GLD               500.00000 XTS                           0.001000 % | 
 Maximum Short Price: 0.0001 GLD / XTS     
 default (unlocked) >>> wallet_market_order_list USD XTS -1 dan
 TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
 ask_order           100.00000 XTS       4. USD / XTS                  100.00000 XTS       400.00000 USD       N/A                 NONE                05db7896838e25ebed6172a48e8a37bc9d1b1847   XTS2HLJKuZVHs9FqGR5TEREnBcJ8bnfMAHAD
-relative_ask_order  9.49496 XTS         0.02 USD / XTS*0.99           9.49496 XTS         0.18800 USD         N/A                 NONE                81ef7826a4fdff9fd11fa8124f5432b8fa878f04   XTS6QvSqvCBQNgLHsDXHFPGnxnSDtAaDGKYy
-relative_ask_order  60.00000 XTS        0.02 USD / XTS*1.2            60.00000 XTS        1.44000 USD         N/A                 NONE                8ab5c0020d8d126fef75ca130ecfe6c3e1370c77   XTS859xhxdgYesJ1AhJVwXuvnYKDyUQkHFsj
-relative_ask_order  40.00000 XTS        0.02 USD / XTS*1.11           40.00000 XTS        0.88800 USD         N/A                 0.0041 USD / XTS    d7832810fd37ec25c747bd77ffad5c213ab45742   XTSLvhadm78je5Er9dEFhgTWkKiVqRQimdLK
-relative_ask_order  50.00000 XTS        0.02 USD / XTS*1.1            50.00000 XTS        2.50000 USD         N/A                 0.05 USD / XTS      ef15557af0d7f103c1438dce76c8bf97ab4aa0b1   XTS6r8ixjvonTXvjHc66GNG12ayTEX7SibtX
 default (unlocked) >>> wallet_market_order_list USD XTS -1 scott
 TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
-cover_order         37.62626 XTS        0.013288591531552697 USD / XTS0.50000 USD         0.49999 USD         75.25252 XTS        NONE                750d3b5073949b6f2d0d157ecdd5865c29d7593c   XTS2Jnp9pLARLLSpikWgXijUUkfGbmYRtFbJ
-short_order         100.00000 XTS       0.003 USD / XTS               100.00000 XTS       0.30000 USD         N/A                 0.003 USD / XTS     7809ac958cb8aca549e4a32dcb9753996508b62d   XTS23rYmTv4jkaf7UooXPdGzY8DGxtw5tmv1
-cover_order         37.62626 XTS        0.013288591531552697 USD / XTS0.50000 USD         0.49999 USD         75.25252 XTS        NONE                902508fac92bc3bea0ec980a5b85f155281ae922   XTSPwNVpo6HmayVNBjraRTJ8GeZEkz8fCyPt
+short_order         50.00000 XTS        0.02 USD / XTS                50.00000 XTS        1.00000 USD         N/A                 NONE                b2587651ebf593b90fed5c512425af4a9b3a1542   XTS2Jnp9pLARLLSpikWgXijUUkfGbmYRtFbJ
+short_order         50.00000 XTS        0.02 USD / XTS                50.00000 XTS        1.00000 USD         N/A                 0.8 USD / XTS       9e40463f735a6f8f0e73a8b48e15cd91cd2e58a5   XTSHwwoVcBQ6mUsjUsCZ1SZHReQxfaSCiY53
+short_order         100.00000 XTS       0.003 USD / XTS               100.00000 XTS       0.30000 USD         N/A                 0.003 USD / XTS     d23037e4a547089572a4a1a6f26cc77af1c9b2ec   XTSPwNVpo6HmayVNBjraRTJ8GeZEkz8fCyPt
 default (unlocked) >>> balance dan
 ACCOUNT                         BALANCE                     
 ============================================================
-dan                             198,687.00000 XTS           
-                                1.00000 USD                 
+dan                             198,899.00000 XTS           
 default (unlocked) >>> balance scott
 ACCOUNT                         BALANCE                     
 ============================================================
-scott                           198,798.00000 XTS           
-                                0.05000 GLD                 
+scott                           199,798.50000 XTS           
 default (unlocked) >>> wallet_market_submit_bid scott .25 USD .001 GLD 
-TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
-======================================================================================================================================================================
-<d-ign>2014-06-20T14:41:50</d-ign>PENDING   scott               scott               0.00025 GLD             buy USD @ 0.001 GLD / USD                   0.50000 XTS         <d-ign> cadaeaf7</d-ign>
+Command failed with exception: insufficient funds (20010)
+
+
+
+
+
+
+
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> wallet_market_submit_ask dan .003 USD .001 GLD 
-TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
-======================================================================================================================================================================
-<d-ign>2014-06-20T14:42:00</d-ign>PENDING   dan                 dan                 0.00300 USD             sell USD @ 0.001 GLD / USD                  0.50000 XTS         <d-ign> 0bb635aa</d-ign>
+Command failed with exception: insufficient funds (20010)
+
+
+
+
+
+
+
 default (unlocked) >>> blockchain_market_order_book GLD USD
-     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+                             BIDS (* Short)                                  |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-0.00025 GLD               0.25000 USD                     0.001000000000 GLD |
+No Orders
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> blockchain_market_order_book GLD USD
-     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+                             BIDS (* Short)                                  |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-0.00025 GLD               0.25000 USD                     0.001000000000 GLD | 0.001000000000 GLD                        0.00300 USD               0.00000 GLD
+No Orders
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> blockchain_market_order_book GLD USD
-     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+                             BIDS (* Short)                                  |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-0.00025 GLD               0.25000 USD                     0.001000000000 GLD |
+No Orders
 default (unlocked) >>> history dan
- TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
-================================================================================================================================================================================================
- <d-ign>2014-06-20T14:40:30</d-ign>2         delegate0           dan                 0.00000 XTS             register dan                                0.00000 XTS             0.00000 XTS         <d-ign> 1e8f51e2</d-ign>
- <d-ign>2014-06-20T14:40:40</d-ign>3         delegate0           dan                 200,000.00000 XTS                                                   200,000.00000 XTS       0.00000 XTS         <d-ign> 0d4c90c8</d-ign>
- <d-ign>2014-06-20T14:41:20</d-ign>7         dan                 ASK-05db7896        100.00000 XTS           sell XTS @ 4. USD / XTS                     199,899.50000 XTS       0.50000 XTS         <d-ign> 3b3e8ab1</d-ign>
- <d-ign>2014-06-20T14:41:30</d-ign>8         dan                 RELATIVE-d7832810   40.00000 XTS            relative sell XTS @ delta 1.11 USD / XTS    199,859.00000 XTS       0.50000 XTS         <d-ign> 5d6f7a37</d-ign>
- <d-ign>2014-06-20T14:41:30</d-ign>8         dan                 RELATIVE-81ef7826   60.00000 XTS            relative sell XTS @ delta 0.99 USD / XTS    199,798.50000 XTS       0.50000 XTS         <d-ign> 5f9e46d9</d-ign>
- <d-ign>2014-06-20T14:41:30</d-ign>8         dan                 SHORT-cdfc7e25      1,000.00000 XTS         short GLD @ 0.001% APR                      198,798.00000 XTS       0.50000 XTS         <d-ign> 8f1dabae</d-ign>
- <d-ign>2014-06-20T14:41:30</d-ign>8         dan                 RELATIVE-ef15557a   50.00000 XTS            relative sell XTS @ delta 1.1 USD / XTS     198,747.50000 XTS       0.50000 XTS         <d-ign> aabe2b54</d-ign>
- <d-ign>2014-06-20T14:41:30</d-ign>8         dan                 RELATIVE-8ab5c002   60.00000 XTS            relative sell XTS @ delta 1.2 USD / XTS     198,687.00000 XTS       0.50000 XTS         <d-ign> e20fd394</d-ign>
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|<d-ign>2014-06-20T14:41:50</d-ign>9         SHORT-cdfc7e25      MARGIN-cdfc7e25     1,000.00000 XTS         add collateral                              198,687.00000 XTS       0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
-|                              MARKET              MARGIN-cdfc7e25     500.00000 XTS           add collateral                              198,687.00000 XTS                                   |
-|                              MARGIN-cdfc7e25     MARKET              0.05000 GLD             short proceeds @ 0.0001 GLD / XTS           0.00000 GLD                                         |
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|<d-ign>2014-06-20T14:41:50</d-ign>9         RELATIVE-81ef7826   MARKET              25.25252 XTS            sell collateral @ 0.0198 USD / XTS          198,687.00000 XTS       0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
-|                              MARKET              RELATIVE-81ef7826   0.50000 USD             payoff debt @ 0.0198 USD / XTS              0.00000 USD                                         |
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|<d-ign>2014-06-20T14:41:50</d-ign>9         RELATIVE-81ef7826   MARKET              25.25252 XTS            sell collateral @ 0.0198 USD / XTS          198,687.00000 XTS       0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
-|                              MARKET              RELATIVE-81ef7826   0.50000 USD             payoff debt @ 0.0198 USD / XTS              0.00000 USD                                         |
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- <d-ign>2014-06-20T14:42:00</d-ign>11        dan                 ASK-0dee23e8        0.00300 USD             sell USD @ 0.001 GLD / USD                  0.00000 USD             0.50000 XTS         <d-ign> 0bb635aa</d-ign>
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|<d-ign>2014-06-20T14:42:20</d-ign>12        ASK-0dee23e8        MARKET              0.00300 USD             fill ask @ 0.001 GLD / USD                  0.00000 USD             0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
-|                              ASK-0dee23e8        dan                 0.00000 GLD             ask proceeds @ 0.001 GLD / USD              0.00000 GLD                                         |
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+<d-ign>2014-06-20T14:40:30</d-ign>2         delegate0           dan                 0.00000 XTS             register dan                                0.00000 XTS             0.00000 XTS         <d-ign> 2fd5b0f5</d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>3         delegate0           dan                 200,000.00000 XTS                                                   200,000.00000 XTS       0.00000 XTS         <d-ign> bdd96c6f</d-ign>
+<d-ign>2014-06-20T14:41:20</d-ign>7         dan                 ASK-05db7896        100.00000 XTS           sell XTS @ 4. USD / XTS                     199,899.50000 XTS       0.50000 XTS         <d-ign> a762e11c</d-ign>
+<d-ign>2014-06-20T14:41:30</d-ign>8         dan                 SHORT-e547c2de      1,000.00000 XTS         short GLD @ 0.001% APR                      198,899.00000 XTS       0.50000 XTS         <d-ign> a9f8b5fb</d-ign>
 default (unlocked) >>> history scott
- TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
-================================================================================================================================================================================================
- <d-ign>2014-06-20T14:40:30</d-ign>2         delegate0           scott               0.00000 XTS             register scott                              0.00000 XTS             0.00000 XTS         <d-ign> 17fd72ab</d-ign>
- <d-ign>2014-06-20T14:40:40</d-ign>3         delegate0           scott               200,000.00000 XTS                                                   200,000.00000 XTS       0.00000 XTS         <d-ign> 0a0def17</d-ign>
- <d-ign>2014-06-20T14:41:30</d-ign>8         scott               SHORT-7809ac95      100.00000 XTS           short USD @ 0.1% APR                        199,899.50000 XTS       0.50000 XTS         <d-ign> 05f80515</d-ign>
- <d-ign>2014-06-20T14:41:30</d-ign>8         scott               RELATIVE-b7b9d8d9   1,000.00000 XTS         relative sell XTS @ delta 1. GLD / XTS      198,899.00000 XTS       0.50000 XTS         <d-ign> 3847864a</d-ign>
- <d-ign>2014-06-20T14:41:30</d-ign>8         scott               SHORT-b2587651      50.00000 XTS            short USD @ 0.1% APR                        198,848.50000 XTS       0.50000 XTS         <d-ign> 43d8a916</d-ign>
- <d-ign>2014-06-20T14:41:30</d-ign>8         scott               SHORT-d23037e4      50.00000 XTS            short USD @ 0.1% APR                        198,798.00000 XTS       0.50000 XTS         <d-ign> ead5e901</d-ign>
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|<d-ign>2014-06-20T14:41:50</d-ign>9         SHORT-b2587651      MARGIN-b2587651     50.00000 XTS            add collateral                              198,798.00000 XTS       0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
-|                              MARKET              MARGIN-b2587651     25.25252 XTS            add collateral                              198,798.00000 XTS                                   |
-|                              MARGIN-b2587651     MARKET              0.50000 USD             short proceeds @ 0.02 USD / XTS             0.00000 USD                                         |
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|<d-ign>2014-06-20T14:41:50</d-ign>9         RELATIVE-b7b9d8d9   MARKET              500.00000 XTS           sell collateral @ 0.0001 GLD / XTS          198,798.00000 XTS       0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
-|                              MARKET              RELATIVE-b7b9d8d9   0.05000 GLD             payoff debt @ 0.0001 GLD / XTS              0.00000 GLD                                         |
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|<d-ign>2014-06-20T14:41:50</d-ign>9         SHORT-d23037e4      MARGIN-d23037e4     50.00000 XTS            add collateral                              198,798.00000 XTS       0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
-|                              MARKET              MARGIN-d23037e4     25.25252 XTS            add collateral                              198,798.00000 XTS                                   |
-|                              MARGIN-d23037e4     MARKET              0.50000 USD             short proceeds @ 0.02 USD / XTS             0.00000 USD                                         |
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- <d-ign>2014-06-20T14:41:50</d-ign>10        scott               BID-c7ba8e19        0.00025 GLD             buy USD @ 0.001 GLD / USD                   0.00000 GLD             0.50000 XTS         <d-ign> cadaeaf7</d-ign>
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|<d-ign>2014-06-20T14:42:20</d-ign>12        BID-c7ba8e19        MARKET              0.00000 GLD             pay bid @ 0.001 GLD / USD                   0.00000 GLD             0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
-|                              BID-c7ba8e19        scott               0.00300 USD             bid proceeds @ 0.001 GLD / USD              0.00300 USD                                         |
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+<d-ign>2014-06-20T14:40:30</d-ign>2         delegate0           scott               0.00000 XTS             register scott                              0.00000 XTS             0.00000 XTS         <d-ign> 2ff488aa</d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>3         delegate0           scott               200,000.00000 XTS                                                   200,000.00000 XTS       0.00000 XTS         <d-ign> e0e2e65b</d-ign>
+<d-ign>2014-06-20T14:41:30</d-ign>8         scott               SHORT-d23037e4      100.00000 XTS           short USD @ 0.1% APR                        199,899.50000 XTS       0.50000 XTS         <d-ign> 233e8fba</d-ign>
+<d-ign>2014-06-20T14:41:30</d-ign>8         scott               SHORT-b2587651      50.00000 XTS            short USD @ 0.1% APR                        199,849.00000 XTS       0.50000 XTS         <d-ign> be19ab2b</d-ign>
+<d-ign>2014-06-20T14:41:30</d-ign>8         scott               SHORT-9e40463f      50.00000 XTS            short USD @ 0.1% APR                        199,798.50000 XTS       0.50000 XTS         <d-ign> f0c16646</d-ign>
 default (unlocked) >>> quit

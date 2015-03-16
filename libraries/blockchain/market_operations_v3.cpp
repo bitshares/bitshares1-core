@@ -34,7 +34,7 @@ void cover_operation::evaluate_v3( transaction_evaluation_state& eval_state )con
 
    auto  asset_to_cover = eval_state._pending_state->get_asset_record( cover_index.order_price.quote_asset_id );
    FC_ASSERT( asset_to_cover.valid() );
-   asset_to_cover->current_share_supply -= delta_amount.amount;
+   asset_to_cover->current_supply -= delta_amount.amount;
    eval_state._pending_state->store_asset_record( *asset_to_cover );
 
    current_cover->payoff_balance -= delta_amount.amount;

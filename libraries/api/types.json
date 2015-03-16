@@ -7,19 +7,6 @@
         "cpp_include_file" : "bts/blockchain/types.hpp"
       },
       {
-         "type_name" : "asset_permission",
-         "cpp_return_type" : "asset_permissions"
-      },
-      {
-         "type_name" : "asset_permission_array",
-         "cpp_return_type" : "std::vector<bts::blockchain::asset_permissions>"
-      },
-      {
-        "type_name": "float",
-        "cpp_return_type" : "float",
-        "cpp_include_file" : "bts/blockchain/types.hpp"
-      },
-      {
         "type_name" : "account_name",
         "cpp_return_type" : "std::string",
         "cpp_include_file" : "string",
@@ -54,8 +41,8 @@
         "cpp_include_file" : "bts/blockchain/types.hpp"
       },
       {
-         "type_name" : "price_map",
-         "cpp_return_type" : "std::map<std::string,double>"
+         "type_name" : "string_map",
+         "cpp_return_type" : "std::map<std::string, std::string>"
       },
       {
          "type_name" : "wallet_balance_record",
@@ -117,10 +104,6 @@
       {
         "type_name" : "optional_string",
         "cpp_return_type" : "fc::optional<std::string>"
-      },
-      {
-        "type_name" : "optional_double",
-        "cpp_return_type" : "fc::optional<double>"
       },
       {
         "type_name" : "optional_uint64_t",
@@ -392,13 +375,6 @@
         "type_name" : "amount",
         "cpp_parameter_type" : "int64_t",
         "cpp_return_type" : "int64_t",
-        "cpp_include_file" : "stdint.h",
-        "default_example" : 10000
-      },
-      {
-        "type_name" : "real_amount",
-        "cpp_parameter_type" : "double",
-        "cpp_return_type" : "double",
         "cpp_include_file" : "stdint.h",
         "default_example" : 10000
       },
@@ -726,6 +702,10 @@
       {
         "type_name" : "wallet_record_type",
         "cpp_return_type" : "bts::wallet::wallet_record_type_enum"
+      },
+      {
+        "type_name" : "asset_flag_enum",
+        "cpp_return_type" : "bts::blockchain::asset_record::flag_enum"
       },
       {
         "type_name" : "feed_entry_list",

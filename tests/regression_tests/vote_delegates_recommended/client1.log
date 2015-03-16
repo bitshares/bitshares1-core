@@ -132,11 +132,11 @@ ACCOUNT                         BALANCE
 ============================================================
 account1                        1,698.00000 XTS             
 default (unlocked) >>> history
-TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
-======================================================================================================================================================================
-<d-ign></d-ign>5         UNKNOWN             account1            2,000.00000 XTS                                                     0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>7         account1            account1            0.00000 XTS             register account1                           0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>10        account1            account0            100.00000 XTS           vote all                                    0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>12        account1            account0            100.00000 XTS           vote recommended                            0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>16        account1            account0            100.00000 XTS           vote recommended #2                         0.50000 XTS         <d-ign></d-ign>
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+<d-ign></d-ign>5         UNKNOWN             account1            2,000.00000 XTS                                                     2,000.00000 XTS         0.50000 XTS         <d-ign> 297d12b6</d-ign>
+<d-ign></d-ign>7         account1            account1            0.00000 XTS             register account1                           1,999.50000 XTS         0.50000 XTS         <d-ign> f4e92672</d-ign>
+<d-ign></d-ign>10        account1            account0            100.00000 XTS           vote all                                    1,899.00000 XTS         0.50000 XTS         <d-ign> aef0dff5</d-ign>
+<d-ign></d-ign>12        account1            account0            100.00000 XTS           vote recommended                            1,798.50000 XTS         0.50000 XTS         <d-ign> 939df584</d-ign>
+<d-ign></d-ign>16        account1            account0            100.00000 XTS           vote recommended #2                         1,698.00000 XTS         0.50000 XTS         <d-ign> 5af11d5f</d-ign>
 default (unlocked) >>> quit

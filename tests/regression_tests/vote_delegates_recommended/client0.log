@@ -29,7 +29,7 @@ OK
 default (unlocked) >>> wallet_transfer 2000 XTS delegate0 XTS5qLJBGDBFX7BpBgs17tynUfvDpQGiMJGoXafF3Ro5JjvdR1n1j
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate0           UNKNOWN             2,000.00000 XTS         To: XTSADnyd...                             0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>PENDING   delegate0           ANONYMOUS           2,000.00000 XTS                                                     0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
@@ -183,7 +183,7 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 <d-ign></d-ign>2         delegate0           mydelegate          1,000,000.00000 XTS                                                 0.50000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>3         delegate0           mydelegate          0.00000 XTS             register mydelegate as a delegate           59,881.68811 XTS    <d-ign></d-ign>
 <d-ign></d-ign>4         delegate0           account0            0.00000 XTS             register account0                           0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>5         delegate0           UNKNOWN             2,000.00000 XTS         To: XTSADnyd...                             0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>5         delegate0           ANONYMOUS           2,000.00000 XTS                                                     0.50000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>6         mydelegate          mydelegate          0.00000 XTS             publish slate 386653298819755463            0.50000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>10        account1            account0            100.00000 XTS           vote all                                    0.50000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>12        account1            account0            100.00000 XTS           vote recommended                            0.50000 XTS         <d-ign></d-ign>

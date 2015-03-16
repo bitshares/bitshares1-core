@@ -109,9 +109,6 @@ namespace bts { namespace blockchain { namespace detail {
                 FC_ASSERT( usd_paid_by_bid >= usd_received_by_ask );
                 FC_ASSERT( xts_paid_by_ask >= xts_received_by_bid );
 
-                // sanity check to keep supply from growing without bound
-                FC_ASSERT( usd_paid_by_bid < asset(quote_asset->maximum_share_supply,quote_id), "", ("usd_paid_by_bid",usd_paid_by_bid)("asset",quote_asset) );
-
                 usd_fees_collected += usd_paid_by_bid - usd_received_by_ask;
 
                 market_transaction mtrx;
@@ -124,7 +121,7 @@ namespace bts { namespace blockchain { namespace detail {
                 mtrx.ask_paid        = xts_paid_by_ask;
                 mtrx.ask_received    = usd_received_by_ask;
                 mtrx.bid_type        = _current_bid->type;
-                mtrx.fees_collected  = xts_paid_by_ask - xts_received_by_bid;
+                mtrx.base_fees  = xts_paid_by_ask - xts_received_by_bid;
 
                 _market_transactions.push_back(mtrx);
                 trading_volume += mtrx.bid_received;

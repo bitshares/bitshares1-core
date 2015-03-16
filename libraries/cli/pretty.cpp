@@ -329,7 +329,7 @@ string pretty_delegate_list( const vector<account_record>& delegate_records, cpt
 
     const auto asset_record = client->get_chain()->get_asset_record( asset_id_type() );
     FC_ASSERT( asset_record.valid() );
-    const auto share_supply = asset_record->current_share_supply;
+    const auto share_supply = asset_record->current_supply;
 
     for( const auto& delegate_record : delegate_records )
     {
@@ -769,8 +769,8 @@ string pretty_asset_list( const vector<asset_record>& asset_records, cptr client
         out << std::setw( 24 ) << pretty_shorten( asset_record.name, 23 );
         out << std::setw( 48 ) << pretty_shorten( asset_record.description, 47 );
 
-        const auto issuer_id = asset_record.issuer_account_id;
-        const auto supply = asset( asset_record.current_share_supply, asset_id );
+        const auto issuer_id = asset_record.issuer_id;
+        const auto supply = asset( asset_record.current_supply, asset_id );
         if( issuer_id == 0 )
         {
             out << std::setw( 32 ) << "GENESIS";
@@ -789,7 +789,7 @@ string pretty_asset_list( const vector<asset_record>& asset_records, cptr client
             else
                 out << std::setw( 32 ) << "";
 
-            const auto max_supply = asset( asset_record.maximum_share_supply, asset_id );
+            const auto max_supply = asset( asset_record.max_supply, asset_id );
             out << std::setw( 10 ) << pretty_percent( supply.amount, max_supply.amount);
         }
 

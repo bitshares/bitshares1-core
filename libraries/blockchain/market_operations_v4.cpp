@@ -77,7 +77,7 @@ void cover_operation::evaluate_v4( transaction_evaluation_state& eval_state )con
    FC_ASSERT( current_cover->payoff_balance >= 0 );
 
    //Covered asset is destroyed, interest pays to fees
-   asset_to_cover->current_share_supply -= principle_paid.amount;
+   asset_to_cover->current_supply -= principle_paid.amount;
    asset_to_cover->collected_fees += interest_paid.amount;
    eval_state._pending_state->store_asset_record( *asset_to_cover );
 

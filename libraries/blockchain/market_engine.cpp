@@ -29,8 +29,8 @@ namespace bts { namespace blockchain { namespace detail {
           oasset_record base_asset = _pending_state->get_asset_record( _base_id );
 
           FC_ASSERT( quote_asset.valid() && base_asset.valid() );
-          FC_ASSERT( !quote_asset->is_market_frozen() );
-          FC_ASSERT( !base_asset->is_market_frozen() );
+          FC_ASSERT( !quote_asset->flag_is_active( asset_record::halted_markets ) );
+          FC_ASSERT( !base_asset->flag_is_active( asset_record::halted_markets ) );
 
           FC_ASSERT( !_pending_state->is_fraudulent_asset( *quote_asset ) );
           FC_ASSERT( !_pending_state->is_fraudulent_asset( *base_asset ) );
@@ -39,8 +39,9 @@ namespace bts { namespace blockchain { namespace detail {
           // we need to go to the first item in the next market class and then back up one
           const price current_pair = price( 0, quote_id, base_id );
           const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );
+
           _bid_itr           = _db_impl._bid_db.lower_bound( market_index_key( next_pair ) );
-          _ask_itr           = _db_impl._ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
+          _ask_itr           = _db_impl._ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id ) ) );
           _short_at_feed_itr  = std::set<market_index_key>::reverse_iterator(_db_impl._shorts_at_feed.lower_bound( market_index_key_ext( next_pair ) ));
           _short_at_limit_itr = _db_impl._short_limit_index.rend();
           _collateral_itr     = _db_impl._collateral_db.lower_bound( market_index_key( next_pair ) );
@@ -206,7 +207,7 @@ namespace bts { namespace blockchain { namespace detail {
                 const asset cover_collateral         = asset( *_current_ask->collateral, _base_id );
                 const asset max_usd_cover_can_afford = cover_collateral * mtrx.bid_price;
                 const asset cover_debt               = get_current_cover_debt();
-                const asset usd_for_short_sale       = _current_bid->get_balance() * collateral_rate; //_current_bid->get_quote_quantity();
+                const asset usd_for_short_sale       = _current_bid->get_balance() * collateral_rate;
 
                 const price liquidation_price = cover_debt / cover_collateral;
 
@@ -325,13 +326,16 @@ namespace bts { namespace blockchain { namespace detail {
                 if( quantity_xts == ask_quantity_xts )
                    mtrx.ask_paid = _current_ask->get_balance();
 
-                mtrx.fees_collected = mtrx.bid_paid - mtrx.ask_received;
+                mtrx.quote_fees = mtrx.bid_paid - mtrx.ask_received;
 
                 pay_current_bid( mtrx, *base_asset, *quote_asset );
                 pay_current_ask( mtrx, *base_asset, *quote_asset );
             }
 
             push_market_transaction( mtrx );
+
+            quote_asset->collected_fees += mtrx.quote_fees.amount;
+            base_asset->collected_fees += mtrx.base_fees.amount;
 
             if( mtrx.ask_received.asset_id == 0 )
               trading_volume += mtrx.ask_received;
@@ -347,11 +351,6 @@ namespace bts { namespace blockchain { namespace detail {
             // TODO check here: store lowest ask price or lowest bid price?
             if( lowest_price == price() || lowest_price > mtrx.ask_price)
               lowest_price = mtrx.ask_price;
-
-            if( mtrx.fees_collected.asset_id == base_asset->id )
-                base_asset->collected_fees += mtrx.fees_collected.amount;
-            else if( mtrx.fees_collected.asset_id == quote_asset->id )
-                quote_asset->collected_fees += mtrx.fees_collected.amount;
            }
           }
 
@@ -405,7 +404,8 @@ namespace bts { namespace blockchain { namespace detail {
           FC_ASSERT( mtrx.ask_received.amount>= 0 );
           FC_ASSERT( mtrx.bid_paid >= mtrx.ask_received );
           FC_ASSERT( mtrx.ask_paid >= mtrx.bid_received );
-          FC_ASSERT( mtrx.fees_collected.amount >= 0 );
+          FC_ASSERT( mtrx.quote_fees.amount >= 0 );
+          FC_ASSERT( mtrx.base_fees.amount >= 0 );
       }
 
       _market_transactions.push_back(mtrx);
@@ -454,7 +454,7 @@ namespace bts { namespace blockchain { namespace detail {
              *mtrx.short_collateral  += (_current_bid->get_balance() - *mtrx.short_collateral);
       }
 
-      quote_asset.current_share_supply += mtrx.bid_paid.amount;
+      quote_asset.current_supply += mtrx.bid_paid.amount;
 
       auto collateral  = *mtrx.short_collateral + mtrx.ask_paid;
       if( mtrx.bid_paid.amount <= 0 )
@@ -493,7 +493,7 @@ namespace bts { namespace blockchain { namespace detail {
       _pending_state->store_short_record( _current_bid->market_index, _current_bid->state );
   } FC_CAPTURE_AND_RETHROW( (mtrx)  ) }
 
-  void market_engine::pay_current_bid( const market_transaction& mtrx, asset_record& base_asset, asset_record& quote_asset )
+  void market_engine::pay_current_bid( market_transaction& mtrx, asset_record& base_asset, asset_record& quote_asset )
   { try {
       FC_ASSERT( _current_bid->type == bid_order );
       FC_ASSERT( mtrx.bid_type == bid_order );
@@ -501,29 +501,33 @@ namespace bts { namespace blockchain { namespace detail {
       _current_bid->state.balance -= mtrx.bid_paid.amount;
       FC_ASSERT( _current_bid->state.balance >= 0 );
 
+      FC_ASSERT( base_asset.address_is_whitelisted( mtrx.bid_owner ) );
+
       auto bid_payout = _pending_state->get_balance_record(
                                 withdraw_condition( withdraw_with_signature(mtrx.bid_owner), _base_id ).get_address() );
       if( !bid_payout )
           bid_payout = balance_record( mtrx.bid_owner, asset(0,_base_id), 0 );
 
-      uint64_t issuer_fee = 0;
-      if( base_asset.market_fee && base_asset.market_fee < BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE  )
+      share_type issuer_fee = 0;
+      if( base_asset.market_fee_rate > 0 )
       {
-         issuer_fee = mtrx.bid_received.amount * base_asset.market_fee;
-         issuer_fee /= BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE;
-         base_asset.collected_fees += issuer_fee;
+          FC_ASSERT( base_asset.market_fee_rate <= BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE_RATE );
+          issuer_fee = mtrx.bid_received.amount * base_asset.market_fee_rate;
+          issuer_fee /= BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE_RATE;
       }
 
-      bid_payout->balance += mtrx.bid_received.amount - issuer_fee;
+      mtrx.base_fees.amount += issuer_fee;
+      mtrx.bid_received.amount -= issuer_fee;
+
+      bid_payout->balance += mtrx.bid_received.amount;
       bid_payout->last_update = _pending_state->now();
       bid_payout->deposit_date = _pending_state->now();
       _pending_state->store_balance_record( *bid_payout );
 
-
       // if the balance is less than 1 XTS then it gets collected as fees.
       if( (_current_bid->get_quote_quantity() * mtrx.bid_price).amount == 0 )
       {
-          quote_asset.collected_fees +=_current_bid->get_quote_quantity().amount;
+          mtrx.quote_fees.amount += _current_bid->state.balance;
           _current_bid->state.balance = 0;
       }
       _pending_state->store_bid_record( _current_bid->market_index, _current_bid->state );
@@ -561,15 +565,16 @@ namespace bts { namespace blockchain { namespace detail {
 
       *(_current_ask->collateral) -= mtrx.ask_paid.amount;
 
-
       FC_ASSERT( *_current_ask->collateral >= 0, "",
                  ("mtrx",mtrx)("_current_ask", _current_ask)("interest_paid",interest_paid)  );
 
-      quote_asset.current_share_supply -= principle_paid.amount;
-      quote_asset.collected_fees       += interest_paid.amount;
+      quote_asset.current_supply -= principle_paid.amount;
+      mtrx.quote_fees.amount += interest_paid.amount;
+
+      // WTF is this?
       if( *_current_ask->collateral == 0 )
       {
-          quote_asset.collected_fees -= _current_ask->state.balance;
+          quote_asset.current_supply -= _current_ask->state.balance;
           _current_ask->state.balance = 0;
       }
 
@@ -603,8 +608,7 @@ namespace bts { namespace blockchain { namespace detail {
                                                _current_collat_record );
   } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
 
-  void market_engine::pay_current_ask( const market_transaction& mtrx, asset_record& base_asset,
-                                                                       asset_record& quote_asset )
+  void market_engine::pay_current_ask( market_transaction& mtrx, asset_record& base_asset, asset_record& quote_asset )
   { try {
       FC_ASSERT( _current_ask->type == ask_order );
       FC_ASSERT( mtrx.ask_type == ask_order );
@@ -612,20 +616,25 @@ namespace bts { namespace blockchain { namespace detail {
       _current_ask->state.balance -= mtrx.ask_paid.amount;
       FC_ASSERT( _current_ask->state.balance >= 0, "balance: ${b}", ("b",_current_ask->state.balance) );
 
+      FC_ASSERT( quote_asset.address_is_whitelisted( mtrx.ask_owner ) );
+
       auto ask_balance_address = withdraw_condition( withdraw_with_signature(mtrx.ask_owner), _quote_id ).get_address();
       auto ask_payout = _pending_state->get_balance_record( ask_balance_address );
       if( !ask_payout )
           ask_payout = balance_record( mtrx.ask_owner, asset(0,_quote_id), 0 );
 
-      uint64_t issuer_fee = 0;
-      if( quote_asset.market_fee && quote_asset.market_fee < BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE  )
+      share_type issuer_fee = 0;
+      if( quote_asset.market_fee_rate > 0 )
       {
-         issuer_fee = mtrx.ask_received.amount * quote_asset.market_fee;
-         issuer_fee /= BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE;
-         quote_asset.collected_fees += issuer_fee;
+          FC_ASSERT( quote_asset.market_fee_rate <= BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE_RATE );
+          issuer_fee = mtrx.ask_received.amount * quote_asset.market_fee_rate;
+          issuer_fee /= BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE_RATE;
       }
 
-      ask_payout->balance += mtrx.ask_received.amount - issuer_fee;
+      mtrx.quote_fees.amount += issuer_fee;
+      mtrx.ask_received.amount -= issuer_fee;
+
+      ask_payout->balance += mtrx.ask_received.amount;
       ask_payout->last_update = _pending_state->now();
       ask_payout->deposit_date = _pending_state->now();
 
@@ -634,9 +643,10 @@ namespace bts { namespace blockchain { namespace detail {
       // if the balance is less than 1 XTS * PRICE < .001 USD XTS goes to fees
       if( (_current_ask->get_quantity() * mtrx.ask_price).amount == 0 )
       {
-          base_asset.collected_fees += _current_ask->get_quantity().amount;
+          mtrx.base_fees.amount += _current_ask->state.balance;
           _current_ask->state.balance = 0;
       }
+
       _pending_state->store_ask_record( _current_ask->market_index, _current_ask->state );
 
   } FC_CAPTURE_AND_RETHROW( (mtrx) )  } // pay_current_ask

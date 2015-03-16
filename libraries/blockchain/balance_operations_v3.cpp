@@ -49,7 +49,7 @@ void withdraw_operation::evaluate_v3( transaction_evaluation_state& eval_state )
       auto yield = current_balance_record->calculate_yield_v1( eval_state._pending_state->now(),
                                                                current_balance_record->balance,
                                                                asset_rec->collected_fees,
-                                                               asset_rec->current_share_supply );
+                                                               asset_rec->current_supply );
 
       if( yield.amount > 0 )
       {

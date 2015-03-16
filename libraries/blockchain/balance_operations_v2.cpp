@@ -51,14 +51,14 @@ void withdraw_operation::evaluate_v2( transaction_evaluation_state& eval_state )
       auto yield = current_balance_record->calculate_yield( eval_state._pending_state->now(),
                                                             current_balance_record->balance,
                                                             asset_rec->collected_fees,
-                                                            asset_rec->current_share_supply );
+                                                            asset_rec->current_supply );
 
       if( eval_state._pending_state->get_head_block_num() < BTS_V0_4_21_FORK_BLOCK_NUM )
       {
          yield = current_balance_record->calculate_yield_v1( eval_state._pending_state->now(),
                                                              current_balance_record->balance,
                                                              asset_rec->collected_fees,
-                                                             asset_rec->current_share_supply );
+                                                             asset_rec->current_supply );
       }
 
       if( yield.amount > 0 )
@@ -143,12 +143,6 @@ void deposit_operation::evaluate_v2( transaction_evaluation_state& eval_state )c
         {
             FC_ASSERT( cur_record->condition.slate_id == 0 );
         }
-    }
-
-    const auto& owners = cur_record->owners();
-    for(const address& owner : owners)
-    {
-        FC_ASSERT(asset_rec->is_authorized(owner));
     }
 
     eval_state._pending_state->store_balance_record( *cur_record );

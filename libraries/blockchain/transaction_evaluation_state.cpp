@@ -111,15 +111,12 @@ namespace bts { namespace blockchain {
                    FC_CAPTURE_AND_THROW( fee_greater_than_max, (fee)(max_fees) );
            }
 
-           oasset_record asset_record = _pending_state->get_asset_record( fee.asset_id );
-           if( !asset_record.valid() )
-               FC_CAPTURE_AND_THROW( unknown_asset_id, (fee) );
-
-           if( fee.amount < asset_record->transaction_fee )
-               FC_CAPTURE_AND_THROW( insufficient_fee, (fee)(asset_record->transaction_fee) );
-
-           if( fee.amount > 0 )
+           if( fee.amount != 0 )
            {
+               oasset_record asset_record = _pending_state->get_asset_record( fee.asset_id );
+               if( !asset_record.valid() )
+                   FC_CAPTURE_AND_THROW( unknown_asset_id, (fee) );
+
                asset_record->collected_fees += fee.amount;
                _pending_state->store_asset_record( *asset_record );
            }

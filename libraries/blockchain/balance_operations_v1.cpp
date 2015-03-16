@@ -161,7 +161,7 @@ void burn_operation::evaluate_v1( transaction_evaluation_state& eval_state )cons
    FC_ASSERT( asset_rec.valid() );
    FC_ASSERT( !asset_rec->is_market_issued() );
 
-   asset_rec->current_share_supply -= this->amount.amount;
+   asset_rec->current_supply -= this->amount.amount;
    eval_state.sub_balance( this->amount );
 
    eval_state._pending_state->store_asset_record( *asset_rec );

@@ -3,6 +3,8 @@
 #include <bts/blockchain/market_operations.hpp>
 #include <bts/blockchain/pending_chain_state.hpp>
 
+#include <fc/real128.hpp>
+
 #include <algorithm>
 
 #include <bts/blockchain/fork_blocks.hpp>
@@ -27,14 +29,14 @@ namespace bts { namespace blockchain {
       FC_ASSERT( base_asset_rec.valid() );
       FC_ASSERT( quote_asset_rec.valid() );
 
-      FC_ASSERT( base_asset_rec->is_authorized( owner ) );
-      FC_ASSERT( quote_asset_rec->is_authorized( owner ) );
+      FC_ASSERT( base_asset_rec->address_is_whitelisted( owner ) );
+      FC_ASSERT( quote_asset_rec->address_is_whitelisted( owner ) );
 
-      const bool issuer_override = quote_asset_rec->is_retractable() && eval_state.verify_authority( quote_asset_rec->authority );
-      if( !issuer_override && !eval_state.check_signature( owner ) )
+      const bool authority_is_retracting = quote_asset_rec->flag_is_active( asset_record::retractable_balances )
+                                           && eval_state.verify_authority( quote_asset_rec->authority );
+
+      if( !authority_is_retracting && !eval_state.check_signature( owner ) )
          FC_CAPTURE_AND_THROW( missing_signature, (bid_index.owner) );
-
-      FC_ASSERT( !issuer_override && !quote_asset_rec->is_balance_frozen() );
 
       asset delta_amount = this->get_amount();
 
@@ -89,14 +91,14 @@ namespace bts { namespace blockchain {
       FC_ASSERT( base_asset_rec.valid() );
       FC_ASSERT( quote_asset_rec.valid() );
 
-      FC_ASSERT( base_asset_rec->is_authorized( owner ) );
-      FC_ASSERT( quote_asset_rec->is_authorized( owner ) );
+      FC_ASSERT( base_asset_rec->address_is_whitelisted( owner ) );
+      FC_ASSERT( quote_asset_rec->address_is_whitelisted( owner ) );
 
-      const bool issuer_override = base_asset_rec->is_retractable() && eval_state.verify_authority( base_asset_rec->authority );
-      if( !issuer_override && !eval_state.check_signature( owner ) )
+      const bool authority_is_retracting = base_asset_rec->flag_is_active( asset_record::retractable_balances )
+                                           && eval_state.verify_authority( base_asset_rec->authority );
+
+      if( !authority_is_retracting && !eval_state.check_signature( owner ) )
          FC_CAPTURE_AND_THROW( missing_signature, (ask_index.owner) );
-
-      FC_ASSERT( !issuer_override && !base_asset_rec->is_balance_frozen() );
 
       asset delta_amount  = this->get_amount();
 
@@ -140,9 +142,14 @@ namespace bts { namespace blockchain {
       FC_ASSERT( quote_asset_rec.valid() );
 
       auto owner = this->short_index.owner;
-      FC_ASSERT( short_index.order_price.ratio < fc::uint128( 10, 0 ), "Interest rate must be less than 1000% APR" );
       FC_ASSERT( short_index.order_price.quote_asset_id > short_index.order_price.base_asset_id,
                  "Interest rate price must have valid base and quote IDs" );
+
+#ifndef WIN32
+#warning [HARDFORK] Short APR limit
+#endif
+      static const fc::uint128 max_apr = fc::uint128( BTS_BLOCKCHAIN_MAX_SHORT_APR_PCT ) * FC_REAL128_PRECISION / 100;
+      FC_ASSERT( short_index.order_price.ratio <= max_apr, "Interest rate too high!" );
 
       asset delta_amount = this->get_amount();
 

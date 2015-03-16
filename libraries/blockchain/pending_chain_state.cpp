@@ -386,11 +386,11 @@ namespace bts { namespace blockchain {
 
            const oasset_record prev_record = prev_state->get_asset_record( id );
            if( prev_record.valid() )
-               reported_delta -= prev_record->current_share_supply;
+               reported_delta -= prev_record->current_supply;
 
            const oasset_record record = get_asset_record( id );
            if( record.valid() )
-               reported_delta += record->current_share_supply;
+               reported_delta += record->current_supply;
 
            if( reported_delta != actual_delta )
                FC_CAPTURE_AND_THROW( unexpected_supply_change, (id)(actual_delta)(reported_delta) );

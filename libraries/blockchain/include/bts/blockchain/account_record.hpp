@@ -24,7 +24,7 @@ struct multisig_meta_info
 {
     static const account_type type = multisig_account;
 
-    uint32_t     required = 0;
+    uint32_t     required = 1;
     set<address> owners;
 };
 

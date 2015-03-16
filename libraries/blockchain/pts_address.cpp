@@ -21,7 +21,7 @@ namespace bts { namespace blockchain {
 
       if( !is_valid() )
       {
-         FC_THROW_EXCEPTION( invalid_pts_address, "invalid pts_address ${a}", ("a", base58str) );  
+         FC_THROW_EXCEPTION( invalid_pts_address, "invalid pts_address ${a}", ("a", base58str) );
       }
    }
 
@@ -42,18 +42,18 @@ namespace bts { namespace blockchain {
        addr.data[0]  = version;
        memcpy( addr.data+1, (char*)&rep, sizeof(rep) );
        auto check    = fc::sha256::hash( addr.data, sizeof(rep)+1 );
-       check = fc::sha256::hash(check); // double
+       check = fc::sha256::hash(check);
        memcpy( addr.data+1+sizeof(rep), (char*)&check, 4 );
    }
 
    /**
-    *  Checks the address to verify it has a 
+    *  Checks the address to verify it has a
     *  valid checksum
     */
    bool pts_address::is_valid()const
    {
        auto check    = fc::sha256::hash( addr.data, sizeof(fc::ripemd160)+1 );
-       check = fc::sha256::hash(check); // double
+       check = fc::sha256::hash(check);
        return memcmp( addr.data+1+sizeof(fc::ripemd160), (char*)&check, 4 ) == 0;
    }
 
@@ -64,8 +64,8 @@ namespace bts { namespace blockchain {
 
 } } // namespace bts
 
-namespace fc 
-{ 
+namespace fc
+{
    void to_variant( const bts::blockchain::pts_address& var,  variant& vo )
    {
         vo = std::string(var);

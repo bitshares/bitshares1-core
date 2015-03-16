@@ -205,8 +205,8 @@ namespace bts { namespace wallet {
       transaction_builder& release_escrow( const account_record& payer,
                                            const address& escrow_account,
                                            const address& released_by_address,
-                                           share_type amount_to_sender,
-                                           share_type amount_to_receiver );
+                                           const asset& amount_to_sender,
+                                           const asset& amount_to_receiver );
 
       transaction_builder& deposit_asset_to_multisig(const asset& amount,
                                                      const string& from_name,
@@ -279,30 +279,9 @@ namespace bts { namespace wallet {
                                         asset cover_amount,
                                         const order_id_type& order_id);
 
-      transaction_builder& asset_authorize_key( const string& symbol,
-                                                const address& owner );
-
       transaction_builder& update_signing_key( const string& authorizing_account_name,
                                                const string& delegate_name,
                                                const public_key_type& signing_key );
-
-      // TODO
-      /*
-      transaction_builder& update_asset( const string& symbol,
-                                         const optional<string>& name,
-                                         const optional<string>& description,
-                                         const optional<variant>& public_data,
-                                         const optional<double>& maximum_share_supply,
-                                         const optional<uint64_t>& precision,
-                                         const share_type issuer_fee,
-                                         double market_fee,
-                                         uint32_t flags,
-                                         uint32_t issuer_perms,
-                                         const optional<account_id_type> issuer_account_id,
-                                         uint32_t required_sigs,
-                                         const vector<address>& authority
-                                       );
-      */
 
       /**
        * @brief Balance the books and pay the fees

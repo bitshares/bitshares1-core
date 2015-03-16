@@ -90,10 +90,6 @@ void add_collateral_operation::evaluate_v2( transaction_evaluation_state& eval_s
 
    current_cover->collateral_balance += delta_amount.amount;
 
-   const auto min_call_price = asset( current_cover->payoff_balance, cover_index.order_price.quote_asset_id )
-                               / asset( (current_cover->collateral_balance * BTS_BLOCKCHAIN_MCALL_D2C_NUMERATOR)
-                               / BTS_BLOCKCHAIN_MCALL_D2C_DENOMINATOR,
-                               cover_index.order_price.base_asset_id );
    const auto new_call_price = asset( current_cover->payoff_balance, cover_index.order_price.quote_asset_id )
                                / asset( (current_cover->collateral_balance*2)/3, cover_index.order_price.base_asset_id );
 

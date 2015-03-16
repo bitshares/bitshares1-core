@@ -11,7 +11,7 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 default (unlocked) >>> wallet_transfer 150 XTS delegate0 XTS5qLJBGDBFX7BpBgs17tynUfvDpQGiMJGoXafF3Ro5JjvdR1n1j "send this back"
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate0           UNKNOWN             150.00000 XTS           send this back                              0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>PENDING   delegate0           ANONYMOUS           150.00000 XTS           send this back                              0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
@@ -31,7 +31,7 @@ test-account                    100.00000 XTS
 default (unlocked) >>> wallet_transfer 50 XTS test-account XTS5qLJBGDBFX7BpBgs17tynUfvDpQGiMJGoXafF3Ro5JjvdR1n1j "again"
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   test-account        UNKNOWN             50.00000 XTS            again                                       0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>PENDING   test-account        ANONYMOUS           50.00000 XTS            again                                       0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
@@ -53,6 +53,6 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 ==============================================================================================================================================================================================
 <d-ign></d-ign>2         delegate0           test-account        0.00000 XTS             register test-account                       0.00000 XTS             0.00000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>3         XTS5qLJBGDBFX7Bp... test-account        100.00000 XTS           take this                                   100.00000 XTS           0.00000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>4         test-account        UNKNOWN             50.00000 XTS            again                                       49.50000 XTS            0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>4         test-account        ANONYMOUS           50.00000 XTS            again                                       49.50000 XTS            0.50000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>5         XTS5qLJBGDBFX7Bp... test-account        50.00000 XTS            take this again                             99.50000 XTS            0.00000 XTS         <d-ign></d-ign>
 default (unlocked) >>> quit

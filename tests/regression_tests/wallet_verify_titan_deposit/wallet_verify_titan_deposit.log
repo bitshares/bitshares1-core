@@ -21,12 +21,12 @@ Returns:
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 account "transfer to account"
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate0           account             100.00000 XTS           transfer to account                         0.50000 XTS         <d-ign> b5b0ed32</d-ign>
+<d-ign></d-ign>PENDING   delegate0           account             100.00000 XTS           transfer to account                         0.50000 XTS         <d-ign> 0299c7ac</d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
 OK
-default (unlocked) >>> wallet_verify_titan_deposit b5b0ed32
+default (unlocked) >>> wallet_verify_titan_deposit 0299c7ac
 {
   "from": "delegate0",
   "to": "account",
@@ -49,11 +49,11 @@ OK
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 account-public "transfer to account-public"
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate0           account-public      100.00000 XTS           transfer to account-public                  0.50000 XTS         <d-ign> 6efcc9c4</d-ign>
+<d-ign></d-ign>PENDING   delegate0           account-public      100.00000 XTS           transfer to account-public                  0.50000 XTS         <d-ign> 94b8483c</d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
 OK
-default (unlocked) >>> wallet_verify_titan_deposit 6efcc9c4
+default (unlocked) >>> wallet_verify_titan_deposit 94b8483c
 null
 default (unlocked) >>> quit

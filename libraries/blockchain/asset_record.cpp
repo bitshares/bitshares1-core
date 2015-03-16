@@ -5,28 +5,9 @@
 
 namespace bts { namespace blockchain {
 
-    share_type asset_record::available_shares()const
+    bool asset_record::address_is_whitelisted( const address& addr )const
     { try {
-        return maximum_share_supply - current_share_supply;
-    } FC_CAPTURE_AND_RETHROW() }
-
-    bool asset_record::can_issue( const asset& amount )const
-    { try {
-        if( id != amount.asset_id ) return false;
-        return can_issue( amount.amount );
-    } FC_CAPTURE_AND_RETHROW( (amount) ) }
-
-    bool asset_record::can_issue( const share_type amount )const
-    { try {
-        if( amount <= 0 ) return false;
-        auto new_share_supply = current_share_supply + amount;
-        // catch overflow conditions
-        return (new_share_supply > current_share_supply) && (new_share_supply <= maximum_share_supply);
-    } FC_CAPTURE_AND_RETHROW( (amount) ) }
-
-    bool asset_record::is_authorized( const address& addr )const
-    { try {
-        if( !is_restricted() )
+        if( !flag_is_active( restricted_deposits ) )
             return true;
 
         if( authority.owners.count( addr ) > 0 )
@@ -35,43 +16,83 @@ namespace bts { namespace blockchain {
         return whitelist.count( addr ) > 0;
     } FC_CAPTURE_AND_RETHROW( (addr) ) }
 
+    uint64_t asset_record::share_string_to_precision_unsafe( const string& share_string_with_trailing_decimals )
+    { try {
+        // Don't bother checking input
+
+        string precision_string;
+        const auto decimal_pos = share_string_with_trailing_decimals.find( '.' );
+        if( decimal_pos != string::npos )
+        {
+            const string rhs = share_string_with_trailing_decimals.substr( decimal_pos + 1 );
+            while( precision_string.size() < rhs.size() )
+                precision_string += '0';
+        }
+
+        return std::stoull( '1' + precision_string );
+    } FC_CAPTURE_AND_RETHROW( (share_string_with_trailing_decimals) ) }
+
+    share_type asset_record::share_string_to_satoshi( const string& share_string, const uint64_t precision )
+    { try {
+        bool negative_found = false;
+        bool decimal_found = false;
+        for( const char c : share_string )
+        {
+            if( isdigit( c ) )
+                continue;
+
+            if( c == '-' && !negative_found )
+            {
+                negative_found = true;
+                continue;
+            }
+
+            if( c == '.' && !decimal_found )
+            {
+                decimal_found = true;
+                continue;
+            }
+
+            FC_CAPTURE_AND_THROW( invalid_asset_amount, (share_string) );
+        }
+
+        if( !is_power_of_ten( precision ) )
+            FC_CAPTURE_AND_THROW( invalid_precision, (precision) );
+
+        share_type satoshis = 0;
+
+        const auto decimal_pos = share_string.find( '.' );
+        const string lhs = share_string.substr( negative_found, decimal_pos );
+        if( !lhs.empty() )
+            satoshis += std::stoll( lhs ) * precision;
+
+        if( decimal_found )
+        {
+            const size_t max_rhs_size = std::to_string( precision ).substr( 1 ).size();
+
+            string rhs = share_string.substr( decimal_pos + 1 );
+            if( rhs.size() > max_rhs_size )
+                FC_CAPTURE_AND_THROW( invalid_asset_amount, (share_string)(max_rhs_size) );
+
+            while( rhs.size() < max_rhs_size )
+                rhs += '0';
+
+            if( !rhs.empty() )
+                satoshis += std::stoll( rhs );
+        }
+
+        if( satoshis > BTS_BLOCKCHAIN_MAX_SHARES )
+            FC_CAPTURE_AND_THROW( amount_too_large, (satoshis)(BTS_BLOCKCHAIN_MAX_SHARES) );
+
+        if( negative_found )
+            satoshis *= -1;
+
+        return satoshis;
+    } FC_CAPTURE_AND_RETHROW( (share_string)(precision) ) }
+
     asset asset_record::asset_from_string( const string& amount )const
     { try {
-       if( amount.find( ',' ) != string::npos )
-           FC_CAPTURE_AND_THROW( invalid_asset_amount, (amount) );
-
-       asset ugly_asset(0, id);
-
-       // Multiply by the precision and truncate if there are extra digits.
-       // example: 100.500019 becomes 10050001
-       const auto decimal = amount.find(".");
-       ugly_asset.amount += atoll(amount.substr(0, decimal).c_str()) * precision;
-
-       if( decimal != string::npos )
-       {
-          string fraction_string = amount.substr(decimal+1);
-          share_type fraction = atoll(fraction_string.c_str());
-
-          if( !fraction_string.empty() && fraction > 0 )
-          {
-             while( fraction < precision )
-                fraction *= 10;
-             while( fraction >= precision )
-                fraction /= 10;
-             while( fraction_string.size() && fraction_string[0] == '0')
-             {
-                fraction /= 10;
-                fraction_string.erase(0, 1);
-             }
-
-             if( ugly_asset.amount >= 0 )
-                ugly_asset.amount += fraction;
-             else
-                ugly_asset.amount -= fraction;
-          }
-       }
-
-       return ugly_asset;
+        return asset( asset_record::share_string_to_satoshi( amount, precision ), id );
     } FC_CAPTURE_AND_RETHROW( (amount) ) }
 
     string asset_record::amount_to_string( share_type amount, bool append_symbol )const
@@ -89,14 +110,15 @@ namespace bts { namespace blockchain {
     { try {
         FC_ASSERT( id >= 0 );
         FC_ASSERT( !symbol.empty() );
+        FC_ASSERT( id == 0 || issuer_id == market_issuer_id || db.lookup<account_record>( issuer_id ).valid() );
+        FC_ASSERT( !is_user_issued() || (authority.required > 0 && !authority.owners.empty()) );
         FC_ASSERT( !name.empty() );
-        FC_ASSERT( id == 0 || issuer_account_id == market_issuer_id || db.lookup<account_record>( issuer_account_id ).valid() );
         FC_ASSERT( is_power_of_ten( precision ) );
-        FC_ASSERT( maximum_share_supply >= 0 && maximum_share_supply <= BTS_BLOCKCHAIN_MAX_SHARES );
-        FC_ASSERT( current_share_supply >= 0 && current_share_supply <= maximum_share_supply );
-        FC_ASSERT( collected_fees >= 0 && collected_fees <= current_share_supply );
-        FC_ASSERT( transaction_fee >= 0 && transaction_fee <= maximum_share_supply );
-        FC_ASSERT( market_fee <= BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE );
+        FC_ASSERT( max_supply >= 0 && max_supply <= BTS_BLOCKCHAIN_MAX_SHARES );
+        FC_ASSERT( withdrawal_fee >= 0 && withdrawal_fee <= max_supply );
+        FC_ASSERT( market_fee_rate <= BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE_RATE );
+        FC_ASSERT( collected_fees >= 0 && collected_fees <= current_supply );
+        FC_ASSERT( current_supply >= 0 && current_supply <= max_supply );
     } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
     oasset_record asset_record::lookup( const chain_interface& db, const asset_id_type id )

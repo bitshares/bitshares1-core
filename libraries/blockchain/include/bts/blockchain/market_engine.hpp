@@ -21,11 +21,14 @@ namespace bts { namespace blockchain { namespace detail {
     void pay_current_short( market_transaction& mtrx,
                             asset_record& quote_asset,
                             asset_record& base_asset );
-    void pay_current_bid( const market_transaction& mtrx,
+
+    void pay_current_bid( market_transaction& mtrx,
                           asset_record& base,
                           asset_record& quote_asset );
+
     void pay_current_cover( market_transaction& mtrx, asset_record& quote_asset );
-    void pay_current_ask( const market_transaction& mtrx,
+
+    void pay_current_ask( market_transaction& mtrx,
                           asset_record& base,
                           asset_record& quote_asset );
 

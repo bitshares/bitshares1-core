@@ -1,7 +1,7 @@
-default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATING AN ASSET" 500 100 null true
+default (unlocked) >>> wallet_mia_create delegate0 XMO DIGITAL_DEVICE1 "CREATING A BITASSET" 0.01
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.50000 XTS   <d-ign></d-ign>
+<d-ign>2014-06-20T14:40:30</d-ign>PENDING   delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.00000 XTS   <d-ign> c9a42ac3</d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
@@ -13,7 +13,7 @@ publishes a price feed for BitAssets, only active delegates may do this
 
 Parameters:
   delegate_account (account_name, required): the delegate to publish the price under
-  price (real_amount, required): the number of this asset per XTS
+  price (string, required): the number of this asset per XTS
   asset_symbol (asset_symbol, required): the type of asset being priced
 
 Returns:
@@ -21,18 +21,19 @@ Returns:
 default (unlocked) >>> wallet_publish_price_feed delegate0 2 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate0           delegate0           0.00000 XTS             publish price 2. XMO / XTS                  0.50000 XTS         <d-ign></d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate0           delegate0           0.00000 XTS             publish price 2. XMO / XTS                  0.50000 XTS         <d-ign> 9832ba98</d-ign>
 default (unlocked) >>> wallet_publish_price_feed delegate1 .2 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate1           delegate1           0.00000 XTS             publish price 0.2 XMO / XTS                 0.50000 XTS         <d-ign></d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate1           delegate1           0.00000 XTS             publish price 0.2 XMO / XTS                 0.50000 XTS         <d-ign> 27990f44</d-ign>
 default (unlocked) >>> wallet_publish_price_feed delegate2 1 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate2           delegate2           0.00000 XTS             publish price 1. XMO / XTS                  0.50000 XTS         <d-ign></d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate2           delegate2           0.00000 XTS             publish price 1. XMO / XTS                  0.50000 XTS         <d-ign> 49d79482</d-ign>
 default (unlocked) >>> wallet_publish_price_feed delegate3 -100 XMO
-Command failed with exception: invalid price (20009)
-Invalid price!
+Command failed with exception: Assert Exception (10)
+quote_asset_id > base_asset_id: -100 > 0
+
 
 
 
@@ -40,10 +41,11 @@ Invalid price!
 default (unlocked) >>> wallet_publish_price_feed delegate4 2.5 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate4           delegate4           0.00000 XTS             publish price 2.5 XMO / XTS                 0.50000 XTS         <d-ign></d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate4           delegate4           0.00000 XTS             publish price 2.5 XMO / XTS                 0.50000 XTS         <d-ign> 113a3b48</d-ign>
 default (unlocked) >>> wallet_publish_price_feed delegate5 -.5 XMO
-Command failed with exception: invalid price (20009)
-Invalid price!
+Command failed with exception: Assert Exception (10)
+quote_asset_id > base_asset_id: 0 > 0
+
 
 
 
@@ -51,11 +53,11 @@ Invalid price!
 default (unlocked) >>> wallet_publish_price_feed delegate6 .01 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate6           delegate6           0.00000 XTS             publish price 0.01 XMO / XTS                0.50000 XTS         <d-ign></d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate6           delegate6           0.00000 XTS             publish price 0.01 XMO / XTS                0.50000 XTS         <d-ign> 4596cc16</d-ign>
 default (unlocked) >>> wallet_publish_price_feed delegate7 2 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate7           delegate7           0.00000 XTS             publish price 2. XMO / XTS                  0.50000 XTS         <d-ign></d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate7           delegate7           0.00000 XTS             publish price 2. XMO / XTS                  0.50000 XTS         <d-ign> c6aa5939</d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
@@ -63,7 +65,7 @@ OK
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
 [{
     "delegate_name": "delegate0",
-    "price": 2,
+    "price": "2.",
     "last_update": "2014-06-20T14:40:40",
     "asset_symbol": "XMO",
     "median_price": null
@@ -72,7 +74,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate1
 [{
     "delegate_name": "delegate1",
-    "price": 0.20000000000000001,
+    "price": "0.2",
     "last_update": "2014-06-20T14:40:40",
     "asset_symbol": "XMO",
     "median_price": null
@@ -81,7 +83,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate1
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate2
 [{
     "delegate_name": "delegate2",
-    "price": 1,
+    "price": "1.",
     "last_update": "2014-06-20T14:40:40",
     "asset_symbol": "XMO",
     "median_price": null
@@ -92,7 +94,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate3
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate4
 [{
     "delegate_name": "delegate4",
-    "price": 2.5,
+    "price": "2.5",
     "last_update": "2014-06-20T14:40:40",
     "asset_symbol": "XMO",
     "median_price": null
@@ -103,7 +105,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate5
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate6
 [{
     "delegate_name": "delegate6",
-    "price": 0.01,
+    "price": "0.01",
     "last_update": "2014-06-20T14:40:40",
     "asset_symbol": "XMO",
     "median_price": null
@@ -112,7 +114,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate6
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate7
 [{
     "delegate_name": "delegate7",
-    "price": 2,
+    "price": "2.",
     "last_update": "2014-06-20T14:40:40",
     "asset_symbol": "XMO",
     "median_price": null
@@ -121,15 +123,15 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate7
 default (unlocked) >>> wallet_publish_price_feed delegate0 99999 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate0           delegate0           0.00000 XTS             publish price 99998.999999999995264 XMO ... 0.50000 XTS         <d-ign></d-ign>
+<d-ign>2014-06-20T14:40:50</d-ign>PENDING   delegate0           delegate0           0.00000 XTS             publish price 99999. XMO / XTS              0.50000 XTS         <d-ign> 6ed52de3</d-ign>
 default (unlocked) >>> wallet_publish_price_feed delegate1 .00002 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate1           delegate1           0.00000 XTS             publish price 0.00002 XMO / XTS             0.50000 XTS         <d-ign></d-ign>
+<d-ign>2014-06-20T14:40:50</d-ign>PENDING   delegate1           delegate1           0.00000 XTS             publish price 0.00002 XMO / XTS             0.50000 XTS         <d-ign> c16d24d4</d-ign>
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
 [{
     "delegate_name": "delegate0",
-    "price": 2,
+    "price": "2.",
     "last_update": "2014-06-20T14:40:40",
     "asset_symbol": "XMO",
     "median_price": null
@@ -138,7 +140,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate1
 [{
     "delegate_name": "delegate1",
-    "price": 0.20000000000000001,
+    "price": "0.2",
     "last_update": "2014-06-20T14:40:40",
     "asset_symbol": "XMO",
     "median_price": null
@@ -151,7 +153,7 @@ OK
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
 [{
     "delegate_name": "delegate0",
-    "price": 99999,
+    "price": "99999.",
     "last_update": "2014-06-20T14:40:50",
     "asset_symbol": "XMO",
     "median_price": null
@@ -160,7 +162,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate1
 [{
     "delegate_name": "delegate1",
-    "price": 2.0000000000000002e-005,
+    "price": "0.00002",
     "last_update": "2014-06-20T14:40:50",
     "asset_symbol": "XMO",
     "median_price": null
