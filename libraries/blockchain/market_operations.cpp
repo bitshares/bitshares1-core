@@ -3,6 +3,8 @@
 #include <bts/blockchain/market_operations.hpp>
 #include <bts/blockchain/pending_chain_state.hpp>
 
+#include <fc/real128.hpp>
+
 #include <algorithm>
 
 namespace bts { namespace blockchain {
@@ -132,9 +134,14 @@ namespace bts { namespace blockchain {
       FC_ASSERT( quote_asset_rec.valid() );
 
       auto owner = this->short_index.owner;
-      FC_ASSERT( short_index.order_price.ratio < fc::uint128( 10, 0 ), "Interest rate must be less than 1000% APR" );
       FC_ASSERT( short_index.order_price.quote_asset_id > short_index.order_price.base_asset_id,
                  "Interest rate price must have valid base and quote IDs" );
+
+#ifndef WIN32
+#warning [HARDFORK] Short APR limit
+#endif
+      static const fc::uint128 max_apr = fc::uint128( BTS_BLOCKCHAIN_MAX_SHORT_APR_PCT ) * FC_REAL128_PRECISION / 100;
+      FC_ASSERT( short_index.order_price.ratio <= max_apr, "Interest rate too high!" );
 
       asset delta_amount = this->get_amount();
 
