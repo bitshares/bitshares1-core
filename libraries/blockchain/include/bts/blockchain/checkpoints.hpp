@@ -3,7 +3,7 @@
 
 namespace bts { namespace blockchain {
 
-static std::unordered_map<uint32_t, bts::blockchain::block_id_type> CHECKPOINT_BLOCKS
+static std::map<uint32_t, bts::blockchain::block_id_type> CHECKPOINT_BLOCKS
 {
 };
 
