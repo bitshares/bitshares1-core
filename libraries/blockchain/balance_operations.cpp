@@ -87,23 +87,20 @@ namespace bts { namespace blockchain {
 
    void deposit_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
-       if( eval_state._pending_state->get_head_block_num() < BTS_V0_4_13_FORK_BLOCK_NUM )
-          return evaluate_v1( eval_state );
+       if( eval_state._pending_state->get_head_block_num() < BTS_V0_7_0_FORK_BLOCK_NUM )
+          return evaluate_v2( eval_state );
 
        if( this->amount <= 0 )
           FC_CAPTURE_AND_THROW( negative_deposit, (amount) );
 
-       if( eval_state._pending_state->get_head_block_num() >= BTS_V0_5_0_FORK_BLOCK_NUM )
+       switch( withdraw_condition_types( this->condition.type ) )
        {
-           switch( withdraw_condition_types( this->condition.type ) )
-           {
-              case withdraw_signature_type:
-              case withdraw_multisig_type:
-              case withdraw_escrow_type:
-                 break;
-              default:
-                 FC_CAPTURE_AND_THROW( invalid_withdraw_condition, (*this) );
-           }
+          case withdraw_signature_type:
+          case withdraw_multisig_type:
+          case withdraw_escrow_type:
+             break;
+          default:
+             FC_CAPTURE_AND_THROW( invalid_withdraw_condition, (*this) );
        }
 
        const balance_id_type deposit_balance_id = this->balance_id();
@@ -142,23 +139,17 @@ namespace bts { namespace blockchain {
        const oasset_record asset_rec = eval_state._pending_state->get_asset_record( cur_record->condition.asset_id );
        FC_ASSERT( asset_rec.valid() );
 
-       if( eval_state._pending_state->get_head_block_num() >= BTS_V0_6_0_FORK_BLOCK_NUM )
-       {
-           FC_ASSERT( !eval_state._pending_state->is_fraudulent_asset( *asset_rec ) );
-       }
+       FC_ASSERT( !eval_state._pending_state->is_fraudulent_asset( *asset_rec ) );
 
-       if( eval_state._pending_state->get_head_block_num() >= BTS_V0_5_0_FORK_BLOCK_NUM )
+       if( asset_rec->is_market_issued() )
        {
-           if( asset_rec->is_market_issued() )
-           {
-               FC_ASSERT( cur_record->condition.slate_id == 0 );
-           }
+           FC_ASSERT( cur_record->condition.slate_id == 0 );
        }
 
        const auto& owners = cur_record->owners();
-       for(const address& owner : owners)
+       for( const address& owner : owners )
        {
-           FC_ASSERT(asset_rec->is_authorized(owner));
+           FC_ASSERT( asset_rec->address_is_whitelisted( owner ) );
        }
 
        eval_state._pending_state->store_balance_record( *cur_record );
@@ -257,6 +248,9 @@ namespace bts { namespace blockchain {
 
    void burn_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
+      if( eval_state._pending_state->get_head_block_num() < BTS_V0_7_0_FORK_BLOCK_NUM )
+          return evaluate_v1( eval_state );
+
       if( this->amount.amount <= 0 )
          FC_CAPTURE_AND_THROW( negative_deposit, (amount) );
 
@@ -265,25 +259,18 @@ namespace bts { namespace blockchain {
 
       if( amount.asset_id == 0 )
       {
-          if( eval_state._pending_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM )
-          {
-              const size_t message_kb = (message.size() / 1024) + 1;
-              const share_type required_fee = message_kb * BTS_BLOCKCHAIN_MIN_BURN_FEE;
+          const size_t message_kb = (message.size() / 1024) + 1;
+          const share_type required_fee = message_kb * BTS_BLOCKCHAIN_MIN_BURN_FEE;
 
-              FC_ASSERT( amount.amount >= required_fee, "Message of size ${s} KiB requires at least ${a} satoshis to be burned!",
-                         ("s",message_kb)("a",required_fee) );
-          }
-          else
-          {
-              FC_ASSERT( amount.amount >= BTS_BLOCKCHAIN_MIN_BURN_FEE );
-          }
+          FC_ASSERT( amount.amount >= required_fee, "Message of size ${s} KiB requires at least ${a} satoshis to be burned!",
+                     ("s",message_kb)("a",required_fee) );
       }
 
       oasset_record asset_rec = eval_state._pending_state->get_asset_record( amount.asset_id );
       FC_ASSERT( asset_rec.valid() );
       FC_ASSERT( !asset_rec->is_market_issued() );
 
-      asset_rec->current_share_supply -= this->amount.amount;
+      asset_rec->current_supply -= this->amount.amount;
       eval_state.sub_balance( this->amount );
 
       eval_state._pending_state->store_asset_record( *asset_rec );

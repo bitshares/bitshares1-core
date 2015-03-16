@@ -66,6 +66,7 @@ struct cover_operation
     fc::optional<price> new_cover_price;
 
     void evaluate( transaction_evaluation_state& eval_state )const;
+    void evaluate_v5( transaction_evaluation_state& eval_state )const;
     void evaluate_v4( transaction_evaluation_state& eval_state )const;
     void evaluate_v3( transaction_evaluation_state& eval_state )const;
     void evaluate_v2( transaction_evaluation_state& eval_state )const;
@@ -89,6 +90,7 @@ struct add_collateral_operation
     market_index_key cover_index;
 
     void evaluate( transaction_evaluation_state& eval_state )const;
+    void evaluate_v2( transaction_evaluation_state& eval_state )const;
     void evaluate_v1( transaction_evaluation_state& eval_state )const;
 };
 

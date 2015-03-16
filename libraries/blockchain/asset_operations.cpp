@@ -109,8 +109,6 @@ namespace bts { namespace blockchain {
 
    void update_asset_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
-      FC_ASSERT( !"This operation is not enabled yet!" );
-
       oasset_record current_asset_record = eval_state._pending_state->get_asset_record( this->asset_id );
       if( NOT current_asset_record.valid() )
           FC_CAPTURE_AND_THROW( unknown_asset_id, (asset_id) );
@@ -171,8 +169,6 @@ namespace bts { namespace blockchain {
 #if 0
    void update_asset_ext_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
-      FC_ASSERT( !"This operation is not enabled yet!" );
-
       oasset_record current_asset_record = eval_state._pending_state->get_asset_record( this->asset_id );
       if( NOT current_asset_record.valid() )
           FC_CAPTURE_AND_THROW( unknown_asset_id, (asset_id) );
@@ -304,8 +300,6 @@ namespace bts { namespace blockchain {
 
    void authorize_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
-      FC_ASSERT( !"This operation is not enabled yet!" );
-
       oasset_record current_asset_record = eval_state._pending_state->get_asset_record( abs( this->asset_id ) );
       if( !current_asset_record.valid() )
           FC_CAPTURE_AND_THROW( unknown_asset_id, (this->asset_id) );

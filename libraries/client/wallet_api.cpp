@@ -1252,8 +1252,6 @@ wallet_transaction_record client_impl::wallet_market_sell(
        bool allow_stupid
        )
 {
-    FC_ASSERT( false, "Disabled while under development" );
-
   auto record = _wallet->sell( from_account, sell_quantity, sell_quantity_symbol, price_limit, price_symbol, relative_price, allow_stupid, true );
   _wallet->cache_transaction( record );
   network_broadcast_transaction( record.trx );

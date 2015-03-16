@@ -194,8 +194,8 @@ namespace bts { namespace blockchain {
    */
    void cover_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
-      if( eval_state._pending_state->get_head_block_num() < BTS_V0_4_23_FORK_BLOCK_NUM )
-         return evaluate_v4( eval_state );
+      if( eval_state._pending_state->get_head_block_num() < BTS_V0_8_0_FORK_BLOCK_NUM )
+         return evaluate_v5( eval_state );
 
       const auto base_asset_rec = eval_state._pending_state->get_asset_record( cover_index.order_price.base_asset_id );
       const auto quote_asset_rec = eval_state._pending_state->get_asset_record( cover_index.order_price.quote_asset_id );
@@ -254,7 +254,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( current_cover->payoff_balance >= 0 );
 
       //Covered asset is destroyed, interest pays to fees
-      asset_to_cover->current_share_supply -= principle_paid.amount;
+      asset_to_cover->current_supply -= principle_paid.amount;
       asset_to_cover->collected_fees += interest_paid.amount;
       eval_state._pending_state->store_asset_record( *asset_to_cover );
 
@@ -267,16 +267,10 @@ namespace bts { namespace blockchain {
 
       if( current_cover->payoff_balance > 0 )
       {
-         auto new_call_price = asset( current_cover->payoff_balance, delta_amount.asset_id)
+         const auto new_call_price = asset( current_cover->payoff_balance, delta_amount.asset_id)
                                      / asset( (current_cover->collateral_balance * BTS_BLOCKCHAIN_MCALL_D2C_NUMERATOR)
                                             / BTS_BLOCKCHAIN_MCALL_D2C_DENOMINATOR,
                                             cover_index.order_price.base_asset_id );
-
-         if( eval_state._pending_state->get_head_block_num() < BTS_V0_8_0_FORK_BLOCK_NUM )
-         {
-             new_call_price = asset( current_cover->payoff_balance, delta_amount.asset_id)
-                                     / asset( (current_cover->collateral_balance*2)/3, cover_index.order_price.base_asset_id );
-         }
 
          if( this->new_cover_price && (*this->new_cover_price > new_call_price) )
             eval_state._pending_state->store_collateral_record( market_index_key( *this->new_cover_price, this->cover_index.owner ),
@@ -297,8 +291,8 @@ namespace bts { namespace blockchain {
 
    void add_collateral_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
-      if( eval_state._pending_state->get_head_block_num() < BTS_V0_4_21_FORK_BLOCK_NUM )
-         return evaluate_v1( eval_state );
+      if( eval_state._pending_state->get_head_block_num() < BTS_V0_8_0_FORK_BLOCK_NUM )
+         return evaluate_v2( eval_state );
 
       const auto base_asset_rec = eval_state._pending_state->get_asset_record( cover_index.order_price.base_asset_id );
       const auto quote_asset_rec = eval_state._pending_state->get_asset_record( cover_index.order_price.quote_asset_id );
@@ -328,13 +322,7 @@ namespace bts { namespace blockchain {
                                   / asset( (current_cover->collateral_balance * BTS_BLOCKCHAIN_MCALL_D2C_NUMERATOR)
                                   / BTS_BLOCKCHAIN_MCALL_D2C_DENOMINATOR,
                                   cover_index.order_price.base_asset_id );
-      auto new_call_price = std::min( min_call_price, cover_index.order_price );
-
-      if( eval_state._pending_state->get_head_block_num() < BTS_V0_8_0_FORK_BLOCK_NUM )
-      {
-          new_call_price = asset( current_cover->payoff_balance, cover_index.order_price.quote_asset_id )
-                                  / asset( (current_cover->collateral_balance*2)/3, cover_index.order_price.base_asset_id );
-      }
+      const auto new_call_price = std::min( min_call_price, cover_index.order_price );
 
       // changing the payoff balance changes the call price... so we need to remove the old record
       // and insert a new one.

@@ -2475,7 +2475,6 @@ namespace bts { namespace blockchain {
    void chain_database::store_feed_record( const feed_record& record )
    {
       chain_interface::store_feed_record(record);
-#if 0
       auto quote_id = record.value.quote_asset_id;
       auto base_id  = record.value.base_asset_id;
       auto  new_feed                   = get_active_feed_price( quote_id, base_id );
@@ -2577,7 +2576,6 @@ namespace bts { namespace blockchain {
          };
          return;
       }
-#endif
    }
 
    void chain_database::store_collateral_record( const market_index_key& key, const collateral_record& collateral )
