@@ -655,7 +655,7 @@ namespace detail {
       {
          static fc::uint128 max_apr = fc::uint128( BTS_BLOCKCHAIN_MAX_SHORT_APR_PCT ) * FC_REAL128_PRECISION / 100;
          price_arg.ratio /= 100;
-         FC_ASSERT( price_arg.ratio < max_apr, "APR must be less than 1000%" );
+         FC_ASSERT( price_arg.ratio < max_apr, "APR must be less than 50%" );
          builder->submit_short(self->get_account(account_name), quantity, price_arg, price_limit);
       }
    }
