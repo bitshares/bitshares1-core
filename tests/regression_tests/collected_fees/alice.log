@@ -67,6 +67,16 @@ Details:
 
     {"quote_id":1,"base_id":0}
     th_a  market_engine.cpp:70 bts::blockchain::detail::market_engine::execute
+default (unlocked) >>> help wallet_publish_feeds_multi_experimental
+Usage:
+wallet_publish_feeds_multi_experimental <symbol_to_price_map>                                         publishes a set of feeds for BitAssets for all active delegates, most useful for testnets
+publishes a set of feeds for BitAssets for all active delegates, most useful for testnets
+
+Parameters:
+  symbol_to_price_map (string_map, required): maps the BitAsset symbol to its price per share
+
+Returns:
+  vector<std::pair<string, wallet_transaction_record>>
 default (unlocked) >>> debug_enable_output false
 >>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
 >>> debug_enable_output true

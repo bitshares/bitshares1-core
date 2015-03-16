@@ -35,7 +35,7 @@ Parameters:
   from_account_name (account_name, required): the account that will provide funds for the ask
   short_collateral (string, required): the amount of collateral you wish to fund this short with
   collateral_symbol (asset_symbol, required): the type of asset collateralizing this short (i.e. XTS)
-  interest_rate (string, required): the APR you wish to pay interest at (0.0% to 1000.0%)
+  interest_rate (string, required): the APR you wish to pay interest at (0.0% to 50.0%)
   quote_symbol (asset_symbol, required): the asset to short sell (i.e. USD)
   short_price_limit (string, optional, defaults to 0): maximim price (USD per XTS) that the short will execute at, if 0 then no limit will be applied
 
@@ -43,32 +43,35 @@ Returns:
   transaction_record
 
 aliases: short
-default (unlocked) >>> wallet_market_submit_short test 100 XTS 100 XMO 2.1
+default (unlocked) >>> wallet_market_submit_short test 100 XTS 10 XMO 2.1
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:40:40</d-ign>PENDING   test                test                100.00000 XTS           short XMO @ 100.% APR                       0.50000 XTS         <d-ign> 132b6640</d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>PENDING   test                test                100.00000 XTS           short XMO @ 10.% APR                        0.50000 XTS         <d-ign> 132b6640</d-ign>
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> wallet_market_submit_short test 100 XTS 50 XMO 3.3334
+Command failed with exception: Assert Exception (10)
+price_arg.ratio < max_apr: APR must be less than 50%
+
+
+
+
+default (unlocked) >>> wallet_market_submit_short test 100 XTS 49 XMO 3.3334
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:40:50</d-ign>PENDING   test                test                100.00000 XTS           short XMO @ 50.% APR                        0.50000 XTS         <d-ign> 1e909d96</d-ign>
+<d-ign>2014-06-20T14:40:50</d-ign>PENDING   test                test                100.00000 XTS           short XMO @ 49.% APR                        0.50000 XTS         <d-ign> 1e909d96</d-ign>
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
-default (unlocked) >>> wallet_market_submit_short test 100 XTS 10 XMO 10.1
+default (unlocked) >>> wallet_market_submit_short test 100 XTS 5 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:41:00</d-ign>PENDING   test                test                100.00000 XTS           short XMO @ 10.% APR                        0.50000 XTS         <d-ign> 0e4a471c</d-ign>
-default (unlocked) >>> wallet_market_submit_short test 100 XTS 300 XMO
-TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
-======================================================================================================================================================================
-<d-ign>2014-06-20T14:41:00</d-ign>PENDING   test                test                100.00000 XTS           short XMO @ 300.% APR                       0.50000 XTS         <d-ign> 27e7032e</d-ign>
+<d-ign>2014-06-20T14:41:00</d-ign>PENDING   test                test                100.00000 XTS           short XMO @ 5.% APR                         0.50000 XTS         <d-ign> 27e7032e</d-ign>
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     
 ============================================================
-test                            9,598.00000 XTS             
+test                            9,698.50000 XTS             
 default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
@@ -84,23 +87,20 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 <d-ign>2014-06-20T14:40:27</d-ign>0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
 <d-ign>2014-06-20T14:40:30</d-ign>1         delegate0           test                10,000.00000 XTS                                                    0.50000 XTS         <d-ign> cc66e5d4</d-ign>
 <d-ign>2014-06-20T14:40:30</d-ign>2         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.00000 XTS   <d-ign> 56c63ac6</d-ign>
-<d-ign>2014-06-20T14:40:40</d-ign>3         test                SHORT-2ba1d2d1      100.00000 XTS           short XMO @ 100.% APR                       0.50000 XTS         <d-ign> 132b6640</d-ign>
-<d-ign>2014-06-20T14:40:50</d-ign>4         test                SHORT-964bf739      100.00000 XTS           short XMO @ 50.% APR                        0.50000 XTS         <d-ign> 1e909d96</d-ign>
-<d-ign>2014-06-20T14:41:00</d-ign>5         test                SHORT-ff60f206      100.00000 XTS           short XMO @ 10.% APR                        0.50000 XTS         <d-ign> 0e4a471c</d-ign>
-<d-ign>2014-06-20T14:41:00</d-ign>5         test                SHORT-91a6854e      100.00000 XTS           short XMO @ 300.% APR                       0.50000 XTS         <d-ign> 27e7032e</d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>3         test                SHORT-9e8fae7e      100.00000 XTS           short XMO @ 10.% APR                        0.50000 XTS         <d-ign> 2df55404</d-ign>
+<d-ign>2014-06-20T14:40:50</d-ign>4         test                SHORT-94a647b8      100.00000 XTS           short XMO @ 49.% APR                        0.50000 XTS         <d-ign> 7ecc28cc</d-ign>
+<d-ign>2014-06-20T14:41:00</d-ign>5         test                SHORT-240ea196      100.00000 XTS           short XMO @ 5.% APR                         0.50000 XTS         <d-ign> e7c02974</d-ign>
 default (unlocked) >>> blockchain_market_list_shorts XMO
 AMOUNT                        COLLATERAL                    INTEREST RATE                 PRICE LIMIT                   ID                                      
 ================================================================================================================================
-N/A                           100.00000 XTS                 300.000000 %                  NONE                          91a6854ee01f7be85985fa6c8af8a604a9945d72
-N/A                           100.00000 XTS                 100.000000 %                  2.1 XMO / XTS                 2ba1d2d14065f7b98023f562bbf826d879351e45
-N/A                           100.00000 XTS                 50.000000 %                   3.3334 XMO / XTS              964bf739d6c0b4b1df0b2353ddac550cc1a3860d
-N/A                           100.00000 XTS                 10.000000 %                   10.1 XMO / XTS                ff60f2064550cba4ceff9358b7094d4133669191
+N/A                           100.00000 XTS                 49.000000 %                   3.3334 XMO / XTS              94a647b8cae7cef7517d70e427d81ef9a53469c5
+N/A                           100.00000 XTS                 10.000000 %                   2.1 XMO / XTS                 9e8fae7e58fd943f1b2017c47254b51df67eca21
+N/A                           100.00000 XTS                 5.000000 %                    NONE                          240ea19628a514a652bc03b3d25f02088f41e62e
 
 default (unlocked) >>> wallet_market_order_list XMO XTS
 TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
-short_order         100.00000 XTS       100. XMO / XTS                100.00000 XTS       10,000.00 XMO       N/A                 10.1 XMO / XTS      ff60f2064550cba4ceff9358b7094d4133669191   XTS3qGsHqiMAMdeYMt2n6cWbLLC2oBdmwwRU
-short_order         100.00000 XTS       500. XMO / XTS                100.00000 XTS       50,000.00 XMO       N/A                 3.3334 XMO / XTS    964bf739d6c0b4b1df0b2353ddac550cc1a3860d   XTS8HcMQqAkWCwPzhrzHMvLMm91RuDkMLXbS
-short_order         100.00000 XTS       1000. XMO / XTS               100.00000 XTS       100,000.00 XMO      N/A                 2.1 XMO / XTS       2ba1d2d14065f7b98023f562bbf826d879351e45   XTSGeRFZj44f4X6wLZnMjF8JgccYcL2tM3rr
-short_order         100.00000 XTS       3000. XMO / XTS               100.00000 XTS       300,000.00 XMO      N/A                 NONE                91a6854ee01f7be85985fa6c8af8a604a9945d72   XTS6nYMeLzw4DwuCkmUQ76bBDGiK1S7CoKtD
+short_order         100.00000 XTS       50. XMO / XTS                 100.00000 XTS       5,000.00 XMO        N/A                 NONE                240ea19628a514a652bc03b3d25f02088f41e62e   XTS3qGsHqiMAMdeYMt2n6cWbLLC2oBdmwwRU
+short_order         100.00000 XTS       100. XMO / XTS                100.00000 XTS       10,000.00 XMO       N/A                 2.1 XMO / XTS       9e8fae7e58fd943f1b2017c47254b51df67eca21   XTSGeRFZj44f4X6wLZnMjF8JgccYcL2tM3rr
+short_order         100.00000 XTS       490. XMO / XTS                100.00000 XTS       49,000.00 XMO       N/A                 3.3334 XMO / XTS    94a647b8cae7cef7517d70e427d81ef9a53469c5   XTS8HcMQqAkWCwPzhrzHMvLMm91RuDkMLXbS
 default (unlocked) >>> quit
