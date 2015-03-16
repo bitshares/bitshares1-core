@@ -1,7 +1,10 @@
 #include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/market_engine.hpp>
+#include <bts/blockchain/market_engine_v7.hpp>
 #include <bts/blockchain/market_operations.hpp>
 #include <bts/blockchain/pending_chain_state.hpp>
+
+#include <fc/real128.hpp>
 
 #include <algorithm>
 
@@ -255,7 +258,17 @@ namespace bts { namespace blockchain {
          return evaluate_v1( eval_state );
 
       auto owner = this->short_index.owner;
-      FC_ASSERT( short_index.order_price.ratio < fc::uint128( 10, 0 ), "Interest rate must be less than 1000% APR" );
+
+      if( eval_state._current_state->get_head_block_num() >= BTS_V0_6_4_FORK_BLOCK_NUM )
+      {
+          static fc::uint128 max_apr = fc::uint128( BTS_BLOCKCHAIN_MAX_SHORT_APR_PCT ) * FC_REAL128_PRECISION / 100;
+          FC_ASSERT( short_index.order_price.ratio <= max_apr, "Interest rate too high!" );
+      }
+      else
+      {
+          FC_ASSERT( short_index.order_price.ratio < fc::uint128( 10, 0 ), "Interest rate must be less than 1000% APR" );
+      }
+
       FC_ASSERT( short_index.order_price.quote_asset_id > short_index.order_price.base_asset_id,
                  "Interest rate price must have valid base and quote IDs" );
 
@@ -342,7 +355,13 @@ namespace bts { namespace blockchain {
       if( elapsed_sec < 0 ) elapsed_sec = 0;
 
       const asset principle = asset( current_cover->payoff_balance, delta_amount.asset_id );
+
       asset total_debt = detail::market_engine::get_interest_owed( principle, current_cover->interest_rate, elapsed_sec ) + principle;
+
+      if( eval_state._current_state->get_head_block_num() >= BTS_V0_6_4_FORK_BLOCK_NUM )
+      {
+          total_debt = detail::market_engine_v7::get_interest_owed_fixed( principle, current_cover->interest_rate, elapsed_sec ) + principle;
+      }
 
       asset principle_paid;
       asset interest_paid;
@@ -356,7 +375,13 @@ namespace bts { namespace blockchain {
       else
       {
           // Partial cover
+
           interest_paid = detail::market_engine::get_interest_paid( delta_amount, current_cover->interest_rate, elapsed_sec );
+          if( eval_state._current_state->get_head_block_num() >= BTS_V0_6_4_FORK_BLOCK_NUM )
+          {
+              interest_paid = detail::market_engine_v7::get_interest_paid_fixed( delta_amount, current_cover->interest_rate, elapsed_sec );
+          }
+
           principle_paid = delta_amount - interest_paid;
           current_cover->payoff_balance -= principle_paid.amount;
       }

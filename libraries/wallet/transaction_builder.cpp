@@ -8,6 +8,8 @@
 
 #include <fc/crypto/sha256.hpp>
 
+#include <bts/blockchain/market_engine_v7.hpp>
+
 using namespace bts::wallet;
 using namespace bts::wallet::detail;
 
@@ -629,8 +631,8 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
                                        + BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC
                                        - (*order->expiration - BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC);
 
-   order_balance += blockchain::detail::market_engine
-           ::get_interest_owed(order_balance, *order->interest_rate, age_at_earliest_confirmation.to_seconds());
+   order_balance += blockchain::detail::market_engine_v7
+           ::get_interest_owed_fixed(order_balance, *order->interest_rate, age_at_earliest_confirmation.to_seconds());
 
    //What's the account's actual balance? We can't pay more than that.
    auto account_balances = _wimpl->self->get_spendable_account_balances( from_account.name );

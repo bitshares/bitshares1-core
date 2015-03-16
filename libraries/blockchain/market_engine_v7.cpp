@@ -479,6 +479,11 @@ namespace bts { namespace blockchain { namespace detail {
               interest_paid = get_interest_paid_v1( mtrx.ask_received, _current_collat_record.interest_rate, cover_age );
           }
 
+          if( _pending_state->get_head_block_num() >= BTS_V0_6_4_FORK_BLOCK_NUM )
+          {
+              interest_paid = get_interest_paid_fixed( mtrx.ask_received, _current_collat_record.interest_rate, cover_age );
+          }
+
           principle_paid = mtrx.ask_received - interest_paid;
           _current_ask->state.balance -= principle_paid.amount;
       }
@@ -745,6 +750,53 @@ namespace bts { namespace blockchain { namespace detail {
           }
   }
 
+  asset market_engine_v7::get_interest_paid_fixed(const asset& total_amount_paid, const price& original_apr, uint32_t age_seconds)
+  {
+      static fc::uint128 max_apr = fc::uint128( BTS_BLOCKCHAIN_MAX_SHORT_APR_PCT ) * FC_REAL128_PRECISION / 100;
+
+      price apr = original_apr;
+      if( apr.ratio > max_apr )
+          apr.ratio = max_apr;
+
+      // TOTAL_PAID = DELTA_PRINCIPLE + DELTA_PRINCIPLE * APR * PERCENT_OF_YEAR
+      // DELTA_PRINCIPLE = TOTAL_PAID / (1 + APR*PERCENT_OF_YEAR)
+      // INTEREST_PAID  = TOTAL_PAID - DELTA_PRINCIPLE
+      fc::real128 total_paid( total_amount_paid.amount );
+      fc::real128 apr_n( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.base_asset_id ) * apr).amount );
+      fc::real128 apr_d( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.base_asset_id ) ).amount );
+      fc::real128 iapr = apr_n / apr_d;
+      fc::real128 age_sec(age_seconds);
+      fc::real128 sec_per_year(365 * 24 * 60 * 60);
+      fc::real128 percent_of_year = age_sec / sec_per_year;
+
+      fc::real128 delta_principle = total_paid / ( fc::real128(1) + iapr * percent_of_year );
+      fc::real128 interest_paid   = total_paid - delta_principle;
+
+      return asset( interest_paid.to_uint64(), total_amount_paid.asset_id );
+  }
+
+  asset market_engine_v7::get_interest_owed_fixed(const asset& principle, const price& original_apr, uint32_t age_seconds)
+  {
+      static fc::uint128 max_apr = fc::uint128( BTS_BLOCKCHAIN_MAX_SHORT_APR_PCT ) * FC_REAL128_PRECISION / 100;
+
+      price apr = original_apr;
+      if( apr.ratio > max_apr )
+          apr.ratio = max_apr;
+
+      // INTEREST_OWED = TOTAL_PRINCIPLE * APR * PERCENT_OF_YEAR
+      fc::real128 total_principle( principle.amount );
+      fc::real128 apr_n( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.base_asset_id ) * apr).amount );
+      fc::real128 apr_d( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.base_asset_id ) ).amount );
+      fc::real128 iapr = apr_n / apr_d;
+      fc::real128 age_sec(age_seconds);
+      fc::real128 sec_per_year(365 * 24 * 60 * 60);
+      fc::real128 percent_of_year = age_sec / sec_per_year;
+
+      fc::real128 interest_owed   = total_principle * iapr * percent_of_year;
+
+      return asset( interest_owed.to_uint64(), principle.asset_id );
+  }
+
   asset market_engine_v7::get_interest_paid(const asset& total_amount_paid, const price& apr, uint32_t age_seconds)
   {
       // TOTAL_PAID = DELTA_PRINCIPLE + DELTA_PRINCIPLE * APR * PERCENT_OF_YEAR
@@ -822,6 +874,13 @@ namespace bts { namespace blockchain { namespace detail {
           return get_interest_owed_v1( _current_ask->get_balance(),
                                        _current_collat_record.interest_rate,
                                        get_current_cover_age() ) + _current_ask->get_balance();
+      }
+
+      if( _pending_state->get_head_block_num() >= BTS_V0_6_4_FORK_BLOCK_NUM )
+      {
+          return get_interest_owed_fixed( _current_ask->get_balance(),
+                                    _current_collat_record.interest_rate,
+                                    get_current_cover_age() ) + _current_ask->get_balance();
       }
 
       return get_interest_owed( _current_ask->get_balance(),
