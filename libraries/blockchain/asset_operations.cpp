@@ -139,11 +139,13 @@ void issue_asset_operation::evaluate( transaction_evaluation_state& eval_state )
     eval_state._pending_state->store_asset_record( *current_asset_record );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-#ifndef WIN32
-#warning [HARDFORK] New op
-#endif
 void asset_update_properties_operation::evaluate( transaction_evaluation_state& eval_state )const
 { try {
+#ifndef WIN32
+#warning [SOFTFORK] Remove this check after BTS_V0_7_0_FORK_BLOCK_NUM has passed
+#endif
+    FC_ASSERT( eval_state._pending_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM );
+
     oasset_record current_asset_record = eval_state._pending_state->get_asset_record( this->asset_id );
     if( !current_asset_record.valid() )
         FC_CAPTURE_AND_THROW( unknown_asset_id, (this->asset_id) );
@@ -235,11 +237,13 @@ void asset_update_properties_operation::evaluate( transaction_evaluation_state& 
     eval_state._pending_state->store_asset_record( *current_asset_record );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-#ifndef WIN32
-#warning [HARDFORK] New op
-#endif
 void asset_update_permissions_operation::evaluate( transaction_evaluation_state& eval_state )const
 { try {
+#ifndef WIN32
+#warning [SOFTFORK] Remove this check after BTS_V0_7_0_FORK_BLOCK_NUM has passed
+#endif
+    FC_ASSERT( eval_state._pending_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM );
+
     oasset_record current_asset_record = eval_state._pending_state->get_asset_record( this->asset_id );
     if( !current_asset_record.valid() )
         FC_CAPTURE_AND_THROW( unknown_asset_id, (this->asset_id) );
@@ -296,11 +300,13 @@ void asset_update_permissions_operation::evaluate( transaction_evaluation_state&
     eval_state._pending_state->store_asset_record( *current_asset_record );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-#ifndef WIN32
-#warning [HARDFORK] New op
-#endif
 void asset_update_whitelist_operation::evaluate( transaction_evaluation_state& eval_state )const
 { try {
+#ifndef WIN32
+#warning [SOFTFORK] Remove this check after BTS_V0_7_0_FORK_BLOCK_NUM has passed
+#endif
+    FC_ASSERT( eval_state._pending_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM );
+
     oasset_record current_asset_record = eval_state._pending_state->get_asset_record( abs( this->asset_id ) );
     if( !current_asset_record.valid() )
         FC_CAPTURE_AND_THROW( unknown_asset_id );

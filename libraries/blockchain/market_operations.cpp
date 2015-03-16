@@ -133,8 +133,8 @@ namespace bts { namespace blockchain {
 
    void short_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
-      if( eval_state._pending_state->get_head_block_num() < BTS_V0_4_21_FORK_BLOCK_NUM )
-         return evaluate_v1( eval_state );
+      if( eval_state._pending_state->get_head_block_num() < BTS_V0_7_0_FORK_BLOCK_NUM )
+         return evaluate_v2( eval_state );
 
       const auto base_asset_rec = eval_state._pending_state->get_asset_record( short_index.order_price.base_asset_id );
       const auto quote_asset_rec = eval_state._pending_state->get_asset_record( short_index.order_price.quote_asset_id );
@@ -145,9 +145,6 @@ namespace bts { namespace blockchain {
       FC_ASSERT( short_index.order_price.quote_asset_id > short_index.order_price.base_asset_id,
                  "Interest rate price must have valid base and quote IDs" );
 
-#ifndef WIN32
-#warning [HARDFORK] Short APR limit
-#endif
       static const fc::uint128 max_apr = fc::uint128( BTS_BLOCKCHAIN_MAX_SHORT_APR_PCT ) * FC_REAL128_PRECISION / 100;
       FC_ASSERT( short_index.order_price.ratio <= max_apr, "Interest rate too high!" );
 
