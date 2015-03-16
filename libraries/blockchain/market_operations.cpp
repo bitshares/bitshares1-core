@@ -137,9 +137,6 @@ namespace bts { namespace blockchain {
       FC_ASSERT( short_index.order_price.quote_asset_id > short_index.order_price.base_asset_id,
                  "Interest rate price must have valid base and quote IDs" );
 
-#ifndef WIN32
-#warning [HARDFORK] Short APR limit
-#endif
       static const fc::uint128 max_apr = fc::uint128( BTS_BLOCKCHAIN_MAX_SHORT_APR_PCT ) * FC_REAL128_PRECISION / 100;
       FC_ASSERT( short_index.order_price.ratio <= max_apr, "Interest rate too high!" );
 
