@@ -10,8 +10,8 @@ default (unlocked) >>> debug_wait_for_block_by_number 2
 OK
 default (unlocked) >>> help blockchain_get_transaction
 Usage:
-blockchain_get_transaction <transaction_id_prefix> [exact]                                            Get detailed information about an in-wallet transaction
-Get detailed information about an in-wallet transaction
+blockchain_get_transaction <transaction_id_prefix> [exact]                                            Get detailed information about the specified transaction in the blockchain
+Get detailed information about the specified transaction in the blockchain
 
 Parameters:
   transaction_id_prefix (string, required): the base58 transaction ID to return
@@ -19,13 +19,20 @@ Parameters:
 
 Returns:
   transaction_record_pair
-default (unlocked) >>> blockchain_get_transaction 30f727facd88885415b34db143da76b0c8d98289
+default (unlocked) >>> blockchain_get_transaction 3a384e9d58953f4a6323b8ef14e825daa394bdc2
 [
-  "30f727facd88885415b34db143da76b0c8d98289",{
+  "3a384e9d58953f4a6323b8ef14e825daa394bdc2",{
     "trx": {
       "expiration": "2014-06-20T15:40:30",
       "reserved": null,
       "operations": [{
+          "type": "withdraw_op_type",
+          "data": {
+            "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
+            "amount": 10050000,
+            "claim_input_data": ""
+          }
+        },{
           "type": "deposit_op_type",
           "data": {
             "amount": 10000000,
@@ -42,66 +49,43 @@ default (unlocked) >>> blockchain_get_transaction 30f727facd88885415b34db143da76
               }
             }
           }
-        },{
-          "type": "withdraw_op_type",
-          "data": {
-            "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
-            "amount": 10050000,
-            "claim_input_data": ""
-          }
         }
       ],
       "signatures": [
-        "1f07787593e6158df2ab1559f42a5dc9d8f2a9e0e0a60f519372e83ad3051bce4c3ae76cb0739f7bf71d5d4735bfa485bc8e0b04c6d44d7be56a5aafbe0370d1f3"
+        "1f39b353ca907cdc39e0947d8d0c4de080e5e72ab69341e17b8a52e14f9b26bd514f0c7f81c38844875bd804ba3971d2e43048cbd00a353d15e02f9e2b3706317a"
       ]
     },
-    "signed_keys": [
+    "signed_addresses": [
       "XTSA5wQqHYd93W65JzCZ1wtmBq9DbtTRyqD",
       "XTSDG4CLPoePEPHaRaDszT4ix8gA1ghTb6FF",
       "XTSEbFjCRUUsoN3FUJTeBbWX7SZx1bMrFzUH",
       "XTSF4Bjx9KdtUChuTn8wL9T6aBFrLBq6wyDJ",
       "XTSPcpRoTjhdb9KBYXmsFB3nfe2BYiZV88Be"
     ],
-    "validation_error": null,
-    "deposits": [[
-        0,
-        10000000
-      ]
-    ],
-    "withdraws": [[
-        0,
-        10050000
-      ]
-    ],
-    "yield": [],
-    "deltas": [[
-        0,[[
-            0,
-            10000000
-          ]
-        ]
-      ],[
-        1,[[
-            0,
-            -10050000
-          ]
-        ]
-      ]
-    ],
-    "required_fees": {
-      "amount": 0,
-      "asset_id": 0
-    },
-    "alt_fees_paid": {
-      "amount": 0,
-      "asset_id": 0
-    },
-    "balance": [[
+    "min_fees": [],
+    "max_fees": [],
+    "fees_paid": [[
         0,
         50000
       ]
     ],
     "delegate_vote_deltas": [],
+    "yield_claimed": [],
+    "op_deltas": [[
+        0,[[
+            0,
+            -10050000
+          ]
+        ]
+      ],[
+        1,[[
+            0,
+            10000000
+          ]
+        ]
+      ]
+    ],
+    "validation_error": null,
     "chain_location": {
       "block_num": 2,
       "trx_num": 0

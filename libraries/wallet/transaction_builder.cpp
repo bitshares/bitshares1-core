@@ -8,6 +8,8 @@
 
 #include <fc/crypto/sha256.hpp>
 
+#include <bts/blockchain/fork_blocks.hpp>
+
 using namespace bts::wallet;
 using namespace bts::wallet::detail;
 
@@ -30,8 +32,8 @@ public_key_type transaction_builder::order_key_for_account(const address& accoun
 transaction_builder& transaction_builder::release_escrow( const account_record& payer,
                                                           const address& escrow_account,
                                                           const address& released_by_address,
-                                                          share_type     amount_to_sender,
-                                                          share_type     amount_to_receiver )
+                                                          const asset& amount_to_sender,
+                                                          const asset& amount_to_receiver )
 { try {
    auto escrow_record = _wimpl->_blockchain->get_balance_record( escrow_account );
    FC_ASSERT( escrow_record.valid() );
@@ -45,7 +47,7 @@ transaction_builder& transaction_builder::release_escrow( const account_record& 
                                  trx,
                                  required_signatures );
    // fetch balance record, assert that released_by_address is a party to the contract
-   trx.release_escrow( escrow_account, released_by_address, amount_to_sender, amount_to_receiver );
+   trx.release_escrow( escrow_account, released_by_address, amount_to_sender.amount, amount_to_receiver.amount );
    if( released_by_address == address() )
    {
       required_signatures.insert( escrow_condition.sender );
@@ -198,8 +200,9 @@ transaction_builder& transaction_builder::deposit_asset(const bts::wallet::walle
    optional<public_key_type> titan_one_time_key;
    auto one_time_key = _wimpl->get_new_private_key(payer.name);
    titan_one_time_key = one_time_key.get_public_key();
-   trx.deposit_to_account(recipient.active_key(), amount, _wimpl->self->get_private_key(memo_key), memo,
-                          memo_key, one_time_key, from_memo, recipient.is_titan_account());
+
+   trx.deposit_with_encrypted_memo( amount, _wimpl->self->get_private_key( memo_key ), recipient.active_key(),
+                                    one_time_key, memo, recipient.is_titan_account() );
 
    deduct_balance(payer.owner_key, amount);
 
@@ -230,7 +233,7 @@ transaction_builder& transaction_builder::deposit_asset_to_address(const wallet_
    if( amount.amount <= 0 )
        FC_THROW_EXCEPTION( invalid_asset_amount, "Cannot deposit a negative amount!" );
 
-   trx.deposit(to_addr, amount );
+   trx.deposit_to_address( amount, to_addr );
    deduct_balance(payer.owner_key, amount);
 
    ledger_entry entry;
@@ -596,6 +599,12 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
    deduct_balance(from_account.owner_address(), cover_amount);
    trx.cover(cover_amount, order->market_index);
 
+#ifndef WIN32
+#warning [SOFTFORK] Remove this check after BTS_V0_7_0_FORK_BLOCK_NUM has passed
+#endif
+   if( _wimpl->_blockchain->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM )
+       trx.limit_fee( _wimpl->self->get_transaction_fee() );
+
    if( trx.expiration == time_point_sec() )
        trx.expiration = blockchain::now() + WALLET_DEFAULT_MARKET_TRANSACTION_EXPIRATION_SEC;
 
@@ -638,58 +647,6 @@ transaction_builder& transaction_builder::update_signing_key( const string& auth
     return *this;
 } FC_CAPTURE_AND_RETHROW( (authorizing_account_name)(delegate_name)(signing_key) ) }
 
-// TODO
-/*
-transaction_builder& transaction_builder::update_asset( const string& symbol,
-                                                        const optional<string>& name,
-                                                        const optional<string>& description,
-                                                        const optional<variant>& public_data,
-                                                        const optional<double>& maximum_share_supply,
-                                                        const optional<uint64_t>& precision,
-                                                        const share_type issuer_fee,
-                                                        double market_fee,
-                                                        uint32_t flags,
-                                                        uint32_t issuer_perms,
-                                                        const optional<account_id_type> issuer_account_id,
-                                                        uint32_t required_sigs,
-                                                        const vector<address>& authority
-                                                        )
-{ try {
-    const oasset_record asset_record = _wimpl->_blockchain->get_asset_record( symbol );
-    FC_ASSERT( asset_record.valid() );
-
-    const oaccount_record issuer_account_record = _wimpl->_blockchain->get_account_record( asset_record->issuer_account_id );
-    if( !issuer_account_record.valid() )
-        FC_THROW_EXCEPTION( unknown_account, "Unknown issuer account id!" );
-
-    account_id_type new_issuer_account_id;
-    if( issuer_account_id.valid() )
-        new_issuer_account_id = *issuer_account_id;
-    else
-        new_issuer_account_id = asset_record->issuer_account_id;
-
-    uint16_t actual_market_fee = uint16_t(-1);
-    if( market_fee >= 0 || market_fee <= BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE )
-       actual_market_fee = BTS_BLOCKCHAIN_MAX_UIA_MARKET_FEE * market_fee;
-
-    trx.update_asset_ext( asset_record->id, name, description, public_data, maximum_share_supply, precision,
-                          issuer_fee, actual_market_fee, flags, issuer_perms, new_issuer_account_id, required_sigs, authority );
-    deduct_balance( issuer_account_record->active_key(), asset() );
-
-    ledger_entry entry;
-    entry.from_account = issuer_account_record->active_key();
-    entry.to_account = issuer_account_record->active_key();
-    entry.memo = "update " + symbol + " asset";
-
-    transaction_record.ledger_entries.push_back( entry );
-
-    ilog("@n adding authority to required signatures: ${a}", ("a", asset_record->authority));
-    for( auto owner : asset_record->authority.owners )
-       required_signatures.insert( owner );
-    return *this;
-} FC_CAPTURE_AND_RETHROW( (symbol)(name)(description)(public_data)(maximum_share_supply)(precision) ) }
-*/
-
 transaction_builder& transaction_builder::finalize( const bool pay_fee, const vote_strategy strategy )
 { try {
    FC_ASSERT( !trx.operations.empty(), "Cannot finalize empty transaction" );
@@ -706,7 +663,7 @@ transaction_builder& transaction_builder::finalize( const bool pay_fee, const vo
       if( balance.amount > 0 )
       {
           const address deposit_address = order_key_for_account(outstanding_balance.first.first, account_name);
-          trx.deposit( deposit_address, balance );
+          trx.deposit_to_address( balance, deposit_address );
       }
       else if( balance.amount < 0 )
       {
@@ -769,7 +726,7 @@ void transaction_builder::pay_fee()
 
    //Choose an asset capable of paying the fee
    for( auto itr = available_balances.begin(); itr != available_balances.end(); ++itr )
-      if( _wimpl->self->asset_can_pay_fee(itr->first) &&
+      if( _wimpl->self->asset_can_pay_network_fee(itr->first) &&
           itr->second >= _wimpl->self->get_transaction_fee(itr->first).amount )
       {
          required_fee = _wimpl->self->get_transaction_fee(itr->first);
@@ -829,18 +786,9 @@ transaction_builder& transaction_builder::deposit_to_balance(const balance_id_ty
                                                              const asset& amount )
 {
     // TODO ledger entries
-    trx.deposit( to, amount );
+    trx.deposit_to_address( amount, to );
     return *this;
 }
-
-transaction_builder& transaction_builder::asset_authorize_key( const string& symbol,
-                                                               const address& owner )
-{ try {
-   const oasset_record asset_record = _wimpl->_blockchain->get_asset_record( symbol );
-   FC_ASSERT( asset_record.valid() );
-   trx.authorize_key( asset_record->id, owner );
-   return *this;
-} FC_CAPTURE_AND_RETHROW( (symbol)(owner) ) }
 
 //Most common case where the fee gets paid
 //Called when pay_fee doesn't find a positive balance in the trx to pay the fee with

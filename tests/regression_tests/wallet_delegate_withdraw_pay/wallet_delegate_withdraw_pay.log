@@ -32,7 +32,7 @@ Used to transfer some of the delegate's pay from their balance
 Parameters:
   delegate_name (account_name, required): the delegate whose pay is being cashed out
   to_account_name (account_name, required): the account that should receive the funds
-  amount_to_withdraw (real_amount, required): the amount to withdraw
+  amount_to_withdraw (string, required): the amount to withdraw
 
 Returns:
   transaction_record
@@ -41,7 +41,7 @@ aliases: pay_delegate
 default (unlocked) >>> wallet_delegate_withdraw_pay delegate42 test 30 "withdraw"
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate42          test                30.00000 XTS            withdraw pay                                0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>PENDING   delegate42          test                29.50000 XTS            withdraw pay                                0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
@@ -65,11 +65,11 @@ Active Key History:
 
 ID    NAME (* next in line)           PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
 ==========================================================================================================================================
-43    delegate42                      0.00000097 %   1        0        100.00 %      100 %    19.50000 XTS        1                       
+43    delegate42                      0.00000100 %   1        0        100.00 %      100 %    20.00000 XTS        1                       
 
 Block Signing Key: XTS6rPKwuYBhyU2wtqC4AuxQp1EGGP5To3uVz5qTj2S4w59mQViDv
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     
 ============================================================
-test                            30.00000 XTS                
+test                            29.50000 XTS                
 default (unlocked) >>> quit

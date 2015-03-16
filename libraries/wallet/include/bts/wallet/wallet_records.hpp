@@ -67,6 +67,8 @@ namespace bts { namespace wallet {
        bool             block_production_enabled = false;
        variant_object   custom_data;
 
+       bool             is_registered()const { return id > 0; }
+
        // Kept in BTS for upgrading old wallet versions; remove after 1.0
        int8_t           approved = 0;
    };

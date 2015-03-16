@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bts/blockchain/types.hpp>
+#include <fc/uint128.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -36,7 +37,7 @@ namespace bts { namespace blockchain {
    *  A price is the result of dividing 2 asset classes.  It is
    *  a 128-bit decimal fraction with denominator FC_REAL128_PRECISION
    *  together with units specifying the two asset ID's.
-   * 
+   *
    *  -1 is considered to be infinity.
    */
   struct price
@@ -45,20 +46,18 @@ namespace bts { namespace blockchain {
       static const fc::uint128& infinite();
 
       price() {}
-      price( const fc::uint128_t& r, asset_id_type base, asset_id_type quote )
-      :ratio(r),base_asset_id(base),quote_asset_id(quote){}
+      price( const fc::uint128_t& r, const asset_id_type quote_id, const asset_id_type base_id )
+      : ratio( r ), base_asset_id( base_id ), quote_asset_id( quote_id ) {}
 
-      price( const std::string& s );
-      price( double a, asset_id_type quote, asset_id_type base );
-      int set_ratio_from_string( const std::string& ratio_str );
-      std::string ratio_string()const;
-      operator std::string()const;
-      explicit operator double()const;
+      price( const string& s );
+      int set_ratio_from_string( const string& ratio_str );
+      string ratio_string()const;
+      operator string()const;
       bool is_infinite() const;
 
       fc::uint128_t ratio; // This is a DECIMAL FRACTION with denominator equal to BTS_PRICE_PRECISION
 
-      std::pair<asset_id_type,asset_id_type> asset_pair()const { return std::make_pair( quote_asset_id, base_asset_id ); }
+      pair<asset_id_type,asset_id_type> asset_pair()const { return std::make_pair( quote_asset_id, base_asset_id ); }
 
       asset_id_type base_asset_id;
       asset_id_type quote_asset_id;
@@ -132,5 +131,5 @@ namespace fc
 }
 
 #include <fc/reflect/reflect.hpp>
-FC_REFLECT( bts::blockchain::price, (ratio)(quote_asset_id)(base_asset_id) );
 FC_REFLECT( bts::blockchain::asset, (amount)(asset_id) );
+FC_REFLECT( bts::blockchain::price, (ratio)(quote_asset_id)(base_asset_id) );

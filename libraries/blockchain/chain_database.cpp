@@ -216,7 +216,7 @@ namespace bts { namespace blockchain {
               else
               {
                   auto status = self->get_market_status( key.order_price.quote_asset_id, key.order_price.base_asset_id );
-                  if( status && status->current_feed_price && *status->current_feed_price <= *order.limit_price )
+                  if( status && (*order.limit_price >= *status->current_feed_price) )
                      _shorts_at_feed.insert( key );
                  _short_limit_index.insert( std::make_pair( *order.limit_price, key ) );
               }
@@ -364,18 +364,15 @@ namespace bts { namespace blockchain {
          asset_record base_asset;
          base_asset.id = asset_id;
          base_asset.symbol = BTS_BLOCKCHAIN_SYMBOL;
+         base_asset.issuer_id = asset_record::god_issuer_id;
          base_asset.name = BTS_BLOCKCHAIN_NAME;
          base_asset.description = BTS_BLOCKCHAIN_DESCRIPTION;
-         base_asset.public_data = variant("");
-         base_asset.issuer_account_id = 0;
          base_asset.precision = BTS_BLOCKCHAIN_PRECISION;
+         base_asset.max_supply = BTS_BLOCKCHAIN_MAX_SHARES;
+         base_asset.current_supply = total_base_supply;
+         base_asset.authority_flag_permissions = 0;
          base_asset.registration_date = timestamp;
          base_asset.last_update = timestamp;
-         base_asset.current_share_supply = total_base_supply;
-         base_asset.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
-         base_asset.collected_fees = 0;
-         base_asset.flags = asset_permissions::none;
-         base_asset.issuer_permissions = asset_permissions::none;
          self->store_asset_record( base_asset );
 
          // Initialize initial market assets
@@ -385,16 +382,14 @@ namespace bts { namespace blockchain {
              asset_record rec;
              rec.id = asset_id;
              rec.symbol = asset.symbol;
+             rec.issuer_id = asset_record::market_issuer_id;
              rec.name = asset.name;
              rec.description = asset.description;
-             rec.public_data = variant("");
-             rec.issuer_account_id = asset_record::market_issuer_id;
              rec.precision = asset.precision;
+             rec.max_supply = BTS_BLOCKCHAIN_MAX_SHARES;
+             rec.authority_flag_permissions = 0;
              rec.registration_date = timestamp;
              rec.last_update = timestamp;
-             rec.current_share_supply = 0;
-             rec.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
-             rec.collected_fees = 0;
              self->store_asset_record( rec );
          }
 
@@ -708,7 +703,7 @@ namespace bts { namespace blockchain {
          uint32_t trx_num = 0;
          for( const auto& trx : block_data.user_transactions )
          {
-            transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_state.get() );
+            transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_state );
             trx_eval_state->_skip_signature_check = !self->_verify_transaction_signatures;
             trx_eval_state->evaluate( trx );
 
@@ -747,7 +742,7 @@ namespace bts { namespace blockchain {
           const share_type max_new_shares = self->get_max_delegate_pay_issued_per_block();
           const share_type accepted_new_shares = (max_new_shares * pay_rate_percent) / 100;
           FC_ASSERT( max_new_shares >= 0 && accepted_new_shares >= 0 );
-          base_asset_record->current_share_supply += accepted_new_shares;
+          base_asset_record->current_supply += accepted_new_shares;
 
           static const uint32_t blocks_per_two_weeks = 14 * BTS_BLOCKCHAIN_BLOCKS_PER_DAY;
           const share_type max_collected_fees = base_asset_record->collected_fees / blocks_per_two_weeks;
@@ -755,7 +750,7 @@ namespace bts { namespace blockchain {
           const share_type destroyed_collected_fees = max_collected_fees - accepted_collected_fees;
           FC_ASSERT( max_collected_fees >= 0 && accepted_collected_fees >= 0 && destroyed_collected_fees >= 0 );
           base_asset_record->collected_fees -= max_collected_fees;
-          base_asset_record->current_share_supply -= destroyed_collected_fees;
+          base_asset_record->current_supply -= destroyed_collected_fees;
 
           const share_type accepted_paycheck = accepted_new_shares + accepted_collected_fees;
           FC_ASSERT( accepted_paycheck >= 0 );
@@ -1057,7 +1052,7 @@ namespace bts { namespace blockchain {
                 wlog( "Block ${n} Hardfork: Recalculating supply for base asset", ("n",block_data.block_num) );
                 oasset_record base_asset_record = self->get_asset_record( asset_id_type( 0 ) );
                 FC_ASSERT( base_asset_record.valid() );
-                base_asset_record->current_share_supply = self->calculate_supplies().at( 0 );
+                base_asset_record->current_supply = self->calculate_supplies().at( 0 );
                 self->store_asset_record( *base_asset_record );
             }
             else if( block_data.block_num == BTS_V0_4_17_FORK_BLOCK_NUM
@@ -1090,7 +1085,7 @@ namespace bts { namespace blockchain {
                         }
                     }
 
-                    record.current_share_supply = supply;
+                    record.current_supply = supply;
                     record.collected_fees = fees;
                     self->store_asset_record( record );
                 }
@@ -1582,7 +1577,7 @@ namespace bts { namespace blockchain {
          my->_pending_trx_state = std::make_shared<pending_chain_state>( shared_from_this() );
 
       pending_chain_state_ptr          pend_state = std::make_shared<pending_chain_state>(my->_pending_trx_state);
-      transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>( pend_state.get() );
+      transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>( pend_state );
 
       trx_eval_state->evaluate( trx );
       const share_type fees = trx_eval_state->calculate_base_fees();
@@ -1602,7 +1597,7 @@ namespace bts { namespace blockchain {
        try
        {
           auto pending_state = std::make_shared<pending_chain_state>( shared_from_this() );
-          transaction_evaluation_state_ptr eval_state = std::make_shared<transaction_evaluation_state>( pending_state.get() );
+          transaction_evaluation_state_ptr eval_state = std::make_shared<transaction_evaluation_state>( pending_state );
 
           eval_state->evaluate( transaction );
           const share_type fees = eval_state->calculate_base_fees();
@@ -2076,7 +2071,7 @@ namespace bts { namespace blockchain {
                   // Validate transaction
                   auto pending_trx_state = std::make_shared<pending_chain_state>( pending_state );
                   {
-                      auto trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_trx_state.get() );
+                      auto trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_trx_state );
                       trx_eval_state->_enforce_canonical_signatures = config.transaction_canonical_signatures_required;
                       trx_eval_state->evaluate( new_transaction );
 
@@ -2401,7 +2396,7 @@ namespace bts { namespace blockchain {
    omarket_order chain_database::get_lowest_ask_record( const asset_id_type quote_id, const asset_id_type base_id )
    {
       omarket_order result;
-      auto itr = my->_ask_db.lower_bound( market_index_key( price(0,quote_id,base_id) ) );
+      auto itr = my->_ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id ) ) );
       if( itr.valid() )
       {
          auto market_index = itr.key();
@@ -2464,7 +2459,7 @@ namespace bts { namespace blockchain {
          else
          {
             auto status = get_market_status( key.order_price.quote_asset_id, key.order_price.base_asset_id );
-            if( status && status->current_feed_price && *status->current_feed_price <= *order.limit_price )
+            if( status && status->current_feed_price && (*order.limit_price >= *status->current_feed_price) )
                my->_shorts_at_feed.insert( key );
             // get feed and if feed insert into shorts at feed
             my->_short_limit_index.insert( std::make_pair( *order.limit_price, key ) );
@@ -2475,7 +2470,6 @@ namespace bts { namespace blockchain {
    void chain_database::store_feed_record( const feed_record& record )
    {
       chain_interface::store_feed_record(record);
-#if 0
       auto quote_id = record.value.quote_asset_id;
       auto base_id  = record.value.base_asset_id;
       auto  new_feed                   = get_active_feed_price( quote_id, base_id );
@@ -2491,10 +2485,7 @@ namespace bts { namespace blockchain {
       if( !new_feed )
       {
          // remove all shorts with limit
-         const price next_pair = (base_id+1 == quote_id)   ?
-                                 price( 0, quote_id+1, 0 ) :
-                                 price( 0, quote_id, base_id+1 );
-
+         const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );
          auto market_itr = my->_short_db.lower_bound( market_index_key( next_pair ) );
          if( market_itr.valid() )   --market_itr;
          else market_itr = my->_short_db.last();
@@ -2519,10 +2510,7 @@ namespace bts { namespace blockchain {
       if( !old_feed )
       {
          // insert all shorts with limit >= feed
-         const price next_pair = (base_id+1 == quote_id)   ?
-                                 price( 0, quote_id+1, 0 ) :
-                                 price( 0, quote_id, base_id+1 );
-
+         const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );
          auto market_itr = my->_short_db.lower_bound( market_index_key( next_pair ) );
          if( market_itr.valid() )   --market_itr;
          else market_itr = my->_short_db.last();
@@ -2534,7 +2522,7 @@ namespace bts { namespace blockchain {
                 key.order_price.base_asset_id == base_id  )
             {
                const order_record& value = market_itr.value();
-               if( !value.limit_price || *value.limit_price >  *new_feed )
+               if( !value.limit_price || (*value.limit_price >= *new_feed) )
                   my->_shorts_at_feed.insert( market_itr.key() );
             }
             else
@@ -2554,7 +2542,7 @@ namespace bts { namespace blockchain {
          {
             if( itr->first.quote_asset_id != quote_id ) break;
             if( itr->first.base_asset_id != base_id ) break;
-            if( itr->first <= *new_feed )
+            if( itr->first >= *new_feed )
                my->_shorts_at_feed.insert( itr->second );
             else
                break;
@@ -2570,14 +2558,13 @@ namespace bts { namespace blockchain {
          {
             if( itr->first.quote_asset_id != quote_id ) break;
             if( itr->first.base_asset_id != base_id ) break;
-            if( itr->first > *new_feed )
+            if( itr->first < *new_feed )
                my->_shorts_at_feed.erase( itr->second );
             else break;
             ++itr;
          };
          return;
       }
-#endif
    }
 
    void chain_database::store_collateral_record( const market_index_key& key, const collateral_record& collateral )
@@ -2994,10 +2981,10 @@ namespace bts { namespace blockchain {
       {
         history.push_back( {
                              record_itr.key().timestamp,
-                             fc::variant(string(record_itr.value().highest_bid.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
-                             fc::variant(string(record_itr.value().lowest_ask.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
-                             fc::variant(string(record_itr.value().opening_price.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
-                             fc::variant(string(record_itr.value().closing_price.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
+                             to_pretty_price( record_itr.value().highest_bid, false ),
+                             to_pretty_price( record_itr.value().lowest_ask, false ),
+                             to_pretty_price( record_itr.value().opening_price, false ),
+                             to_pretty_price( record_itr.value().closing_price, false ),
                              record_itr.value().volume
                            } );
         ++record_itr;

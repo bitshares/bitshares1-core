@@ -189,7 +189,7 @@ void wallet_impl::scan_market_transaction(
                 entry.memo = "cover proceeds";
                 record.ledger_entries.push_back( entry );
                 self->wallet_claimed_transaction( entry );
-                record.fee = mtrx.fees_collected;
+                record.fee = mtrx.base_fees;
             }
         }
 
@@ -468,9 +468,6 @@ wallet_transaction_record wallet_impl::scan_transaction(
                 break;
             case create_asset_op_type:
                 store_record |= scan_create_asset( op.as<create_asset_operation>(), *transaction_record );
-                break;
-            case update_asset_op_type:
-                // TODO
                 break;
             case issue_asset_op_type:
                 store_record |= scan_issue_asset( op.as<issue_asset_operation>(), *transaction_record );

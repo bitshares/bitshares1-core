@@ -1,5 +1,4 @@
-
-with _btstest.ClientProcess(name="alice") as p_alice:
+with _btstest.ClientProcess(name="alice", testname=testname) as p_alice:
     # create client process
     rpc_client = _btstest.RPCClient(dict(
         host="127.0.0.1",
@@ -13,4 +12,3 @@ with _btstest.ClientProcess(name="alice") as p_alice:
     # active_client = "alice"
 
     run_testdir(my_path)
-

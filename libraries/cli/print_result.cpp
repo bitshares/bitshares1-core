@@ -120,6 +120,38 @@ namespace bts { namespace cli {
       for( const auto& order_item : order_map )
           order_list.push_back( std::make_pair( order_item.first, order_item.second ) );
 
+      // sort them in a useful order before display
+      std::sort( order_list.begin(), order_list.end(),
+         []( const std::pair<order_id_type, market_order>& a,
+             const std::pair<order_id_type, market_order>& b ) -> bool
+         {
+             // sort by base_id, then quote_id, then order type, then price
+             asset_id_type a_base_id  = a.second.market_index.order_price.base_asset_id;
+             asset_id_type a_quote_id = a.second.market_index.order_price.quote_asset_id;
+             asset_id_type b_base_id  = b.second.market_index.order_price.base_asset_id;
+             asset_id_type b_quote_id = b.second.market_index.order_price.quote_asset_id;
+
+             if( a_base_id < b_base_id )
+                 return true;
+             if( a_base_id > b_base_id )
+                 return false;
+             FC_ASSERT( a_base_id == b_base_id );          // trichotomy
+
+             if( a_quote_id < b_quote_id )
+                 return true;
+             if( a_quote_id > b_quote_id )
+                 return false;
+             FC_ASSERT( a_quote_id == b_quote_id );        // trichotomy
+
+             if( a.second.type < b.second.type )
+                 return true;
+             if( a.second.type > b.second.type )
+                 return false;
+             FC_ASSERT( a.second.type == b.second.type );  // trichotomy
+             return (a.second.market_index < b.second.market_index);
+         }
+         );
+
       out << pretty_order_list( order_list, client );
     };
 
@@ -147,28 +179,36 @@ namespace bts { namespace cli {
       out << pretty_balances( balances, client );
     };
 
-    _command_to_function["wallet_transfer"]                     = &f_wallet_transfer;
-    _command_to_function["wallet_get_transaction"]              = &f_wallet_transfer;
-    _command_to_function["wallet_account_register"]             = &f_wallet_transfer;
-    _command_to_function["wallet_account_retract"]              = &f_wallet_transfer;
-    _command_to_function["wallet_account_update_registration"]  = &f_wallet_transfer;
-    _command_to_function["wallet_account_update_active_key"]    = &f_wallet_transfer;
-    _command_to_function["wallet_asset_create"]                 = &f_wallet_transfer;
-    _command_to_function["wallet_asset_issue"]                  = &f_wallet_transfer;
-    _command_to_function["wallet_delegate_withdraw_pay"]        = &f_wallet_transfer;
-    _command_to_function["wallet_market_submit_bid"]            = &f_wallet_transfer;
-    _command_to_function["wallet_market_submit_ask"]            = &f_wallet_transfer;
-    _command_to_function["wallet_market_submit_short"]          = &f_wallet_transfer;
-    _command_to_function["wallet_market_cover"]                 = &f_wallet_transfer;
-    _command_to_function["wallet_market_add_collateral"]        = &f_wallet_transfer;
-    _command_to_function["wallet_market_cancel_order"]          = &f_wallet_transfer;
-    _command_to_function["wallet_publish_version"]              = &f_wallet_transfer;
-    _command_to_function["wallet_publish_slate"]                = &f_wallet_transfer;
-    _command_to_function["wallet_publish_price_feed"]           = &f_wallet_transfer;
-    _command_to_function["wallet_publish_feeds"]                = &f_wallet_transfer;
-    _command_to_function["wallet_scan_transaction"]             = &f_wallet_transfer;
-    _command_to_function["wallet_recover_transaction"]          = &f_wallet_transfer;
-    _command_to_function["wallet_burn"]                         = &f_wallet_transfer;
+    _command_to_function["wallet_transfer"]                         = &f_wallet_transfer;
+    _command_to_function["wallet_get_transaction"]                  = &f_wallet_transfer;
+    _command_to_function["wallet_account_register"]                 = &f_wallet_transfer;
+    _command_to_function["wallet_account_retract"]                  = &f_wallet_transfer;
+    _command_to_function["wallet_account_update_registration"]      = &f_wallet_transfer;
+    _command_to_function["wallet_account_update_active_key"]        = &f_wallet_transfer;
+    _command_to_function["wallet_mia_create"]                       = &f_wallet_transfer;
+    _command_to_function["wallet_uia_create"]                       = &f_wallet_transfer;
+    _command_to_function["wallet_uia_issue"]                        = &f_wallet_transfer;
+    _command_to_function["wallet_uia_collect_fees"]                 = &f_wallet_transfer;
+    _command_to_function["wallet_uia_update_description"]           = &f_wallet_transfer;
+    _command_to_function["wallet_uia_update_supply"]                = &f_wallet_transfer;
+    _command_to_function["wallet_uia_update_fees"]                  = &f_wallet_transfer;
+    _command_to_function["wallet_uia_update_active_flags"]          = &f_wallet_transfer;
+    _command_to_function["wallet_uia_update_authority_permissions"] = &f_wallet_transfer;
+    _command_to_function["wallet_uia_update_whitelist"]             = &f_wallet_transfer;
+    _command_to_function["wallet_delegate_withdraw_pay"]            = &f_wallet_transfer;
+    _command_to_function["wallet_market_submit_bid"]                = &f_wallet_transfer;
+    _command_to_function["wallet_market_submit_ask"]                = &f_wallet_transfer;
+    _command_to_function["wallet_market_submit_short"]              = &f_wallet_transfer;
+    _command_to_function["wallet_market_cover"]                     = &f_wallet_transfer;
+    _command_to_function["wallet_market_add_collateral"]            = &f_wallet_transfer;
+    _command_to_function["wallet_market_cancel_order"]              = &f_wallet_transfer;
+    _command_to_function["wallet_publish_version"]                  = &f_wallet_transfer;
+    _command_to_function["wallet_publish_slate"]                    = &f_wallet_transfer;
+    _command_to_function["wallet_publish_price_feed"]               = &f_wallet_transfer;
+    _command_to_function["wallet_publish_feeds"]                    = &f_wallet_transfer;
+    _command_to_function["wallet_scan_transaction"]                 = &f_wallet_transfer;
+    _command_to_function["wallet_recover_transaction"]              = &f_wallet_transfer;
+    _command_to_function["wallet_burn"]                             = &f_wallet_transfer;
 
     _command_to_function["wallet_list"] = &f_wallet_list;
 
@@ -635,8 +675,8 @@ namespace bts { namespace cli {
   { try {
     auto bids_asks = result.as<std::pair<vector<market_order>, vector<market_order>>>();
 
-    out << std::string(5, ' ') << "BIDS (* Short, + Relative, - Relative Limit)"
-      << std::string(27, ' ') << " | "
+    out << std::string(29, ' ') << "BIDS (* Short)"
+      << std::string(33, ' ') << " | "
       << std::string(34, ' ') << "ASKS"
       << std::string(34, ' ') << "\n"
       << std::left << std::setw(26) << "TOTAL"
@@ -768,7 +808,7 @@ namespace bts { namespace cli {
           asset usd_quantity = quantity * *bid_itr->get_limit_price();
           out << std::left << std::setw(26) << client->get_chain()->to_pretty_asset( usd_quantity ) //bid_itr->get_quote_quantity( feed_price ))
               << std::setw(20) << client->get_chain()->to_pretty_asset(quantity)
-              << std::right << std::setw(30) << (fc::to_string(client->get_chain()->to_pretty_price_double(*bid_itr->state.limit_price)) + " " + quote_asset_record->symbol)
+              << std::right << std::setw(30) << (client->get_chain()->to_pretty_price( *bid_itr->state.limit_price, false ) + " " + quote_asset_record->symbol)
               << "*";
         }
         else
@@ -776,7 +816,7 @@ namespace bts { namespace cli {
              out << std::left << std::setw(26) << client->get_chain()->to_pretty_asset(bid_itr->get_balance())
                  << std::setw(20) << client->get_chain()->to_pretty_asset(bid_itr->get_quantity( feed_price ))
                  << std::right << std::setw(30) <<
-                     (fc::to_string(client->get_chain()->to_pretty_price_double(bid_itr->get_price( feed_price ))) + " " + quote_asset_record->symbol);
+                     (client->get_chain()->to_pretty_price( bid_itr->get_price( feed_price ), false ) + " " + quote_asset_record->symbol);
              if(is_short_order)
                out << "*";
              else
@@ -795,7 +835,7 @@ namespace bts { namespace cli {
         {
           auto abs_price =  ask_itr->get_price( feed_price );
           out << " ";
-          out << std::left << std::setw(30) << (fc::to_string(client->get_chain()->to_pretty_price_double(abs_price)) + " " + quote_asset_record->symbol)
+          out << std::left << std::setw(30) << (client->get_chain()->to_pretty_price( abs_price, false ) + " " + quote_asset_record->symbol)
    //         << std::left << std::setw(30) << (fc::to_string(client->get_chain()->to_pretty_price_double(ask_itr->get_price(feed_price))) + " " + quote_asset_record->symbol)
     //        << std::left << std::setw(30) << (fc::to_string(client->get_chain()->to_pretty_price_double(feed_price)) + " " + quote_asset_record->symbol)
             << std::right << std::setw(23) << client->get_chain()->to_pretty_asset(ask_itr->get_quantity( feed_price ))
@@ -859,7 +899,7 @@ namespace bts { namespace cli {
             ++ask_itr;
           if(ask_itr != bids_asks.second.rend())
           {
-            out << std::left << std::setw(30) << std::setprecision(8) << (fc::to_string(client->get_chain()->to_pretty_price_double(ask_itr->get_price( feed_price ))) + " " + quote_asset_record->symbol)
+            out << std::left << std::setw(30) << std::setprecision(8) << (client->get_chain()->to_pretty_price( ask_itr->get_price( feed_price ), false ) + " " + quote_asset_record->symbol)
               << std::right << std::setw(23) << client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
               << std::right << std::setw(26) << client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
             if(FILTER_OUTPUT_FOR_TESTS)

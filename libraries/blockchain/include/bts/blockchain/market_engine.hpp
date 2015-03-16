@@ -21,11 +21,14 @@ namespace bts { namespace blockchain { namespace detail {
     void pay_current_short( market_transaction& mtrx,
                             asset_record& quote_asset,
                             asset_record& base_asset );
-    void pay_current_bid( const market_transaction& mtrx,
+
+    void pay_current_bid( market_transaction& mtrx,
                           asset_record& base,
                           asset_record& quote_asset );
+
     void pay_current_cover( market_transaction& mtrx, asset_record& quote_asset );
-    void pay_current_ask( const market_transaction& mtrx,
+
+    void pay_current_ask( market_transaction& mtrx,
                           asset_record& base,
                           asset_record& quote_asset );
 
@@ -42,7 +45,7 @@ namespace bts { namespace blockchain { namespace detail {
         return BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC - (*_current_ask->expiration - _pending_state->now()).to_seconds();
     }
 
-    price minimum_ask()const
+    price minimum_cover_ask_price()const
     {
         FC_ASSERT( _feed_price.valid() );
         price min_ask = *_feed_price;
@@ -79,6 +82,7 @@ namespace bts { namespace blockchain { namespace detail {
     oprice                        _feed_price;
 
     int                           _orders_filled = 0;
+    int                           _current_pass;
 
   public:
     vector<market_transaction>    _market_transactions;
@@ -86,11 +90,10 @@ namespace bts { namespace blockchain { namespace detail {
   private:
     bts::db::cached_level_map< market_index_key, order_record >::iterator         _bid_itr;
     bts::db::cached_level_map< market_index_key, order_record >::iterator         _ask_itr;
-    bts::db::cached_level_map< market_index_key, order_record >::iterator         _short_itr;
     std::set< market_index_key >::reverse_iterator                                _short_at_feed_itr;
     std::set< pair<price,market_index_key> >::reverse_iterator                    _short_at_limit_itr;
     bts::db::cached_level_map< market_index_key, collateral_record >::iterator    _collateral_itr;
-    std::set< expiration_index >::iterator                   _collateral_expiration_itr;
+    std::set< expiration_index >::iterator                                        _collateral_expiration_itr;
   };
 
 } } } // end namespace bts::blockchain::detail

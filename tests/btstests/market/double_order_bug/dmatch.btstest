@@ -1,0 +1,408 @@
+>>> !client alice
+>>> !expect disable
+>>> !showmatch enable
+>>> debug_start_simulated_time "20140620T144030.000000"
+OK
+>>> wallet_create default "password"
+OK
+>>> wallet_set_automatic_backups false
+false
+>>> debug_deterministic_private_keys 0 101 init true
+[
+  "5JZAeEjgszF9kXVpFsAK9wsVer2L3z9WwY63DT7p9kLNZUFYyRQ",
+  "5KegApb8VGr1CAtUJH4a41KGqX1ZMK2ik64YCjRD3LR95k7LJAS",
+  "5KBmzDrKReUgZGzUYQpFzSei8FvXgXx89VtR3cN14sP5FMsdh6B",
+  "5JBMRKhodYLM1NFTgEnawW77pyeesHdesmZ8kkhhDwAeG7Tz9g8",
+  "5KcTU6qQtLVrKv7nGq5kRiwPH5gUyjLSxYfAp9ZBUZjmq3wZYtA",
+  "5K2CLJtRcz7WrkUqHdM5qZuP5QRmQNcpvMPxAGMDx9H6XRVXBcU",
+  "5KTtTQ3PQXWBVjjmY9MnSgPz1u88cz3an2yWXvoFrN6XTJiKSfx",
+  "5KGoE3ZMKPTmFXqPPiwCZ2gu2WFZc3zQzbBdGQdR6p2WSthZLPs",
+  "5KPAnQpTUrETF2eoTWMswnXiP6ysH92EFvjeZBtaYo4irm4SLuG",
+  "5KgT72VtpMdmayVSXo94BYotKdof43WWzaQfDuM2MEAw6zFkFpV",
+  "5JAcdKQdw2jUMFrZLqzRWAG2M5W15Wc6VfENbmsUUX8Wy2p5Zdm",
+  "5JWgBth76GFqK9zZsiSv2JcdgY8xrw7Vqh7KUMGAPvvERDjVCYi",
+  "5KHCnJJD3qG55dLMQQV38CJiz2JHttowqBSLDmS34u9FP9ZWYGM",
+  "5JtW5qeAonXVKg3DdJbAvLKDBQ8Rn1aPv8PA5MJ4Cx38EbirdNY",
+  "5KB2BGnoTSyMTa5R7Z6TpEkKcDAU7Lw5WibK54zVGeanxQ8mRrb",
+  "5J9bhV3fh7JnTyCkcpK9LNGgPJjdTq6iVk9K5rDmyjjWMiguPnN",
+  "5JeD5TE8LYGx47WZABX6nvFDQLHxzJznWaeu8skhrbQr5aKPjZe",
+  "5JyMRc2otmTYMwsHadE8QwVMRL1rXqncRLdykRY4hd28iXfDdn4",
+  "5KFKWwnoc88yjdChcpohWPJ8Z9Xp4eYMgsohYt3i93Wg3JNGru5",
+  "5JRNP1o8XGvmpD278LWNsR1dMrE5ctSvWtkC6s87QZKdPjCUYBp",
+  "5JDpgkR6JgaEHYYhLA7D1FP5rgrZbkhrhWSw7GkkmPRezqD4Dsi",
+  "5KhsnAKnPBBcgPVfgcyvZftDJPTSGwNQgtasaauZk1DpyaCmzhi",
+  "5KNQ9RYofA5NQ9iDETN9aaMBcf6N9X8MN9wY5UEpNmnxBwSf68f",
+  "5JUM6LgGLNgjPPqHv1qufr926M3smzUx3PTsVQTjAjEtGp1PETq",
+  "5KfkWSrwSPJ1rJLwh5D6WsqpJioGjeNtprSrji1sNE2y6A1t42q",
+  "5JJg6rA1R9aAU5eQtbqyjAutz9X3LPXMTdMZvfjK8WEhj8HZRL5",
+  "5JXxinYk49CopythyukJ4VvVAWwN3Fm6R8KWJeHw5zjKgFoZfqF",
+  "5JCAWEbqL6gGbTfwZ14Cnop7irJzpgZSz5Vyb9bcpsQ4c34p7T4",
+  "5JMRxfRW2q7hP1m5dM6fD8493rUW7ySWiT6stHuXexHth4i4pbY",
+  "5KWXgFZzNgUqCTGy3u48o7btRCEJEEC4tAYQYoVPB7mKczdLKjj",
+  "5KbYfjXKCTzZ9Df9MMEZNkrDeXsnBjSWdJjpWFTVEHd1Yzvpvwn",
+  "5KAffGcds8Ce64xuZixTLqPbnmjDtC5DdgJWM2HUKWz9auFALCq",
+  "5KbmwjZ9Asm5eEgTrVUEbNcHckPvtQpiYxCW6GL32cJawbRyt8i",
+  "5HscNbXiAEx2nTqFbvFeqHB4CkNbqusEqbzbGeVsdGMboAprfdS",
+  "5KSWch7TNarPGH16TsGELJzQkAuJjJviY7XG9MVefV5gAuvFoUd",
+  "5JzPDN9kQHdtvotv5JvvKcg1oYdTEzSbypR4d2bpjjzXXpzN7PL",
+  "5K8sZhZR3wTURZ2Qx4JKRAL5UJfKot4uCfKEDH2MM7BWNhyzz2y",
+  "5J7JKQmawVr8vRC5D5aPGdjQYCQTUBvMGAmA1xY78VWKjMihmx9",
+  "5Jjff8qdveKb9gKeVNk4Ji898HjQGuffg4KGkkNKnhdD2HqvTBj",
+  "5JAMkpmgaGohxjNoPsaDMFP8fc7Zr6FDgWDsPZiNQpwyEKYSKB7",
+  "5JMXAdAfwVCANRaxES6y7GXgL4PtonoC6QHWZ37QYwATomJbPas",
+  "5JMuaSmVr6QFYF9w2Eaz6HrVr1bD4iBjs5Trakq7BqMjnjhLkFW",
+  "5KVKFV4nAsy8WLpSDndVE53oGntqniHpCw4hUTpFctGhPUrB6ih",
+  "5Jfvbsrd5HhyHjhXGB61e1UuTkBt3hdGHBFmnZ9b3fXwzR8s96z",
+  "5K4KWf9qA5ggtMQVR4owcd8RXtTnkiBcquzGbLxNyaUEkRB7nMa",
+  "5KSDjYGbr9YfzthnFg4Dibs8fUEsx65yNwGefe31VL9zMEhMBK7",
+  "5JYiMWqi3nVfs7bisdRZ3eZ8srweNaMwDscj2vvNUrdy3QUjNXu",
+  "5K5tsbyEyEd56yPreWS1fREb6TMC8S26NjVSYcx4MdKEe58a8q5",
+  "5HqJeJ2x7Wi9w6iMHeAZzrXfUgsoSsU5QCizrPUqLTj3thQ2BnP",
+  "5HsPLmErdrtUnosD4fMX7XDssLTAMcuzfaZRXLM7zQXaujsfFtZ",
+  "5JAacqeSxZdHauwJgRKBfEgbtpZZTjRZ8F9pBsWz2dmph62KnSY",
+  "5JUS8sAENFhts4MdTJXPHYKNTX6Cjhxn2PJMZFJXAHpRokS83Hv",
+  "5KdGBuWRWtiY7RmSaVpNMDzur34ULWKSsETVr8NH4dMssiiiyTB",
+  "5K5G9FXMLVaM52jjECKhGNjQkXwLcDgLPR3H894cREfEBjTiq7B",
+  "5JN16hTgDUtszzyD6BeCffB5zRRVHPLi8MJjHiirJkSVcbhC3tu",
+  "5KGVZmGdGdaPHRecMvEyo71YEHvrNLM6hTh2xAdT6aczhDDaCh6",
+  "5HqbVJNMBxSyZZF2Awjkqz7HadH77yuxtJ6f9wNrTxjZsmrJ41u",
+  "5JBUu6QscBL4XAGhqueYEHMbJMvuDt6ZsVDPMbZ5tSWzmRnoJ5g",
+  "5K8p6bvdyhsda7daQt5YAnmneJpXL2M3QXgF2o1T4fLUnnA5H3x",
+  "5KdJNEQrcQ2Ph7uUVsRG3LXCB5JgzDtrFJbmW8C9ngrFhFhfSDb",
+  "5HpaR8erUVXdCd6FdvzePoAV1cQxpUimyULs9RBu8qRZ6TFN5kR",
+  "5KGT4eBVexgKXWDpM9zqU29A7DGkmbDAvMPsmHv1bdteEikMQAT",
+  "5K68rPoJ9qs2WX7TcaViPbUeAnJ6Kv1nMzMYiUgzMef72EJf9w2",
+  "5JXYRrENUrPPcV5gdQcSNreeVhTmZ8qKK5Yu5MzsrAbcqChm92H",
+  "5KMPxS1JatKrZSHDbV3FTEenPUWfHjppPsbcdw1njeuZLLgiugg",
+  "5JJFNYwFfLGfVgDNCz7cwonRgRj6PHXnCVMGKYTuMzaC1owk4oz",
+  "5JQEBKeQ4KNHnRLuEb2jWpccgC9PV5YvV9beQa5MEZziVCFLnkR",
+  "5KMFVoYt6zKg3w3UcpyYnWtp286hUoocMHposDP9i9ztf6dj6DK",
+  "5JXU3RCZtd9vfAA1SVEMMddLi6JzN86WEGpabTHEXbUW5fxPDsW",
+  "5JhbkMZTBuAcC49tQQeTiP93AbvGH6gpnF3kv5YpLEsDn4VXKjE",
+  "5JraBp46bTGoFucvB612bGcPCAEy75GaCzCJYXaG2DJqSB3J7fM",
+  "5JrD7eaTubfSeDFPfbRv2MRiWsBGN3eLNbdiGcC8sx8idSfWQPr",
+  "5KDdvsvWnD7HbqxFABb4EgjwGdMsHPf3pbTxm88H131BtjyyVGf",
+  "5J5HNwxuz39LF6c4WmjxNdVqP1sX4TyCjVrnwxxVq5wV7EGDFMF",
+  "5JEh3wugfJ3a71VJTCxKvxC7xSzc8dtGWSehkXCHrp4eDf3Ssqw",
+  "5HqwRpUgtS58j79myW7uJTw2W53a9yRGZc8Dg9z5TefGjUb71rq",
+  "5KLzChMtQGLiS5FdDja3LdyQCxjgqQCZoijKgz8kLoLzKUwNo6o",
+  "5JB3SQnPNsNRbgDuVbnGSymkXHPFynXv16cE1ufTUMeuYoFwpuQ",
+  "5KiJviXNqhDKZDJWx56VYJFh8buRyQpXRFpVmyuwhjxzsNZJqs6",
+  "5Kfa1KBFVVUFV5ZiamRN9MmNkrvkGKKyTdDqoE2ENVTsXA5tCac",
+  "5KL25F84wJLXa5YzMHSPs8Qhny7G1UrZZep5NJJkKN1YB8gBeWv",
+  "5KTufBdpVVTpEFEWjUdgtJpZwisRFGPwTBdkKiWeroES3rJbNuF",
+  "5KjBrjz1JPNzhBg9EzVpNWH8wg6LtqMwNNCi5BHEGNiqi3fzpHq",
+  "5HsmSJ69GFcv4M3BVvLHCZy4iCXTecNqA9yNauL9R4VXszvC322",
+  "5HvTdYJcjKMZmYEwDXYYnD2U1osq6bt1mU9uGs6QSNowMCix7JK",
+  "5JWTeRM5d7BKPDADqNGGqwEJYVNqonvY1ZxGqwoNK5xoVV2hCt2",
+  "5KWpUb3VvgJokafN1Wa4krwwicGTXGikzR8XH8uZacYDGyNftKs",
+  "5KHD96HLXrojEYx6FDaBbnMTQ1iowVpaueX5RoAQQpQPikXLsyN",
+  "5K5XuW79PKFgF4dNKWyrh76D7u6BRAVaapkTFFfqTHGpURNSx3B",
+  "5K5923UPrFUqTwixSB9v34ANkcHr3tHsJHT1ntcHUxYgUKQqtMU",
+  "5KJrR5ots76J8bJVaxRrM7V1TjLauktzHVCs1EvkmaCPzfdnYgx",
+  "5KkbYwNytHemnTrkbPkhLDjfUH3gDH7LYhkD4U7btNo69v3F9eh",
+  "5JHCiuq87gJKKsBa9DHffFQ3BoPiL78i4uyKSVtsfCmu2r96RdB",
+  "5JUU9gjVPkHUCafbSt1c3v1rFmgeNDUrjBiBtqXDHX7eBPLmoxi",
+  "5HqDiZVXZLUtjiynLTGx2Xzu5BFwhkH3jEJ2EjG2pKpuSHqA22u",
+  "5KQE8tgfpzSRBDahTVKwMdAwnBcsrSSVvi4c99KXxAEe817mbRR",
+  "5KicXhL73YeuTK9zx5sfPCGtdVNbzxPrbyHHkFQqpYVFvfr8nBg",
+  "5K8bNAM4LhhbLsLo8WpeSeKnWbzDzD4HM3sUWhYRqofUi7ABcD2",
+  "5HvkUPqPBNFLwcXubukbEuSX1yc6VHULtibEPuN2i6SL76FXDTW",
+  "5K69KCSiNu5qDkxVfz3n2vT3eTni5sNAP4BNXsr1CCqMGwat7pz",
+  "5KZw3WpATeW1JdthN6jpdEAwJsgdupgF2CRovbjw4rCE9xvCZp7"
+]
+>>> wallet_delegate_set_block_production ALL true
+OK
+>>> wallet_set_transaction_scanning true
+true
+>>> debug_wait_for_block_by_number 1
+#{
+Get 300,000 genesis XTS for Alice and Bob
+}#
+OK
+>>> debug_deterministic_private_keys 0 3 alice true alice true true
+[
+  "5HpUwrtzSztqQpJxVHLsrZkVzVjVv9nUXeauYeeSxguzcmpgRcK",
+  "5JuNNRpMexdnkHMn5RocYnKePjmHB8HHoaEuYWFHxC8eH4ELWi7",
+  "5KgGWyx1aXqT2EQFiipCCfyG3CZhNbEUwYmNDFBa7YWrT9thvXn"
+]
+>>> debug_deterministic_private_keys 0 3 bob true bob true true
+
+#{
+####################################################################
+
+The following scenarios are covered by this test:
+
+- Short matching partially against an ask.
+- Short matching fully against an ask.
+- Bid matching partially against existing ask.
+- Bid matching exactly against existing ask.
+- Bid matching overstepping an ask.
+
+- Short below feed partial match.
+- Short below feed full match.
+- Short at feed prioritized over short below feed when IR at feed is higher
+- Short at feed prioritized over short below feed when IR at feed is lower
+
+- Shorts at two different limits prioritized based on IR when at feed
+- Shorts at two different limits prioritized based on limits when not at feed
+
+- Short match against exposed cover.
+- Bid match against exposed cover.
+- Short match against latent (expiring) cover.
+- Bid match against latent (expiring) cover.
+- Short match against latent (margin called) cover.
+- Bid match against latent (margin called) cover.
+
+####################################################################
+}#
+
+#{
+####################################################################
+
+Short matching partially / fully against an ask
+
+Alice shorts some BitUSD and Bob buys it in two orders.  BitUSD
+requires a price feed.  The wallet_publish_feeds_multi_experimental
+command publishes the price feed for all delegate accounts.
+
+####################################################################
+}#
+
+[
+  "5JBYhWpCEr7vE4bVqkUsDuEE2V3xAV6ABhueZEnKRAxi89ZE6Ad",
+  "5JmdXaRirZ2N4Tt374pBHsLmcvbR4MNLznQ3DWT1m857LoTKmEG",
+  "5JEwtPbA1yimJDsrnLAt3J3tzcBYpok9tCuoKabB9bs29Bo3ZCX"
+]
+>>> !expect enable
+>>> !showmatch disable
+>>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
+${ expect_json() }$
+>>> !showmatch enable
+>>> balance alice
+ACCOUNT                         BALANCE
+============================================================
+alice                           300,000.00000 XTS
+>>> balance bob
+ACCOUNT                         BALANCE
+============================================================
+bob                             300,000.00000 XTS
+>>> wallet_market_submit_short alice 100000 XTS 0 USD 0.02
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID
+======================================================================================================================================================================
+${ expect_isotime() }$~{2014-06-20T14:40:30}~ PENDING   alice               alice               100,000.00000 XTS       short USD @ 0.% APR                         0.50000 XTS         ${ regex("[0-9a-f]{8}") }$~{580414d8}~
+>>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+No Orders
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+No Orders
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1,000.0000 USD           50,000.00000 XTS                         0.000000 % |
+Maximum Short Price: 0.02 USD / XTS
+>>> wallet_market_submit_ask bob 20000 XTS 0.02 USD
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+${ expect_isotime() }$~{2014-06-20T14:40:50}~ PENDING   bob                 bob                 20,000.00000 XTS        sell XTS @ 0.02 USD / XTS                   0.50000 XTS         ${ regex("[0-9a-f]{8}") }$~{ff920715}~
+>>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1,000.0000 USD            50,000.00000 XTS                        0.000000 % | 
+Maximum Short Price: 0.02 USD / XTS     
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.020000000000 USD                   20,000.00000 XTS              400.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1,000.0000 USD            50,000.00000 XTS                        0.000000 % | 
+Maximum Short Price: 0.02 USD / XTS     
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             |
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN                                  
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+600.0000 USD              30,000.00000 XTS                        0.000000 % | 0.013333333333 USD                   30,000.00000 XTS              400.0000 USD              ${ expect_reltime() }$~{36 weeks ago}~   60,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS     
+
+#{
+
+Here is where things get wonky.
+
+ >> balance alice
+ >> balance bob
+ >> wallet_market_submit_ask bob 30000 XTS 0.02 USD
+ >> wallet_market_submit_ask bob 30000 XTS 0.02 USD
+ >> debug_advance_time 1 block
+ >> debug_wait_for_block_by_number 1 rlast
+ >> blockchain_market_order_book USD XTS
+ >> debug_advance_time 1 block
+ >> debug_wait_for_block_by_number 1 rlast
+ >> blockchain_market_order_book USD XTS
+ >> debug_advance_time 1 block
+ >> debug_wait_for_block_by_number 1 rlast
+ >> blockchain_market_order_book USD XTS
+ >> balance alice
+ >> balance bob
+ >> wallet_transfer 1600 USD bob alice
+ >> debug_advance_time 1 block
+ >> debug_wait_for_block_by_number 1 rlast
+ >> balance alice
+ >> balance bob
+ >> debug_advance_time 1 block
+ >> debug_wait_for_block_by_number 1 rlast
+ >> balance alice
+ >> balance bob
+
+}#
+
+>>> balance alice
+ACCOUNT                         BALANCE
+============================================================
+alice                           199,999.50000 XTS
+>>> balance bob
+ACCOUNT                         BALANCE
+============================================================
+bob                             279,999.50000 XTS
+                                400.0000 USD
+>>> wallet_market_submit_ask bob 30000 XTS 0.02 USD
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID
+======================================================================================================================================================================
+2014-06-20T14:41:10 PENDING   bob                 bob                 30,000.00000 XTS        sell XTS @ 0.02 USD / XTS                   0.50000 XTS         regex("[0-9a-f]{8}")
+>>> wallet_market_submit_ask bob 30000 XTS 0.02 USD
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID
+======================================================================================================================================================================
+2014-06-20T14:41:10 PENDING   bob                 bob                 30,000.00000 XTS        sell XTS @ 0.02 USD / XTS                   0.50000 XTS         regex("[0-9a-f]{8}")
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.020000000000 USD                   30,000.00000 XTS              600.0000 USD
+                                                                             | 0.020000000000 USD                   30,000.00000 XTS              600.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+600.0000 USD              30,000.00000 XTS                        0.000000 % | 0.013333333333 USD                   30,000.00000 XTS              400.0000 USD              ${ expect_reltime() }$   60,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> blockchain_market_order_book USD XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.020000000000 USD                   30,000.00000 XTS              600.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.013333333333 USD                   75,000.00000 XTS            1,000.0000 USD              ${ expect_reltime() }$   150,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> blockchain_market_order_book USD XTS  
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.020000000000 USD                   30,000.00000 XTS              600.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.013333333333 USD                   75,000.00000 XTS            1,000.0000 USD              ${ expect_reltime() }$   150,000.00000 XTS
+Maximum Short Price: 0.02 USD / XTS
+>>> balance alice
+ACCOUNT                         BALANCE   
+============================================================
+alice                           199,999.50000 XTS
+>>> balance bob
+ACCOUNT                         BALANCE   
+============================================================
+bob                             219,998.50000 XTS
+                                1,000.0000 USD
+>>> debug_trap
+>>> wallet_transfer 1000 USD bob alice
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID
+======================================================================================================================================================================
+${ expect_isotime() }$ PENDING   bob                 alice               1,000.0000 USD                                                      0.50000 XTS         ${ regex("[0-9a-f]{8}") }$
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> balance alice
+ACCOUNT                         BALANCE   
+============================================================
+alice                           199,999.50000 XTS
+                                1,000.0000 USD
+>>> balance bob
+ACCOUNT                         BALANCE   
+============================================================
+bob                             219,998.00000 XTS
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> balance alice
+ACCOUNT                         BALANCE   
+============================================================
+alice                           199,999.50000 XTS
+                                1,000.0000 USD
+>>> balance bob
+ACCOUNT                         BALANCE   
+============================================================
+bob                             219,998.00000 XTS
+>>> wallet_market_order_list USD XTS
+TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER
+==================================================================================================================================================================
+cover_order         120,000.00000 XTS   0.01333333333333333 USD / XTS 1,600.0000 USD      1,599.9999 USD      240,000.00000 XTS   NONE                ${ regex("(?P<cover_txid>[0-9a-f]+)") }$   XTS${ regex("[0-9a-zA-Z]+") }$
+>>> !expect disable
+>>> wallet_market_cover alice 1600 USD ${ cover_txid }$
+>>> quit
+

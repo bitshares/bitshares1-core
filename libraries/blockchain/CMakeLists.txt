@@ -63,6 +63,7 @@ add_library( bts_blockchain
              market_operations_v2.cpp
              market_operations_v3.cpp
              market_operations_v4.cpp
+             market_operations_v5.cpp
              market_operations.cpp
              data_operations.cpp
 

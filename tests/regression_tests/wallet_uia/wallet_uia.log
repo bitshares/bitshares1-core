@@ -5,30 +5,27 @@ default (unlocked) >>> wallet_account_create test2
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate0           test                100.00000 XTS                                                       0.50000 XTS         <d-ign></d-ign>
+<d-ign>2014-06-20T14:40:30</d-ign>PENDING   delegate0           test                100.00000 XTS                                                       0.50000 XTS         <d-ign> 28bd6c38</d-ign>
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
-default (unlocked) >>> help wallet_asset_create
+default (unlocked) >>> help wallet_uia_create
 Usage:
-wallet_asset_create <symbol> <asset_name> <issuer_name> <description> <maximum_share_supply> <precision> [public_data] [is_market_issued]   Creates a new user issued asset
-Creates a new user issued asset
+wallet_uia_create <issuer_account> <symbol> <name> <description> <max_supply_with_trailing_decimals>   Create a new user-issued asset on the blockchain. Warning: creation fees can be very high!
+Create a new user-issued asset on the blockchain. Warning: creation fees can be very high!
 
 Parameters:
-  symbol (asset_symbol, required): the ticker symbol for the new asset
-  asset_name (string, required): the name of the asset
-  issuer_name (string, required): the name of the issuer of the asset
-  description (string, required): a description of the asset
-  maximum_share_supply (real_amount, required): the maximum number of shares of the asset
-  precision (uint64_t, required): defines where the decimal should be displayed, must be a power of 10
-  public_data (json_variant, optional, defaults to null): arbitrary data attached to the asset
-  is_market_issued (bool, optional, defaults to false): creation of a new BitAsset that is created by shorting
+  issuer_account (string, required): The registered account name that will pay the creation fee and control the new asset
+  symbol (asset_symbol, required): A unique symbol that will represent the new asset. Short symbols are very expensive!
+  name (string, required): A human-readable name for the new asset
+  description (string, required): A human-readable description of the new asset
+  max_supply_with_trailing_decimals (string, required): Choose the max share supply and max share divisibility for the new asset. For example: 10000000000.00000 or 12345.6789
 
 Returns:
   transaction_record
-default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATING AN ASSET" 500 100
+default (unlocked) >>> wallet_uia_create delegate0 XMO DIGITAL_DEVICE1 "CREATING AN ASSET" 500.00
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.50000 XTS   <d-ign></d-ign>
+<d-ign>2014-06-20T14:40:30</d-ign>PENDING   delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.00000 XTS   <d-ign> e2973d09</d-ign>
 default (unlocked) >>> wallet_account_balance test
 ACCOUNT                         BALANCE                     
 ============================================================
@@ -38,36 +35,60 @@ OK
 default (unlocked) >>> blockchain_list_blocks
 HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME  RANDOM SEED                             
 =============================================================================================================================================
-2       <d-ign></d-ign><d-ign></d-ign>1       392     <d-ign></d-ign><d-ign></d-ign><d-ign></d-ign>
-1       <d-ign></d-ign><d-ign></d-ign>1       410     <d-ign></d-ign><d-ign></d-ign><d-ign></d-ign>
+2       <d-ign>2014-06-20T14:40:40</d-ign><d-ign>                         delegate43</d-ign>1       392     <d-ign> 0</d-ign><d-ign>          0.000725</d-ign><d-ign>                                 651f4a46471d05b65eb769e890392640878b3f97</d-ign>
+1       <d-ign>2014-06-20T14:40:30</d-ign><d-ign>                         delegate42</d-ign>1       410     <d-ign> 0</d-ign><d-ign>          0.000956</d-ign><d-ign>                                 2322c73ae804adc5c3e9ec4d188eee59871e4604</d-ign>
 default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
 1     XMO    DIGITAL_DEVICE1         CREATING AN ASSET                               delegate0                       0.00 %    0.00 XMO                    
 0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,099.99901 XTS     
-default (unlocked) >>> help wallet_asset_issue
+default (unlocked) >>> blockchain_get_asset XMO
+{
+  "id": 1,
+  "symbol": "XMO",
+  "issuer_id": 1,
+  "authority": {
+    "required": 1,
+    "owners": [
+      "XTSDG4CLPoePEPHaRaDszT4ix8gA1ghTb6FF"
+    ]
+  },
+  "authority_flag_permissions": 4294967295,
+  "active_flags": 0,
+  "whitelist": [],
+  "name": "DIGITAL_DEVICE1",
+  "description": "CREATING AN ASSET",
+  "public_data": null,
+  "precision": 100,
+  "max_supply": 50000,
+  "withdrawal_fee": 0,
+  "market_fee_rate": 0,
+  "collected_fees": 0,
+  "current_supply": 0,
+  "registration_date": "2014-06-20T14:40:30",
+  "last_update": "2014-06-20T14:40:30"
+}
+default (unlocked) >>> help wallet_uia_issue
 Usage:
-wallet_asset_issue <amount> <symbol> <to_account_name> [memo_message]                                 Issues new shares of a given asset type
-Issues new shares of a given asset type
-
-The asset being issued must have been created via wallet_asset_create in a previous block.
+wallet_uia_issue <asset_amount> <asset_symbol> <recipient> [memo_message]                             Issue shares of a user-issued asset to the specified recipient
+Issue shares of a user-issued asset to the specified recipient
 
 Parameters:
-  amount (real_amount, required): the amount of shares to issue
-  symbol (asset_symbol, required): the ticker symbol for asset
-  to_account_name (account_name, required): the name of the account to receive the shares
-  memo_message (string, optional, defaults to ""): the memo to send to the receiver
+  asset_amount (string, required): the amount of shares of the asset to issue
+  asset_symbol (asset_symbol, required): specify the unique symbol of the asset
+  recipient (string, required): the account name, public key, address, btc address, or contact label (prefixed by "label:") which will receive the funds
+  memo_message (string, optional, defaults to ""): a memo to send if the recipient is an account
 
 Returns:
   transaction_record
-default (unlocked) >>> wallet_asset_issue 10 XMO test "Sending some assets"
+default (unlocked) >>> wallet_uia_issue 10 XMO test "Sending some assets"
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate0           test                10.00 XMO               issue 10.00 XMO                             0.50000 XTS         <d-ign></d-ign>
-default (unlocked) >>> wallet_asset_issue 20 XMO test2 "Sending some assets"
+<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate0           test                10.00 XMO               Sending some assets                         0.50000 XTS         <d-ign> 4bed9686</d-ign>
+default (unlocked) >>> wallet_uia_issue 20 XMO test2 "Sending some assets"
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate0           test2               20.00 XMO               issue 20.00 XMO                             0.50000 XTS         <d-ign></d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate0           test2               20.00 XMO               Sending some assets                         0.50000 XTS         <d-ign> 0d86ed61</d-ign>
 default (unlocked) >>> debug_wait_for_block_by_number 2 relative
 OK
 default (unlocked) >>> blockchain_list_assets XMO
@@ -109,4 +130,29 @@ default (unlocked) >>> blockchain_calculate_supply XMO
 30.00 XMO
 default (unlocked) >>> blockchain_calculate_supply XTS
 2,000,000,199.99901 XTS
+default (unlocked) >>> help blockchain_generate_issuance_map
+Usage:
+blockchain_generate_issuance_map <symbol> <filename>                                                  A utility to help verify UIA distribution. Returns a snapshot map of all issuances for a particular UIA.
+A utility to help verify UIA distribution. Returns a snapshot map of all issuances for a particular UIA.
+
+Parameters:
+  symbol (string, required): the UIA for which to compute issuance map
+  filename (string, required): filename to save snapshot to
+
+Returns:
+  void
+default (unlocked) >>> blockchain_generate_issuance_map XMO snapshot_map.json
+OK
+default (unlocked) >>> help blockchain_generate_snapshot
+Usage:
+blockchain_generate_snapshot <filename>                                                               Save snapshot of current base asset balances to specified file
+Save snapshot of current base asset balances to specified file
+
+Parameters:
+  filename (string, required): filename to save snapshot to
+
+Returns:
+  void
+default (unlocked) >>> blockchain_generate_snapshot snapshot_base.json
+OK
 default (unlocked) >>> quit

@@ -1,0 +1,268 @@
+>>> !client alice
+>>> !expect disable
+>>> !showmatch enable
+>>> !showlineno enable
+>>> debug_start_simulated_time "20140620T144030.000000"
+>>> wallet_create default "password"
+>>> wallet_set_automatic_backups false
+>>> debug_deterministic_private_keys 0 101 init true
+>>> wallet_delegate_set_block_production ALL true
+>>> wallet_set_transaction_scanning true
+>>> debug_wait_for_block_by_number 1
+>>> debug_deterministic_private_keys 0 1 angel true delegate0 true true
+>>> !expect enable
+>>> wallet_account_create testaccount1
+${ regex(r'"XTS[0-9a-zA-Z]+"') }$
+>>> wallet_account_create testaccount2
+${ regex(r'"XTS[0-9a-zA-Z]+"') }$
+>>> wallet_account_register delegate0 delegate0
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID
+======================================================================================================================================================================
+${ expect_isotime() }$ PENDING   delegate0           delegate0           0.00000 XTS             register delegate0                          0.50000 XTS         ${ regex(r"[0-9a-f]{8}") }$
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> wallet_uia_create delegate0 XMO DIGITAL_DEVICE1 "CREATING AN ASSET" 50000.00
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+${ expect_isotime() }$ PENDING   delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.50000 XTS   ${ regex(r"[0-9a-f]{8}") }$
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> wallet_transfer 100 XTS delegate0 testaccount1
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+${ expect_isotime() }$ PENDING   delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         ${ regex(r"[0-9a-f]{8}") }$
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> wallet_transfer 10000 XTS delegate0 testaccount2
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+${ expect_isotime() }$ PENDING   delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         ${ regex(r"[0-9a-f]{8}") }$
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> blockchain_list_assets
+ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
+===========================================================================================================================================================
+2     BTC    Bitcoin                 This is an internet cryptocurrency.  All cra... MARKET                          N/A       0.00000000 BTC              
+3     GAS    Gasoline                Secondary fuel source used by some electric ... MARKET                          N/A       0.0000 GAS                  
+1     USD    United States Dollar    Federally Reserved, Inflation Guaranteed        MARKET                          N/A       0.0000 USD                  
+4     XMO    DIGITAL_DEVICE1         AN ASSET                                        delegate0                       0.00 %    0.00 XMO                    
+0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,300.00000 XTS     
+>>> blockchain_list_pending_transactions
+No pending transactions.
+>>> balance delegate0
+  ACCOUNT                         BALANCE
+============================================================
+delegate0                       19,489,898.00000 XTS
+>>> balance testaccount1
+  ACCOUNT                         BALANCE
+============================================================
+testaccount1                    100.00000 XTS               
+>>> balance testaccount2
+ACCOUNT                         BALANCE                     
+============================================================
+testaccount2                    10,000.00000 XTS            
+>>> wallet_uia_issue 10000 XMO testaccount1 "Sending some assets"
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+${ expect_isotime() }$ PENDING   delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS      ${ regex(r"[0-9a-f]{8}") }$
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> history delegate0
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+${ expect_isotime() }$ 0       GENESIS             delegate0           20,000,000.00000 XTS    claim Pfyf3E2129Wp1NLSmsrKXBcx7ShKyevdmX    20,000,000.00000 XTS          0.00000 XTS         VIRTUAL
+${ expect_isotime() }$ 2       delegate0           delegate0           0.00000 XTS             register delegate0                          19,999,999.50000 XTS          0.50000 XTS         ${ regex(r"[0-9a-f]{8}") }$
+${ expect_isotime() }$ 3       delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                19,499,999.00000 XTS    500,000.50000 XTS         ${ regex(r"[0-9a-f]{8}") }$
+${ expect_isotime() }$ 4       delegate0           testaccount1        100.00000 XTS                                                       19,499,898.50000 XTS          0.50000 XTS         ${ regex(r"[0-9a-f]{8}") }$
+${ expect_isotime() }$ 5       delegate0           testaccount2        10,000.00000 XTS                                                    19,489,898.00000 XTS          0.50000 XTS         ${ regex(r"[0-9a-f]{8}") }$
+${ expect_isotime() }$ 7       delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.00 XMO                      0.50000 XTS         ${ regex(r"[0-9a-f]{8}") }$
+>>> blockchain_list_assets
+ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
+===========================================================================================================================================================
+2     BTC    Bitcoin                 This is an internet cryptocurrency.  All cra... MARKET                          N/A       0.00000000 BTC              
+3     GAS    Gasoline                Secondary fuel source used by some electric ... MARKET                          N/A       0.0000 GAS                  
+1     USD    United States Dollar    Federally Reserved, Inflation Guaranteed        MARKET                          N/A       0.0000 USD                  
+4     XMO    DIGITAL_DEVICE1         AN ASSET                                        delegate0                       0.20 %    10,000.00 XMO               
+0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,400.00000 XTS     
+>>> help wallet_market_submit_bid 
+Usage:
+wallet_market_submit_bid <from_account_name> <quantity> <quantity_symbol> <base_price> <base_symbol> [allow_stupid_bid]   Used to place a request to buy a quantity of assets at a price specified in another asset
+Used to place a request to buy a quantity of assets at a price specified in another asset
+
+Parameters:
+  from_account_name (account_name, required): the account that will provide funds for the bid
+  quantity (string, required): the quantity of items you would like to buy
+  quantity_symbol (asset_symbol, required): the type of items you would like to buy
+  base_price (string, required): the price you would like to pay
+  base_symbol (asset_symbol, required): the type of asset you would like to pay with
+  allow_stupid_bid (bool, optional, defaults to "false"): Allow user to place bid at more than 5% above the current sell price.
+
+Returns:
+  transaction_record
+
+aliases: bid
+>>> wallet_market_submit_bid testaccount1 500 XTS 3 XMO
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+${ expect_isotime() }$ PENDING   testaccount1        testaccount1        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS      ${ regex("[0-9a-f]{8}") }$
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> balance delegate0
+ACCOUNT                         BALANCE                     
+============================================================
+delegate0                       19,489,897.50000 XTS
+>>> balance testaccount1
+ACCOUNT                         BALANCE                     
+============================================================
+testaccount1                    99.50000 XTS                
+                                8,500.00 XMO                
+>>> balance testaccount2
+ACCOUNT                         BALANCE                     
+============================================================
+testaccount2                    10,000.00000 XTS            
+>>> history testaccount1
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID
+==============================================================================================================================================================================================
+${ expect_isotime() }$ 4      delegate0           testaccount1        100.00000 XTS                                                       100.00000 XTS           0.00000 XTS         ${ regex("[0-9a-f]{8}") }$
+${ expect_isotime() }$ 7      delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         10,000.00 XMO           0.00000 XTS         ${ regex("[0-9a-f]{8}") }$
+${ expect_isotime() }$ 9      testaccount1        ${ regex(r"BID-[0-9a-f]{8}") }$
+                                                                       1,500.00 XMO            buy XTS @ 3. XMO / XTS                      8,500.00 XMO           0.50000 XTS         ${ regex("[0-9a-f]{8}") }$
+
+#{ #####################################
+   #
+   # TODO:  assert owners here are same as above
+   #
+   ##################################### }#
+
+>>> blockchain_market_list_bids XMO XTS
+TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
+==================================================================================================================================================================
+bid_order           500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 NONE                ${ regex("[0-9a-f]{40}") }$                ${ regex(r"XTS[0-9a-zA-Z]+") }$
+>>> wallet_market_order_list XMO XTS
+TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
+==================================================================================================================================================================
+bid_order           500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 NONE                ${ regex("[0-9a-f]{40}") }$                ${ regex(r"XTS[0-9a-zA-Z]+") }$
+>>> help wallet_market_submit_ask
+Usage:
+wallet_market_submit_ask <from_account_name> <sell_quantity> <sell_quantity_symbol> <ask_price> <ask_price_symbol> [allow_stupid_ask]   Used to place a request to sell a quantity of assets at a price specified in another asset
+Used to place a request to sell a quantity of assets at a price specified in another asset
+
+Parameters:
+  from_account_name (account_name, required): the account that will provide funds for the ask
+  sell_quantity (string, required): the quantity of items you would like to sell
+  sell_quantity_symbol (asset_symbol, required): the type of items you would like to sell
+  ask_price (string, required): the price per unit sold.
+  ask_price_symbol (asset_symbol, required): the type of asset you would like to be paid
+  allow_stupid_ask (bool, optional, defaults to "false"): Allow user to place ask at more than 5% below the current buy price.
+
+Returns:
+  transaction_record
+
+aliases: ask
+>>> wallet_market_submit_ask testaccount2 100 XTS 4 XMO
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+${ expect_isotime() }$ PENDING   testaccount2        testaccount2        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.50000 XTS         ${ regex("[0-9a-f]{8}") }$
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> balance delegate0
+ACCOUNT                         BALANCE                     
+============================================================
+delegate0                       19,489,897.50000 XTS
+>>> balance testaccount1
+ACCOUNT                         BALANCE                     
+============================================================
+testaccount1                    99.50000 XTS                
+                                8,500.00 XMO                
+>>> balance testaccount2
+ACCOUNT                         BALANCE                     
+============================================================
+testaccount2                    9,899.50000 XTS             
+>>> history testaccount2
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID
+==============================================================================================================================================================================================
+${ expect_isotime() }$  5     delegate0           testaccount2        10,000.00000 XTS                                                    10,000.00000 XTS        0.00000 XTS         ${ regex(r"[0-9a-f]{8}") }$ 
+${ expect_isotime() }$ 11     testaccount2        ${ regex(r"ASK-[0-9a-f]{8}") }$
+                                                                         100.00000 XTS        sell XTS @ 4. XMO / XTS                      9,899.50000 XTS        0.50000 XTS        ${ regex(r"[0-9a-f]{8}") }$ 
+>>> blockchain_market_list_asks XMO XTS
+TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
+==================================================================================================================================================================
+ask_order           100.00000 XTS       4. XMO / XTS                  100.00000 XTS       400.00 XMO          N/A                 NONE                ${ regex("[0-9a-f]{40}") }$                ${ regex(r"XTS[0-9a-zA-Z]+") }$
+>>> wallet_market_order_list XMO XTS
+TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
+==================================================================================================================================================================
+bid_order           500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 NONE                ${ regex("[0-9a-f]{40}") }$                ${ regex(r"XTS[0-9a-zA-Z]+") }$
+ask_order           100.00000 XTS       4. XMO / XTS                  100.00000 XTS       400.00 XMO          N/A                 NONE                ${ regex("[0-9a-f]{40}") }$                ${ regex(r"XTS[0-9a-zA-Z]+") }$
+>>> help blockchain_market_order_book
+Usage:
+blockchain_market_order_book <quote_symbol> <base_symbol> [limit]                                     Returns the long and short sides of the order book for a given market
+Returns the long and short sides of the order book for a given market
+
+Parameters:
+  quote_symbol (asset_symbol, required): the symbol name the market is quoted in
+  base_symbol (asset_symbol, required): the item being bought in this market
+  limit (uint32_t, optional, defaults to "10"): the maximum number of items to return, -1 for all
+
+Returns:
+  pair<market_order_array,market_order_array>
+
+aliases: market_book
+>>> blockchain_market_order_book XMO XTS
+     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1,500.00 XMO              500.00000 XTS                   3.000000000000 XMO | 4.000000000000 XMO                      100.00000 XTS                400.00 XMO
+>>> help blockchain_market_status 
+Usage:
+blockchain_market_status <quote_symbol> <base_symbol>                                                 Returns the status of a particular market, including any trading errors.
+Returns the status of a particular market, including any trading errors.
+
+Parameters:
+  quote_symbol (asset_symbol, required): quote symbol
+  base_symbol (asset_symbol, required): base symbol
+
+Returns:
+  market_status
+>>> blockchain_market_status XMO XTS
+{
+  "quote_id": 4,
+  "base_id": 0,
+  "current_feed_price": 0,
+  "last_valid_feed_price": 0,
+  "last_error": null
+}
+>>> quit

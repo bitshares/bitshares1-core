@@ -36,11 +36,13 @@ namespace bts { namespace blockchain {
 
    bool transaction_evaluation_state::any_parent_has_signed( const string& account_name )const
    { try {
-       for( optional<string> parent_name = _current_state->get_parent_account_name( account_name );
+       FC_ASSERT( _pending_state != nullptr );
+
+       for( optional<string> parent_name = _pending_state->get_parent_account_name( account_name );
             parent_name.valid();
-            parent_name = _current_state->get_parent_account_name( *parent_name ) )
+            parent_name = _pending_state->get_parent_account_name( *parent_name ) )
        {
-           const oaccount_record parent_record = _current_state->get_account_record( *parent_name );
+           const oaccount_record parent_record = _pending_state->get_account_record( *parent_name );
            if( !parent_record.valid() )
                continue;
 
@@ -71,20 +73,24 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::update_delegate_votes()
    { try {
+      FC_ASSERT( _pending_state != nullptr );
+
       for( const auto& item : delegate_vote_deltas )
       {
           const account_id_type id = item.first;
-          oaccount_record delegate_record = _current_state->get_account_record( id );
+          oaccount_record delegate_record = _pending_state->get_account_record( id );
           FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
 
           const share_type amount = item.second;
           delegate_record->adjust_votes_for( amount );
-          _current_state->store_account_record( *delegate_record );
+          _pending_state->store_account_record( *delegate_record );
       }
    } FC_CAPTURE_AND_RETHROW() }
 
    void transaction_evaluation_state::validate_fees()
    { try {
+       FC_ASSERT( _pending_state != nullptr );
+
        for( const auto& item : fees_paid )
        {
            const asset fee( item.second, item.first );
@@ -105,45 +111,44 @@ namespace bts { namespace blockchain {
                    FC_CAPTURE_AND_THROW( fee_greater_than_max, (fee)(max_fees) );
            }
 
-           oasset_record asset_record = _current_state->get_asset_record( fee.asset_id );
-           if( !asset_record.valid() )
-               FC_CAPTURE_AND_THROW( unknown_asset_id, (fee) );
-
-           if( fee.amount < asset_record->transaction_fee )
-               FC_CAPTURE_AND_THROW( insufficient_fee, (fee)(asset_record->transaction_fee) );
-
-           if( fee.amount > 0 )
+           if( fee.amount != 0 )
            {
+               oasset_record asset_record = _pending_state->get_asset_record( fee.asset_id );
+               if( !asset_record.valid() )
+                   FC_CAPTURE_AND_THROW( unknown_asset_id, (fee) );
+
                asset_record->collected_fees += fee.amount;
-               _current_state->store_asset_record( *asset_record );
+               _pending_state->store_asset_record( *asset_record );
            }
        }
    } FC_CAPTURE_AND_RETHROW() }
 
    void transaction_evaluation_state::evaluate( const signed_transaction& trx_arg )
    { try {
+      FC_ASSERT( _pending_state != nullptr );
+
       trx = trx_arg;
       try {
-        if( _current_state->now() >= trx_arg.expiration )
+        if( _pending_state->now() >= trx_arg.expiration )
         {
-           if( _current_state->now() > trx_arg.expiration || _current_state->get_head_block_num() >= BTS_V0_4_21_FORK_BLOCK_NUM )
+           if( _pending_state->now() > trx_arg.expiration || _pending_state->get_head_block_num() >= BTS_V0_4_21_FORK_BLOCK_NUM )
            {
-               const auto expired_by_sec = (_current_state->now() - trx_arg.expiration).to_seconds();
-               FC_CAPTURE_AND_THROW( expired_transaction, (trx_arg)(_current_state->now())(expired_by_sec) );
+               const auto expired_by_sec = (_pending_state->now() - trx_arg.expiration).to_seconds();
+               FC_CAPTURE_AND_THROW( expired_transaction, (trx_arg)(_pending_state->now())(expired_by_sec) );
            }
         }
-        if( (_current_state->now() + BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC) < trx_arg.expiration )
-           FC_CAPTURE_AND_THROW( invalid_transaction_expiration, (trx_arg)(_current_state->now()) );
+        if( (_pending_state->now() + BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC) < trx_arg.expiration )
+           FC_CAPTURE_AND_THROW( invalid_transaction_expiration, (trx_arg)(_pending_state->now()) );
 
-        if( _current_state->get_head_block_num() >= BTS_V0_4_26_FORK_BLOCK_NUM )
+        if( _pending_state->get_head_block_num() >= BTS_V0_4_26_FORK_BLOCK_NUM )
         {
-            if( _current_state->is_known_transaction( trx_arg ) )
+            if( _pending_state->is_known_transaction( trx_arg ) )
                FC_CAPTURE_AND_THROW( duplicate_transaction, (trx.id()) );
         }
 
         if( !_skip_signature_check )
         {
-           const auto trx_digest = trx_arg.digest( _current_state->get_chain_id() );
+           const auto trx_digest = trx_arg.digest( _pending_state->get_chain_id() );
            for( const auto& sig : trx_arg.signatures )
            {
               const auto key = fc::ecc::public_key( sig, trx_digest, _enforce_canonical_signatures ).serialize();
@@ -165,7 +170,7 @@ namespace bts { namespace blockchain {
         validate_fees();
         update_delegate_votes();
 
-        _current_state->store_transaction( trx.id(), transaction_record( transaction_location(), *this ) );
+        _pending_state->store_transaction( trx.id(), transaction_record( transaction_location(), *this ) );
       }
       catch ( const fc::exception& e )
       {
@@ -181,10 +186,12 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::adjust_vote( const slate_id_type slate_id, const share_type amount )
    { try {
+       FC_ASSERT( _pending_state != nullptr );
+
        if( slate_id == 0 || _skip_vote_adjustment )
            return;
 
-       const oslate_record slate_record = _current_state->get_slate_record( slate_id );
+       const oslate_record slate_record = _pending_state->get_slate_record( slate_id );
        if( !slate_record.valid() )
            FC_CAPTURE_AND_THROW( unknown_delegate_slate, (slate_id) );
 
@@ -205,7 +212,7 @@ namespace bts { namespace blockchain {
 
    share_type transaction_evaluation_state::calculate_base_fees()const
    { try {
-       FC_ASSERT( _current_state != nullptr );
+       FC_ASSERT( _pending_state != nullptr );
 
        share_type base_fees = 0;
 
@@ -218,13 +225,13 @@ namespace bts { namespace blockchain {
            }
            else
            {
-               const oasset_record asset_record = _current_state->get_asset_record( fee.asset_id );
+               const oasset_record asset_record = _pending_state->get_asset_record( fee.asset_id );
                FC_ASSERT( asset_record.valid() );
 
                // Tally BitAsset fees using feed price discounted by 33%
                if( asset_record->is_market_issued() )
                {
-                   const oprice feed_price = _current_state->get_active_feed_price( fee.asset_id );
+                   const oprice feed_price = _pending_state->get_active_feed_price( fee.asset_id );
                    if( feed_price.valid() )
                        base_fees += (asset( fee.amount * 2, fee.asset_id ) * *feed_price).amount / 3;
                }

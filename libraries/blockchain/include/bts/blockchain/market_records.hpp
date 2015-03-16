@@ -12,7 +12,7 @@
 
 namespace bts { namespace blockchain {
 
-   /** 
+   /**
     *  Note: this data structure is used for operation serialization, modifications
     *        will break existing operations.
     */
@@ -37,7 +37,7 @@ namespace bts { namespace blockchain {
 
    struct market_index_key_ext : public market_index_key
    {
-      market_index_key_ext( const market_index_key b = market_index_key(), 
+      market_index_key_ext( const market_index_key b = market_index_key(),
                             optional<price> limit = optional<price>() )
       :market_index_key(b),limit_price(limit){}
 
@@ -157,10 +157,10 @@ namespace bts { namespace blockchain {
    struct market_history_point
    {
        fc::time_point_sec timestamp;
-       double highest_bid;
-       double lowest_ask;
-       double opening_price;
-       double closing_price;
+       string highest_bid;
+       string lowest_ask;
+       string opening_price;
+       string closing_price;
        share_type volume;
    };
    typedef vector<market_history_point> market_history_points;
@@ -238,7 +238,8 @@ namespace bts { namespace blockchain {
       optional<asset>                           returned_collateral;
       fc::enum_type<uint8_t, order_type_enum>   bid_type = null_order;
       fc::enum_type<uint8_t, order_type_enum>   ask_type = null_order;
-      asset                                     fees_collected;
+      asset                                     quote_fees;
+      asset                                     base_fees;
    };
    typedef optional<market_order> omarket_order;
 
@@ -319,8 +320,8 @@ namespace bts { namespace blockchain {
        api_market_status(const market_status& market_stat = market_status())
          : market_status(market_stat)
        {}
-       double                   current_feed_price;
-       double                   last_valid_feed_price;
+       optional<string>         current_feed_price;
+       optional<string>         last_valid_feed_price;
    };
 
 } } // bts::blockchain
@@ -359,6 +360,7 @@ FC_REFLECT( bts::blockchain::market_transaction,
             (returned_collateral)
             (bid_type)
             (ask_type)
-            (fees_collected)
+            (quote_fees)
+            (base_fees)
           )
 FC_REFLECT_DERIVED( bts::blockchain::order_history_record, (bts::blockchain::market_transaction), (timestamp) )

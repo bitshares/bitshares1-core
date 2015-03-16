@@ -1,0 +1,105 @@
+>>> !client alice
+>>> debug_start_simulated_time "20140620T144030.000000"
+OK
+>>> wallet_create default "password"
+OK
+>>> wallet_set_automatic_backups false
+false
+>>> debug_deterministic_private_keys 0 101 init true
+[ ${ expect_regex(r'(?:\s*"[a-zA-Z0-9]+"[,]?){101}') }$ ]
+>>> wallet_delegate_set_block_production ALL true
+OK
+>>> wallet_set_transaction_scanning true
+true
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1
+OK
+>>> wallet_account_create issuer
+"XTS ${ expect_regex(r'[a-zA-Z0-9]+') }$"
+>>> wallet_account_balance myaccount
+No balances found.
+>>> debug_deterministic_private_keys 0 6 alice true issuer false true
+[ ${ expect_regex(r'(?:\s*"[a-zA-Z0-9]+"[,]?){6}') }$ ]
+>>> wallet_account_balance issuer
+ACCOUNT                         BALANCE                     
+============================================================
+issuer                       600,000.00000 XTS
+>>> blockchain_get_account issuer
+No account found.
+>>> wallet_account_register issuer issuer
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+2014-06-20T14:40:30 PENDING   issuer              issuer              0.00000 XTS             register issuer                             0.50000 XTS         3577f090
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 2
+OK
+>>> wallet_uia_create issuer ASSET "Test Asset" "A test asset" 10000.000
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID
+======================================================================================================================================================================
+2015-06-20T14:40:40 PENDING   issuer              issuer              0.00000 XTS             create ASSET (Test Asset)                   500,000.50000 XTS   d2faa4a6
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 3
+OK
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 4
+OK
+>>> wallet_account_create customer
+"XTS ${ expect_regex(r'[a-zA-Z0-9]+') }$"
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 5
+OK
+>>> wallet_account_register customer issuer
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID
+======================================================================================================================================================================
+2015-03-05T00:44:36 PENDING   issuer              customer            0.00000 XTS             register customer                           0.50000 XTS         12f601f0
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 6
+OK
+>>> blockchain_get_account customer
+${ expect_json() }$
+>>> wallet_uia_issue 123 ASSET customer "this should succeed"
+${ expect_json() }$
+>>> wallet_uia_update_active_flags issuer ASSET restricted_deposits true
+${ expect_json() }$
+>>> wallet_uia_issue 124 ASSET customer "this should fail"
+${ expect_json() }$
+>>> wallet_uia_issue 125 ASSET XTS83XY1B31esQX72NE233b54mURybGqA66qqJvKjGqr5izCK4epH "this should fail"
+${ expect_json() }$
+>>> wallet_uia_update_whitelist issuer ASSET XTS83XY1B31esQX72NE233b54mURybGqA66qqJvKjGqr5izCK4epH true
+${ expect_json() }$
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 7
+OK
+>>> wallet_uia_issue 126 ASSET XTS83XY1B31esQX72NE233b54mURybGqA66qqJvKjGqr5izCK4epH "this should succeed"
+${ expect_json() }$
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 8
+>>> wallet_uia_update_whitelist issuer ASSET XTS83XY1B31esQX72NE233b54mURybGqA66qqJvKjGqr5izCK4epH false
+${ expect_json() }$
+>>> wallet_uia_issue 127 ASSET XTS83XY1B31esQX72NE233b54mURybGqA66qqJvKjGqr5izCK4epH "this should fail"
+${ expect_json() }$
+>>> blockchain_get_account issuer
+${ expect_json() }$
+>>> wallet_uia_issue 128 ASSET issuer "this should fail"
+${ expect_json() }$
+>>> wallet_uia_issue 129 ASSET XTS8SwjoEtxaFAan2Qj5bn28kQvSfaSprptA2Qyq32uhzotvkkyng "this should succeed"
+${ expect_json() }$
+
+#{ set state to "restricted" and whitelist a customer }#
+#{  set state to "retractable" and retract his balance }#
+#{  set state to "market_halt" and make sure the market is halted }#
+#{  set state to "balance_halt" and make sure nobody can transact }#
+
+#{  remove "restricted" permission and check that there are no restrictions }#
+#{  remove "retractable" permission and check that you can't retract balances }#
+#{  remove "supply_unlimit" permission and check that you can't print shares }#
+#{  remove "market_halt" permission and make sure you can't set that state anymore }#
+#{  remove "balance_halt" permission and make sure you can't set that state anymore }#

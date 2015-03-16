@@ -53,6 +53,7 @@ struct deposit_operation
     withdraw_condition               condition;
 
     void evaluate( transaction_evaluation_state& eval_state )const;
+    void evaluate_v2( transaction_evaluation_state& eval_state )const;
     void evaluate_v1( transaction_evaluation_state& eval_state )const;
 };
 
@@ -80,6 +81,7 @@ struct burn_operation
     optional<signature_type>     message_signature;
 
     void evaluate( transaction_evaluation_state& eval_state )const;
+    void evaluate_v1( transaction_evaluation_state& eval_state )const;
 };
 
 struct release_escrow_operation

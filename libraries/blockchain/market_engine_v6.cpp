@@ -244,7 +244,7 @@ namespace bts { namespace blockchain { namespace detail {
                 if( quantity_xts == ask_quantity_xts )
                    mtrx.ask_paid = _current_ask->get_balance();
 
-                mtrx.fees_collected = mtrx.bid_paid - mtrx.ask_received;
+                mtrx.quote_fees = mtrx.bid_paid - mtrx.ask_received;
 
                 pay_current_bid( mtrx, *quote_asset );
                 pay_current_ask( mtrx, *base_asset );
@@ -267,10 +267,8 @@ namespace bts { namespace blockchain { namespace detail {
             if( lowest_price == price() || lowest_price > mtrx.ask_price)
               lowest_price = mtrx.ask_price;
 
-            if( mtrx.fees_collected.asset_id == base_asset->id )
-                base_asset->collected_fees += mtrx.fees_collected.amount;
-            else if( mtrx.fees_collected.asset_id == quote_asset->id )
-                quote_asset->collected_fees += mtrx.fees_collected.amount;
+            quote_asset->collected_fees += mtrx.quote_fees.amount;
+            base_asset->collected_fees += mtrx.base_fees.amount;
           } // while( next bid && next ask )
 
           // update any fees collected
@@ -313,7 +311,6 @@ namespace bts { namespace blockchain { namespace detail {
           FC_ASSERT( mtrx.ask_received.amount>= 0 );
           FC_ASSERT( mtrx.bid_paid >= mtrx.ask_received );
           FC_ASSERT( mtrx.ask_paid >= mtrx.bid_received );
-          FC_ASSERT( mtrx.fees_collected.amount >= 0 );
       }
 
 
@@ -362,7 +359,7 @@ namespace bts { namespace blockchain { namespace detail {
              *mtrx.short_collateral  += (_current_bid->get_balance() - *mtrx.short_collateral);
       }
 
-      quote_asset.current_share_supply += mtrx.bid_paid.amount;
+      quote_asset.current_supply += mtrx.bid_paid.amount;
 
       auto collateral  = *mtrx.short_collateral + mtrx.ask_paid;
       if( mtrx.bid_paid.amount <= 0 ) // WHY is this ever negative??
@@ -388,7 +385,7 @@ namespace bts { namespace blockchain { namespace detail {
 
       ocover_record->collateral_balance += collateral.amount;
       ocover_record->payoff_balance += mtrx.bid_paid.amount;
-      ocover_record->interest_rate = price( double( 0 ), quote_asset.id, 0 );
+      ocover_record->interest_rate = price( 0, quote_asset.id, 0 );
       ocover_record->expiration = _pending_state->now() + BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC;
 
       FC_ASSERT( ocover_record->payoff_balance >= 0, "", ("record",ocover_record) );
@@ -443,7 +440,7 @@ namespace bts { namespace blockchain { namespace detail {
       FC_ASSERT( _current_ask->state.balance >= 0 );
       FC_ASSERT( *_current_ask->collateral >= 0, "", ("mtrx",mtrx)("_current_ask", _current_ask)  );
 
-      quote_asset.current_share_supply -= mtrx.ask_received.amount;
+      quote_asset.current_supply -= mtrx.ask_received.amount;
       if( *_current_ask->collateral == 0 )
       {
           quote_asset.collected_fees -= _current_ask->state.balance;
@@ -469,14 +466,13 @@ namespace bts { namespace blockchain { namespace detail {
                left_over_collateral -= fee;
                // when executing a cover order, it always takes the exact price of the
                // highest bid, so there should be no fees paid *except* this.
-               FC_ASSERT( mtrx.fees_collected.amount == 0 );
 
                // these go to the network... as dividends..
-               mtrx.fees_collected += asset( fee, _base_id );
+               mtrx.base_fees += asset( fee, _base_id );
             }
             else
             {
-               mtrx.fees_collected += asset( 0, _base_id );
+               mtrx.base_fees += asset( 0, _base_id );
             }
 
             ask_payout->balance += left_over_collateral;

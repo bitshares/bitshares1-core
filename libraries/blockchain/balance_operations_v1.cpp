@@ -78,12 +78,12 @@ void deposit_operation::evaluate_v1( transaction_evaluation_state& eval_state )c
 
     auto deposit_balance_id = this->balance_id();
 
-    auto cur_record = eval_state._current_state->get_balance_record( deposit_balance_id );
+    auto cur_record = eval_state._pending_state->get_balance_record( deposit_balance_id );
     if( !cur_record )
     {
        cur_record = balance_record( this->condition );
     }
-    cur_record->last_update   = eval_state._current_state->now();
+    cur_record->last_update   = eval_state._pending_state->now();
     cur_record->balance       += this->amount;
 
     eval_state.sub_balance( asset(this->amount, cur_record->condition.asset_id) );
@@ -91,7 +91,7 @@ void deposit_operation::evaluate_v1( transaction_evaluation_state& eval_state )c
     if( cur_record->condition.asset_id == 0 && cur_record->condition.slate_id )
        eval_state.adjust_vote( cur_record->condition.slate_id, this->amount );
 
-    eval_state._current_state->store_balance_record( *cur_record );
+    eval_state._pending_state->store_balance_record( *cur_record );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 void withdraw_operation::evaluate_v1( transaction_evaluation_state& eval_state )const
@@ -99,9 +99,9 @@ void withdraw_operation::evaluate_v1( transaction_evaluation_state& eval_state )
     if( this->amount <= 0 )
        FC_CAPTURE_AND_THROW( negative_deposit, (amount) );
 
-   obalance_record current_balance_record = eval_state._current_state->get_balance_record( this->balance_id );
+   obalance_record current_balance_record = eval_state._pending_state->get_balance_record( this->balance_id );
 
-   if( eval_state._current_state->get_head_block_num() >= BTS_V0_4_10_FORK_BLOCK_NUM )
+   if( eval_state._pending_state->get_head_block_num() >= BTS_V0_4_10_FORK_BLOCK_NUM )
    {
       if( !current_balance_record )
          FC_CAPTURE_AND_THROW( unknown_balance_record, (balance_id) );
@@ -130,18 +130,58 @@ void withdraw_operation::evaluate_v1( transaction_evaluation_state& eval_state )
       // update delegate vote on withdrawn account..
 
       current_balance_record->balance -= this->amount;
-      current_balance_record->last_update = eval_state._current_state->now();
+      current_balance_record->last_update = eval_state._pending_state->now();
 
       if( current_balance_record->condition.asset_id == 0 && current_balance_record->condition.slate_id )
          eval_state.adjust_vote( current_balance_record->condition.slate_id, -this->amount );
 
-      eval_state._current_state->store_balance_record( *current_balance_record );
+      eval_state._pending_state->store_balance_record( *current_balance_record );
       eval_state.add_balance( asset(this->amount, current_balance_record->condition.asset_id) );
    } // if current balance record
    else
    {
       eval_state.add_balance( asset(this->amount, 0) );
    }
+} FC_CAPTURE_AND_RETHROW( (*this) ) }
+
+void burn_operation::evaluate_v1( transaction_evaluation_state& eval_state )const
+{ try {
+   if( this->amount.amount <= 0 )
+      FC_CAPTURE_AND_THROW( negative_deposit, (amount) );
+
+   if( !message.empty() )
+       FC_ASSERT( amount.asset_id == 0 );
+
+   if( amount.asset_id == 0 )
+   {
+       FC_ASSERT( amount.amount >= BTS_BLOCKCHAIN_MIN_BURN_FEE );
+   }
+
+   oasset_record asset_rec = eval_state._pending_state->get_asset_record( amount.asset_id );
+   FC_ASSERT( asset_rec.valid() );
+   FC_ASSERT( !asset_rec->is_market_issued() );
+
+   asset_rec->current_supply -= this->amount.amount;
+   eval_state.sub_balance( this->amount );
+
+   eval_state._pending_state->store_asset_record( *asset_rec );
+
+   if( account_id != 0 ) // you can offer burnt offerings to God if you like... otherwise it must be an account
+   {
+       const oaccount_record account_rec = eval_state._pending_state->get_account_record( abs( this->account_id ) );
+       FC_ASSERT( account_rec.valid() );
+   }
+
+   burn_record record;
+   record.index.account_id = account_id;
+   record.index.transaction_id = eval_state.trx.id();
+   record.amount = amount;
+   record.message = message;
+   record.signer = message_signature;
+
+   FC_ASSERT( !eval_state._pending_state->get_burn_record( record.index ).valid() );
+
+   eval_state._pending_state->store_burn_record( std::move( record ) );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 } }  // bts::blockchain

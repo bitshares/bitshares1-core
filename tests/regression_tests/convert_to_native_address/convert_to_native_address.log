@@ -1,0 +1,46 @@
+default (unlocked) >>> wallet_account_create test
+"XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 1
+OK
+default (unlocked) >>> wallet_account_list_public_keys test
+[{
+    "hex": "02d6a0351c151cf57938e0f540830cb390305081aed4a6f01ec42668d7b85f03eb",
+    "native_pubkey": "XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX",
+    "native_address": "XTSFtXy1oqCnZ5Sw5txgm2421smvzZ6jwVUM",
+    "pts_normal_address": "PvRmwBk2YNJUqcuJCJF9acrHzqetRxow7B",
+    "pts_compressed_address": "PmBMQNvypoMaUTRQUqQNX7KgW1m9Vvrh1a",
+    "btc_normal_address": "1PVzo73tnGMR3M6SpobJRbcEkbE4bd4iE3",
+    "btc_compressed_address": "1EFaGJEr4hQWgBcZ7LkXN65dFmLKiCLdSb"
+  },{
+    "hex": "02e310a74ab789949e7a8b17b0ae06a70cb414bdec78513375a572fb592d33c0d4",
+    "native_pubkey": "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra",
+    "native_address": "XTSFVXDozgCnWhF3w4efcv75jaVPkkMVbcKm",
+    "pts_normal_address": "PaWvEfxXFR1LWPEsVzWCGZPe7ESvNoPUpA",
+    "pts_compressed_address": "PvrSYijUNcwCsJca8UN8B5yERhTCW1a2PU",
+    "btc_normal_address": "13b96bGPVK4Gi7S28VrM7Y9arz26W3qtkr",
+    "btc_compressed_address": "1PvfQe3LcWz952oikyiH24jBBT2NdN3Faq"
+  }
+]
+default (unlocked) >>> help convert_to_native_address
+Usage:
+convert_to_native_address <raw_address>                                                               Convert a BTC or PTS address into a BTS address.
+Convert a BTC or PTS address into a BTS address.
+
+Parameters:
+  raw_address (string, required): the BTC or PTS address to convert
+
+Returns:
+  address
+
+aliases: convertaddress
+default (unlocked) >>> convert_to_native_address 1PVzo73tnGMR3M6SpobJRbcEkbE4bd4iE3
+XTSNSfzNnAcR3qbH6CoUvR4NMFtg1MHruy83
+default (unlocked) >>> convert_to_native_address PvRmwBk2YNJUqcuJCJF9acrHzqetRxow7B
+XTS3Hmppe14JMBSAWGJgh7RNBJ6VuC4TojjR
+default (unlocked) >>> convert_to_native_address 13b96bGPVK4Gi7S28VrM7Y9arz26W3qtkr
+XTS5Z5g2FXWyDd6xu4ucBBi5kLrrrHTFFJnF
+default (unlocked) >>> convert_to_native_address PaWvEfxXFR1LWPEsVzWCGZPe7ESvNoPUpA
+XTSGETmZKAaqU1k97G5hy2SR8xxE6gjMzgzD
+default (unlocked) >>> quit

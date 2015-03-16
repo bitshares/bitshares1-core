@@ -574,29 +574,6 @@
         "aliases": ["approve", "add_approval", "update_approval"]
       },
       {
-        "method_name": "wallet_asset_authorize_key",
-        "description": "Authorizes a public key to control funds of a particular asset class.  Requires authority of asset issuer",
-        "return_type": "transaction_record",
-        "parameters" : [
-            {
-              "name" : "paying_account",
-              "type" : "account_name",
-              "description" : "the account that will pay the transaction fee"
-            },
-            {
-              "name" : "symbol",
-              "type" : "asset_symbol",
-              "description" : "the asset granting authorization"
-            },
-            {
-              "name" : "address",
-              "type" : "string",
-              "description" : "the address being granted permission, or the public key, or the account name"
-            }
-           ],
-        "prerequisites" : ["wallet_unlocked"]
-      },
-      {
         "method_name": "wallet_burn",
         "description": "Burns given amount to the given account.  This will allow you to post message and +/- sentiment on someones account as a form of reputation.",
         "return_type": "transaction_record",
@@ -693,12 +670,12 @@
             {
               "name" : "recipient",
               "type" : "string",
-              "description" : "the account name, public key, address, or btc address which will receive the funds"
+              "description" : "the account name, public key, address, btc address, or contact label (prefixed by \"label:\") which will receive the funds"
             },
             {
               "name" : "memo_message",
               "type" : "string",
-              "description" : "a memo to store with the transaction",
+              "description" : "a memo to send if the recipient is an account",
               "default_value" : ""
             },
             {
@@ -991,13 +968,13 @@
             },
             {
                 "name": "amount_to_sender",
-                "type": "real_amount",
+                "type": "string",
                 "description": "Amount to release back to the sender.",
                 "default_value": 0
             },
             {
                 "name": "amount_to_receiver",
-                "type": "real_amount",
+                "type": "string",
                 "description": "Amount to release to receiver.",
                 "default_value": 0
             }
@@ -1351,172 +1328,102 @@
          "aliases" : ["wallet_rename_account"]
       },
       {
-         "method_name" : "wallet_asset_create",
-         "description" : "Creates a new user issued asset",
+         "method_name" : "wallet_mia_create",
+         "description" : "Create a new market-issued asset (BitAsset) on the blockchain. Warning: creation fees can be very high!",
          "return_type" : "transaction_record",
          "parameters"  : [
                {
-                  "name" : "symbol",
-                  "type" : "asset_symbol",
-                  "description" : "the ticker symbol for the new asset"
-               },
-               {
-                  "name" : "asset_name",
+                  "name" : "payer_account",
                   "type" : "string",
-                  "description" : "the name of the asset"
+                  "description" : "The local account name that will pay the creation fee"
                },
-               {
-                  "name" : "issuer_name",
-                  "type" : "string",
-                  "description" : "the name of the issuer of the asset"
-               },
-               {
-                  "name" : "description",
-                  "type" : "string",
-                  "description" : "a description of the asset"
-               },
-               {
-                  "name" : "maximum_share_supply",
-                  "type" : "real_amount",
-                  "description" : "the maximum number of shares of the asset"
-               },
-               {
-                  "name" : "precision",
-                  "type" : "uint64_t",
-                  "description" : "defines where the decimal should be displayed, must be a power of 10"
-               },
-               {
-                  "name" : "public_data",
-                  "type" : "json_variant",
-                  "description" : "arbitrary data attached to the asset",
-                  "default_value" : null
-               },
-               {
-                  "name" : "is_market_issued",
-                  "type" : "bool",
-                  "description" : "creation of a new BitAsset that is created by shorting",
-                  "default_value": false
-               }
-            ],
-         "prerequisites" : ["wallet_unlocked"]
-      },
-      {
-         "method_name" : "wallet_asset_update",
-         "description" : "Updates an existing user-issued asset; only the public_data can be updated if any shares of the asset exist",
-         "return_type" : "transaction_record",
-         "parameters"  : [
                {
                   "name" : "symbol",
                   "type" : "asset_symbol",
-                  "description" : "the ticker symbol for the asset to update"
+                  "description" : "A unique symbol that will represent the new asset. Short symbols are very expensive!"
                },
                {
                   "name" : "name",
-                  "type" : "optional_string",
-                  "description" : "the new name to give the asset; or null to keep the current name",
-                  "default_value" : null
+                  "type" : "string",
+                  "description" : "A human-readable name for the new asset"
                },
                {
                   "name" : "description",
-                  "type" : "optional_string",
-                  "description" : "the new description to give the asset; or null to keep the current description",
-                  "default_value" : null
+                  "type" : "string",
+                  "description" : "A human-readable description of the new asset"
                },
                {
-                  "name" : "public_data",
-                  "type" : "optional_variant",
-                  "description" : "the new public_data to give the asset; or null to keep the current public_data",
-                  "default_value" : null
-               },
-               {
-                  "name" : "maximum_share_supply",
-                  "type" : "optional_double",
-                  "description" : "the new maximum_share_supply to give the asset; or null to keep the current maximum_share_supply",
-                  "default_value" : null
-               },
-               {
-                  "name" : "precision",
-                  "type" : "optional_uint64_t",
-                  "description" : "the new precision to give the asset; or null to keep the current precision",
-                  "default_value" : null
-               },
-               {
-                  "name" : "issuer_transaction_fee",
-                  "type" : "share_type",
-                  "description" : "an additional fee (denominated in issued asset) charged by the issuer on every transaction that uses this asset type",
-                  "default_value" : 0
-               },
-               {
-                  "name" : "issuer_market_fee",
-                  "type" : "real_amount",
-                  "description" : "an additional fee (denominated in percent) charged by the issuer on every order that is matched",
-                  "default_value" : -1
-               },
-               {
-                  "name" : "flags",
-                  "type" : "asset_permission_array",
-                  "description" : "a set of flags set by the issuer (if they have permission to set them)",
-                  "default_value" : []
-               },
-               {
-                  "name" : "issuer_permissions",
-                  "type" : "asset_permission_array",
-                  "description" : "a set of permissions an issuer retains",
-                  "default_value" : ["restricted", "retractable","market_halt","balance_halt","supply_limit"]
-               },
-               {
-                  "name" : "issuer_account_name",
-                  "type" : "account_name",
-                  "description" : "used to transfer the asset to a new user",
-                  "default_value" : ""
-               },
-               {
-                  "name" : "required_sigs",
-                  "type" : "uint32_t",
-                  "description" : "number of signatures from the authority required to control this asset record",
-                  "default_value" : 0
-               },
-               {
-                  "name" : "authority",
-                  "type" : "address_list",
-                  "description" : "owner keys that control this asset record",
-                  "default_value" : []
+                  "name" : "max_divisibility",
+                  "type" : "string",
+                  "description" : "Choose the max share divisibility for the new asset. Must be an inverse power of ten. For example: 0.00001 or 1"
                }
             ],
          "prerequisites" : ["wallet_unlocked"]
       },
       {
-         "method_name" : "wallet_asset_issue",
-         "description" : "Issues new shares of a given asset type",
+         "method_name" : "wallet_uia_create",
+         "description" : "Create a new user-issued asset on the blockchain. Warning: creation fees can be very high!",
          "return_type" : "transaction_record",
          "parameters"  : [
                {
-                  "name" : "amount",
-                  "type" : "real_amount",
-                  "description" : "the amount of shares to issue"
+                  "name" : "issuer_account",
+                  "type" : "string",
+                  "description" : "The registered account name that will pay the creation fee and control the new asset"
                },
                {
                   "name" : "symbol",
                   "type" : "asset_symbol",
-                  "description" : "the ticker symbol for asset"
+                  "description" : "A unique symbol that will represent the new asset. Short symbols are very expensive!"
                },
                {
-                  "name" : "to_account_name",
-                  "type" : "account_name",
-                  "description" : "the name of the account to receive the shares"
+                  "name" : "name",
+                  "type" : "string",
+                  "description" : "A human-readable name for the new asset"
+               },
+               {
+                  "name" : "description",
+                  "type" : "string",
+                  "description" : "A human-readable description of the new asset"
+               },
+               {
+                  "name" : "max_supply_with_trailing_decimals",
+                  "type" : "string",
+                  "description" : "Choose the max share supply and max share divisibility for the new asset. For example: 10000000000.00000 or 12345.6789"
+               }
+            ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_uia_issue",
+         "description" : "Issue shares of a user-issued asset to the specified recipient",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+               {
+                  "name" : "asset_amount",
+                  "type" : "string",
+                  "description" : "the amount of shares of the asset to issue"
+               },
+               {
+                  "name" : "asset_symbol",
+                  "type" : "asset_symbol",
+                  "description" : "specify the unique symbol of the asset"
+               },
+               {
+                  "name" : "recipient",
+                  "type" : "string",
+                  "description" : "the account name, public key, address, btc address, or contact label (prefixed by \"label:\") which will receive the funds"
                },
                {
                   "name" : "memo_message",
                   "type" : "string",
-                  "description" : "the memo to send to the receiver",
+                  "description" : "a memo to send if the recipient is an account",
                   "default_value": ""
                }
             ],
-         "detailed_description" : "The asset being issued must have been created via wallet_asset_create in a previous block.",
          "prerequisites" : ["wallet_unlocked"]
       },
       {
-         "method_name" : "wallet_asset_issue_to_addresses",
+         "method_name" : "wallet_uia_issue_to_addresses",
          "description" : "Issues new UIA shares to specific addresses.",
          "return_type" : "transaction_record",
          "parameters"  : [
@@ -1528,11 +1435,208 @@
                {
                   "name" : "addresses",
                   "type" : "snapshot_map",
-                  "description" : "A map of addresses-to-amounts to transfer the new shares to",
+                  "description" : "A map of addresses-to-amounts to transfer the new shares to"
                }
             ],
          "detailed_description" : "This is intended to be used with a helper script to break up snapshots. It will not do any magic for you.",
          "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_uia_collect_fees",
+         "description" : "Withdraw fees collected in the specified user-issued asset and deposit to the specified recipient",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+               {
+                  "name" : "asset_symbol",
+                  "type" : "asset_symbol",
+                  "description" : "specify the unique symbol of the asset"
+               },
+               {
+                  "name" : "recipient",
+                  "type" : "string",
+                  "description" : "the account name, public key, address, btc address, or contact label (prefixed by \"label:\") which will receive the funds"
+               },
+               {
+                  "name" : "memo_message",
+                  "type" : "string",
+                  "description" : "a memo to send if the recipient is an account",
+                  "default_value": ""
+               }
+            ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+        "method_name": "wallet_uia_update_description",
+        "description": "Update the name, description, public data of the specified user-issue asset",
+        "return_type": "transaction_record",
+        "parameters" : [
+            {
+              "name" : "paying_account",
+              "type" : "account_name",
+              "description" : "the account that will pay the transaction fee"
+            },
+            {
+              "name" : "asset_symbol",
+              "type" : "asset_symbol",
+              "description" : "the user-issued asset to update"
+            },
+            {
+               "name" : "name",
+               "type" : "string",
+               "description" : "A human-readable name for the new asset",
+               "default_value": ""
+            },
+            {
+               "name" : "description",
+               "type" : "string",
+               "description" : "A human-readable description of the new asset",
+               "default_value": ""
+            },
+            {
+               "name" : "public_data",
+               "type" : "variant",
+               "description" : "Extra data to attach to the asset",
+               "default_value": null
+            }
+           ],
+        "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+        "method_name": "wallet_uia_update_supply",
+        "description": "Update the max supply and max divisibility of the specified user-issued asset if permitted",
+        "return_type": "transaction_record",
+        "parameters" : [
+            {
+              "name" : "paying_account",
+              "type" : "account_name",
+              "description" : "the account that will pay the transaction fee"
+            },
+            {
+              "name" : "asset_symbol",
+              "type" : "asset_symbol",
+              "description" : "the user-issued asset to update"
+            },
+            {
+               "name" : "max_supply_with_trailing_decimals",
+               "type" : "string",
+               "description" : "Choose the max share supply and max share divisibility for the asset. For example: 10000000000.00000 or 12345.6789"
+            }
+           ],
+        "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+        "method_name": "wallet_uia_update_fees",
+        "description": "Update the transaction fee, market fee rate for the specified user-issued asset if permitted",
+        "return_type": "transaction_record",
+        "parameters" : [
+            {
+              "name" : "paying_account",
+              "type" : "account_name",
+              "description" : "the account that will pay the transaction fee"
+            },
+            {
+              "name" : "asset_symbol",
+              "type" : "asset_symbol",
+              "description" : "the user-issued asset to update"
+            },
+            {
+               "name" : "withdrawal_fee",
+               "type" : "string",
+               "description" : "the transaction fee for the asset in shares of the asset",
+               "default_value": ""
+            },
+            {
+               "name" : "market_fee_rate",
+               "type" : "string",
+               "description" : "the market fee rate for the asset as a percentage between 0.01 and 100, or 0",
+               "default_value": ""
+            }
+           ],
+        "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+        "method_name": "wallet_uia_update_active_flags",
+        "description": "Activate or deactivate one of the special flags for the specified user-issued asset as permitted",
+        "return_type": "transaction_record",
+        "parameters" : [
+            {
+              "name" : "paying_account",
+              "type" : "account_name",
+              "description" : "the account that will pay the transaction fee"
+            },
+            {
+              "name" : "asset_symbol",
+              "type" : "asset_symbol",
+              "description" : "the user-issued asset to update"
+            },
+            {
+              "name" : "flag",
+              "type" : "asset_flag_enum",
+              "description" : "the special flag to enable or disable; one of {dynamic_max_supply, dynamic_fees, halted_markets, halted_withdrawals, retractable_balances, restricted_deposits}"
+            },
+            {
+              "name" : "enable_instead_of_disable",
+              "type" : "bool",
+              "description" : "true to enable, or false to disable"
+            }
+           ],
+        "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+        "method_name": "wallet_uia_update_authority_permissions",
+        "description": "Update the authority's special flag permissions for the specified user-issued asset. Warning: If any shares have been issued, then revoked permissions cannot be restored!",
+        "return_type": "transaction_record",
+        "parameters" : [
+            {
+              "name" : "paying_account",
+              "type" : "account_name",
+              "description" : "the account that will pay the transaction fee"
+            },
+            {
+              "name" : "asset_symbol",
+              "type" : "asset_symbol",
+              "description" : "the user-issued asset to update"
+            },
+            {
+              "name" : "permission",
+              "type" : "asset_flag_enum",
+              "description" : "the special permission to enable or disable; one of {dynamic_max_supply, dynamic_fees, halted_markets, halted_withdrawals, retractable_balances, restricted_deposits}"
+            },
+            {
+              "name" : "add_instead_of_remove",
+              "type" : "bool",
+              "description" : "True to add, or false to remove. Use with extreme caution!"
+            }
+           ],
+        "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+        "method_name": "wallet_uia_update_whitelist",
+        "description": "Add or remove the specified address or public key from the specified user-issued asset's whitelist",
+        "return_type": "transaction_record",
+        "parameters" : [
+            {
+              "name" : "paying_account",
+              "type" : "account_name",
+              "description" : "the account that will pay the transaction fee"
+            },
+            {
+              "name" : "asset_symbol",
+              "type" : "asset_symbol",
+              "description" : "the user-issued asset that will have its whitelist updated"
+            },
+            {
+              "name" : "address_or_public_key",
+              "type" : "string",
+              "description" : "the address or public key to add or remove from the whitelist"
+            },
+            {
+              "name" : "add_to_whitelist",
+              "type" : "bool",
+              "description" : "true to add to whitelist, or false to remove"
+            }
+           ],
+        "prerequisites" : ["wallet_unlocked"]
       },
       {
          "method_name"    : "wallet_escrow_summary",
@@ -1667,7 +1771,7 @@
             },
             {
                "name" : "amount_to_withdraw",
-               "type" : "real_amount",
+               "type" : "string",
                "description" : "the amount to withdraw"
             }
          ],
@@ -1681,7 +1785,7 @@
          "parameters"   : [
          {
             "name" : "fee",
-            "type" : "real_amount",
+            "type" : "string",
             "description" : "the wallet transaction fee to set"
          }
          ],
@@ -1855,7 +1959,7 @@
             {
                "name" : "interest_rate",
                "type" : "string",
-               "description" : "the APR you wish to pay interest at (0.0% to 1000.0%)"
+               "description" : "the APR you wish to pay interest at (0.0% to 50.0%)"
             },
             {
                "name" : "quote_symbol",
@@ -2385,7 +2489,7 @@
              },
              {
                 "name" : "price",
-                "type" : "real_amount",
+                "type" : "string",
                 "description" : "the number of this asset per XTS"
              },
              {
@@ -2408,7 +2512,7 @@
              },
              {
                 "name" : "symbol_to_price_map",
-                "type" : "price_map",
+                "type" : "string_map",
                 "description" : "maps the BitAsset symbol to its price per share"
              }
          ],
@@ -2421,7 +2525,7 @@
          "parameters"  : [
              {
                 "name" : "symbol_to_price_map",
-                "type" : "price_map",
+                "type" : "string_map",
                 "description" : "maps the BitAsset symbol to its price per share"
              }
          ],

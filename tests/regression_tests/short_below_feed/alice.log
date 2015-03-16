@@ -23,7 +23,7 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 ======================================================================================================================================================================
 <d-ign>2014-06-20T14:40:41</d-ign>PENDING   alice               alice               30,000.00000 XTS        short USD @ 0.% APR                         0.50000 XTS         <d-ign> 42db2319</d-ign>
 default (unlocked) >>> blockchain_market_order_book USD XTS
-     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+                             BIDS (* Short)                                  |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 No Orders
@@ -32,10 +32,10 @@ OK
 default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
 OK
 default (unlocked) >>> blockchain_market_order_book USD XTS
-     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+                             BIDS (* Short)                                  |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-225.0000 USD              15,000.00000 XTS                0.015000000000 USD*| 0.015000000000 USD                   15,000.00000 XTS              225.0000 USD
+225.0000 USD              15,000.00000 XTS                         0.015 USD*| 0.015 USD                            15,000.00000 XTS              225.0000 USD
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
@@ -52,7 +52,7 @@ OK
 default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
 OK
 default (unlocked) >>> blockchain_market_order_book USD XTS
-     BIDS (* Short, + Relative, - Relative Limit)                            |                                   ASKS                                  
+                             BIDS (* Short)                                  |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
                                                                              |
@@ -60,7 +60,7 @@ TOTAL                     QUANTITY                                     PRICE | P
                              SHORT WALL                                      |                                   MARGIN                                  
 TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-                                                                             | 0.010000000000 USD                   22,500.00000 XTS              225.0000 USD       2014-06-20T16:40:50   45,000.00000 XTS
+                                                                             | 0.01 USD                             22,500.00000 XTS              225.0000 USD       2014-06-20T16:40:50   45,000.00000 XTS
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> debug_advance_time 1 block
 OK

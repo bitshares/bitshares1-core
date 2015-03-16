@@ -172,11 +172,11 @@ class ClientProcess(object):
     default_p2p_port = default_rpc_port
     default_username = "username"
     default_password = "password"
-    default_testdir = os.path.join(os.path.dirname(__file__), "btstests", "out")
     default_genesis_config = os.path.join(os.path.dirname(__file__), "drltc_tests", "genesis.json")
 
     def __init__(self,
         name="default",
+        testname=None,
         client_exe=None,
         p2p_port=None,
         rpc_port=None,
@@ -186,8 +186,13 @@ class ClientProcess(object):
         genesis_config=None,
         testdir=None,
         rpc_client=None,
+        debug_stop=False,
         ):
         self.name = name
+
+        if testname is None:
+            raise RuntimeError("Must set testname when creating ClientProcess")
+        self.testname = testname
 
         if client_exe is None:
             client_exe = self.default_client_exe
@@ -218,7 +223,7 @@ class ClientProcess(object):
         self.genesis_config = genesis_config
 
         if testdir is None:
-            testdir = self.default_testdir
+            testdir = self.get_default_testdir()
         self.testdir = testdir
 
         self.process_object = None
@@ -227,6 +232,8 @@ class ClientProcess(object):
         self.stderr_file = None
 
         self.rpc_client = rpc_client
+
+        self.debug_stop = debug_stop
 
         return
 
@@ -237,6 +244,14 @@ class ClientProcess(object):
     def __exit__(self, exc_type, exc_value, traceback):
         self.stop()
         return
+
+    def get_default_testdir(self):
+        return os.path.join(
+            os.path.dirname(__file__),
+            "btstests",
+            "out",
+            self.testname,
+            )
 
     def start(self):
         # execute process object and wait for RPC to become available
@@ -278,6 +293,9 @@ class ClientProcess(object):
             #"--log-commands", os.path.join(data_dir, "console.log"),
             ]
 
+        if self.debug_stop:
+            args.append("--debug-stop")
+
         logging.debug("args: "+str(args))
 
         self.stdout_file = open(os.path.join(data_dir, "stdout.txt"), "wb")
@@ -290,7 +308,14 @@ class ClientProcess(object):
             stdin=subprocess.PIPE,
             cwd=data_dir,
             )
+
+        with open(self.get_pid_filename(), "w") as pidfile:
+            pidfile.write(str(self.process_object.pid)+"\n")
+
         return
+
+    def get_pid_filename(self):
+        return os.path.join(self.testdir, self.name + ".pid")
 
     def stop(self):
         if self.process_object is None:
@@ -311,6 +336,11 @@ class ClientProcess(object):
             self.stdout_file.close()
         if self.stderr_file is not None:
             self.stderr_file.close()
+
+        try:
+            os.remove(self.get_pid_filename())
+        except OSError as e:
+            pass
 
         return
 
@@ -426,7 +456,14 @@ class TestClient(object):
         m = self.last_command_pos
         return self.last_command_output[self.last_command_pos:]
 
-def token_iterator(regex, s):
+class Token(object):
+    def __init__(self, text="", lineno=-1, col=-1):
+        self.text = text
+        self.lineno = lineno
+        self.col = col
+        return
+
+def _token_iterator(regex, s):
     """
     Returns match for regex, or non-matching characters
     """
@@ -437,6 +474,37 @@ def token_iterator(regex, s):
             yield s[i:j]
         i = m.end()
         yield m.group(0)
+    return
+
+re_nl = re.compile(r"\r\n?|\n")
+
+def _line_start_iter(s):
+    yield 0
+    for m in re_nl.finditer(s):
+        yield m.end()
+    return
+
+def token_iterator(regex, s):
+    """
+    Returns match for regex, or non-matching characters
+    """
+    ls_iter = _line_start_iter(s)
+    ls_index = -1
+    
+    lineno = 0
+    col = 1
+    
+    char_offset = 0
+    for t in _token_iterator(regex, s):
+        while char_offset >= ls_index:
+            lineno += 1
+            try:
+                ls_index = next(ls_iter)
+            except StopIteration:
+                ls_index = len(s)+1
+        col = char_offset-ls_index+1
+        yield Token(t, lineno, col)
+        char_offset += len(t)
     return
 
 class Test(object):
@@ -454,6 +522,7 @@ class Test(object):
         self.context["register_client"] = self.register_client
         self.context["expect_enabled"] = True
         self.context["showmatch_enabled"] = False
+        self.context["showlineno_enabled"] = False
         self.context["matchbuf"] = []
         self.context["_btstest"] = sys.modules[__name__]
         self.last_command_client = None
@@ -467,6 +536,7 @@ class Test(object):
 
         self.context["my_filename"] = testenv_filename
         self.context["my_path"] = os.path.dirname(testenv_filename)
+        self.context["testname"] = os.path.basename(self.context["my_path"])
 
         with add_to_sys_path([os.path.dirname(testenv_filename)]):
             exec(compiled_testenv, self.context)
@@ -485,11 +555,11 @@ class Test(object):
 
     def on_fail_literal_str(self, expected_value, got_value):
         # TODO: respect showmatch_enabled here
-        print("!{ " + expected_value + " }!~{ " + got_value + " }~", end="")
+        self.print_output("!{ " + expected_value + " }!~{ " + got_value + " }~")
         return
 
     def on_pass_literal_str(self, s):
-        print(s, end="")
+        self.print_output(s)
         return
 
     def expect_literal_str(self, data):
@@ -547,7 +617,7 @@ class Test(object):
 
     def dump_matchbuf(self, do_print=False):
         if do_print:
-            print("~{"+"".join(self.context["matchbuf"])+"}~", end="")
+            self.print_output("~{"+"".join(self.context["matchbuf"])+"}~")
         del self.context["matchbuf"][:]
         return
 
@@ -571,6 +641,14 @@ class Test(object):
                 self.context["showmatch_enabled"] = False
             else:
                 raise RuntimeError("unknown keyword in showmatch command")
+            return
+        elif cmd[0] == "!showlineno":
+            if cmd[1] == "enable":
+                self.context["showlineno_enabled"] = True
+            elif cmd[1] == "disable":
+                self.context["showlineno_enabled"] = False
+            else:
+                raise RuntimeError("unknown keyword in showlineno command")
             return
             
         # TODO: exception type
@@ -626,8 +704,9 @@ class Test(object):
         
         parse_pos = 0
         
-        for t in token_iterator(self.re_script_token, script_str):
+        for tok in token_iterator(self.re_script_token, script_str):
 
+            t = tok.text
             logging.debug("process token: "+repr(t[:40]))
             if t == "":
                 # empty token
@@ -639,19 +718,21 @@ class Test(object):
                 self.finish_cmd()
                 in_command = True
                 # echo
-                print(t, end="", flush=True)
+                if self.context["showlineno_enabled"]:
+                    self.print_output("L"+str(tok.lineno)+": ")
+                self.print_output(t)
             elif t[-1] in "\r\n":
                 # newline
                 if in_command:
                     in_command = False
                     self.execute_cmd("".join(cmd_text).strip())
                     del cmd_text[:]
-                print(t, end="", flush=True)
+                self.print_output(t)
             elif t[0] in " \t\f\v":
                 # whitespace
                 if in_command:
                     cmd_text.append(t)
-                print(t, end="", flush=True)
+                self.print_output(t)
             elif len(t) >= 4 and t[0:2] == "${":
                 # Python expression
                 if t[-2:] == "}$":
@@ -664,7 +745,7 @@ class Test(object):
                     expr = mo.group(1)
                 self.interpret_expr(expr)
                 # TODO: cmd_text.append() function
-                print("${"+expr+"}$", end="", flush=True)
+                self.print_output("${"+expr+"}$")
                 self.dump_matchbuf(self.context["showmatch_enabled"])
             elif len(t) >= 4 and t[0:2] == "#{" and t[-2:] == "}#":
                 # comment
@@ -697,10 +778,14 @@ class Test(object):
         if end_text.strip() != "":
             if self.context["expect_enabled"] and self.context["showmatch_enabled"]:
                 # TODO:  respect showmatch here
-                print("!{ }!~{ " + end_text.strip() + " }~")
+                self.print_output("!{ }!~{ " + end_text.strip() + " }~\n")
             else:
-                print(end_text, end="")
+                self.print_output(end_text)
         self.last_command_client = None
+        return
+
+    def print_output(self, text):
+        print(text, end="", flush=True)
         return
 
 def main():
@@ -708,6 +793,7 @@ def main():
     parser.add_argument("testdirs", metavar="TEST", type=str, nargs="+", help="Test directory")
     parser.add_argument("--testenv", metavar="ENV", type=str, action="append", help="Specify a global testenv")
     parser.add_argument("--loglevel", metavar="LOGLEVEL", type=str, default="INFO")
+    parser.add_argument("--client", metavar="CLIENT", type=str, default="", help="Path to BitShares client")
     
     args = parser.parse_args()
 
@@ -715,6 +801,9 @@ def main():
     if not isinstance(numeric_loglevel, int):
         raise ValueError("Invalid log level {}".format(repr(numeric_loglevel)))
     logging.basicConfig(level=numeric_loglevel)
+
+    if args.client != "":
+        ClientProcess.default_client_exe = args.client
 
     for d in args.testdirs:
         local_testenv_filename = os.path.join(d, "testenv")

@@ -302,6 +302,9 @@ Improvements to btstest
 - Have multiple `.btstest` in same directory do something meaningful
 - Create `!include` command to allow common functionality to be split off
 - Specify include path from command line or environment variable
+- REPL mode for directly talking to client(s)
+- Instructions for using gdb
+- Example(s) of tests that work with mainnet and testnet
 
 Test API
 --------
@@ -342,3 +345,36 @@ means verifying this invariant by iterating through micro entities (e.g. all bal
 be equal to the sum obtained, but might not be if there is a bug where some transactions, chain rewinding logic or whatever doesn't properly update the macro
 statistic).
 
+Using gdb with btstest
+----------------------
+
+Since `btstest` launches the BitShares executable, using GDB is non-trivial.  However, `btstest` has some support for this use case.
+
+Include `debug_stop=True` in your `ClientProcess` creation in `testenv`, like so:
+
+    with _btstest.ClientProcess(name="alice", debug_stop=True) as p_alice:
+
+This passes the `--debug-stop` parameter to the process which causes the BitShares executable to issue a `SIGSTOP` to itself at a defined point in its startup.
+Which will cause `btstest` to become unresponsive until you send the `SIGCONT` signal.
+Then GDB may be attached with the `--pid` flag.  The process can be located by the PID file whose name is `alice.pid`:
+
+    $ gdb --pid=$(cat tests/btstests/out/alice.pid)
+    (gdb) continue
+    (gdb) continue
+    (gdb) continue
+
+The `continue` command must be repeated several times on my system, I am not sure why.
+
+The `debug_trap` RPC call may be used to break into GDB in the middle of a run.  For example, the following shows a script which might be used to debug a `wallet_transfer` command causing a crash:
+
+    >>> balance alice
+    ACCOUNT                         BALANCE   
+    ============================================================
+    alice                           199,999.50000 XTS
+    >>> balance bob
+    ACCOUNT                         BALANCE   
+    ============================================================
+    bob                             219,998.50000 XTS
+                                    1,000.0000 USD
+    >>> debug_trap
+    >>> wallet_transfer 500 USD bob alice

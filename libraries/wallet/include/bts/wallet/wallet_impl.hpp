@@ -139,7 +139,14 @@ class wallet_impl : public chain_observer
       void withdraw_to_transaction( const asset& amount_to_withdraw,
                                     const string& from_account_name,
                                     signed_transaction& trx,
-                                    unordered_set<address>& required_signatures );
+                                    unordered_set<address>& required_signatures )const;
+
+      wallet_contact_record generic_recipient_to_contact( const string& generic_recipient )const;
+
+      public_key_type deposit_from_transaction( signed_transaction& transaction, const asset& amount,
+                                                const wallet_account_record& sender, const wallet_contact_record& recipient,
+                                                const string& memo );
+
       void authorize_update( unordered_set<address>& required_signatures, oaccount_record account, bool need_owner_key = false );
 
       void start_scan_task( const uint32_t start_block_num, const uint32_t limit );

@@ -1,26 +1,51 @@
-default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATING AN ASSET" 500 100 null true
+default (unlocked) >>> wallet_mia_create delegate0 XMO DIGITAL_DEVICE1 "CREATING AN ASSET" .001
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.50000 XTS   <d-ign></d-ign>
+<d-ign>2014-06-20T14:40:30</d-ign>PENDING   delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.00000 XTS   <d-ign> 2bee101c</d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
 OK
+default (unlocked) >>> blockchain_get_asset XMO
+{
+  "id": 1,
+  "symbol": "XMO",
+  "issuer_id": -2,
+  "authority": {
+    "required": 1,
+    "owners": []
+  },
+  "authority_flag_permissions": 4294967295,
+  "active_flags": 0,
+  "whitelist": [],
+  "name": "DIGITAL_DEVICE1",
+  "description": "CREATING AN ASSET",
+  "public_data": null,
+  "precision": 1000,
+  "max_supply": 1000000000000000,
+  "withdrawal_fee": 0,
+  "market_fee_rate": 0,
+  "collected_fees": 0,
+  "current_supply": 0,
+  "registration_date": "2014-06-20T14:40:30",
+  "last_update": "2014-06-20T14:40:30"
+}
 default (unlocked) >>> wallet_publish_price_feed delegate0 2 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate0           delegate0           0.00000 XTS             publish price 2. XMO / XTS                  0.50000 XTS         <d-ign></d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate0           delegate0           0.00000 XTS             publish price 2. XMO / XTS                  0.50000 XTS         <d-ign> 560dfd4c</d-ign>
 default (unlocked) >>> wallet_publish_price_feed delegate1 .2 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate1           delegate1           0.00000 XTS             publish price 0.2 XMO / XTS                 0.50000 XTS         <d-ign></d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate1           delegate1           0.00000 XTS             publish price 0.2 XMO / XTS                 0.50000 XTS         <d-ign> 63fcfdc2</d-ign>
 default (unlocked) >>> wallet_publish_price_feed delegate2 1 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate2           delegate2           0.00000 XTS             publish price 1. XMO / XTS                  0.50000 XTS         <d-ign></d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate2           delegate2           0.00000 XTS             publish price 1. XMO / XTS                  0.50000 XTS         <d-ign> c24fd523</d-ign>
 default (unlocked) >>> wallet_publish_price_feed delegate3 -100 XMO
-Command failed with exception: invalid price (20009)
-Invalid price!
+Command failed with exception: Assert Exception (10)
+quote_asset_id > base_asset_id: -100 > 0
+
 
 
 
@@ -28,10 +53,11 @@ Invalid price!
 default (unlocked) >>> wallet_publish_price_feed delegate4 2.5 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate4           delegate4           0.00000 XTS             publish price 2.5 XMO / XTS                 0.50000 XTS         <d-ign></d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate4           delegate4           0.00000 XTS             publish price 2.5 XMO / XTS                 0.50000 XTS         <d-ign> c47e71d1</d-ign>
 default (unlocked) >>> wallet_publish_price_feed delegate5 -.5 XMO
-Command failed with exception: invalid price (20009)
-Invalid price!
+Command failed with exception: Assert Exception (10)
+quote_asset_id > base_asset_id: 0 > 0
+
 
 
 
@@ -39,11 +65,11 @@ Invalid price!
 default (unlocked) >>> wallet_publish_price_feed delegate6 .01 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate6           delegate6           0.00000 XTS             publish price 0.01 XMO / XTS                0.50000 XTS         <d-ign></d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate6           delegate6           0.00000 XTS             publish price 0.01 XMO / XTS                0.50000 XTS         <d-ign> 761b4c09</d-ign>
 default (unlocked) >>> wallet_publish_price_feed delegate7 2 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate7           delegate7           0.00000 XTS             publish price 2. XMO / XTS                  0.50000 XTS         <d-ign></d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate7           delegate7           0.00000 XTS             publish price 2. XMO / XTS                  0.50000 XTS         <d-ign> 5735295b</d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
@@ -61,37 +87,37 @@ Returns:
 default (unlocked) >>> blockchain_get_feeds_for_asset XMO
 [{
     "delegate_name": "delegate0",
-    "price": 2,
+    "price": "2.",
     "last_update": "2014-06-20T14:40:40",
     "asset_symbol": null,
     "median_price": null
   },{
     "delegate_name": "delegate1",
-    "price": 0.20000000000000001,
+    "price": "0.2",
     "last_update": "2014-06-20T14:40:40",
     "asset_symbol": null,
     "median_price": null
   },{
     "delegate_name": "delegate2",
-    "price": 1,
+    "price": "1.",
     "last_update": "2014-06-20T14:40:40",
     "asset_symbol": null,
     "median_price": null
   },{
     "delegate_name": "delegate4",
-    "price": 2.5,
+    "price": "2.5",
     "last_update": "2014-06-20T14:40:40",
     "asset_symbol": null,
     "median_price": null
   },{
     "delegate_name": "delegate6",
-    "price": 0.01,
+    "price": "0.01",
     "last_update": "2014-06-20T14:40:40",
     "asset_symbol": null,
     "median_price": null
   },{
     "delegate_name": "delegate7",
-    "price": 2,
+    "price": "2.",
     "last_update": "2014-06-20T14:40:40",
     "asset_symbol": null,
     "median_price": null

@@ -28,7 +28,7 @@ wallet_set_transaction_fee <fee>                                                
 Set the fee to add to new transactions
 
 Parameters:
-  fee (real_amount, required): the wallet transaction fee to set
+  fee (string, required): the wallet transaction fee to set
 
 Returns:
   asset

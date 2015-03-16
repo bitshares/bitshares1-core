@@ -29,7 +29,7 @@ namespace bts { namespace blockchain {
              FC_THROW_EXCEPTION( price_multiplication_undefined, "price multiplication undefined (inf * 0)" );
          return r;
      }
-     
+
      // zero times anything is zero (infinity is already handled above)
      if( l.ratio == fc::uint128_t(0) )
          return l;
@@ -54,8 +54,7 @@ namespace bts { namespace blockchain {
 
      // NB we throw away the low bits, thus this function always rounds down
 
-     price result( fc::uint128( product ),
-                   l.base_asset_id, l.quote_asset_id );
+     price result( fc::uint128( product ), l.quote_asset_id, l.base_asset_id );
      return result;
   } FC_CAPTURE_AND_RETHROW( (l)(r) ) }
 
@@ -105,7 +104,7 @@ namespace bts { namespace blockchain {
       static fc::uint128 i(-1);
       return i;
   }
-  
+
   bool price::is_infinite() const
   {
       static fc::uint128 infinity = infinite();
@@ -173,29 +172,11 @@ namespace bts { namespace blockchain {
     return c - ratio_str.c_str();
   }
 
-  price::price( double a, asset_id_type q, asset_id_type b )
-  {
-     FC_ASSERT( q > b, "${quote} > ${base}", ("quote",q)("base",b) );
-
-     uint64_t high_bits = uint64_t(a);
-     double fract_part = a - high_bits;
-     //uint64_t low_bits = uint64_t(-1)*fract_part;
-     //ratio = fc::uint128( high_bits, low_bits );
-     ratio = (fc::uint128( high_bits ) * FC_REAL128_PRECISION) + (int64_t((fract_part) * FC_REAL128_PRECISION));
-     base_asset_id = b;
-     quote_asset_id = q;
-  }
-
-  price::operator double()const
-  {
-     return double(ratio.high_bits()) + double(ratio.low_bits()) / double(uint64_t(-1));
-  }
-
   std::string price::ratio_string()const
   {
      std::string full_int = std::string( ratio );
      std::stringstream ss;
-     ss <<std::string( ratio / FC_REAL128_PRECISION ); 
+     ss <<std::string( ratio / FC_REAL128_PRECISION );
      ss << '.';
      ss << std::string( (ratio % FC_REAL128_PRECISION) + FC_REAL128_PRECISION ).substr(1);
 
@@ -210,7 +191,7 @@ namespace bts { namespace blockchain {
      auto number = ratio_string();
 
      number += ' ' + fc::to_string(int64_t(quote_asset_id.value));
-     number +=  '/' + fc::to_string(int64_t(base_asset_id.value)); 
+     number +=  '/' + fc::to_string(int64_t(base_asset_id.value));
 
      return number;
   } FC_RETHROW_EXCEPTIONS( warn, "" )}
@@ -225,7 +206,7 @@ namespace bts { namespace blockchain {
    */
   price operator / ( const asset& a, const asset& b )
   {
-    try 
+    try
     {
         if( a.asset_id == b.asset_id )
            FC_CAPTURE_AND_THROW( asset_divide_by_self );
@@ -262,7 +243,7 @@ namespace bts { namespace blockchain {
    *  could be exchanged at price p.
    *
    *  ie:  p = 3 usd/bts & a = 4 bts then result = 12 usd
-   *  ie:  p = 3 usd/bts & a = 4 usd then result = 1.333 bts 
+   *  ie:  p = 3 usd/bts & a = 4 usd then result = 1.333 bts
    */
   asset operator * ( const asset& a, const price& p )
   {
@@ -273,7 +254,7 @@ namespace bts { namespace blockchain {
             fc::bigint r( p.ratio ); // 64.64
 
             auto amnt = ba * r; //  128.128
-            amnt /= FC_REAL128_PRECISION; // 128.64 
+            amnt /= FC_REAL128_PRECISION; // 128.64
             auto lg2 = amnt.log2();
             if( lg2 >= 128 )
             {
@@ -301,8 +282,8 @@ namespace bts { namespace blockchain {
             if( lg2 >= 128 )
             {
              //  wlog( "." );
-               FC_THROW_EXCEPTION( addition_overflow, 
-                                    "overflow ${a} / ${p} = ${r} lg2 = ${l}", 
+               FC_THROW_EXCEPTION( addition_overflow,
+                                    "overflow ${a} / ${p} = ${r} lg2 = ${l}",
                                     ("a",a)("p",p)("r", std::string(result)  )("l",lg2) );
             }
           //  result += 5000000000; // TODO: evaluate this rounding factor..
@@ -313,9 +294,9 @@ namespace bts { namespace blockchain {
            // ilog( "${a} * ${p} => ${rtn}", ("a", a)("p",p )("rtn",r) );
             return r;
         }
-        FC_THROW_EXCEPTION( asset_type_mismatch, "type mismatch multiplying asset ${a} by price ${p}", 
+        FC_THROW_EXCEPTION( asset_type_mismatch, "type mismatch multiplying asset ${a} by price ${p}",
                                             ("a",a)("p",p) );
-    } FC_RETHROW_EXCEPTIONS( warn, "type mismatch multiplying asset ${a} by price ${p}", 
+    } FC_RETHROW_EXCEPTIONS( warn, "type mismatch multiplying asset ${a} by price ${p}",
                                         ("a",a)("p",p) );
 
   }

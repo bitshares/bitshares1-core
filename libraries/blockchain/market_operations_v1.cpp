@@ -17,7 +17,7 @@ void ask_operation::evaluate_v1( transaction_evaluation_state& eval_state )const
 
    asset delta_amount  = this->get_amount();
 
-   auto current_ask   = eval_state._current_state->get_ask_record( this->ask_index );
+   auto current_ask   = eval_state._pending_state->get_ask_record( this->ask_index );
 
    if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
    if( this->amount <  0 ) // withdraw
@@ -39,21 +39,21 @@ void ask_operation::evaluate_v1( transaction_evaluation_state& eval_state )const
        eval_state.sub_balance( delta_amount );
    }
 
-   current_ask->last_update = eval_state._current_state->now();
+   current_ask->last_update = eval_state._pending_state->now();
    current_ask->balance     += this->amount;
    FC_ASSERT( current_ask->balance >= 0, "", ("current_ask",current_ask)  );
 
-   auto market_stat = eval_state._current_state->get_market_status( ask_index.order_price.quote_asset_id, ask_index.order_price.base_asset_id );
+   auto market_stat = eval_state._pending_state->get_market_status( ask_index.order_price.quote_asset_id, ask_index.order_price.base_asset_id );
 
    if( !market_stat )
       market_stat = market_status( ask_index.order_price.quote_asset_id, ask_index.order_price.base_asset_id );
    market_stat->ask_depth += delta_amount.amount;
 
-   eval_state._current_state->store_market_status( *market_stat );
+   eval_state._pending_state->store_market_status( *market_stat );
 
-   eval_state._current_state->store_ask_record( this->ask_index, *current_ask );
+   eval_state._pending_state->store_ask_record( this->ask_index, *current_ask );
 
-   //auto check   = eval_state._current_state->get_ask_record( this->ask_index );
+   //auto check   = eval_state._pending_state->get_ask_record( this->ask_index );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 void short_operation::evaluate_v1( transaction_evaluation_state& eval_state )const
@@ -72,16 +72,16 @@ void short_operation::evaluate_v1( transaction_evaluation_state& eval_state )con
    /** if the USD amount of the order is effectively then don't bother */
    FC_ASSERT( llabs( delta_quote.amount ) > 0, "", ("delta_quote",delta_quote)("order",*this));
 
-   auto  asset_to_short = eval_state._current_state->get_asset_record( short_index.order_price.quote_asset_id );
+   auto  asset_to_short = eval_state._pending_state->get_asset_record( short_index.order_price.quote_asset_id );
    FC_ASSERT( asset_to_short.valid() );
    FC_ASSERT( asset_to_short->is_market_issued(), "${symbol} is not a market issued asset", ("symbol",asset_to_short->symbol) );
 
-   if( eval_state._current_state->get_head_block_num() >= BTS_V0_4_17_FORK_BLOCK_NUM )
+   if( eval_state._pending_state->get_head_block_num() >= BTS_V0_4_17_FORK_BLOCK_NUM )
    {
        FC_ASSERT( !this->short_index.limit_price || *(this->short_index.limit_price) >= this->short_index.order_price, "Insufficient collateral at price limit" );
    }
 
-   auto current_short   = eval_state._current_state->get_short_record( this->short_index );
+   auto current_short   = eval_state._pending_state->get_short_record( this->short_index );
 
    if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
    if( this->amount <  0 ) // withdraw
@@ -107,19 +107,19 @@ void short_operation::evaluate_v1( transaction_evaluation_state& eval_state )con
        eval_state.sub_balance( delta_amount );
    }
    current_short->limit_price = this->short_index.limit_price;
-   current_short->last_update = eval_state._current_state->now();
+   current_short->last_update = eval_state._pending_state->now();
    current_short->balance     += this->amount;
    FC_ASSERT( current_short->balance >= 0 );
 
-   auto market_stat = eval_state._current_state->get_market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
+   auto market_stat = eval_state._pending_state->get_market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
    if( !market_stat )
       market_stat = market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
 
    market_stat->bid_depth += delta_amount.amount;
 
-   eval_state._current_state->store_market_status( *market_stat );
+   eval_state._pending_state->store_market_status( *market_stat );
 
-   eval_state._current_state->store_short_record( this->short_index, *current_short );
+   eval_state._pending_state->store_short_record( this->short_index, *current_short );
 }
 
 void add_collateral_operation::evaluate_v1( transaction_evaluation_state& eval_state )const
@@ -137,7 +137,7 @@ void add_collateral_operation::evaluate_v1( transaction_evaluation_state& eval_s
    eval_state.sub_balance( delta_amount );
 
    // update collateral and call price
-   auto current_cover   = eval_state._current_state->get_collateral_record( this->cover_index );
+   auto current_cover   = eval_state._pending_state->get_collateral_record( this->cover_index );
    if( NOT current_cover )
       FC_CAPTURE_AND_THROW( unknown_market_order, (cover_index) );
 
@@ -145,28 +145,28 @@ void add_collateral_operation::evaluate_v1( transaction_evaluation_state& eval_s
 
    // changing the payoff balance changes the call price... so we need to remove the old record
    // and insert a new one.
-   eval_state._current_state->store_collateral_record( this->cover_index, collateral_record() );
+   eval_state._pending_state->store_collateral_record( this->cover_index, collateral_record() );
 
    auto new_call_price = asset( current_cover->payoff_balance, cover_index.order_price.quote_asset_id ) /
                          asset( (current_cover->collateral_balance*2)/3, cover_index.order_price.base_asset_id );
 
-   eval_state._current_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
+   eval_state._pending_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
                                                        *current_cover );
 
-   auto market_stat = eval_state._current_state->get_market_status( cover_index.order_price.quote_asset_id, cover_index.order_price.base_asset_id );
+   auto market_stat = eval_state._pending_state->get_market_status( cover_index.order_price.quote_asset_id, cover_index.order_price.base_asset_id );
    FC_ASSERT( market_stat, "this should be valid for there to even be a position to cover" );
    market_stat->ask_depth += delta_amount.amount;
 
-   eval_state._current_state->store_market_status( *market_stat );
+   eval_state._pending_state->store_market_status( *market_stat );
 }
 
 void short_operation_v1::evaluate( transaction_evaluation_state& eval_state )const
 {
-   if( eval_state._current_state->get_head_block_num() >= BTS_V0_4_16_FORK_BLOCK_NUM )
+   if( eval_state._pending_state->get_head_block_num() >= BTS_V0_4_16_FORK_BLOCK_NUM )
    {
       FC_ASSERT( !"short_operation_v1 is no longer supported!" );
    }
-   else if( eval_state._current_state->get_head_block_num() < BTS_V0_4_12_FORK_BLOCK_NUM )
+   else if( eval_state._pending_state->get_head_block_num() < BTS_V0_4_12_FORK_BLOCK_NUM )
    {
       evaluate_v1( eval_state );
       return;
@@ -185,11 +185,11 @@ void short_operation_v1::evaluate( transaction_evaluation_state& eval_state )con
    /** if the USD amount of the order is effectively then don't bother */
    FC_ASSERT( llabs(delta_quote.amount) > 0, "", ("delta_quote",delta_quote)("order",*this));
 
-   auto  asset_to_short = eval_state._current_state->get_asset_record( short_index.order_price.quote_asset_id );
+   auto  asset_to_short = eval_state._pending_state->get_asset_record( short_index.order_price.quote_asset_id );
    FC_ASSERT( asset_to_short.valid() );
    FC_ASSERT( asset_to_short->is_market_issued(), "${symbol} is not a market issued asset", ("symbol",asset_to_short->symbol) );
 
-   auto current_short   = eval_state._current_state->get_short_record( this->short_index );
+   auto current_short   = eval_state._pending_state->get_short_record( this->short_index );
 
    if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
    if( this->amount <  0 ) // withdraw
@@ -215,7 +215,7 @@ void short_operation_v1::evaluate( transaction_evaluation_state& eval_state )con
    current_short->balance     += this->amount;
    FC_ASSERT( current_short->balance >= 0 );
 
-   auto market_stat = eval_state._current_state->get_market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
+   auto market_stat = eval_state._pending_state->get_market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
    if( !market_stat )
       market_stat = market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
 
@@ -230,7 +230,7 @@ void short_operation_v1::evaluate( transaction_evaluation_state& eval_state )con
       }
       else // if there is no average, there must be a median feed and the short must not be more than 10% above the feed
       {
-         auto median_delegate_price = eval_state._current_state->get_active_feed_price( short_index.order_price.quote_asset_id );
+         auto median_delegate_price = eval_state._pending_state->get_active_feed_price( short_index.order_price.quote_asset_id );
          FC_ASSERT( median_delegate_price.valid() );
          auto feed_max_short_bid = *median_delegate_price;
          feed_max_short_bid.ratio *= 10;
@@ -241,9 +241,9 @@ void short_operation_v1::evaluate( transaction_evaluation_state& eval_state )con
 
    market_stat->bid_depth += delta_amount.amount;
 
-   eval_state._current_state->store_market_status( *market_stat );
+   eval_state._pending_state->store_market_status( *market_stat );
 
-   eval_state._current_state->store_short_record( this->short_index, *current_short );
+   eval_state._pending_state->store_short_record( this->short_index, *current_short );
 }
 
 void short_operation_v1::evaluate_v1( transaction_evaluation_state& eval_state )const
@@ -261,11 +261,11 @@ void short_operation_v1::evaluate_v1( transaction_evaluation_state& eval_state )
    /** if the USD amount of the order is effectively then don't bother */
    FC_ASSERT( llabs(delta_quote.amount) > 0, "", ("delta_quote",delta_quote)("order",*this));
 
-   auto asset_to_short = eval_state._current_state->get_asset_record( short_index.order_price.quote_asset_id );
+   auto asset_to_short = eval_state._pending_state->get_asset_record( short_index.order_price.quote_asset_id );
    FC_ASSERT( asset_to_short.valid() );
    FC_ASSERT( asset_to_short->is_market_issued(), "${symbol} is not a market issued asset", ("symbol",asset_to_short->symbol) );
 
-   auto market_stat = eval_state._current_state->get_market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
+   auto market_stat = eval_state._pending_state->get_market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
    if( !market_stat )
       market_stat = market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
 
@@ -273,9 +273,9 @@ void short_operation_v1::evaluate_v1( transaction_evaluation_state& eval_state )
    {
       FC_ASSERT( short_index.order_price < market_stat->maximum_bid(), "", ("order",*this)("market_stat",market_stat) );
    }
-   else if( eval_state._current_state->get_head_block_num() >= BTS_V0_4_0_FORK_BLOCK_NUM )
+   else if( eval_state._pending_state->get_head_block_num() >= BTS_V0_4_0_FORK_BLOCK_NUM )
    {
-      auto median_delegate_price = eval_state._current_state->get_active_feed_price( short_index.order_price.quote_asset_id );
+      auto median_delegate_price = eval_state._pending_state->get_active_feed_price( short_index.order_price.quote_asset_id );
       FC_ASSERT( median_delegate_price.valid() );
       auto feed_max_short_bid = *median_delegate_price;
       feed_max_short_bid.ratio *= 4;
@@ -290,7 +290,7 @@ void short_operation_v1::evaluate_v1( transaction_evaluation_state& eval_state )
    }
    */
 
-   auto current_short   = eval_state._current_state->get_short_record( this->short_index );
+   auto current_short   = eval_state._pending_state->get_short_record( this->short_index );
 
    if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
    if( this->amount <  0 ) // withdraw
@@ -317,11 +317,11 @@ void short_operation_v1::evaluate_v1( transaction_evaluation_state& eval_state )
 
    market_stat->bid_depth += delta_amount.amount;
 
-   eval_state._current_state->store_market_status( *market_stat );
+   eval_state._pending_state->store_market_status( *market_stat );
 
-   eval_state._current_state->store_short_record( this->short_index, *current_short );
+   eval_state._pending_state->store_short_record( this->short_index, *current_short );
 
-   //auto check   = eval_state._current_state->get_ask_record( this->ask_index );
+   //auto check   = eval_state._pending_state->get_ask_record( this->ask_index );
 }
 
 void cover_operation::evaluate_v1( transaction_evaluation_state& eval_state )const
@@ -343,14 +343,14 @@ void cover_operation::evaluate_v1( transaction_evaluation_state& eval_state )con
    // subtract this from the transaction
    eval_state.sub_balance( delta_amount );
 
-   auto current_cover   = eval_state._current_state->get_collateral_record( this->cover_index );
+   auto current_cover   = eval_state._pending_state->get_collateral_record( this->cover_index );
    if( NOT current_cover )
       FC_CAPTURE_AND_THROW( unknown_market_order, (cover_index) );
 
    current_cover->payoff_balance -= delta_amount.amount;
    // changing the payoff balance changes the call price... so we need to remove the old record
    // and insert a new one.
-   eval_state._current_state->store_collateral_record( this->cover_index, collateral_record() );
+   eval_state._pending_state->store_collateral_record( this->cover_index, collateral_record() );
 
    if( current_cover->payoff_balance > 0 )
    {
@@ -358,21 +358,21 @@ void cover_operation::evaluate_v1( transaction_evaluation_state& eval_state )con
                             asset((current_cover->collateral_balance*3)/4, 0);
 
       if( this->new_cover_price && (*this->new_cover_price > new_call_price) )
-         eval_state._current_state->store_collateral_record( market_index_key( *this->new_cover_price, this->cover_index.owner),
+         eval_state._pending_state->store_collateral_record( market_index_key( *this->new_cover_price, this->cover_index.owner),
                                                              *current_cover );
       else
-         eval_state._current_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
+         eval_state._pending_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
                                                              *current_cover );
    }
    else // withdraw the collateral to the transaction to be deposited at owners discretion / cover fees
    {
       eval_state.add_balance( asset( current_cover->collateral_balance, 0 ) );
 
-      auto market_stat = eval_state._current_state->get_market_status( cover_index.order_price.quote_asset_id, cover_index.order_price.base_asset_id );
+      auto market_stat = eval_state._pending_state->get_market_status( cover_index.order_price.quote_asset_id, cover_index.order_price.base_asset_id );
       FC_ASSERT( market_stat, "this should be valid for there to even be a position to cover" );
       market_stat->ask_depth -= current_cover->collateral_balance;
 
-      eval_state._current_state->store_market_status( *market_stat );
+      eval_state._pending_state->store_market_status( *market_stat );
    }
 }
 
