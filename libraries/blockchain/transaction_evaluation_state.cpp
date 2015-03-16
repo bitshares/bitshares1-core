@@ -171,6 +171,17 @@ namespace bts { namespace blockchain {
             _current_state->store_asset_record( *asset_record );
          }
       }
+
+      if( _current_state->get_head_block_num() >= BTS_V0_6_4_FORK_BLOCK_NUM )
+      {
+          for( const auto& op : trx.operations )
+          {
+              if( operation_type_enum( op.type ) == cover_op_type )
+              {
+                  FC_ASSERT( balance[ 0 ] <= BTS_BLOCKCHAIN_PRECISION );
+              }
+          }
+      }
    } FC_CAPTURE_AND_RETHROW() }
 
    void transaction_evaluation_state::evaluate( const signed_transaction& trx_arg )
