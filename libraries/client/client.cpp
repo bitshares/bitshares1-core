@@ -759,6 +759,13 @@ block_fork_data client_impl::on_new_block(const full_block& block,
 {
    try
    {
+	  // delay until we want to accept the block
+	  while( (this->_debug_stop_before_block_num >= 1) &&
+	         (block.block_num >= this->_debug_stop_before_block_num) )
+	  {
+		  fc::usleep(fc::microseconds(1000000));
+	  }
+
       _sync_mode = sync_mode;
       if (sync_mode && _remaining_items_to_sync > 0)
          --_remaining_items_to_sync;
