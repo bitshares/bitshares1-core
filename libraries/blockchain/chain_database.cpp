@@ -805,7 +805,7 @@ namespace bts { namespace blockchain {
           if( block_digest.timestamp >  (now + BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*2) )
              FC_CAPTURE_AND_THROW( time_in_future, (block_digest.timestamp)(now)(delta_seconds) );
 
-          if( block_digest.block_num >= BTS_V0_7_0_FORK_BLOCK_NUM )
+          if( block_digest.block_num >= BTS_V0_8_0_FORK_BLOCK_NUM )
           {
               if( NOT block_digest.validate_digest() )
                  FC_CAPTURE_AND_THROW( invalid_block_digest );
@@ -910,7 +910,7 @@ namespace bts { namespace blockchain {
       void chain_database_impl::update_active_delegate_list( const uint32_t block_num,
                                                              const pending_chain_state_ptr& pending_state )const
       { try {
-          if( pending_state->get_head_block_num() < BTS_V0_7_0_FORK_BLOCK_NUM )
+          if( pending_state->get_head_block_num() < BTS_V0_8_0_FORK_BLOCK_NUM )
               return update_active_delegate_list_v1( block_num, pending_state );
 
           if( block_num % BTS_BLOCKCHAIN_NUM_DELEGATES != 0 )
@@ -953,7 +953,7 @@ namespace bts { namespace blockchain {
       void chain_database_impl::execute_markets( const time_point_sec timestamp,
                                                  const pending_chain_state_ptr& pending_state )const
       { try {
-        if( pending_state->get_head_block_num() < BTS_V0_8_0_FORK_BLOCK_NUM )
+        if( pending_state->get_head_block_num() < BTS_V0_9_0_FORK_BLOCK_NUM )
            return execute_markets_v1( timestamp, pending_state );
 
         vector<market_transaction> market_transactions;
@@ -1058,7 +1058,7 @@ namespace bts { namespace blockchain {
             else if( block_data.block_num == BTS_V0_4_17_FORK_BLOCK_NUM
                      || block_data.block_num == BTS_V0_4_21_FORK_BLOCK_NUM
                      || block_data.block_num == BTS_V0_4_24_FORK_BLOCK_NUM
-                     || block_data.block_num == BTS_V0_7_0_FORK_BLOCK_NUM )
+                     || block_data.block_num == BTS_V0_8_0_FORK_BLOCK_NUM )
             {
                 vector<asset_record> records;
                 for( auto iter = _asset_id_to_record.unordered_begin(); iter != _asset_id_to_record.unordered_end(); ++iter )
@@ -2115,9 +2115,9 @@ namespace bts { namespace blockchain {
       new_block.transaction_digest  = digest_block( new_block ).calculate_transaction_digest();
 
 #ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_7_0_FORK_BLOCK_NUM has passed
+#warning [SOFTFORK] Remove this check after BTS_V0_8_0_FORK_BLOCK_NUM has passed
 #endif
-      if( new_block.block_num < BTS_V0_7_0_FORK_BLOCK_NUM )
+      if( new_block.block_num < BTS_V0_8_0_FORK_BLOCK_NUM )
           new_block.transaction_digest = digest_type( "c8cf12fe3180ed901a58a0697a522f1217de72d04529bd255627a4ad6164f0f0" );
 
       return new_block;

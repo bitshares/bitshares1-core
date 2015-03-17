@@ -51,7 +51,7 @@ namespace bts { namespace blockchain { namespace detail {
               FC_ASSERT( !_pending_state->is_fraudulent_asset( *base_asset ) );
           }
 
-          if( _pending_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM )
+          if( _pending_state->get_head_block_num() >= BTS_V0_8_0_FORK_BLOCK_NUM )
           {
               FC_ASSERT( !quote_asset->flag_is_active( asset_record::halted_markets ) );
               FC_ASSERT( !base_asset->flag_is_active( asset_record::halted_markets ) );
@@ -235,7 +235,7 @@ namespace bts { namespace blockchain { namespace detail {
                 mtrx.ask_received = usd_exchanged;
 
                 /** handle rounding errors */
-                if( _pending_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM )
+                if( _pending_state->get_head_block_num() >= BTS_V0_8_0_FORK_BLOCK_NUM )
                 {
                     if( usd_exchanged == ask_quantity_usd )
                         mtrx.ask_paid = _current_ask->get_balance();
