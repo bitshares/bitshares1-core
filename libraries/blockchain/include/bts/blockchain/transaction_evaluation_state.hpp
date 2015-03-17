@@ -25,6 +25,13 @@ struct transaction_evaluation_state
 {
     transaction_evaluation_state( pending_chain_state_ptr pending_state = nullptr ) : _pending_state( pending_state ) {}
 
+    pending_chain_state* pending_state()const
+    {
+        const pending_chain_state_ptr ptr = _pending_state.lock();
+        FC_ASSERT( ptr );
+        return ptr.get();
+    }
+
     void evaluate( const signed_transaction& trx );
     void evaluate_operation( const operation& op );
     void validate_fees();
@@ -62,14 +69,12 @@ struct transaction_evaluation_state
     optional<fc::exception>                        validation_error;
 
     // Below not serialized
-
-    pending_chain_state_ptr                        _pending_state = nullptr;
-
     bool                                           _skip_signature_check = false;
     bool                                           _enforce_canonical_signatures = false;
     bool                                           _skip_vote_adjustment = false;
 
 private:
+    std::weak_ptr<pending_chain_state>             _pending_state;
     uint32_t                                       _current_op_index = 0;
 };
 typedef shared_ptr<transaction_evaluation_state> transaction_evaluation_state_ptr;
