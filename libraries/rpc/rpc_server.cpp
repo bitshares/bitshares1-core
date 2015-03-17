@@ -82,7 +82,7 @@ namespace bts { namespace rpc {
          virtual void verify_wallet_is_open() const override;
          virtual void verify_wallet_is_unlocked() const override;
          virtual void verify_connected_to_network() const override;
-         virtual void store_method_metadata(const bts::api::method_data& method_metadata);
+         virtual void store_method_metadata(const bts::api::method_data& method_metadata)override;
 
          std::string help(const std::string& command_name) const;
 
