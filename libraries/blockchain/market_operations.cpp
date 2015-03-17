@@ -24,8 +24,8 @@ namespace bts { namespace blockchain {
 
       auto owner = this->bid_index.owner;
 
-      auto base_asset_rec = eval_state._pending_state->get_asset_record( bid_index.order_price.base_asset_id );
-      auto quote_asset_rec = eval_state._pending_state->get_asset_record( bid_index.order_price.quote_asset_id );
+      auto base_asset_rec = eval_state.pending_state()->get_asset_record( bid_index.order_price.base_asset_id );
+      auto quote_asset_rec = eval_state.pending_state()->get_asset_record( bid_index.order_price.quote_asset_id );
       FC_ASSERT( base_asset_rec.valid() );
       FC_ASSERT( quote_asset_rec.valid() );
 
@@ -40,7 +40,7 @@ namespace bts { namespace blockchain {
 
       asset delta_amount = this->get_amount();
 
-      auto current_bid = eval_state._pending_state->get_bid_record( this->bid_index );
+      auto current_bid = eval_state.pending_state()->get_bid_record( this->bid_index );
 
       if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
       if( this->amount <  0 ) // withdraw
@@ -62,12 +62,12 @@ namespace bts { namespace blockchain {
           eval_state.sub_balance( delta_amount );
       }
 
-      current_bid->last_update = eval_state._pending_state->now();
+      current_bid->last_update = eval_state.pending_state()->now();
       current_bid->balance     += this->amount;
 
-      eval_state._pending_state->store_bid_record( this->bid_index, *current_bid );
+      eval_state.pending_state()->store_bid_record( this->bid_index, *current_bid );
 
-      //auto check   = eval_state._pending_state->get_bid_record( this->bid_index );
+      //auto check   = eval_state.pending_state()->get_bid_record( this->bid_index );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
    /**
@@ -78,7 +78,7 @@ namespace bts { namespace blockchain {
     */
    void ask_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
-      if( eval_state._pending_state->get_head_block_num() < BTS_V0_4_21_FORK_BLOCK_NUM )
+      if( eval_state.pending_state()->get_head_block_num() < BTS_V0_4_21_FORK_BLOCK_NUM )
          return evaluate_v1( eval_state );
 
       if( this->ask_index.order_price == price() )
@@ -86,8 +86,8 @@ namespace bts { namespace blockchain {
 
       auto owner = this->ask_index.owner;
 
-      auto base_asset_rec = eval_state._pending_state->get_asset_record( ask_index.order_price.base_asset_id );
-      auto quote_asset_rec = eval_state._pending_state->get_asset_record( ask_index.order_price.quote_asset_id );
+      auto base_asset_rec = eval_state.pending_state()->get_asset_record( ask_index.order_price.base_asset_id );
+      auto quote_asset_rec = eval_state.pending_state()->get_asset_record( ask_index.order_price.quote_asset_id );
       FC_ASSERT( base_asset_rec.valid() );
       FC_ASSERT( quote_asset_rec.valid() );
 
@@ -102,7 +102,7 @@ namespace bts { namespace blockchain {
 
       asset delta_amount  = this->get_amount();
 
-      auto current_ask   = eval_state._pending_state->get_ask_record( this->ask_index );
+      auto current_ask   = eval_state.pending_state()->get_ask_record( this->ask_index );
 
       if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
       if( this->amount <  0 ) // withdraw
@@ -124,20 +124,20 @@ namespace bts { namespace blockchain {
           eval_state.sub_balance( delta_amount );
       }
 
-      current_ask->last_update = eval_state._pending_state->now();
+      current_ask->last_update = eval_state.pending_state()->now();
       current_ask->balance     += this->amount;
       FC_ASSERT( current_ask->balance >= 0, "", ("current_ask",current_ask)  );
 
-      eval_state._pending_state->store_ask_record( this->ask_index, *current_ask );
+      eval_state.pending_state()->store_ask_record( this->ask_index, *current_ask );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
    void short_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
-      if( eval_state._pending_state->get_head_block_num() < BTS_V0_8_0_FORK_BLOCK_NUM )
+      if( eval_state.pending_state()->get_head_block_num() < BTS_V0_8_0_FORK_BLOCK_NUM )
          return evaluate_v2( eval_state );
 
-      const auto base_asset_rec = eval_state._pending_state->get_asset_record( short_index.order_price.base_asset_id );
-      const auto quote_asset_rec = eval_state._pending_state->get_asset_record( short_index.order_price.quote_asset_id );
+      const auto base_asset_rec = eval_state.pending_state()->get_asset_record( short_index.order_price.base_asset_id );
+      const auto quote_asset_rec = eval_state.pending_state()->get_asset_record( short_index.order_price.quote_asset_id );
       FC_ASSERT( base_asset_rec.valid() );
       FC_ASSERT( quote_asset_rec.valid() );
 
@@ -153,11 +153,11 @@ namespace bts { namespace blockchain {
       // Only allow using the base asset as collateral
       FC_ASSERT( delta_amount.asset_id == 0 );
 
-      auto  asset_to_short = eval_state._pending_state->get_asset_record( short_index.order_price.quote_asset_id );
+      auto  asset_to_short = eval_state.pending_state()->get_asset_record( short_index.order_price.quote_asset_id );
       FC_ASSERT( asset_to_short.valid() );
       FC_ASSERT( asset_to_short->is_market_issued(), "${symbol} is not a market issued asset", ("symbol",asset_to_short->symbol) );
 
-      auto current_short   = eval_state._pending_state->get_short_record( this->short_index );
+      auto current_short   = eval_state.pending_state()->get_short_record( this->short_index );
       //if( current_short ) wdump( (current_short) );
 
       if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
@@ -184,11 +184,11 @@ namespace bts { namespace blockchain {
           eval_state.sub_balance( delta_amount );
       }
       current_short->limit_price = this->short_index.limit_price;
-      current_short->last_update = eval_state._pending_state->now();
+      current_short->last_update = eval_state.pending_state()->now();
       current_short->balance     += this->amount;
       FC_ASSERT( current_short->balance >= 0 );
 
-      eval_state._pending_state->store_short_record( this->short_index, *current_short );
+      eval_state.pending_state()->store_short_record( this->short_index, *current_short );
    }
 
    /**
@@ -198,11 +198,11 @@ namespace bts { namespace blockchain {
    */
    void cover_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
-      if( eval_state._pending_state->get_head_block_num() < BTS_V0_9_0_FORK_BLOCK_NUM )
+      if( eval_state.pending_state()->get_head_block_num() < BTS_V0_9_0_FORK_BLOCK_NUM )
          return evaluate_v5( eval_state );
 
-      const auto base_asset_rec = eval_state._pending_state->get_asset_record( cover_index.order_price.base_asset_id );
-      const auto quote_asset_rec = eval_state._pending_state->get_asset_record( cover_index.order_price.quote_asset_id );
+      const auto base_asset_rec = eval_state.pending_state()->get_asset_record( cover_index.order_price.base_asset_id );
+      const auto quote_asset_rec = eval_state.pending_state()->get_asset_record( cover_index.order_price.quote_asset_id );
       FC_ASSERT( base_asset_rec.valid() );
       FC_ASSERT( quote_asset_rec.valid() );
 
@@ -223,15 +223,15 @@ namespace bts { namespace blockchain {
       // subtract this from the transaction
       eval_state.sub_balance( delta_amount );
 
-      auto current_cover   = eval_state._pending_state->get_collateral_record( this->cover_index );
+      auto current_cover   = eval_state.pending_state()->get_collateral_record( this->cover_index );
       if( NOT current_cover )
          FC_CAPTURE_AND_THROW( unknown_market_order, (cover_index) );
 
-      auto  asset_to_cover = eval_state._pending_state->get_asset_record( cover_index.order_price.quote_asset_id );
+      auto  asset_to_cover = eval_state.pending_state()->get_asset_record( cover_index.order_price.quote_asset_id );
       FC_ASSERT( asset_to_cover.valid() );
 
       const auto start_time = current_cover->expiration - fc::seconds( BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC );
-      auto elapsed_sec = ( eval_state._pending_state->now() - start_time ).to_seconds();
+      auto elapsed_sec = ( eval_state.pending_state()->now() - start_time ).to_seconds();
       if( elapsed_sec < 0 ) elapsed_sec = 0;
 
       const asset principle = asset( current_cover->payoff_balance, delta_amount.asset_id );
@@ -260,11 +260,11 @@ namespace bts { namespace blockchain {
       //Covered asset is destroyed, interest pays to fees
       asset_to_cover->current_supply -= principle_paid.amount;
       asset_to_cover->collected_fees += interest_paid.amount;
-      eval_state._pending_state->store_asset_record( *asset_to_cover );
+      eval_state.pending_state()->store_asset_record( *asset_to_cover );
 
       // changing the payoff balance changes the call price... so we need to remove the old record
       // and insert a new one.
-      eval_state._pending_state->store_collateral_record( this->cover_index, collateral_record() );
+      eval_state.pending_state()->store_collateral_record( this->cover_index, collateral_record() );
 
       FC_ASSERT( current_cover->interest_rate.quote_asset_id > current_cover->interest_rate.base_asset_id,
                  "Rejecting cover order with invalid interest rate.", ("cover", *current_cover) );
@@ -277,10 +277,10 @@ namespace bts { namespace blockchain {
                                             cover_index.order_price.base_asset_id );
 
          if( this->new_cover_price && (*this->new_cover_price > new_call_price) )
-            eval_state._pending_state->store_collateral_record( market_index_key( *this->new_cover_price, this->cover_index.owner ),
+            eval_state.pending_state()->store_collateral_record( market_index_key( *this->new_cover_price, this->cover_index.owner ),
                                                                 *current_cover );
          else
-            eval_state._pending_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner ),
+            eval_state.pending_state()->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner ),
                                                                 *current_cover );
       }
       else // withdraw the collateral to the transaction to be deposited at owners discretion / cover fees
@@ -295,11 +295,11 @@ namespace bts { namespace blockchain {
 
    void add_collateral_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
-      if( eval_state._pending_state->get_head_block_num() < BTS_V0_9_0_FORK_BLOCK_NUM )
+      if( eval_state.pending_state()->get_head_block_num() < BTS_V0_9_0_FORK_BLOCK_NUM )
          return evaluate_v2( eval_state );
 
-      const auto base_asset_rec = eval_state._pending_state->get_asset_record( cover_index.order_price.base_asset_id );
-      const auto quote_asset_rec = eval_state._pending_state->get_asset_record( cover_index.order_price.quote_asset_id );
+      const auto base_asset_rec = eval_state.pending_state()->get_asset_record( cover_index.order_price.base_asset_id );
+      const auto quote_asset_rec = eval_state.pending_state()->get_asset_record( cover_index.order_price.quote_asset_id );
       FC_ASSERT( base_asset_rec.valid() );
       FC_ASSERT( quote_asset_rec.valid() );
 
@@ -316,7 +316,7 @@ namespace bts { namespace blockchain {
       eval_state.sub_balance( delta_amount );
 
       // update collateral and call price
-      auto current_cover = eval_state._pending_state->get_collateral_record( this->cover_index );
+      auto current_cover = eval_state.pending_state()->get_collateral_record( this->cover_index );
       if( NOT current_cover )
          FC_CAPTURE_AND_THROW( unknown_market_order, (cover_index) );
 
@@ -330,10 +330,9 @@ namespace bts { namespace blockchain {
 
       // changing the payoff balance changes the call price... so we need to remove the old record
       // and insert a new one.
-      eval_state._pending_state->store_collateral_record( this->cover_index, collateral_record() );
+      eval_state.pending_state()->store_collateral_record( this->cover_index, collateral_record() );
 
-
-      eval_state._pending_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
+      eval_state.pending_state()->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
                                                           *current_cover );
    }
 
@@ -351,7 +350,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( this->new_call_price.base_asset_id == cover_index.order_price.base_asset_id );
 
       // update collateral and call price
-      auto current_cover = eval_state._pending_state->get_collateral_record( this->cover_index );
+      auto current_cover = eval_state.pending_state()->get_collateral_record( this->cover_index );
       if( NOT current_cover )
          FC_CAPTURE_AND_THROW( unknown_market_order, (cover_index) );
 
@@ -364,14 +363,15 @@ namespace bts { namespace blockchain {
 
       // changing the payoff balance changes the call price... so we need to remove the old record
       // and insert a new one.
-      eval_state._pending_state->store_collateral_record( this->cover_index, collateral_record() );
+      eval_state.pending_state()->store_collateral_record( this->cover_index, collateral_record() );
       if( this->new_slate && *this->new_slate != current_cover->slate_id )
       {
          eval_state.adjust_vote( current_cover->slate_id, -current_cover->collateral_balance );
          current_cover->slate_id = *this->new_slate;
          eval_state.adjust_vote( current_cover->slate_id, current_cover->collateral_balance );
       }
-      eval_state._pending_state->store_collateral_record( market_index_key( new_call_price, this->new_owner ? *this->new_owner : this->cover_index.owner),
+
+      eval_state.pending_state()->store_collateral_record( market_index_key( new_call_price, this->new_owner ? *this->new_owner : this->cover_index.owner),
                                                           *current_cover );
    }
 
