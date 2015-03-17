@@ -3,6 +3,7 @@ Feature: Short/cover BitUSD
   I want to short BitUSD
   So I can profit from USD price drop
 
+@current @pause
 Scenario: Alice shorts BitUSD and sells to Bob, then Bob shorts and Alice covers
   Given USD/XTS market
   And I'm Alice
@@ -19,16 +20,9 @@ Scenario: Alice shorts BitUSD and sells to Bob, then Bob shorts and Alice covers
   And I should have the following market order:
     | Type        | Collateral | Interest Rate |
     | cover_order | 30000      | 10            |
-  When Bob shorts USD, collateral 40,000 XTS, interest rate 11%
-  And I submit ask for 12000 XTS at 0.01 USD/XTS
-  And I wait for 2 blocks
-  Then I should have 68,000 XTS minus 2*fee
-  And I should have 120 USD
-  And Bob should have 50,000 XTS minus 2*fee
-  When I cover last USD margin order in full
-  And I wait for 2 blocks
-  Then I should have around 20 USD
-  And I should have no margin orders
+
+
+
 
 Scenario: Alice shorts BitUSD with price limit, price feed moves short executes, Bob is able to sell 10 USD paying fee in USD
   Given USD/XTS market
