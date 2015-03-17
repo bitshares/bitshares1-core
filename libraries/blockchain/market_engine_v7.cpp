@@ -622,6 +622,10 @@ namespace bts { namespace blockchain { namespace detail {
 
   bool market_engine_v7::get_next_short_v064()
   {
+      // if top-of-book short is better than _current_bid:
+      //    write short into _current_bid
+      //    move _short_itr
+      //    return true
       if( _short_itr.valid() )
       {
         auto bid = market_order( short_order,
@@ -629,12 +633,22 @@ namespace bts { namespace blockchain { namespace detail {
                                  _short_itr.value(),
                                  _short_itr.value().balance,
                                  _short_itr.key().order_price );
-        if( bid.get_price().quote_asset_id == _quote_id &&
-            bid.get_price().base_asset_id == _base_id )
+        
+        // we don't use get_price(*_feed_price) here because
+        // this is checking whether the index might have moved into
+        // another market, which might not have a valid feed
+        if( (bid.get_price().quote_asset_id != _quote_id) ||
+            (bid.get_price().base_asset_id != _base_id) )
+            return false;
+
+        if(
+            (!_current_bid.valid()) ||
+            (bid.get_price(*_feed_price) > _current_bid->get_price(*_feed_price))
+          )
         {
             --_short_itr;
             _current_bid = bid;
-            return _current_bid.valid();
+            return true;
         }
       }
       return false;
@@ -653,14 +667,15 @@ namespace bts { namespace blockchain { namespace detail {
         auto bid = market_order( bid_order, _bid_itr.key(), _bid_itr.value() );
         if( bid.get_price().quote_asset_id == _quote_id &&
             bid.get_price().base_asset_id == _base_id )
-        {
-            if( _feed_price.valid() && bid.get_price() < *_feed_price && get_next_short() )
-                return _current_bid.valid();
-
             _current_bid = bid;
+
+        if( _feed_price.valid() && bid.get_price() < *_feed_price && get_next_short() )
+            return true;
+
+        if( _current_bid.valid() )
             --_bid_itr;
-            return _current_bid.valid();
-        }
+
+        return _current_bid.valid();
       }
       get_next_short();
       return _current_bid.valid();
