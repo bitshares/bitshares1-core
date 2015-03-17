@@ -40,7 +40,7 @@ void create_asset_operation::evaluate( transaction_evaluation_state& eval_state 
     {
         string parent_symbol = this->symbol.substr( 0, dot_pos );
         oasset_record parent_asset_record = eval_state._pending_state->get_asset_record( parent_symbol );
-        FC_ASSERT( parent_asset_record.valid() );
+        FC_ASSERT( parent_asset_record.valid() && parent_asset_record->is_user_issued() );
 
         if( !eval_state.verify_authority( parent_asset_record->authority ) )
             FC_CAPTURE_AND_THROW( missing_signature, (parent_asset_record->authority) );
