@@ -145,6 +145,8 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
          ("input-log", program_options::value< vector<string> >(), "Set log file with CLI commands to execute at startup")
          ("log-commands", "Log all command input and output")
          ("ulog", program_options::value<bool>()->default_value( true ), "Enable CLI user logging")
+         
+         ("stop-before-block", program_options::value<uint32_t>(), "stop before given block number")
 
          ("growl", program_options::value<std::string>()->implicit_value("127.0.0.1"), "Send notifications about potential problems to Growl")
          ("growl-password", program_options::value<std::string>(), "Password for authenticating to a Growl server")
@@ -1572,6 +1574,8 @@ void client::configure_from_command_line(int argc, char** argv)
       }
    } //end else we will accept input from the console
 
+   if( option_variables.count("stop-before-block") )
+      my->_debug_stop_before_block_num = option_variables["stop-before-block"].as<uint32_t>();
 
    // start listening.  this just finds a port and binds it, it doesn't start
    // accepting connections until connect_to_p2p_network()
