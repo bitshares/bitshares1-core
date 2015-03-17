@@ -32,36 +32,36 @@ bool is_power_of_ten( uint64_t n )
 
 void create_asset_operation::evaluate( transaction_evaluation_state& eval_state )const
 { try {
-    if( !eval_state._pending_state->is_valid_symbol_name( this->symbol ) )
+    if( !eval_state.pending_state()->is_valid_symbol_name( this->symbol ) )
         FC_CAPTURE_AND_THROW( invalid_asset_symbol, (symbol) );
 
     const auto dot_pos = this->symbol.find('.');
     if( dot_pos != string::npos )
     {
         string parent_symbol = this->symbol.substr( 0, dot_pos );
-        oasset_record parent_asset_record = eval_state._pending_state->get_asset_record( parent_symbol );
+        oasset_record parent_asset_record = eval_state.pending_state()->get_asset_record( parent_symbol );
         FC_ASSERT( parent_asset_record.valid() && parent_asset_record->is_user_issued() );
 
         if( !eval_state.verify_authority( parent_asset_record->authority ) )
             FC_CAPTURE_AND_THROW( missing_signature, (parent_asset_record->authority) );
     }
 
-    oasset_record current_asset_record = eval_state._pending_state->get_asset_record( this->symbol );
+    oasset_record current_asset_record = eval_state.pending_state()->get_asset_record( this->symbol );
     if( current_asset_record.valid() )
         FC_CAPTURE_AND_THROW( asset_symbol_in_use, (symbol) );
 
     if( this->name.empty() )
         FC_CAPTURE_AND_THROW( invalid_asset_name, (this->name) );
 
-    const asset_id_type asset_id = eval_state._pending_state->last_asset_id() + 1;
-    current_asset_record = eval_state._pending_state->get_asset_record( asset_id );
+    const asset_id_type asset_id = eval_state.pending_state()->last_asset_id() + 1;
+    current_asset_record = eval_state.pending_state()->get_asset_record( asset_id );
     if( current_asset_record.valid() )
         FC_CAPTURE_AND_THROW( asset_id_in_use, (asset_id) );
 
     oaccount_record issuer_account_record;
     if( issuer_account_id != asset_record::market_issuer_id )
     {
-        issuer_account_record = eval_state._pending_state->get_account_record( this->issuer_account_id );
+        issuer_account_record = eval_state.pending_state()->get_account_record( this->issuer_account_id );
         if( !issuer_account_record.valid() )
             FC_CAPTURE_AND_THROW( unknown_account_id, (issuer_account_id) );
     }
@@ -72,12 +72,12 @@ void create_asset_operation::evaluate( transaction_evaluation_state& eval_state 
     if( !is_power_of_ten( this->precision ) )
         FC_CAPTURE_AND_THROW( invalid_precision, (this->precision) );
 
-    const asset reg_fee( eval_state._pending_state->get_asset_registration_fee( this->symbol.size() ), 0 );
+    const asset reg_fee( eval_state.pending_state()->get_asset_registration_fee( this->symbol.size() ), 0 );
     eval_state.min_fees[ reg_fee.asset_id ] += reg_fee.amount;
 
     asset_record new_record;
 
-    new_record.id                 = eval_state._pending_state->new_asset_id();
+    new_record.id                 = eval_state.pending_state()->new_asset_id();
     new_record.symbol             = this->symbol;
 
     new_record.issuer_id          = this->issuer_account_id;
@@ -95,15 +95,15 @@ void create_asset_operation::evaluate( transaction_evaluation_state& eval_state 
     new_record.precision          = this->precision;
     new_record.max_supply         = this->maximum_share_supply;
 
-    new_record.registration_date  = eval_state._pending_state->now();
+    new_record.registration_date  = eval_state.pending_state()->now();
     new_record.last_update        = new_record.registration_date;
 
-    eval_state._pending_state->store_asset_record( new_record );
+    eval_state.pending_state()->store_asset_record( new_record );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 void issue_asset_operation::evaluate( transaction_evaluation_state& eval_state )const
 { try {
-    oasset_record current_asset_record = eval_state._pending_state->get_asset_record( abs( this->amount.asset_id ) );
+    oasset_record current_asset_record = eval_state.pending_state()->get_asset_record( abs( this->amount.asset_id ) );
     if( !current_asset_record.valid() )
         FC_CAPTURE_AND_THROW( unknown_asset_id, (amount.asset_id) );
 
@@ -133,13 +133,13 @@ void issue_asset_operation::evaluate( transaction_evaluation_state& eval_state )
 
     eval_state.add_balance( asset( this->amount.amount, abs( this->amount.asset_id ) ) );
 
-    current_asset_record->last_update = eval_state._pending_state->now();
-    eval_state._pending_state->store_asset_record( *current_asset_record );
+    current_asset_record->last_update = eval_state.pending_state()->now();
+    eval_state.pending_state()->store_asset_record( *current_asset_record );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 void asset_update_properties_operation::evaluate( transaction_evaluation_state& eval_state )const
 { try {
-    oasset_record current_asset_record = eval_state._pending_state->get_asset_record( this->asset_id );
+    oasset_record current_asset_record = eval_state.pending_state()->get_asset_record( this->asset_id );
     if( !current_asset_record.valid() )
         FC_CAPTURE_AND_THROW( unknown_asset_id, (this->asset_id) );
 
@@ -161,7 +161,7 @@ void asset_update_properties_operation::evaluate( transaction_evaluation_state& 
 
     if( this->issuer_id.valid() )
     {
-        const oaccount_record account_record = eval_state._pending_state->get_account_record( *this->issuer_id );
+        const oaccount_record account_record = eval_state.pending_state()->get_account_record( *this->issuer_id );
         if( !account_record.valid() )
             FC_CAPTURE_AND_THROW( unknown_account_id, (*this->issuer_id) );
 
@@ -226,13 +226,13 @@ void asset_update_properties_operation::evaluate( transaction_evaluation_state& 
         current_asset_record->market_fee_rate = *this->market_fee_rate;
     }
 
-    current_asset_record->last_update = eval_state._pending_state->now();
-    eval_state._pending_state->store_asset_record( *current_asset_record );
+    current_asset_record->last_update = eval_state.pending_state()->now();
+    eval_state.pending_state()->store_asset_record( *current_asset_record );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 void asset_update_permissions_operation::evaluate( transaction_evaluation_state& eval_state )const
 { try {
-    oasset_record current_asset_record = eval_state._pending_state->get_asset_record( this->asset_id );
+    oasset_record current_asset_record = eval_state.pending_state()->get_asset_record( this->asset_id );
     if( !current_asset_record.valid() )
         FC_CAPTURE_AND_THROW( unknown_asset_id, (this->asset_id) );
 
@@ -284,13 +284,13 @@ void asset_update_permissions_operation::evaluate( transaction_evaluation_state&
         current_asset_record->active_flags = *this->active_flags;
     }
 
-    current_asset_record->last_update = eval_state._pending_state->now();
-    eval_state._pending_state->store_asset_record( *current_asset_record );
+    current_asset_record->last_update = eval_state.pending_state()->now();
+    eval_state.pending_state()->store_asset_record( *current_asset_record );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 void asset_update_whitelist_operation::evaluate( transaction_evaluation_state& eval_state )const
 { try {
-    oasset_record current_asset_record = eval_state._pending_state->get_asset_record( abs( this->asset_id ) );
+    oasset_record current_asset_record = eval_state.pending_state()->get_asset_record( abs( this->asset_id ) );
     if( !current_asset_record.valid() )
         FC_CAPTURE_AND_THROW( unknown_asset_id );
 
@@ -307,7 +307,7 @@ void asset_update_whitelist_operation::evaluate( transaction_evaluation_state& e
         current_asset_record->whitelist.erase( this->owner );
     }
 
-    eval_state._pending_state->store_asset_record( *current_asset_record );
+    eval_state.pending_state()->store_asset_record( *current_asset_record );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 } } // bts::blockchain
