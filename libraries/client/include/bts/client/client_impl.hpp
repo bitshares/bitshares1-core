@@ -310,6 +310,7 @@ public:
    fc::future<void>                                        _client_done;
 
    uint32_t                                                _debug_last_wait_block;
+   uint32_t                                                _debug_stop_before_block_num;
 
    void wallet_http_callback( const string& url, const ledger_entry& e );
    boost::signals2::scoped_connection   _http_callback_signal_connection;
