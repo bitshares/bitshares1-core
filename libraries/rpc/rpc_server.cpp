@@ -324,6 +324,21 @@ namespace bts { namespace rpc {
              }
          }
 
+         static string send_and_log_reply( const fc::http::server::response& s,
+                                           const fc::http::reply::status_code status,
+                                           const fc::path& path,
+                                           const string& method,
+                                           const fc::mutable_variant_object& json)
+         {
+             s.set_status( status );
+             auto reply = fc::json::to_string( json );
+             s.set_length( reply.size() );
+             s.write( reply.c_str(), reply.size() );
+             auto reply_log = reply.size() > 253 ? reply.substr(0,253) + ".." :  reply;
+             fc_ilog( fc::logger::get("rpc"), "Result ${path} ${method}: ${reply}", ("path",path)("method",method)("reply",reply_log));
+             return reply;
+         }
+
          fc::http::reply::status_code handle_http_rpc(const fc::http::request& r, const fc::http::server::response& s )
          {
                 fc::http::reply::status_code status = fc::http::reply::OK;
@@ -353,13 +368,9 @@ namespace bts { namespace rpc {
                       if( cache_itr != _call_cache.end() )
                       {
                          status = fc::http::reply::OK;
-                         s.set_status( status );
-
-                         auto reply = cache_itr->second;
-                         s.set_length( reply.size() );
-                         s.write( reply.c_str(), reply.size() );
-                         auto reply_log = reply.size() > 253 ? reply.substr(0,253) + ".." :  reply;
-                         fc_ilog( fc::logger::get("rpc"), "Result ${path} ${method}: ${reply}", ("path",r.path)("method",method_name)("reply",reply_log));
+                         fc::mutable_variant_object json( fc::json::from_string( cache_itr->second ) );
+                         json["id"] =  rpc_call["id"];
+                         send_and_log_reply( s, status, r.path, method_name, json );
                          return status;
                       }
                    }
@@ -380,7 +391,6 @@ namespace bts { namespace rpc {
                          result["result"] = dispatch_authenticated_method(_method_map[call_itr->second], params);
                       //   auto reply = fc::json::to_string( result );
                          status = fc::http::reply::OK;
-                         s.set_status( status );
                       }
                       catch ( const fc::canceled_exception& )
                       {
@@ -389,18 +399,12 @@ namespace bts { namespace rpc {
                       catch ( const fc::exception& e )
                       {
                           status = fc::http::reply::InternalServerError;
-                          s.set_status( status );
                           result["error"] = fc::mutable_variant_object("message",e.to_string())( "detail",e.to_detail_string() )("code",e.code());
                       }
                       //ilog( "${e}", ("e",result) );
-                      auto reply = fc::json::to_string( result );
-                      s.set_length( reply.size() );
-                      s.write( reply.c_str(), reply.size() );
-                      auto reply_log = reply.size() > 253 ? reply.substr(0,253) + ".." :  reply;
-                      fc_ilog( fc::logger::get("rpc"), "Result ${path} ${method}: ${reply}", ("path",r.path)("method",method_name)("reply",reply_log));
-
+                      auto reply = send_and_log_reply( s, status, r.path, method_name, result );
                       if( _method_map[method_name].cached )
-                         _call_cache[request_key] = reply;
+                         _call_cache[request_key] = std::move( reply );
 
                       return status;
                    }
