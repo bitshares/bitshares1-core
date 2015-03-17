@@ -51,7 +51,7 @@ namespace bts { namespace blockchain { namespace detail {
               FC_ASSERT( !_pending_state->is_fraudulent_asset( *base_asset ) );
           }
 
-          if( _pending_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM )
+          if( _pending_state->get_head_block_num() >= BTS_V0_8_0_FORK_BLOCK_NUM )
           {
               FC_ASSERT( !quote_asset->flag_is_active( asset_record::halted_markets ) );
               FC_ASSERT( !base_asset->flag_is_active( asset_record::halted_markets ) );
@@ -235,7 +235,7 @@ namespace bts { namespace blockchain { namespace detail {
                 mtrx.ask_received = usd_exchanged;
 
                 /** handle rounding errors */
-                if( _pending_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM )
+                if( _pending_state->get_head_block_num() >= BTS_V0_8_0_FORK_BLOCK_NUM )
                 {
                     if( usd_exchanged == ask_quantity_usd )
                         mtrx.ask_paid = _current_ask->get_balance();
@@ -471,7 +471,7 @@ namespace bts { namespace blockchain { namespace detail {
       // if the balance is less than 1 XTS then it gets collected as fees.
       if( (_current_bid->get_quote_quantity() * _current_bid->get_price()).amount == 0 )
       {
-          mtrx.quote_fees.amount += _current_bid->state.balance;
+          quote_asset.collected_fees += _current_bid->get_quote_quantity().amount;
           _current_bid->state.balance = 0;
       }
       _pending_state->store_bid_record( _current_bid->market_index, _current_bid->state );
@@ -519,7 +519,7 @@ namespace bts { namespace blockchain { namespace detail {
                  ("mtrx",mtrx)("_current_ask", _current_ask)("interest_paid",interest_paid)  );
 
       quote_asset.current_supply -= principle_paid.amount;
-      mtrx.quote_fees.amount += interest_paid.amount;
+      quote_asset.collected_fees += interest_paid.amount;
       if( *_current_ask->collateral == 0 )
       {
           quote_asset.collected_fees -= _current_ask->state.balance;
@@ -544,6 +544,11 @@ namespace bts { namespace blockchain { namespace detail {
                /** charge 5% fee for having a margin call */
                auto fee = (left_over_collateral * 5000 )/100000;
                left_over_collateral -= fee;
+
+               // when executing a cover order, it always takes the exact price of the
+               // highest bid, so there should be no fees paid *except* this.
+               FC_ASSERT( mtrx.quote_fees.amount == 0 );
+               FC_ASSERT( mtrx.base_fees.amount == 0 );
 
                // these go to the network... as dividends..
                mtrx.base_fees += asset( fee, _base_id );
@@ -586,7 +591,7 @@ namespace bts { namespace blockchain { namespace detail {
       // if the balance is less than 1 XTS * PRICE < .001 USD XTS goes to fees
       if( (_current_ask->get_quantity() * _current_ask->get_price()).amount == 0 )
       {
-          mtrx.base_fees.amount += _current_ask->state.balance;
+          base_asset.collected_fees += _current_ask->get_quantity().amount;
           _current_ask->state.balance = 0;
       }
       _pending_state->store_ask_record( _current_ask->market_index, _current_ask->state );

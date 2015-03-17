@@ -87,7 +87,7 @@ namespace bts { namespace blockchain {
 
    void deposit_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
-       if( eval_state._pending_state->get_head_block_num() < BTS_V0_7_0_FORK_BLOCK_NUM )
+       if( eval_state._pending_state->get_head_block_num() < BTS_V0_8_0_FORK_BLOCK_NUM )
           return evaluate_v2( eval_state );
 
        if( this->amount <= 0 )
@@ -250,7 +250,7 @@ namespace bts { namespace blockchain {
 
    void burn_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
-      if( eval_state._pending_state->get_head_block_num() < BTS_V0_7_0_FORK_BLOCK_NUM )
+      if( eval_state._pending_state->get_head_block_num() < BTS_V0_8_0_FORK_BLOCK_NUM )
           return evaluate_v1( eval_state );
 
       if( this->amount.amount <= 0 )
@@ -547,9 +547,9 @@ namespace bts { namespace blockchain {
    void limit_fee_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
 #ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_7_0_FORK_BLOCK_NUM has passed
+#warning [SOFTFORK] Remove this check after BTS_V0_8_0_FORK_BLOCK_NUM has passed
 #endif
-       FC_ASSERT( eval_state._pending_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM );
+       FC_ASSERT( eval_state._pending_state->get_head_block_num() >= BTS_V0_8_0_FORK_BLOCK_NUM );
 
        FC_ASSERT( eval_state.max_fees.count( this->max_fee.asset_id ) == 0 );
        eval_state.max_fees[ this->max_fee.asset_id ] = this->max_fee.amount;

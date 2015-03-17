@@ -133,7 +133,7 @@ namespace bts { namespace blockchain {
 
    void short_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
-      if( eval_state._pending_state->get_head_block_num() < BTS_V0_7_0_FORK_BLOCK_NUM )
+      if( eval_state._pending_state->get_head_block_num() < BTS_V0_8_0_FORK_BLOCK_NUM )
          return evaluate_v2( eval_state );
 
       const auto base_asset_rec = eval_state._pending_state->get_asset_record( short_index.order_price.base_asset_id );
@@ -198,7 +198,7 @@ namespace bts { namespace blockchain {
    */
    void cover_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
-      if( eval_state._pending_state->get_head_block_num() < BTS_V0_8_0_FORK_BLOCK_NUM )
+      if( eval_state._pending_state->get_head_block_num() < BTS_V0_9_0_FORK_BLOCK_NUM )
          return evaluate_v5( eval_state );
 
       const auto base_asset_rec = eval_state._pending_state->get_asset_record( cover_index.order_price.base_asset_id );
@@ -295,7 +295,7 @@ namespace bts { namespace blockchain {
 
    void add_collateral_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
-      if( eval_state._pending_state->get_head_block_num() < BTS_V0_8_0_FORK_BLOCK_NUM )
+      if( eval_state._pending_state->get_head_block_num() < BTS_V0_9_0_FORK_BLOCK_NUM )
          return evaluate_v2( eval_state );
 
       const auto base_asset_rec = eval_state._pending_state->get_asset_record( cover_index.order_price.base_asset_id );

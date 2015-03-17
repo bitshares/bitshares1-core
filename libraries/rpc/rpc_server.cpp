@@ -82,7 +82,7 @@ namespace bts { namespace rpc {
          virtual void verify_wallet_is_open() const override;
          virtual void verify_wallet_is_unlocked() const override;
          virtual void verify_connected_to_network() const override;
-         virtual void store_method_metadata(const bts::api::method_data& method_metadata);
+         virtual void store_method_metadata(const bts::api::method_data& method_metadata)override;
 
          std::string help(const std::string& command_name) const;
 
@@ -211,7 +211,8 @@ namespace bts { namespace rpc {
                  add_content_type_header(path,s);
 
                 auto filename = _config.htdocs / path.substr(1,std::string::npos);
-                if( r.path == fc::path("/rpc") )
+                if( r.path == fc::path("/rpc")
+                        || fc::path(r.path).parent_path() == fc::path("/rpc"))
                 {
                    // WARNING: logging RPC calls can capture passwords and private keys
                   //  dlog( "RPC ${r}", ("r",r.path) );
@@ -300,6 +301,29 @@ namespace bts { namespace rpc {
              fc_ilog( fc::logger::get("rpc"), "Completed ${path} ${status} in ${ms}ms", ("path",r.path)("status",(int)status)("ms",(end_time - begin_time).count()/1000));
          }
 
+         /** Assures that if the request path is either /req or
+          *  /safebot/whatever, or of the form /req/something where
+          *  something == method.
+          *  throws an exception otherwise.
+          */
+         static void validate_request_path(const fc::path& req, const string& method,
+                                           fc::variants& parameters)
+         {
+             static fc::path prefix("/rpc");
+             if ( req.parent_path() == fc::path("/safebot") || req == prefix )
+             {
+                 return;
+             }
+             if ( method == "batch" )
+             {
+                 FC_ASSERT( parameters.size() > 0 && parameters[0].is_string() && req == prefix / parameters[0].as_string() );
+             }
+             else
+             {
+                 FC_ASSERT( req == prefix / method );
+             }
+         }
+
          fc::http::reply::status_code handle_http_rpc(const fc::http::request& r, const fc::http::server::response& s )
          {
                 fc::http::reply::status_code status = fc::http::reply::OK;
@@ -313,6 +337,7 @@ namespace bts { namespace rpc {
                    auto rpc_call = fc::json::from_string( str ).get_object();
                    method_name = rpc_call["method"].as_string();
                    auto params = rpc_call["params"].get_array();
+                   validate_request_path( r.path, method_name, params );
 
                    auto request_key = method_name + "=" + fc::json::to_string(rpc_call["params"]);
 
