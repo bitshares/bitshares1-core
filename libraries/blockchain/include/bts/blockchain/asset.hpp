@@ -2,6 +2,8 @@
 
 #include <bts/blockchain/types.hpp>
 
+#include <fc/uint128.hpp>
+
 namespace bts { namespace blockchain {
 
   struct price;
