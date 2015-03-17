@@ -574,7 +574,7 @@ namespace bts { namespace blockchain { namespace detail {
 
   } FC_CAPTURE_AND_RETHROW( (mtrx) )  } // pay_current_ask
 
-  bool market_engine_v7::get_next_short()
+  bool market_engine_v7::get_next_short_v063()
   {
       if( _short_itr.valid() )
       {
@@ -594,7 +594,7 @@ namespace bts { namespace blockchain { namespace detail {
       return false;
   }
 
-  bool market_engine_v7::get_next_bid()
+  bool market_engine_v7::get_next_bid_v063()
   { try {
       if( _current_bid && _current_bid->get_quantity().amount > 0 )
         return _current_bid.valid();
@@ -619,6 +619,70 @@ namespace bts { namespace blockchain { namespace detail {
       get_next_short();
       return _current_bid.valid();
   } FC_CAPTURE_AND_RETHROW() }
+
+  bool market_engine_v7::get_next_short_v064()
+  {
+      if( _short_itr.valid() )
+      {
+        auto bid = market_order( short_order,
+                                 _short_itr.key(),
+                                 _short_itr.value(),
+                                 _short_itr.value().balance,
+                                 _short_itr.key().order_price );
+        if( bid.get_price().quote_asset_id == _quote_id &&
+            bid.get_price().base_asset_id == _base_id )
+        {
+            --_short_itr;
+            _current_bid = bid;
+            return _current_bid.valid();
+        }
+      }
+      return false;
+  }
+
+  bool market_engine_v7::get_next_bid_v064()
+  { try {
+      if( _current_bid && _current_bid->get_quantity().amount > 0 )
+        return _current_bid.valid();
+
+      ++_orders_filled;
+      _current_bid.reset();
+
+      if( _bid_itr.valid() )
+      {
+        auto bid = market_order( bid_order, _bid_itr.key(), _bid_itr.value() );
+        if( bid.get_price().quote_asset_id == _quote_id &&
+            bid.get_price().base_asset_id == _base_id )
+        {
+            if( _feed_price.valid() && bid.get_price() < *_feed_price && get_next_short() )
+                return _current_bid.valid();
+
+            _current_bid = bid;
+            --_bid_itr;
+            return _current_bid.valid();
+        }
+      }
+      get_next_short();
+      return _current_bid.valid();
+  } FC_CAPTURE_AND_RETHROW() }
+  
+  bool market_engine_v7::get_next_bid()
+  {
+      if( _pending_state->get_head_block_num() < BTS_V0_6_4_FORK_BLOCK_NUM )
+      {
+          return get_next_bid_v063();
+      }
+      return get_next_bid_v064();
+  }
+
+  bool market_engine_v7::get_next_short()
+  {
+      if( _pending_state->get_head_block_num() < BTS_V0_6_4_FORK_BLOCK_NUM )
+      {
+          return get_next_short_v063();
+      }
+      return get_next_short_v064();
+  }
 
   bool market_engine_v7::get_next_ask()
   { try {
