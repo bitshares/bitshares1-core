@@ -64,20 +64,49 @@ namespace bts { namespace blockchain {
   };
   typedef optional<price> oprice;
 
-  inline bool operator == ( const asset& l, const asset& r ) { return l.amount == r.amount; }
-  inline bool operator != ( const asset& l, const asset& r ) { return l.amount != r.amount; }
-  inline bool operator <  ( const asset& l, const asset& r ) { return l.amount <  r.amount; }
-  inline bool operator >  ( const asset& l, const asset& r ) { return l.amount >  r.amount; }
-  inline bool operator <= ( const asset& l, const asset& r ) { return l.asset_id == r.asset_id && l.amount <= r.amount; }
-  inline bool operator >= ( const asset& l, const asset& r ) { return l.asset_id == r.asset_id && l.amount >= r.amount; }
-  inline asset operator +  ( const asset& l, const asset& r ) { return asset(l) += r; }
-  inline asset operator -  ( const asset& l, const asset& r ) { return asset(l) -= r; }
+  inline bool operator == ( const asset& l, const asset& r )
+  {
+      return std::tie( l.amount, l.asset_id ) == std::tie( r.amount, r.asset_id );
+  }
+  inline bool operator != ( const asset& l, const asset& r )
+  {
+      return !( l == r );
+  }
+  inline bool operator < ( const asset& l, const asset& r )
+  {
+      FC_ASSERT( l.asset_id == r.asset_id );
+      return l.amount < r.amount;
+  }
+  inline bool operator > ( const asset& l, const asset& r )
+  {
+      FC_ASSERT( l.asset_id == r.asset_id );
+      return l.amount > r.amount;
+  }
+  inline bool operator <= ( const asset& l, const asset& r )
+  {
+      return l < r || l == r;
+  }
+  inline bool operator >= ( const asset& l, const asset& r )
+  {
+      return l > r || l == r;
+  }
+  inline asset operator + ( const asset& l, const asset& r )
+  {
+      return asset( l ) += r;
+  }
+  inline asset operator - ( const asset& l, const asset& r )
+  {
+      return asset( l ) -= r;
+  }
 
-  inline bool operator == ( const price& l, const price& r ) { return l.ratio == r.ratio; }
-
-  inline bool operator != ( const price& l, const price& r ) { return l.ratio != r.ratio ||
-                                                                      l.base_asset_id != r.base_asset_id ||
-                                                                      l.quote_asset_id != r.quote_asset_id; }
+  inline bool operator == ( const price& l, const price& r )
+  {
+      return std::tie( l.ratio, l.base_asset_id, l.quote_asset_id ) == std::tie( r.ratio, r.base_asset_id, r.quote_asset_id );
+  }
+  inline bool operator != ( const price& l, const price& r )
+  {
+      return !( l == r );
+  }
 
   price operator *  ( const price& l, const price& r );
 
@@ -97,6 +126,7 @@ namespace bts { namespace blockchain {
      if( l.base_asset_id < r.base_asset_id ) return false;
      return l.ratio >  r.ratio;
   }
+
   inline bool operator <= ( const price& l, const price& r ) { return l.ratio <= r.ratio && l.asset_pair() == r.asset_pair(); }
   inline bool operator >= ( const price& l, const price& r ) { return l.ratio >= r.ratio && l.asset_pair() == r.asset_pair(); }
 

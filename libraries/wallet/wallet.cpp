@@ -25,11 +25,16 @@ namespace detail {
            _scanner_threads.push_back( std::unique_ptr<fc::thread>( new fc::thread( "wallet_scanner_" + std::to_string( i ) ) ) );
    }
 
-   wallet_impl::~wallet_impl()
+   void wallet_impl::block_pushed( const full_block& block_data )
    {
+       if( !self->is_open() || !self->is_unlocked() ) return;
+       if( !self->get_transaction_scanning() ) return;
+       if( block_data.block_num <= self->get_last_scanned_block_number() ) return;
+
+       self->start_scan( std::min( self->get_last_scanned_block_number() + 1, block_data.block_num ), -1 );
    }
 
-   void wallet_impl::state_changed( const pending_chain_state_ptr& state )
+   void wallet_impl::block_popped( const pending_chain_state_ptr& )
    {
        if( !self->is_open() || !self->is_unlocked() ) return;
 
@@ -38,15 +43,6 @@ namespace detail {
        {
            self->set_last_scanned_block_number( _blockchain->get_head_block_num() );
        }
-   }
-
-   void wallet_impl::block_applied( const block_summary& summary )
-   {
-       if( !self->is_open() || !self->is_unlocked() ) return;
-       if( !self->get_transaction_scanning() ) return;
-       if( summary.block_data.block_num <= self->get_last_scanned_block_number() ) return;
-
-       self->start_scan( std::min( self->get_last_scanned_block_number() + 1, summary.block_data.block_num ), -1 );
    }
 
    vector<wallet_transaction_record> wallet_impl::get_pending_transactions()const
@@ -2709,7 +2705,6 @@ namespace detail {
       auto record = wallet_transaction_record();
       record.ledger_entries.push_back( entry );
       record.fee = required_fees;
-      record.extra_addresses.push_back( to_account_rec->active_key() );
 
       if( sign )
           my->sign_transaction( trx, required_signatures );
