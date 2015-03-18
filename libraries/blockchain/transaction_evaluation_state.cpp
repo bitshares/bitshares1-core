@@ -152,6 +152,7 @@ namespace bts { namespace blockchain {
         }
 
         validate_fees();
+        calculate_base_equivalent_fees();
         update_delegate_votes();
 
         pending_state()->store_transaction( trx.id(), transaction_record( transaction_location(), *this ) );
@@ -184,16 +185,16 @@ namespace bts { namespace blockchain {
        }
    } FC_CAPTURE_AND_RETHROW( (slate_id)(amount) ) }
 
-   share_type transaction_evaluation_state::calculate_base_fees()const
+   void transaction_evaluation_state::calculate_base_equivalent_fees()
    { try {
-       share_type base_fees = 0;
+       total_base_equivalent_fees_paid = 0;
 
        for( const auto& item : fees_paid )
        {
            const asset fee( item.second, item.first );
            if( fee.asset_id == 0 )
            {
-               base_fees += fee.amount;
+               total_base_equivalent_fees_paid += fee.amount;
            }
            else
            {
@@ -205,12 +206,10 @@ namespace bts { namespace blockchain {
                {
                    const oprice feed_price = pending_state()->get_active_feed_price( fee.asset_id );
                    if( feed_price.valid() )
-                       base_fees += (asset( fee.amount * 2, fee.asset_id ) * *feed_price).amount / 3;
+                       total_base_equivalent_fees_paid += (asset( fee.amount * 2, fee.asset_id ) * *feed_price).amount / 3;
                }
            }
        }
-
-       return base_fees;
    } FC_CAPTURE_AND_RETHROW() }
 
    void transaction_evaluation_state::sub_balance( const asset& amount )
