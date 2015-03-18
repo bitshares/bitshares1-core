@@ -28,13 +28,6 @@
          "prerequisites" : ["no_prerequisites"]
       },
       {
-         "method_name" : "get_registration_requests",
-         "description" : "list pending registration requests",
-         "return_type" : "account_record_array",
-         "parameters" : [],
-         "prerequisites" :["json_authenticated"]
-      },
-      {
          "method_name" : "approve_register_account",
          "description" : "Adds an account record to the request queue",
          "return_type" : "bool",

@@ -318,6 +318,22 @@
         ],
         "prerequisites" : ["wallet_unlocked"],
         "aliases" : []
+      },
+      {
+        "method_name": "debug_stop_before_block",
+        "description": "stop before given block number",
+        "return_type": "void",
+        "parameters" : [
+            {
+              "name" : "block_number",
+              "type" : "uint32_t",
+              "description" : "The block number to stop before"
+            }
+        ],
+        "is_const" : false,
+        "cached"  : false,
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["stop_before_block", "stop_b4_block", "debug_stop_b4_block", "stop_before", "stop_b4", "stopb4"]
       }
     ]
 }

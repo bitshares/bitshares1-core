@@ -11,12 +11,6 @@ namespace bts { namespace blockchain {
    struct transaction_evaluation_state;
    typedef std::shared_ptr<transaction_evaluation_state> transaction_evaluation_state_ptr;
 
-   struct block_summary
-   {
-      full_block                                    block_data;
-      pending_chain_state_ptr                       applied_changes;
-   };
-
    struct block_fork_data
    {
       block_fork_data():is_linked(false),is_included(false),is_known(false){}
@@ -73,17 +67,9 @@ namespace bts { namespace blockchain {
    class chain_observer
    {
       public:
-         virtual ~chain_observer(){}
-
-         /**
-          * This method is called anytime the blockchain state changes including
-          * undo operations.
-          */
-         virtual void state_changed( const pending_chain_state_ptr& state ) = 0;
-         /**
-          *  This method is called anytime a block is applied to the chain.
-          */
-         virtual void block_applied( const block_summary& summary ) = 0;
+         virtual ~chain_observer() {}
+         virtual void block_pushed( const full_block& ) = 0;
+         virtual void block_popped( const pending_chain_state_ptr& ) = 0;
    };
 
    class chain_database : public chain_interface, public std::enable_shared_from_this<chain_database>
