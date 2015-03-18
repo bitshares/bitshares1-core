@@ -48,6 +48,11 @@ void cover_operation::evaluate_v5( transaction_evaluation_state& eval_state )con
    const asset principle = asset( current_cover->payoff_balance, delta_amount.asset_id );
    asset total_debt = detail::market_engine::get_interest_owed( principle, current_cover->interest_rate, elapsed_sec ) + principle;
 
+   if( eval_state.pending_state()->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM )
+   {
+       total_debt = detail::market_engine_v7::get_interest_owed_fixed( principle, current_cover->interest_rate, elapsed_sec ) + principle;
+   }
+
    asset principle_paid;
    asset interest_paid;
    if( delta_amount >= total_debt )
@@ -61,6 +66,12 @@ void cover_operation::evaluate_v5( transaction_evaluation_state& eval_state )con
    {
        // Partial cover
        interest_paid = detail::market_engine::get_interest_paid( delta_amount, current_cover->interest_rate, elapsed_sec );
+
+       if( eval_state.pending_state()->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM )
+       {
+           interest_paid = detail::market_engine_v7::get_interest_paid_fixed( delta_amount, current_cover->interest_rate, elapsed_sec );
+       }
+
        principle_paid = delta_amount - interest_paid;
        current_cover->payoff_balance -= principle_paid.amount;
    }

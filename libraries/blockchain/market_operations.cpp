@@ -133,7 +133,7 @@ namespace bts { namespace blockchain {
 
    void short_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
-      if( eval_state.pending_state()->get_head_block_num() < BTS_V0_8_0_FORK_BLOCK_NUM )
+      if( eval_state.pending_state()->get_head_block_num() < BTS_V0_7_0_FORK_BLOCK_NUM )
          return evaluate_v2( eval_state );
 
       const auto base_asset_rec = eval_state.pending_state()->get_asset_record( short_index.order_price.base_asset_id );

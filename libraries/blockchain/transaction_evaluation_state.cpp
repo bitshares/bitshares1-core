@@ -115,6 +115,21 @@ namespace bts { namespace blockchain {
                pending_state()->store_asset_record( *asset_record );
            }
        }
+
+#ifndef WIN32
+#warning [SOFTFORK] Remove this check after BTS_V0_8_0_FORK_BLOCK_NUM has passed
+#endif
+       if( pending_state()->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM
+           && pending_state()->get_head_block_num() < BTS_V0_8_0_FORK_BLOCK_NUM )
+       {
+           for( const auto& op : trx.operations )
+           {
+               if( operation_type_enum( op.type ) == cover_op_type )
+               {
+                   FC_ASSERT( fees_paid[ 0 ] <= BTS_BLOCKCHAIN_PRECISION );
+               }
+           }
+       }
    } FC_CAPTURE_AND_RETHROW() }
 
    void transaction_evaluation_state::evaluate( const signed_transaction& trx_arg )
