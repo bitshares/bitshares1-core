@@ -352,8 +352,13 @@ namespace bts { namespace blockchain { namespace detail {
             if( opening_price == price() )
               opening_price = mtrx.bid_price;
             closing_price = mtrx.bid_price;
-            // Remark: only prices of matched orders be updated to market history
-            // TODO check here: since the orders have been sorted, maybe don't need the 2nd comparison
+            //
+            // Remark: only prices of matched orders are used to update market history
+            //
+            // Because of prioritization, we need the second comparison
+            // in the following if statements.  Ask-side orders are
+            // only sorted by price within a single pass.
+            //
             if( highest_price == price() || highest_price < mtrx.bid_price)
               highest_price = mtrx.bid_price;
             // TODO check here: store lowest ask price or lowest bid price?
@@ -387,10 +392,6 @@ namespace bts { namespace blockchain { namespace detail {
         wlog( "error executing market ${quote} / ${base}\n ${e}", ("quote",quote_id)("base",base_id)("e",e.to_detail_string()) );
         omarket_status market_stat = _prior_state->get_market_status( _quote_id, _base_id );
         if( !market_stat.valid() ) market_stat = market_status( _quote_id, _base_id );
-        if( !(_feed_price == market_stat->current_feed_price) )
-        {
-           // TODO: update shorts at feed
-        }
         market_stat->update_feed_price( _feed_price );
         market_stat->last_error = e;
         _prior_state->store_market_status( *market_stat );
