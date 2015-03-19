@@ -34,12 +34,6 @@ struct transaction_evaluation_state
 
     void evaluate( const signed_transaction& trx );
     void evaluate_operation( const operation& op );
-    void validate_fees();
-    void update_delegate_votes();
-
-    void sub_balance( const asset& amount );
-    void add_balance( const asset& amount );
-    void adjust_vote( slate_id_type slate, share_type amount );
 
     bool check_signature( const address& a )const;
     bool check_multisig( const multisig_condition& a )const;
@@ -48,7 +42,10 @@ struct transaction_evaluation_state
     bool any_parent_has_signed( const string& account_name )const;
     bool account_or_any_parent_has_signed( const account_record& record )const;
 
-    share_type calculate_base_fees()const;
+    void add_balance( const asset& amount );
+    void sub_balance( const asset& amount );
+
+    void adjust_vote( slate_id_type slate, share_type amount );
 
     bool scan_op_deltas( const uint32_t op_index, const function<bool( const asset& )> callback )const;
     void scan_addresses( const chain_interface&, const function<void( const address& )> callback )const;
@@ -60,6 +57,8 @@ struct transaction_evaluation_state
     map<asset_id_type, share_type>                 max_fees; // For pay_fee op
 
     map<asset_id_type, share_type>                 fees_paid;
+    share_type                                     total_base_equivalent_fees_paid = 0;
+
     map<account_id_type, share_type>               delegate_vote_deltas;
 
     // Used for transaction scanning
@@ -76,6 +75,10 @@ struct transaction_evaluation_state
 private:
     std::weak_ptr<pending_chain_state>             _pending_state;
     uint32_t                                       _current_op_index = 0;
+
+    void validate_fees();
+    void calculate_base_equivalent_fees();
+    void update_delegate_votes();
 };
 typedef shared_ptr<transaction_evaluation_state> transaction_evaluation_state_ptr;
 
@@ -87,6 +90,7 @@ FC_REFLECT( bts::blockchain::transaction_evaluation_state,
             (min_fees)
             (max_fees)
             (fees_paid)
+            (total_base_equivalent_fees_paid)
             (delegate_vote_deltas)
             (yield_claimed)
             (op_deltas)

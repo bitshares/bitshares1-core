@@ -9,24 +9,23 @@ namespace bts { namespace blockchain {
    {
       public:
                                         pending_chain_state( chain_interface_ptr prev_state = chain_interface_ptr() );
-         pending_chain_state&           operator = ( const pending_chain_state& ) = default;
 
          void                           set_prev_state( chain_interface_ptr prev_state );
 
-         virtual void                   set_market_dirty( const asset_id_type quote_id, const asset_id_type base_id )override;
-
          virtual fc::time_point_sec     now()const override;
-
-         virtual oprice                 get_active_feed_price( const asset_id_type quote_id,
-                                                               const asset_id_type base_id = 0 )const override;
 
          virtual bool                   is_known_transaction( const transaction& trx )const override;
          virtual otransaction_record    get_transaction( const transaction_id_type& trx_id, bool exact = true )const override;
 
          virtual void                   store_transaction( const transaction_id_type&, const transaction_record&  ) override;
 
+         virtual void                   set_market_dirty( const asset_id_type quote_id, const asset_id_type base_id )override;
+
          virtual omarket_status         get_market_status( const asset_id_type quote_id, const asset_id_type base_id )const override;
          virtual void                   store_market_status( const market_status& s ) override;
+
+         virtual oprice                 get_active_feed_price( const asset_id_type quote_id,
+                                                               const asset_id_type base_id = 0 )const override;
 
          virtual omarket_order          get_lowest_ask_record( const asset_id_type quote_id,
                                                                const asset_id_type base_id )override;
@@ -44,8 +43,8 @@ namespace bts { namespace blockchain {
                                                                      const market_history_record& record )override;
          virtual omarket_history_record get_market_history_record( const market_history_key& key )const override;
 
+         void                           build_undo_state( const chain_interface_ptr& undo_state )const;
          void                           apply_changes()const;
-         void                           get_undo_state( const chain_interface_ptr& undo_state )const;
 
          template<typename T, typename U>
          void populate_undo_state( const chain_interface_ptr& undo_state, const chain_interface_ptr& prev_state,

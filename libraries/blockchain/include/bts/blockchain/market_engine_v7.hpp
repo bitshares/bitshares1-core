@@ -11,6 +11,9 @@ namespace bts { namespace blockchain { namespace detail {
 
     void cancel_all_shorts();
 
+    static asset get_interest_paid_fixed(const asset& total_amount_paid, const price& apr, uint32_t age_seconds);
+    static asset get_interest_owed_fixed(const asset& principle, const price& apr, uint32_t age_seconds);
+
     static asset get_interest_paid(const asset& total_amount_paid, const price& apr, uint32_t age_seconds);
     static asset get_interest_owed(const asset& principle, const price& apr, uint32_t age_seconds);
 
@@ -27,8 +30,15 @@ namespace bts { namespace blockchain { namespace detail {
     void pay_current_cover( market_transaction& mtrx, asset_record& quote_asset );
     void pay_current_ask( market_transaction& mtrx, asset_record& base_asset );
 
+    bool get_next_short_v063();
+    bool get_next_bid_v063();
+
+    bool get_next_short_v064();
+    bool get_next_bid_v064();
+
     bool get_next_short();
     bool get_next_bid();
+
     bool get_next_ask();
     asset get_current_cover_debt()const;
     uint32_t get_current_cover_age()const

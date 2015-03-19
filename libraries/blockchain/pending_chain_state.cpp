@@ -87,7 +87,7 @@ namespace bts { namespace blockchain {
        store( id, rec );
    }
 
-   void pending_chain_state::get_undo_state( const chain_interface_ptr& undo_state_arg )const
+   void pending_chain_state::build_undo_state( const chain_interface_ptr& undo_state_arg )const
    {
       auto undo_state = std::dynamic_pointer_cast<pending_chain_state>( undo_state_arg );
       chain_interface_ptr prev_state = _prev_state.lock();

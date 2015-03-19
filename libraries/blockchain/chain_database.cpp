@@ -19,6 +19,7 @@
 #include <iostream>
 
 #include <bts/blockchain/fork_blocks.hpp>
+#include <fc/real128.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -43,7 +44,7 @@ namespace bts { namespace blockchain {
                 try
                 {
                   transaction_evaluation_state_ptr eval_state = self->evaluate_transaction( trx, _relay_fee );
-                  share_type fees = eval_state->calculate_base_fees();
+                  const share_type fees = eval_state->total_base_equivalent_fees_paid;
                   _pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
                   ilog( "revalidated pending transaction id ${id}", ("id", trx_id) );
                 }
@@ -713,9 +714,6 @@ namespace bts { namespace blockchain {
             record->chain_location = transaction_location( block_data.block_num, trx_num );
             pending_state->store_transaction( trx_id, *record );
 
-            // TODO:  capture the evaluation state with a callback for wallets...
-            // summary.transaction_states.emplace_back( std::move(trx_eval_state) );
-
             ++trx_num;
          }
       } FC_CAPTURE_AND_RETHROW( (block_data) ) }
@@ -777,7 +775,7 @@ namespace bts { namespace blockchain {
               return;
 
           pending_chain_state_ptr undo_state = std::make_shared<pending_chain_state>( pending_state );
-          pending_state->get_undo_state( undo_state );
+          pending_state->build_undo_state( undo_state );
 
           if( block_num > BTS_BLOCKCHAIN_MAX_UNDO_HISTORY )
           {
@@ -801,7 +799,7 @@ namespace bts { namespace blockchain {
              FC_CAPTURE_AND_THROW( time_in_past, (block_digest.timestamp)(_head_block_header.timestamp) );
 
           fc::time_point_sec now = bts::blockchain::now();
-          auto delta_seconds = (block_digest.timestamp - now).to_seconds();
+          const uint32_t delta_seconds = (block_digest.timestamp - now).to_seconds();
           if( block_digest.timestamp >  (now + BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*2) )
              FC_CAPTURE_AND_THROW( time_in_future, (block_digest.timestamp)(now)(delta_seconds) );
 
@@ -813,7 +811,7 @@ namespace bts { namespace blockchain {
 
           FC_ASSERT( block_digest.validate_unique() );
 
-          auto expected_delegate = self->get_slot_signee( block_digest.timestamp, self->get_active_delegates() );
+          const auto expected_delegate = self->get_slot_signee( block_digest.timestamp, self->get_active_delegates() );
 
           if( block_signee != expected_delegate.signing_key() )
              FC_CAPTURE_AND_THROW( invalid_delegate_signee, (expected_delegate.id) );
@@ -980,7 +978,6 @@ namespace bts { namespace blockchain {
       { try {
          const time_point start_time = time_point::now();
          const block_id_type& block_id = block_data.id();
-         block_summary summary;
          try
          {
             public_key_type block_signee;
@@ -1001,11 +998,8 @@ namespace bts { namespace blockchain {
             // NOTE: Secret is validated later in update_delegate_production_info()
             verify_header( digest_block( block_data ), block_signee );
 
-            summary.block_data = block_data;
-
             // Create a pending state to track changes that would apply as we evaluate the block
             pending_chain_state_ptr pending_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
-            summary.applied_changes = pending_state;
 
             /** Increment the blocks produced or missed for all delegates. This must be done
              *  before applying transactions because it depends upon the current active delegate order.
@@ -1110,6 +1104,31 @@ namespace bts { namespace blockchain {
                 }
             }
 
+            if( block_data.block_num == BTS_V0_8_0_FORK_BLOCK_NUM )
+            {
+                static const fc::uint128 max_apr = fc::uint128( BTS_BLOCKCHAIN_MAX_SHORT_APR_PCT ) * FC_REAL128_PRECISION / 100;
+
+                map<market_index_key, order_record> records;
+                for( auto iter = _short_db.begin(); iter.valid(); ++iter )
+                {
+                    const market_index_key& key = iter.key();
+                    if( key.order_price.ratio > max_apr )
+                        records[ key ] = iter.value();
+                }
+
+                wlog( "Block ${n} Hardfork: Resetting interest rates for ${x} short orders", ("n",block_data.block_num)("x",records.size()) );
+
+                for( const auto& item : records )
+                {
+                    market_index_key key = item.first;
+                    const order_record& record = item.second;
+
+                    _short_db.remove( key );
+                    key.order_price.ratio = std::min( max_apr, key.order_price.ratio );
+                    _short_db.store( key, record );
+                }
+            }
+
             if( block_record.valid() )
             {
                 block_record->processing_time = time_point::now() - start_time;
@@ -1128,11 +1147,15 @@ namespace bts { namespace blockchain {
          while( iter != _unique_transactions.end() && iter->expiration <= self->now() )
              iter = _unique_transactions.erase( iter );
 
-         //Schedule the observer notifications for later; the chain is in a
-         //non-premptable state right now, and observers may yield.
-         if( (now() - block_data.timestamp).to_seconds() < BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC )
-           for( chain_observer* o : _observers )
-              fc::async([o,summary]{o->block_applied( summary );}, "call_block_applied_observer");
+         // Schedule the observer notifications for later; the chain is in a
+         // non-premptable state right now, and observers may yield
+         if( (blockchain::now() - block_data.timestamp).to_seconds() < BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC )
+         {
+             for( chain_observer* o : _observers )
+             {
+                 fc::async( [ = ] { o->block_pushed( block_data ); }, "call_block_pushed_observer" );
+             }
+         }
       } FC_CAPTURE_AND_RETHROW( (block_data) ) }
 
       /**
@@ -1204,10 +1227,12 @@ namespace bts { namespace blockchain {
          else
              _head_block_header = self->get_block_header( _head_block_id );
 
-         //Schedule the observer notifications for later; the chain is in a
-         //non-premptable state right now, and observers may yield.
+         // Schedule the observer notifications for later; the chain is in a
+         // non-premptable state right now, and observers may yield
          for( chain_observer* o : _observers )
-            fc::async([o,undo_state_ptr]{ o->state_changed( undo_state_ptr ); }, "call_state_changed_observer");
+         {
+             fc::async( [ = ] { o->block_popped( undo_state_ptr ); }, "call_block_popped_observer" );
+         }
       } FC_CAPTURE_AND_RETHROW() }
 
    } // namespace detail
@@ -1444,7 +1469,7 @@ namespace bts { namespace blockchain {
                 const auto trx = pending_itr.value();
                 const auto trx_id = trx.id();
                 const auto eval_state = evaluate_transaction( trx, my->_relay_fee );
-                share_type fees = eval_state->calculate_base_fees();
+                const share_type fees = eval_state->total_base_equivalent_fees_paid;
                 my->_pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
                 my->_pending_transaction_db.store( trx_id, trx );
              }
@@ -1580,7 +1605,7 @@ namespace bts { namespace blockchain {
       transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>( pend_state );
 
       trx_eval_state->evaluate( trx );
-      const share_type fees = trx_eval_state->calculate_base_fees();
+      const share_type fees = trx_eval_state->total_base_equivalent_fees_paid;
       if( fees < required_fees )
       {
           ilog("Transaction ${id} needed relay fee ${required_fees} but only had ${fees}", ("id", trx.id())("required_fees",required_fees)("fees",fees));
@@ -1600,7 +1625,7 @@ namespace bts { namespace blockchain {
           transaction_evaluation_state_ptr eval_state = std::make_shared<transaction_evaluation_state>( pending_state );
 
           eval_state->evaluate( transaction );
-          const share_type fees = eval_state->calculate_base_fees();
+          const share_type fees = eval_state->total_base_equivalent_fees_paid;
           if( fees < min_fee )
              FC_CAPTURE_AND_THROW( insufficient_relay_fee, (fees)(min_fee) );
        }
@@ -1974,7 +1999,7 @@ namespace bts { namespace blockchain {
       }
 
       transaction_evaluation_state_ptr eval_state = evaluate_transaction( trx, relay_fee );
-      const share_type fees = eval_state->calculate_base_fees();
+      const share_type fees = eval_state->total_base_equivalent_fees_paid;
 
       //if( fees < my->_relay_fee )
       //   FC_CAPTURE_AND_THROW( insufficient_relay_fee, (fees)(my->_relay_fee) );
@@ -2076,7 +2101,7 @@ namespace bts { namespace blockchain {
                       trx_eval_state->evaluate( new_transaction );
 
                       // Check transaction fee limit
-                      const share_type transaction_fee = trx_eval_state->calculate_base_fees();
+                      const share_type transaction_fee = trx_eval_state->total_base_equivalent_fees_paid;
                       if( transaction_fee < config.transaction_min_fee )
                       {
                           wlog( "Excluding transaction ${id} with fee ${fee} because it does not meet transaction fee limit ${limit}",

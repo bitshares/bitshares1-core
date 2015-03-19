@@ -66,10 +66,4 @@ bool client_impl::approve_register_account( const string& salt, const string& pa
    return false;
 } FC_CAPTURE_AND_RETHROW( ) }
 
-vector<account_record> client_impl::get_registration_requests()
-{
-   return vector<account_record>();
-}
-
-
 } } } // namespace bts::client::detail
