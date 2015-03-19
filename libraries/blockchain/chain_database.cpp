@@ -2441,15 +2441,23 @@ namespace bts { namespace blockchain {
       }
       if( *old_feed < *new_feed )
       {
-         // add all shorts with limit less than old feed price and greater than new feed price
-         // iterate from old feed price -> new feed price and add items
+         //
+         // _shorts_at_feed contains order o if and only if o.limit_price >= feed
+         // thus when feed is rising,
+         // orders that were greater than or equal to the old feed,
+         // but less than the new feed,
+         // change from being in _shorts_at_feed to being out of _shorts_at_feed
+         //
+         // thus we must:
+         // iterate from old feed price -> new feed price and erase items
+         //
          auto itr = my->_short_limit_index.lower_bound( std::make_pair(*old_feed, market_index_key()) );
          while( itr != my->_short_limit_index.end() )
          {
             if( itr->first.quote_asset_id != quote_id ) break;
             if( itr->first.base_asset_id != base_id ) break;
-            if( itr->first >= *new_feed )
-               my->_shorts_at_feed.insert( itr->second );
+            if( itr->first < *new_feed )
+               my->_shorts_at_feed.erase( itr->second );
             else
                break;
             ++itr;
@@ -2458,14 +2466,23 @@ namespace bts { namespace blockchain {
       }
       if (*old_feed > *new_feed )
       {
-         // iterate from new_feed price to old feed price and remove items
+         //
+         // _shorts_at_feed contains order o if and only if o.limit_price >= feed
+         // thus when feed is falling,
+         // orders that are greater than or equal to the new feed,
+         // but less than the old feed,
+         // change from being out of _shorts_at_feed to being in _shorts_at_feed
+         //
+         // thus we must:
+         // iterate from new feed price -> old feed price and insert items
+         //
          auto itr = my->_short_limit_index.lower_bound( std::make_pair(*new_feed, market_index_key()) );
          while( itr != my->_short_limit_index.end() )
          {
             if( itr->first.quote_asset_id != quote_id ) break;
             if( itr->first.base_asset_id != base_id ) break;
-            if( itr->first < *new_feed )
-               my->_shorts_at_feed.erase( itr->second );
+            if( itr->first < *old_feed )
+               my->_shorts_at_feed.insert( itr->second );
             else break;
             ++itr;
          };
