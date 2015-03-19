@@ -68,6 +68,7 @@ default (unlocked) >>> blockchain_get_block_transactions 2
           50000
         ]
       ],
+      "total_base_equivalent_fees_paid": 50000,
       "delegate_vote_deltas": [],
       "yield_claimed": [],
       "op_deltas": [[

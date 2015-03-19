@@ -24,7 +24,8 @@ debug_clear_errors [start_time] [first_error_number] [limit]
 debug_get_call_statistics 
 debug_get_client_name 
 debug_list_errors [first_error_number] [limit] [filename] 
-debug_list_errors_brief [first_error_number] [limit] [filename] 
+debug_list_errors_brief [first_error_number] [limit] [filename]
+debug_stop_before_block <block_number>
 debug_update_logging_config 
 debug_wait_block_interval <wait_time_in_block_intervals> 
 debug_write_errors_to_file [path] [start_time] 
@@ -32,7 +33,6 @@ disk_usage
 execute_command_line <input> 
 execute_script <script> 
 fetch_welcome_package <arguments> 
-get_registration_requests 
 http_start_server [port] 
 mail_archive_message <message_id> 
 mail_cancel_message <message_id> 
