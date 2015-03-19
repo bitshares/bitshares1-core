@@ -35,6 +35,20 @@ Returns:
   wallet_contact_record_array
 
 aliases: contacts, get_contacts, list_contacts
+default (unlocked) >>> help wallet_set_custom_data
+Usage:
+wallet_set_custom_data <type> <item> <custom_data>                                                    Overwrite the local custom data for an account, contact, or approval
+Overwrite the local custom data for an account, contact, or approval
+
+Parameters:
+  type (wallet_record_type, required): specify one of {account_record_type, contact_record_type, approval_record_type}
+  item (string, required): name of the account, contact, or approval
+  custom_data (variant_object, required): the custom data object to store
+
+Returns:
+  void
+
+aliases: update_private_data
 default (unlocked) >>> help wallet_remove_contact
 Usage:
 wallet_remove_contact <contact>                                                                       Remove a contact entry
@@ -119,6 +133,32 @@ default (unlocked) >>> wallet_get_contact XTS5nkoz8qNcLPF8w7xSpnf6CCFcgioGMDqsvw
   "label": "contact-1",
   "custom_data": {}
 }
+default (unlocked) >>> wallet_set_custom_data contact_record_type label:contact-2-update {"first_name": "Jonh", "last_name": "smith"}
+OK
+default (unlocked) >>> wallet_get_contact label:contact-2-update
+{
+  "index": 9,
+  "contact_type": "public_key",
+  "data": "XTS5qLJBGDBFX7BpBgs17tynUfvDpQGiMJGoXafF3Ro5JjvdR1n1j",
+  "label": "contact-2-update",
+  "custom_data": {
+    "first_name": "Jonh",
+    "last_name": "smith"
+  }
+}
+default (unlocked) >>> wallet_set_custom_data contact_record_type label:contact-2-update {"first_name": "John", "last_name": "Smith"}
+OK
+default (unlocked) >>> wallet_get_contact label:contact-2-update
+{
+  "index": 9,
+  "contact_type": "public_key",
+  "data": "XTS5qLJBGDBFX7BpBgs17tynUfvDpQGiMJGoXafF3Ro5JjvdR1n1j",
+  "label": "contact-2-update",
+  "custom_data": {
+    "first_name": "John",
+    "last_name": "Smith"
+  }
+}
 default (unlocked) >>> wallet_remove_contact contact-2-update
 null
 default (unlocked) >>> wallet_remove_contact label:contact-2-update
@@ -127,7 +167,10 @@ default (unlocked) >>> wallet_remove_contact label:contact-2-update
   "contact_type": "public_key",
   "data": "XTS5qLJBGDBFX7BpBgs17tynUfvDpQGiMJGoXafF3Ro5JjvdR1n1j",
   "label": "contact-2-update",
-  "custom_data": {}
+  "custom_data": {
+    "first_name": "John",
+    "last_name": "Smith"
+  }
 }
 default (unlocked) >>> wallet_remove_contact XTS5nkoz8qNcLPF8w7xSpnf6CCFcgioGMDqsvw7G7hgEvMAxL6fCc
 {

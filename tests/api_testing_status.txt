@@ -108,7 +108,6 @@ wallet_remove_transaction <transaction_id>
 wallet_repair_records [collecting_account_name] 
 wallet_scan_transaction <transaction_id> [overwrite_existing] 
 wallet_scan_transaction_experimental <transaction_id> [overwrite_existing] 
-wallet_set_custom_data <type> <item> <custom_data>
 wallet_set_preferred_mail_servers <account_name> <server_list> [paying_account] 
 wallet_set_transaction_expiration_time <seconds> 
 wallet_sign_hash <signer> <hash> 
@@ -237,6 +236,7 @@ wallet_release_escrow <pay_fee_with_account_name> <escrow_balance_id> <released_
 wallet_remove_contact <contact> 
 wallet_rescan_blockchain [start_block_num] [limit] [scan_in_background]
 wallet_set_automatic_backups <enabled> 
+wallet_set_custom_data <type> <item> <custom_data>
 wallet_set_setting <name> <value> 
 wallet_set_transaction_fee <fee> 
 wallet_set_transaction_scanning <enabled> 
