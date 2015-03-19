@@ -68,6 +68,54 @@ default (unlocked) >>> blockchain_get_asset XMO
   "registration_date": "2014-06-20T14:40:30",
   "last_update": "2014-06-20T14:40:30"
 }
+default (unlocked) >>> help wallet_uia_update_description
+Usage:
+wallet_uia_update_description <paying_account> <asset_symbol> [name] [description] [public_data]      Update the name, description, public data of the specified user-issue asset
+Update the name, description, public data of the specified user-issue asset
+
+Parameters:
+  paying_account (account_name, required): the account that will pay the transaction fee
+  asset_symbol (asset_symbol, required): the user-issued asset to update
+  name (string, optional, defaults to ""): A human-readable name for the new asset
+  description (string, optional, defaults to ""): A human-readable description of the new asset
+  public_data (variant, optional, defaults to null): Extra data to attach to the asset
+
+Returns:
+  transaction_record
+default (unlocked) >>> wallet_uia_update_description delegate1 XMO "DIGITAL_DEVICE_2" "change the description" {"my_public_data":"ABC 123"}
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate1           UNKNOWN             0.00000 XTS             update properties for XMO                   0.50000 XTS         <d-ign> 554116f3</d-ign>
+default (unlocked) >>> debug_wait_for_block_by_number 1 relative
+OK
+default (unlocked) >>> blockchain_get_asset XMO
+{
+  "id": 1,
+  "symbol": "XMO",
+  "issuer_id": 1,
+  "authority": {
+    "required": 1,
+    "owners": [
+      "XTSDG4CLPoePEPHaRaDszT4ix8gA1ghTb6FF"
+    ]
+  },
+  "authority_flag_permissions": 4294967295,
+  "active_flags": 0,
+  "whitelist": [],
+  "name": "DIGITAL_DEVICE_2",
+  "description": "change the description",
+  "public_data": {
+    "my_public_data": "ABC 123"
+  },
+  "precision": 100,
+  "max_supply": 50000,
+  "withdrawal_fee": 0,
+  "market_fee_rate": 0,
+  "collected_fees": 0,
+  "current_supply": 0,
+  "registration_date": "2014-06-20T14:40:30",
+  "last_update": "2014-06-20T14:40:40"
+}
 default (unlocked) >>> help wallet_uia_issue
 Usage:
 wallet_uia_issue <asset_amount> <asset_symbol> <recipient> [memo_message]                             Issue shares of a user-issued asset to the specified recipient
@@ -94,17 +142,17 @@ OK
 default (unlocked) >>> blockchain_list_assets XMO
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
-1     XMO    DIGITAL_DEVICE1         CREATING AN ASSET                               delegate0                       6.00 %    30.00 XMO                   
-0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,199.99901 XTS     
+1     XMO    DIGITAL_DEVICE_2        change the description                          delegate0                       6.00 %    30.00 XMO                   
+0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,249.99901 XTS     
 default (unlocked) >>> blockchain_list_assets XTS
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
-0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,199.99901 XTS     
+0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,249.99901 XTS     
 default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
-1     XMO    DIGITAL_DEVICE1         CREATING AN ASSET                               delegate0                       6.00 %    30.00 XMO                   
-0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,199.99901 XTS     
+1     XMO    DIGITAL_DEVICE_2        change the description                          delegate0                       6.00 %    30.00 XMO                   
+0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,249.99901 XTS     
 default (unlocked) >>> wallet_account_balance test
 ACCOUNT                         BALANCE                     
 ============================================================
@@ -129,7 +177,7 @@ aliases: supply, calculate_supply
 default (unlocked) >>> blockchain_calculate_supply XMO
 30.00 XMO
 default (unlocked) >>> blockchain_calculate_supply XTS
-2,000,000,199.99901 XTS
+2,000,000,249.99901 XTS
 default (unlocked) >>> help blockchain_generate_issuance_map
 Usage:
 blockchain_generate_issuance_map <symbol> <filename>                                                  A utility to help verify UIA distribution. Returns a snapshot map of all issuances for a particular UIA.

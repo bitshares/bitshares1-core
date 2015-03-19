@@ -115,7 +115,6 @@ wallet_transaction_history_experimental [account_name]
 wallet_uia_issue_to_addresses <symbol> <addresses>
 wallet_uia_update_active_flags <paying_account> <asset_symbol> <flag> <enable_instead_of_disable>
 wallet_uia_update_authority_permissions <paying_account> <asset_symbol> <permission> <add_instead_of_remove>
-wallet_uia_update_description <paying_account> <asset_symbol> [name] [description] [public_data]
 wallet_uia_update_supply <paying_account> <asset_symbol> <max_supply_with_trailing_decimals>
 wallet_uia_update_whitelist <paying_account> <asset_symbol> <address_or_public_key> <add_to_whitelist>
 wallet_withdraw_from_address <amount> <symbol> <from_address> <to> [strategy] [sign_and_broadcast] [builder_path] 
@@ -245,6 +244,7 @@ wallet_transfer_from_with_escrow <amount_to_transfer> <asset_symbol> <paying_acc
 wallet_uia_collect_fees <asset_symbol> <recipient> [memo_message]
 wallet_uia_create <issuer_account> <symbol> <name> <description> <max_supply_with_trailing_decimals>
 wallet_uia_issue <asset_amount> <asset_symbol> <recipient> [memo_message]
+wallet_uia_update_description <paying_account> <asset_symbol> [name] [description] [public_data]
 wallet_uia_update_fees <paying_account> <asset_symbol> [withdrawal_fee] [market_fee_rate]
 wallet_unlock <timeout> <passphrase>
 wallet_verify_titan_deposit <transaction_id_prefix>
