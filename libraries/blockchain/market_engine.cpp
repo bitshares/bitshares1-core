@@ -54,7 +54,23 @@ namespace bts { namespace blockchain { namespace detail {
 
           if( !_ask_itr.valid() ) _ask_itr = _db_impl._ask_db.begin();
 
-          // TODO:  does this really work if iterator is begin()?
+          //
+          // following logic depends on the internals of cached_level_map class.
+          // if lower_bound() argument is past the end of the collection,
+          // then result will point to end() which has valid() == false
+          //
+          // so we need to decrement the returned iterator, but
+          // decrement operator may be undefined for end(), so we
+          // special-case the result.
+          //
+          // one day we should write a greatest_element_below() method
+          // for our DB class to implement the logic we're doing
+          // directly here
+          //
+          // decrementing begin() OTOH is well-defined and returns
+          // end() which is invalid, thus overflow of --itr here is
+          // ok as long as we check valid() later
+          //
           if( _bid_itr.valid() )   --_bid_itr;
           else _bid_itr = _db_impl._bid_db.last();
 
