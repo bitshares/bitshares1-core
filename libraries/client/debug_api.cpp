@@ -30,6 +30,12 @@ void client_impl::debug_wait_block_interval(uint32_t wait_time) const
    fc::usleep(fc::seconds(wait_time*BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC));
 }
 
+void client_impl::debug_verify_market_matching(bool enable_flag)
+{
+   _chain_db->_debug_verify_market_matching = enable_flag;
+   return;
+}
+
 map<fc::time_point, fc::exception> client_impl::debug_list_errors( int32_t first_error_number, uint32_t limit, const string& filename )const
 {
    map<fc::time_point, fc::exception> result;

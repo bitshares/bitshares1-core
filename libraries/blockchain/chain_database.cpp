@@ -951,7 +951,158 @@ namespace bts { namespace blockchain {
         }
 
         pending_state->set_market_transactions( std::move( market_transactions ) );
+        if( self->_debug_verify_market_matching )
+        {
+            debug_check_no_orders_overlap();
+        }
       } FC_CAPTURE_AND_RETHROW( (timestamp) ) }
+
+      void chain_database_impl::debug_check_no_orders_overlap() const
+      {
+          //
+          // the market engine does all kinds of fancy indexing to find
+          // and fill overlapping orders efficiently
+          //
+          // this method only exists for debugging purposes, so we
+          // don't care about efficiency.  we simply dump the orders
+          // and check the top bid-side order vs. top ask-side order
+          // for each market
+          //
+          // since this method doesn't fill orders, there is no fill
+          // logic here
+          //
+
+          ilog("running debug_check_no_orders_overlap()");
+          
+          std::map<std::pair<asset_id_type, asset_id_type>, std::pair<price, market_order>> mkt_to_best_bid;
+          std::map<std::pair<asset_id_type, asset_id_type>, std::pair<price, market_order>> mkt_to_best_ask;
+
+          auto process_bid = [&]( price p, market_order& order )
+          {
+              std::pair<asset_id_type, asset_id_type> mkt = p.asset_pair();
+              auto current_best = mkt_to_best_bid.find( mkt );
+              if( (current_best == mkt_to_best_bid.end()) ||
+                  (p > current_best->second.first) )
+                  mkt_to_best_bid[mkt] = std::pair<price, market_order>( p, order );
+          };
+          
+          auto process_ask = [&]( price p, market_order& order )
+          {
+              std::pair<asset_id_type, asset_id_type> mkt = p.asset_pair();
+              auto current_best = mkt_to_best_ask.find( mkt );
+              if( (current_best == mkt_to_best_ask.end()) ||
+                  (p < current_best->second.first) )
+                  mkt_to_best_ask[mkt] = std::pair<price, market_order>( p, order );
+          };
+
+          for( bts::db::cached_level_map< market_index_key, order_record >::iterator
+               bid_itr  = _bid_db.begin();
+               bid_itr.valid();
+               bid_itr++ )
+          {
+              market_order morder = market_order( bid_order, bid_itr.key(), bid_itr.value() );
+              process_bid( morder.get_price(), morder );
+          }
+          
+          for( bts::db::cached_level_map< market_index_key, order_record >::iterator
+               ask_itr  = _ask_db.begin();
+               ask_itr.valid();
+               ask_itr++ )
+          {
+              market_order morder = market_order( ask_order, ask_itr.key(), ask_itr.value() );
+              process_ask( morder.get_price(), morder );
+          }
+
+          for( bts::db::cached_level_map< market_index_key, order_record >::iterator
+               short_itr  = _short_db.begin();
+               short_itr.valid();
+               short_itr++ )
+          {
+              market_order morder = market_order( short_order, short_itr.key(), short_itr.value() );
+              oprice feed = self->get_active_feed_price(
+                  morder.get_price().quote_asset_id,
+                  morder.get_price().base_asset_id
+                  );
+              if( !feed.valid() )
+                  continue;
+              // TODO:  use different ctor
+              process_bid( morder.get_price( *feed ), morder );
+          }
+
+          for( bts::db::cached_level_map< market_index_key, collateral_record >::iterator
+               collateral_itr  = _collateral_db.begin();
+               collateral_itr.valid();
+               collateral_itr++ )
+          {
+              market_index_key k = collateral_itr.key();
+              collateral_record record = collateral_itr.value();
+              oprice feed = self->get_active_feed_price(
+                  k.order_price.quote_asset_id,
+                  k.order_price.base_asset_id
+                  );
+              if( !feed.valid() )
+                  continue;
+
+              market_order morder = market_order( cover_order,
+                k,
+                order_record(record.payoff_balance),
+                record.collateral_balance,
+                record.interest_rate,
+                record.expiration
+                );
+
+              if( k.order_price <= (*feed) )
+                  // margin called.  in reality the price may be raised
+                  // to force a match, but we'll ignore that subtlety
+                  // here...
+                  process_ask( k.order_price, morder );
+              else if( record.expiration <= now() )
+                  // expired
+                  process_ask( k.order_price, morder );
+          }
+          
+          uint64_t failure_count = 0;
+          
+          // best bid price <= best ask price
+          for( auto it=mkt_to_best_bid.begin(); it != mkt_to_best_bid.end(); it++ )
+          {
+              std::pair<asset_id_type, asset_id_type> k = it->first;
+              auto it_ask = mkt_to_best_ask.find( k );
+              if( it_ask == mkt_to_best_ask.end() )
+                  continue;
+              price bid_price = it->second.first;
+              price ask_price = it_ask->second.first;
+              if( bid_price < ask_price )
+                  continue;
+              oasset_record quote_asset = self->get_asset_record( k.first );
+              oasset_record base_asset = self->get_asset_record( k.second );
+              
+              FC_ASSERT( quote_asset.valid() );
+              FC_ASSERT( base_asset.valid() );
+              
+              elog("mismatch in market ${quote} / ${base} at block ${block}",
+                  ("quote", quote_asset->symbol)
+                  ("base" ,  base_asset->symbol)
+                  ("block", self->get_head_block_num())
+                  );
+              failure_count++;
+          }
+          if( failure_count == 0 )
+          {
+              ilog("debug_check_no_orders_overlap() on block ${b} ok",
+                   ("b", self->get_head_block_num())
+                  );
+          }
+          else
+          {
+              elog("debug_check_no_orders_overlap() on block ${b} found ${n} errors",
+                   ("b", self->get_head_block_num())
+                   ("n", failure_count)
+                  );
+          }
+          
+          return;
+      }
 
       /**
        *  Performs all of the block validation steps and throws if error.

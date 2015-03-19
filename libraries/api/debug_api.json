@@ -334,6 +334,23 @@
         "cached"  : false,
         "prerequisites" : ["json_authenticated"],
         "aliases" : ["stop_before_block", "stop_b4_block", "debug_stop_b4_block", "stop_before", "stop_b4", "stopb4"]
+      },
+      {
+        "method_name": "debug_verify_market_matching",
+        "description": "enables or disables (slow) market matching verification code",
+        "return_type": "void",
+        "parameters" :
+          [
+            {
+              "name" : "enable_flag",
+              "type" : "bool",
+              "description" : "true to enable checking, false to disable it"
+            }
+          ],
+        "is_const" : false,
+        "cached"   : false,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases"  : []
       }
     ]
 }

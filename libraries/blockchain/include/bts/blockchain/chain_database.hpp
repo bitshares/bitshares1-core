@@ -285,6 +285,7 @@ namespace bts { namespace blockchain {
 
          // Applies only when pushing new blocks; gets enabled in delegate loop
          bool                               _verify_transaction_signatures = false;
+         bool _debug_verify_market_matching = false;
 
       private:
          unique_ptr<detail::chain_database_impl> my;
