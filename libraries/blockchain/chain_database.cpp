@@ -214,7 +214,7 @@ namespace bts { namespace blockchain {
               else
               {
                   auto status = self->get_market_status( key.order_price.quote_asset_id, key.order_price.base_asset_id );
-                  if( status && (*order.limit_price >= *status->current_feed_price) )
+                  if( status && status->current_feed_price && (*order.limit_price >= *status->current_feed_price) )
                      _shorts_at_feed.insert( key );
                  _short_limit_index.insert( std::make_pair( *order.limit_price, key ) );
               }
