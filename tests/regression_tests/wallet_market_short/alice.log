@@ -5847,7 +5847,7 @@ Details:
 37006 insufficient_feeds: insufficient feeds
 
     {"quote_id":2,"base_id":0}
-    th_a  market_engine.cpp:70 bts::blockchain::detail::market_engine::execute
+    th_a  market_engine.cpp:86 bts::blockchain::detail::market_engine::execute
 default (unlocked) >>> wallet_market_order_list USD XTS -1 dan
 TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
