@@ -1095,10 +1095,18 @@ namespace bts { namespace blockchain {
           }
           else
           {
-              elog("debug_check_no_orders_overlap() on block ${b} found ${n} errors",
+              elog("debug_check_no_orders_overlap() on block ${b} found ${n} error(s)",
                    ("b", self->get_head_block_num())
                    ("n", failure_count)
                   );
+              _debug_matching_error_log.push_back(
+              fc::format_string(
+                   "debug_check_no_orders_overlap() on block ${b} found ${n} error(s)",
+                   fc::mutable_variant_object()
+                   ("b", self->get_head_block_num())
+                   ("n", failure_count)
+                  )
+              );
           }
           
           return;
@@ -3820,6 +3828,11 @@ namespace bts { namespace blockchain {
    void chain_database::slot_erase_from_timestamp_map( const time_point_sec timestamp )
    {
        my->_slot_timestamp_to_delegate.remove( timestamp );
+   }
+
+   vector<string> chain_database::debug_get_matching_errors() const
+   {
+       return my->_debug_matching_error_log;
    }
 
 } } // bts::blockchain

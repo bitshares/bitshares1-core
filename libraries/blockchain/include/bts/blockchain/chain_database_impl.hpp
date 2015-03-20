@@ -26,7 +26,7 @@ namespace bts { namespace blockchain {
           return std::tie( a._fees, a._trx ) > std::tie( b._fees, b._trx );
       }
    };
-
+   
    namespace detail
    {
       class chain_database_impl
@@ -173,6 +173,8 @@ namespace bts { namespace blockchain {
             bts::db::level_map<time_point_sec, account_id_type>                         _slot_timestamp_to_delegate;
 
             map<operation_type_enum, std::deque<operation>>                             _recent_operations;
+            
+            mutable std::vector<std::string>                                            _debug_matching_error_log;
       };
 
   } // detail

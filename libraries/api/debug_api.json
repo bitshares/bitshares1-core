@@ -351,6 +351,16 @@
         "cached"   : false,
         "prerequisites" : ["no_prerequisites"],
         "aliases"  : []
-      }
+      },
+      {
+        "method_name" : "debug_list_matching_errors",
+        "description" : "returns a list of blocks flagged by debug_verify_market_matching",
+        "return_type" : "variants",
+        "parameters"  : [],
+        "is_const"   : true,
+        "cached"  : false,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
+      }      
     ]
 }

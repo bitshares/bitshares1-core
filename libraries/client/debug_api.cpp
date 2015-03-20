@@ -36,6 +36,15 @@ void client_impl::debug_verify_market_matching(bool enable_flag)
    return;
 }
 
+fc::variants client_impl::debug_list_matching_errors() const
+{
+    vector<string> v = _chain_db->debug_get_matching_errors();
+    fc::variants result;
+    for( const fc::string &s : v )
+        result.push_back( s );
+    return result;
+}
+
 map<fc::time_point, fc::exception> client_impl::debug_list_errors( int32_t first_error_number, uint32_t limit, const string& filename )const
 {
    map<fc::time_point, fc::exception> result;
