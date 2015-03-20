@@ -2388,6 +2388,15 @@ namespace bts { namespace blockchain {
 
       store_market_status( *market_stat );
 
+      //
+      // something we may want to address in the future:
+      // un-limited shorts are not erased from _shorts_at_feed
+      // when !new_feed, but are added back by !old_feed logic.
+      //
+      // since _shorts_at_feed is a set, inserting these duplicate
+      // objects is a no-op, so the behavior is correct (but maybe
+      // a little less optimized than it could be).
+      //
       if( !new_feed )
       {
          // remove all shorts with limit
