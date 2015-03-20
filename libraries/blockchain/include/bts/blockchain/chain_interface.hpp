@@ -142,7 +142,7 @@ namespace bts { namespace blockchain {
          void                               store_burn_record( const burn_record& record );
 
          ofeed_record                       get_feed_record( const feed_index index )const;
-         virtual void                       store_feed_record( const feed_record& record );
+         void                               store_feed_record( const feed_record& record );
 
          oslot_record                       get_slot_record( const slot_index index )const;
          oslot_record                       get_slot_record( const time_point_sec timestamp )const;

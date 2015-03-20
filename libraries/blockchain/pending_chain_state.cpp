@@ -57,13 +57,8 @@ namespace bts { namespace blockchain {
       for( const auto& item : market_history )  prev_state->store_market_history_record( item.first, item.second );
       for( const auto& item : market_statuses ) prev_state->store_market_status( item.second );
 
-      /** do this last because it could have side effects on other records while
-       * we manage the short index
-       */
-      //apply_records( prev_state, _feed_index_to_record, _feed_index_remove );
-      for( auto item : _feed_index_to_record )
-         prev_state->store_feed_record( item.second );
-      for( const auto& item : _feed_index_remove ) prev_state->remove<feed_record>( item );
+      // We have to do this last because it has side effects on the short at feed index and market status
+      apply_records( prev_state, _feed_index_to_record, _feed_index_remove );
 
       prev_state->set_market_transactions( market_transactions );
       prev_state->set_dirty_markets( _dirty_markets );
