@@ -29,11 +29,11 @@ namespace bts { namespace blockchain {
       return prev_state->now();
    }
 
-   oprice pending_chain_state::get_active_feed_price( const asset_id_type quote_id, const asset_id_type base_id )const
+   oprice pending_chain_state::get_active_feed_price( const asset_id_type quote_id )const
    {
       const chain_interface_ptr prev_state = _prev_state.lock();
       FC_ASSERT( prev_state );
-      return prev_state->get_active_feed_price( quote_id, base_id );
+      return prev_state->get_active_feed_price( quote_id );
    }
 
    void pending_chain_state::apply_changes()const

@@ -2537,7 +2537,7 @@ namespace bts { namespace blockchain {
       chain_interface::store_feed_record(record);
       auto quote_id = record.value.quote_asset_id;
       auto base_id  = record.value.base_asset_id;
-      auto  new_feed                   = get_active_feed_price( quote_id, base_id );
+      auto  new_feed = get_active_feed_price( quote_id );
       omarket_status market_stat = get_market_status( quote_id, base_id );
       if( !market_stat ) market_stat = market_status( quote_id, base_id );
       auto  old_feed =  market_stat->current_feed_price;
@@ -3443,7 +3443,7 @@ namespace bts { namespace blockchain {
         return unclaimed_total;
    } FC_CAPTURE_AND_RETHROW() }
 
-   oprice chain_database::get_active_feed_price( const asset_id_type quote_id, const asset_id_type base_id )const
+   oprice chain_database::get_active_feed_price( const asset_id_type quote_id )const
    { try {
        const auto outer_iter = my->_nested_feed_map.find( quote_id );
        if( outer_iter == my->_nested_feed_map.end() )
@@ -3468,7 +3468,7 @@ namespace bts { namespace blockchain {
            if( time_point( now ) - time_point( record.last_update ) >= limit ) continue;
 
            if( record.value.quote_asset_id != quote_id ) continue;
-           if( record.value.base_asset_id != base_id ) continue;
+           if( record.value.base_asset_id != 0 ) continue;
 
            prices.push_back( record.value );
        }

@@ -24,8 +24,7 @@ namespace bts { namespace blockchain {
          virtual omarket_status         get_market_status( const asset_id_type quote_id, const asset_id_type base_id )const override;
          virtual void                   store_market_status( const market_status& s ) override;
 
-         virtual oprice                 get_active_feed_price( const asset_id_type quote_id,
-                                                               const asset_id_type base_id = 0 )const override;
+         virtual oprice                 get_active_feed_price( const asset_id_type quote_id )const override;
 
          virtual omarket_order          get_lowest_ask_record( const asset_id_type quote_id,
                                                                const asset_id_type base_id )override;
