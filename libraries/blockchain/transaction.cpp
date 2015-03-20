@@ -339,14 +339,17 @@ namespace bts { namespace blockchain {
         operations.emplace_back( std::move( op ) );
     } FC_CAPTURE_AND_RETHROW( (asset_id)(active_flags) ) }
 
-    void transaction::uia_add_to_whitelist( const asset_id_type asset_id, const address& owner )
+    void transaction::uia_add_to_whitelist( const asset_id_type asset_id, const account_id_type account_id )
     { try {
-        operations.emplace_back( asset_update_whitelist_operation{ asset_id, owner } );
-    } FC_CAPTURE_AND_RETHROW( (asset_id)(owner) ) }
+        asset_update_whitelist_operation op;
+        op.asset_id = asset_id;
+        op.account_ids.insert( account_id );
+        operations.emplace_back( std::move( op ) );
+    } FC_CAPTURE_AND_RETHROW( (asset_id)(account_id) ) }
 
-    void transaction::uia_remove_from_whitelist( const asset_id_type asset_id, const address& owner )
+    void transaction::uia_remove_from_whitelist( const asset_id_type asset_id, const account_id_type account_id )
     { try {
-        operations.emplace_back( asset_update_whitelist_operation{ -asset_id, owner } );
-    } FC_CAPTURE_AND_RETHROW( (asset_id)(owner) ) }
+        uia_add_to_whitelist( asset_id, -account_id );
+    } FC_CAPTURE_AND_RETHROW( (asset_id)(account_id) ) }
 
 } } // bts::blockchain

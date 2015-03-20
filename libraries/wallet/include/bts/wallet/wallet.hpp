@@ -377,8 +377,13 @@ namespace bts { namespace wallet {
          wallet_transaction_record uia_update_whitelist(
                  const string& paying_account,
                  const string& asset_symbol,
-                 const address& addr,
+                 const string& account_name,
                  const bool add_to_whitelist,
+                 const bool sign
+                 );
+         wallet_transaction_record uia_retract_balance(
+                 const balance_id_type& balance_id,
+                 const string& account_name,
                  const bool sign
                  );
          /**

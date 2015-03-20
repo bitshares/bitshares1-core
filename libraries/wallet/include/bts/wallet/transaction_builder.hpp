@@ -156,28 +156,6 @@ namespace bts { namespace wallet {
                                                        optional<public_key_type> active_key,
                                                        optional<uint8_t> delegate_pay,
                                                        optional<wallet_account_record> paying_account);
-      /**
-       * @brief Transfer funds from payer to recipient
-       * @param payer The account to charge
-       * @param recipient The account to credit
-       * @param amount The amount to credit
-       * @param memo The memo to attach to the transaction notification. May be arbitrarily long
-       * @param memo_sender If valid, the recipient will see the transaction as being from this sender instead of the
-       * payer.
-       *
-       * payer is expected to be a receive account.
-       * If set, memo_sender is expected to be a receive account.
-       *
-       * If recipient is a public account, a public deposit will be made to his active address; otherwise, a TITAN
-       * transaction will be used.
-       *
-       * This method will create a transaction notice message, which will be completed after sign() is called.
-       */
-      transaction_builder& deposit_asset(const wallet_account_record& payer,
-                                         const account_record& recipient,
-                                         const asset& amount,
-                                         const string& memo,
-                                         fc::optional<string> memo_sender = fc::optional<string>());
 
       /**
        * @brief Transfer funds from payer to a raw address

@@ -498,7 +498,7 @@ void market_engine::pay_current_bid( market_transaction& mtrx, asset_record& quo
     _current_bid->state.balance -= mtrx.bid_paid.amount;
     FC_ASSERT( _current_bid->state.balance >= 0 );
 
-    FC_ASSERT( base_asset.address_is_whitelisted( mtrx.bid_owner ) );
+    FC_ASSERT( base_asset.address_is_approved( *_pending_state, mtrx.bid_owner ) );
 
     auto bid_payout = _pending_state->get_balance_record(
                               withdraw_condition( withdraw_with_signature(mtrx.bid_owner), _base_id ).get_address() );
@@ -612,7 +612,7 @@ void market_engine::pay_current_ask( market_transaction& mtrx, asset_record& quo
     _current_ask->state.balance -= mtrx.ask_paid.amount;
     FC_ASSERT( _current_ask->state.balance >= 0, "balance: ${b}", ("b",_current_ask->state.balance) );
 
-    FC_ASSERT( quote_asset.address_is_whitelisted( mtrx.ask_owner ) );
+    FC_ASSERT( quote_asset.address_is_approved( *_pending_state, mtrx.ask_owner ) );
 
     auto ask_balance_address = withdraw_condition( withdraw_with_signature(mtrx.ask_owner), _quote_id ).get_address();
     auto ask_payout = _pending_state->get_balance_record( ask_balance_address );

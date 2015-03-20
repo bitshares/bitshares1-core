@@ -81,8 +81,9 @@ FC_DECLARE_DERIVED_EXCEPTION( outstanding_shares_exist,         bts::blockchain:
 FC_DECLARE_DERIVED_EXCEPTION( invalid_fee_rate,                 bts::blockchain::evaluation_error, 35014, "invalid fee rate" );
 FC_DECLARE_DERIVED_EXCEPTION( invalid_authority,                bts::blockchain::evaluation_error, 35015, "invalid authority" );
 FC_DECLARE_DERIVED_EXCEPTION( permission_not_available,         bts::blockchain::evaluation_error, 35016, "permission not available" );
-FC_DECLARE_DERIVED_EXCEPTION( not_on_whitelist,                 bts::blockchain::evaluation_error, 35017, "not on whitelist" );
-FC_DECLARE_DERIVED_EXCEPTION( market_halted,                    bts::blockchain::evaluation_error, 35018, "market halted" );
+FC_DECLARE_DERIVED_EXCEPTION( invalid_whitelist,                bts::blockchain::evaluation_error, 35017, "invalid whitelist" );
+FC_DECLARE_DERIVED_EXCEPTION( not_on_whitelist,                 bts::blockchain::evaluation_error, 35018, "not on whitelist" );
+FC_DECLARE_DERIVED_EXCEPTION( market_halted,                    bts::blockchain::evaluation_error, 35019, "market halted" );
 
 FC_DECLARE_DERIVED_EXCEPTION( delegate_vote_limit,              bts::blockchain::evaluation_error, 36001, "delegate_vote_limit" );
 FC_DECLARE_DERIVED_EXCEPTION( insufficient_fee,                 bts::blockchain::evaluation_error, 36002, "insufficient fee" );

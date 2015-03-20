@@ -1572,7 +1572,7 @@
             {
               "name" : "flag",
               "type" : "asset_flag_enum",
-              "description" : "the special flag to enable or disable; one of {dynamic_max_supply, dynamic_fees, halted_markets, halted_withdrawals, retractable_balances, restricted_deposits}"
+              "description" : "the special flag to enable or disable; one of {dynamic_max_supply, dynamic_fees, halted_markets, halted_withdrawals, retractable_balances, restricted_accounts}"
             },
             {
               "name" : "enable_instead_of_disable",
@@ -1600,7 +1600,7 @@
             {
               "name" : "permission",
               "type" : "asset_flag_enum",
-              "description" : "the special permission to enable or disable; one of {dynamic_max_supply, dynamic_fees, halted_markets, halted_withdrawals, retractable_balances, restricted_deposits}"
+              "description" : "the special permission to enable or disable; one of {dynamic_max_supply, dynamic_fees, halted_markets, halted_withdrawals, retractable_balances, restricted_accounts}"
             },
             {
               "name" : "add_instead_of_remove",
@@ -1612,7 +1612,7 @@
       },
       {
         "method_name": "wallet_uia_update_whitelist",
-        "description": "Add or remove the specified address or public key from the specified user-issued asset's whitelist",
+        "description": "Add or remove the specified registered account from the specified user-issued asset's whitelist",
         "return_type": "transaction_record",
         "parameters" : [
             {
@@ -1626,14 +1626,32 @@
               "description" : "the user-issued asset that will have its whitelist updated"
             },
             {
-              "name" : "address_or_public_key",
+              "name" : "account_name",
               "type" : "string",
-              "description" : "the address or public key to add or remove from the whitelist"
+              "description" : "the name of the account to add or remove from the whitelist"
             },
             {
               "name" : "add_to_whitelist",
               "type" : "bool",
               "description" : "true to add to whitelist, or false to remove"
+            }
+           ],
+        "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+        "method_name": "wallet_uia_retract_balance",
+        "description": "Retract all funds from the specified user-issued asset balance record",
+        "return_type": "transaction_record",
+        "parameters" : [
+            {
+              "name" : "balance_id",
+              "type" : "address",
+              "description" : "the ID of the balance record"
+            },
+            {
+              "name" : "account_name",
+              "type" : "string",
+              "description" : "the local account name that will receive the funds and pay the fee"
             }
            ],
         "prerequisites" : ["wallet_unlocked"]

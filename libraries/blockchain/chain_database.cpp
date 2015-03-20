@@ -2229,17 +2229,6 @@ namespace bts { namespace blockchain {
       return my->_head_block_id;
    } FC_CAPTURE_AND_RETHROW() }
 
-   unordered_map<balance_id_type, balance_record> chain_database::get_balances( const balance_id_type& first, uint32_t limit )const
-   { try {
-       unordered_map<balance_id_type, balance_record> records;
-       for( auto iter = my->_balance_id_to_record.ordered_lower_bound( first ); iter.valid(); ++iter )
-       {
-           records[ iter.key() ] = iter.value();
-           if( records.size() >= limit ) break;
-       }
-       return records;
-   } FC_CAPTURE_AND_RETHROW( (first)(limit) ) }
-
    unordered_map<balance_id_type, balance_record> chain_database::get_balances_for_address( const address& addr )const
    { try {
         unordered_map<balance_id_type, balance_record> records;
