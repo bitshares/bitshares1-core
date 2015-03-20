@@ -1,0 +1,348 @@
+default (unlocked) >>> wallet_account_create test
+"XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
+default (unlocked) >>> wallet_account_create test2
+"XTS56gEKGQjqxWuEF7umuaaFbPTYQ1kP9LWRQHsyoojVmWML1yoNM"
+default (unlocked) >>> wallet_uia_create delegate0 XMO DIGITAL_DEVICE1 "CREATING AN ASSET" 500.00
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:40:30</d-ign>PENDING   delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.00000 XTS   <d-ign> e2973d09</d-ign>
+default (unlocked) >>> debug_wait_for_block_by_number 1 relative
+OK
+default (unlocked) >>> blockchain_list_assets
+ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
+===========================================================================================================================================================
+1     XMO    DIGITAL_DEVICE1         CREATING AN ASSET                               delegate0                       0.00 %    0.00 XMO                    
+0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,049.99901 XTS     
+default (unlocked) >>> blockchain_get_asset XMO
+{
+  "id": 1,
+  "symbol": "XMO",
+  "issuer_id": 1,
+  "authority": {
+    "required": 1,
+    "owners": [
+      "XTSDG4CLPoePEPHaRaDszT4ix8gA1ghTb6FF"
+    ]
+  },
+  "authority_flag_permissions": 4294967295,
+  "active_flags": 0,
+  "whitelist": [],
+  "name": "DIGITAL_DEVICE1",
+  "description": "CREATING AN ASSET",
+  "public_data": null,
+  "precision": 100,
+  "max_supply": 50000,
+  "withdrawal_fee": 0,
+  "market_fee_rate": 0,
+  "collected_fees": 0,
+  "current_supply": 0,
+  "registration_date": "2014-06-20T14:40:20",
+  "last_update": "2014-06-20T14:40:20"
+}
+default (unlocked) >>> help wallet_uia_update_active_flags
+Usage:
+wallet_uia_update_active_flags <paying_account> <asset_symbol> <flag> <enable_instead_of_disable>     Activate or deactivate one of the special flags for the specified user-issued asset as permitted
+Activate or deactivate one of the special flags for the specified user-issued asset as permitted
+
+Parameters:
+  paying_account (account_name, required): the account that will pay the transaction fee
+  asset_symbol (asset_symbol, required): the user-issued asset to update
+  flag (asset_flag_enum, required): the special flag to enable or disable; one of {dynamic_max_supply, dynamic_fees, halted_markets, halted_withdrawals, retractable_balances, restricted_deposits}
+  enable_instead_of_disable (bool, required): true to enable, or false to disable
+
+Returns:
+  transaction_record
+default (unlocked) >>> wallet_uia_update_active_flags delegate0 XMO dynamic_max_supply true
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:40:30</d-ign>PENDING   delegate0           UNKNOWN             0.00000 XTS             add dynamic_max_supply to authority perm... 0.50000 XTS         <d-ign> a2ea80db</d-ign>
+default (unlocked) >>> debug_wait_for_block_by_number 1 relative
+OK
+default (unlocked) >>> wallet_uia_update_active_flags delegate0 XMO dynamic_fees true
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate0           UNKNOWN             0.00000 XTS             add dynamic_fees to authority permsfor XMO  0.50000 XTS         <d-ign> fa89a184</d-ign>
+default (unlocked) >>> debug_wait_for_block_by_number 1 relative
+OK
+default (unlocked) >>> wallet_uia_update_active_flags delegate0 XMO halted_markets true
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:40:50</d-ign>PENDING   delegate0           UNKNOWN             0.00000 XTS             add halted_markets to authority permsfor... 0.50000 XTS         <d-ign> fa89a184</d-ign>
+default (unlocked) >>> debug_wait_for_block_by_number 1 relative
+OK
+default (unlocked) >>> blockchain_get_asset XMO
+{
+  "id": 1,
+  "symbol": "XMO",
+  "issuer_id": 1,
+  "authority": {
+    "required": 1,
+    "owners": [
+      "XTSDG4CLPoePEPHaRaDszT4ix8gA1ghTb6FF"
+    ]
+  },
+  "authority_flag_permissions": 4294967295,
+  "active_flags": 7,
+  "whitelist": [],
+  "name": "DIGITAL_DEVICE1",
+  "description": "CREATING AN ASSET",
+  "public_data": null,
+  "precision": 100,
+  "max_supply": 50000,
+  "withdrawal_fee": 0,
+  "market_fee_rate": 0,
+  "collected_fees": 0,
+  "current_supply": 0,
+  "registration_date": "2014-06-20T14:40:20",
+  "last_update": "2014-06-20T14:40:50"
+}
+default (unlocked) >>> wallet_uia_update_active_flags delegate0 XMO dynamic_fees false
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:41:10</d-ign>PENDING   delegate0           UNKNOWN             0.00000 XTS             remove dynamic_fees from active flagsfor... 0.50000 XTS         <d-ign> fa89a184</d-ign>
+default (unlocked) >>> debug_wait_for_block_by_number 1 relative
+OK
+default (unlocked) >>> blockchain_get_asset XMO
+{
+  "id": 1,
+  "symbol": "XMO",
+  "issuer_id": 1,
+  "authority": {
+    "required": 1,
+    "owners": [
+      "XTSDG4CLPoePEPHaRaDszT4ix8gA1ghTb6FF"
+    ]
+  },
+  "authority_flag_permissions": 4294967295,
+  "active_flags": 5,
+  "whitelist": [],
+  "name": "DIGITAL_DEVICE1",
+  "description": "CREATING AN ASSET",
+  "public_data": null,
+  "precision": 100,
+  "max_supply": 50000,
+  "withdrawal_fee": 0,
+  "market_fee_rate": 0,
+  "collected_fees": 0,
+  "current_supply": 0,
+  "registration_date": "2014-06-20T14:40:20",
+  "last_update": "2014-06-20T14:41:00"
+}
+default (unlocked) >>> help wallet_uia_update_whitelist
+Usage:
+wallet_uia_update_whitelist <paying_account> <asset_symbol> <address_or_public_key> <add_to_whitelist>   Add or remove the specified address or public key from the specified user-issued asset's whitelist
+Add or remove the specified address or public key from the specified user-issued asset's whitelist
+
+Parameters:
+  paying_account (account_name, required): the account that will pay the transaction fee
+  asset_symbol (asset_symbol, required): the user-issued asset that will have its whitelist updated
+  address_or_public_key (string, required): the address or public key to add or remove from the whitelist
+  add_to_whitelist (bool, required): true to add to whitelist, or false to remove
+
+Returns:
+  transaction_record
+default (unlocked) >>> wallet_uia_update_whitelist delegate0 XMO XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt true
+Command failed with exception: Assert Exception (10)
+current_asset_record->flag_is_active( asset_record::restricted_deposits ): 
+
+
+
+
+
+
+
+
+
+
+
+default (unlocked) >>> wallet_uia_update_active_flags delegate0 XMO restricted_deposits true
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:41:10</d-ign>PENDING   delegate0           UNKNOWN             0.00000 XTS             add restricted_deposits to authority per... 0.50000 XTS         <d-ign> fa89a184</d-ign>
+default (unlocked) >>> debug_wait_for_block_by_number 1 relative
+OK
+default (unlocked) >>> wallet_uia_update_whitelist delegate0 XMO XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt true
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:41:10</d-ign>PENDING   delegate0           UNKNOWN             0.00000 XTS             add XTSEz7eoMUssHQBeeH5xLr38Rg8RSJXYBebN... 0.50000 XTS         <d-ign> 60a9e67c</d-ign>
+default (unlocked) >>> debug_wait_for_block_by_number 1 relative
+OK
+default (unlocked) >>> blockchain_get_asset XMO
+{
+  "id": 1,
+  "symbol": "XMO",
+  "issuer_id": 1,
+  "authority": {
+    "required": 1,
+    "owners": [
+      "XTSDG4CLPoePEPHaRaDszT4ix8gA1ghTb6FF"
+    ]
+  },
+  "authority_flag_permissions": 4294967295,
+  "active_flags": 37,
+  "whitelist": [
+    "XTSEz7eoMUssHQBeeH5xLr38Rg8RSJXYBebN"
+  ],
+  "name": "DIGITAL_DEVICE1",
+  "description": "CREATING AN ASSET",
+  "public_data": null,
+  "precision": 100,
+  "max_supply": 50000,
+  "withdrawal_fee": 0,
+  "market_fee_rate": 0,
+  "collected_fees": 0,
+  "current_supply": 0,
+  "registration_date": "2014-06-20T14:40:20",
+  "last_update": "2014-06-20T14:41:10"
+}
+default (unlocked) >>> wallet_uia_issue 1000 XMO test "Sending some assets"
+Command failed with exception: over issue (35007)
+
+
+
+
+
+
+
+
+
+
+
+
+default (unlocked) >>> wallet_uia_issue 20 XMO test2 "Sending some assets"
+Command failed with exception: Assert Exception (10)
+asset_rec->address_is_whitelisted( owner ): 
+
+
+
+
+
+
+
+
+
+
+
+default (unlocked) >>> help wallet_uia_update_authority_permissions
+Usage:
+wallet_uia_update_authority_permissions <paying_account> <asset_symbol> <permission> <add_instead_of_remove>   Update the authority's special flag permissions for the specified user-issued asset. Warning: If any shares have been issued, then revoked permissions cannot be restored!
+Update the authority's special flag permissions for the specified user-issued asset. Warning: If any shares have been issued, then revoked permissions cannot be restored!
+
+Parameters:
+  paying_account (account_name, required): the account that will pay the transaction fee
+  asset_symbol (asset_symbol, required): the user-issued asset to update
+  permission (asset_flag_enum, required): the special permission to enable or disable; one of {dynamic_max_supply, dynamic_fees, halted_markets, halted_withdrawals, retractable_balances, restricted_deposits}
+  add_instead_of_remove (bool, required): True to add, or false to remove. Use with extreme caution!
+
+Returns:
+  transaction_record
+default (unlocked) >>> wallet_uia_update_authority_permissions delegate0 XMO restricted_deposits false
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:41:20</d-ign>PENDING   delegate0           UNKNOWN             0.00000 XTS             remove restricted_deposits from active f... 0.50000 XTS         <d-ign> ee6b58d0</d-ign>
+default (unlocked) >>> debug_wait_for_block_by_number 1 relative
+OK
+default (unlocked) >>> blockchain_get_asset XMO
+{
+  "id": 1,
+  "symbol": "XMO",
+  "issuer_id": 1,
+  "authority": {
+    "required": 1,
+    "owners": [
+      "XTSDG4CLPoePEPHaRaDszT4ix8gA1ghTb6FF"
+    ]
+  },
+  "authority_flag_permissions": 4294967263,
+  "active_flags": 37,
+  "whitelist": [
+    "XTSEz7eoMUssHQBeeH5xLr38Rg8RSJXYBebN"
+  ],
+  "name": "DIGITAL_DEVICE1",
+  "description": "CREATING AN ASSET",
+  "public_data": null,
+  "precision": 100,
+  "max_supply": 50000,
+  "withdrawal_fee": 0,
+  "market_fee_rate": 0,
+  "collected_fees": 0,
+  "current_supply": 0,
+  "registration_date": "2014-06-20T14:40:20",
+  "last_update": "2014-06-20T14:41:30"
+}
+default (unlocked) >>> wallet_uia_issue 1000 XMO test "Sending some assets"
+Command failed with exception: over issue (35007)
+
+
+
+
+
+
+
+
+
+
+
+
+default (unlocked) >>> wallet_uia_issue 20 XMO test2 "Sending some assets"
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:41:00</d-ign>PENDING   delegate0           test2               20.00 XMO               Sending some assets                         0.50000 XTS         <d-ign> 0d86ed61</d-ign>
+default (unlocked) >>> debug_wait_for_block_by_number 2 relative
+OK
+default (unlocked) >>> blockchain_list_assets
+ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
+===========================================================================================================================================================
+1     XMO    DIGITAL_DEVICE1         CREATING AN ASSET                               delegate0                       4.00 %    20.00 XMO                   
+0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,499.99901 XTS     
+default (unlocked) >>> wallet_account_balance test
+No balances found.
+default (unlocked) >>> wallet_account_balance test2
+ACCOUNT                         BALANCE                     
+============================================================
+test2                           20.00 XMO                   
+default (unlocked) >>> wallet_uia_update_active_flags delegate0 XMO dynamic_fees true
+Command failed with exception: permission not available (35016)
+
+
+
+
+
+
+
+
+
+
+
+
+default (unlocked) >>> debug_wait_for_block_by_number 1 relative
+OK
+default (unlocked) >>> blockchain_get_asset XMO
+{
+  "id": 1,
+  "symbol": "XMO",
+  "issuer_id": 1,
+  "authority": {
+    "required": 1,
+    "owners": [
+      "XTSDG4CLPoePEPHaRaDszT4ix8gA1ghTb6FF"
+    ]
+  },
+  "authority_flag_permissions": 4294967263,
+  "active_flags": 37,
+  "whitelist": [
+    "XTSEz7eoMUssHQBeeH5xLr38Rg8RSJXYBebN"
+  ],
+  "name": "DIGITAL_DEVICE1",
+  "description": "CREATING AN ASSET",
+  "public_data": null,
+  "precision": 100,
+  "max_supply": 50000,
+  "withdrawal_fee": 0,
+  "market_fee_rate": 0,
+  "collected_fees": 0,
+  "current_supply": 2000,
+  "registration_date": "2014-06-20T14:40:20",
+  "last_update": "2014-06-20T14:41:40"
+}
+default (unlocked) >>> quit
