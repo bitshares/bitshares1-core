@@ -86,6 +86,29 @@ namespace bts { namespace blockchain { namespace detail {
                   const omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
                   if( (!market_stat.valid() || !market_stat->last_valid_feed_price.valid()) && !_feed_price.valid() )
                       FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id)(base_id) );
+
+                  if( _pending_state->get_head_block_num() >= BTS_SHORTFIX_FORK_BLOCK_NUM && _feed_price.valid() )
+                  {
+                      for( ; _short_itr.valid(); --_short_itr )
+                      {
+                          const market_index_key& key = _short_itr.key();
+                          if( key.order_price.quote_asset_id != _quote_id || key.order_price.base_asset_id != _base_id )
+                              break;
+
+                          const order_record& order = _short_itr.value();
+                          if( !order.limit_price.valid() )
+                          {
+                              _shorts_at_feed.insert( key );
+                          }
+                          else
+                          {
+                              if( *order.limit_price >= *_feed_price)
+                                  _shorts_at_feed.insert( key );
+                              else
+                                  _short_limit_index.insert( std::make_pair( *order.limit_price, key ) );
+                          }
+                      }
+                  }
               }
           }
           else
@@ -99,6 +122,9 @@ namespace bts { namespace blockchain { namespace detail {
                       FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id)(base_id) );
               }
           }
+
+          _short_at_feed_itr  = _shorts_at_feed.rbegin();
+          _short_at_limit_itr = _short_limit_index.rbegin();
 
           // prime the pump, to make sure that margin calls (asks) have a bid to check against.
           get_next_bid(); get_next_ask();
@@ -633,7 +659,7 @@ namespace bts { namespace blockchain { namespace detail {
                                  _short_itr.value(),
                                  _short_itr.value().balance,
                                  _short_itr.key().order_price );
-        
+
         // we don't use get_price(*_feed_price) here because
         // this is checking whether the index might have moved into
         // another market, which might not have a valid feed
@@ -680,7 +706,44 @@ namespace bts { namespace blockchain { namespace detail {
       get_next_short();
       return _current_bid.valid();
   } FC_CAPTURE_AND_RETHROW() }
-  
+
+  bool market_engine_v7::get_next_short_v065()
+  {
+      optional<market_order> bid;
+
+      // first consider shorts at the feed price
+      if( _short_at_feed_itr != _shorts_at_feed.rend() )
+      {
+          optional<order_record> oshort = _pending_state->get_short_record( *_short_at_feed_itr );
+          if( oshort.valid() )
+          {
+              _current_bid = market_order( short_order, *_short_at_feed_itr, *oshort );
+              ++_short_at_feed_itr;
+              return true;
+          }
+      }
+      // then check shorts with a limit below the feed
+      else if( _short_at_limit_itr != _short_limit_index.rend() )
+      {
+          FC_ASSERT( _feed_price.valid() );
+          const price& limit_price = _short_at_limit_itr->first;
+
+          // if the limit price is better than a current bid
+          if( !_current_bid.valid() || limit_price > _current_bid->get_price( *_feed_price ) )
+          {
+              optional<order_record> oshort = _pending_state->get_short_record( _short_at_limit_itr->second );
+              if( oshort.valid() )
+              {
+                  _current_bid = market_order( short_order, _short_at_limit_itr->second, *oshort );
+                  ++_short_at_limit_itr;
+                  return true;
+              }
+          }
+      }
+
+      return false;
+  }
+
   bool market_engine_v7::get_next_bid()
   {
       if( _pending_state->get_head_block_num() < BTS_V0_6_4_FORK_BLOCK_NUM )
@@ -692,10 +755,12 @@ namespace bts { namespace blockchain { namespace detail {
 
   bool market_engine_v7::get_next_short()
   {
+      if( _pending_state->get_head_block_num() >= BTS_SHORTFIX_FORK_BLOCK_NUM )
+          return get_next_short_v065();
+
       if( _pending_state->get_head_block_num() < BTS_V0_6_4_FORK_BLOCK_NUM )
-      {
           return get_next_short_v063();
-      }
+
       return get_next_short_v064();
   }
 

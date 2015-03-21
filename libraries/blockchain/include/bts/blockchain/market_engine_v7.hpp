@@ -32,13 +32,15 @@ namespace bts { namespace blockchain { namespace detail {
 
     bool get_next_short_v063();
     bool get_next_bid_v063();
-    
+
     bool get_next_short_v064();
     bool get_next_bid_v064();
-    
+
+    bool get_next_short_v065();
+
     bool get_next_short();
     bool get_next_bid();
-    
+
     bool get_next_ask();
     asset get_current_cover_debt()const;
     uint32_t get_current_cover_age()const
@@ -85,10 +87,16 @@ namespace bts { namespace blockchain { namespace detail {
     vector<market_transaction>    _market_transactions;
 
   private:
-    bts::db::cached_level_map< market_index_key, order_record >::iterator         _bid_itr;
-    bts::db::cached_level_map< market_index_key, order_record >::iterator         _ask_itr;
-    bts::db::cached_level_map< market_index_key, order_record >::iterator         _short_itr;
-    bts::db::cached_level_map< market_index_key, collateral_record >::iterator    _collateral_itr;
+    bts::db::cached_level_map< market_index_key, order_record >::iterator       _bid_itr;
+    bts::db::cached_level_map< market_index_key, order_record >::iterator       _ask_itr;
+    bts::db::cached_level_map< market_index_key, order_record >::iterator       _short_itr;
+    bts::db::cached_level_map< market_index_key, collateral_record >::iterator  _collateral_itr;
+
+    set<market_index_key>                                                       _shorts_at_feed;
+    set<pair<price, market_index_key>>                                          _short_limit_index;
+
+    std::set<market_index_key>::reverse_iterator                                _short_at_feed_itr;
+    std::set<pair<price, market_index_key>>::reverse_iterator                   _short_at_limit_itr;
   };
 
 } } } // end namespace bts::blockchain::detail
