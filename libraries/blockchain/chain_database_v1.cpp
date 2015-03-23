@@ -78,7 +78,7 @@ void chain_database_impl::execute_markets_v1( const fc::time_point_sec timestamp
   else if( pending_block_num == BTS_SHORTFIX_FORK_BLOCK_NUM )
   {
      market_engine_v7 engine( pending_state, *this );
-     engine.cancel_all_shorts();
+     engine.cancel_high_apr_shorts();
      market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
   }
 

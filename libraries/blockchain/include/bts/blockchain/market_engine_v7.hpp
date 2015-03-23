@@ -11,6 +11,8 @@ namespace bts { namespace blockchain { namespace detail {
 
     void cancel_all_shorts();
 
+    void cancel_high_apr_shorts();
+
     static asset get_interest_paid_fixed(const asset& total_amount_paid, const price& apr, uint32_t age_seconds);
     static asset get_interest_owed_fixed(const asset& principle, const price& apr, uint32_t age_seconds);
 

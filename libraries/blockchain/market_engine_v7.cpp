@@ -34,6 +34,31 @@ namespace bts { namespace blockchain { namespace detail {
       _pending_state->apply_changes();
   }
 
+  void market_engine_v7::cancel_high_apr_shorts()
+  {
+      static fc::uint128 max_apr = fc::uint128( BTS_BLOCKCHAIN_MAX_SHORT_APR_PCT ) * FC_REAL128_PRECISION / 100;
+
+      for( auto short_itr = _db_impl._short_db.begin(); short_itr.valid(); ++short_itr )
+      {
+          const market_index_key market_idx = short_itr.key();
+          if( market_idx.order_price.ratio <= max_apr )
+              continue;
+
+          const order_record order_rec = short_itr.value();
+          _current_bid = market_order( short_order, market_idx, order_rec, order_rec.balance, market_idx.order_price );
+
+          // Initialize the market transaction
+          market_transaction mtrx;
+          mtrx.bid_owner = _current_bid->get_owner();
+          mtrx.bid_type = short_order;
+
+          cancel_current_short( mtrx, market_idx.order_price.quote_asset_id );
+          push_market_transaction( mtrx );
+      }
+
+      _pending_state->apply_changes();
+  }
+
   bool market_engine_v7::execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec timestamp )
   {
       try
