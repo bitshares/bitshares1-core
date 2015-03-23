@@ -715,23 +715,33 @@ namespace bts { namespace blockchain { namespace detail {
       ++_orders_filled;
       _current_bid.reset();
 
-      if( _bid_itr.valid() )
-      {
-        auto bid = market_order( bid_order, _bid_itr.key(), _bid_itr.value() );
-        if( bid.get_price().quote_asset_id == _quote_id &&
-            bid.get_price().base_asset_id == _base_id )
-            _current_bid = bid;
+      // if we have no bids, the short wins as long as there is one,
+      // so just call get_next_short() and be done
+      if( !_bid_itr.valid() )
+        return get_next_short();
 
-        if( _feed_price.valid() && bid.get_price() < *_feed_price && get_next_short() )
-            return true;
+      auto bid = market_order( bid_order, _bid_itr.key(), _bid_itr.value() );
 
-        if( _current_bid.valid() )
-            --_bid_itr;
+      // if we iterated out of the market, there are no bids and the
+      // short wins (as long as there is one), so handle this case
+      // just like above
+      if( (bid.get_price().quote_asset_id != _quote_id) ||
+          (bid.get_price().base_asset_id != _base_id) )
+        return get_next_short();
 
-        return _current_bid.valid();
-      }
-      get_next_short();
-      return _current_bid.valid();
+      //
+      // bid from itr is valid and in the correct market.
+      // in order for short to win, _feed_price must be valid,
+      // bid_price must be less than the feed.  then we call
+      // to get_next_short() to actually fetch the short and
+      // compare its price.
+      //
+      if( _feed_price.valid() && bid.get_price() < *_feed_price && get_next_short() )
+        return true;
+
+      _current_bid = bid;
+      --_bid_itr;
+      return true;
   } FC_CAPTURE_AND_RETHROW() }
 
   bool market_engine_v7::get_next_short_v065()
