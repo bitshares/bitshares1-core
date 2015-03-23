@@ -96,8 +96,8 @@ namespace bts { namespace blockchain { namespace detail {
     map<market_index_key, order_record>                                         _stuck_shorts;
     map<pair<price, market_index_key>, order_record>                            _unstuck_shorts;
 
-    decltype( _stuck_shorts.rbegin() )                                          _stuck_shorts_iter;
-    decltype( _unstuck_shorts.rbegin() )                                        _unstuck_shorts_iter;
+    map<market_index_key, order_record>::reverse_iterator                       _stuck_shorts_iter;
+    map<pair<price, market_index_key>, order_record>::reverse_iterator          _unstuck_shorts_iter;
   };
 
 } } } // end namespace bts::blockchain::detail
