@@ -707,6 +707,33 @@ namespace bts { namespace blockchain { namespace detail {
       return _current_bid.valid();
   } FC_CAPTURE_AND_RETHROW() }
 
+  bool market_engine_v7::get_next_bid_v065()
+  { try {
+      if( _current_bid && _current_bid->get_quantity().amount > 0 )
+        return _current_bid.valid();
+
+      ++_orders_filled;
+      _current_bid.reset();
+
+      if( _bid_itr.valid() )
+      {
+        auto bid = market_order( bid_order, _bid_itr.key(), _bid_itr.value() );
+        if( bid.get_price().quote_asset_id == _quote_id &&
+            bid.get_price().base_asset_id == _base_id )
+            _current_bid = bid;
+
+        if( _feed_price.valid() && bid.get_price() < *_feed_price && get_next_short() )
+            return true;
+
+        if( _current_bid.valid() )
+            --_bid_itr;
+
+        return _current_bid.valid();
+      }
+      get_next_short();
+      return _current_bid.valid();
+  } FC_CAPTURE_AND_RETHROW() }
+
   bool market_engine_v7::get_next_short_v065()
   {
       // first consider shorts at the feed price
@@ -742,10 +769,11 @@ namespace bts { namespace blockchain { namespace detail {
   bool market_engine_v7::get_next_bid()
   {
       if( _pending_state->get_head_block_num() < BTS_V0_6_4_FORK_BLOCK_NUM )
-      {
           return get_next_bid_v063();
-      }
-      return get_next_bid_v064();
+      else if( _pending_state->get_head_block_num() < BTS_SHORTFIX_FORK_BLOCK_NUM )
+          return get_next_bid_v064();
+      else
+          return get_next_bid_v065();
   }
 
   bool market_engine_v7::get_next_short()
