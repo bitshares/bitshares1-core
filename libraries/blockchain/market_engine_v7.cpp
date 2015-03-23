@@ -98,14 +98,14 @@ namespace bts { namespace blockchain { namespace detail {
                           const order_record& order = _short_itr.value();
                           if( !order.limit_price.valid() )
                           {
-                              _shorts_at_feed.insert( key );
+                              _stuck_shorts[ key ] = order;
                           }
                           else
                           {
                               if( *order.limit_price >= *_feed_price)
-                                  _shorts_at_feed.insert( key );
+                                  _stuck_shorts[ key ] = order;
                               else
-                                  _short_limit_index.insert( std::make_pair( *order.limit_price, key ) );
+                                  _unstuck_shorts[ std::make_pair( *order.limit_price, key ) ] = order;
                           }
                       }
                   }
@@ -123,8 +123,8 @@ namespace bts { namespace blockchain { namespace detail {
               }
           }
 
-          _short_at_feed_itr  = _shorts_at_feed.rbegin();
-          _short_at_limit_itr = _short_limit_index.rbegin();
+          _stuck_shorts_iter = _stuck_shorts.rbegin();
+          _unstuck_shorts_iter = _unstuck_shorts.rbegin();
 
           // prime the pump, to make sure that margin calls (asks) have a bid to check against.
           get_next_bid(); get_next_ask();
@@ -712,32 +712,29 @@ namespace bts { namespace blockchain { namespace detail {
       optional<market_order> bid;
 
       // first consider shorts at the feed price
-      if( _short_at_feed_itr != _shorts_at_feed.rend() )
+      if( _stuck_shorts_iter != _stuck_shorts.rend() )
       {
-          optional<order_record> oshort = _pending_state->get_short_record( *_short_at_feed_itr );
-          if( oshort.valid() )
-          {
-              _current_bid = market_order( short_order, *_short_at_feed_itr, *oshort );
-              ++_short_at_feed_itr;
-              return true;
-          }
+          const market_index_key& key = _stuck_shorts_iter->first;
+          const order_record& order = _stuck_shorts_iter->second;
+          _current_bid = market_order( short_order, key, order );
+          ++_stuck_shorts_iter;
+          return true;
       }
       // then check shorts with a limit below the feed
-      else if( _short_at_limit_itr != _short_limit_index.rend() )
+      else if( _unstuck_shorts_iter != _unstuck_shorts.rend() )
       {
           FC_ASSERT( _feed_price.valid() );
-          const price& limit_price = _short_at_limit_itr->first;
+
+          const price& limit_price = _unstuck_shorts_iter->first.first;
+          const market_index_key& key = _unstuck_shorts_iter->first.second;
+          const order_record& order = _stuck_shorts_iter->second;
 
           // if the limit price is better than a current bid
           if( !_current_bid.valid() || limit_price > _current_bid->get_price( *_feed_price ) )
           {
-              optional<order_record> oshort = _pending_state->get_short_record( _short_at_limit_itr->second );
-              if( oshort.valid() )
-              {
-                  _current_bid = market_order( short_order, _short_at_limit_itr->second, *oshort );
-                  ++_short_at_limit_itr;
-                  return true;
-              }
+              _current_bid = market_order( short_order, key, order );
+              ++_unstuck_shorts_iter;
+              return true;
           }
       }
 

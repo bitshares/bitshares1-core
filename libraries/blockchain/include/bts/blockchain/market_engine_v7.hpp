@@ -92,11 +92,11 @@ namespace bts { namespace blockchain { namespace detail {
     bts::db::cached_level_map< market_index_key, order_record >::iterator       _short_itr;
     bts::db::cached_level_map< market_index_key, collateral_record >::iterator  _collateral_itr;
 
-    set<market_index_key>                                                       _shorts_at_feed;
-    set<pair<price, market_index_key>>                                          _short_limit_index;
+    map<market_index_key, order_record>                                         _stuck_shorts;
+    map<pair<price, market_index_key>, order_record>                            _unstuck_shorts;
 
-    std::set<market_index_key>::reverse_iterator                                _short_at_feed_itr;
-    std::set<pair<price, market_index_key>>::reverse_iterator                   _short_at_limit_itr;
+    decltype( _stuck_shorts.rbegin() )                                          _stuck_shorts_iter;
+    decltype( _unstuck_shorts.rbegin() )                                        _unstuck_shorts_iter;
   };
 
 } } } // end namespace bts::blockchain::detail
