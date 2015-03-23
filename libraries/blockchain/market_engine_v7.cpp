@@ -709,8 +709,6 @@ namespace bts { namespace blockchain { namespace detail {
 
   bool market_engine_v7::get_next_short_v065()
   {
-      optional<market_order> bid;
-
       // first consider shorts at the feed price
       if( _stuck_shorts_iter != _stuck_shorts.rend() )
       {
