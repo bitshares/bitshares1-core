@@ -1022,10 +1022,7 @@ namespace bts { namespace blockchain {
                short_itr++ )
           {
               market_order morder = market_order( short_order, short_itr.key(), short_itr.value() );
-              oprice feed = self->get_active_feed_price(
-                  morder.get_price().quote_asset_id,
-                  morder.get_price().base_asset_id
-                  );
+              oprice feed = self->get_active_feed_price( morder.get_price().quote_asset_id );
               if( !feed.valid() )
                   continue;
               // TODO:  use different ctor
@@ -1039,10 +1036,7 @@ namespace bts { namespace blockchain {
           {
               market_index_key k = collateral_itr.key();
               collateral_record record = collateral_itr.value();
-              oprice feed = self->get_active_feed_price(
-                  k.order_price.quote_asset_id,
-                  k.order_price.base_asset_id
-                  );
+              oprice feed = self->get_active_feed_price( k.order_price.quote_asset_id );
               if( !feed.valid() )
                   continue;
 
