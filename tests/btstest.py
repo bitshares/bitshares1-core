@@ -32,6 +32,12 @@ def add_to_sys_path(path_additions):
 class ParseError(Exception):
     pass
 
+class RPCError(Exception):
+    def __init__(self, http_error_code=-1, error_data=None):
+        self.http_error_code = http_error_code
+        self.error_data = error_data
+        return
+
 class RPCClient(object):
     def __init__(self, credentials):
 
@@ -57,12 +63,18 @@ class RPCClient(object):
         #post_data = urllib.parse.urlencode(o).encode("UTF-8")
         post_data = json.dumps(o).encode("UTF-8")
         req = urllib.request.Request(self.rpc_url, post_data)
-        response = self.url_opener.open(req)
-        response_content = response.read().decode("UTF-8")
-        d = json.loads(response_content, parse_float=decimal.Decimal)
-        logging.debug("result: "+str(d))
-        result = d["result"]
-        logging.debug("result: "+str(result))
+        try:
+            response = self.url_opener.open(req)
+            response_content = response.read().decode("UTF-8")
+            d = json.loads(response_content, parse_float=decimal.Decimal)
+            logging.debug("result: "+str(d))
+            result = d["result"]
+            logging.debug("result: "+str(result))
+        except urllib.error.HTTPError as e:
+            response_content = e.read().decode("UTF-8")
+            d = json.loads(response_content, parse_float=decimal.Decimal)
+            logging.debug("error result: "+str(d))
+            raise RPCError(http_error_code=e.code, error_data=d)
         return result
 
     def get_next_request_id(self):
