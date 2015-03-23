@@ -36,10 +36,10 @@ namespace bts { namespace blockchain { namespace detail {
     bool get_next_short_v064();
     bool get_next_bid_v064();
 
-    bool get_next_short_v065();
+    bool get_next_short_v065( const omarket_order& bid_being_considered );
     bool get_next_bid_v065();
 
-    bool get_next_short();
+    bool get_next_short( const omarket_order& bid_being_considered = omarket_order() );
     bool get_next_bid();
 
     bool get_next_ask();

@@ -720,7 +720,7 @@ namespace bts { namespace blockchain { namespace detail {
       if( !_bid_itr.valid() )
         return get_next_short();
 
-      auto bid = market_order( bid_order, _bid_itr.key(), _bid_itr.value() );
+      const auto bid = market_order( bid_order, _bid_itr.key(), _bid_itr.value() );
 
       // if we iterated out of the market, there are no bids and the
       // short wins (as long as there is one), so handle this case
@@ -736,7 +736,7 @@ namespace bts { namespace blockchain { namespace detail {
       // to get_next_short() to actually fetch the short and
       // compare its price.
       //
-      if( _feed_price.valid() && bid.get_price() < *_feed_price && get_next_short() )
+      if( _feed_price.valid() && bid.get_price() < *_feed_price && get_next_short( bid ) )
         return true;
 
       _current_bid = bid;
@@ -744,14 +744,14 @@ namespace bts { namespace blockchain { namespace detail {
       return true;
   } FC_CAPTURE_AND_RETHROW() }
 
-  bool market_engine_v7::get_next_short_v065()
+  bool market_engine_v7::get_next_short_v065( const omarket_order& bid_being_considered )
   {
       // first consider shorts at the feed price
       if( _stuck_shorts_iter != _stuck_shorts.rend() )
       {
           const market_index_key& key = _stuck_shorts_iter->first;
           const order_record& order = _stuck_shorts_iter->second;
-          _current_bid = market_order( short_order, key, order );
+          _current_bid = market_order( short_order, key, order, order.balance, key.order_price );
           ++_stuck_shorts_iter;
           return true;
       }
@@ -762,12 +762,12 @@ namespace bts { namespace blockchain { namespace detail {
 
           const price& limit_price = _unstuck_shorts_iter->first.first;
           const market_index_key& key = _unstuck_shorts_iter->first.second;
-          const order_record& order = _stuck_shorts_iter->second;
+          const order_record& order = _unstuck_shorts_iter->second;
 
           // if the limit price is better than a current bid
-          if( !_current_bid.valid() || limit_price > _current_bid->get_price( *_feed_price ) )
+          if( !bid_being_considered.valid() || limit_price > bid_being_considered->get_price( *_feed_price ) )
           {
-              _current_bid = market_order( short_order, key, order );
+              _current_bid = market_order( short_order, key, order, order.balance, key.order_price );
               ++_unstuck_shorts_iter;
               return true;
           }
@@ -786,10 +786,10 @@ namespace bts { namespace blockchain { namespace detail {
           return get_next_bid_v065();
   }
 
-  bool market_engine_v7::get_next_short()
+  bool market_engine_v7::get_next_short( const omarket_order& bid_being_considered )
   {
       if( _pending_state->get_head_block_num() >= BTS_SHORTFIX_FORK_BLOCK_NUM )
-          return get_next_short_v065();
+          return get_next_short_v065( bid_being_considered );
 
       if( _pending_state->get_head_block_num() < BTS_V0_6_4_FORK_BLOCK_NUM )
           return get_next_short_v063();
