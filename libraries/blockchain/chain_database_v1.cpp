@@ -75,12 +75,18 @@ void chain_database_impl::execute_markets_v1( const fc::time_point_sec timestamp
      engine.cancel_all_shorts();
      market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
   }
+  else if( pending_block_num == BTS_SHORTFIX_FORK_BLOCK_NUM )
+  {
+     market_engine_v7 engine( pending_state, *this );
+     engine.cancel_all_shorts();
+     market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+  }
 
   const auto dirty_markets = self->get_dirty_markets();
   for( const auto& market_pair : dirty_markets )
   {
      FC_ASSERT( market_pair.first > market_pair.second );
-     if( pending_block_num > BTS_V0_4_21_FORK_BLOCK_NUM )
+     if( pending_block_num > BTS_V0_4_21_FORK_BLOCK_NUM && pending_block_num != BTS_SHORTFIX_FORK_BLOCK_NUM )
      {
         market_engine_v7 engine( pending_state, *this );
         if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
