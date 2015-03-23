@@ -1145,6 +1145,7 @@ namespace bts { namespace blockchain {
                     market_index_key key = item.first;
                     const order_record& record = item.second;
 
+                    // TODO: Use db interface remove and store when implemented
                     _short_db.remove( key );
                     key.order_price.ratio = std::min( max_apr, key.order_price.ratio );
                     _short_db.store( key, record );
