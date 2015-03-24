@@ -63,10 +63,10 @@ void chain_database_impl::execute_markets_v1( const fc::time_point_sec timestamp
   vector<market_transaction> market_transactions;
 
   const auto pending_block_num = pending_state->get_head_block_num();
-  if( pending_block_num == BTS_V0_4_17_FORK_BLOCK_NUM )
+  if( pending_block_num == BTS_V0_8_0_FORK_BLOCK_NUM )
   {
-     market_engine_v4 engine( pending_state, *this );
-     //engine.cancel_all_shorts( self->get_block_header( BTS_V0_4_16_FORK_BLOCK_NUM ).timestamp );
+     market_engine_v7 engine( pending_state, *this );
+     engine.cancel_high_apr_shorts();
      market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
   }
   else if( pending_block_num == BTS_V0_4_21_FORK_BLOCK_NUM )
@@ -75,79 +75,79 @@ void chain_database_impl::execute_markets_v1( const fc::time_point_sec timestamp
      engine.cancel_all_shorts();
      market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
   }
-
-  const auto dirty_markets = self->get_dirty_markets();
-  for( const auto& market_pair : dirty_markets )
+  else if( pending_block_num == BTS_V0_4_17_FORK_BLOCK_NUM )
   {
-     FC_ASSERT( market_pair.first > market_pair.second );
-     if( pending_block_num > BTS_V0_4_21_FORK_BLOCK_NUM )
-     {
-        market_engine_v7 engine( pending_state, *this );
-        if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
-        {
-           market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-        }
-     }
-     else if( pending_block_num == BTS_V0_4_21_FORK_BLOCK_NUM )
-     {
-         // Cancel all shorts before BTS_V0_4_21_FORK_BLOCK_NUM -- see above
-     }
-     else if( pending_block_num >= BTS_V0_4_19_FORK_BLOCK_NUM )
-     {
-        market_engine_v6 engine( pending_state, *this );
-        if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
-        {
-           market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-        }
-     }
-     else if( pending_block_num > BTS_V0_4_17_FORK_BLOCK_NUM )
-     {
-        market_engine_v5 engine( pending_state, *this );
-        if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
-        {
-           market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-        }
-     }
-     else if( pending_block_num == BTS_V0_4_17_FORK_BLOCK_NUM )
-     {
-         // Cancel all shorts before BTS_V0_4_16_FORK_BLOCK_NUM -- see above
-     }
-     else if( pending_block_num > BTS_V0_4_16_FORK_BLOCK_NUM )
-     {
-        market_engine_v4 engine( pending_state, *this );
-        if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
-        {
-           market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-        }
-     }
-     else if( pending_block_num == BTS_V0_4_16_FORK_BLOCK_NUM )
-     {
-         // Should have canceled all shorts but we missed it
-     }
-     else if( pending_block_num >= BTS_V0_4_13_FORK_BLOCK_NUM )
-     {
-        market_engine_v3 engine( pending_state, *this );
-        if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
-        {
-           market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-        }
-     }
-     else if( pending_block_num >= BTS_V0_4_0_FORK_BLOCK_NUM )
-     {
-        market_engine_v2 engine( pending_state, *this );
-        if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
-        {
-           market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-        }
-     }
-     else
-     {
-        market_engine_v1 engine( pending_state, *this );
-        if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
-        {
-           market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-        }
-     }
+     market_engine_v4 engine( pending_state, *this );
+     //engine.cancel_all_shorts( self->get_block_header( BTS_V0_4_16_FORK_BLOCK_NUM ).timestamp );
+     market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+  }
+  else if( pending_block_num == BTS_V0_4_16_FORK_BLOCK_NUM )
+  {
+     // Should have canceled all shorts but we missed it
+  }
+  else
+  {
+      const auto dirty_markets = self->get_dirty_markets();
+      for( const auto& market_pair : dirty_markets )
+      {
+         FC_ASSERT( market_pair.first > market_pair.second );
+         if( pending_block_num >= BTS_V0_4_21_FORK_BLOCK_NUM )
+         {
+            market_engine_v7 engine( pending_state, *this );
+            if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
+            {
+               market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+            }
+         }
+         else if( pending_block_num >= BTS_V0_4_19_FORK_BLOCK_NUM )
+         {
+            market_engine_v6 engine( pending_state, *this );
+            if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
+            {
+               market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+            }
+         }
+         else if( pending_block_num >= BTS_V0_4_17_FORK_BLOCK_NUM )
+         {
+            market_engine_v5 engine( pending_state, *this );
+            if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
+            {
+               market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+            }
+         }
+         else if( pending_block_num >= BTS_V0_4_16_FORK_BLOCK_NUM )
+         {
+            market_engine_v4 engine( pending_state, *this );
+            if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
+            {
+               market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+            }
+         }
+         else if( pending_block_num >= BTS_V0_4_13_FORK_BLOCK_NUM )
+         {
+            market_engine_v3 engine( pending_state, *this );
+            if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
+            {
+               market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+            }
+         }
+         else if( pending_block_num >= BTS_V0_4_0_FORK_BLOCK_NUM )
+         {
+            market_engine_v2 engine( pending_state, *this );
+            if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
+            {
+               market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+            }
+         }
+         else
+         {
+            market_engine_v1 engine( pending_state, *this );
+            if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
+            {
+               market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+            }
+         }
+      }
   }
 
   if( pending_block_num < BTS_V0_4_9_FORK_BLOCK_NUM )

@@ -19,7 +19,6 @@
 #include <iostream>
 
 #include <bts/blockchain/fork_blocks.hpp>
-#include <fc/real128.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -1101,31 +1100,6 @@ namespace bts { namespace blockchain {
                 {
                     record.delegate_info->pay_rate = 3;
                     self->store_account_record( record );
-                }
-            }
-
-            if( block_data.block_num == BTS_V0_9_0_FORK_BLOCK_NUM )
-            {
-                static const fc::uint128 max_apr = fc::uint128( BTS_BLOCKCHAIN_MAX_SHORT_APR_PCT ) * FC_REAL128_PRECISION / 100;
-
-                map<market_index_key, order_record> records;
-                for( auto iter = _short_db.begin(); iter.valid(); ++iter )
-                {
-                    const market_index_key& key = iter.key();
-                    if( key.order_price.ratio > max_apr )
-                        records[ key ] = iter.value();
-                }
-
-                wlog( "Block ${n} Hardfork: Resetting interest rates for ${x} short orders", ("n",block_data.block_num)("x",records.size()) );
-
-                for( const auto& item : records )
-                {
-                    market_index_key key = item.first;
-                    const order_record& record = item.second;
-
-                    _short_db.remove( key );
-                    key.order_price.ratio = std::min( max_apr, key.order_price.ratio );
-                    _short_db.store( key, record );
                 }
             }
 

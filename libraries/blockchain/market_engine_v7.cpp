@@ -14,26 +14,6 @@ namespace bts { namespace blockchain { namespace detail {
       _prior_state = ps;
   }
 
-  void market_engine_v7::cancel_all_shorts()
-  {
-      for( auto short_itr = _db_impl._short_db.begin(); short_itr.valid(); ++short_itr )
-      {
-          const market_index_key market_idx = short_itr.key();
-          const order_record order_rec = short_itr.value();
-          _current_bid = market_order( short_order, market_idx, order_rec );
-
-          // Initialize the market transaction
-          market_transaction mtrx;
-          mtrx.bid_owner = _current_bid->get_owner();
-          mtrx.bid_type = short_order;
-
-          cancel_current_short( mtrx, market_idx.order_price.quote_asset_id );
-          push_market_transaction( mtrx );
-      }
-
-      _pending_state->apply_changes();
-  }
-
   bool market_engine_v7::execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec timestamp )
   {
       try
@@ -93,6 +73,29 @@ namespace bts { namespace blockchain { namespace detail {
                   if( (!market_stat.valid() || !market_stat->last_valid_feed_price.valid()) && !_feed_price.valid() )
                       FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id)(base_id) );
               }
+
+              if( _pending_state->get_head_block_num() >= BTS_V0_8_0_FORK_BLOCK_NUM && _feed_price.valid() )
+              {
+                  for( ; _short_itr.valid(); --_short_itr )
+                  {
+                      const market_index_key& key = _short_itr.key();
+                      if( key.order_price.quote_asset_id != _quote_id || key.order_price.base_asset_id != _base_id )
+                          break;
+
+                      const order_record& order = _short_itr.value();
+                      if( !order.limit_price.valid() )
+                      {
+                          _stuck_shorts[ key ] = order;
+                      }
+                      else
+                      {
+                          if( *order.limit_price >= *_feed_price)
+                              _stuck_shorts[ key ] = order;
+                          else
+                              _unstuck_shorts[ std::make_pair( *order.limit_price, key ) ] = order;
+                      }
+                  }
+              }
           }
           else
           {
@@ -105,6 +108,9 @@ namespace bts { namespace blockchain { namespace detail {
                       FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id)(base_id) );
               }
           }
+
+          _stuck_shorts_iter = _stuck_shorts.rbegin();
+          _unstuck_shorts_iter = _unstuck_shorts.rbegin();
 
           // prime the pump, to make sure that margin calls (asks) have a bid to check against.
           get_next_bid(); get_next_ask();
@@ -705,17 +711,90 @@ namespace bts { namespace blockchain { namespace detail {
       return _current_bid.valid();
   } FC_CAPTURE_AND_RETHROW() }
 
+  bool market_engine_v7::get_next_bid_v065()
+  { try {
+      if( _current_bid && _current_bid->get_quantity().amount > 0 )
+        return _current_bid.valid();
+
+      ++_orders_filled;
+      _current_bid.reset();
+
+      // if we have no bids, the short wins as long as there is one,
+      // so just call get_next_short() and be done
+      if( !_bid_itr.valid() )
+        return get_next_short();
+
+      const auto bid = market_order( bid_order, _bid_itr.key(), _bid_itr.value() );
+
+      // if we iterated out of the market, there are no bids and the
+      // short wins (as long as there is one), so handle this case
+      // just like above
+      if( (bid.get_price().quote_asset_id != _quote_id) ||
+          (bid.get_price().base_asset_id != _base_id) )
+        return get_next_short();
+
+      //
+      // bid from itr is valid and in the correct market.
+      // in order for short to win, _feed_price must be valid,
+      // bid_price must be less than the feed.  then we call
+      // to get_next_short() to actually fetch the short and
+      // compare its price.
+      //
+      if( _feed_price.valid() && bid.get_price() < *_feed_price && get_next_short( bid ) )
+        return true;
+
+      _current_bid = bid;
+      --_bid_itr;
+      return true;
+  } FC_CAPTURE_AND_RETHROW() }
+
+  bool market_engine_v7::get_next_short_v065( const omarket_order& bid_being_considered )
+  {
+      // first consider shorts at the feed price
+      if( _stuck_shorts_iter != _stuck_shorts.rend() )
+      {
+          const market_index_key& key = _stuck_shorts_iter->first;
+          const order_record& order = _stuck_shorts_iter->second;
+          _current_bid = market_order( short_order, key, order, order.balance, key.order_price );
+          ++_stuck_shorts_iter;
+          return true;
+      }
+      // then check shorts with a limit below the feed
+      else if( _unstuck_shorts_iter != _unstuck_shorts.rend() )
+      {
+          FC_ASSERT( _feed_price.valid() );
+
+          const price& limit_price = _unstuck_shorts_iter->first.first;
+          const market_index_key& key = _unstuck_shorts_iter->first.second;
+          const order_record& order = _unstuck_shorts_iter->second;
+
+          // if the limit price is better than a current bid
+          if( !bid_being_considered.valid() || limit_price > bid_being_considered->get_price( *_feed_price ) )
+          {
+              _current_bid = market_order( short_order, key, order, order.balance, key.order_price );
+              ++_unstuck_shorts_iter;
+              return true;
+          }
+      }
+
+      return false;
+  }
+
   bool market_engine_v7::get_next_bid()
   {
-      if( _pending_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM )
+      if( _pending_state->get_head_block_num() >= BTS_V0_8_0_FORK_BLOCK_NUM )
+          return get_next_bid_v065();
+      else if( _pending_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM )
           return get_next_bid_v064();
       else
           return get_next_bid_v063();
   }
 
-  bool market_engine_v7::get_next_short()
+  bool market_engine_v7::get_next_short( const omarket_order& bid_being_considered )
   {
-      if( _pending_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM )
+      if( _pending_state->get_head_block_num() >= BTS_V0_8_0_FORK_BLOCK_NUM )
+          return get_next_short_v065( bid_being_considered );
+      else if( _pending_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM )
           return get_next_short_v064();
       else
           return get_next_short_v063();
@@ -974,7 +1053,7 @@ namespace bts { namespace blockchain { namespace detail {
       return asset( interest_owed.to_uint64(), principle.asset_id );
   }
 
-  asset market_engine_v7::get_current_cover_debt() const
+  asset market_engine_v7::get_current_cover_debt()const
   {
       if( _pending_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM )
       {
@@ -994,6 +1073,31 @@ namespace bts { namespace blockchain { namespace detail {
                                        _current_collat_record.interest_rate,
                                        get_current_cover_age() ) + _current_ask->get_balance();
       }
+  }
+
+  void market_engine_v7::cancel_high_apr_shorts()
+  {
+      static const fc::uint128 max_apr = fc::uint128( BTS_BLOCKCHAIN_MAX_SHORT_APR_PCT ) * FC_REAL128_PRECISION / 100;
+
+      for( auto short_itr = _db_impl._short_db.begin(); short_itr.valid(); ++short_itr )
+      {
+          const market_index_key market_idx = short_itr.key();
+          if( market_idx.order_price.ratio <= max_apr )
+              continue;
+
+          const order_record order_rec = short_itr.value();
+          _current_bid = market_order( short_order, market_idx, order_rec, order_rec.balance, market_idx.order_price );
+
+          // Initialize the market transaction
+          market_transaction mtrx;
+          mtrx.bid_owner = _current_bid->get_owner();
+          mtrx.bid_type = short_order;
+
+          cancel_current_short( mtrx, market_idx.order_price.quote_asset_id );
+          push_market_transaction( mtrx );
+      }
+
+      _pending_state->apply_changes();
   }
 
 } } } // end namespace bts::blockchain::detail
