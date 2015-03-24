@@ -156,7 +156,7 @@ namespace bts { namespace blockchain {
 
    share_type chain_interface::get_asset_registration_fee( uint8_t symbol_length )const
    {
-       if( get_head_block_num() < BTS_V0_8_0_FORK_BLOCK_NUM )
+       if( get_head_block_num() < BTS_V0_9_0_FORK_BLOCK_NUM )
            return get_asset_registration_fee_v2( symbol_length );
 
        // TODO: Add #define's for these fixed prices

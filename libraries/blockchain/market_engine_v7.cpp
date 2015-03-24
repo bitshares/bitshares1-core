@@ -51,7 +51,7 @@ namespace bts { namespace blockchain { namespace detail {
               FC_ASSERT( !_pending_state->is_fraudulent_asset( *base_asset ) );
           }
 
-          if( _pending_state->get_head_block_num() >= BTS_V0_8_0_FORK_BLOCK_NUM )
+          if( _pending_state->get_head_block_num() >= BTS_V0_9_0_FORK_BLOCK_NUM )
           {
               FC_ASSERT( !quote_asset->flag_is_active( asset_record::halted_markets ) );
               FC_ASSERT( !base_asset->flag_is_active( asset_record::halted_markets ) );
@@ -235,7 +235,7 @@ namespace bts { namespace blockchain { namespace detail {
                 mtrx.ask_received = usd_exchanged;
 
                 /** handle rounding errors */
-                if( _pending_state->get_head_block_num() >= BTS_V0_8_0_FORK_BLOCK_NUM )
+                if( _pending_state->get_head_block_num() >= BTS_V0_9_0_FORK_BLOCK_NUM )
                 {
                     if( usd_exchanged == ask_quantity_usd )
                         mtrx.ask_paid = _current_ask->get_balance();
@@ -499,17 +499,12 @@ namespace bts { namespace blockchain { namespace detail {
       else
       {
           // Partial cover
-          interest_paid = get_interest_paid( mtrx.ask_received, _current_collat_record.interest_rate, cover_age );
-
-          if( _pending_state->get_head_block_num() < BTS_V0_4_23_FORK_BLOCK_NUM )
-          {
-              interest_paid = get_interest_paid_v1( mtrx.ask_received, _current_collat_record.interest_rate, cover_age );
-          }
-
           if( _pending_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM )
-          {
               interest_paid = get_interest_paid_fixed( mtrx.ask_received, _current_collat_record.interest_rate, cover_age );
-          }
+          else if( _pending_state->get_head_block_num() >= BTS_V0_4_23_FORK_BLOCK_NUM )
+              interest_paid = get_interest_paid( mtrx.ask_received, _current_collat_record.interest_rate, cover_age );
+          else
+              interest_paid = get_interest_paid_v1( mtrx.ask_received, _current_collat_record.interest_rate, cover_age );
 
           principle_paid = mtrx.ask_received - interest_paid;
           _current_ask->state.balance -= principle_paid.amount;
@@ -712,20 +707,18 @@ namespace bts { namespace blockchain { namespace detail {
 
   bool market_engine_v7::get_next_bid()
   {
-      if( _pending_state->get_head_block_num() < BTS_V0_7_0_FORK_BLOCK_NUM )
-      {
+      if( _pending_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM )
+          return get_next_bid_v064();
+      else
           return get_next_bid_v063();
-      }
-      return get_next_bid_v064();
   }
 
   bool market_engine_v7::get_next_short()
   {
-      if( _pending_state->get_head_block_num() < BTS_V0_7_0_FORK_BLOCK_NUM )
-      {
+      if( _pending_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM )
+          return get_next_short_v064();
+      else
           return get_next_short_v063();
-      }
-      return get_next_short_v064();
   }
 
   bool market_engine_v7::get_next_ask()
@@ -983,23 +976,24 @@ namespace bts { namespace blockchain { namespace detail {
 
   asset market_engine_v7::get_current_cover_debt() const
   {
-      if( _pending_state->get_head_block_num() < BTS_V0_4_23_FORK_BLOCK_NUM )
-      {
-          return get_interest_owed_v1( _current_ask->get_balance(),
-                                       _current_collat_record.interest_rate,
-                                       get_current_cover_age() ) + _current_ask->get_balance();
-      }
-
       if( _pending_state->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM )
       {
           return get_interest_owed_fixed( _current_ask->get_balance(),
                                     _current_collat_record.interest_rate,
                                     get_current_cover_age() ) + _current_ask->get_balance();
       }
-
-      return get_interest_owed( _current_ask->get_balance(),
-                                _current_collat_record.interest_rate,
-                                get_current_cover_age() ) + _current_ask->get_balance();
+      else if( _pending_state->get_head_block_num() >= BTS_V0_4_23_FORK_BLOCK_NUM )
+      {
+          return get_interest_owed( _current_ask->get_balance(),
+                                    _current_collat_record.interest_rate,
+                                    get_current_cover_age() ) + _current_ask->get_balance();
+      }
+      else
+      {
+          return get_interest_owed_v1( _current_ask->get_balance(),
+                                       _current_collat_record.interest_rate,
+                                       get_current_cover_age() ) + _current_ask->get_balance();
+      }
   }
 
 } } } // end namespace bts::blockchain::detail

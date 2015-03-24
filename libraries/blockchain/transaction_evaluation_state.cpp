@@ -117,10 +117,10 @@ namespace bts { namespace blockchain {
        }
 
 #ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_8_0_FORK_BLOCK_NUM has passed
+#warning [SOFTFORK] Remove this check after BTS_V0_9_0_FORK_BLOCK_NUM has passed
 #endif
        if( pending_state()->get_head_block_num() >= BTS_V0_7_0_FORK_BLOCK_NUM
-           && pending_state()->get_head_block_num() < BTS_V0_8_0_FORK_BLOCK_NUM )
+           && pending_state()->get_head_block_num() < BTS_V0_9_0_FORK_BLOCK_NUM )
        {
            for( const auto& op : trx.operations )
            {
