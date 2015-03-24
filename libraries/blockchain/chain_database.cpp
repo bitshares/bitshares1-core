@@ -1018,6 +1018,17 @@ namespace bts { namespace blockchain {
                 block_signee = self->get_slot_signee( block_data.timestamp, self->get_active_delegates() ).signing_key();
             }
 
+            if( _head_block_header.block_num <= BTS_SHORTFIX_FORK_BLOCK_NUM )
+            {
+                if( BTS_SHORTFIX_FORK_BLOCK_NUM - _head_block_header.block_num <= 3 )
+                    FC_ASSERT( block_data.user_transactions.empty() );
+            }
+            else
+            {
+                if( _head_block_header.block_num - BTS_SHORTFIX_FORK_BLOCK_NUM <= 3 )
+                    FC_ASSERT( block_data.user_transactions.empty() );
+            }
+
             // NOTE: Secret is validated later in update_delegate_production_info()
             verify_header( digest_block( block_data ), block_signee );
 
@@ -2024,6 +2035,8 @@ namespace bts { namespace blockchain {
       if( pending_state->get_head_block_num() >= BTS_V0_4_9_FORK_BLOCK_NUM )
           my->execute_markets( block_timestamp, pending_state );
 
+      const signed_block_header head_block = get_head_block();
+
       // Initialize block
       full_block new_block;
       size_t block_size = new_block.block_size();
@@ -2033,6 +2046,17 @@ namespace bts { namespace blockchain {
           const vector<transaction_evaluation_state_ptr> pending_trx = get_pending_transactions();
           for( const transaction_evaluation_state_ptr& item : pending_trx )
           {
+              if( head_block.block_num <= BTS_SHORTFIX_FORK_BLOCK_NUM )
+              {
+                  if( BTS_SHORTFIX_FORK_BLOCK_NUM - head_block.block_num <= 5 )
+                      break;
+              }
+              else
+              {
+                  if( head_block.block_num - BTS_SHORTFIX_FORK_BLOCK_NUM <= 5 )
+                      break;
+              }
+
               // Check block production time limit
               if( time_point::now() - start_time >= config.block_max_production_time )
                   break;
@@ -2125,8 +2149,6 @@ namespace bts { namespace blockchain {
               }
           }
       }
-
-      const signed_block_header head_block = get_head_block();
 
       // Populate block header
       new_block.previous            = head_block.block_num > 0 ? head_block.id() : block_id_type();
