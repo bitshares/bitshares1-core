@@ -58,21 +58,6 @@ namespace bts { namespace blockchain {
       }
    };
 
-   struct short_price_index_key
-   {
-      price             order_price;    // min(feed,limit)
-      market_index_key  index;
-
-      friend bool operator < ( const short_price_index_key& a, const short_price_index_key& b )
-      {
-        return std::tie( a.order_price, a.index ) < std::tie( b.order_price, b.index );
-      }
-      friend bool operator == ( const short_price_index_key& a, const short_price_index_key& b )
-      {
-        return std::tie( a.order_price, a.index ) == std::tie( b.order_price, b.index );
-      }
-   };
-
    struct expiration_index
    {
       asset_id_type      quote_id;

@@ -26,7 +26,7 @@ namespace bts { namespace blockchain {
           return std::tie( a._fees, a._trx ) > std::tie( b._fees, b._trx );
       }
    };
-   
+
    namespace detail
    {
       class chain_database_impl
@@ -152,13 +152,7 @@ namespace bts { namespace blockchain {
             bts::db::cached_level_map<market_index_key, order_record>                   _ask_db;
             bts::db::cached_level_map<market_index_key, order_record>                   _bid_db;
 
-            bts::db::cached_level_map<market_index_key, order_record>                   _short_db; // interest,owner => order
-
-            /** maintains a subset of _short_db that is currently at the price feed, sorted by interest rate, then owner */
-            set<market_index_key>                                                       _shorts_at_feed;
-
-            /** maintains a sorted index of all shorts with a price limit by price limit, then interest, then owner */
-            set<pair<price, market_index_key>>                                          _short_limit_index;
+            bts::db::cached_level_map<market_index_key, order_record>                   _short_db;
 
             bts::db::cached_level_map<market_index_key, collateral_record>              _collateral_db;
             set<expiration_index>                                                       _collateral_expiration_index;
@@ -171,7 +165,7 @@ namespace bts { namespace blockchain {
             bts::db::level_map<time_point_sec, account_id_type>                         _slot_timestamp_to_delegate;
 
             map<operation_type_enum, std::deque<operation>>                             _recent_operations;
-            
+
             mutable std::vector<std::string>                                            _debug_matching_error_log;
       };
 

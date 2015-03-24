@@ -48,19 +48,15 @@ namespace bts { namespace blockchain {
       apply_records( prev_state, _balance_id_to_record, _balance_id_remove );
       apply_records( prev_state, _transaction_id_to_record, _transaction_id_remove );
       apply_records( prev_state, _burn_index_to_record, _burn_index_remove );
+      apply_records( prev_state, _feed_index_to_record, _feed_index_remove );
       apply_records( prev_state, _slot_index_to_record, _slot_index_remove );
 
-      // This has to go before shorts and feeds because side effects
       for( const auto& item : market_statuses ) prev_state->store_market_status( item.second );
-
       for( const auto& item : bids )            prev_state->store_bid_record( item.first, item.second );
       for( const auto& item : asks )            prev_state->store_ask_record( item.first, item.second );
       for( const auto& item : shorts )          prev_state->store_short_record( item.first, item.second );
       for( const auto& item : collateral )      prev_state->store_collateral_record( item.first, item.second );
       for( const auto& item : market_history )  prev_state->store_market_history_record( item.first, item.second );
-
-      // We have to do this last because it has side effects on the short at feed index and market status
-      apply_records( prev_state, _feed_index_to_record, _feed_index_remove );
 
       prev_state->set_market_transactions( market_transactions );
       prev_state->set_dirty_markets( _dirty_markets );

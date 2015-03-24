@@ -145,8 +145,6 @@ namespace bts { namespace blockchain {
 
          virtual oprice              get_active_feed_price( const asset_id_type quote_id )const override;
 
-         void                        reindex_shorts_at_feed( const asset_id_type quote_id );
-
          vector<feed_record>         get_feeds_for_asset( const asset_id_type quote_id, const asset_id_type base_id )const;
          vector<feed_record>         get_feeds_from_delegate( const account_id_type delegate_id )const;
 

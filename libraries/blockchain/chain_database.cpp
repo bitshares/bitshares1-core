@@ -205,23 +205,6 @@ namespace bts { namespace blockchain {
               const expiration_index index{ key.order_price.quote_asset_id, record.expiration, key };
               _collateral_expiration_index.insert( index );
           }
-          for( auto iter = _short_db.begin(); iter.valid(); ++iter )
-          {
-              const market_index_key& key = iter.key();
-              const order_record& order = iter.value();
-              if( !order.limit_price.valid() )
-              {
-                  _shorts_at_feed.insert( key );
-              }
-              else
-              {
-                  _short_limit_index.insert( std::make_pair( *order.limit_price, key ) );
-
-                  const omarket_status status = self->get_market_status( key.order_price.quote_asset_id, key.order_price.base_asset_id );
-                  if( status.valid() && status->current_feed_price.valid() && (*order.limit_price >= *status->current_feed_price) )
-                      _shorts_at_feed.insert( key );
-              }
-          }
       } FC_CAPTURE_AND_RETHROW() }
 
       void chain_database_impl::clear_invalidation_of_future_blocks()
@@ -939,25 +922,24 @@ namespace bts { namespace blockchain {
       void chain_database_impl::execute_markets( const time_point_sec timestamp,
                                                  const pending_chain_state_ptr& pending_state )const
       { try {
-        vector<market_transaction> market_transactions;
+          vector<market_transaction> market_transactions;
 
-        const auto dirty_markets = self->get_dirty_markets();
-        for( const auto& market_pair : dirty_markets )
-        {
-           FC_ASSERT( market_pair.first > market_pair.second );
-           market_engine engine( pending_state, *this );
-           if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
-           {
-               market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(),
-                                                                      engine._market_transactions.end() );
-           }
-        }
+          const auto dirty_markets = self->get_dirty_markets();
+          for( const auto& market_pair : dirty_markets )
+          {
+              FC_ASSERT( market_pair.first > market_pair.second );
+              market_engine engine( pending_state, *this );
+              if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
+              {
+                  market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(),
+                                                                         engine._market_transactions.end() );
+              }
+          }
 
-        pending_state->set_market_transactions( std::move( market_transactions ) );
-        if( self->_debug_verify_market_matching )
-        {
-            debug_check_no_orders_overlap();
-        }
+          pending_state->set_market_transactions( std::move( market_transactions ) );
+
+          if( self->_debug_verify_market_matching )
+              debug_check_no_orders_overlap();
       } FC_CAPTURE_AND_RETHROW( (timestamp) ) }
 
       void chain_database_impl::debug_check_no_orders_overlap() const
@@ -976,7 +958,7 @@ namespace bts { namespace blockchain {
           //
 
           ilog("running debug_check_no_orders_overlap()");
-          
+
           std::map<std::pair<asset_id_type, asset_id_type>, std::pair<price, market_order>> mkt_to_best_bid;
           std::map<std::pair<asset_id_type, asset_id_type>, std::pair<price, market_order>> mkt_to_best_ask;
 
@@ -988,7 +970,7 @@ namespace bts { namespace blockchain {
                   (p > current_best->second.first) )
                   mkt_to_best_bid[mkt] = std::pair<price, market_order>( p, order );
           };
-          
+
           auto process_ask = [&]( price p, market_order& order )
           {
               std::pair<asset_id_type, asset_id_type> mkt = p.asset_pair();
@@ -1006,7 +988,7 @@ namespace bts { namespace blockchain {
               market_order morder = market_order( bid_order, bid_itr.key(), bid_itr.value() );
               process_bid( morder.get_price(), morder );
           }
-          
+
           for( bts::db::cached_level_map< market_index_key, order_record >::iterator
                ask_itr  = _ask_db.begin();
                ask_itr.valid();
@@ -1057,9 +1039,9 @@ namespace bts { namespace blockchain {
                   // expired
                   process_ask( k.order_price, morder );
           }
-          
+
           uint64_t failure_count = 0;
-          
+
           // best bid price <= best ask price
           for( auto it=mkt_to_best_bid.begin(); it != mkt_to_best_bid.end(); it++ )
           {
@@ -1073,10 +1055,10 @@ namespace bts { namespace blockchain {
                   continue;
               oasset_record quote_asset = self->get_asset_record( k.first );
               oasset_record base_asset = self->get_asset_record( k.second );
-              
+
               FC_ASSERT( quote_asset.valid() );
               FC_ASSERT( base_asset.valid() );
-              
+
               elog("mismatch in market ${quote} / ${base} at block ${block}",
                   ("quote", quote_asset->symbol)
                   ("base" ,  base_asset->symbol)
@@ -1105,7 +1087,7 @@ namespace bts { namespace blockchain {
                   )
               );
           }
-          
+
           return;
       }
 
@@ -1165,9 +1147,9 @@ namespace bts { namespace blockchain {
 
             pending_state->apply_changes();
 
-            mark_included( block_id, true );
-
             update_head_block( block_data, block_id );
+
+            mark_included( block_id, true );
 
             clear_pending( block_data );
 
@@ -2506,129 +2488,13 @@ namespace bts { namespace blockchain {
       {
          auto existing = my->_short_db.fetch_optional( key );
          if( existing )
-         {
             my->_short_db.remove( key );
-            my->_shorts_at_feed.erase( key );
-            if( existing->limit_price )
-               my->_short_limit_index.erase( std::make_pair( *existing->limit_price, key ) );
-         }
       }
       else
       {
          my->_short_db.store( key, order );
-         if( !order.limit_price )
-         {
-            my->_shorts_at_feed.insert( key );
-         }
-         else
-         {
-            my->_short_limit_index.insert( std::make_pair( *order.limit_price, key ) );
-
-            // NOTE: This assumes that the limit price for a given short order will never change
-            const omarket_status status = get_market_status( key.order_price.quote_asset_id, key.order_price.base_asset_id );
-            if( status.valid() && status->current_feed_price.valid() && (*order.limit_price >= *status->current_feed_price) )
-                my->_shorts_at_feed.insert( key );
-         }
       }
    }
-
-   void chain_database::reindex_shorts_at_feed( const asset_id_type quote_id )
-   { try {
-       const oprice current_feed_price = get_active_feed_price( quote_id );
-
-       const asset_id_type base_id( 0 );
-       omarket_status status = get_market_status( quote_id, base_id );
-       if( !status.valid() )
-           status = market_status( quote_id, base_id );
-
-       const oprice prev_feed_price = status->current_feed_price;
-       if( current_feed_price == prev_feed_price )
-           return;
-
-       // TODO: I don't believe this works when rewinding market_statuses
-       status->update_feed_price( current_feed_price );
-       store_market_status( *status );
-
-       if( !current_feed_price.valid() || !prev_feed_price.valid() )
-       {
-           const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );
-           auto iter = my->_short_db.lower_bound( market_index_key( next_pair ) );
-           if( iter.valid() ) --iter;
-           else iter = my->_short_db.last();
-
-           for( ; iter.valid(); --iter )
-           {
-               const market_index_key& key = iter.key();
-               if( key.order_price.quote_asset_id != quote_id || key.order_price.base_asset_id != base_id )
-                   break;
-
-               const order_record& order = iter.value();
-               if( !current_feed_price.valid() )
-               {
-                   // Remove all shorts with limit price
-                   if( order.limit_price.valid() )
-                       my->_shorts_at_feed.erase( key );
-               }
-               else if( !prev_feed_price.valid() )
-               {
-                   // Insert all shorts with limit >= feed
-                   if( !order.limit_price.valid() || (*order.limit_price >= *current_feed_price) )
-                       my->_shorts_at_feed.insert( key );
-               }
-           }
-
-       }
-       else if( *prev_feed_price < *current_feed_price )
-       {
-           // _shorts_at_feed contains order o if and only if o.limit_price >= feed
-           // thus when feed is rising,
-           // orders that were greater than or equal to the old feed,
-           // but less than the new feed,
-           // change from being in _shorts_at_feed to being out of _shorts_at_feed
-           //
-           // thus we must:
-           // iterate from old feed price -> new feed price and erase items
-           //
-           auto iter = my->_short_limit_index.lower_bound( std::make_pair( *prev_feed_price, market_index_key() ) );
-           for( ; iter != my->_short_limit_index.end(); ++iter )
-           {
-               const price& limit_price = iter->first;
-               if( limit_price.quote_asset_id != quote_id || limit_price.base_asset_id != base_id )
-                   break;
-
-               // These should never have been added to the index
-               if( limit_price >= *current_feed_price )
-                   break;
-
-               my->_shorts_at_feed.erase( iter->second );
-           }
-       }
-       else if( *prev_feed_price > *current_feed_price )
-       {
-           // _shorts_at_feed contains order o if and only if o.limit_price >= feed
-           // thus when feed is falling,
-           // orders that are greater than or equal to the new feed,
-           // but less than the old feed,
-           // change from being out of _shorts_at_feed to being in _shorts_at_feed
-           //
-           // thus we must:
-           // iterate from new feed price -> old feed price and insert items
-           //
-           auto iter = my->_short_limit_index.lower_bound( std::make_pair( *current_feed_price, market_index_key() ) );
-           for( ; iter != my->_short_limit_index.end(); ++iter )
-           {
-               const price& limit_price = iter->first;
-               if( limit_price.quote_asset_id != quote_id || limit_price.base_asset_id != base_id )
-                   break;
-
-               // These should already be in the index
-               if( limit_price >= *prev_feed_price )
-                   break;
-
-               my->_shorts_at_feed.insert( iter->second );
-           }
-       }
-   } FC_CAPTURE_AND_RETHROW( (quote_id) ) }
 
    void chain_database::store_collateral_record( const market_index_key& key, const collateral_record& collateral )
    {
@@ -3756,8 +3622,6 @@ namespace bts { namespace blockchain {
    {
        my->_feed_index_to_record.store( index, record );
        my->_nested_feed_map[ index.quote_id ][ index.delegate_id ] = record;
-
-       reindex_shorts_at_feed( index.quote_id );
    }
 
    void chain_database::feed_erase_from_index_map( const feed_index index )
@@ -3770,8 +3634,6 @@ namespace bts { namespace blockchain {
            if( inner_iter != outer_iter->second.end() )
                outer_iter->second.erase( index.delegate_id );
        }
-
-       reindex_shorts_at_feed( index.quote_id );
    }
 
    oslot_record chain_database::slot_lookup_by_index( const slot_index index )const
