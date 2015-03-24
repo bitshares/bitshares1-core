@@ -9,7 +9,7 @@ namespace bts { namespace blockchain { namespace detail {
     /** return true if execute was successful and applied */
     bool execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec timestamp );
 
-    void cancel_all_shorts();
+    void cancel_high_apr_shorts();
 
     static asset get_interest_paid_fixed(const asset& total_amount_paid, const price& apr, uint32_t age_seconds);
     static asset get_interest_owed_fixed(const asset& principle, const price& apr, uint32_t age_seconds);
@@ -36,7 +36,10 @@ namespace bts { namespace blockchain { namespace detail {
     bool get_next_short_v064();
     bool get_next_bid_v064();
 
-    bool get_next_short();
+    bool get_next_short_v065( const omarket_order& bid_being_considered );
+    bool get_next_bid_v065();
+
+    bool get_next_short( const omarket_order& bid_being_considered = omarket_order() );
     bool get_next_bid();
 
     bool get_next_ask();
@@ -87,10 +90,16 @@ namespace bts { namespace blockchain { namespace detail {
     vector<market_transaction>    _market_transactions;
 
   private:
-    bts::db::cached_level_map< market_index_key, order_record >::iterator         _bid_itr;
-    bts::db::cached_level_map< market_index_key, order_record >::iterator         _ask_itr;
-    bts::db::cached_level_map< market_index_key, order_record >::iterator         _short_itr;
-    bts::db::cached_level_map< market_index_key, collateral_record >::iterator    _collateral_itr;
+    bts::db::cached_level_map< market_index_key, order_record >::iterator       _bid_itr;
+    bts::db::cached_level_map< market_index_key, order_record >::iterator       _ask_itr;
+    bts::db::cached_level_map< market_index_key, order_record >::iterator       _short_itr;
+    bts::db::cached_level_map< market_index_key, collateral_record >::iterator  _collateral_itr;
+
+    map<market_index_key, order_record>                                         _stuck_shorts;
+    map<pair<price, market_index_key>, order_record>                            _unstuck_shorts;
+
+    map<market_index_key, order_record>::reverse_iterator                       _stuck_shorts_iter;
+    map<pair<price, market_index_key>, order_record>::reverse_iterator          _unstuck_shorts_iter;
   };
 
 } } } // end namespace bts::blockchain::detail
