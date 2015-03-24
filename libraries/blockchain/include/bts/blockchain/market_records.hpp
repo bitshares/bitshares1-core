@@ -98,15 +98,19 @@ namespace bts { namespace blockchain {
        time_granularity_enum granularity;
        time_point_sec timestamp;
 
-       bool operator == ( const market_history_key& other ) const
+       bool operator == ( const market_history_key& other )const
        {
-         return std::tie( quote_id, base_id, granularity, timestamp )
-                == std::tie( other.quote_id, other.base_id, other.granularity, other.timestamp );
+           return std::tie( quote_id, base_id, granularity, timestamp )
+                  == std::tie( other.quote_id, other.base_id, other.granularity, other.timestamp );
        }
-       bool operator < ( const market_history_key& other ) const
+       bool operator != ( const market_history_key& other )const
        {
-         return std::tie( quote_id, base_id, granularity, timestamp )
-                < std::tie( other.quote_id, other.base_id, other.granularity, other.timestamp );
+           return !( *this == other );
+       }
+       bool operator < ( const market_history_key& other )const
+       {
+           return std::tie( quote_id, base_id, granularity, timestamp )
+                  < std::tie( other.quote_id, other.base_id, other.granularity, other.timestamp );
        }
    };
 

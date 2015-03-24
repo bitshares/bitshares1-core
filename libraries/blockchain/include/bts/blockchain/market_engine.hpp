@@ -7,7 +7,7 @@ class market_engine
 public:
     market_engine( const pending_chain_state_ptr ps, const chain_database_impl& cdi );
 
-    bool execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec timestamp );
+    bool execute( const asset_id_type quote_id, const asset_id_type base_id, const time_point_sec timestamp );
 
     static asset get_interest_paid( const asset& total_amount_paid, const price& apr, uint32_t age_seconds );
     static asset get_interest_owed( const asset& principle, const price& apr, uint32_t age_seconds );
@@ -77,7 +77,6 @@ public:
 private:
     bts::db::cached_level_map<market_index_key, order_record>::iterator         _bid_itr;
     bts::db::cached_level_map<market_index_key, order_record>::iterator         _ask_itr;
-    bts::db::cached_level_map<market_index_key, order_record>::iterator         _short_itr;
     bts::db::cached_level_map<market_index_key, collateral_record>::iterator    _collateral_itr;
 
     map<market_index_key, order_record>                                         _stuck_shorts;
