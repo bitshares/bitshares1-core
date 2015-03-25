@@ -116,9 +116,28 @@ namespace bts { namespace blockchain {
       bool chain_database_impl::replay_required( const fc::path& data_dir )
       { try {
           _property_id_to_record.open( data_dir / "index/property_id_to_record" );
-          const oproperty_record record = self->get_property_record( property_id_type::database_version );
+          const oproperty_record version_record = self->get_property_record( property_id_type::database_version );
           _property_id_to_record.close();
-          return !record.valid() || record->value.as_uint64() != BTS_BLOCKCHAIN_DATABASE_VERSION;
+
+          if( !version_record.valid() || version_record->value.as_uint64() != BTS_BLOCKCHAIN_DATABASE_VERSION )
+              return true;
+
+          _block_num_to_id_db.open( data_dir / "raw_chain/block_num_to_id_db" );
+          for( const auto& item : CHECKPOINT_BLOCKS )
+          {
+              const uint32_t block_num = item.first;
+              const block_id_type& expected_block_id = item.second;
+
+              const optional<block_id_type> actual_block_id = _block_num_to_id_db.fetch_optional( block_num );
+              if( actual_block_id.valid() && *actual_block_id != expected_block_id )
+              {
+                  _block_num_to_id_db.close();
+                  return true;
+              }
+          }
+          _block_num_to_id_db.close();
+
+          return false;
       } FC_CAPTURE_AND_RETHROW( (data_dir) ) }
 
       void chain_database_impl::open_database( const fc::path& data_dir )
