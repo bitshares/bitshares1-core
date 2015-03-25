@@ -3,6 +3,7 @@
 #include <fc/optional.hpp>
 #include <fc/signals.hpp>
 #include <fc/time.hpp>
+#include <string>
 
 namespace bts { namespace blockchain {
 
@@ -22,5 +23,10 @@ namespace bts { namespace blockchain {
    uint32_t                     get_slot_number( const fc::time_point_sec timestamp );
    fc::time_point_sec           get_slot_start_time( uint32_t slot_number );
    fc::time_point_sec           get_slot_start_time( const fc::time_point_sec timestamp );
+
+   // drop-in replacements for fc library functions
+   // which respect simulated_time
+   std::string get_approximate_relative_time_string( const fc::time_point_sec& event_time );
+   std::string get_approximate_relative_time_string( const fc::time_point& event_time );
 
 } } // bts::blockchain

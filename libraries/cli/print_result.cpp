@@ -1,3 +1,4 @@
+#include <bts/blockchain/time.hpp>
 #include <bts/blockchain/types.hpp>
 #include <bts/cli/print_result.hpp>
 #include <bts/rpc/rpc_server.hpp>
@@ -343,7 +344,7 @@ namespace bts { namespace cli {
     else
       for(const auto& item : error_map)
       {
-      (out) << string(item.first) << " (" << fc::get_approximate_relative_time_string(item.first) << " )\n";
+      (out) << string(item.first) << " (" << bts::blockchain::get_approximate_relative_time_string(item.first) << " )\n";
       (out) << item.second.to_detail_string();
       (out) << "\n";
       }
@@ -919,7 +920,7 @@ namespace bts { namespace cli {
             }
             else
             {
-                  out << std::right << std::setw(26) << fc::get_approximate_relative_time_string( *ask_itr->expiration );
+                  out << std::right << std::setw(26) << bts::blockchain::get_approximate_relative_time_string( *ask_itr->expiration );
             }
             out << "   " << client->get_chain()->to_pretty_asset(asset(*ask_itr->collateral));
             out << "\n";
