@@ -108,8 +108,7 @@ default (unlocked) >>> wallet_transfer_from_with_escrow  1000 XTS sender sender 
     "asset_id": 0
   },
   "created_time": "2014-06-20T14:41:00",
-  "received_time": "2014-06-20T14:41:00",
-  "extra_addresses": []
+  "received_time": "2014-06-20T14:41:00"
 }
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
@@ -186,8 +185,7 @@ default (unlocked) >>> wallet_release_escrow sender XTSKrhkPnQToEZfF4JXDztmKbFUR
     "asset_id": 0
   },
   "created_time": "2014-06-20T14:41:10",
-  "received_time": "2014-06-20T14:41:10",
-  "extra_addresses": []
+  "received_time": "2014-06-20T14:41:10"
 }
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
@@ -267,8 +265,7 @@ default (unlocked) >>> wallet_release_escrow receiver XTSKrhkPnQToEZfF4JXDztmKbF
     "asset_id": 0
   },
   "created_time": "2014-06-20T14:41:20",
-  "received_time": "2014-06-20T14:41:20",
-  "extra_addresses": []
+  "received_time": "2014-06-20T14:41:20"
 }
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
@@ -349,8 +346,7 @@ default (unlocked) >>> wallet_release_escrow delegate0 XTSKrhkPnQToEZfF4JXDztmKb
     "asset_id": 0
   },
   "created_time": "2014-06-20T14:41:30",
-  "received_time": "2014-06-20T14:41:30",
-  "extra_addresses": []
+  "received_time": "2014-06-20T14:41:30"
 }
 default (unlocked) >>> debug_advance_time 1 blocks
 OK

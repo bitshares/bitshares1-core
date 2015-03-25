@@ -99,7 +99,7 @@ namespace bts { namespace blockchain { namespace detail {
           }
           else
           {
-              _feed_price = _db_impl.self->get_active_feed_price( _quote_id, _base_id );
+              _feed_price = _db_impl.self->get_active_feed_price( _quote_id );
               // Market issued assets cannot match until the first time there is a median feed
               if( quote_asset->is_market_issued() )
               {

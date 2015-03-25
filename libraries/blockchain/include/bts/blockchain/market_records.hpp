@@ -58,21 +58,6 @@ namespace bts { namespace blockchain {
       }
    };
 
-   struct short_price_index_key
-   {
-      price             order_price;    // min(feed,limit)
-      market_index_key  index;
-
-      friend bool operator < ( const short_price_index_key& a, const short_price_index_key& b )
-      {
-        return std::tie( a.order_price, a.index ) < std::tie( b.order_price, b.index );
-      }
-      friend bool operator == ( const short_price_index_key& a, const short_price_index_key& b )
-      {
-        return std::tie( a.order_price, a.index ) == std::tie( b.order_price, b.index );
-      }
-   };
-
    struct expiration_index
    {
       asset_id_type      quote_id;
@@ -113,15 +98,19 @@ namespace bts { namespace blockchain {
        time_granularity_enum granularity;
        time_point_sec timestamp;
 
-       bool operator == ( const market_history_key& other ) const
+       bool operator == ( const market_history_key& other )const
        {
-         return std::tie( quote_id, base_id, granularity, timestamp )
-                == std::tie( other.quote_id, other.base_id, other.granularity, other.timestamp );
+           return std::tie( quote_id, base_id, granularity, timestamp )
+                  == std::tie( other.quote_id, other.base_id, other.granularity, other.timestamp );
        }
-       bool operator < ( const market_history_key& other ) const
+       bool operator != ( const market_history_key& other )const
        {
-         return std::tie( quote_id, base_id, granularity, timestamp )
-                < std::tie( other.quote_id, other.base_id, other.granularity, other.timestamp );
+           return !( *this == other );
+       }
+       bool operator < ( const market_history_key& other )const
+       {
+           return std::tie( quote_id, base_id, granularity, timestamp )
+                  < std::tie( other.quote_id, other.base_id, other.granularity, other.timestamp );
        }
    };
 

@@ -77,7 +77,7 @@ namespace bts { namespace blockchain { namespace detail {
           price min_cover_ask;
           price opening_price, closing_price, highest_price, lowest_price;
 
-          const oprice median_feed_price = _db_impl.self->get_active_feed_price( quote_id, base_id );
+          const oprice median_feed_price = _db_impl.self->get_active_feed_price( quote_id );
           if( quote_asset->is_market_issued() )
           {
               // If bootstrapping market for the very first time

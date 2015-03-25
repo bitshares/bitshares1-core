@@ -46,7 +46,7 @@ default (unlocked) >>> wallet_market_order_list USD XTS
 TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
 ==================================================================================================================================================================
 ask_order           15,000.00000 XTS    0.015 USD / XTS               15,000.00000 XTS    225.0000 USD        N/A                 NONE                4649334e8c1783788e55b2310d1bcee4a416ec99   XTSF7h3cJZ5sojtdDtDr28bZs4nNQWE9cZC4
-short_order         30,000.00000 XTS    0. USD / XTS                  30,000.00000 XTS    0.0000 USD          N/A                 0.015 USD / XTS     93698ec46f514fea3d307e8e6cd42cdac69833e8   XTSBBkP3sXyKXCrZua6e9iWp5y2J5yJL1ccq
+short_order         30,000.00000 XTS    0.015 USD / XTS               30,000.00000 XTS    450.0000 USD        N/A                 0.015 USD / XTS     93698ec46f514fea3d307e8e6cd42cdac69833e8   XTSBBkP3sXyKXCrZua6e9iWp5y2J5yJL1ccq
 default (unlocked) >>> debug_advance_time 1 block
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 1 rlast

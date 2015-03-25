@@ -66,7 +66,7 @@ Details:
 37006 insufficient_feeds: insufficient feeds
 
     {"quote_id":1,"base_id":0}
-    th_a  market_engine.cpp:70 bts::blockchain::detail::market_engine::execute
+    th_a  market_engine.cpp:86 bts::blockchain::detail::market_engine::execute
 default (unlocked) >>> help wallet_publish_feeds_multi_experimental
 Usage:
 wallet_publish_feeds_multi_experimental <symbol_to_price_map>                                         publishes a set of feeds for BitAssets for all active delegates, most useful for testnets
@@ -126,7 +126,7 @@ Details:
 37006 insufficient_feeds: insufficient feeds
 
     {"quote_id":1,"base_id":0}
-    th_a  market_engine.cpp:70 bts::blockchain::detail::market_engine::execute
+    th_a  market_engine.cpp:86 bts::blockchain::detail::market_engine::execute
 default (unlocked) >>> balance angel
 ACCOUNT                         BALANCE                     
 ============================================================
