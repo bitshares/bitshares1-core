@@ -435,7 +435,7 @@ namespace bts { namespace blockchain {
              if( !_revalidate_pending.valid() || _revalidate_pending.ready() )
                  _revalidate_pending = fc::async( [=](){ revalidate_pending(); }, "revalidate_pending" );
          }
-      } FC_CAPTURE_AND_RETHROW( (block_data) ) }
+      } FC_CAPTURE_AND_RETHROW() }
 
       std::pair<block_id_type, block_fork_data> chain_database_impl::recursive_mark_as_linked(const std::unordered_set<block_id_type>& ids)
       {
@@ -715,7 +715,7 @@ namespace bts { namespace blockchain {
 
             ++trx_num;
          }
-      } FC_CAPTURE_AND_RETHROW( (block_data) ) }
+      } FC_CAPTURE_AND_RETHROW() }
 
       void chain_database_impl::pay_delegate( const block_id_type& block_id,
                                               const public_key_type& block_signee,
@@ -1201,7 +1201,7 @@ namespace bts { namespace blockchain {
                  fc::async( [ = ] { o->block_pushed( block_data ); }, "call_block_pushed_observer" );
              }
          }
-      } FC_CAPTURE_AND_RETHROW( (block_data) ) }
+      } FC_CAPTURE_AND_RETHROW() }
 
       /**
        * Traverse the previous links of all blocks in fork until we find one that is_included
@@ -1892,7 +1892,7 @@ namespace bts { namespace blockchain {
          elog( "unable to link longest fork ${f}", ("f", longest_fork) );
       }
       return *get_block_fork_data(block_id);
-   } FC_CAPTURE_AND_RETHROW( (block_data) )  }
+   } FC_CAPTURE_AND_RETHROW() }
 
   std::vector<block_id_type> chain_database::get_fork_history( const block_id_type& id )
   {

@@ -152,7 +152,7 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
          ("input-log", program_options::value< vector<string> >(), "Set log file with CLI commands to execute at startup")
          ("log-commands", "Log all command input and output")
          ("ulog", program_options::value<bool>()->default_value( true ), "Enable CLI user logging")
-         
+
          ("stop-before-block", program_options::value<uint32_t>(), "stop before given block number")
 
          ("growl", program_options::value<std::string>()->implicit_value("127.0.0.1"), "Send notifications about potential problems to Growl")
@@ -777,8 +777,8 @@ block_fork_data client_impl::on_new_block(const full_block& block,
       {
          FC_ASSERT( !_simulate_disconnect );
          ilog("Received a new block from the p2p network, current head block is ${num}, "
-              "new block is ${block}, current head block is ${num}",
-              ("num", _chain_db->get_head_block_num())("block", block)("num", _chain_db->get_head_block_num()));
+              "new block is ${new_num}, current head block is ${num}",
+              ("num", _chain_db->get_head_block_num())("new_num", block.block_num)("num", _chain_db->get_head_block_num()));
          fc::optional<block_fork_data> fork_data = _chain_db->get_block_fork_data( block_id );
 
          if( fork_data && fork_data->is_known )
@@ -844,8 +844,7 @@ block_fork_data client_impl::on_new_block(const full_block& block,
          }
       } FC_RETHROW_EXCEPTIONS(warn, "Error pushing block ${block_number} - ${block_id}",
                               ("block_id",block.id())
-                              ("block_number",block.block_num)
-                              ("block", block) );
+                              ("block_number",block.block_num) );
    }
    catch ( const fc::exception& e )
    {
@@ -1472,7 +1471,7 @@ void client::configure_from_command_line(int argc, char** argv)
    }
    // parse command-line options
    auto option_variables = parse_option_variables(argc,argv);
-   
+
    if( option_variables.count("debug-stop") )
    {
 #ifdef WIN32
