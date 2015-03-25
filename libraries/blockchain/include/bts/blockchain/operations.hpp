@@ -43,7 +43,8 @@ enum operation_type_enum
     short_op_type                       = 14,
     cover_op_type                       = 15,
     add_collateral_op_type              = 16,
-    update_cover_op_type                = 17,
+
+    reserved_1_op_type                  = 17,
 
     define_slate_op_type                = 18,
 
@@ -51,15 +52,15 @@ enum operation_type_enum
 
     burn_op_type                        = 20,
 
-    reserved_1_op_type                  = 21,
-    reserved_2_op_type                  = 22,
+    reserved_2_op_type                  = 21,
+    reserved_3_op_type                  = 22,
 
     release_escrow_op_type              = 23,
 
     update_signing_key_op_type          = 24,
 
-    reserved_3_op_type                  = 25,
-    reserved_4_op_type                  = 26,
+    reserved_4_op_type                  = 25,
+    reserved_5_op_type                  = 26,
 
     update_balance_vote_op_type         = 27,
     limit_fee_op_type                   = 28,
@@ -135,16 +136,16 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
         (short_op_type)
         (cover_op_type)
         (add_collateral_op_type)
-        (update_cover_op_type)
+        (reserved_1_op_type)
         (define_slate_op_type)
         (update_feed_op_type)
         (burn_op_type)
-        (reserved_1_op_type)
         (reserved_2_op_type)
+        (reserved_3_op_type)
         (release_escrow_op_type)
         (update_signing_key_op_type)
-        (reserved_3_op_type)
         (reserved_4_op_type)
+        (reserved_5_op_type)
         (update_balance_vote_op_type)
         (limit_fee_op_type)
         (data_op_type)

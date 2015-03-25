@@ -255,7 +255,6 @@ namespace bts { namespace blockchain {
       share_type      payoff_balance = 0;
       price           interest_rate;
       time_point_sec  expiration; // after expiration the collateral is forced to be called.
-      slate_id_type   slate_id = 0;
    };
    typedef optional<collateral_record> ocollateral_record;
 
@@ -311,7 +310,7 @@ FC_REFLECT( bts::blockchain::market_history_record, (highest_bid)(lowest_ask)(op
 FC_REFLECT( bts::blockchain::market_history_key, (quote_id)(base_id)(granularity)(timestamp) )
 FC_REFLECT( bts::blockchain::market_history_point, (timestamp)(highest_bid)(lowest_ask)(opening_price)(closing_price)(volume) )
 FC_REFLECT( bts::blockchain::order_record, (balance)(limit_price)(last_update) )
-FC_REFLECT( bts::blockchain::collateral_record, (collateral_balance)(payoff_balance)(interest_rate)(expiration)(slate_id) )
+FC_REFLECT( bts::blockchain::collateral_record, (collateral_balance)(payoff_balance)(interest_rate)(expiration) )
 FC_REFLECT( bts::blockchain::market_order, (type)(market_index)(state)(collateral)(interest_rate)(expiration) )
 FC_REFLECT_TYPENAME( std::vector<bts::blockchain::market_transaction> )
 FC_REFLECT_TYPENAME( bts::blockchain::market_history_key::time_granularity_enum ) // http://en.wikipedia.org/wiki/Voodoo_programminqg

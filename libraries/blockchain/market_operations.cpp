@@ -4,359 +4,315 @@
 #include <bts/blockchain/pending_chain_state.hpp>
 
 #include <fc/real128.hpp>
-
 #include <algorithm>
 
 namespace bts { namespace blockchain {
 
-   /**
-    *  If the amount is negative then it will withdraw/cancel the bid assuming
-    *  it is signed by the owner and there is sufficient funds.
-    *
-    *  If the amount is positive then it will add funds to the bid.
-    */
-   void bid_operation::evaluate( transaction_evaluation_state& eval_state )const
-   { try {
-      if( this->bid_index.order_price == price() )
-         FC_CAPTURE_AND_THROW( zero_price, (bid_index.order_price) );
-
-      auto owner = this->bid_index.owner;
-
-      auto base_asset_rec = eval_state.pending_state()->get_asset_record( bid_index.order_price.base_asset_id );
-      auto quote_asset_rec = eval_state.pending_state()->get_asset_record( bid_index.order_price.quote_asset_id );
-      FC_ASSERT( base_asset_rec.valid() );
-      FC_ASSERT( quote_asset_rec.valid() );
-
-      FC_ASSERT( base_asset_rec->address_is_whitelisted( owner ) );
-      FC_ASSERT( quote_asset_rec->address_is_whitelisted( owner ) );
-
-      const bool authority_is_retracting = quote_asset_rec->flag_is_active( asset_record::retractable_balances )
-                                           && eval_state.verify_authority( quote_asset_rec->authority );
-
-      if( !authority_is_retracting && !eval_state.check_signature( owner ) )
-         FC_CAPTURE_AND_THROW( missing_signature, (bid_index.owner) );
-
-      asset delta_amount = this->get_amount();
-
-      auto current_bid = eval_state.pending_state()->get_bid_record( this->bid_index );
-
-      if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
-      if( this->amount <  0 ) // withdraw
-      {
-          if( NOT current_bid )
-             FC_CAPTURE_AND_THROW( unknown_market_order, (bid_index) );
-
-          if( llabs(this->amount) > current_bid->balance )
-             FC_CAPTURE_AND_THROW( insufficient_funds, (amount)(current_bid->balance) );
-
-          // add the delta amount to the eval state that we withdrew from the bid
-          eval_state.add_balance( -delta_amount );
-      }
-      else // this->amount > 0 - deposit
-      {
-          if( NOT current_bid )  // then initialize to 0
-            current_bid = order_record();
-          // sub the delta amount from the eval state that we deposited to the bid
-          eval_state.sub_balance( delta_amount );
-      }
-
-      current_bid->last_update = eval_state.pending_state()->now();
-      current_bid->balance     += this->amount;
-
-      eval_state.pending_state()->store_bid_record( this->bid_index, *current_bid );
-
-      //auto check   = eval_state.pending_state()->get_bid_record( this->bid_index );
-   } FC_CAPTURE_AND_RETHROW( (*this) ) }
-
-   /**
-    *  If the amount is negative then it will withdraw/cancel the bid assuming
-    *  it is signed by the owner and there is sufficient funds.
-    *
-    *  If the amount is positive then it will add funds to the bid.
-    */
-   void ask_operation::evaluate( transaction_evaluation_state& eval_state )const
-   { try {
-      if( this->ask_index.order_price == price() )
-         FC_CAPTURE_AND_THROW( zero_price, (ask_index.order_price) );
-
-      auto owner = this->ask_index.owner;
-
-      auto base_asset_rec = eval_state.pending_state()->get_asset_record( ask_index.order_price.base_asset_id );
-      auto quote_asset_rec = eval_state.pending_state()->get_asset_record( ask_index.order_price.quote_asset_id );
-      FC_ASSERT( base_asset_rec.valid() );
-      FC_ASSERT( quote_asset_rec.valid() );
-
-      FC_ASSERT( base_asset_rec->address_is_whitelisted( owner ) );
-      FC_ASSERT( quote_asset_rec->address_is_whitelisted( owner ) );
-
-      const bool authority_is_retracting = base_asset_rec->flag_is_active( asset_record::retractable_balances )
-                                           && eval_state.verify_authority( base_asset_rec->authority );
-
-      if( !authority_is_retracting && !eval_state.check_signature( owner ) )
-         FC_CAPTURE_AND_THROW( missing_signature, (ask_index.owner) );
-
-      asset delta_amount  = this->get_amount();
-
-      auto current_ask   = eval_state.pending_state()->get_ask_record( this->ask_index );
-
-      if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
-      if( this->amount <  0 ) // withdraw
-      {
-          if( NOT current_ask )
-             FC_CAPTURE_AND_THROW( unknown_market_order, (ask_index) );
-
-          if( llabs(this->amount) > current_ask->balance )
-             FC_CAPTURE_AND_THROW( insufficient_funds, (amount)(current_ask->balance) );
-
-          // add the delta amount to the eval state that we withdrew from the ask
-          eval_state.add_balance( -delta_amount );
-      }
-      else // this->amount > 0 - deposit
-      {
-          if( NOT current_ask )  // then initialize to 0
-            current_ask = order_record();
-          // sub the delta amount from the eval state that we deposited to the ask
-          eval_state.sub_balance( delta_amount );
-      }
-
-      current_ask->last_update = eval_state.pending_state()->now();
-      current_ask->balance     += this->amount;
-      FC_ASSERT( current_ask->balance >= 0, "", ("current_ask",current_ask)  );
-
-      eval_state.pending_state()->store_ask_record( this->ask_index, *current_ask );
-   } FC_CAPTURE_AND_RETHROW( (*this) ) }
-
-   void short_operation::evaluate( transaction_evaluation_state& eval_state )const
-   {
-      const auto base_asset_rec = eval_state.pending_state()->get_asset_record( short_index.order_price.base_asset_id );
-      const auto quote_asset_rec = eval_state.pending_state()->get_asset_record( short_index.order_price.quote_asset_id );
-      FC_ASSERT( base_asset_rec.valid() );
-      FC_ASSERT( quote_asset_rec.valid() );
-
-      auto owner = this->short_index.owner;
-      FC_ASSERT( short_index.order_price.quote_asset_id > short_index.order_price.base_asset_id,
-                 "Interest rate price must have valid base and quote IDs" );
-
-      static const fc::uint128 max_apr = fc::uint128( BTS_BLOCKCHAIN_MAX_SHORT_APR_PCT ) * FC_REAL128_PRECISION / 100;
-      FC_ASSERT( short_index.order_price.ratio <= max_apr, "Interest rate too high!" );
-
-      asset delta_amount = this->get_amount();
-
-      // Only allow using the base asset as collateral
-      FC_ASSERT( delta_amount.asset_id == 0 );
-
-      auto  asset_to_short = eval_state.pending_state()->get_asset_record( short_index.order_price.quote_asset_id );
-      FC_ASSERT( asset_to_short.valid() );
-      FC_ASSERT( asset_to_short->is_market_issued(), "${symbol} is not a market issued asset", ("symbol",asset_to_short->symbol) );
-
-      auto current_short   = eval_state.pending_state()->get_short_record( this->short_index );
-      //if( current_short ) wdump( (current_short) );
-
-      if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
-      if( this->amount <  0 ) // withdraw
-      {
-          if( !eval_state.check_signature( owner ) )
-             FC_CAPTURE_AND_THROW( missing_signature, (short_index.owner) );
-
-          if( NOT current_short )
-             FC_CAPTURE_AND_THROW( unknown_market_order, (short_index) );
-
-          if( llabs(this->amount) > current_short->balance )
-             FC_CAPTURE_AND_THROW( insufficient_funds, (amount)(current_short->balance) );
-
-          // add the delta amount to the eval state that we withdrew from the short
-          eval_state.add_balance( -delta_amount );
-      }
-      else // this->amount > 0 - deposit
-      {
-          FC_ASSERT( this->amount >=  0 ); // 100 XTS min short order
-          if( NOT current_short )  // then initialize to 0
-            current_short = order_record();
-          // sub the delta amount from the eval state that we deposited to the short
-          eval_state.sub_balance( delta_amount );
-      }
-      current_short->limit_price = this->short_index.limit_price;
-      current_short->last_update = eval_state.pending_state()->now();
-      current_short->balance     += this->amount;
-      FC_ASSERT( current_short->balance >= 0 );
-
-      eval_state.pending_state()->store_short_record( this->short_index, *current_short );
-   }
-
-   /**
-     pay off part of the USD balance, if balance goes to 0 then close out
-     the position and transfer collateral to proper place.
-     update the call price (remove old value, add new value)
-   */
-   void cover_operation::evaluate( transaction_evaluation_state& eval_state )const
-   {
-      const auto base_asset_rec = eval_state.pending_state()->get_asset_record( cover_index.order_price.base_asset_id );
-      const auto quote_asset_rec = eval_state.pending_state()->get_asset_record( cover_index.order_price.quote_asset_id );
-      FC_ASSERT( base_asset_rec.valid() );
-      FC_ASSERT( quote_asset_rec.valid() );
-
-      if( this->cover_index.order_price == price() )
-         FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );
-
-      if( this->amount == 0 && !this->new_cover_price )
-         FC_CAPTURE_AND_THROW( zero_amount );
-
-      if( this->amount < 0 )
-         FC_CAPTURE_AND_THROW( negative_deposit );
-
-      asset delta_amount  = this->get_amount();
-
-      if( !eval_state.check_signature( cover_index.owner ) )
-         FC_CAPTURE_AND_THROW( missing_signature, (cover_index.owner) );
-
-      // subtract this from the transaction
-      eval_state.sub_balance( delta_amount );
-
-      auto current_cover   = eval_state.pending_state()->get_collateral_record( this->cover_index );
-      if( NOT current_cover )
-         FC_CAPTURE_AND_THROW( unknown_market_order, (cover_index) );
-
-      auto  asset_to_cover = eval_state.pending_state()->get_asset_record( cover_index.order_price.quote_asset_id );
-      FC_ASSERT( asset_to_cover.valid() );
-
-      const auto start_time = current_cover->expiration - fc::seconds( BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC );
-      auto elapsed_sec = ( eval_state.pending_state()->now() - start_time ).to_seconds();
-      if( elapsed_sec < 0 ) elapsed_sec = 0;
-
-      const asset principle = asset( current_cover->payoff_balance, delta_amount.asset_id );
-      asset total_debt = detail::market_engine::get_interest_owed( principle, current_cover->interest_rate, elapsed_sec ) + principle;
-
-      asset principle_paid;
-      asset interest_paid;
-      if( delta_amount >= total_debt )
-      {
-          // Payoff the whole debt
-          principle_paid = principle;
-          interest_paid = delta_amount - principle_paid;
-          current_cover->payoff_balance = 0;
-      }
-      else
-      {
-          // Partial cover
-          interest_paid = detail::market_engine::get_interest_paid( delta_amount, current_cover->interest_rate, elapsed_sec );
-          principle_paid = delta_amount - interest_paid;
-          current_cover->payoff_balance -= principle_paid.amount;
-      }
-      FC_ASSERT( principle_paid.amount >= 0 );
-      FC_ASSERT( interest_paid.amount >= 0 );
-      FC_ASSERT( current_cover->payoff_balance >= 0 );
-
-      //Covered asset is destroyed, interest pays to fees
-      asset_to_cover->current_supply -= principle_paid.amount;
-      asset_to_cover->collected_fees += interest_paid.amount;
-      eval_state.pending_state()->store_asset_record( *asset_to_cover );
-
-      // changing the payoff balance changes the call price... so we need to remove the old record
-      // and insert a new one.
-      eval_state.pending_state()->store_collateral_record( this->cover_index, collateral_record() );
-
-      FC_ASSERT( current_cover->interest_rate.quote_asset_id > current_cover->interest_rate.base_asset_id,
-                 "Rejecting cover order with invalid interest rate.", ("cover", *current_cover) );
-
-      if( current_cover->payoff_balance > 0 )
-      {
-         const auto new_call_price = asset( current_cover->payoff_balance, delta_amount.asset_id)
-                                     / asset( (current_cover->collateral_balance * BTS_BLOCKCHAIN_MCALL_D2C_NUMERATOR)
-                                            / BTS_BLOCKCHAIN_MCALL_D2C_DENOMINATOR,
-                                            cover_index.order_price.base_asset_id );
-
-         if( this->new_cover_price && (*this->new_cover_price > new_call_price) )
-            eval_state.pending_state()->store_collateral_record( market_index_key( *this->new_cover_price, this->cover_index.owner ),
-                                                                *current_cover );
-         else
-            eval_state.pending_state()->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner ),
-                                                                *current_cover );
-      }
-      else // withdraw the collateral to the transaction to be deposited at owners discretion / cover fees
-      {
-         if( current_cover->slate_id && cover_index.order_price.base_asset_id == 0 )
-         {
-            eval_state.adjust_vote( current_cover->slate_id, -current_cover->collateral_balance );
-         }
-         eval_state.add_balance( asset( current_cover->collateral_balance, cover_index.order_price.base_asset_id ) );
-      }
-   }
-
-   void add_collateral_operation::evaluate( transaction_evaluation_state& eval_state )const
-   {
-      const auto base_asset_rec = eval_state.pending_state()->get_asset_record( cover_index.order_price.base_asset_id );
-      const auto quote_asset_rec = eval_state.pending_state()->get_asset_record( cover_index.order_price.quote_asset_id );
-      FC_ASSERT( base_asset_rec.valid() );
-      FC_ASSERT( quote_asset_rec.valid() );
-
-      if( this->cover_index.order_price == price() )
-         FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );
-
-      if( this->amount == 0 )
-         FC_CAPTURE_AND_THROW( zero_amount );
-
-      if( this->amount < 0 )
-         FC_CAPTURE_AND_THROW( negative_deposit );
-
-      asset delta_amount  = this->get_amount();
-      eval_state.sub_balance( delta_amount );
-
-      // update collateral and call price
-      auto current_cover = eval_state.pending_state()->get_collateral_record( this->cover_index );
-      if( NOT current_cover )
-         FC_CAPTURE_AND_THROW( unknown_market_order, (cover_index) );
-
-      current_cover->collateral_balance += delta_amount.amount;
-
-      const auto min_call_price = asset( current_cover->payoff_balance, cover_index.order_price.quote_asset_id )
-                                  / asset( (current_cover->collateral_balance * BTS_BLOCKCHAIN_MCALL_D2C_NUMERATOR)
-                                  / BTS_BLOCKCHAIN_MCALL_D2C_DENOMINATOR,
-                                  cover_index.order_price.base_asset_id );
-      const auto new_call_price = std::min( min_call_price, cover_index.order_price );
-
-      // changing the payoff balance changes the call price... so we need to remove the old record
-      // and insert a new one.
-      eval_state.pending_state()->store_collateral_record( this->cover_index, collateral_record() );
-
-      eval_state.pending_state()->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
-                                                          *current_cover );
-   }
-
-   void update_cover_operation::evaluate( transaction_evaluation_state& eval_state )const
-   {
-      if( this->cover_index.order_price == price() )
-         FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );
-
-      if( this->new_call_price == price() )
-         FC_CAPTURE_AND_THROW( zero_price, (new_call_price) );
-
-      FC_ASSERT( this->new_call_price.quote_asset_id == cover_index.order_price.quote_asset_id );
-      FC_ASSERT( this->new_call_price.base_asset_id == cover_index.order_price.base_asset_id );
-
-      // update collateral and call price
-      auto current_cover = eval_state.pending_state()->get_collateral_record( this->cover_index );
-      if( NOT current_cover )
-         FC_CAPTURE_AND_THROW( unknown_market_order, (cover_index) );
-
-      const auto min_call_price = asset( current_cover->payoff_balance, cover_index.order_price.quote_asset_id )
-                                  / asset( (current_cover->collateral_balance * BTS_BLOCKCHAIN_MCALL_D2C_NUMERATOR)
-                                  / BTS_BLOCKCHAIN_MCALL_D2C_DENOMINATOR, cover_index.order_price.base_asset_id );
-
-      FC_ASSERT( new_call_price >= min_call_price );
-
-
-      // changing the payoff balance changes the call price... so we need to remove the old record
-      // and insert a new one.
-      eval_state.pending_state()->store_collateral_record( this->cover_index, collateral_record() );
-      if( this->new_slate && *this->new_slate != current_cover->slate_id )
-      {
-         eval_state.adjust_vote( current_cover->slate_id, -current_cover->collateral_balance );
-         current_cover->slate_id = *this->new_slate;
-         eval_state.adjust_vote( current_cover->slate_id, current_cover->collateral_balance );
-      }
-
-      eval_state.pending_state()->store_collateral_record( market_index_key( new_call_price, this->new_owner ? *this->new_owner : this->cover_index.owner),
-                                                          *current_cover );
-   }
+/**
+ *  If the amount is negative then it will withdraw/cancel the bid assuming
+ *  it is signed by the owner and there is sufficient funds.
+ *
+ *  If the amount is positive then it will add funds to the bid.
+ */
+void bid_operation::evaluate( transaction_evaluation_state& eval_state )const
+{ try {
+    if( this->amount == 0 )
+        FC_CAPTURE_AND_THROW( zero_amount );
+
+    const asset delta_amount = this->get_amount();
+
+    const asset_id_type quote_asset_id = this->bid_index.order_price.quote_asset_id;
+    const asset_id_type base_asset_id = this->bid_index.order_price.base_asset_id;
+
+    const oasset_record quote_asset_record = eval_state.pending_state()->get_asset_record( quote_asset_id );
+    const oasset_record base_asset_record = eval_state.pending_state()->get_asset_record( base_asset_id );
+    if( !quote_asset_record.valid() || !base_asset_record.valid() )
+        FC_CAPTURE_AND_THROW( invalid_price );
+
+    const address& owner = this->bid_index.owner;
+
+    oorder_record current_order = eval_state.pending_state()->get_bid_record( this->bid_index );
+
+    if( delta_amount.amount > 0 ) // Withdraw from transaction and deposit to order
+    {
+        if( quote_asset_id <= base_asset_id )
+            FC_CAPTURE_AND_THROW( invalid_price );
+
+        if( this->bid_index.order_price.ratio <= 0 )
+            FC_CAPTURE_AND_THROW( invalid_price );
+
+        if( quote_asset_record->flag_is_active( asset_record::halted_markets )
+            || base_asset_record->flag_is_active( asset_record::halted_markets ) )
+        {
+            FC_CAPTURE_AND_THROW( market_halted );
+        }
+
+        if( !quote_asset_record->address_is_whitelisted( owner ) || !base_asset_record->address_is_whitelisted( owner ) )
+            FC_CAPTURE_AND_THROW( not_on_whitelist );
+
+        if( !current_order.valid() )
+            current_order = order_record();
+
+        eval_state.sub_balance( delta_amount );
+    }
+    else // Withdraw from order and deposit to transaction
+    {
+        if( !current_order.valid() )
+            FC_CAPTURE_AND_THROW( unknown_market_order );
+
+        if( -delta_amount.amount > current_order->balance )
+            FC_CAPTURE_AND_THROW( insufficient_funds, (*current_order) );
+
+        eval_state.add_balance( -delta_amount );
+    }
+
+    FC_ASSERT( current_order.valid() );
+    current_order->balance += delta_amount.amount;
+    current_order->last_update = eval_state.pending_state()->now();
+
+    eval_state.pending_state()->store_bid_record( this->bid_index, *current_order );
+
+    if( !eval_state.check_signature( owner ) && !quote_asset_record->authority_is_retracting( eval_state ) )
+        FC_CAPTURE_AND_THROW( missing_signature );
+} FC_CAPTURE_AND_RETHROW( (*this) ) }
+
+/**
+ *  If the amount is negative then it will withdraw/cancel the bid assuming
+ *  it is signed by the owner and there is sufficient funds.
+ *
+ *  If the amount is positive then it will add funds to the bid.
+ */
+void ask_operation::evaluate( transaction_evaluation_state& eval_state )const
+{ try {
+    if( this->amount == 0 )
+        FC_CAPTURE_AND_THROW( zero_amount );
+
+    const asset delta_amount = this->get_amount();
+
+    const asset_id_type quote_asset_id = this->ask_index.order_price.quote_asset_id;
+    const asset_id_type base_asset_id = this->ask_index.order_price.base_asset_id;
+
+    const oasset_record quote_asset_record = eval_state.pending_state()->get_asset_record( quote_asset_id );
+    const oasset_record base_asset_record = eval_state.pending_state()->get_asset_record( base_asset_id );
+    if( !quote_asset_record.valid() || !base_asset_record.valid() )
+        FC_CAPTURE_AND_THROW( invalid_price );
+
+    const address& owner = this->ask_index.owner;
+
+    oorder_record current_order = eval_state.pending_state()->get_ask_record( this->ask_index );
+
+    if( delta_amount.amount > 0 ) // Withdraw from transaction and deposit to order
+    {
+        if( quote_asset_id <= base_asset_id )
+            FC_CAPTURE_AND_THROW( invalid_price );
+
+        if( this->ask_index.order_price.ratio <= 0 )
+            FC_CAPTURE_AND_THROW( invalid_price );
+
+        if( quote_asset_record->flag_is_active( asset_record::halted_markets )
+            || base_asset_record->flag_is_active( asset_record::halted_markets ) )
+        {
+            FC_CAPTURE_AND_THROW( market_halted );
+        }
+
+        if( !quote_asset_record->address_is_whitelisted( owner ) || !base_asset_record->address_is_whitelisted( owner ) )
+            FC_CAPTURE_AND_THROW( not_on_whitelist );
+
+        if( !current_order.valid() )
+            current_order = order_record();
+
+        eval_state.sub_balance( delta_amount );
+    }
+    else // Withdraw from order and deposit to transaction
+    {
+        if( !current_order.valid() )
+            FC_CAPTURE_AND_THROW( unknown_market_order );
+
+        if( -delta_amount.amount > current_order->balance )
+            FC_CAPTURE_AND_THROW( insufficient_funds, (*current_order) );
+
+        eval_state.add_balance( -delta_amount );
+    }
+
+    FC_ASSERT( current_order.valid() );
+    current_order->balance += delta_amount.amount;
+    current_order->last_update = eval_state.pending_state()->now();
+
+    eval_state.pending_state()->store_ask_record( this->ask_index, *current_order );
+
+    if( !eval_state.check_signature( owner ) && !base_asset_record->authority_is_retracting( eval_state ) )
+        FC_CAPTURE_AND_THROW( missing_signature );
+} FC_CAPTURE_AND_RETHROW( (*this) ) }
+
+void short_operation::evaluate( transaction_evaluation_state& eval_state )const
+{ try {
+    if( this->amount == 0 )
+        FC_CAPTURE_AND_THROW( zero_amount );
+
+    const asset delta_amount = this->get_amount();
+
+    const asset_id_type quote_asset_id = this->short_index.order_price.quote_asset_id;
+    const asset_id_type base_asset_id = this->short_index.order_price.base_asset_id;
+
+    const oasset_record quote_asset_record = eval_state.pending_state()->get_asset_record( quote_asset_id );
+    const oasset_record base_asset_record = eval_state.pending_state()->get_asset_record( base_asset_id );
+    if( !quote_asset_record.valid() || !base_asset_record.valid() )
+        FC_CAPTURE_AND_THROW( invalid_apr );
+
+    const address& owner = this->short_index.owner;
+
+    oorder_record current_order = eval_state.pending_state()->get_short_record( this->short_index );
+
+    if( delta_amount.amount > 0 ) // Withdraw from transaction and deposit to order
+    {
+        if( base_asset_id != asset_id_type( 0 ) )
+            FC_CAPTURE_AND_THROW( invalid_apr );
+
+        if( quote_asset_id <= base_asset_id )
+            FC_CAPTURE_AND_THROW( invalid_apr );
+
+        if( !quote_asset_record->is_market_issued() )
+            FC_CAPTURE_AND_THROW( invalid_market );
+
+        static const fc::uint128 max_apr = fc::uint128( BTS_BLOCKCHAIN_MAX_SHORT_APR_PCT ) * FC_REAL128_PRECISION / 100;
+        if( this->short_index.order_price.ratio < 0 || this->short_index.order_price.ratio > max_apr )
+            FC_CAPTURE_AND_THROW( invalid_apr );
+
+        if( this->short_index.limit_price.valid() )
+        {
+            const price& limit_price = *this->short_index.limit_price;
+            if( limit_price.quote_asset_id != quote_asset_id || limit_price.base_asset_id != base_asset_id )
+                FC_CAPTURE_AND_THROW( invalid_price );
+
+            if( limit_price.ratio <= 0 )
+                FC_CAPTURE_AND_THROW( invalid_price );
+        }
+
+        if( !current_order.valid() )
+            current_order = order_record();
+
+        eval_state.sub_balance( delta_amount );
+    }
+    else // Withdraw from order and deposit to transaction
+    {
+        if( !current_order.valid() )
+            FC_CAPTURE_AND_THROW( unknown_market_order );
+
+        if( -delta_amount.amount > current_order->balance )
+            FC_CAPTURE_AND_THROW( insufficient_funds, (*current_order) );
+
+        eval_state.add_balance( -delta_amount );
+    }
+
+    FC_ASSERT( current_order.valid() );
+    current_order->balance += delta_amount.amount;
+    current_order->limit_price = this->short_index.limit_price;
+    current_order->last_update = eval_state.pending_state()->now();
+
+    eval_state.pending_state()->store_short_record( this->short_index, *current_order );
+
+    if( !eval_state.check_signature( owner ) )
+        FC_CAPTURE_AND_THROW( missing_signature );
+} FC_CAPTURE_AND_RETHROW( (*this) ) }
+
+/**
+  pay off part of the USD balance, if balance goes to 0 then close out
+  the position and transfer collateral to proper place.
+  update the call price (remove old value, add new value)
+*/
+void cover_operation::evaluate( transaction_evaluation_state& eval_state )const
+{ try {
+    if( this->amount <= 0 )
+        FC_CAPTURE_AND_THROW( invalid_amount );
+
+    ocollateral_record current_position = eval_state.pending_state()->get_collateral_record( this->cover_index );
+    if( !current_position.valid() )
+        FC_CAPTURE_AND_THROW( unknown_market_order );
+
+    const asset_id_type quote_asset_id = this->cover_index.order_price.quote_asset_id;
+    oasset_record quote_asset_record = eval_state.pending_state()->get_asset_record( quote_asset_id );
+    if( !quote_asset_record.valid() )
+        FC_CAPTURE_AND_THROW( invalid_price );
+
+    const asset delta_amount = this->get_amount();
+    eval_state.sub_balance( delta_amount );
+
+    const address& owner = this->cover_index.owner;
+
+    const time_point_sec start_time = current_position->expiration - fc::seconds( BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC );
+    const time_point_sec now = eval_state.pending_state()->now();
+    const uint32_t elapsed_sec = ( start_time >= now ) ? 0 : ( now - start_time ).to_seconds();
+
+    const asset principle = asset( current_position->payoff_balance, delta_amount.asset_id );
+    const asset total_debt = detail::market_engine::get_interest_owed( principle, current_position->interest_rate, elapsed_sec )
+                             + principle;
+
+    asset principle_paid; // Principle will be destroyed
+    asset interest_paid; // Interest goes to fees
+    if( delta_amount >= total_debt )
+    {
+        // Payoff the whole debt
+        principle_paid = principle;
+        interest_paid = delta_amount - principle_paid; // Include any extra payment amount
+        current_position->payoff_balance = 0;
+
+        // Withdraw from position and deposit to transaction
+        eval_state.add_balance( asset( current_position->collateral_balance, this->cover_index.order_price.base_asset_id ) );
+    }
+    else
+    {
+        // Partial cover
+        interest_paid = detail::market_engine::get_interest_paid( delta_amount, current_position->interest_rate, elapsed_sec );
+        principle_paid = delta_amount - interest_paid;
+        current_position->payoff_balance -= principle_paid.amount;
+        FC_ASSERT( current_position->payoff_balance > 0 );
+
+        const price new_call_price = asset( current_position->payoff_balance, this->cover_index.order_price.quote_asset_id )
+                                     / asset( (current_position->collateral_balance * BTS_BLOCKCHAIN_MCALL_D2C_NUMERATOR)
+                                              / BTS_BLOCKCHAIN_MCALL_D2C_DENOMINATOR, this->cover_index.order_price.base_asset_id );
+
+        eval_state.pending_state()->store_collateral_record( market_index_key( new_call_price, owner ), *current_position );
+    }
+
+    // Remove original position since it was either paid off or updated to a new call price
+    eval_state.pending_state()->store_collateral_record( this->cover_index, collateral_record() );
+
+    // Adjust debt asset supply
+    FC_ASSERT( principle_paid.amount >= 0 && interest_paid.amount >= 0 );
+    quote_asset_record->current_supply -= principle_paid.amount;
+    quote_asset_record->collected_fees += interest_paid.amount;
+    eval_state.pending_state()->store_asset_record( *quote_asset_record );
+
+    if( !eval_state.check_signature( owner ) )
+        FC_CAPTURE_AND_THROW( missing_signature );
+} FC_CAPTURE_AND_RETHROW( (*this) ) }
+
+void add_collateral_operation::evaluate( transaction_evaluation_state& eval_state )const
+{ try {
+    if( this->amount <= 0 )
+        FC_CAPTURE_AND_THROW( invalid_amount );
+
+    ocollateral_record current_position = eval_state.pending_state()->get_collateral_record( this->cover_index );
+    if( !current_position.valid() )
+        FC_CAPTURE_AND_THROW( unknown_market_order );
+
+    const asset delta_amount = this->get_amount();
+    eval_state.sub_balance( delta_amount );
+
+    const address& owner = this->cover_index.owner;
+
+    current_position->collateral_balance += delta_amount.amount;
+
+    const price new_call_price = asset( current_position->payoff_balance, this->cover_index.order_price.quote_asset_id )
+                                 / asset( (current_position->collateral_balance * BTS_BLOCKCHAIN_MCALL_D2C_NUMERATOR)
+                                          / BTS_BLOCKCHAIN_MCALL_D2C_DENOMINATOR, this->cover_index.order_price.base_asset_id );
+
+    // Remove old position and insert new one
+    eval_state.pending_state()->store_collateral_record( this->cover_index, collateral_record() );
+    eval_state.pending_state()->store_collateral_record( market_index_key( new_call_price, owner ), *current_position );
+
+    if( !eval_state.check_signature( owner ) )
+        FC_CAPTURE_AND_THROW( missing_signature );
+} FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 } } // bts::blockchain
