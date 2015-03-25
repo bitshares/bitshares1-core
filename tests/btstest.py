@@ -458,8 +458,10 @@ class TestClient(object):
         self.last_command_failed = False
         return
 
-    def execute_cmd(self, cmd, expect_enabled=True, extra_output_callback=None):
+    def execute_cmd(self, cmd, expect_enabled=True, extra_output_callback=None, echo=False):
         # store result
+        if echo:
+            print(">>> "+cmd)
         result = self.rpc_client.call("execute_command_line", cmd)
         self.reset_last_command(result)
         return
@@ -535,6 +537,7 @@ class Test(object):
         self.context["expect_enabled"] = True
         self.context["showmatch_enabled"] = False
         self.context["showlineno_enabled"] = False
+        self.context["current_test"] = self
         self.context["matchbuf"] = []
         self.context["_btstest"] = sys.modules[__name__]
         self.last_command_client = None
@@ -706,11 +709,14 @@ class Test(object):
         re.VERBOSE,
         )
 
-    def parse_script(self, filename):
+    def parse_script_file(self, filename):
         with open(filename, "r") as f:
             # read entire script into memory
             script_str = f.read()
-            
+        self.parse_script(script_str)
+        return
+
+    def parse_script(self, script_str):
         in_command = False
         cmd_text = []
         
@@ -776,7 +782,7 @@ class Test(object):
         for f in filenames:
             if not f.endswith(".btstest"):
                 continue
-            self.parse_script(os.path.join(testdir, f))
+            self.parse_script_file(os.path.join(testdir, f))
         return
 
     def register_client(self, client=None):
