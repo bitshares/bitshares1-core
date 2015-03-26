@@ -19,6 +19,9 @@ namespace bts { namespace blockchain {
     */
    void bid_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
+      if( eval_state.pending_state()->get_head_block_num() < BTS_V0_9_0_FORK_BLOCK_NUM )
+         return evaluate_v1( eval_state );
+
       if( this->bid_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (bid_index.order_price) );
 
@@ -78,8 +81,8 @@ namespace bts { namespace blockchain {
     */
    void ask_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
-      if( eval_state.pending_state()->get_head_block_num() < BTS_V0_4_21_FORK_BLOCK_NUM )
-         return evaluate_v1( eval_state );
+      if( eval_state.pending_state()->get_head_block_num() < BTS_V0_9_0_FORK_BLOCK_NUM )
+         return evaluate_v2( eval_state );
 
       if( this->ask_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (ask_index.order_price) );
@@ -133,8 +136,8 @@ namespace bts { namespace blockchain {
 
    void short_operation::evaluate( transaction_evaluation_state& eval_state )const
    {
-      if( eval_state.pending_state()->get_head_block_num() < BTS_V0_7_0_FORK_BLOCK_NUM )
-         return evaluate_v2( eval_state );
+      if( eval_state.pending_state()->get_head_block_num() < BTS_V0_9_0_FORK_BLOCK_NUM )
+         return evaluate_v3( eval_state );
 
       const auto base_asset_rec = eval_state.pending_state()->get_asset_record( short_index.order_price.base_asset_id );
       const auto quote_asset_rec = eval_state.pending_state()->get_asset_record( short_index.order_price.quote_asset_id );
@@ -333,45 +336,6 @@ namespace bts { namespace blockchain {
       eval_state.pending_state()->store_collateral_record( this->cover_index, collateral_record() );
 
       eval_state.pending_state()->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
-                                                          *current_cover );
-   }
-
-   void update_cover_operation::evaluate( transaction_evaluation_state& eval_state )const
-   {
-      FC_ASSERT( !"This operation is not enabled yet!" );
-
-      if( this->cover_index.order_price == price() )
-         FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );
-
-      if( this->new_call_price == price() )
-         FC_CAPTURE_AND_THROW( zero_price, (new_call_price) );
-
-      FC_ASSERT( this->new_call_price.quote_asset_id == cover_index.order_price.quote_asset_id );
-      FC_ASSERT( this->new_call_price.base_asset_id == cover_index.order_price.base_asset_id );
-
-      // update collateral and call price
-      auto current_cover = eval_state.pending_state()->get_collateral_record( this->cover_index );
-      if( NOT current_cover )
-         FC_CAPTURE_AND_THROW( unknown_market_order, (cover_index) );
-
-      const auto min_call_price = asset( current_cover->payoff_balance, cover_index.order_price.quote_asset_id )
-                                  / asset( (current_cover->collateral_balance * BTS_BLOCKCHAIN_MCALL_D2C_NUMERATOR)
-                                  / BTS_BLOCKCHAIN_MCALL_D2C_DENOMINATOR, cover_index.order_price.base_asset_id );
-
-      FC_ASSERT( new_call_price >= min_call_price );
-
-
-      // changing the payoff balance changes the call price... so we need to remove the old record
-      // and insert a new one.
-      eval_state.pending_state()->store_collateral_record( this->cover_index, collateral_record() );
-      if( this->new_slate && *this->new_slate != current_cover->slate_id )
-      {
-         eval_state.adjust_vote( current_cover->slate_id, -current_cover->collateral_balance );
-         current_cover->slate_id = *this->new_slate;
-         eval_state.adjust_vote( current_cover->slate_id, current_cover->collateral_balance );
-      }
-
-      eval_state.pending_state()->store_collateral_record( market_index_key( new_call_price, this->new_owner ? *this->new_owner : this->cover_index.owner),
                                                           *current_cover );
    }
 

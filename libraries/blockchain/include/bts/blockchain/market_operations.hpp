@@ -19,6 +19,7 @@ struct bid_operation
     market_index_key bid_index;
 
     void evaluate( transaction_evaluation_state& eval_state )const;
+    void evaluate_v1( transaction_evaluation_state& eval_state )const;
 };
 
 struct ask_operation
@@ -33,6 +34,7 @@ struct ask_operation
     market_index_key  ask_index;
 
     void evaluate( transaction_evaluation_state& eval_state )const;
+    void evaluate_v2( transaction_evaluation_state& eval_state )const;
     void evaluate_v1( transaction_evaluation_state& eval_state )const;
 };
 
@@ -48,6 +50,7 @@ struct short_operation
     market_index_key_ext   short_index;
 
     void evaluate( transaction_evaluation_state& eval_state )const;
+    void evaluate_v3( transaction_evaluation_state& eval_state )const;
     void evaluate_v2( transaction_evaluation_state& eval_state )const;
     void evaluate_v1( transaction_evaluation_state& eval_state )const;
 };
