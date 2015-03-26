@@ -494,6 +494,9 @@ wallet_transaction_record wallet_impl::scan_transaction(
               if( !blockchain_trx_state->yield_claimed.empty() )
                  _wallet_db.store_transaction( *transaction_record );
           }
+
+          if( blockchain_trx_state->fees_paid.count( transaction_record->fee.asset_id ) > 0 )
+              transaction_record->fee.amount = blockchain_trx_state->fees_paid.at( transaction_record->fee.asset_id );
        }
     }
 
