@@ -190,6 +190,7 @@ wallet_account_update_active_key <account_to_update> <pay_from_account> [new_act
 wallet_account_update_registration <account_name> <pay_from_account> [public_data] [delegate_pay_rate] 
 wallet_account_vote_summary [account_name] 
 wallet_add_contact <contact> [label]
+wallet_address_create <account_name> [label] [legacy_network_byte] 
 wallet_approve <name> [approval]
 wallet_approve
 wallet_backup_create <json_filename> 
