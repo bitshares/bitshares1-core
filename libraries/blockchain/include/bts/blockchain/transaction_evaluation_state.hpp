@@ -37,7 +37,7 @@ struct transaction_evaluation_state
 
     bool check_signature( const address& a )const;
     bool check_multisig( const multisig_condition& a )const;
-    bool verify_authority( const multisig_meta_info& siginfo );
+    bool verify_authority( const multisig_meta_info& siginfo )const;
 
     bool any_parent_has_signed( const string& account_name )const;
     bool account_or_any_parent_has_signed( const account_record& record )const;

@@ -16,6 +16,11 @@ namespace bts { namespace blockchain {
         return whitelist.count( addr ) > 0;
     } FC_CAPTURE_AND_RETHROW( (addr) ) }
 
+    bool asset_record::authority_is_retracting( const transaction_evaluation_state& eval_state )const
+    { try {
+        return flag_is_active( retractable_balances ) && eval_state.verify_authority( authority );
+    } FC_CAPTURE_AND_RETHROW() }
+
     uint64_t asset_record::share_string_to_precision_unsafe( const string& share_string_with_trailing_decimals )
     { try {
         // Don't bother checking input

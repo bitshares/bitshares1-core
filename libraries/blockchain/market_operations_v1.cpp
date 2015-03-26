@@ -258,7 +258,6 @@ void short_operation_v1::evaluate( transaction_evaluation_state& eval_state )con
    }
    else // this->amount > 0 - deposit
    {
-       FC_ASSERT( this->amount >=  (BTS_BLOCKCHAIN_MINIMUM_SHORT_ORDER_SIZE) ); // 100 XTS min short order
        if( NOT current_short )  // then initialize to 0
          current_short = order_record();
        // sub the delta amount from the eval state that we deposited to the short
@@ -382,7 +381,7 @@ void cover_operation::evaluate_v1( transaction_evaluation_state& eval_state )con
    if( this->cover_index.order_price == price() )
       FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );
 
-   if( this->amount == 0 && !this->new_cover_price )
+   if( this->amount == 0 )
       FC_CAPTURE_AND_THROW( zero_amount );
 
    if( this->amount < 0 )
@@ -410,12 +409,8 @@ void cover_operation::evaluate_v1( transaction_evaluation_state& eval_state )con
       auto new_call_price = asset(current_cover->payoff_balance, delta_amount.asset_id) /
                             asset((current_cover->collateral_balance*3)/4, 0);
 
-      if( this->new_cover_price && (*this->new_cover_price > new_call_price) )
-         eval_state.pending_state()->store_collateral_record( market_index_key( *this->new_cover_price, this->cover_index.owner),
-                                                             *current_cover );
-      else
-         eval_state.pending_state()->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
-                                                             *current_cover );
+      eval_state.pending_state()->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
+                                                           *current_cover );
    }
    else // withdraw the collateral to the transaction to be deposited at owners discretion / cover fees
    {

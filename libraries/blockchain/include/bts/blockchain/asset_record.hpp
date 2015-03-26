@@ -6,6 +6,8 @@
 
 namespace bts { namespace blockchain {
 
+struct transaction_evaluation_state;
+
 struct asset_record;
 typedef fc::optional<asset_record> oasset_record;
 
@@ -39,6 +41,7 @@ struct asset_record
     { return authority_has_flag_permission( flag ) && (active_flags & flag); }
 
     bool address_is_whitelisted( const address& addr )const;
+    bool authority_is_retracting( const transaction_evaluation_state& eval_state )const;
 
     static uint64_t share_string_to_precision_unsafe( const string& share_string_with_trailing_decimals );
     static share_type share_string_to_satoshi( const string& share_string, const uint64_t precision );
