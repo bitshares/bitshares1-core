@@ -336,13 +336,32 @@ class ClientProcess(object):
             # subprocess already exited, no cleanup is necessary
             return
 
+        sys.stderr.write("\nSIGTERM")
+        sys.stderr.flush()
         # send SIGTERM, then SIGKILL if we don't exit quickly (or cross-platform equivalents)
         self.process_object.terminate()
-        try:
-            self.process_object.wait(timeout=10)
-        except subprocess.TimeoutExpired:
+        for dot in range(12):
+            try:
+                sys.stderr.write(".")
+                sys.stderr.flush()
+                self.process_object.wait(timeout=0.25)
+            except subprocess.TimeoutExpired:
+                continue
+            break
+        else:
+            sys.stderr.write("\nSIGKILL")
+            sys.stderr.flush()
             self.process_object.kill()
-            self.process_object.wait(timeout=10)
+            for dot in range(12):
+                try:
+                    sys.stderr.write(".")
+                    sys.stderr.flush()
+                    self.process_object.wait(timeout=0.25)
+                except subprocess.TimeoutExpired:
+                    continue
+                break
+        sys.stderr.write("\n")
+        sys.stderr.flush()
 
         if self.stdout_file is not None:
             self.stdout_file.close()
