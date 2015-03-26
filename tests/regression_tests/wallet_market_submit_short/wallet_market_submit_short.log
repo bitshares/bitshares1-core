@@ -50,8 +50,9 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> wallet_market_submit_short test 100 XTS 51 XMO 3.3334
-Command failed with exception: Assert Exception (10)
-short_index.order_price.ratio <= max_apr: Interest rate too high!
+Command failed with exception: invalid apr (30028)
+
+
 
 
 

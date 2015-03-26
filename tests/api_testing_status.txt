@@ -72,7 +72,6 @@ rpc_set_password [password]
 rpc_set_username [username] 
 rpc_start_server [port] 
 stop 
-wallet_account_historic_balance <time> [account_name] 
 wallet_account_vesting_balances [account_name] 
 wallet_account_yield [account_name] 
 wallet_add_transaction_note_experimental <transaction_id> <note> 
@@ -180,6 +179,7 @@ wallet_account_balance [account_name]
 wallet_account_balance_extended [account_name] 
 wallet_account_balance_ids [account_name] 
 wallet_account_create <account_name>
+wallet_account_historic_balance <time> [account_name] 
 wallet_account_list_public_keys <account_name> 
 wallet_account_order_list [account_name] [limit] 
 wallet_account_register <account_name> <pay_from_account> [public_data] [delegate_pay_rate] [account_type] 
