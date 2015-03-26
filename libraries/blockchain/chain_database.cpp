@@ -958,10 +958,11 @@ namespace bts { namespace blockchain {
           pending_state->set_market_transactions( std::move( market_transactions ) );
 
           if( self->_debug_verify_market_matching )
-              debug_check_no_orders_overlap();
+              debug_check_no_orders_overlap( pending_state );
       } FC_CAPTURE_AND_RETHROW( (timestamp) ) }
 
-      void chain_database_impl::debug_check_no_orders_overlap() const
+      void chain_database_impl::debug_check_no_orders_overlap(
+          const pending_chain_state_ptr& pending_state ) const
       {
           //
           // the market engine does all kinds of fancy indexing to find
@@ -1004,7 +1005,11 @@ namespace bts { namespace blockchain {
                bid_itr.valid();
                bid_itr++ )
           {
-              market_order morder = market_order( bid_order, bid_itr.key(), bid_itr.value() );
+              oorder_record orec = pending_state->get_bid_record( bid_itr.key() );
+              if( (!orec.valid()) || (orec->balance <= 0) )
+                  continue;
+              
+              market_order morder = market_order( bid_order, bid_itr.key(), *orec );
               process_bid( morder.get_price(), morder );
           }
 
@@ -1013,7 +1018,11 @@ namespace bts { namespace blockchain {
                ask_itr.valid();
                ask_itr++ )
           {
-              market_order morder = market_order( ask_order, ask_itr.key(), ask_itr.value() );
+              oorder_record orec = pending_state->get_ask_record( ask_itr.key() );
+              if( (!orec.valid()) || (orec->balance <= 0) )
+                  continue;
+
+              market_order morder = market_order( ask_order, ask_itr.key(), *orec );
               process_ask( morder.get_price(), morder );
           }
 
@@ -1022,7 +1031,11 @@ namespace bts { namespace blockchain {
                short_itr.valid();
                short_itr++ )
           {
-              market_order morder = market_order( short_order, short_itr.key(), short_itr.value() );
+              oorder_record orec = pending_state->get_short_record( short_itr.key() );
+              if( (!orec.valid()) || (orec->balance <= 0) )
+                  continue;
+
+              market_order morder = market_order( short_order, short_itr.key(), *orec );
               oprice feed = self->get_active_feed_price( morder.get_price().quote_asset_id );
               if( !feed.valid() )
                   continue;
@@ -1036,17 +1049,20 @@ namespace bts { namespace blockchain {
                collateral_itr++ )
           {
               market_index_key k = collateral_itr.key();
-              collateral_record record = collateral_itr.value();
               oprice feed = self->get_active_feed_price( k.order_price.quote_asset_id );
               if( !feed.valid() )
                   continue;
 
+              ocollateral_record orec = pending_state->get_collateral_record( k );
+              if( (!orec.valid()) || (orec->payoff_balance <= 0) || (orec->collateral_balance <= 0) )
+                  continue;
+
               market_order morder = market_order( cover_order,
                 k,
-                order_record(record.payoff_balance),
-                record.collateral_balance,
-                record.interest_rate,
-                record.expiration
+                order_record(orec->payoff_balance),
+                orec->collateral_balance,
+                orec->interest_rate,
+                orec->expiration
                 );
 
               if( k.order_price <= (*feed) )
@@ -1054,7 +1070,7 @@ namespace bts { namespace blockchain {
                   // to force a match, but we'll ignore that subtlety
                   // here...
                   process_ask( k.order_price, morder );
-              else if( record.expiration <= now() )
+              else if( orec->expiration <= now() )
                   // expired
                   process_ask( k.order_price, morder );
           }

@@ -93,7 +93,7 @@ namespace bts { namespace blockchain {
             void                                        update_head_block( const signed_block_header& block_header,
                                                                            const block_id_type& block_id );
 
-            void debug_check_no_orders_overlap() const;
+            void debug_check_no_orders_overlap( const pending_chain_state_ptr& pending_state ) const;
 
             chain_database*                                                             self = nullptr;
             unordered_set<chain_observer*>                                              _observers;
