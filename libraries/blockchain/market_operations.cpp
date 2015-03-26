@@ -175,7 +175,7 @@ void short_operation::evaluate( transaction_evaluation_state& eval_state )const
             FC_CAPTURE_AND_THROW( invalid_market );
 
         static const fc::uint128 max_apr = fc::uint128( BTS_BLOCKCHAIN_MAX_SHORT_APR_PCT ) * FC_REAL128_PRECISION / 100;
-        if( this->short_index.order_price.ratio < 0 || this->short_index.order_price.ratio > max_apr )
+        if( this->short_index.order_price.ratio < fc::uint128( 0 ) || this->short_index.order_price.ratio > max_apr )
             FC_CAPTURE_AND_THROW( invalid_apr );
 
         if( this->short_index.limit_price.valid() )
