@@ -2922,7 +2922,8 @@ namespace bts { namespace blockchain {
                              to_pretty_price( record_itr.value().lowest_ask, false ),
                              to_pretty_price( record_itr.value().opening_price, false ),
                              to_pretty_price( record_itr.value().closing_price, false ),
-                             record_itr.value().volume
+                             record_itr.value().base_volume,
+                             record_itr.value().quote_volume
                            } );
         ++record_itr;
       }
