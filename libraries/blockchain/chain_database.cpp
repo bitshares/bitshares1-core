@@ -2860,7 +2860,7 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_market_history_record(const market_history_key& key, const market_history_record& record)
    {
-     if( record.volume == 0 )
+     if( record.quote_volume == 0 && record.base_volume == 0 )
        my->_market_history_db.remove( key );
      else
        my->_market_history_db.store( key, record );
