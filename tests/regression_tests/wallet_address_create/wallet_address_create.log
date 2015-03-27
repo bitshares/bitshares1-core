@@ -1,0 +1,233 @@
+default (unlocked) >>> wallet_account_balance delegate0
+ACCOUNT                         BALANCE                     
+============================================================
+delegate0                       19,801,980.19801 XTS        
+default (unlocked) >>> wallet_account_create test
+"XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
+default (unlocked) >>> wallet_account_list_public_keys test
+[{
+    "hex": "02d6a0351c151cf57938e0f540830cb390305081aed4a6f01ec42668d7b85f03eb",
+    "native_pubkey": "XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX",
+    "native_address": "XTSFtXy1oqCnZ5Sw5txgm2421smvzZ6jwVUM",
+    "pts_normal_address": "PvRmwBk2YNJUqcuJCJF9acrHzqetRxow7B",
+    "pts_compressed_address": "PmBMQNvypoMaUTRQUqQNX7KgW1m9Vvrh1a",
+    "btc_normal_address": "1PVzo73tnGMR3M6SpobJRbcEkbE4bd4iE3",
+    "btc_compressed_address": "1EFaGJEr4hQWgBcZ7LkXN65dFmLKiCLdSb"
+  },{
+    "hex": "02e310a74ab789949e7a8b17b0ae06a70cb414bdec78513375a572fb592d33c0d4",
+    "native_pubkey": "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra",
+    "native_address": "XTSFVXDozgCnWhF3w4efcv75jaVPkkMVbcKm",
+    "pts_normal_address": "PaWvEfxXFR1LWPEsVzWCGZPe7ESvNoPUpA",
+    "pts_compressed_address": "PvrSYijUNcwCsJca8UN8B5yERhTCW1a2PU",
+    "btc_normal_address": "13b96bGPVK4Gi7S28VrM7Y9arz26W3qtkr",
+    "btc_compressed_address": "1PvfQe3LcWz952oikyiH24jBBT2NdN3Faq"
+  }
+]
+default (unlocked) >>> help wallet_address_create
+Usage:
+wallet_address_create <account_name> [label] [legacy_network_byte]                                    Creates an address which can be used for a simple (non-TITAN) transfer.
+Creates an address which can be used for a simple (non-TITAN) transfer.
+
+Parameters:
+  account_name (string, required): The account name that will own this address
+  label (string, optional, defaults to ""): 
+  legacy_network_byte (int32_t, optional, defaults to -1): If not -1, use this as the network byte for a BTC-style address.
+
+Returns:
+  string
+
+aliases: new_address
+default (unlocked) >>> wallet_address_create test "for a simple transfer"
+"XTS2HLJKuZVHs9FqGR5TEREnBcJ8bnfMAHAD"
+default (unlocked) >>> wallet_account_list_public_keys test
+[{
+    "hex": "02c84f87ee5ae6e9126ee0c3f927fd7b41a17a8e24d3c3f02c833e774031eeb6c8",
+    "native_pubkey": "XTS6Qi2AF9yduV3yFMhGo5dZHP8sq3xMoTLmpYKSmQ7H9qtCq9gNW",
+    "native_address": "XTS2HLJKuZVHs9FqGR5TEREnBcJ8bnfMAHAD",
+    "pts_normal_address": "PmPzkQDBznqb2oiDQPeaBBy9Z2ujHiUvPZ",
+    "pts_compressed_address": "PgMXQ2MmKz9vGTyhHpZhEtnPqVBXNqpKLZ",
+    "btc_normal_address": "1EUDcKX4EgtXEXuN2tzj2Aj6JnUuV4NdMf",
+    "btc_compressed_address": "19RkFwfdZtCrUCAqvKur5sYLbEkhaWQsjh"
+  },{
+    "hex": "02d6a0351c151cf57938e0f540830cb390305081aed4a6f01ec42668d7b85f03eb",
+    "native_pubkey": "XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX",
+    "native_address": "XTSFtXy1oqCnZ5Sw5txgm2421smvzZ6jwVUM",
+    "pts_normal_address": "PvRmwBk2YNJUqcuJCJF9acrHzqetRxow7B",
+    "pts_compressed_address": "PmBMQNvypoMaUTRQUqQNX7KgW1m9Vvrh1a",
+    "btc_normal_address": "1PVzo73tnGMR3M6SpobJRbcEkbE4bd4iE3",
+    "btc_compressed_address": "1EFaGJEr4hQWgBcZ7LkXN65dFmLKiCLdSb"
+  },{
+    "hex": "02e310a74ab789949e7a8b17b0ae06a70cb414bdec78513375a572fb592d33c0d4",
+    "native_pubkey": "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra",
+    "native_address": "XTSFVXDozgCnWhF3w4efcv75jaVPkkMVbcKm",
+    "pts_normal_address": "PaWvEfxXFR1LWPEsVzWCGZPe7ESvNoPUpA",
+    "pts_compressed_address": "PvrSYijUNcwCsJca8UN8B5yERhTCW1a2PU",
+    "btc_normal_address": "13b96bGPVK4Gi7S28VrM7Y9arz26W3qtkr",
+    "btc_compressed_address": "1PvfQe3LcWz952oikyiH24jBBT2NdN3Faq"
+  }
+]
+default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:40:30</d-ign>PENDING   delegate0           test                100.00000 XTS                                                       0.50000 XTS         <d-ign> 3a384e9d</d-ign>
+default (unlocked) >>> wallet_transfer 110 XTS delegate0 XTS2HLJKuZVHs9FqGR5TEREnBcJ8bnfMAHAD
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:40:30</d-ign>PENDING   delegate0           ANONYMOUS           110.00000 XTS                                                       0.50000 XTS         <d-ign> 42de46b4</d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 4
+OK
+default (unlocked) >>> wallet_account_balance delegate0
+ACCOUNT                         BALANCE                     
+============================================================
+delegate0                       19,801,769.19801 XTS        
+default (unlocked) >>> wallet_account_balance test
+ACCOUNT                         BALANCE                     
+============================================================
+test                            210.00000 XTS               
+default (unlocked) >>> wallet_transfer 101 XTS delegate0 test "transfer to account"
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate0           test                101.00000 XTS           transfer to account                         0.50000 XTS         <d-ign> 2da4a37f</d-ign>
+default (unlocked) >>> wallet_transfer 121 XTS delegate0 XTS2HLJKuZVHs9FqGR5TEREnBcJ8bnfMAHAD "transfer to address"
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate0           ANONYMOUS           121.00000 XTS           transfer to address                         0.50000 XTS         <d-ign> 0360a884</d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 4
+OK
+default (unlocked) >>> wallet_account_balance delegate0
+ACCOUNT                         BALANCE                     
+============================================================
+delegate0                       19,801,546.19801 XTS        
+default (unlocked) >>> wallet_account_balance test
+ACCOUNT                         BALANCE                     
+============================================================
+test                            432.00000 XTS               
+default (unlocked) >>> history test 
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+<d-ign>2014-06-20T14:40:30</d-ign>2         delegate0           test                100.00000 XTS                                                       100.00000 XTS           0.00000 XTS         <d-ign> 3a384e9d</d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>3         delegate0           test                101.00000 XTS           transfer to account                         201.00000 XTS           0.00000 XTS         <d-ign> 2da4a37f</d-ign>
+default (unlocked) >>> history delegate0 
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+<d-ign>2014-06-20T14:40:27</d-ign>0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    19,801,980.19801 XTS    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+<d-ign>2014-06-20T14:40:30</d-ign>2         delegate0           test                100.00000 XTS                                                       19,801,879.69801 XTS    0.50000 XTS         <d-ign> 3a384e9d</d-ign>
+<d-ign>2014-06-20T14:40:30</d-ign>2         delegate0           ANONYMOUS           110.00000 XTS                                                       19,801,769.19801 XTS    0.50000 XTS         <d-ign> 42de46b4</d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>3         delegate0           ANONYMOUS           121.00000 XTS           transfer to address                         19,801,647.69801 XTS    0.50000 XTS         <d-ign> 0360a884</d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>3         delegate0           test                101.00000 XTS           transfer to account                         19,801,546.19801 XTS    0.50000 XTS         <d-ign> 2da4a37f</d-ign>
+default (unlocked) >>> wallet_scan_transaction 2da4a37f
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:40:40</d-ign>3         delegate0           test                101.00000 XTS           transfer to account                         0.50000 XTS         <d-ign> 2da4a37f</d-ign>
+default (unlocked) >>> wallet_verify_titan_deposit 2da4a37f
+null
+default (unlocked) >>> wallet_scan_transaction 0360a884
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:40:40</d-ign>3         delegate0           test                121.00000 XTS           transfer to address                         0.50000 XTS         <d-ign> 0360a884</d-ign>
+default (unlocked) >>> wallet_verify_titan_deposit 0360a884
+Command failed with exception: Assert Exception (10)
+withdraw_condition.memo.valid(): 
+
+
+
+
+default (unlocked) >>> wallet_account_register test delegate0
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:40:50</d-ign>PENDING   delegate0           test                0.00000 XTS             register test                               0.50000 XTS         <d-ign> c2b27ff4</d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 4
+OK
+default (unlocked) >>> wallet_get_account test
+{
+  "index": 314,
+  "id": 102,
+  "name": "test",
+  "public_data": null,
+  "owner_key": "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra",
+  "active_key_history": [[
+      "2014-06-20T14:40:50",
+      "XTS6X1gWC7M9nRg95ytLBg1aYz8nfsWLhVaj8FuSHacxHXr78dAUX"
+    ]
+  ],
+  "registration_date": "2014-06-20T14:40:50",
+  "last_update": "2014-06-20T14:40:50",
+  "delegate_info": null,
+  "meta_data": {
+    "type": "titan_account",
+    "data": ""
+  },
+  "last_child_key_index": 1,
+  "block_production_enabled": false,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_transfer 103 XTS delegate0 test "transfer to a registered titan account"
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:41:00</d-ign>PENDING   delegate0           test                103.00000 XTS           transfer to a registered titan account      0.50000 XTS         <d-ign> ec2ddff0</d-ign>
+default (unlocked) >>> wallet_transfer 133 XTS delegate0 XTS2HLJKuZVHs9FqGR5TEREnBcJ8bnfMAHAD "transfer to address (registered titan account)"
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:41:00</d-ign>PENDING   delegate0           ANONYMOUS           133.00000 XTS           transfer to address (registered titan ac... 0.50000 XTS         <d-ign> c0d35468</d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 4
+OK
+default (unlocked) >>> wallet_account_balance delegate0
+ACCOUNT                         BALANCE                     
+============================================================
+delegate0                       19,801,308.69801 XTS        
+default (unlocked) >>> wallet_account_balance test
+ACCOUNT                         BALANCE                     
+============================================================
+test                            668.00000 XTS               
+default (unlocked) >>> history test 
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+<d-ign>2014-06-20T14:40:30</d-ign>2         delegate0           test                100.00000 XTS                                                       100.00000 XTS           0.00000 XTS         <d-ign> 3a384e9d</d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>3         delegate0           test                101.00000 XTS           transfer to account                         201.00000 XTS           0.00000 XTS         <d-ign> 2da4a37f</d-ign>
+<d-ign>2014-06-20T14:40:50</d-ign>4         delegate0           test                0.00000 XTS             register test                               201.00000 XTS           0.00000 XTS         <d-ign> c2b27ff4</d-ign>
+<d-ign>2014-06-20T14:41:00</d-ign>5         delegate0           test                103.00000 XTS           transfer to a registered titan account      304.00000 XTS           0.00000 XTS         <d-ign> ec2ddff0</d-ign>
+default (unlocked) >>> history delegate0 
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+<d-ign>2014-06-20T14:40:27</d-ign>0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    19,801,980.19801 XTS    0.00000 XTS         <d-ign> VIRTUAL</d-ign>
+<d-ign>2014-06-20T14:40:30</d-ign>2         delegate0           test                100.00000 XTS                                                       19,801,879.69801 XTS    0.50000 XTS         <d-ign> 3a384e9d</d-ign>
+<d-ign>2014-06-20T14:40:30</d-ign>2         delegate0           ANONYMOUS           110.00000 XTS                                                       19,801,769.19801 XTS    0.50000 XTS         <d-ign> 42de46b4</d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>3         delegate0           ANONYMOUS           121.00000 XTS           transfer to address                         19,801,647.69801 XTS    0.50000 XTS         <d-ign> 0360a884</d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>3         delegate0           test                101.00000 XTS           transfer to account                         19,801,546.19801 XTS    0.50000 XTS         <d-ign> 2da4a37f</d-ign>
+<d-ign>2014-06-20T14:40:50</d-ign>4         delegate0           test                0.00000 XTS             register test                               19,801,545.69801 XTS    0.50000 XTS         <d-ign> c2b27ff4</d-ign>
+<d-ign>2014-06-20T14:41:00</d-ign>5         delegate0           ANONYMOUS           133.00000 XTS           transfer to address (registered titan ac... 19,801,412.19801 XTS    0.50000 XTS         <d-ign> c0d35468</d-ign>
+<d-ign>2014-06-20T14:41:00</d-ign>5         delegate0           test                103.00000 XTS           transfer to a registered titan account      19,801,308.69801 XTS    0.50000 XTS         <d-ign> ec2ddff0</d-ign>
+default (unlocked) >>> wallet_scan_transaction ec2ddff0
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:41:00</d-ign>5         delegate0           test                103.00000 XTS           transfer to a registered titan account      0.50000 XTS         <d-ign> ec2ddff0</d-ign>
+default (unlocked) >>> wallet_verify_titan_deposit ec2ddff0
+{
+  "from": "delegate0",
+  "to": "test",
+  "amount": {
+    "amount": 10300000,
+    "asset_id": 0
+  },
+  "memo": "transfer to a registered titan account"
+}
+default (unlocked) >>> wallet_scan_transaction c0d35468
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:41:00</d-ign>5         delegate0           test                133.00000 XTS           transfer to address (registered titan ac... 0.50000 XTS         <d-ign> c0d35468</d-ign>
+default (unlocked) >>> wallet_verify_titan_deposit c0d35468
+Command failed with exception: Assert Exception (10)
+withdraw_condition.memo.valid(): 
+
+
+
+
+default (unlocked) >>> quit

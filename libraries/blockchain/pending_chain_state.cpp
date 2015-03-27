@@ -29,11 +29,11 @@ namespace bts { namespace blockchain {
       return prev_state->now();
    }
 
-   oprice pending_chain_state::get_active_feed_price( const asset_id_type quote_id, const asset_id_type base_id )const
+   oprice pending_chain_state::get_active_feed_price( const asset_id_type quote_id )const
    {
       const chain_interface_ptr prev_state = _prev_state.lock();
       FC_ASSERT( prev_state );
-      return prev_state->get_active_feed_price( quote_id, base_id );
+      return prev_state->get_active_feed_price( quote_id );
    }
 
    void pending_chain_state::apply_changes()const
@@ -48,22 +48,15 @@ namespace bts { namespace blockchain {
       apply_records( prev_state, _balance_id_to_record, _balance_id_remove );
       apply_records( prev_state, _transaction_id_to_record, _transaction_id_remove );
       apply_records( prev_state, _burn_index_to_record, _burn_index_remove );
+      apply_records( prev_state, _feed_index_to_record, _feed_index_remove );
       apply_records( prev_state, _slot_index_to_record, _slot_index_remove );
 
+      for( const auto& item : market_statuses ) prev_state->store_market_status( item.second );
       for( const auto& item : bids )            prev_state->store_bid_record( item.first, item.second );
       for( const auto& item : asks )            prev_state->store_ask_record( item.first, item.second );
       for( const auto& item : shorts )          prev_state->store_short_record( item.first, item.second );
       for( const auto& item : collateral )      prev_state->store_collateral_record( item.first, item.second );
       for( const auto& item : market_history )  prev_state->store_market_history_record( item.first, item.second );
-      for( const auto& item : market_statuses ) prev_state->store_market_status( item.second );
-
-      /** do this last because it could have side effects on other records while
-       * we manage the short index
-       */
-      //apply_records( prev_state, _feed_index_to_record, _feed_index_remove );
-      for( auto item : _feed_index_to_record )
-         prev_state->store_feed_record( item.second );
-      for( const auto& item : _feed_index_remove ) prev_state->remove<feed_record>( item );
 
       prev_state->set_market_transactions( market_transactions );
       prev_state->set_dirty_markets( _dirty_markets );

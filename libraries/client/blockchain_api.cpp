@@ -311,13 +311,25 @@ oblock_record detail::client_impl::blockchain_get_block( const string& block )co
    return oblock_record();
 } FC_CAPTURE_AND_RETHROW( (block) ) }
 
-unordered_map<balance_id_type, balance_record> detail::client_impl::blockchain_list_balances( const string& first, uint32_t limit )const
+unordered_map<balance_id_type, balance_record> detail::client_impl::blockchain_list_balances( const string& asset, uint32_t limit )const
 { try {
     FC_ASSERT( limit > 0 );
-    balance_id_type id;
-    if( !first.empty() ) id = variant( first ).as<balance_id_type>();
-    return _chain_db->get_balances( id, limit );
-} FC_CAPTURE_AND_RETHROW( (first)(limit) ) }
+    const oasset_record asset_record = blockchain_get_asset( asset );
+
+    unordered_map<balance_id_type, balance_record> records;
+
+    const auto scan_balance = [ &records, &asset_record, limit ]( const balance_record& record )
+    {
+        if( records.size() >= limit )
+            return;
+
+        if( !asset_record.valid() || record.asset_id() == asset_record->id )
+            records[ record.id() ] = record;
+    };
+    _chain_db->scan_balances( scan_balance );
+
+    return records;
+} FC_CAPTURE_AND_RETHROW( (asset)(limit) ) }
 
 map<asset_id_type, share_type> detail::client_impl::blockchain_get_account_public_balance( const string& account_name )const
 { try {
@@ -476,7 +488,6 @@ variant_object client_impl::blockchain_get_info()const
 
    info["name_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
    info["memo_size_max"]                        = BTS_BLOCKCHAIN_MAX_EXTENDED_MEMO_SIZE;
-   info["data_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
 
    info["symbol_size_max"]                      = BTS_BLOCKCHAIN_MAX_SUB_SYMBOL_SIZE;
    info["symbol_size_min"]                      = BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE;

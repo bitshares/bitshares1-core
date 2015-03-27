@@ -10,6 +10,7 @@ struct asset_record;
 typedef fc::optional<asset_record> oasset_record;
 
 class chain_interface;
+struct transaction_evaluation_state;
 struct asset_record
 {
     enum
@@ -26,7 +27,7 @@ struct asset_record
         halted_markets          = 1 << 2, // Markets cannot execute
         halted_withdrawals      = 1 << 3, // Balances cannot be withdrawn
         retractable_balances    = 1 << 4, // Authority can withdraw from any balance or market order
-        restricted_deposits     = 1 << 5  // Only whitelisted addresses can receive deposits (conflicting market executions will fail)
+        restricted_accounts     = 1 << 5  // Only whitelisted account active and owner keys can receive deposits and market payouts
     };
 
     bool is_market_issued()const      { return issuer_id == market_issuer_id; };
@@ -38,7 +39,8 @@ struct asset_record
     bool flag_is_active( const flag_enum flag )const
     { return authority_has_flag_permission( flag ) && (active_flags & flag); }
 
-    bool address_is_whitelisted( const address& addr )const;
+    bool address_is_approved( const chain_interface& db, const address& addr )const;
+    bool authority_is_retracting( const transaction_evaluation_state& eval_state )const;
 
     static uint64_t share_string_to_precision_unsafe( const string& share_string_with_trailing_decimals );
     static share_type share_string_to_satoshi( const string& share_string, const uint64_t precision );
@@ -54,7 +56,7 @@ struct asset_record
     multisig_meta_info      authority;
     uint32_t                authority_flag_permissions = uint32_t( -1 );
     uint32_t                active_flags = 0;
-    unordered_set<address>  whitelist;
+    set<account_id_type>    whitelist;
 
     string                  name;
     string                  description;
@@ -101,7 +103,7 @@ FC_REFLECT_ENUM( bts::blockchain::asset_record::flag_enum,
         (halted_markets)
         (halted_withdrawals)
         (retractable_balances)
-        (restricted_deposits)
+        (restricted_accounts)
         )
 FC_REFLECT( bts::blockchain::asset_record,
         (id)

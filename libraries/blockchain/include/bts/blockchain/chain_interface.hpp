@@ -72,8 +72,7 @@ namespace bts { namespace blockchain {
          void                               set_statistics_enabled( const bool enabled );
          bool                               get_statistics_enabled()const;
 
-         virtual oprice                     get_active_feed_price( const asset_id_type quote_id,
-                                                                   const asset_id_type base_id = 0 )const = 0;
+         virtual oprice                     get_active_feed_price( const asset_id_type quote_id )const = 0;
 
          virtual void                       set_market_dirty( const asset_id_type quote_id,
                                                               const asset_id_type base_id )                = 0;
@@ -151,7 +150,7 @@ namespace bts { namespace blockchain {
          void                               store_burn_record( const burn_record& record );
 
          ofeed_record                       get_feed_record( const feed_index index )const;
-         virtual void                       store_feed_record( const feed_record& record );
+         void                               store_feed_record( const feed_record& record );
 
          oslot_record                       get_slot_record( const slot_index index )const;
          oslot_record                       get_slot_record( const time_point_sec timestamp )const;

@@ -24,7 +24,6 @@ aliases: getconfig, get_config, config, blockchain_get_config
   "max_delegate_reg_fee": "59,881.18811 XTS",
   "name_size_max": 63,
   "memo_size_max": 51,
-  "data_size_max": 65536,
   "symbol_size_max": 8,
   "symbol_size_min": 3,
   "asset_shares_max": 1000000000000000,

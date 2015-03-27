@@ -165,8 +165,16 @@ namespace detail {
 
            const private_key_type one_time_private_key = get_new_private_key( sender.name );
 
+           bool use_titan = recipient_account->is_titan_account();
+           if( use_titan )
+           {
+               const oasset_record asset_record = _blockchain->get_asset_record( amount.asset_id );
+               FC_ASSERT( asset_record.valid() );
+               use_titan &= !asset_record->flag_is_active( asset_record::restricted_accounts );
+           }
+
            transaction.deposit_with_encrypted_memo( amount, sender_private_key, recipient_account->active_key(),
-                                                    one_time_private_key, memo, recipient_account->is_titan_account() );
+                                                    one_time_private_key, memo, use_titan );
 
            // XXX: Return recipient key since current transaction scanner wants it for ledger
            return recipient_account->owner_key;
@@ -2225,8 +2233,11 @@ namespace detail {
           FC_CAPTURE_AND_THROW( insufficient_funds, (account_name) );
 
       signed_transaction trx;
-      trx.expiration = blockchain::now() + get_transaction_expiration();
       unordered_set<address> required_signatures;
+
+      trx.expiration = blockchain::now() + get_transaction_expiration();
+
+      const auto required_fees = get_transaction_fee();
 
       asset total_balance;
       for( const balance_record& record : balance_records.at( account_name ) )
@@ -2239,22 +2250,21 @@ namespace detail {
           total_balance += balance;
       }
 
-      trx.deposit_with_encrypted_memo( total_balance - get_transaction_fee(),
-                                       get_private_key( account_record->active_key() ),
-                                       account_record->active_key(),
-                                       my->get_new_private_key( account_name ),
-                                       memo_message,
-                                       account_record->is_titan_account() );
+      const public_key_type recipient_key = my->deposit_from_transaction( trx,
+                                                                          total_balance - required_fees,
+                                                                          *account_record,
+                                                                          my->generic_recipient_to_contact( account_record->name ),
+                                                                          memo_message );
 
       auto entry = ledger_entry();
       entry.from_account = account_record->owner_key;
-      entry.to_account = account_record->owner_key;
-      entry.amount = total_balance - get_transaction_fee();
+      entry.to_account = recipient_key;
+      entry.amount = total_balance - required_fees;
       entry.memo = memo_message;
 
       auto record = wallet_transaction_record();
       record.ledger_entries.push_back( entry );
-      record.fee = get_transaction_fee();
+      record.fee = required_fees;
 
       if( sign )
           my->sign_transaction( trx, required_signatures );
@@ -2705,44 +2715,39 @@ namespace detail {
    wallet_transaction_record wallet::withdraw_delegate_pay(
            const string& delegate_name,
            const asset& amount,
-           const string& withdraw_to_account_name,
+           const string& recipient,
            bool sign )
    { try {
        FC_ASSERT( is_open() );
        FC_ASSERT( is_unlocked() );
 
-       auto delegate_account_record = my->_blockchain->get_account_record( delegate_name );
-       FC_ASSERT( delegate_account_record.valid() );
-       FC_ASSERT( delegate_account_record->is_delegate() );
-
-       const auto required_fees = get_transaction_fee();
+       const wallet_account_record delegate_account = get_account( delegate_name );
 
        signed_transaction trx;
        unordered_set<address> required_signatures;
 
        trx.expiration = blockchain::now() + get_transaction_expiration();
 
-       owallet_key_record delegate_key = my->_wallet_db.lookup_key( delegate_account_record->active_key() );
-       FC_ASSERT( delegate_key && delegate_key->has_private_key() );
-       const auto delegate_private_key = delegate_key->decrypt_private_key( my->_wallet_password );
-       const auto delegate_public_key = delegate_private_key.get_public_key();
-       required_signatures.insert( delegate_public_key );
+       const auto required_fees = get_transaction_fee();
 
-       const wallet_account_record receiver_account = get_account( withdraw_to_account_name );
+       if( my->_wallet_db.has_private_key( delegate_account.owner_address() ) )
+           required_signatures.insert( delegate_account.owner_address() );
+       else
+           required_signatures.insert( delegate_account.active_address() );
+
        const string memo_message = "withdraw pay";
 
-       trx.withdraw_pay( delegate_account_record->id, amount.amount );
+       trx.withdraw_pay( delegate_account.id, amount.amount );
 
-       trx.deposit_with_encrypted_memo( amount - required_fees,
-                                        delegate_private_key,
-                                        receiver_account.active_key(),
-                                        my->get_new_private_key( delegate_name ),
-                                        memo_message,
-                                        receiver_account.is_titan_account() );
+       const public_key_type recipient_key = my->deposit_from_transaction( trx,
+                                                                           amount - required_fees,
+                                                                           delegate_account,
+                                                                           my->generic_recipient_to_contact( recipient ),
+                                                                           memo_message );
 
        auto entry = ledger_entry();
-       entry.from_account = delegate_public_key;
-       entry.to_account = receiver_account.active_key(),
+       entry.from_account = delegate_account.owner_key;
+       entry.to_account = recipient_key;
        entry.amount = amount - required_fees;
        entry.memo = memo_message;
 
@@ -2755,7 +2760,7 @@ namespace detail {
 
        record.trx = trx;
        return record;
-   } FC_CAPTURE_AND_RETHROW( (delegate_name)(amount)(sign) ) }
+   } FC_CAPTURE_AND_RETHROW( (delegate_name)(amount)(recipient)(sign) ) }
 
    wallet_transaction_record wallet::burn_asset(
            const asset& asset_to_transfer,
@@ -2939,18 +2944,23 @@ namespace detail {
 
       trx.expiration = blockchain::now() + get_transaction_expiration();
 
-      const auto required_fees = get_transaction_fee( amount.asset_id );
+      const oasset_record asset_record = my->_blockchain->get_asset_record( amount.asset_id );
+      FC_ASSERT( asset_record.valid() );
+
+      const asset required_fees = asset_record->is_user_issued() ? get_transaction_fee() : get_transaction_fee( amount.asset_id );
+
+      const asset withdrawal_fee = asset( asset_record->withdrawal_fee, amount.asset_id );
 
       if( required_fees.asset_id == amount.asset_id )
       {
-          my->withdraw_to_transaction( amount + required_fees,
+          my->withdraw_to_transaction( amount + withdrawal_fee + required_fees,
                                        sender_account->name,
                                        trx,
                                        required_signatures );
       }
       else
       {
-          my->withdraw_to_transaction( amount,
+          my->withdraw_to_transaction( amount + withdrawal_fee,
                                        sender_account->name,
                                        trx,
                                        required_signatures );
@@ -3396,7 +3406,7 @@ namespace detail {
    wallet_transaction_record wallet::uia_update_whitelist(
            const string& paying_account,
            const string& asset_symbol,
-           const address& addr,
+           const string& account_name,
            const bool add_to_whitelist,
            const bool sign
            )
@@ -3406,6 +3416,9 @@ namespace detail {
 
       const oasset_record asset_record = my->_blockchain->get_asset_record( asset_symbol );
       FC_ASSERT( asset_record.valid() );
+
+      const oaccount_record account_record = my->_blockchain->get_account_record( account_name );
+      FC_ASSERT( account_record.valid() );
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
@@ -3420,9 +3433,9 @@ namespace detail {
                                    required_signatures );
 
       if( add_to_whitelist )
-          trx.uia_add_to_whitelist( asset_record->id, addr );
+          trx.uia_add_to_whitelist( asset_record->id, account_record->id );
       else
-          trx.uia_remove_from_whitelist( asset_record->id, addr );
+          trx.uia_remove_from_whitelist( asset_record->id, account_record->id );
 
       for( const address& authority : asset_record->authority.owners )
           required_signatures.insert( authority );
@@ -3435,9 +3448,9 @@ namespace detail {
 
       string memo;
       if( add_to_whitelist )
-          memo = "add " + string( addr ) + " to";
+          memo = "add " + account_record->name + " to";
       else
-          memo = "remove " + string( addr ) + " from";
+          memo = "remove " + account_record->name + " from";
 
       memo += "whitelist for " + asset_record->symbol;
 
@@ -3451,7 +3464,68 @@ namespace detail {
       record.trx = trx;
 
       return record;
-   } FC_CAPTURE_AND_RETHROW( (paying_account)(asset_symbol)(addr)(add_to_whitelist)(sign) ) }
+   } FC_CAPTURE_AND_RETHROW( (paying_account)(asset_symbol)(account_name)(add_to_whitelist)(sign) ) }
+
+   wallet_transaction_record wallet::uia_retract_balance(
+           const balance_id_type& balance_id,
+           const string& account_name,
+           const bool sign
+           )
+   { try {
+      if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+      if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
+
+      const obalance_record balance_record = my->_blockchain->get_balance_record( balance_id );
+      FC_ASSERT( balance_record.valid() );
+
+      const asset balance = balance_record->get_spendable_balance( my->_blockchain->get_pending_state()->now() );
+      FC_ASSERT( balance.amount > 0 );
+
+      const oasset_record asset_record = my->_blockchain->get_asset_record( balance.asset_id );
+      FC_ASSERT( asset_record.valid() );
+
+      const owallet_account_record account_record = my->_wallet_db.lookup_account( account_name );
+      FC_ASSERT( account_record.valid() );
+
+      signed_transaction     trx;
+      unordered_set<address> required_signatures;
+
+      trx.expiration = blockchain::now() + get_transaction_expiration();
+
+      const auto required_fees = get_transaction_fee();
+
+      my->withdraw_to_transaction( required_fees,
+                                   account_name,
+                                   trx,
+                                   required_signatures );
+
+      trx.withdraw( balance_id, balance.amount );
+
+      const string memo = "retract balance " + string( balance_id );
+
+      const public_key_type recipient_key = my->deposit_from_transaction( trx,
+                                                                          balance,
+                                                                          *account_record,
+                                                                          my->generic_recipient_to_contact( account_name ),
+                                                                          memo );
+
+      for( const address& authority : asset_record->authority.owners )
+          required_signatures.insert( authority );
+
+      if( sign )
+          my->sign_transaction( trx, required_signatures );
+
+      auto entry = ledger_entry();
+      entry.to_account = recipient_key;
+      entry.memo = memo;
+
+      auto record = wallet_transaction_record();
+      record.ledger_entries.push_back( entry );
+      record.fee = required_fees;
+      record.trx = trx;
+
+      return record;
+   } FC_CAPTURE_AND_RETHROW( (balance_id)(account_name)(sign) ) }
 
    wallet_transaction_record wallet::update_registered_account(
            const string& account_to_update,
@@ -3858,10 +3932,6 @@ namespace detail {
               fee += fee + fee;
               fee = fee * *feed_price;
           }
-      }
-      else if( asset_record->is_user_issued() )
-      {
-          fee = asset( asset_record->withdrawal_fee, asset_record->id );
       }
 
       return fee;

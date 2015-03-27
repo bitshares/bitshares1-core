@@ -126,7 +126,7 @@ default (unlocked) >>> debug_wait_for_block_by_number 1 rlast
 OK
 default (unlocked) >>> wallet_uia_create delegate0 FAKE.ABC unregistered_primary_symbol "unused" 10000.00
 Command failed with exception: Assert Exception (10)
-parent_asset_record.valid(): 
+parent_asset_record.valid() && parent_asset_record->is_user_issued(): 
 
 
 

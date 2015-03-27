@@ -24,15 +24,17 @@ debug_clear_errors [start_time] [first_error_number] [limit]
 debug_get_call_statistics 
 debug_get_client_name 
 debug_list_errors [first_error_number] [limit] [filename] 
-debug_list_errors_brief [first_error_number] [limit] [filename] 
-debug_update_logging_config 
+debug_list_errors_brief [first_error_number] [limit] [filename]
+debug_list_matching_errors
+debug_stop_before_block <block_number>
+debug_update_logging_config
+debug_verify_market_matching <enable_flag>
 debug_wait_block_interval <wait_time_in_block_intervals> 
 debug_write_errors_to_file [path] [start_time] 
 disk_usage 
 execute_command_line <input> 
 execute_script <script> 
 fetch_welcome_package <arguments> 
-get_registration_requests 
 http_start_server [port] 
 mail_archive_message <message_id> 
 mail_cancel_message <message_id> 
@@ -70,7 +72,6 @@ rpc_set_password [password]
 rpc_set_username [username] 
 rpc_start_server [port] 
 stop 
-wallet_account_historic_balance <time> [account_name] 
 wallet_account_vesting_balances [account_name] 
 wallet_account_yield [account_name] 
 wallet_add_transaction_note_experimental <transaction_id> <note> 
@@ -108,17 +109,11 @@ wallet_remove_transaction <transaction_id>
 wallet_repair_records [collecting_account_name] 
 wallet_scan_transaction <transaction_id> [overwrite_existing] 
 wallet_scan_transaction_experimental <transaction_id> [overwrite_existing] 
-wallet_set_custom_data <type> <item> <custom_data>
 wallet_set_preferred_mail_servers <account_name> <server_list> [paying_account] 
 wallet_set_transaction_expiration_time <seconds> 
 wallet_sign_hash <signer> <hash> 
 wallet_transaction_history_experimental [account_name] 
 wallet_uia_issue_to_addresses <symbol> <addresses>
-wallet_uia_update_active_flags <paying_account> <asset_symbol> <flag> <enable_instead_of_disable>
-wallet_uia_update_authority_permissions <paying_account> <asset_symbol> <permission> <add_instead_of_remove>
-wallet_uia_update_description <paying_account> <asset_symbol> [name] [description] [public_data]
-wallet_uia_update_supply <paying_account> <asset_symbol> <max_supply_with_trailing_decimals>
-wallet_uia_update_whitelist <paying_account> <asset_symbol> <address_or_public_key> <add_to_whitelist>
 wallet_withdraw_from_address <amount> <symbol> <from_address> <to> [strategy] [sign_and_broadcast] [builder_path] 
 wallet_withdraw_from_legacy_address <amount> <symbol> <from_address> <to> [strategy] [sign_and_broadcast] [builder_path]
 
@@ -184,6 +179,7 @@ wallet_account_balance [account_name]
 wallet_account_balance_extended [account_name] 
 wallet_account_balance_ids [account_name] 
 wallet_account_create <account_name>
+wallet_account_historic_balance <time> [account_name] 
 wallet_account_list_public_keys <account_name> 
 wallet_account_order_list [account_name] [limit] 
 wallet_account_register <account_name> <pay_from_account> [public_data] [delegate_pay_rate] [account_type] 
@@ -194,6 +190,7 @@ wallet_account_update_active_key <account_to_update> <pay_from_account> [new_act
 wallet_account_update_registration <account_name> <pay_from_account> [public_data] [delegate_pay_rate] 
 wallet_account_vote_summary [account_name] 
 wallet_add_contact <contact> [label]
+wallet_address_create <account_name> [label] [legacy_network_byte] 
 wallet_approve <name> [approval]
 wallet_approve
 wallet_backup_create <json_filename> 
@@ -237,6 +234,7 @@ wallet_release_escrow <pay_fee_with_account_name> <escrow_balance_id> <released_
 wallet_remove_contact <contact> 
 wallet_rescan_blockchain [start_block_num] [limit] [scan_in_background]
 wallet_set_automatic_backups <enabled> 
+wallet_set_custom_data <type> <item> <custom_data>
 wallet_set_setting <name> <value> 
 wallet_set_transaction_fee <fee> 
 wallet_set_transaction_scanning <enabled> 
@@ -245,7 +243,12 @@ wallet_transfer_from_with_escrow <amount_to_transfer> <asset_symbol> <paying_acc
 wallet_uia_collect_fees <asset_symbol> <recipient> [memo_message]
 wallet_uia_create <issuer_account> <symbol> <name> <description> <max_supply_with_trailing_decimals>
 wallet_uia_issue <asset_amount> <asset_symbol> <recipient> [memo_message]
+wallet_uia_update_active_flags <paying_account> <asset_symbol> <flag> <enable_instead_of_disable>
+wallet_uia_update_authority_permissions <paying_account> <asset_symbol> <permission> <add_instead_of_remove>
+wallet_uia_update_description <paying_account> <asset_symbol> [name] [description] [public_data]
 wallet_uia_update_fees <paying_account> <asset_symbol> [withdrawal_fee] [market_fee_rate]
+wallet_uia_update_supply <paying_account> <asset_symbol> <max_supply_with_trailing_decimals>
+wallet_uia_update_whitelist <paying_account> <asset_symbol> <address_or_public_key> <add_to_whitelist>
 wallet_unlock <timeout> <passphrase>
 wallet_verify_titan_deposit <transaction_id_prefix>
 

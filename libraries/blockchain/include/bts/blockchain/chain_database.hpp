@@ -143,8 +143,7 @@ namespace bts { namespace blockchain {
          oblock_record               get_block_record( const block_id_type& block_id )const;
          oblock_record               get_block_record( uint32_t block_num )const;
 
-         virtual oprice              get_active_feed_price( const asset_id_type quote_id,
-                                                            const asset_id_type base_id = 0 )const override;
+         virtual oprice              get_active_feed_price( const asset_id_type quote_id )const override;
 
          vector<feed_record>         get_feeds_for_asset( const asset_id_type quote_id, const asset_id_type base_id )const;
          vector<feed_record>         get_feeds_from_delegate( const account_id_type delegate_id )const;
@@ -156,11 +155,6 @@ namespace bts { namespace blockchain {
                                                         const transaction_record&  ) override;
 
          vector<burn_record>         fetch_burn_records( const string& account_name )const;
-
-         virtual void                store_feed_record( const feed_record& r ) override;
-
-         unordered_map<balance_id_type, balance_record>     get_balances( const balance_id_type& first,
-                                                                          uint32_t limit )const;
 
          unordered_map<balance_id_type, balance_record>     get_balances_for_address( const address& addr )const;
          unordered_map<balance_id_type, balance_record>     get_balances_for_key( const public_key_type& key )const;
@@ -284,7 +278,10 @@ namespace bts { namespace blockchain {
          }
 
          // Applies only when pushing new blocks; gets enabled in delegate loop
-         bool                               _verify_transaction_signatures = false;
+         bool _verify_transaction_signatures = false;
+
+         vector<string> debug_get_matching_errors() const;
+         bool _debug_verify_market_matching = false;
 
       private:
          unique_ptr<detail::chain_database_impl> my;

@@ -31,6 +31,9 @@ FC_DECLARE_DERIVED_EXCEPTION( wrong_chain_id,                   bts::blockchain:
 FC_DECLARE_DERIVED_EXCEPTION( unknown_block,                    bts::blockchain::blockchain_exception, 30024, "unknown block" );
 FC_DECLARE_DERIVED_EXCEPTION( block_older_than_undo_history,    bts::blockchain::blockchain_exception, 30025, "block is older than our undo history allows us to process" );
 FC_DECLARE_DERIVED_EXCEPTION( unexpected_supply_change,         bts::blockchain::blockchain_exception, 30026, "unexpected supply change" );
+FC_DECLARE_DERIVED_EXCEPTION( invalid_price,                    bts::blockchain::blockchain_exception, 30027, "invalid price" );
+FC_DECLARE_DERIVED_EXCEPTION( invalid_apr,                      bts::blockchain::blockchain_exception, 30028, "invalid apr" );
+FC_DECLARE_DERIVED_EXCEPTION( invalid_amount,                   bts::blockchain::blockchain_exception, 30029, "invalid amount" );
 
 FC_DECLARE_EXCEPTION(         evaluation_error,                                                    31000, "Evaluation Error" );
 FC_DECLARE_DERIVED_EXCEPTION( negative_deposit,                 bts::blockchain::evaluation_error, 31001, "negative deposit" );
@@ -78,6 +81,9 @@ FC_DECLARE_DERIVED_EXCEPTION( outstanding_shares_exist,         bts::blockchain:
 FC_DECLARE_DERIVED_EXCEPTION( invalid_fee_rate,                 bts::blockchain::evaluation_error, 35014, "invalid fee rate" );
 FC_DECLARE_DERIVED_EXCEPTION( invalid_authority,                bts::blockchain::evaluation_error, 35015, "invalid authority" );
 FC_DECLARE_DERIVED_EXCEPTION( permission_not_available,         bts::blockchain::evaluation_error, 35016, "permission not available" );
+FC_DECLARE_DERIVED_EXCEPTION( invalid_whitelist,                bts::blockchain::evaluation_error, 35017, "invalid whitelist" );
+FC_DECLARE_DERIVED_EXCEPTION( not_on_whitelist,                 bts::blockchain::evaluation_error, 35018, "not on whitelist" );
+FC_DECLARE_DERIVED_EXCEPTION( market_halted,                    bts::blockchain::evaluation_error, 35019, "market halted" );
 
 FC_DECLARE_DERIVED_EXCEPTION( delegate_vote_limit,              bts::blockchain::evaluation_error, 36001, "delegate_vote_limit" );
 FC_DECLARE_DERIVED_EXCEPTION( insufficient_fee,                 bts::blockchain::evaluation_error, 36002, "insufficient fee" );

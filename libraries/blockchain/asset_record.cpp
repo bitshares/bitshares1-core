@@ -5,16 +5,34 @@
 
 namespace bts { namespace blockchain {
 
-    bool asset_record::address_is_whitelisted( const address& addr )const
+    bool asset_record::address_is_approved( const chain_interface& db, const address& addr )const
     { try {
-        if( !flag_is_active( restricted_deposits ) )
+        if( !flag_is_active( restricted_accounts ) )
             return true;
 
         if( authority.owners.count( addr ) > 0 )
             return true;
 
-        return whitelist.count( addr ) > 0;
+        const oaccount_record account_record = db.get_account_record( addr );
+        if( account_record.valid() && !account_record->is_retracted() )
+        {
+            if( account_record->id == issuer_id || whitelist.count( account_record->id ) > 0 )
+            {
+                if( account_record->owner_address() == addr )
+                    return true;
+
+                if( account_record->active_address() == addr )
+                    return true;
+            }
+        }
+
+        return false;
     } FC_CAPTURE_AND_RETHROW( (addr) ) }
+
+    bool asset_record::authority_is_retracting( const transaction_evaluation_state& eval_state )const
+    { try {
+        return flag_is_active( retractable_balances ) && eval_state.verify_authority( authority );
+    } FC_CAPTURE_AND_RETHROW() }
 
     uint64_t asset_record::share_string_to_precision_unsafe( const string& share_string_with_trailing_decimals )
     { try {

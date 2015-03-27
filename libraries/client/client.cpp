@@ -154,7 +154,7 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
          ("input-log", program_options::value< vector<string> >(), "Set log file with CLI commands to execute at startup")
          ("log-commands", "Log all command input and output")
          ("ulog", program_options::value<bool>()->default_value( true ), "Enable CLI user logging")
-         
+
          ("stop-before-block", program_options::value<uint32_t>(), "stop before given block number")
 
          ("growl", program_options::value<std::string>()->implicit_value("127.0.0.1"), "Send notifications about potential problems to Growl")
@@ -227,40 +227,36 @@ fc::logging_config create_default_logging_config( const fc::path& data_dir, bool
 
    fc::file_appender::config ac;
    ac.filename             = log_dir / "default" / "default.log";
-   ac.truncate             = false;
    ac.flush                = true;
    ac.rotate               = true;
    ac.rotation_interval    = fc::hours( 1 );
    ac.rotation_limit       = fc::days( 1 );
-   ac.rotation_compression = true;
+   ac.rotation_compression = false;
 
    std::cout << "Logging to file: " << (data_dir / ac.filename).preferred_string() << "\n";
 
    fc::file_appender::config ac_rpc;
    ac_rpc.filename             = log_dir / "rpc" / "rpc.log";
-   ac_rpc.truncate             = false;
    ac_rpc.flush                = true;
    ac_rpc.rotate               = true;
    ac_rpc.rotation_interval    = fc::hours( 1 );
    ac_rpc.rotation_limit       = fc::days( 1 );
-   ac_rpc.rotation_compression = true;
+   ac_rpc.rotation_compression = false;
 
    std::cout << "Logging RPC to file: " << (data_dir / ac_rpc.filename).preferred_string() << "\n";
 
    fc::file_appender::config ac_blockchain;
    ac_blockchain.filename             = log_dir / "blockchain" / "blockchain.log";
-   ac_blockchain.truncate             = false;
    ac_blockchain.flush                = true;
    ac_blockchain.rotate               = true;
    ac_blockchain.rotation_interval    = fc::hours( 1 );
    ac_blockchain.rotation_limit       = fc::days( 1 );
-   ac_blockchain.rotation_compression = true;
+   ac_blockchain.rotation_compression = false;
 
    std::cout << "Logging blockchain to file: " << (data_dir / ac_blockchain.filename).preferred_string() << "\n";
 
    fc::file_appender::config ac_p2p;
    ac_p2p.filename             = log_dir / "p2p" / "p2p.log";
-   ac_p2p.truncate             = false;
 #ifdef NDEBUG
    ac_p2p.flush                = false;
 #else // NDEBUG
@@ -269,7 +265,7 @@ fc::logging_config create_default_logging_config( const fc::path& data_dir, bool
    ac_p2p.rotate               = true;
    ac_p2p.rotation_interval    = fc::hours( 1 );
    ac_p2p.rotation_limit       = fc::days( 1 );
-   ac_p2p.rotation_compression = true;
+   ac_p2p.rotation_compression = false;
 
    std::cout << "Logging P2P to file: " << (data_dir / ac_p2p.filename).preferred_string() << "\n";
 
@@ -786,8 +782,8 @@ block_fork_data client_impl::on_new_block(const full_block& block,
       {
          FC_ASSERT( !_simulate_disconnect );
          ilog("Received a new block from the p2p network, current head block is ${num}, "
-              "new block is ${block}, current head block is ${num}",
-              ("num", _chain_db->get_head_block_num())("block", block)("num", _chain_db->get_head_block_num()));
+              "new block is ${new_num}, current head block is ${num}",
+              ("num", _chain_db->get_head_block_num())("new_num", block.block_num)("num", _chain_db->get_head_block_num()));
          fc::optional<block_fork_data> fork_data = _chain_db->get_block_fork_data( block_id );
 
          if( fork_data && fork_data->is_known )
@@ -853,8 +849,7 @@ block_fork_data client_impl::on_new_block(const full_block& block,
          }
       } FC_RETHROW_EXCEPTIONS(warn, "Error pushing block ${block_number} - ${block_id}",
                               ("block_id",block.id())
-                              ("block_number",block.block_num)
-                              ("block", block) );
+                              ("block_number",block.block_num) );
    }
    catch ( const fc::exception& e )
    {

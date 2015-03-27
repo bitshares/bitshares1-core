@@ -1,5 +1,7 @@
 This will show you how to make use of the multisig feature using the command line.
 
+Note, that only addresses are used. Do not try this with public keys.
+
 
 First, have each party to the multisig create a normal address.
 
@@ -16,7 +18,7 @@ First, have each party to the multisig create a normal address.
 Now lets deposit from account 'angel' to a 2-of-3 multisig with the above users. Notice the last two arguments
 are the required number of signatures and the allowed addresses.
 
-    >>> wallet_multisig_deposit 100 BTS alice 2 [BTS...alice-addres..., BTS...bob-address..., BTS...carol-address...]
+    >>> wallet_multisig_deposit 100 BTS angel 2 [BTS...alice-addres..., BTS...bob-address..., BTS...carol-address...]
 
 That's it! Making a 2-of-2 or whatever other combination you like is done the same way.
 

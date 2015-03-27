@@ -763,26 +763,26 @@ wallet_transaction_record detail::client_impl::wallet_uia_update_authority_permi
 wallet_transaction_record detail::client_impl::wallet_uia_update_whitelist(
         const string& paying_account,
         const string& asset_symbol,
-        const string& address_or_public_key,
+        const string& account_name,
         const bool add_to_whitelist
         )
 { try {
-    address addr;
-    try
-    {
-        addr = address( public_key_type( address_or_public_key ) );
-    }
-    catch( const fc::exception& )
-    {
-        addr = address( address_or_public_key );
-    }
-
-    auto record = _wallet->uia_update_whitelist( paying_account, asset_symbol, addr, add_to_whitelist, true );
+    auto record = _wallet->uia_update_whitelist( paying_account, asset_symbol, account_name, add_to_whitelist, true );
     _wallet->cache_transaction( record );
     network_broadcast_transaction( record.trx );
-
     return record;
-} FC_CAPTURE_AND_RETHROW( (paying_account)(asset_symbol)(address_or_public_key)(add_to_whitelist) ) }
+} FC_CAPTURE_AND_RETHROW( (paying_account)(asset_symbol)(account_name)(add_to_whitelist) ) }
+
+wallet_transaction_record detail::client_impl::wallet_uia_retract_balance(
+        const balance_id_type& balance_id,
+        const string& account_name
+        )
+{ try {
+    auto record = _wallet->uia_retract_balance( balance_id, account_name, true );
+    _wallet->cache_transaction( record );
+    network_broadcast_transaction( record.trx );
+    return record;
+} FC_CAPTURE_AND_RETHROW( (balance_id)(account_name) ) }
 
 vector<string> detail::client_impl::wallet_list() const
 {

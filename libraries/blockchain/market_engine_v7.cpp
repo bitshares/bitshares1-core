@@ -46,7 +46,8 @@ namespace bts { namespace blockchain { namespace detail {
           _collateral_itr = _db_impl._collateral_db.lower_bound( market_index_key( next_pair ) );
 
           int last_orders_filled = -1;
-          asset trading_volume(0, base_id);
+            asset base_volume( 0, base_id );
+            asset quote_volume( 0, quote_id );
           price opening_price, closing_price, highest_price, lowest_price;
 
           if( !_ask_itr.valid() )
@@ -99,7 +100,7 @@ namespace bts { namespace blockchain { namespace detail {
           }
           else
           {
-              _feed_price = _db_impl.self->get_active_feed_price( _quote_id, _base_id );
+              _feed_price = _db_impl.self->get_active_feed_price( _quote_id );
               // Market issued assets cannot match until the first time there is a median feed
               if( quote_asset->is_market_issued() )
               {
@@ -304,10 +305,8 @@ namespace bts { namespace blockchain { namespace detail {
             quote_asset->collected_fees += mtrx.quote_fees.amount;
             base_asset->collected_fees += mtrx.base_fees.amount;
 
-            if( mtrx.ask_received.asset_id == 0 )
-              trading_volume += mtrx.ask_received;
-            else if( mtrx.bid_received.asset_id == 0 )
-              trading_volume += mtrx.bid_received;
+            base_volume += mtrx.bid_received;
+            quote_volume += mtrx.ask_received;
             if( opening_price == price() )
               opening_price = mtrx.bid_price;
             closing_price = mtrx.bid_price;
@@ -333,7 +332,8 @@ namespace bts { namespace blockchain { namespace detail {
               _pending_state->store_market_status( *market_stat );
 
               // Remark: only prices of matched orders be updated to market history
-              update_market_history( trading_volume, highest_price, lowest_price, opening_price, closing_price, timestamp );
+            update_market_history( base_volume, quote_volume, highest_price, lowest_price,
+                opening_price, closing_price, timestamp );
           }
 
           _pending_state->apply_changes();
@@ -860,22 +860,21 @@ namespace bts { namespace blockchain { namespace detail {
     *  This method should not affect market execution or validation and
     *  is for historical purposes only.
     */
-  void market_engine_v7::update_market_history( const asset& trading_volume,
-                                             const price& highest_price,
-                                             const price& lowest_price,
-                                             const price& opening_price,
-                                             const price& closing_price,
-                                             const fc::time_point_sec timestamp )
+void market_engine_v7::update_market_history( const asset& base_volume,
+                                           const asset& quote_volume,
+                                           const price& highest_price,
+                                           const price& lowest_price,
+                                           const price& opening_price,
+                                           const price& closing_price,
+                                           const fc::time_point_sec timestamp )
   {
           // Remark: only prices of matched orders be updated to market history
-          if( trading_volume.amount > 0 )
-          {
+            if( base_volume.amount == 0 && quote_volume.amount == 0)
+                return;
+
             market_history_key key(_quote_id, _base_id, market_history_key::each_block, _db_impl._head_block_header.timestamp);
-            market_history_record new_record(highest_price,
-                                            lowest_price,
-                                            opening_price,
-                                            closing_price,
-                                            trading_volume.amount);
+            market_history_record new_record( highest_price, lowest_price, opening_price, closing_price,
+                base_volume.amount, quote_volume.amount );
 
             //LevelDB iterators are dumb and don't support proper past-the-end semantics.
             auto last_key_itr = _db_impl._market_history_db.lower_bound(key);
@@ -904,7 +903,8 @@ namespace bts { namespace blockchain { namespace detail {
             if( auto opt = _db_impl._market_history_db.fetch_optional(old_key) )
             {
               auto old_record = *opt;
-              old_record.volume += new_record.volume;
+                old_record.base_volume += new_record.base_volume;
+                old_record.quote_volume += new_record.quote_volume;
               old_record.closing_price = new_record.closing_price;
               if( new_record.highest_bid > old_record.highest_bid || new_record.lowest_ask < old_record.lowest_ask )
               {
@@ -922,7 +922,8 @@ namespace bts { namespace blockchain { namespace detail {
             if( auto opt = _db_impl._market_history_db.fetch_optional(old_key) )
             {
               auto old_record = *opt;
-              old_record.volume += new_record.volume;
+                old_record.base_volume += new_record.base_volume;
+                old_record.quote_volume += new_record.quote_volume;
               old_record.closing_price = new_record.closing_price;
               if( new_record.highest_bid > old_record.highest_bid || new_record.lowest_ask < old_record.lowest_ask )
               {
@@ -934,7 +935,6 @@ namespace bts { namespace blockchain { namespace detail {
             }
             else
               _pending_state->market_history[old_key] = new_record;
-          }
   }
 
   asset market_engine_v7::get_interest_paid_fixed(const asset& total_amount_paid, const price& original_apr, uint32_t age_seconds)

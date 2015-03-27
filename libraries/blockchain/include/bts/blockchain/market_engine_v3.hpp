@@ -23,13 +23,13 @@ namespace bts { namespace blockchain { namespace detail {
       *  This method should not affect market execution or validation and
       *  is for historical purposes only.
       */
-    void update_market_history( const asset& trading_volume,
+    void update_market_history( const asset& base_volume,
+                                const asset& quote_volume,
                                 const price& highest_price,
                                 const price& lowest_price,
                                 const price& opening_price,
                                 const price& closing_price,
                                 const fc::time_point_sec timestamp );
-
 
     pending_chain_state_ptr       _pending_state;
     pending_chain_state_ptr       _prior_state;

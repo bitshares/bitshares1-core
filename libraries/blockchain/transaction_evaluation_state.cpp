@@ -7,7 +7,7 @@
 
 namespace bts { namespace blockchain {
 
-   bool transaction_evaluation_state::verify_authority( const multisig_meta_info& siginfo )
+   bool transaction_evaluation_state::verify_authority( const multisig_meta_info& siginfo )const
    { try {
       uint32_t sig_count = 0;
       ilog("@n verifying authority");

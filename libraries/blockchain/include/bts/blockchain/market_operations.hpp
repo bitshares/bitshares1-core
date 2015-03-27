@@ -19,6 +19,7 @@ struct bid_operation
     market_index_key bid_index;
 
     void evaluate( transaction_evaluation_state& eval_state )const;
+    void evaluate_v1( transaction_evaluation_state& eval_state )const;
 };
 
 struct ask_operation
@@ -33,6 +34,7 @@ struct ask_operation
     market_index_key  ask_index;
 
     void evaluate( transaction_evaluation_state& eval_state )const;
+    void evaluate_v2( transaction_evaluation_state& eval_state )const;
     void evaluate_v1( transaction_evaluation_state& eval_state )const;
 };
 
@@ -48,6 +50,7 @@ struct short_operation
     market_index_key_ext   short_index;
 
     void evaluate( transaction_evaluation_state& eval_state )const;
+    void evaluate_v3( transaction_evaluation_state& eval_state )const;
     void evaluate_v2( transaction_evaluation_state& eval_state )const;
     void evaluate_v1( transaction_evaluation_state& eval_state )const;
 };
@@ -64,7 +67,7 @@ struct cover_operation
 
     share_type          amount;
     market_index_key    cover_index;
-    fc::optional<price> new_cover_price;
+    fc::optional<price> reserved;
 
     void evaluate( transaction_evaluation_state& eval_state )const;
     void evaluate_v5( transaction_evaluation_state& eval_state )const;
@@ -95,33 +98,11 @@ struct add_collateral_operation
     void evaluate_v1( transaction_evaluation_state& eval_state )const;
 };
 
-/**
-*  The call price can be set to any price above the minimum call
-*  price which is defined as 50% of the collateral being required
-*  to cover 100% of the debt.
-*
-*  This can be used to protect the short as a "stop loss" and to
-*  allow the short to exit their position without having to keep
-*  extra BTS on the side to buy USD to cover the order.
-*/
-struct update_cover_operation
-{
-    static const operation_type_enum type;
-
-    market_index_key        cover_index;
-    price                   new_call_price;
-    optional<address>       new_owner;
-    optional<slate_id_type> new_slate;
-
-    void evaluate( transaction_evaluation_state& eval_state )const;
-};
-
 } } // bts::blockchain
 
-FC_REFLECT( bts::blockchain::bid_operation, (amount)(bid_index))
-FC_REFLECT( bts::blockchain::ask_operation, (amount)(ask_index))
+FC_REFLECT( bts::blockchain::bid_operation, (amount)(bid_index) )
+FC_REFLECT( bts::blockchain::ask_operation, (amount)(ask_index) )
 FC_REFLECT( bts::blockchain::short_operation, (amount)(short_index) )
 FC_REFLECT( bts::blockchain::short_operation_v1, (amount)(short_index) )
-FC_REFLECT( bts::blockchain::cover_operation, (amount)(cover_index)(new_cover_price) )
-FC_REFLECT( bts::blockchain::add_collateral_operation, (amount)(cover_index))
-FC_REFLECT( bts::blockchain::update_cover_operation, (cover_index)(new_call_price)(new_owner)(new_slate) )
+FC_REFLECT( bts::blockchain::cover_operation, (amount)(cover_index)(reserved) )
+FC_REFLECT( bts::blockchain::add_collateral_operation, (amount)(cover_index) )

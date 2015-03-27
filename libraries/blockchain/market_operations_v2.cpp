@@ -6,6 +6,58 @@
 
 namespace bts { namespace blockchain {
 
+void ask_operation::evaluate_v2( transaction_evaluation_state& eval_state )const
+{ try {
+   if( eval_state.pending_state()->get_head_block_num() < BTS_V0_4_21_FORK_BLOCK_NUM )
+      return evaluate_v1( eval_state );
+
+   if( this->ask_index.order_price == price() )
+      FC_CAPTURE_AND_THROW( zero_price, (ask_index.order_price) );
+
+   auto owner = this->ask_index.owner;
+
+   auto base_asset_rec = eval_state.pending_state()->get_asset_record( ask_index.order_price.base_asset_id );
+   auto quote_asset_rec = eval_state.pending_state()->get_asset_record( ask_index.order_price.quote_asset_id );
+   FC_ASSERT( base_asset_rec.valid() );
+   FC_ASSERT( quote_asset_rec.valid() );
+
+   const bool authority_is_retracting = base_asset_rec->flag_is_active( asset_record::retractable_balances )
+                                        && eval_state.verify_authority( base_asset_rec->authority );
+
+   if( !authority_is_retracting && !eval_state.check_signature( owner ) )
+      FC_CAPTURE_AND_THROW( missing_signature, (ask_index.owner) );
+
+   asset delta_amount  = this->get_amount();
+
+   auto current_ask   = eval_state.pending_state()->get_ask_record( this->ask_index );
+
+   if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
+   if( this->amount <  0 ) // withdraw
+   {
+       if( NOT current_ask )
+          FC_CAPTURE_AND_THROW( unknown_market_order, (ask_index) );
+
+       if( llabs(this->amount) > current_ask->balance )
+          FC_CAPTURE_AND_THROW( insufficient_funds, (amount)(current_ask->balance) );
+
+       // add the delta amount to the eval state that we withdrew from the ask
+       eval_state.add_balance( -delta_amount );
+   }
+   else // this->amount > 0 - deposit
+   {
+       if( NOT current_ask )  // then initialize to 0
+         current_ask = order_record();
+       // sub the delta amount from the eval state that we deposited to the ask
+       eval_state.sub_balance( delta_amount );
+   }
+
+   current_ask->last_update = eval_state.pending_state()->now();
+   current_ask->balance     += this->amount;
+   FC_ASSERT( current_ask->balance >= 0, "", ("current_ask",current_ask)  );
+
+   eval_state.pending_state()->store_ask_record( this->ask_index, *current_ask );
+} FC_CAPTURE_AND_RETHROW( (*this) ) }
+
 void short_operation::evaluate_v2( transaction_evaluation_state& eval_state )const
 {
    if( eval_state.pending_state()->get_head_block_num() < BTS_V0_4_21_FORK_BLOCK_NUM )
@@ -72,7 +124,7 @@ void cover_operation::evaluate_v2( transaction_evaluation_state& eval_state )con
    if( this->cover_index.order_price == price() )
       FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );
 
-   if( this->amount == 0 && !this->new_cover_price )
+   if( this->amount == 0 )
       FC_CAPTURE_AND_THROW( zero_amount );
 
    if( this->amount < 0 )
@@ -100,12 +152,8 @@ void cover_operation::evaluate_v2( transaction_evaluation_state& eval_state )con
       auto new_call_price = asset(current_cover->payoff_balance, delta_amount.asset_id) /
                             asset((current_cover->collateral_balance*2)/3, 0);
 
-      if( this->new_cover_price && (*this->new_cover_price > new_call_price) )
-         eval_state.pending_state()->store_collateral_record( market_index_key( *this->new_cover_price, this->cover_index.owner),
-                                                             *current_cover );
-      else
-         eval_state.pending_state()->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
-                                                             *current_cover );
+      eval_state.pending_state()->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
+                                                           *current_cover );
    }
    else // withdraw the collateral to the transaction to be deposited at owners discretion / cover fees
    {
