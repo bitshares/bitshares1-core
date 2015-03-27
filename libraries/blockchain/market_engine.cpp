@@ -926,13 +926,8 @@ void market_engine::update_market_history( const asset& base_volume,
     }
 } FC_CAPTURE_AND_RETHROW( (base_volume)(quote_volume)(highest_price)(lowest_price)(opening_price)(closing_price)(timestamp) ) }
 
-asset market_engine::get_interest_paid( const asset& total_amount_paid, const price& original_apr, uint32_t age_seconds )
+asset market_engine::get_interest_paid( const asset& total_amount_paid, const price& apr, uint32_t age_seconds )
 { try {
-    static const fc::uint128 max_apr = fc::uint128( BTS_BLOCKCHAIN_MAX_SHORT_APR_PCT ) * FC_REAL128_PRECISION / 100;
-    price apr = original_apr;
-    if( apr.ratio > max_apr )
-        apr.ratio = max_apr;
-
     // TOTAL_PAID = DELTA_PRINCIPLE + DELTA_PRINCIPLE * APR * PERCENT_OF_YEAR
     // DELTA_PRINCIPLE = TOTAL_PAID / (1 + APR*PERCENT_OF_YEAR)
     // INTEREST_PAID  = TOTAL_PAID - DELTA_PRINCIPLE
@@ -948,15 +943,10 @@ asset market_engine::get_interest_paid( const asset& total_amount_paid, const pr
     fc::real128 interest_paid   = total_paid - delta_principle;
 
     return asset( interest_paid.to_uint64(), total_amount_paid.asset_id );
-} FC_CAPTURE_AND_RETHROW( (total_amount_paid)(original_apr)(age_seconds) ) }
+} FC_CAPTURE_AND_RETHROW( (total_amount_paid)(apr)(age_seconds) ) }
 
-asset market_engine::get_interest_owed( const asset& principle, const price& original_apr, uint32_t age_seconds )
+asset market_engine::get_interest_owed( const asset& principle, const price& apr, uint32_t age_seconds )
 { try {
-    static const fc::uint128 max_apr = fc::uint128( BTS_BLOCKCHAIN_MAX_SHORT_APR_PCT ) * FC_REAL128_PRECISION / 100;
-    price apr = original_apr;
-    if( apr.ratio > max_apr )
-        apr.ratio = max_apr;
-
     // INTEREST_OWED = TOTAL_PRINCIPLE * APR * PERCENT_OF_YEAR
     fc::real128 total_principle( principle.amount );
     fc::real128 apr_n( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.base_asset_id ) * apr).amount );
@@ -969,7 +959,7 @@ asset market_engine::get_interest_owed( const asset& principle, const price& ori
     fc::real128 interest_owed   = total_principle * iapr * percent_of_year;
 
     return asset( interest_owed.to_uint64(), principle.asset_id );
-} FC_CAPTURE_AND_RETHROW( (principle)(original_apr)(age_seconds) ) }
+} FC_CAPTURE_AND_RETHROW( (principle)(apr)(age_seconds) ) }
 
 asset market_engine::get_current_cover_debt() const
 { try {

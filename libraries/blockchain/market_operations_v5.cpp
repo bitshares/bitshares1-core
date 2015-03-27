@@ -34,7 +34,7 @@ void cover_operation::evaluate_v5( transaction_evaluation_state& eval_state )con
    // subtract this from the transaction
    eval_state.sub_balance( delta_amount );
 
-   auto current_cover   = eval_state.pending_state()->get_collateral_record( this->cover_index );
+   auto current_cover = eval_state.pending_state()->get_collateral_record( this->cover_index );
    if( NOT current_cover )
       FC_CAPTURE_AND_THROW( unknown_market_order, (cover_index) );
 

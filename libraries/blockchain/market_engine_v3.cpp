@@ -58,7 +58,9 @@ namespace bts { namespace blockchain { namespace detail {
               price opening_price, closing_price, highest_price, lowest_price;
 
              // while bootstraping we use this metric
-             auto median_price = _db_impl.self->get_active_feed_price( quote_id );
+             oprice median_price;
+             if( quote_asset->is_market_issued() )
+                 median_price = _db_impl.self->get_active_feed_price( quote_id );
 
              // convert any fees collected in quote unit to XTS
              if( base_id == 0 )
