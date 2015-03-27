@@ -1,12 +1,18 @@
 #include <bts/blockchain/block.hpp>
 #include <algorithm>
 
+#include <bts/blockchain/fork_blocks.hpp>
+
 namespace bts { namespace blockchain {
 
    digest_type block_header::digest()const
    {
       fc::sha256::encoder enc;
       fc::raw::pack( enc, *this );
+
+      if( block_num >= BTS_V0_9_0_FORK_BLOCK_NUM )
+          fc::raw::pack( enc, 0 );
+
       return enc.result();
    }
 
@@ -14,6 +20,10 @@ namespace bts { namespace blockchain {
    {
       fc::sha512::encoder enc;
       fc::raw::pack( enc, *this );
+
+      if( block_num >= BTS_V0_9_0_FORK_BLOCK_NUM )
+          fc::raw::pack( enc, 0 );
+
       return fc::ripemd160::hash( enc.result() );
    }
 
