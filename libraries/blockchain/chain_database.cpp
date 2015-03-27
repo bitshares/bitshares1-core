@@ -1076,6 +1076,7 @@ namespace bts { namespace blockchain {
           }
 
           uint64_t failure_count = 0;
+          fc::variants error_list;
 
           // best bid price <= best ask price
           for( auto it=mkt_to_best_bid.begin(); it != mkt_to_best_bid.end(); it++ )
@@ -1091,6 +1092,47 @@ namespace bts { namespace blockchain {
               oasset_record quote_asset = self->get_asset_record( k.first );
               oasset_record base_asset = self->get_asset_record( k.second );
 
+              // it and it_ask are of type
+              // ((asset_id_type, asset_id_type), (price, market_order))
+              market_order bid_order = it->second.second;
+              market_order ask_order = it_ask->second.second;
+
+              std::string bid_type, ask_type;
+
+              // there is probably a way to do this with fc reflection
+              // but the lack of documentation means I don't know what
+              // it is or how to easily find it out
+
+              auto get_order_type = [&]( const market_order& order ) -> std::string
+              {
+                  switch( order.type )
+                  {
+                      case bts::blockchain::null_order:
+                          return "null_order";
+                      case bts::blockchain::bid_order:
+                          return "bid_order";
+                      case bts::blockchain::ask_order:
+                          return "ask_order";
+                      case bts::blockchain::short_order:
+                          return "short_order";
+                      case bts::blockchain::cover_order:
+                          return "cover_order";
+                      default:
+                          return "<unknown>";
+                  }
+              };
+
+              error_list.push_back(
+                   fc::mutable_variant_object()
+                   ("block", self->get_head_block_num())
+                   ("quote_asset", quote_asset->symbol)
+                   ("base_asset", base_asset->symbol)
+                   ("bid_price", it->second.first)
+                   ("ask_price", it_ask->second.first)
+                   ("bid_type", get_order_type( bid_order ))
+                   ("ask_type", get_order_type( ask_order ))
+                  );
+              
               FC_ASSERT( quote_asset.valid() );
               FC_ASSERT( base_asset.valid() );
 
@@ -1113,14 +1155,7 @@ namespace bts { namespace blockchain {
                    ("b", self->get_head_block_num())
                    ("n", failure_count)
                   );
-              _debug_matching_error_log.push_back(
-              fc::format_string(
-                   "debug_check_no_orders_overlap() on block ${b} found ${n} error(s)",
-                   fc::mutable_variant_object()
-                   ("b", self->get_head_block_num())
-                   ("n", failure_count)
-                  )
-              );
+              _debug_matching_error_log.push_back( error_list );
           }
 
           return;
@@ -3693,7 +3728,7 @@ namespace bts { namespace blockchain {
        my->_slot_timestamp_to_delegate.remove( timestamp );
    }
 
-   vector<string> chain_database::debug_get_matching_errors() const
+   fc::variants chain_database::debug_get_matching_errors() const
    {
        return my->_debug_matching_error_log;
    }

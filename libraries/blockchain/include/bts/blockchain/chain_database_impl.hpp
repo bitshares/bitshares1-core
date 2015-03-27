@@ -166,7 +166,7 @@ namespace bts { namespace blockchain {
 
             map<operation_type_enum, std::deque<operation>>                             _recent_operations;
 
-            mutable std::vector<std::string>                                            _debug_matching_error_log;
+            mutable fc::variants                                                        _debug_matching_error_log;
       };
 
   } // detail

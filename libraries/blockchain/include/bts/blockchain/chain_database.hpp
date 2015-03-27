@@ -277,7 +277,7 @@ namespace bts { namespace blockchain {
              FC_ASSERT( false, "this shouldn't be called directly" );
          }
          
-         vector<string> debug_get_matching_errors() const;
+         fc::variants debug_get_matching_errors() const;
 
          // Applies only when pushing new blocks; gets enabled in delegate loop
          bool                               _verify_transaction_signatures = false;
