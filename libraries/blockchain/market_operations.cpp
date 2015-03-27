@@ -52,9 +52,6 @@ void bid_operation::evaluate( transaction_evaluation_state& eval_state )const
             FC_CAPTURE_AND_THROW( market_halted );
         }
 
-        if( !quote_asset_record->address_is_whitelisted( owner ) || !base_asset_record->address_is_whitelisted( owner ) )
-            FC_CAPTURE_AND_THROW( not_on_whitelist );
-
         if( !current_order.valid() )
             current_order = order_record();
 
@@ -122,9 +119,6 @@ void ask_operation::evaluate( transaction_evaluation_state& eval_state )const
         {
             FC_CAPTURE_AND_THROW( market_halted );
         }
-
-        if( !quote_asset_record->address_is_whitelisted( owner ) || !base_asset_record->address_is_whitelisted( owner ) )
-            FC_CAPTURE_AND_THROW( not_on_whitelist );
 
         if( !current_order.valid() )
             current_order = order_record();

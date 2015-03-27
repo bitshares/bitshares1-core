@@ -294,15 +294,15 @@
       },
       {
         "method_name": "blockchain_list_balances",
-        "description": "Lists balance records starting at the given balance ID",
+        "description": "Lists balance records for the specified asset",
         "cached"   : true,
         "return_type": "balance_record_map",
         "parameters" : [
             {
-              "name" : "first_balance_id",
+              "name" : "asset",
               "type" : "string",
-              "description" : "the first balance id to start at",
-              "default_value" : ""
+              "description" : "the symbol or ID of the asset to list balances for, or empty to include all assets",
+              "default_value" : "0"
             },
             {
               "name" : "limit",

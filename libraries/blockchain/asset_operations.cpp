@@ -319,21 +319,26 @@ void asset_update_whitelist_operation::evaluate( transaction_evaluation_state& e
 #endif
     FC_ASSERT( eval_state.pending_state()->get_head_block_num() >= BTS_V0_9_0_FORK_BLOCK_NUM );
 
-    oasset_record current_asset_record = eval_state.pending_state()->get_asset_record( abs( this->asset_id ) );
+    oasset_record current_asset_record = eval_state.pending_state()->get_asset_record( this->asset_id );
     if( !current_asset_record.valid() )
         FC_CAPTURE_AND_THROW( unknown_asset_id );
 
     if( !current_asset_record->is_user_issued() )
         FC_CAPTURE_AND_THROW( not_user_issued, (*current_asset_record) );
 
-    if( this->asset_id > 0 )
+    if( this->account_ids.empty() )
+        FC_CAPTURE_AND_THROW( invalid_whitelist );
+
+    for( const account_id_type id : this->account_ids )
     {
-        FC_ASSERT( current_asset_record->flag_is_active( asset_record::restricted_deposits ) );
-        current_asset_record->whitelist.insert( this->owner );
-    }
-    else
-    {
-        current_asset_record->whitelist.erase( this->owner );
+        const oaccount_record account_record = eval_state.pending_state()->get_account_record( abs( id ) );
+        if( !account_record.valid() )
+            FC_CAPTURE_AND_THROW( unknown_account_id );
+
+        if( id > 0 )
+            current_asset_record->whitelist.insert( id );
+        else
+            current_asset_record->whitelist.erase( abs( id ) );
     }
 
     eval_state.pending_state()->store_asset_record( *current_asset_record );

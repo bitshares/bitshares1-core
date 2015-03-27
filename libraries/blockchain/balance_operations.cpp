@@ -149,7 +149,7 @@ namespace bts { namespace blockchain {
        const auto& owners = cur_record->owners();
        for( const address& owner : owners )
        {
-           FC_ASSERT( asset_rec->address_is_whitelisted( owner ) );
+           FC_ASSERT( asset_rec->address_is_approved( *eval_state.pending_state(), owner ) );
        }
 
        eval_state.pending_state()->store_balance_record( *cur_record );
@@ -320,9 +320,9 @@ namespace bts { namespace blockchain {
       auto asset_rec = eval_state.pending_state()->get_asset_record( escrow_balance_record->condition.asset_id );
 
       if( amount_to_sender > 0 )
-          FC_ASSERT( asset_rec->address_is_whitelisted( escrow_condition.sender ) );
+          FC_ASSERT( asset_rec->address_is_approved( *eval_state.pending_state(), escrow_condition.sender ) );
       if( amount_to_receiver > 0 )
-          FC_ASSERT( asset_rec->address_is_whitelisted( escrow_condition.receiver ) );
+          FC_ASSERT( asset_rec->address_is_approved( *eval_state.pending_state(), escrow_condition.receiver ) );
 
       const bool authority_is_retracting = asset_rec->flag_is_active( asset_record::retractable_balances )
                                            && eval_state.verify_authority( asset_rec->authority );
@@ -371,6 +371,7 @@ namespace bts { namespace blockchain {
       {
          if( !eval_state.check_signature( escrow_condition.escrow ) && !authority_is_retracting )
              FC_CAPTURE_AND_THROW( missing_signature, (escrow_condition.escrow) );
+
          // get a balance record for the receiver, create it if necessary and deposit funds
          {
             balance_record new_balance_record( escrow_condition.receiver,
@@ -382,8 +383,10 @@ namespace bts { namespace blockchain {
                current_receiver_balance->balance += amount_to_receiver;
             else
                current_receiver_balance = new_balance_record;
+
             eval_state.pending_state()->store_balance_record( *current_receiver_balance );
          }
+
          //  get a balance record for the sender, create it if necessary and deposit funds
          {
             balance_record new_balance_record( escrow_condition.sender,
@@ -395,6 +398,7 @@ namespace bts { namespace blockchain {
                current_sender_balance->balance += amount_to_sender;
             else
                current_sender_balance = new_balance_record;
+
             eval_state.pending_state()->store_balance_record( *current_sender_balance );
          }
       }
@@ -402,8 +406,10 @@ namespace bts { namespace blockchain {
       {
          if( !eval_state.check_signature( escrow_condition.sender ) && !authority_is_retracting)
              FC_CAPTURE_AND_THROW( missing_signature, (escrow_condition.sender) );
+
          if( !eval_state.check_signature( escrow_condition.receiver ) && !authority_is_retracting)
              FC_CAPTURE_AND_THROW( missing_signature, (escrow_condition.receiver) );
+
          // get a balance record for the receiver, create it if necessary and deposit funds
          {
             balance_record new_balance_record( escrow_condition.receiver,
@@ -415,6 +421,7 @@ namespace bts { namespace blockchain {
                current_receiver_balance->balance += amount_to_receiver;
             else
                current_receiver_balance = new_balance_record;
+
             eval_state.pending_state()->store_balance_record( *current_receiver_balance );
          }
          //  get a balance record for the sender, create it if necessary and deposit funds
@@ -428,6 +435,7 @@ namespace bts { namespace blockchain {
                current_sender_balance->balance += amount_to_sender;
             else
                current_sender_balance = new_balance_record;
+
             eval_state.pending_state()->store_balance_record( *current_sender_balance );
          }
       }

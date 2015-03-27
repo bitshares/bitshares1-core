@@ -2322,17 +2322,6 @@ namespace bts { namespace blockchain {
       return my->_head_block_id;
    } FC_CAPTURE_AND_RETHROW() }
 
-   unordered_map<balance_id_type, balance_record> chain_database::get_balances( const balance_id_type& first, uint32_t limit )const
-   { try {
-       unordered_map<balance_id_type, balance_record> records;
-       for( auto iter = my->_balance_id_to_record.ordered_lower_bound( first ); iter.valid(); ++iter )
-       {
-           records[ iter.key() ] = iter.value();
-           if( records.size() >= limit ) break;
-       }
-       return records;
-   } FC_CAPTURE_AND_RETHROW( (first)(limit) ) }
-
    unordered_map<balance_id_type, balance_record> chain_database::get_balances_for_address( const address& addr )const
    { try {
         unordered_map<balance_id_type, balance_record> records;
@@ -2964,7 +2953,7 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_market_history_record(const market_history_key& key, const market_history_record& record)
    {
-     if( record.volume == 0 )
+     if( record.quote_volume == 0 && record.base_volume == 0 )
        my->_market_history_db.remove( key );
      else
        my->_market_history_db.store( key, record );
@@ -3026,7 +3015,8 @@ namespace bts { namespace blockchain {
                              to_pretty_price( record_itr.value().lowest_ask, false ),
                              to_pretty_price( record_itr.value().opening_price, false ),
                              to_pretty_price( record_itr.value().closing_price, false ),
-                             record_itr.value().volume
+                             record_itr.value().base_volume,
+                             record_itr.value().quote_volume
                            } );
         ++record_itr;
       }

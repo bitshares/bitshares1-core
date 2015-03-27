@@ -114,9 +114,9 @@ namespace bts { namespace blockchain {
 
       void uia_update_active_flags( const asset_id_type asset_id, const uint32_t active_flags );
 
-      void uia_add_to_whitelist( const asset_id_type asset_id, const address& owner );
+      void uia_add_to_whitelist( const asset_id_type asset_id, const account_id_type account_id );
 
-      void uia_remove_from_whitelist( const asset_id_type asset_id, const address& owner );
+      void uia_remove_from_whitelist( const asset_id_type asset_id, const account_id_type account_id );
 
       bool is_cancel()const;
    }; // transaction

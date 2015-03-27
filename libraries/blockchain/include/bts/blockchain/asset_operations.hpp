@@ -75,8 +75,8 @@ struct asset_update_whitelist_operation
 {
     static const operation_type_enum type;
 
-    asset_id_type   asset_id;
-    address         owner;
+    asset_id_type           asset_id;
+    set<account_id_type>    account_ids;
 
     void evaluate( transaction_evaluation_state& eval_state )const;
 };
@@ -114,5 +114,5 @@ FC_REFLECT( bts::blockchain::asset_update_permissions_operation,
         )
 FC_REFLECT( bts::blockchain::asset_update_whitelist_operation,
         (asset_id)
-        (owner)
+        (account_ids)
         )

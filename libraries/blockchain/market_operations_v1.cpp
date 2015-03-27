@@ -18,9 +18,6 @@ void bid_operation::evaluate_v1( transaction_evaluation_state& eval_state )const
    FC_ASSERT( base_asset_rec.valid() );
    FC_ASSERT( quote_asset_rec.valid() );
 
-   FC_ASSERT( base_asset_rec->address_is_whitelisted( owner ) );
-   FC_ASSERT( quote_asset_rec->address_is_whitelisted( owner ) );
-
    const bool authority_is_retracting = quote_asset_rec->flag_is_active( asset_record::retractable_balances )
                                         && eval_state.verify_authority( quote_asset_rec->authority );
 

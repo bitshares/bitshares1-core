@@ -171,60 +171,6 @@ transaction_builder& transaction_builder::update_account_registration(const wall
    return *this;
 }
 
-transaction_builder& transaction_builder::deposit_asset(const bts::wallet::wallet_account_record& payer,
-                                                        const bts::blockchain::account_record& recipient,
-                                                        const asset& amount,
-                                                        const string& memo,
-                                                        fc::optional<string> memo_sender)
-{ try {
-   if( recipient.is_retracted() )
-       FC_CAPTURE_AND_THROW( account_retracted, (recipient) );
-
-   if( amount.amount <= 0 )
-      FC_THROW_EXCEPTION( invalid_asset_amount, "Cannot deposit a negative amount!" );
-
-   // Don't automatically truncate memos as long as users still depend on them via deposit ops rather than mail
-   if( memo.size() > BTS_BLOCKCHAIN_MAX_EXTENDED_MEMO_SIZE )
-       FC_CAPTURE_AND_THROW( memo_too_long, (memo) );
-
-   if( !memo_sender.valid() )
-       memo_sender = payer.name;
-   const owallet_account_record memo_account = _wimpl->_wallet_db.lookup_account( *memo_sender );
-   FC_ASSERT( memo_account.valid() );
-
-   public_key_type memo_key = memo_account->owner_key;
-   if( !_wimpl->_wallet_db.has_private_key( memo_key ) )
-       memo_key = memo_account->active_key();
-   FC_ASSERT( _wimpl->_wallet_db.has_private_key( memo_key ) );
-
-   optional<public_key_type> titan_one_time_key;
-   auto one_time_key = _wimpl->get_new_private_key(payer.name);
-   titan_one_time_key = one_time_key.get_public_key();
-
-   trx.deposit_with_encrypted_memo( amount, _wimpl->self->get_private_key( memo_key ), recipient.active_key(),
-                                    one_time_key, memo, recipient.is_titan_account() );
-
-   deduct_balance(payer.owner_key, amount);
-
-   ledger_entry entry;
-   entry.from_account = payer.owner_key;
-   entry.to_account = recipient.owner_key;
-   entry.amount = amount;
-   entry.memo = memo;
-   if( *memo_sender != payer.name ) entry.memo_from_account = memo_account->owner_key;
-   transaction_record.ledger_entries.push_back(std::move(entry));
-
-   auto memo_signature = _wimpl->self->get_private_key(memo_key).sign_compact(fc::sha256::hash(memo.data(),
-                                                                                                   memo.size()));
-   notices.emplace_back(std::make_pair(mail::transaction_notice_message(string(memo),
-                                                                        std::move(titan_one_time_key),
-                                                                        std::move(memo_signature)),
-                                       recipient.active_key()));
-
-   return *this;
-} FC_CAPTURE_AND_RETHROW( (recipient)(amount)(memo) ) }
-
-
 transaction_builder& transaction_builder::deposit_asset_to_address(const wallet_account_record& payer,
                                                                    const address& to_addr,
                                                                    const asset& amount,
