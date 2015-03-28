@@ -1065,14 +1065,14 @@ namespace bts { namespace blockchain {
                 orec->expiration
                 );
 
-              if( k.order_price <= (*feed) )
+              if( k.order_price >= (*feed) )
                   // margin called.  in reality the price may be raised
                   // to force a match, but we'll ignore that subtlety
                   // here...
-                  process_ask( k.order_price, morder );
+                  process_ask( (*feed), morder );
               else if( orec->expiration <= now() )
                   // expired
-                  process_ask( k.order_price, morder );
+                  process_ask( (*feed), morder );
           }
 
           uint64_t failure_count = 0;
