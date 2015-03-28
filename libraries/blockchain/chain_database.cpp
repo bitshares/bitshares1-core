@@ -2572,8 +2572,8 @@ namespace bts { namespace blockchain {
          if( old_record && old_record->expiration != collateral.expiration)
          {
             my->_collateral_expiration_index.erase( {key.order_price.quote_asset_id,  old_record->expiration, key } );
-            my->_collateral_expiration_index.insert( {key.order_price.quote_asset_id, collateral.expiration, key } );
          }
+         my->_collateral_expiration_index.insert( {key.order_price.quote_asset_id, collateral.expiration, key } );
          my->_collateral_db.store( key, collateral );
       }
    }
