@@ -660,7 +660,7 @@ void client_impl::delegate_loop()
          }
          catch( const fc::exception& e )
          {
-            _exception_db.store( e );
+            elog( "Error producing block: ${e}", ("e",e.to_detail_string()) );
          }
       }
    }
@@ -844,7 +844,6 @@ block_fork_data client_impl::on_new_block(const full_block& block,
    }
    catch ( const fc::exception& e )
    {
-      _exception_db.store(e);
       throw;
    }
 }
@@ -861,7 +860,6 @@ bool client_impl::on_new_transaction(const signed_transaction& trx)
    }
    catch ( const fc::exception& e )
    {
-      _exception_db.store(e);
       throw;
    }
 }
@@ -1228,10 +1226,7 @@ uint32_t client_impl::estimate_last_known_fork_from_git_revision_timestamp(uint3
 
 void client_impl::error_encountered(const std::string& message, const fc::oexception& error)
 {
-   if (error)
-      _exception_db.store(*error);
-   else
-      _exception_db.store(fc::exception(FC_LOG_MESSAGE(error, message.c_str())));
+   if( error.valid() ) elog( error->to_detail_string() );
    ulog( message );
 }
 
@@ -1294,8 +1289,6 @@ void client::open( const path& data_dir, const fc::optional<fc::path>& genesis_f
     fc::configure_logging( my->_config.logging );
     // re-register the _user_appender which was overwritten by configure_logging()
     fc::logger::get( "user" ).add_appender( my->_user_appender );
-
-    my->_exception_db.open( data_dir / "exceptions" );
 
     bool attempt_to_recover_database = false;
     try
