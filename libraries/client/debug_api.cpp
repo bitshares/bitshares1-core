@@ -119,8 +119,13 @@ std::string client_impl::debug_get_client_name() const
    return this->_config.client_debug_name;
 }
 
-void client_impl::debug_trap() const
+void client_impl::debug_trap( uint32_t blocknum )
 {
+    if( blocknum != 0 )
+    {
+        _chain_db->debug_trap_on_block( blocknum );
+        return;
+    }
 #ifdef WIN32
     __debugbreak();
 #else

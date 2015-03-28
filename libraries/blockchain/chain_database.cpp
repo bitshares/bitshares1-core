@@ -18,6 +18,10 @@
 #include <iomanip>
 #include <iostream>
 
+#ifndef WIN32
+#include <csignal>
+#endif
+
 namespace bts { namespace blockchain {
 
    const static short MAX_RECENT_OPERATIONS = 20;
@@ -1168,6 +1172,14 @@ namespace bts { namespace blockchain {
       { try {
          const time_point start_time = time_point::now();
          const block_id_type& block_id = block_data.id();
+         if( _debug_trap_blocks.count( block_data.block_num ) != 0 )
+         {
+#ifdef WIN32
+             __debugbreak();
+#else
+             raise(SIGTRAP);
+#endif
+         }
          try
          {
             public_key_type block_signee;
@@ -3731,6 +3743,12 @@ namespace bts { namespace blockchain {
    fc::variants chain_database::debug_get_matching_errors() const
    {
        return my->_debug_matching_error_log;
+   }
+
+   void chain_database::debug_trap_on_block( uint32_t blocknum )
+   {
+       my->_debug_trap_blocks.insert( blocknum );
+       return;
    }
 
 } } // bts::blockchain

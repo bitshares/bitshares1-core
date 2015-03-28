@@ -278,6 +278,7 @@ namespace bts { namespace blockchain {
          }
          
          fc::variants debug_get_matching_errors() const;
+         void debug_trap_on_block( uint32_t blocknum );
 
          // Applies only when pushing new blocks; gets enabled in delegate loop
          bool                               _verify_transaction_signatures = false;
