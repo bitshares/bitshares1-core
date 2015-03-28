@@ -405,7 +405,7 @@ bool market_engine::execute( const asset_id_type quote_id, const asset_id_type b
 
             // Remark: only prices of matched orders be updated to market history
             update_market_history( base_volume, quote_volume, highest_price, lowest_price,
-                opening_price, closing_price, timestamp );
+                                   opening_price, closing_price, timestamp );
         }
 
         _pending_state->apply_changes();
@@ -862,7 +862,7 @@ void market_engine::update_market_history( const asset& base_volume,
     // Remark: only prices of matched orders be updated to market history
     market_history_key key(_quote_id, _base_id, market_history_key::each_block, _db_impl._head_block_header.timestamp);
     market_history_record new_record( highest_price, lowest_price, opening_price, closing_price,
-        base_volume.amount, quote_volume.amount );
+                                      base_volume.amount, quote_volume.amount );
 
     //LevelDB iterators are dumb and don't support proper past-the-end semantics.
     auto last_key_itr = _db_impl._market_history_db.lower_bound( key );

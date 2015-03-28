@@ -2,7 +2,6 @@
 
 #include <bts/cli/cli.hpp>
 #include <bts/client/notifier.hpp>
-#include <bts/db/level_map.hpp>
 #include <bts/net/chain_server.hpp>
 #include <bts/net/upnp.hpp>
 
@@ -28,46 +27,6 @@ using namespace boost;
 
 using namespace bts::wallet;
 using namespace bts::blockchain;
-
-// wrap the exception database in a class that logs the exception to the normal logging stream
-// in addition to just storing it
-class logging_exception_db
-{
-public:
-   typedef bts::db::level_map<fc::time_point,fc::exception> exception_leveldb_type;
-private:
-   exception_leveldb_type _db;
-public:
-   void open(const fc::path& filename)
-   {
-      try
-      {
-          _db.open(filename);
-      }
-      catch (const bts::db::level_map_open_failure&)
-      {
-          fc::remove_all(filename);
-          _db.open(filename);
-      }
-   }
-   void store(const fc::exception& e)
-   {
-      elog("storing error in database: ${e}", ("e", e));
-      _db.store(fc::time_point::now(), e);
-   }
-   exception_leveldb_type::iterator lower_bound(const fc::time_point time) const
-   {
-      return _db.lower_bound(time);
-   }
-   exception_leveldb_type::iterator begin() const
-   {
-      return _db.begin();
-   }
-   void remove(const fc::time_point key)
-   {
-      _db.remove(key);
-   }
-};
 
 class client_impl : public bts::net::node_delegate,
       public bts::api::common_api
@@ -286,7 +245,6 @@ public:
    uint32_t                                                _connection_count_last_value_displayed;
 
    config                                                  _config;
-   logging_exception_db                                    _exception_db;
 
    // Delegate block production
    fc::future<void>                                        _delegate_loop_complete;
