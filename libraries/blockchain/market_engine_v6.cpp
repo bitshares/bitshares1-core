@@ -72,7 +72,10 @@ namespace bts { namespace blockchain { namespace detail {
 
           price opening_price, closing_price, highest_price, lowest_price;
 
-          const oprice median_feed_price = _db_impl.self->get_active_feed_price( quote_id );
+          oprice median_feed_price;
+          if( quote_asset->is_market_issued() && base_id == asset_id_type( 0 ) )
+              median_feed_price = _db_impl.self->get_active_feed_price( quote_id );
+
           // If bootstrapping market for the very first time
           if( quote_asset->is_market_issued() &&
               _market_stat.center_price.ratio == fc::uint128_t() &&
