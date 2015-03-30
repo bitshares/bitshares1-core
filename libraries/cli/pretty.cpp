@@ -50,7 +50,7 @@ string pretty_age( const time_point_sec timestamp, bool from_now, const string& 
             str = fc::get_approximate_relative_time_string(timestamp, now, " " + suffix);
     }
     else
-        str = fc::get_approximate_relative_time_string(timestamp);
+        str = bts::blockchain::get_approximate_relative_time_string(timestamp);
     if( FILTER_OUTPUT_FOR_TESTS )
         return "<d-ign>" + str + "</d-ign>";
     else

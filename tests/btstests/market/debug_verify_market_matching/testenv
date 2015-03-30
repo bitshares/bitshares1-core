@@ -1,0 +1,16 @@
+
+with _btstest.ClientProcess(name="alice", testname=testname, debug_stop=False) as p_alice:
+    # create client process
+    rpc_client = _btstest.RPCClient(dict(
+        host="127.0.0.1",
+        port=p_alice.http_port,
+        rpc_user=p_alice.username,
+        rpc_password=p_alice.password,
+        ))
+    test_client = _btstest.TestClient("alice", rpc_client)
+    register_client(test_client)
+    rpc_client.wait_for_rpc()
+    # active_client = "alice"
+
+    run_testdir(my_path)
+

@@ -44,8 +44,14 @@
         "method_name": "debug_trap",
         "description": "Break into debugger (UNIX: SIGINT, win32: __debugbreak)",
         "return_type": "void",
-        "parameters" : [],
-        "is_const" : true,
+        "parameters" : [
+            {
+              "name" : "block_number",
+              "type" : "uint32_t",
+              "description" : "Delay trap until we start to process the given blocknum"
+            }
+        ],
+        "is_const" : false,
         "cached"  : false,
         "prerequisites" : ["json_authenticated"],
         "aliases" : []

@@ -1269,11 +1269,11 @@ wallet_transaction_record client_impl::wallet_market_submit_bid(
 {
   vector<market_order> lowest_ask = blockchain_market_order_book(quote_symbol, quantity_symbol, 1).second;
 
-  if( !lowest_ask.empty() )
+  if( (!allow_stupid_bid) && (!lowest_ask.empty()) )
   {
       const double requested_price = variant( quote_price ).as_double();
       const double lowest_ask_price = variant( _chain_db->to_pretty_price( lowest_ask.front().get_price(), false ) ).as_double();
-      if( requested_price > lowest_ask_price * 1.05 )
+      if( (requested_price > lowest_ask_price * 1.05) )
       {
           FC_THROW_EXCEPTION(stupid_order, "You are attempting to bid at more than 5% above the buy price. "
                                            "This bid is based on economically unsound principles, and is ill-advised. "
@@ -1313,7 +1313,7 @@ wallet_transaction_record client_impl::wallet_market_submit_ask(
 {
   vector<market_order> highest_bid = blockchain_market_order_book(quote_symbol, quantity_symbol, 1).first;
 
-  if( !highest_bid.empty() )
+  if( (!allow_stupid_ask) && (!highest_bid.empty()) )
   {
       const double requested_price = variant( quote_price ).as_double();
       const double highest_bid_price = variant( _chain_db->to_pretty_price( highest_bid.front().get_price(), false ) ).as_double();
