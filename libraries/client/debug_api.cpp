@@ -38,11 +38,7 @@ void client_impl::debug_verify_market_matching(bool enable_flag)
 
 fc::variants client_impl::debug_list_matching_errors() const
 {
-    vector<string> v = _chain_db->debug_get_matching_errors();
-    fc::variants result;
-    for( const fc::string &s : v )
-        result.push_back( s );
-    return result;
+    return _chain_db->debug_get_matching_errors();
 }
 
 fc::variant_object client_impl::debug_get_call_statistics() const
@@ -123,8 +119,13 @@ std::string client_impl::debug_get_client_name() const
    return this->_config.client_debug_name;
 }
 
-void client_impl::debug_trap() const
+void client_impl::debug_trap( uint32_t blocknum )
 {
+    if( blocknum != 0 )
+    {
+        _chain_db->debug_trap_on_block( blocknum );
+        return;
+    }
 #ifdef WIN32
     __debugbreak();
 #else

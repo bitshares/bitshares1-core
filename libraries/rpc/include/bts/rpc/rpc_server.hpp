@@ -27,8 +27,9 @@ namespace bts { namespace rpc {
        rpc_server(bts::client::client* client);
        virtual ~rpc_server();
 
-       bool        configure_rpc( const bts::client::rpc_server_config& cfg );
+       bool        configure_rpc(const bts::client::rpc_server_config& cfg);
        bool        configure_http(const bts::client::rpc_server_config& cfg);
+       bool        configure_websockets(const bts::client::rpc_server_config& cfg);
        bool        configure_encrypted_rpc(const bts::client::rpc_server_config& cfg);
 
        /// used to invoke json methods from the cli without going over the network

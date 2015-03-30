@@ -43,6 +43,22 @@ void shutdown_ntp_time()
   delete actual_ntp_service;
 }
 
+std::string get_approximate_relative_time_string(const fc::time_point_sec& event_time)
+{
+    if( simulated_time )
+        return fc::get_approximate_relative_time_string( event_time, now() );
+    else
+        return fc::get_approximate_relative_time_string( event_time );
+}
+
+std::string get_approximate_relative_time_string(const fc::time_point& event_time)
+{
+    if( simulated_time )
+        return fc::get_approximate_relative_time_string( fc::time_point_sec(event_time), now() );
+    else
+        return fc::get_approximate_relative_time_string( event_time );
+}
+
 fc::time_point_sec now()
 {
    if( simulated_time )

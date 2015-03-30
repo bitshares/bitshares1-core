@@ -32,6 +32,12 @@ def add_to_sys_path(path_additions):
 class ParseError(Exception):
     pass
 
+class RPCError(Exception):
+    def __init__(self, http_error_code=-1, error_data=None):
+        self.http_error_code = http_error_code
+        self.error_data = error_data
+        return
+
 class RPCClient(object):
     def __init__(self, credentials):
 
@@ -57,12 +63,18 @@ class RPCClient(object):
         #post_data = urllib.parse.urlencode(o).encode("UTF-8")
         post_data = json.dumps(o).encode("UTF-8")
         req = urllib.request.Request(self.rpc_url, post_data)
-        response = self.url_opener.open(req)
-        response_content = response.read().decode("UTF-8")
-        d = json.loads(response_content, parse_float=decimal.Decimal)
-        logging.debug("result: "+str(d))
-        result = d["result"]
-        logging.debug("result: "+str(result))
+        try:
+            response = self.url_opener.open(req)
+            response_content = response.read().decode("UTF-8")
+            d = json.loads(response_content, parse_float=decimal.Decimal)
+            logging.debug("result: "+str(d))
+            result = d["result"]
+            logging.debug("result: "+str(result))
+        except urllib.error.HTTPError as e:
+            response_content = e.read().decode("UTF-8")
+            d = json.loads(response_content, parse_float=decimal.Decimal)
+            logging.debug("error result: "+str(d))
+            raise RPCError(http_error_code=e.code, error_data=d)
         return result
 
     def get_next_request_id(self):
@@ -324,13 +336,32 @@ class ClientProcess(object):
             # subprocess already exited, no cleanup is necessary
             return
 
+        sys.stderr.write("\nSIGTERM")
+        sys.stderr.flush()
         # send SIGTERM, then SIGKILL if we don't exit quickly (or cross-platform equivalents)
         self.process_object.terminate()
-        try:
-            self.process_object.wait(timeout=10)
-        except subprocess.TimeoutExpired:
+        for dot in range(12):
+            try:
+                sys.stderr.write(".")
+                sys.stderr.flush()
+                self.process_object.wait(timeout=0.25)
+            except subprocess.TimeoutExpired:
+                continue
+            break
+        else:
+            sys.stderr.write("\nSIGKILL")
+            sys.stderr.flush()
             self.process_object.kill()
-            self.process_object.wait(timeout=10)
+            for dot in range(12):
+                try:
+                    sys.stderr.write(".")
+                    sys.stderr.flush()
+                    self.process_object.wait(timeout=0.25)
+                except subprocess.TimeoutExpired:
+                    continue
+                break
+        sys.stderr.write("\n")
+        sys.stderr.flush()
 
         if self.stdout_file is not None:
             self.stdout_file.close()
@@ -446,8 +477,10 @@ class TestClient(object):
         self.last_command_failed = False
         return
 
-    def execute_cmd(self, cmd, expect_enabled=True, extra_output_callback=None):
+    def execute_cmd(self, cmd, expect_enabled=True, extra_output_callback=None, echo=False):
         # store result
+        if echo:
+            print(">>> "+cmd)
         result = self.rpc_client.call("execute_command_line", cmd)
         self.reset_last_command(result)
         return
@@ -523,6 +556,7 @@ class Test(object):
         self.context["expect_enabled"] = True
         self.context["showmatch_enabled"] = False
         self.context["showlineno_enabled"] = False
+        self.context["current_test"] = self
         self.context["matchbuf"] = []
         self.context["_btstest"] = sys.modules[__name__]
         self.last_command_client = None
@@ -694,11 +728,14 @@ class Test(object):
         re.VERBOSE,
         )
 
-    def parse_script(self, filename):
+    def parse_script_file(self, filename):
         with open(filename, "r") as f:
             # read entire script into memory
             script_str = f.read()
-            
+        self.parse_script(script_str)
+        return
+
+    def parse_script(self, script_str):
         in_command = False
         cmd_text = []
         
@@ -764,7 +801,7 @@ class Test(object):
         for f in filenames:
             if not f.endswith(".btstest"):
                 continue
-            self.parse_script(os.path.join(testdir, f))
+            self.parse_script_file(os.path.join(testdir, f))
         return
 
     def register_client(self, client=None):

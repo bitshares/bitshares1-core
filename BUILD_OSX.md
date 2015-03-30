@@ -35,7 +35,7 @@ BitShares OS X Build Instructions
 
 8. Build BitShares:
    ```
-   git submodule update --init
+   git submodule update --init --recursive
    cmake .
    make
    ```

@@ -1,0 +1,184 @@
+>>> !client alice
+>>> !expect disable
+>>> !showmatch enable
+>>> debug_start_simulated_time "20140620T144030.000000"
+>>> wallet_create default "password"
+>>> wallet_set_automatic_backups false
+>>> debug_deterministic_private_keys 0 101 init true
+>>> wallet_delegate_set_block_production ALL true
+>>> wallet_set_transaction_scanning true
+>>> debug_wait_for_block_by_number 1
+#{
+Get 300,000 genesis XTS for Alice and Bob
+}#
+OK
+>>> debug_deterministic_private_keys 0 3 alice true alice true true
+>>> debug_deterministic_private_keys 0 3 bob true bob true true
+
+#{
+####################################################################
+
+This is based on valzav's test.
+
+I, [2015-03-18T11:31:10.468171 #81793] INFO -- : [alice] request: wallet_market_submit_short alice 10000.0 XTS 10 USD 0.01
+I, [2015-03-18T11:31:10.486051 #81793] INFO -- : [bob] request: wallet_market_submit_ask bob 20000.0 XTS 0.02 USD
+...
+I, [2015-03-18T11:31:22.733095 #81793] INFO -- : [delegate] request: wallet_publish_price_feed delegate100 0.01 USD
+I, [2015-03-18T11:31:30.840283 #81793] INFO -- : [bob] request: wallet_market_submit_ask bob 20000.0 XTS 0.01 USD
+
+####################################################################
+}#
+
+>>> !showmatch disable
+>>> wallet_publish_feeds_multi_experimental [["USD", "0.02"]]
+${ expect_json() }$
+>>> debug_verify_market_matching true
+>>> balance alice
+ACCOUNT                         BALANCE
+============================================================
+alice                           300,000.00000 XTS
+>>> balance bob
+ACCOUNT                         BALANCE
+============================================================
+bob                             300,000.00000 XTS
+>>> wallet_market_submit_short alice 10000.0 XTS 10 USD 0.01
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID
+======================================================================================================================================================================
+${ expect_isotime() }$~{2014-06-20T14:40:30}~ PENDING   alice               alice               10,000.00000 XTS       short USD @ 10.% APR                         0.50000 XTS         ${ regex("[0-9a-f]{8}") }$~{580414d8}~
+>>> blockchain_market_order_book USD XTS
+                             BIDS (* Short)                                  |                                   ASKS
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+No Orders
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> blockchain_market_order_book USD XTS
+                             BIDS (* Short)                                  |                                   ASKS
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+No Orders
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> blockchain_market_order_book USD XTS
+                             BIDS (* Short)                                  |                                   ASKS
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+50.0000 USD               5,000.00000 XTS                           0.01 USD*|
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Maximum Short Price: 0.02 USD / XTS
+>>> wallet_market_submit_ask bob 20000.0 XTS 0.02 USD
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+${ expect_isotime() }$~{2014-06-20T14:40:50}~ PENDING   bob                 bob                 20,000.00000 XTS        sell XTS @ 0.02 USD / XTS                   0.50000 XTS         ${ regex("[0-9a-f]{8}") }$~{ff920715}~
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> blockchain_market_order_book USD XTS
+                             BIDS (* Short)                                  |                                   ASKS
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+50.0000 USD               5,000.00000 XTS                           0.01 USD*| 0.02 USD                             20,000.00000 XTS              400.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             |
+Maximum Short Price: 0.02 USD / XTS
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> blockchain_market_order_book USD XTS
+                             BIDS (* Short)                                  |                                   ASKS
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+50.0000 USD               5,000.00000 XTS                           0.01 USD*| 0.02 USD                             20,000.00000 XTS              400.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             |
+Maximum Short Price: 0.02 USD / XTS
+>>> balance alice
+ACCOUNT                         BALANCE
+============================================================
+alice                           289,999.50000 XTS
+>>> balance bob
+ACCOUNT                         BALANCE
+============================================================
+bob                             279,999.50000 XTS
+>>> !showmatch disable
+>>> wallet_publish_feeds_multi_experimental [["USD", "0.01"]]
+${ expect_json() }$
+>>> !showmatch enable
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> blockchain_market_order_book USD XTS
+                             BIDS (* Short)                                  |                                   ASKS
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.02 USD                             20,000.00000 XTS              400.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+50.0000 USD               5,000.00000 XTS                        10.000000 % |
+Maximum Short Price: 0.01 USD / XTS
+>>> wallet_market_submit_ask bob 20000.0 XTS 0.01 USD
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+${ expect_isotime() }$~{2014-06-20T14:40:50}~ PENDING   bob                 bob                 20,000.00000 XTS        sell XTS @ 0.01 USD / XTS                   0.50000 XTS         ${ regex("[0-9a-f]{8}") }$~{ff920715}~
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> blockchain_market_order_book USD XTS
+                             BIDS (* Short)                                  |                                   ASKS
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.01 USD                             20,000.00000 XTS              200.0000 USD
+                                                                             | 0.02 USD                             20,000.00000 XTS              400.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+50.0000 USD               5,000.00000 XTS                        10.000000 % |
+Maximum Short Price: 0.01 USD / XTS
+>>> debug_advance_time 1 block
+OK
+>>> debug_wait_for_block_by_number 1 rlast
+OK
+>>> blockchain_market_order_book USD XTS  
+                             BIDS (* Short)                                  |                                   ASKS
+TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.01 USD                             15,000.00000 XTS              150.0000 USD
+                                                                             | 0.02 USD                             20,000.00000 XTS              400.0000 USD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                             SHORT WALL                                      |                                   MARGIN
+TOTAL                     QUANTITY                       INTEREST RATE (APR) | CALL PRICE                                   QUANTITY                     TOTAL   COLLATERAL    EXPIRES
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                             | 0.00666666666666666 USD               7,500.00000 XTS               50.0000 USD              39 weeks ago   15,000.00000 XTS
+Maximum Short Price: 0.01 USD / XTS
+>>> balance alice
+ACCOUNT                         BALANCE  
+============================================================
+alice                           289,999.50000 XTS
+>>> balance bob
+ACCOUNT                         BALANCE  
+============================================================
+bob                             259,999.00000 XTS
+                                50.0000 USD
+>>> debug_list_matching_errors
+>>> quit
+

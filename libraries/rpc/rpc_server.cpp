@@ -34,6 +34,12 @@
 
 #include <bts/rpc_stubs/common_api_rpc_server.hpp>
 
+#include <fc/api.hpp>
+#include <fc/rpc/api_connection.hpp>
+#include <fc/rpc/websocket_api.hpp>
+
+#include <bts/api/reflect_api.hpp>
+
 namespace bts { namespace rpc {
 
   using namespace client;
@@ -48,6 +54,7 @@ namespace bts { namespace rpc {
          std::shared_ptr<fc::http::server>                 _httpd;
          std::shared_ptr<fc::tcp_server>                   _tcp_serv;
          std::shared_ptr<fc::tcp_server>                   _stcp_serv;
+         std::shared_ptr<fc::http::websocket_server>       _websocket_server;
          fc::future<void>                                  _accept_loop_complete;
          fc::future<void>                                  _encrypted_accept_loop_complete;
          rpc_server*                                       _self;
@@ -816,6 +823,31 @@ namespace bts { namespace rpc {
       ilog( "listening for json rpc connections on port ${port}", ("port",my->_tcp_serv->get_port()) );
 
       my->_accept_loop_complete = fc::async( [=]{ my->accept_loop(); }, "rpc_server accept_loop" );
+
+      return true;
+    } FC_RETHROW_EXCEPTIONS( warn, "attempting to configure rpc server ${port}", ("port",cfg.rpc_endpoint)("config",cfg) );
+  }
+
+  bool rpc_server::configure_websockets( const rpc_server_config& cfg )
+  {
+    if (!cfg.is_valid())
+      return false;
+    my->_cache_enabled = cfg.enable_cache;
+
+    try
+    {
+      my->_websocket_server = std::make_shared<fc::http::websocket_server>();
+
+      my->_websocket_server->on_connection([&]( const fc::http::websocket_connection_ptr& c ){
+               auto wsc = std::make_shared<fc::rpc::websocket_api_connection>(c);
+               auto login = std::make_shared<bts::api::login_api>( cfg.users, my->_client );
+               wsc->register_api(fc::api<bts::api::login_api>(login));
+               c->set_session_data( wsc );
+          });
+
+      my->_websocket_server->listen( cfg.websocket_endpoint.port() );
+      my->_websocket_server->start_accept();
+      ilog( "listening for websocket json rpc connections on port ${port}", ("port",cfg.rpc_endpoint.port())  );
 
       return true;
     } FC_RETHROW_EXCEPTIONS( warn, "attempting to configure rpc server ${port}", ("port",cfg.rpc_endpoint)("config",cfg) );

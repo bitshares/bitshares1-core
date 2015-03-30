@@ -18,7 +18,12 @@
 #include <iomanip>
 #include <iostream>
 
+#ifndef WIN32
+#include <csignal>
+#endif
+
 #include <bts/blockchain/fork_blocks.hpp>
+#include <fc/real128.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -975,10 +980,11 @@ namespace bts { namespace blockchain {
           pending_state->set_market_transactions( std::move( market_transactions ) );
 
           if( self->_debug_verify_market_matching )
-              debug_check_no_orders_overlap();
+              debug_check_no_orders_overlap( pending_state );
       } FC_CAPTURE_AND_RETHROW( (timestamp) ) }
 
-      void chain_database_impl::debug_check_no_orders_overlap() const
+      void chain_database_impl::debug_check_no_orders_overlap(
+          const pending_chain_state_ptr& pending_state ) const
       {
           //
           // the market engine does all kinds of fancy indexing to find
@@ -1021,7 +1027,11 @@ namespace bts { namespace blockchain {
                bid_itr.valid();
                bid_itr++ )
           {
-              market_order morder = market_order( bid_order, bid_itr.key(), bid_itr.value() );
+              oorder_record orec = pending_state->get_bid_record( bid_itr.key() );
+              if( (!orec.valid()) || (orec->balance <= 0) )
+                  continue;
+              
+              market_order morder = market_order( bid_order, bid_itr.key(), *orec );
               process_bid( morder.get_price(), morder );
           }
 
@@ -1030,7 +1040,11 @@ namespace bts { namespace blockchain {
                ask_itr.valid();
                ask_itr++ )
           {
-              market_order morder = market_order( ask_order, ask_itr.key(), ask_itr.value() );
+              oorder_record orec = pending_state->get_ask_record( ask_itr.key() );
+              if( (!orec.valid()) || (orec->balance <= 0) )
+                  continue;
+
+              market_order morder = market_order( ask_order, ask_itr.key(), *orec );
               process_ask( morder.get_price(), morder );
           }
 
@@ -1039,7 +1053,11 @@ namespace bts { namespace blockchain {
                short_itr.valid();
                short_itr++ )
           {
-              market_order morder = market_order( short_order, short_itr.key(), short_itr.value() );
+              oorder_record orec = pending_state->get_short_record( short_itr.key() );
+              if( (!orec.valid()) || (orec->balance <= 0) )
+                  continue;
+
+              market_order morder = market_order( short_order, short_itr.key(), *orec );
               oprice feed = self->get_active_feed_price( morder.get_price().quote_asset_id );
               if( !feed.valid() )
                   continue;
@@ -1053,30 +1071,34 @@ namespace bts { namespace blockchain {
                collateral_itr++ )
           {
               market_index_key k = collateral_itr.key();
-              collateral_record record = collateral_itr.value();
               oprice feed = self->get_active_feed_price( k.order_price.quote_asset_id );
               if( !feed.valid() )
                   continue;
 
+              ocollateral_record orec = pending_state->get_collateral_record( k );
+              if( (!orec.valid()) || (orec->payoff_balance <= 0) || (orec->collateral_balance <= 0) )
+                  continue;
+
               market_order morder = market_order( cover_order,
                 k,
-                order_record(record.payoff_balance),
-                record.collateral_balance,
-                record.interest_rate,
-                record.expiration
+                order_record(orec->payoff_balance),
+                orec->collateral_balance,
+                orec->interest_rate,
+                orec->expiration
                 );
 
-              if( k.order_price <= (*feed) )
+              if( k.order_price >= (*feed) )
                   // margin called.  in reality the price may be raised
                   // to force a match, but we'll ignore that subtlety
                   // here...
-                  process_ask( k.order_price, morder );
-              else if( record.expiration <= now() )
+                  process_ask( (*feed), morder );
+              else if( orec->expiration <= now() )
                   // expired
-                  process_ask( k.order_price, morder );
+                  process_ask( (*feed), morder );
           }
 
           uint64_t failure_count = 0;
+          fc::variants error_list;
 
           // best bid price <= best ask price
           for( auto it=mkt_to_best_bid.begin(); it != mkt_to_best_bid.end(); it++ )
@@ -1092,6 +1114,47 @@ namespace bts { namespace blockchain {
               oasset_record quote_asset = self->get_asset_record( k.first );
               oasset_record base_asset = self->get_asset_record( k.second );
 
+              // it and it_ask are of type
+              // ((asset_id_type, asset_id_type), (price, market_order))
+              market_order bid_order = it->second.second;
+              market_order ask_order = it_ask->second.second;
+
+              std::string bid_type, ask_type;
+
+              // there is probably a way to do this with fc reflection
+              // but the lack of documentation means I don't know what
+              // it is or how to easily find it out
+
+              auto get_order_type = [&]( const market_order& order ) -> std::string
+              {
+                  switch( order.type )
+                  {
+                      case bts::blockchain::null_order:
+                          return "null_order";
+                      case bts::blockchain::bid_order:
+                          return "bid_order";
+                      case bts::blockchain::ask_order:
+                          return "ask_order";
+                      case bts::blockchain::short_order:
+                          return "short_order";
+                      case bts::blockchain::cover_order:
+                          return "cover_order";
+                      default:
+                          return "<unknown>";
+                  }
+              };
+
+              error_list.push_back(
+                   fc::mutable_variant_object()
+                   ("block", self->get_head_block_num())
+                   ("quote_asset", quote_asset->symbol)
+                   ("base_asset", base_asset->symbol)
+                   ("bid_price", it->second.first)
+                   ("ask_price", it_ask->second.first)
+                   ("bid_type", get_order_type( bid_order ))
+                   ("ask_type", get_order_type( ask_order ))
+                  );
+              
               FC_ASSERT( quote_asset.valid() );
               FC_ASSERT( base_asset.valid() );
 
@@ -1114,14 +1177,7 @@ namespace bts { namespace blockchain {
                    ("b", self->get_head_block_num())
                    ("n", failure_count)
                   );
-              _debug_matching_error_log.push_back(
-              fc::format_string(
-                   "debug_check_no_orders_overlap() on block ${b} found ${n} error(s)",
-                   fc::mutable_variant_object()
-                   ("b", self->get_head_block_num())
-                   ("n", failure_count)
-                  )
-              );
+              _debug_matching_error_log.push_back( error_list );
           }
 
           return;
@@ -1134,6 +1190,14 @@ namespace bts { namespace blockchain {
       { try {
          const time_point start_time = time_point::now();
          const block_id_type& block_id = block_data.id();
+         if( _debug_trap_blocks.count( block_data.block_num ) != 0 )
+         {
+#ifdef WIN32
+             __debugbreak();
+#else
+             raise(SIGTRAP);
+#endif
+         }
          try
          {
             public_key_type block_signee;
@@ -1257,6 +1321,29 @@ namespace bts { namespace blockchain {
                 {
                     record.delegate_info->pay_rate = 3;
                     self->store_account_record( record );
+                }
+            }
+
+            if( block_data.block_num == BTS_V0_9_0_FORK_BLOCK_NUM )
+            {
+                static const fc::uint128 max_apr = fc::uint128( BTS_BLOCKCHAIN_MAX_SHORT_APR_PCT ) * FC_REAL128_PRECISION / 100;
+
+                map<market_index_key, collateral_record> records;
+                for( auto iter = _collateral_db.begin(); iter.valid(); ++iter )
+                {
+                    const collateral_record& record = iter.value();
+                    if( record.interest_rate.ratio > max_apr )
+                        records[ iter.key() ] = record;
+                }
+
+                wlog( "Block ${n} Hardfork: Bounding interest rates for ${x} cover positions", ("n",block_data.block_num)("x",records.size()) );
+
+                for( auto& item : records )
+                {
+                    const market_index_key& key = item.first;
+                    collateral_record& record = item.second;
+                    record.interest_rate.ratio = std::min( max_apr, record.interest_rate.ratio );
+                    self->store_collateral_record( key, record );
                 }
             }
 
@@ -2614,8 +2701,8 @@ namespace bts { namespace blockchain {
          if( old_record && old_record->expiration != collateral.expiration)
          {
             my->_collateral_expiration_index.erase( {key.order_price.quote_asset_id,  old_record->expiration, key } );
-            my->_collateral_expiration_index.insert( {key.order_price.quote_asset_id, collateral.expiration, key } );
          }
+         my->_collateral_expiration_index.insert( {key.order_price.quote_asset_id, collateral.expiration, key } );
          my->_collateral_db.store( key, collateral );
       }
    }
@@ -3770,9 +3857,15 @@ namespace bts { namespace blockchain {
        my->_slot_timestamp_to_delegate.remove( timestamp );
    }
 
-   vector<string> chain_database::debug_get_matching_errors() const
+   fc::variants chain_database::debug_get_matching_errors() const
    {
        return my->_debug_matching_error_log;
+   }
+
+   void chain_database::debug_trap_on_block( uint32_t blocknum )
+   {
+       my->_debug_trap_blocks.insert( blocknum );
+       return;
    }
 
 } } // bts::blockchain

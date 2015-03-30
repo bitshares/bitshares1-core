@@ -11,7 +11,7 @@ namespace bts { namespace blockchain {
       fc::raw::pack( enc, *this );
 
       if( block_num >= BTS_V0_9_0_FORK_BLOCK_NUM )
-          fc::raw::pack( enc, 0 );
+          fc::raw::pack( enc, uint32_t( 0 ) );
 
       return enc.result();
    }
@@ -22,7 +22,7 @@ namespace bts { namespace blockchain {
       fc::raw::pack( enc, *this );
 
       if( block_num >= BTS_V0_9_0_FORK_BLOCK_NUM )
-          fc::raw::pack( enc, 0 );
+          fc::raw::pack( enc, uint32_t( 0 ) );
 
       return fc::ripemd160::hash( enc.result() );
    }
