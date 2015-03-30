@@ -18,8 +18,7 @@ mkdir D:\BitShares
 cd D:\BitShares
 git clone https://github.com/bitshares/bitshares.git
 cd bitshares
-git submodule init
-git submodule update
+git submodule update --init --recursive
 ```
 
 * Dowload CMake
