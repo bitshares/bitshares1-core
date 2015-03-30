@@ -1,0 +1,216 @@
+
+import decimal
+import random
+import sys
+
+seed = 1234
+
+rand = random.Random(seed)
+num_expired_cover = 3
+num_unexpired_cover = 3
+num_margin_call = 3
+num_bid = 5
+num_ask = 5
+num_short = 5
+num_feed_move = 3
+
+num_waits = 10
+
+# need to set angel2 short to min_short_price
+
+min_short_price = 135
+max_short_price = 200
+short_price_scale = 1 / decimal.Decimal(10000)
+
+xts_match_min_amount = 50
+xts_match_max_amount = 5000
+xts_match_scale = decimal.Decimal(1)
+
+min_ask_price = 135
+max_ask_price = 300
+ask_price_scale = 1 / decimal.Decimal(10000)
+min_ask_qty_xts = 100
+max_ask_qty_xts = 1000
+ask_qty_scale = decimal.Decimal(1)
+
+min_bid_price = 135
+max_bid_price = 300
+bid_price_scale = 1 / decimal.Decimal(10000)
+min_bid_qty_xts = 100
+max_bid_qty_xts = 1000
+bid_qty_scale = decimal.Decimal(1)
+
+# need to set min_feed_price based on call price of angel2 short
+
+min_feed_price =  90
+max_feed_price = 250
+feed_price_scale = decimal.Decimal(1)
+
+def short_account_generator():
+    for i in range(101):
+        yield "init" + str(i)
+    return
+
+shorting_accounts = short_account_generator()
+
+def _issue_matched_shorts(n):
+    total_xts_match = 0
+    for i in range(n):
+        price = rand.randrange(min_short_price+1, max_short_price) * short_price_scale
+        xts_match_amount = rand.randrange(xts_match_min_amount, xts_match_max_amount) * xts_match_scale
+        xts_collateral = 2 * xts_match_amount
+        usd_debt = xts_match_amount * price
+        acct = next(shorting_accounts)
+        interest_rate = 0
+        yield """
+>>> !expect enable
+>>> !showmatch disable
+>>> wallet_publish_feeds_multi_experimental [["USD", "{price}"]]
+${{ expect_json() }}$
+>>> !expect disable
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> wallet_market_submit_short {acct} {xts_collateral} XTS {interest_rate} USD {price}
+>>> wallet_market_submit_ask charlie {xts_match_amount} XTS {price} USD
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+""".format(**locals())
+    return
+
+def issue_expired_covers():
+    try:
+        for order in _issue_matched_shorts(num_expired_cover):
+            current_test.parse_script(order)
+        current_test.parse_script("""
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+    """)
+
+    except _btstest.RPCError as e:
+        print(e.error_data["error"]["message"])
+        raise
+    return
+
+def get_bids():
+    for i in range(num_bid):
+        price = rand.randrange(min_bid_price+1, max_bid_price) * bid_price_scale
+        qty = rand.randrange(min_bid_qty_xts, max_bid_qty_xts) * bid_qty_scale
+        yield """
+>>> wallet_market_submit_bid bob {qty} XTS {price} USD true
+""".format(**locals())
+    return
+
+def get_asks():
+    for i in range(num_ask):
+        price = rand.randrange(min_ask_price+1, max_ask_price) * ask_price_scale
+        qty = rand.randrange(min_ask_qty_xts, max_ask_qty_xts) * ask_qty_scale
+        yield """
+>>> wallet_market_submit_ask alice {qty} XTS {price} USD true
+""".format(**locals())
+    return
+
+def get_shorts():
+    for i in range(num_short):
+        price = rand.randrange(min_short_price+1, max_short_price) * short_price_scale
+        xts_match_amount = rand.randrange(xts_match_min_amount, xts_match_max_amount) * xts_match_scale
+        xts_collateral = 2 * xts_match_amount
+        usd_debt = xts_match_amount * price
+        acct = next(shorting_accounts)
+        interest_rate = 0
+        yield """
+>>> wallet_market_submit_short {acct} {xts_collateral} XTS {interest_rate} USD {price}
+""".format(**locals())
+    return
+
+def get_feed_movements():
+    for i in range(num_feed_move):
+        price = rand.randrange(min_feed_price+1, max_feed_price) * feed_price_scale
+        yield """
+>>> !expect enable
+>>> !showmatch disable
+>>> wallet_publish_feeds_multi_experimental [["USD", "{price}"]]
+${{ expect_json() }}$
+>>> !expect disable
+""".format(**locals())
+    return
+
+def get_block_waits():
+    for i in range(num_waits):
+        yield """
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+"""
+    return
+
+def check_for_matching_errors():
+    current_test.parse_script("""
+>>> debug_list_matching_errors
+>>>
+""")
+    result = rpc_client.call("debug_list_matching_errors")
+    if len(result) != 0:
+        print("matching error found")
+        sys.exit(1)
+    return
+
+def issue_the_orders():
+    orders = (list(get_bids())
+            + list(get_asks())
+            + list(get_shorts())
+            + list(get_feed_movements())
+            + list(get_block_waits())
+            )
+    rand.shuffle(orders)
+    for order in orders:
+        current_test.parse_script(order)
+        # make sure we matched OK
+        check_for_matching_errors()
+    return
+
+def cover_angel_order():
+    try:
+        angel_order_list = rpc_client.call("wallet_market_order_list", "USD", "XTS", -1, "angel")
+        current_test.parse_script(">>> wallet_market_order_list USD XTS -1 angel")
+
+        xts_precision = decimal.Decimal(rpc_client.call("get_asset", 0)["precision"])
+        usd_precision = decimal.Decimal(rpc_client.call("get_asset", "USD")["precision"])
+
+        for order_id, order_data in angel_order_list:
+            if order_data["type"] == "cover_order":
+                cover_usd = order_data["state"]["balance"] / usd_precision
+                current_test.parse_script("""
+>>> wallet_market_cover angel {cover_usd} USD {order_id}
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD XTS
+>>>
+""".format(**locals()))
+    except _btstest.RPCError as e:
+        print("got HTTP error code", e.http_error_code)
+        print(e.error_data["error"]["message"])
+        raise
+    return
+
+with _btstest.ClientProcess(name="alice", testname=testname, debug_stop=False) as p_alice:
+    # create client process
+    rpc_client = _btstest.RPCClient(dict(
+        host="127.0.0.1",
+        port=p_alice.http_port,
+        rpc_user=p_alice.username,
+        rpc_password=p_alice.password,
+        ))
+    test_client = _btstest.TestClient("alice", rpc_client)
+    register_client(test_client)
+    rpc_client.wait_for_rpc()
+
+    run_testdir(my_path)
+

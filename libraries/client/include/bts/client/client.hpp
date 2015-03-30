@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bts/api/common_api.hpp>
+#include <bts/api/reflect_api.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/client/seed_nodes.hpp>
 #include <bts/net/node.hpp>
@@ -13,6 +14,8 @@
 
 #include <boost/program_options.hpp>
 #include <memory>
+
+#include <fc/api.hpp>
 
 namespace bts { namespace rpc {
     class rpc_server;
@@ -54,9 +57,11 @@ namespace bts { namespace client {
       std::string      rpc_password;
       fc::ip::endpoint rpc_endpoint;
       fc::ip::endpoint httpd_endpoint;
+      fc::ip::endpoint websocket_endpoint;
       fc::ip::endpoint encrypted_rpc_endpoint;
       std::string      encrypted_rpc_wif_key;
       fc::path         htdocs;
+      map<string,bts::api::permissions> users;
 
       bool is_valid() const; /* Currently just checks if rpc port is set */
     };
@@ -78,7 +83,7 @@ namespace bts { namespace client {
         bool                ignore_console = false;
         string              client_debug_name;
 
-        rpc_server_config   rpc;
+        rpc_server_config           rpc;
 
         optional<fc::path>  genesis_config;
         bool                statistics_enabled = false;
@@ -200,9 +205,10 @@ namespace bts { namespace client {
 
 extern const std::string BTS_MESSAGE_MAGIC;
 
+
 FC_REFLECT(bts::client::client_notification, (timestamp)(message)(signature) )
-FC_REFLECT( bts::client::rpc_server_config, (enable)(enable_cache)(rpc_user)(rpc_password)(rpc_endpoint)(httpd_endpoint)
-            (encrypted_rpc_endpoint)(encrypted_rpc_wif_key)(htdocs) )
+FC_REFLECT( bts::client::rpc_server_config, (enable)(enable_cache)(rpc_user)(rpc_password)(rpc_endpoint)(httpd_endpoint)(websocket_endpoint)
+            (encrypted_rpc_endpoint)(encrypted_rpc_wif_key)(htdocs)(users) )
 FC_REFLECT( bts::client::chain_server_config, (enabled)(listen_port) )
 FC_REFLECT( bts::client::config,
         (logging)
@@ -230,3 +236,8 @@ FC_REFLECT( bts::client::config,
         (mail_server_enabled)
         (rpc)
     )
+
+FC_API( bts::api::common_api,
+        (about)
+        (get_info)
+      )

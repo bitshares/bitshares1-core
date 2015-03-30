@@ -148,7 +148,7 @@ else( WIN32 ) # Apple AND Linux
     find_package( Gperftools QUIET )
     if( GPERFTOOLS_FOUND )
         message( STATUS "Found gperftools; compiling LevelDB with TCMalloc")
-        list(APPEND LEVELDB_BUILD_LIBRARIES tcmalloc)
+#     list(APPEND LEVELDB_BUILD_LIBRARIES tcmalloc)
     else()
         message( STATUS "Could not find gperftools; compiling LevelDB without TCMalloc")
     endif()

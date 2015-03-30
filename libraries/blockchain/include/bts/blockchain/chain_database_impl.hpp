@@ -109,7 +109,7 @@ namespace bts { namespace blockchain {
             void                                        update_active_delegate_list_v1( const uint32_t block_num,
                                                                                         const pending_chain_state_ptr& pending_state )const;
 
-            void                                        debug_check_no_orders_overlap() const;
+            void                                        debug_check_no_orders_overlap( const pending_chain_state_ptr& pending_state ) const;
 
             chain_database*                                                             self = nullptr;
             unordered_set<chain_observer*>                                              _observers;
@@ -182,7 +182,8 @@ namespace bts { namespace blockchain {
 
             map<operation_type_enum, std::deque<operation>>                             _recent_operations;
 
-            mutable std::vector<std::string>                                            _debug_matching_error_log;
+            mutable fc::variants                                                        _debug_matching_error_log;
+            mutable set<uint32_t>                                                       _debug_trap_blocks;
       };
 
   } // detail

@@ -143,7 +143,7 @@ namespace bts { namespace blockchain {
     {
       // if the string doesn't look like "123.45" or ".45", this code isn't designed to parse it correctly
       // in particular, we don't try to handle leading whitespace or '+'/'-' indicators at the beginning
-      assert(*c == '.');
+      FC_ASSERT( (*c) == '.' );
       ratio = fc::uint128();
     }
 
