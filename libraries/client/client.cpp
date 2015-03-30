@@ -315,15 +315,6 @@ fc::logging_config create_default_logging_config( const fc::path& data_dir, bool
    dlc_rpc.name = "rpc";
    dlc_rpc.appenders.push_back("rpc");
 
-   fc::logger_config dlc_blockchain;
-#ifdef BTS_TEST_NETWORK
-   dlc_blockchain.level = fc::log_level::debug;
-#else
-   dlc_blockchain.level = fc::log_level::warn;
-#endif
-   dlc_blockchain.name = "blockchain";
-   dlc_blockchain.appenders.push_back("blockchain");
-
    fc::logger_config dlc_p2p;
 #ifdef BTS_TEST_NETWORK
    dlc_p2p.level = fc::log_level::debug;
@@ -344,7 +335,6 @@ fc::logging_config create_default_logging_config( const fc::path& data_dir, bool
    cfg.loggers.push_back(dlc_rpc);
    cfg.loggers.push_back(dlc_p2p);
    cfg.loggers.push_back(dlc_user);
-   cfg.loggers.push_back(dlc_blockchain);
 
    return cfg;
 }
