@@ -1299,6 +1299,9 @@ void client::open( const path& data_dir, const fc::optional<fc::path>& genesis_f
     // re-register the _user_appender which was overwritten by configure_logging()
     fc::logger::get( "user" ).add_appender( my->_user_appender );
 
+    // TODO: Remove after 1.0
+    fc::remove_all( data_dir / "exceptions" );
+
     bool attempt_to_recover_database = false;
     try
     {
