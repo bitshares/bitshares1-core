@@ -1,3 +1,15 @@
+default (unlocked) >>> help blockchain_unclaimed_genesis
+Usage:
+blockchain_unclaimed_genesis                                                                          Returns the total shares in the genesis block which have never been fully or partially claimed.
+Returns the total shares in the genesis block which have never been fully or partially claimed.
+
+Parameters:
+  (none)
+
+Returns:
+  asset
+default (unlocked) >>> blockchain_unclaimed_genesis
+1,999,999,999.99901 XTS
 default (unlocked) >>> wallet_account_create testaccount1
 "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
 default (unlocked) >>> wallet_account_create testaccount2
@@ -210,4 +222,6 @@ default (unlocked) >>> blockchain_market_status XMO XTS
   "last_valid_feed_price": null,
   "last_error": null
 }
+default (unlocked) >>> blockchain_unclaimed_genesis
+1,980,198,019.80100 XTS
 default (unlocked) >>> quit

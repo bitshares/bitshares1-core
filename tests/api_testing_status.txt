@@ -17,7 +17,6 @@ blockchain_market_list_covers <quote_symbol> [base_symbol] [limit]
 blockchain_market_order_history <quote_symbol> <base_symbol> [skip_count] [limit] [owner] 
 blockchain_market_price_history <quote_symbol> <base_symbol> <start_time> <duration> [granularity] 
 blockchain_median_feed_price <symbol> 
-blockchain_unclaimed_genesis 
 blockchain_verify_signature <signer> <hash> <signature> 
 builder_finalize_and_sign <builder> 
 debug_clear_errors [start_time] [first_error_number] [limit] 
@@ -75,7 +74,6 @@ stop
 wallet_account_vesting_balances [account_name] 
 wallet_account_yield [account_name] 
 wallet_add_transaction_note_experimental <transaction_id> <note> 
-wallet_address_create <account_name> [label] [legacy_network_byte] 
 wallet_balance_set_vote_info <balance_id> [voter_address] [strategy] [sign_and_broadcast] [builder_path] 
 wallet_builder_add_signature <builder> [broadcast] 
 wallet_builder_file_add_signature [builder_path] [broadcast] 
@@ -152,6 +150,7 @@ blockchain_market_list_bids <quote_symbol> <base_symbol> [limit]
 blockchain_market_list_shorts <quote_symbol> [limit] 
 blockchain_market_order_book <quote_symbol> <base_symbol> [limit] 
 blockchain_market_status <quote_symbol> <base_symbol> 
+blockchain_unclaimed_genesis 
 convert_to_native_address <raw_address> 
 debug_advance_time <delta_time_seconds> [unit] 
 debug_deterministic_private_keys [start] [count] [prefix] [import] [account_name] [create_new_account] [rescan] 
