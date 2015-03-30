@@ -510,6 +510,7 @@ void client_impl::configure_rpc_server(config& cfg,
       // launch the RPC servers
       bool rpc_success = _rpc_server->configure_rpc(cfg.rpc);
       rpc_success &= _rpc_server->configure_http(cfg.rpc);
+      rpc_success &= _rpc_server->configure_websockets(cfg.rpc);
       if( !cfg.rpc.encrypted_rpc_wif_key.empty() )
           rpc_success &= _rpc_server->configure_encrypted_rpc(cfg.rpc);
 
