@@ -30,15 +30,16 @@
 #define BTS_V0_6_1_FORK_BLOCK_NUM    129600
 #define BTS_V0_6_2_FORK_BLOCK_NUM    187000
 #define BTS_V0_6_3_FORK_BLOCK_NUM    237500
-#define BTS_V0_7_0_FORK_BLOCK_NUM   9999999
-#define BTS_V0_8_0_FORK_BLOCK_NUM   BTS_V0_7_0_FORK_BLOCK_NUM
-#define BTS_V0_9_0_FORK_BLOCK_NUM   BTS_V0_8_0_FORK_BLOCK_NUM
+#define BTS_V0_7_0_FORK_BLOCK_NUM    650000
+#define BTS_V0_8_0_FORK_BLOCK_NUM    BTS_V0_7_0_FORK_BLOCK_NUM
+#define BTS_V0_9_0_FORK_BLOCK_NUM    BTS_V0_8_0_FORK_BLOCK_NUM
 
-#define BTS_FORK_TO_UNIX_TIME_LIST  ((BTS_V0_5_0_FORK_BLOCK_NUM,   "0.5.0",     1420737680)) \
-                                    ((BTS_V0_6_0_FORK_BLOCK_NUM,   "0.6.0",     1421716727)) \
-                                    ((BTS_V0_6_1_FORK_BLOCK_NUM,   "0.6.1",     1421879633)) \
-                                    ((BTS_V0_6_2_FORK_BLOCK_NUM,   "0.6.2",     1422474382)) \
-                                    ((BTS_V0_6_3_FORK_BLOCK_NUM,   "0.6.3",     1422998567))
+#define BTS_FORK_TO_UNIX_TIME_LIST   ((BTS_V0_5_0_FORK_BLOCK_NUM,   "0.5.0",     1420737680)) \
+                                     ((BTS_V0_6_0_FORK_BLOCK_NUM,   "0.6.0",     1421716727)) \
+                                     ((BTS_V0_6_1_FORK_BLOCK_NUM,   "0.6.1",     1421879633)) \
+                                     ((BTS_V0_6_2_FORK_BLOCK_NUM,   "0.6.2",     1422474382)) \
+                                     ((BTS_V0_6_3_FORK_BLOCK_NUM,   "0.6.3",     1422998567))
+                                     //((BTS_V0_9_0_FORK_BLOCK_NUM,   "0.9.0",     1422998567))
 
 namespace bts { namespace blockchain {
   uint32_t estimate_last_known_fork_from_git_revision_timestamp(uint32_t revision_time);
