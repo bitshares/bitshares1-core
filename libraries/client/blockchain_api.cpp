@@ -595,9 +595,9 @@ map<order_id_type, market_order> client_impl::blockchain_list_address_orders(
 
   const oasset_record quote_record = _chain_db->get_asset_record( quote_symbol );
   const oasset_record base_record = _chain_db->get_asset_record( base_symbol );
-  FC_ASSERT( quote_record.valid() );
-  FC_ASSERT( base_record.valid() );
-  
+  FC_ASSERT( quote_symbol.empty() || quote_record.valid() );
+  FC_ASSERT( base_symbol.empty() || base_record.valid() );
+      
   address account_address = address(account_address_str);
   
   const auto filter = [&]( const market_order& order ) -> bool
