@@ -145,15 +145,6 @@ else( WIN32 ) # Apple AND Linux
         list(APPEND LEVELDB_BUILD_LIBRARIES pthread)
     endif()
 
-    find_package( Gperftools QUIET )
-    if( GPERFTOOLS_FOUND )
-        message( STATUS "Found gperftools; compiling LevelDB with TCMalloc")
-#     list(APPEND LEVELDB_BUILD_LIBRARIES tcmalloc)
-    else()
-        message( STATUS "Could not find gperftools; compiling LevelDB without TCMalloc")
-    endif()
-
-
     find_library(READLINE_LIBRARIES NAMES readline)
     find_path(READLINE_INCLUDE_DIR readline/readline.h)
     #if(NOT READLINE_INCLUDE_DIR OR NOT READLINE_LIBRARIES)

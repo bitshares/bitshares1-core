@@ -599,6 +599,54 @@
         "aliases" : ["market_book"]
       },
       {
+        "method_name" : "blockchain_get_market_order",
+        "description" : "Fetch an order",
+        "cached"      : true,
+        "return_type" : "market_order",
+        "parameters"  : [
+           {
+              "name" : "order_id",
+              "type" : "string",
+              "description" : "market order id"
+           }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
+      },
+      {
+        "method_name" : "blockchain_list_address_orders",
+        "description" : "List an order list of a specific market",
+        "cached"      : true,
+        "return_type" : "market_order_map",
+        "parameters"  : [
+           {
+              "name" : "base_symbol",
+              "type" : "asset_symbol",
+              "description" : "the base symbol of the market"
+           },
+           {
+              "name" : "quote_symbol",
+              "type" : "asset_symbol",
+              "description" : "the quote symbol of the market"
+           },
+           {
+               "name" : "account_address",
+               "type" : "string",
+               "description" : "the account for which to get the orders"
+           },
+           {
+              "name" : "limit",
+              "type" : "uint32_t",
+              "description" : "the maximum number of items to return, -1 for all",
+              "default_value" : "10"
+           }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
+      },
+      {
         "method_name": "blockchain_market_order_history",
         "description": "Returns a list of recently filled orders in a given market, in reverse order of execution.",
         "cached"     : true,

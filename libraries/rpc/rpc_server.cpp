@@ -839,7 +839,7 @@ namespace bts { namespace rpc {
       my->_websocket_server = std::make_shared<fc::http::websocket_server>();
 
       my->_websocket_server->on_connection([&]( const fc::http::websocket_connection_ptr& c ){
-               auto wsc = std::make_shared<fc::rpc::websocket_api_connection>(c);
+               auto wsc = std::make_shared<fc::rpc::websocket_api_connection>(*c);
                auto login = std::make_shared<bts::api::login_api>( cfg.users, my->_client );
                wsc->register_api(fc::api<bts::api::login_api>(login));
                c->set_session_data( wsc );

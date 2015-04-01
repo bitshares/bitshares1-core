@@ -580,6 +580,48 @@ std::pair<vector<market_order>,vector<market_order>> client_impl::blockchain_mar
    return std::make_pair(bids, asks);
 }
 
+market_order client_impl::blockchain_get_market_order( const string& order_id_str )const
+{
+   fc::optional<market_order> order = _chain_db->get_market_order( order_id_type(order_id_str) );
+   FC_ASSERT( order.valid(), "Order not found!" );
+   return *order;
+}
+
+map<order_id_type, market_order> client_impl::blockchain_list_address_orders(
+    const string& quote_symbol, const string& base_symbol,
+    const string& account_address_str, uint32_t limit
+)const { try {
+  map<order_id_type, market_order> map;
+
+  const oasset_record quote_record = _chain_db->get_asset_record( quote_symbol );
+  const oasset_record base_record = _chain_db->get_asset_record( base_symbol );
+  FC_ASSERT( quote_symbol.empty() || quote_record.valid() );
+  FC_ASSERT( base_symbol.empty() || base_record.valid() );
+      
+  address account_address = address(account_address_str);
+  
+  const auto filter = [&]( const market_order& order ) -> bool
+  {
+      if( quote_record.valid() && order.market_index.order_price.quote_asset_id != quote_record->id )
+          return false;
+
+      if( base_record.valid() && order.market_index.order_price.base_asset_id != base_record->id )
+          return false;
+
+      if( account_address != order.get_owner() )
+          return false;
+
+      return true;
+  };
+
+  const auto orders = _chain_db->scan_market_orders( filter, limit );
+  for( const auto& order : orders )
+      map[ order.get_id() ] = order;
+
+  return map;
+} FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol)(limit)(account_address_str) ) }
+
+
 std::vector<order_history_record> client_impl::blockchain_market_order_history( const std::string &quote_symbol,
                                                                                 const std::string &base_symbol,
                                                                                 uint32_t skip_count,
