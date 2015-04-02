@@ -1,4 +1,6 @@
+#include <bts/blockchain/account_operations.hpp>
 #include <bts/blockchain/balance_operations.hpp>
+#include <bts/blockchain/market_operations.hpp>
 #include <bts/blockchain/operation_factory.hpp>
 #include <bts/blockchain/pending_chain_state.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
@@ -243,6 +245,8 @@ namespace bts { namespace blockchain {
    void transaction_evaluation_state::scan_addresses( const chain_interface& chain,
                                                       const function<void( const address& )> callback )const
    { try {
+       set<address> addrs;
+
        for( const operation& op : trx.operations )
        {
            switch( operation_type_enum( op.type ) )
@@ -254,7 +258,7 @@ namespace bts { namespace blockchain {
                    {
                        const set<address>& owners = balance_record->owners();
                        for( const address& addr : owners )
-                           callback( addr );
+                           addrs.insert( addr );
                    }
                    break;
                }
@@ -262,7 +266,49 @@ namespace bts { namespace blockchain {
                {
                    const set<address>& owners = op.as<deposit_operation>().condition.owners();
                    for( const address& addr : owners )
-                       callback( addr );
+                       addrs.insert( addr );
+                   break;
+               }
+               case register_account_op_type:
+               {
+                   const register_account_operation account_register = op.as<register_account_operation>();
+                   addrs.emplace( account_register.owner_key );
+                   addrs.emplace( account_register.active_key );
+                   break;
+               }
+               case update_account_op_type:
+               {
+                   const update_account_operation account_update = op.as<update_account_operation>();
+                   if( account_update.active_key.valid() )
+                       addrs.emplace( *account_update.active_key );
+                   break;
+               }
+               case bid_op_type:
+               {
+                   addrs.insert( op.as<bid_operation>().bid_index.owner );
+                   break;
+               }
+               case ask_op_type:
+               {
+                   addrs.insert( op.as<ask_operation>().ask_index.owner );
+                   break;
+               }
+#ifndef WIN32
+#warning [DVS/BTS] Add short_v2 here
+#endif
+               case short_op_type:
+               {
+                   addrs.insert( op.as<short_operation>().short_index.owner );
+                   break;
+               }
+               case cover_op_type:
+               {
+                   addrs.insert( op.as<cover_operation>().cover_index.owner );
+                   break;
+               }
+               case add_collateral_op_type:
+               {
+                   addrs.insert( op.as<add_collateral_operation>().cover_index.owner );
                    break;
                }
                default:
@@ -271,6 +317,9 @@ namespace bts { namespace blockchain {
                }
            }
        }
+
+       for( const address& addr : addrs )
+           callback( addr );
    } FC_CAPTURE_AND_RETHROW() }
 
 } } // bts::blockchain
