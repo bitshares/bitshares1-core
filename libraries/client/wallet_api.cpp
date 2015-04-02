@@ -1262,7 +1262,7 @@ account_balance_summary_type client_impl::wallet_account_yield( const string& ac
 wallet_transaction_record client_impl::wallet_market_submit_bid(
        const string& from_account,
        const string& quantity,
-       const string& quantity_symbol,
+       const string& quantity_symbol, //base_symbol
        const string& quote_price,
        const string& quote_symbol,
        bool allow_stupid_bid )

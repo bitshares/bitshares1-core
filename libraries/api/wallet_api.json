@@ -1890,9 +1890,9 @@
                "description" : "the quantity of items you would like to buy"
             },
             {
-               "name" : "quantity_symbol",
+               "name" : "base_symbol",
                "type" : "asset_symbol",
-               "description" : "the type of items you would like to buy"
+               "description" : "the type of asset you would like to pay with"
             },
             {
                "name" : "base_price",
@@ -1900,9 +1900,9 @@
                "description" : "the price you would like to pay"
             },
             {
-               "name" : "base_symbol",
+               "name" : "quoted_symbol",
                "type" : "asset_symbol",
-               "description" : "the type of asset you would like to pay with"
+               "description" : "the type of asset you would like to buy"
             },
             {
                "name" : "allow_stupid_bid",
