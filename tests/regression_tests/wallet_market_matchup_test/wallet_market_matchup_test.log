@@ -129,12 +129,8 @@ default (unlocked) >>> wallet_account_order_list
       },
       "state": {
         "balance": 150000,
-        "limit_price": null,
         "last_update": "2014-06-20T14:41:10"
-      },
-      "collateral": null,
-      "interest_rate": null,
-      "expiration": null
+      }
     }
   ]
 ]
@@ -165,10 +161,7 @@ TOTAL                     QUANTITY                                     PRICE | P
 default (unlocked) >>> blockchain_market_status XMO XTS
 {
   "quote_id": 1,
-  "base_id": 0,
-  "current_feed_price": null,
-  "last_valid_feed_price": null,
-  "last_error": null
+  "base_id": 0
 }
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
@@ -223,10 +216,7 @@ TOTAL                     QUANTITY                                     PRICE | P
 default (unlocked) >>> blockchain_market_status XMO XTS
 {
   "quote_id": 1,
-  "base_id": 0,
-  "current_feed_price": null,
-  "last_valid_feed_price": null,
-  "last_error": null
+  "base_id": 0
 }
 default (unlocked) >>> wallet_account_order_list
 [[
@@ -242,12 +232,8 @@ default (unlocked) >>> wallet_account_order_list
       },
       "state": {
         "balance": 120000,
-        "limit_price": null,
         "last_update": "2014-06-20T14:41:10"
-      },
-      "collateral": null,
-      "interest_rate": null,
-      "expiration": null
+      }
     }
   ]
 ]
@@ -278,10 +264,7 @@ TOTAL                     QUANTITY                                     PRICE | P
 default (unlocked) >>> blockchain_market_status XMO XTS
 {
   "quote_id": 1,
-  "base_id": 0,
-  "current_feed_price": null,
-  "last_valid_feed_price": null,
-  "last_error": null
+  "base_id": 0
 }
 default (unlocked) >>> balance
 ACCOUNT                         BALANCE                     
@@ -331,12 +314,8 @@ default (unlocked) >>> wallet_account_order_list
       },
       "state": {
         "balance": 10000000,
-        "limit_price": null,
         "last_update": "2014-06-20T14:41:50"
-      },
-      "collateral": null,
-      "interest_rate": null,
-      "expiration": null
+      }
     }
   ],[
     "ee62e3cee425e0410eae3a3b614020fa70cd0e21",{
@@ -351,12 +330,8 @@ default (unlocked) >>> wallet_account_order_list
       },
       "state": {
         "balance": 120000,
-        "limit_price": null,
         "last_update": "2014-06-20T14:41:10"
-      },
-      "collateral": null,
-      "interest_rate": null,
-      "expiration": null
+      }
     }
   ]
 ]

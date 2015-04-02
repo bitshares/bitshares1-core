@@ -50,8 +50,6 @@ default (unlocked) >>> blockchain_get_balance XTSQ64zpSJuFzNuDMp1ThGz9tgudPYUYwt
     }
   },
   "balance": 12345000,
-  "restricted_owner": null,
-  "snapshot_info": null,
   "deposit_date": "2014-06-20T14:40:40",
   "last_update": "2014-06-20T14:40:40",
   "meta_data": null

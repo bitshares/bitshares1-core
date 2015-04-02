@@ -94,7 +94,6 @@ default (unlocked) >>> wallet_get_account test
   ],
   "registration_date": "2014-06-20T14:40:50",
   "last_update": "2014-06-20T14:40:50",
-  "delegate_info": null,
   "meta_data": {
     "type": "titan_account",
     "data": ""

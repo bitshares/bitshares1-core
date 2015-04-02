@@ -210,10 +210,7 @@ TOTAL                     QUANTITY                                     PRICE | P
 default (unlocked) >>> blockchain_market_status XMO XTS
 {
   "quote_id": 1,
-  "base_id": 0,
-  "current_feed_price": null,
-  "last_valid_feed_price": null,
-  "last_error": null
+  "base_id": 0
 }
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
