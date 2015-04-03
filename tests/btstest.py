@@ -811,7 +811,8 @@ class Test(object):
                         raise RuntimeError("mismatched ${")
                     expr = mo.group(1)
                 self.interpret_expr(expr)
-                # TODO: cmd_text.append() function
+                if in_command:
+                    cmd_text.append("".join(self.context["matchbuf"]))
                 self.print_output("${"+expr+"}$")
                 self.dump_matchbuf(self.context["showmatch_enabled"])
             elif len(t) >= 4 and t[0:2] == "#{" and t[-2:] == "}#":
