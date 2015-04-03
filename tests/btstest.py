@@ -310,6 +310,15 @@ class ClientProcess(object):
         with open(genesis_file, "w") as f:
             json.dump(genesis_config, f, indent=4, sort_keys=True)
 
+        with open(os.path.join(data_dir, "checkpoints.json"), "w") as f:
+            #
+            # Since the client uses builtin checkpoints beyond the
+            # last checkpoint in the file, an empty checkpoint file
+            # won't work.  Use a hack to workaround this:  Set a
+            # bogus checkpoint very far in the future.
+            #
+            f.write("[[999999999, \"9999999999999999999999999999999999999999\"]]\n")
+
         args = [
             "--p2p-port", str(self.p2p_port),
             "--rpcuser", self.username,
