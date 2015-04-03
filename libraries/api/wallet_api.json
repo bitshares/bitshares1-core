@@ -681,7 +681,7 @@
             {
               "name" : "strategy",
               "type" : "vote_strategy",
-              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "description" : "enumeration [vote_recommended | vote_all | vote_none]",
               "default_value" : "vote_recommended"
             }
           ],
@@ -748,7 +748,7 @@
             {
               "name" : "strategy",
               "type" : "vote_strategy",
-              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "description" : "enumeration [vote_recommended | vote_all | vote_none]",
               "default_value" : "vote_none"
             }
         ],
@@ -785,7 +785,7 @@
             {
               "name" : "strategy",
               "type" : "vote_strategy",
-              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "description" : "enumeration [vote_recommended | vote_all | vote_none]",
               "default_value" : "vote_none"
             },
             {
@@ -835,7 +835,7 @@
             {
               "name" : "strategy",
               "type" : "vote_strategy",
-              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "description" : "enumeration [vote_recommended | vote_all | vote_none]",
               "default_value" : "vote_none"
             },
             {
@@ -887,7 +887,7 @@
             {
               "name" : "strategy",
               "type" : "vote_strategy",
-              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "description" : "enumeration [vote_recommended | vote_all | vote_none]",
               "default_value" : "vote_none"
             },
             {
@@ -1033,7 +1033,7 @@
             {
               "name" : "strategy",
               "type" : "vote_strategy",
-              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "description" : "enumeration [vote_recommended | vote_all | vote_none]",
               "default_value" : "vote_recommended"
             }
           ],
@@ -2337,7 +2337,7 @@
                {
                  "name" : "strategy",
                  "type" : "vote_strategy",
-                 "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+                 "description" : "enumeration [vote_recommended | vote_all | vote_none]",
                  "default_value" : "vote_all"
                },
                {

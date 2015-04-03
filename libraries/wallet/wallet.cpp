@@ -802,127 +802,69 @@ namespace detail {
        return slate_id;
    } FC_CAPTURE_AND_RETHROW( (transaction)(strategy) ) }
 
-   /**
-    *  Select a slate of delegates from those approved by this wallet. Specify
-    *  strategy as vote_none, vote_all, or vote_random. The slate
-    *  returned will contain no more than BTS_BLOCKCHAIN_MAX_SLATE_SIZE delegates.
-    */
    slate_record wallet_impl::get_delegate_slate( const vote_strategy strategy )const
    {
-      if( strategy == vote_none )
-         return slate_record();
+       if( strategy == vote_none )
+           return slate_record();
 
-      vector<account_id_type> for_candidates;
+       map<account_id_type, account_record> approved_accounts;
+       set<account_id_type> disapproved_accounts;
 
-      const auto account_items = _wallet_db.get_approvals();
-      for( const auto& item : account_items )
-      {
-          const wallet_approval_record& record = item.second;
-          const oaccount_record chain_record = _blockchain->get_account_record( record.name );
-          if( !chain_record.valid() ) continue;
-          if( record.approval > 0 )
-              for_candidates.push_back( chain_record->id );
-      }
+       const auto& approvals = _wallet_db.get_approvals();
+       for( const auto& item : approvals )
+       {
+           const wallet_approval_record& approval_record = item.second;
+           const oaccount_record account_record = _blockchain->get_account_record( approval_record.name );
+           if( account_record.valid() && !account_record->is_retracted() )
+           {
+               if( approval_record.approval > 0 )
+                   approved_accounts[ account_record->id ] = *account_record;
+               else if( approval_record.approval < 0 )
+                   disapproved_accounts.insert( account_record->id );
+           }
+       }
 
-      std::random_shuffle( for_candidates.begin(), for_candidates.end() );
+       if( strategy == vote_recommended )
+       {
+           for( const auto& item : approved_accounts )
+           {
+               oslate_record recommended_slate;
+               try
+               {
+                   const auto& account_record = item.second;
+                   const slate_id_type slate_id = account_record.public_data.get_object()[ "slate_id" ].as<slate_id_type>();
+                   recommended_slate = _blockchain->get_slate_record( slate_id );
+               }
+               catch( ... )
+               {
+               }
 
-      size_t slate_size = 0;
-      if( strategy == vote_all )
-      {
-          slate_size = std::min<size_t>( BTS_BLOCKCHAIN_MAX_SLATE_SIZE, for_candidates.size() );
-      }
-      else if( strategy == vote_random )
-      {
-          slate_size = std::min<size_t>( BTS_BLOCKCHAIN_MAX_SLATE_SIZE / 3, for_candidates.size() );
-          slate_size = rand() % ( slate_size + 1 );
-      }
-      else if( strategy == vote_recommended && for_candidates.size() < BTS_BLOCKCHAIN_MAX_SLATE_SIZE )
-      {
-          unordered_map<account_id_type, int> recommended_candidate_ranks;
+               if( recommended_slate.valid() )
+               {
+                   for( const account_id_type recommended_id : recommended_slate->slate )
+                   {
+                       if( approved_accounts.count( recommended_id ) > 0 || disapproved_accounts.count( recommended_id ) > 0 )
+                           continue;
 
-          //Tally up the recommendation count for all delegates recommended by delegates I approve of
-          for( const auto approved_candidate : for_candidates )
-          {
-            oaccount_record candidate_record = _blockchain->get_account_record(approved_candidate);
-            if( !candidate_record.valid() ) continue;
-            if( candidate_record->is_retracted() ) continue;
+                       const oaccount_record account_record = _blockchain->get_account_record( recommended_id );
+                       if( account_record.valid() && !account_record->is_retracted() )
+                           approved_accounts[ account_record->id ] = *account_record;
+                   }
+               }
+           }
+       }
 
-            if( !candidate_record->public_data.is_object()
-                || !candidate_record->public_data.get_object().contains("slate_id"))
-              continue;
+       slate_record record;
+       for( const auto& item : approved_accounts )
+       {
+           if( record.slate.size() >= BTS_BLOCKCHAIN_MAX_SLATE_SIZE )
+               break;
 
-            if( !candidate_record->public_data.get_object()["slate_id"].is_uint64() )
-            {
-              //Delegate is doing something non-kosher with their slate_id. Disapprove of them.
-              //self->set_account_approval( candidate_record->name, -1 );
-              continue;
-            }
-
-            oslate_record recommendations = _blockchain->get_slate_record(candidate_record->public_data.get_object()["slate_id"].as<slate_id_type>());
-            if( !recommendations.valid() )
-            {
-              //Delegate is doing something non-kosher with their slate_id. Disapprove of them.
-              //self->set_account_approval( candidate_record->name, -1 );
-              continue;
-            }
-
-            for( const auto recommended_candidate : recommendations->slate )
-              ++recommended_candidate_ranks[recommended_candidate];
-          }
-
-          //Disqualify non-delegates and delegates I actively disapprove of
-          for( const auto& item : account_items )
-          {
-              const wallet_approval_record& record = item.second;
-              const oaccount_record chain_record = _blockchain->get_account_record( record.name );
-              if( !chain_record.valid() ) continue;
-              if( chain_record->is_retracted() || !chain_record->is_delegate() || record.approval < 0 )
-                  recommended_candidate_ranks.erase( chain_record->id );
-          }
-
-          //Remove from rankings candidates I already approve of
-          for( const auto approved_id : for_candidates )
-            if( recommended_candidate_ranks.find(approved_id) != recommended_candidate_ranks.end() )
-              recommended_candidate_ranks.erase(approved_id);
-
-          //Remove non-delegates from for_candidates
-          vector<account_id_type> delegates;
-          for( const auto id : for_candidates )
-          {
-              const oaccount_record record = _blockchain->get_account_record( id );
-              if( !record.valid() ) continue;
-              if( !record->is_delegate() ) continue;
-              if( record->is_retracted() ) continue;
-              delegates.push_back(id);
-          }
-          for_candidates = delegates;
-
-          //While I can vote for more candidates, and there are more recommendations to vote for...
-          while( for_candidates.size() < BTS_BLOCKCHAIN_MAX_SLATE_SIZE && recommended_candidate_ranks.size() > 0 )
-          {
-            int best_rank = 0;
-            account_id_type best_ranked_candidate;
-
-            //Add highest-ranked candidate to my list to vote for and remove him from rankings
-            for( const auto& ranked_candidate : recommended_candidate_ranks )
-              if( ranked_candidate.second > best_rank )
-              {
-                best_rank = ranked_candidate.second;
-                best_ranked_candidate = ranked_candidate.first;
-              }
-
-            for_candidates.push_back(best_ranked_candidate);
-            recommended_candidate_ranks.erase(best_ranked_candidate);
-          }
-
-          slate_size = for_candidates.size();
-      }
-
-      slate_record record;
-      for( const account_id_type id : for_candidates ) record.slate.insert( id );
-      FC_ASSERT( record.slate.size() <= BTS_BLOCKCHAIN_MAX_SLATE_SIZE );
-
-      return record;
+           const auto& account_record = item.second;
+           if( account_record.is_delegate() && !account_record.is_retracted() )
+               record.slate.insert( account_record.id );
+       }
+       return record;
    }
 
    price wallet_impl::str_to_relative_price( const string& str, const string& base_symbol, const string& quote_symbol )
