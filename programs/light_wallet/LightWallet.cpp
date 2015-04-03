@@ -405,7 +405,7 @@ void LightWallet::syncAllTransactions()
    END_THREAD
 }
 
-void LightWallet::generateBrainKey()
+void LightWallet::generateBrainKey(uint8_t wordCount)
 {
    FC_ASSERT( &fc::thread::current() == &m_walletThread );
 
@@ -414,8 +414,19 @@ void LightWallet::generateBrainKey()
    auto secret = priv_key.get_secret();
 
    uint16_t* keys = (uint16_t*)&secret;
-   for( uint32_t i = 0; i < 9; ++i )
+   for( uint32_t i = 0; i < wordCount; ++i )
+   {
+      // The private key secret is 32 bytes, which is good for 16 words. Every 16 words, we need to get a new secret
+      // and begin iterating it again.
+      static_assert((sizeof(secret._hash)/sizeof(uint16_t)) == 16, "Unexpected size for private key");
+      if( i >= (sizeof(secret._hash)/sizeof(uint16_t)) )
+      {
+         wordCount -= i;
+         i = 0;
+         secret = fc::ecc::private_key::generate().get_secret();
+      }
       result = result + word_list[keys[i]%word_list_size] + " ";
+   }
    result.chop(1);
 
    m_brainKey = result;

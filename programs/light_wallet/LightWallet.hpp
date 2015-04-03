@@ -174,6 +174,6 @@ private:
 
    mutable QMap<QString,int> m_digitsOfPrecisionCache;
 
-   void generateBrainKey();
+   void generateBrainKey(uint8_t wordCount = 16);
    void updateAccount(const bts::light_wallet::account_record& account);
 };
