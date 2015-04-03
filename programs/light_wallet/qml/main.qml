@@ -1,7 +1,7 @@
 import QtQuick 2.3
 import QtQuick.Window 2.2
 import QtQuick.Layouts 1.1
-import QtQuick.Controls 1.2
+import QtQuick.Controls 1.3 as Controls3
 import QtGraphicalEffects 1.0
 
 import Qt.labs.settings 1.0
@@ -124,6 +124,13 @@ Window {
       iconName: "action/payment"
       onTriggered: openTransferPage({accountName: wallet.accountNames[0]})
    }
+   Controls3.Action {
+      id: __quitAction
+      text: "Quit"
+      shortcut: StandardKey.Quit
+      onTriggered: Qt.quit()
+   }
+
    QtObject {
       id: visuals
       property real margins: units.dp(16)
@@ -250,7 +257,7 @@ Window {
             anchors.fill: parent
             z: -1
             // @disable-check M126 -- I actually do want type coercion on this comparison
-            enabled: pageStack.currentItem.accountName != ""
+            enabled: pageStack.currentItem && pageStack.currentItem.accountName != ""
             onClicked: {
                Utils.copyTextToClipboard(pageStack.currentItem.accountName)
                showMessage("Copied <i>" + pageStack.currentItem.accountName + "</i> to clipboard")
