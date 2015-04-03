@@ -214,6 +214,24 @@ void LightWallet::createWallet(QString accountName, QString password)
    END_WAIT_THREAD
 }
 
+QStringList LightWallet::recoverableAccounts(QString brainKey)
+{
+   QStringList results;
+
+   IN_WAIT_THREAD
+   int n = 0;
+   bts::blockchain::oaccount_record account;
+   do {
+      auto key = m_wallet.derive_private_key(convert(brainKey), n++);
+      account = m_wallet.get_account_record(std::string(bts::blockchain::public_key_type(key.get_public_key())));
+      if( account )
+         results.append(convert(account->name));
+   } while(account);
+   END_WAIT_THREAD
+
+   return results;
+}
+
 bool LightWallet::recoverWallet(QString accountName, QString password, QString brainKey)
 {
    bool success = false;
