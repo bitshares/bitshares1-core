@@ -70,15 +70,15 @@ ${{ expect_json() }}$
 >>> !expect disable
 >>> debug_advance_time 1 block
 >>> debug_wait_for_block_by_number 1 rlast
->>> wallet_market_submit_short {acct} {xts_collateral} XTS {interest_rate} USD {price}
->>> wallet_market_submit_ask charlie {xts_match_amount} XTS {price} USD
+>>> wallet_market_submit_short {acct} {xts_collateral} {xts} {interest_rate} USD {price}
+>>> wallet_market_submit_ask charlie {xts_match_amount} {xts} {price} USD
 >>> debug_advance_time 1 block
 >>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
+>>> blockchain_market_order_book USD {xts}
 >>> debug_advance_time 1 block
 >>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
-""".format(**locals())
+>>> blockchain_market_order_book USD {xts}
+""".format(xts=xts, **locals())
     return
 
 def issue_expired_covers():
@@ -88,11 +88,11 @@ def issue_expired_covers():
         current_test.parse_script("""
 >>> debug_advance_time 1 block
 >>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
+>>> blockchain_market_order_book USD {xts}
 >>> debug_advance_time 1 block
 >>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
-    """)
+>>> blockchain_market_order_book USD {xts}
+    """.format(xts=xts))
 
     except _btstest.RPCError as e:
         print(e.error_data["error"]["message"])
@@ -104,8 +104,8 @@ def get_bids():
         price = rand.randrange(min_bid_price+1, max_bid_price) * bid_price_scale
         qty = rand.randrange(min_bid_qty_xts, max_bid_qty_xts) * bid_qty_scale
         yield """
->>> wallet_market_submit_bid bob {qty} XTS {price} USD true
-""".format(**locals())
+>>> wallet_market_submit_bid bob {qty} {xts} {price} USD true
+""".format(xts=xts, **locals())
     return
 
 def get_asks():
@@ -113,8 +113,8 @@ def get_asks():
         price = rand.randrange(min_ask_price+1, max_ask_price) * ask_price_scale
         qty = rand.randrange(min_ask_qty_xts, max_ask_qty_xts) * ask_qty_scale
         yield """
->>> wallet_market_submit_ask alice {qty} XTS {price} USD true
-""".format(**locals())
+>>> wallet_market_submit_ask alice {qty} {xts} {price} USD true
+""".format(xts=xts, **locals())
     return
 
 def get_shorts():
@@ -126,8 +126,8 @@ def get_shorts():
         acct = next(shorting_accounts)
         interest_rate = 0
         yield """
->>> wallet_market_submit_short {acct} {xts_collateral} XTS {interest_rate} USD {price}
-""".format(**locals())
+>>> wallet_market_submit_short {acct} {xts_collateral} {xts} {interest_rate} USD {price}
+""".format(xts=xts, **locals())
     return
 
 def get_feed_movements():
@@ -147,8 +147,8 @@ def get_block_waits():
         yield """
 >>> debug_advance_time 1 block
 >>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
-"""
+>>> blockchain_market_order_book USD {xts}
+""".format(xts=xts)
     return
 
 def check_for_matching_errors():
@@ -178,8 +178,8 @@ def issue_the_orders():
 
 def cover_angel_order():
     try:
-        angel_order_list = rpc_client.call("wallet_market_order_list", "USD", "XTS", -1, "angel")
-        current_test.parse_script(">>> wallet_market_order_list USD XTS -1 angel")
+        angel_order_list = rpc_client.call("wallet_market_order_list", "USD", xts, -1, "angel")
+        current_test.parse_script(">>> wallet_market_order_list USD {xts} -1 angel".format(xts=xts))
 
         xts_precision = decimal.Decimal(rpc_client.call("get_asset", 0)["precision"])
         usd_precision = decimal.Decimal(rpc_client.call("get_asset", "USD")["precision"])
@@ -191,9 +191,9 @@ def cover_angel_order():
 >>> wallet_market_cover angel {cover_usd} USD {order_id}
 >>> debug_advance_time 1 block
 >>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
+>>> blockchain_market_order_book USD {xts}
 >>>
-""".format(**locals()))
+""".format(xts=xts, **locals()))
     except _btstest.RPCError as e:
         print("got HTTP error code", e.http_error_code)
         print(e.error_data["error"]["message"])
