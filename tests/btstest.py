@@ -575,6 +575,7 @@ class Test(object):
         self.context = {}
         self.name2client = {}
         self.context["active_client"] = ""
+        self.context["arg"] = self.append_arg
         self.context["expect_str"] = self.expect_str
         self.context["expect_regex"] = self.expect_regex
         self.context["expect_json"] = self.expect_json
@@ -624,6 +625,12 @@ class Test(object):
 
     def on_pass_literal_str(self, s):
         self.print_output(s)
+        return
+
+    def append_arg(self, arg):
+        s_arg = str(arg)
+        cmd_text.append(s_arg)
+        self.matchbuf.append(s_arg)
         return
 
     def expect_literal_str(self, data):
@@ -811,8 +818,6 @@ class Test(object):
                         raise RuntimeError("mismatched ${")
                     expr = mo.group(1)
                 self.interpret_expr(expr)
-                if in_command:
-                    cmd_text.append("".join(self.context["matchbuf"]))
                 self.print_output("${"+expr+"}$")
                 self.dump_matchbuf(self.context["showmatch_enabled"])
             elif len(t) >= 4 and t[0:2] == "#{" and t[-2:] == "}#":
