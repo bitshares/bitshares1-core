@@ -244,6 +244,17 @@ Window {
          id: toolbar
          width: parent.width
          backgroundColor: Theme.primaryColor
+
+         Ink {
+            anchors.fill: parent
+            z: -1
+            // @disable-check M126 -- I actually do want type coercion on this comparison
+            enabled: pageStack.currentItem.accountName != ""
+            onClicked: {
+               Utils.copyTextToClipboard(pageStack.currentItem.accountName)
+               showMessage("Copied <i>" + pageStack.currentItem.accountName + "</i> to clipboard")
+            }
+         }
       }
       View {
          id: criticalNotificationArea
