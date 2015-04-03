@@ -92,7 +92,8 @@ MainView {
          id: registrationProgress
          anchors.horizontalCenter: parent.horizontalCenter
          width: units.dp(400)
-         progress: 0
+         value: 0
+         opacity: 0
 
          NumberAnimation {
             id: registrationProgressAnimation
@@ -222,12 +223,7 @@ MainView {
          placeholderText: qsTr("Recovery Password")
          helperText: qsTr("This is the password you were asked to write down when you backed up your account.")
          floatingLabel: true
-         onEditingFinished: {
-            showMessage(qsTr("Searching for accounts to recover..."))
-            importNameField.model = wallet.recoverableAccounts(text)
-            if( importNameField.model.length === 0 )
-               showMessage(qsTr("Could not find any accounts to recover. Is your recovery password correct?"))
-         }
+         onEditingFinished: importNameField.findRecoverableAccounts(text)
          transform: ShakeAnimation { id: brainKeyShaker }
       }
       MenuField {
@@ -235,10 +231,18 @@ MainView {
          anchors.horizontalCenter: parent.horizontalCenter
          width: parent.width - visuals.margins*2
          placeholderText: qsTr("Account Name")
-         helperText: model.length === 0? qsTr("Enter your recovery password above, then select an account to recover here.")
-                                       : qsTr("Select the account to recover.")
+         helperText: (model && model.length === 0)? qsTr("Enter your recovery password above, then select an account to recover here.")
+                                                  : qsTr("Select the account to recover.")
          floatingLabel: true
          transform: ShakeAnimation { id: importNameShaker }
+
+         function findRecoverableAccounts(key) {
+            if( onboarder.state !== "IMPORTING" ) return
+            showMessage(qsTr("Searching for accounts to recover..."))
+            importNameField.model = wallet.recoverableAccounts(key)
+            if( importNameField.model.length === 0 )
+               showMessage(qsTr("Could not find any accounts to recover. Is your recovery password correct?"))
+         }
       }
       PasswordField {
          id: importPasswordField
@@ -267,7 +271,11 @@ MainView {
             text: qsTr("Import Account")
             onClicked: {
                if( !importNameField.model || importNameField.model.length === 0 )
+               {
+                  if( importBrainKeyField.activeFocus )
+                     return importNameField.findRecoverableAccounts(importBrainKeyField.text)
                   return brainKeyShaker.shake()
+               }
                if( !importNameField.selectedText )
                   return importNameShaker.shake()
                if( !importPasswordField.password )
@@ -302,6 +310,10 @@ MainView {
          PropertyChanges {
             target: importButton
             enabled: false
+         }
+         PropertyChanges {
+            target: registrationProgress
+            opacity: 1
          }
       },
       State {

@@ -57,7 +57,7 @@ void GuardFuture(fc::future<T> f, const char* file, const char* function, QObjec
 inline static QString normalize(QString key)
 {
    key = key.simplified();
-   return key.toUpper().remove(QRegExp("[^A-Z] "));
+   return key.toUpper();
 }
 
 LightWallet::LightWallet()
@@ -229,6 +229,7 @@ QStringList LightWallet::recoverableAccounts(QString brainKey)
    } while(account);
    END_WAIT_THREAD
 
+   qDebug() << "Found recoverable accounts:" << results;
    return results;
 }
 
@@ -255,7 +256,8 @@ bool LightWallet::recoverWallet(QString accountName, QString password, QString b
          Q_EMIT notification(tr("Couldn't recover account."));
       }
    } catch (bts::light_wallet::account_already_registered e) {
-      Q_EMIT notification(tr("Could not claim registered account %1. Is your recovery password correct?").arg(accountName));
+      Q_EMIT notification(tr("Could not claim %1. Is your recovery password correct?").arg(accountName));
+      wdump((e.to_detail_string()));
    }
 
    Q_EMIT walletExistsChanged(walletExists());
