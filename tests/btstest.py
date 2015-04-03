@@ -199,6 +199,7 @@ class ClientProcess(object):
         testdir=None,
         rpc_client=None,
         debug_stop=False,
+        xts="XTS",
         ):
         self.name = name
 
@@ -247,6 +248,8 @@ class ClientProcess(object):
 
         self.debug_stop = debug_stop
 
+        self.xts = xts
+
         return
 
     def __enter__(self):
@@ -287,7 +290,25 @@ class ClientProcess(object):
         if callable(self.http_port):
             self.http_port = self.http_port()
 
-        genesis_config = os.path.abspath(self.genesis_config)
+        genesis_file = os.path.join(data_dir, "genesis.json")
+        genesis_config = self.genesis_config
+
+        if not isinstance(genesis_config, dict):
+            with open(self.genesis_config, "r") as f:
+                genesis_config = json.load(f)
+
+        # write genesis to output file after trimming keys
+        for delegate in genesis_config["delegates"]:
+            if (
+                delegate["owner"].startswith("XTS") or
+                delegate["owner"].startswith("DVS") or
+                delegate["owner"].startswith("BTS")
+               ):
+                delegate["owner"] = self.xts+delegate["owner"][3:]
+
+        # copy genesis config to file
+        with open(genesis_file, "w") as f:
+            json.dump(genesis_config, f, indent=4, sort_keys=True)
 
         args = [
             "--p2p-port", str(self.p2p_port),
@@ -299,7 +320,7 @@ class ClientProcess(object):
             "--disable-peer-advertising",
             "--min-delegate-connection-count", "0",
             "--upnp", "0",
-            "--genesis-config", genesis_config,
+            "--genesis-config", genesis_file,
             "--data-dir", data_dir,
             "--server",
             #"--log-commands", os.path.join(data_dir, "console.log"),
