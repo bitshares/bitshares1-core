@@ -200,7 +200,7 @@ def cover_angel_order():
         raise
     return
 
-with _btstest.ClientProcess(name="alice", testname=testname, debug_stop=False) as p_alice:
+with _btstest.ClientProcess(name="alice", testname=testname, xts=xts, debug_stop=False) as p_alice:
     # create client process
     rpc_client = _btstest.RPCClient(dict(
         host="127.0.0.1",
