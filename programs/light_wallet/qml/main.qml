@@ -13,7 +13,7 @@ import Material 0.1
 import Material.ListItems 0.1
 import Material.Extras 0.1 as Extras
 
-Window {
+ApplicationWindow {
    id: window
    visible: true
    width: units.dp(1200)
@@ -28,7 +28,7 @@ Window {
       property string guid: Extras.Utils.generateID()
    }
 
-   property alias pageStack: __pageStack
+//   property alias pageStack: __pageStack
    property alias lockAction: __lockAction
    property alias payAction: __payAction
 
@@ -46,16 +46,12 @@ Window {
    }
 
    function showMessage(error, buttonName, buttonCallback) {
-      snack.text = error
       if( buttonName && buttonCallback ) {
          snack.buttonText = buttonName
-         snack.onClick.connect(buttonCallback)
-         snack.onDissapear.connect(function() {
-            snack.onClick.disconnect(buttonCallback)
-         })
+         snack.buttonCallback = buttonCallback
       } else
          snack.buttonText = ""
-      snack.open()
+      snack.open(error)
    }
    function deviceType() {
       switch(Device.type) {
@@ -166,22 +162,22 @@ Window {
       onNotification: showMessage(message)
    }
 
-   Item {
-      id: overlayLayer
-      objectName: "overlayLayer"
+//   Item {
+//      id: overlayLayer
+//      objectName: "overlayLayer"
 
-      anchors.fill: parent
-      z: 100
+//      anchors.fill: parent
+//      z: 100
 
-      property Item currentOverlay
+//      property Item currentOverlay
 
-      MouseArea {
-         anchors.fill: parent
-         enabled: overlayLayer.currentOverlay != null
-         hoverEnabled: enabled
-         onClicked: overlayLayer.currentOverlay.close()
-      }
-   }
+//      MouseArea {
+//         anchors.fill: parent
+//         enabled: overlayLayer.currentOverlay != null
+//         hoverEnabled: enabled
+//         onClicked: overlayLayer.currentOverlay.close()
+//      }
+//   }
    LockScreen {
       id: lockScreen
       width: window.width
@@ -243,26 +239,27 @@ Window {
       ]
    }
 
-   Item {
-      id: applicationArea
-      anchors.fill: parent
-      enabled: wallet.unlocked
-      Toolbar {
-         id: toolbar
-         width: parent.width
-         backgroundColor: Theme.primaryColor
+//   Item {
+//      id: applicationArea
+//      anchors.fill: parent
+//      enabled: wallet.unlocked
+//      Toolbar {
+//         id: toolbar
+//         width: parent.width
+//         backgroundColor: Theme.primaryColor
+//         page: pageStack.currentItem
 
-         Ink {
-            anchors.fill: parent
-            z: -1
-            // @disable-check M126 -- I actually do want type coercion on this comparison
-            enabled: pageStack.currentItem && pageStack.currentItem.accountName != ""
-            onClicked: {
-               Utils.copyTextToClipboard(pageStack.currentItem.accountName)
-               showMessage("Copied <i>" + pageStack.currentItem.accountName + "</i> to clipboard")
-            }
-         }
-      }
+//         Ink {
+//            anchors.fill: parent
+//            z: -1
+//            // @disable-check M126 -- I actually do want type coercion on this comparison
+//            enabled: pageStack.currentItem && pageStack.currentItem.accountName != ""
+//            onClicked: {
+//               Utils.copyTextToClipboard(pageStack.currentItem.accountName)
+//               showMessage("Copied <i>" + pageStack.currentItem.accountName + "</i> to clipboard")
+//            }
+//         }
+//      }
       View {
          id: criticalNotificationArea
          y: toolbar.height
@@ -270,7 +267,7 @@ Window {
          height: units.dp(100)
          width: parent.width
          enabled: false
-         z: -1
+         z: -5
 
          //Show iff brain key is set, the main page is not active or transitioning out, and we're not already in an onboarding UI
          property bool active: wallet.brainKey.length > 0
@@ -319,17 +316,17 @@ Window {
             }
          ]
       }
-      PageStack {
-         id: __pageStack
-         anchors {
-            left: parent.left
-            right: parent.right
-            top: toolbar.bottom
-            bottom: parent.bottom
-         }
+//      PageStack {
+//         id: __pageStack
+//         anchors {
+//            left: parent.left
+//            right: parent.right
+//            top: toolbar.bottom
+//            bottom: parent.bottom
+//         }
 
-         onPushed: toolbar.push(page)
-         onPopped: toolbar.pop()
+//         onPushed: toolbar.push(page)
+//         onPopped: toolbar.pop()
 
          Component {
             id: assetsUi
@@ -361,8 +358,8 @@ Window {
 
             OrderForm {
             }
-         }
-      }
+//         }
+//      }
    }
    Component {
       id: onboardingUi
@@ -376,7 +373,7 @@ Window {
    }
    BackupLayout {
       id: backupUi
-      minimumWidth: parent.width / 2
+      minimumWidth: window.width * 2/3
    }
    Loader {
       id: onboardLoader
@@ -387,7 +384,7 @@ Window {
       id: snack
       duration: 5000
       enabled: opened
-      onClick: opened = false
+      onClicked: opened = false
       z: 21
    }
 }

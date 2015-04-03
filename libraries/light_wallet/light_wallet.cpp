@@ -196,9 +196,8 @@ void light_wallet::lock()
 fc::ecc::private_key light_wallet::derive_private_key(const string& prefix_string, int sequence_number)
 {
    string sequence_string = std::to_string(sequence_number);
-   fc::ecc::private_key owner_key = fc::ecc::private_key::regenerate(fc::sha256::hash(fc::sha512::hash(prefix_string +
-                                                                                                       " " +
-                                                                                                       sequence_string)));
+   fc::sha512 hash = fc::sha512::hash(prefix_string + " " + sequence_string);
+   fc::ecc::private_key owner_key = fc::ecc::private_key::regenerate(fc::sha256::hash(hash));
 
    return owner_key;
 }
@@ -222,7 +221,8 @@ void light_wallet::create( const string& account_name,
       // values of n until we can't find an account with that key.
       owner_key = derive_private_key(brain_seed, n++);
       new_account.owner_key = owner_key.get_public_key();
-   } while( _rpc.blockchain_get_account(string(new_account.owner_key)).valid() );
+   } while( get_account_record(string(blockchain::public_key_type(owner_key.get_public_key()))).valid() &&
+            get_account_record(string(blockchain::public_key_type(owner_key.get_public_key())))->name != account_name );
 
    // Active key is hash(wif_owner_key + " " + n) where n = number of previous active keys
    // i.e. first active key has n=0, second has n=1, etc. We're creating a new account, so n=0
