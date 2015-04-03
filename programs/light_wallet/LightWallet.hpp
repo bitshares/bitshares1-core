@@ -127,6 +127,7 @@ public Q_SLOTS:
    void disconnectFromServer();
 
    void createWallet(QString accountName, QString password);
+   QStringList recoverableAccounts(QString brainKey);
    bool recoverWallet(QString accountName, QString password, QString brainKey);
    void openWallet();
    void closeWallet();

@@ -193,6 +193,16 @@ void light_wallet::lock()
    _wallet_key.reset();
 }
 
+fc::ecc::private_key light_wallet::derive_private_key(const string& prefix_string, int sequence_number)
+{
+   string sequence_string = std::to_string(sequence_number);
+   fc::ecc::private_key owner_key = fc::ecc::private_key::regenerate(fc::sha256::hash(fc::sha512::hash(prefix_string +
+                                                                                                       " " +
+                                                                                                       sequence_string)));
+
+   return owner_key;
+}
+
 void light_wallet::create( const string& account_name,
                            const string& password,
                            const string& brain_seed )
@@ -202,15 +212,21 @@ void light_wallet::create( const string& account_name,
       _data = light_wallet_data();
    account_record& new_account = _data->accounts[account_name].user_account;
 
-   // Don't actually store the owner key; it can be recovered via brain key and salt.
-   // Locally, we'll only keep a deterministically derived child key so if that key is compromised,
-   // the owner key remains safe.
-   fc::ecc::private_key owner_key = fc::ecc::private_key::regenerate(fc::sha256::hash(fc::sha512::hash(brain_seed + " " + account_name)));
-   new_account.owner_key = owner_key.get_public_key();
+   int n = 0;
+   fc::ecc::private_key owner_key;
+   do {
+      // Don't actually store the owner key; it can be recovered via brain key and salt.
+      // Locally, we'll only keep a deterministically derived child key so if that key is compromised,
+      // the owner key remains safe.
+      // Owner key is hash(brain_seed + n) where n = number of previous accounts on this key. Keep trying subsequent
+      // values of n until we can't find an account with that key.
+      owner_key = derive_private_key(brain_seed, n++);
+      new_account.owner_key = owner_key.get_public_key();
+   } while( _rpc.blockchain_get_account(string(new_account.owner_key)).valid() );
 
    // Active key is hash(wif_owner_key + " " + n) where n = number of previous active keys
-   // i.e. first active key has n=0, second has n=1, etc
-   fc::ecc::private_key active_key = fc::ecc::private_key::regenerate(fc::sha256::hash(fc::sha512::hash(utilities::key_to_wif(owner_key) + " 0")));
+   // i.e. first active key has n=0, second has n=1, etc. We're creating a new account, so n=0
+   fc::ecc::private_key active_key = derive_private_key(utilities::key_to_wif(owner_key), 0);
    new_account.active_key_history[fc::time_point::now()] = active_key.get_public_key();
 
    // set the password

@@ -102,6 +102,7 @@ namespace bts { namespace light_wallet {
          std::function<string(string)>             restore;
 
          void fetch_welcome_package();
+         fc::ecc::private_key derive_private_key(const string& prefix_string, int sequence_number);
    private:
          fc::ecc::private_key create_one_time_key(const std::string& account_name, const std::string& key_id);
          asset get_network_fee( const string& symbol );

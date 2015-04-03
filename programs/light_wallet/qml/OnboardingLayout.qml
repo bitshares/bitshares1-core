@@ -148,6 +148,7 @@ MainView {
             id: passwordField
             Layout.fillWidth: true
             placeholderText: qsTr("Create a Password")
+            helperText: qsTr("This password will unlock your account only on this %1, so it can be short and easy to remember.").arg(deviceType())
             fontPixelSize: units.dp(20)
             onAccepted: openButton.clicked()
 
@@ -215,30 +216,38 @@ MainView {
       width: Math.min(parent.width, units.dp(600))
 
       TextField {
-         id: importNameField
-         anchors.horizontalCenter: parent.horizontalCenter
-         width: parent.width - visuals.margins*2
-         placeholderText: qsTr("Account Name")
-         helperText: qsTr("Must be the same as when you originally created your account.")
-         floatingLabel: true
-         transform: ShakeAnimation { id: importNameFieldShaker }
-      }
-      TextField {
          id: importBrainKeyField
          anchors.horizontalCenter: parent.horizontalCenter
          width: parent.width - visuals.margins*2
          placeholderText: qsTr("Recovery Password")
          helperText: qsTr("This is the password you were asked to write down when you backed up your account.")
          floatingLabel: true
-         transform: ShakeAnimation { id: importBrainKeyFieldShaker }
+         onEditingFinished: {
+            showMessage(qsTr("Searching for accounts to recover..."))
+            importNameField.model = wallet.recoverableAccounts(text)
+            if( importNameField.model.length === 0 )
+               showMessage(qsTr("Could not find any accounts to recover. Is your recovery password correct?"))
+         }
+         transform: ShakeAnimation { id: brainKeyShaker }
+      }
+      MenuField {
+         id: importNameField
+         anchors.horizontalCenter: parent.horizontalCenter
+         width: parent.width - visuals.margins*2
+         placeholderText: qsTr("Account Name")
+         helperText: model.length === 0? qsTr("Enter your recovery password above, then select an account to recover here.")
+                                       : qsTr("Select the account to recover.")
+         floatingLabel: true
+         transform: ShakeAnimation { id: importNameShaker }
       }
       PasswordField {
          id: importPasswordField
          anchors.horizontalCenter: parent.horizontalCenter
          width: parent.width - visuals.margins*2
-         placeholderText: qsTr("New Unlocking Password")
-         helperText: qsTr("This password can be short and easy to remember.")
+         placeholderText: qsTr("Unlocking Password")
+         helperText: qsTr("This password will unlock your account only on this %1, so it can be short and easy to remember.").arg(deviceType())
          onAccepted: finishImportButton.clicked()
+         transform: ShakeAnimation { id: importPasswordShaker }
       }
       Item {
          anchors.horizontalCenter: parent.horizontalCenter
@@ -257,13 +266,14 @@ MainView {
             anchors.rightMargin: units.dp(16)
             text: qsTr("Import Account")
             onClicked: {
-               if( !importNameField.text )
-                  return importNameFieldShaker.shake()
-               if( !importBrainKeyField.text )
-                  return importBrainKeyFieldShaker.shake()
+               if( !importNameField.model || importNameField.model.length === 0 )
+                  return brainKeyShaker.shake()
+               if( !importNameField.selectedText )
+                  return importNameShaker.shake()
                if( !importPasswordField.password )
-                  return importPasswordField.shake()
-               if( wallet.recoverWallet(importNameField.text, importPasswordField.password, importBrainKeyField.text) )
+                  return importPasswordShaker.shake()
+
+               if( wallet.recoverWallet(importNameField.selectedText, importPasswordField.password, importBrainKeyField.text) )
                   onboarder.finished()
             }
          }
