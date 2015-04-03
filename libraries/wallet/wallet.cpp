@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <random>
 #include <thread>
 
 namespace bts { namespace wallet {
@@ -854,15 +855,22 @@ namespace detail {
            }
        }
 
-       slate_record record;
+       vector<account_id_type> approved_delegate_ids;
        for( const auto& item : approved_accounts )
+       {
+           const auto& account_record = item.second;
+           if( account_record.is_delegate() && !account_record.is_retracted() )
+               approved_delegate_ids.push_back( account_record.id );
+       }
+       std::shuffle( approved_delegate_ids.begin(), approved_delegate_ids.end(), std::default_random_engine() );
+
+       slate_record record;
+       for( const account_id_type approved_delegate_id : approved_delegate_ids )
        {
            if( record.slate.size() >= BTS_BLOCKCHAIN_MAX_SLATE_SIZE )
                break;
 
-           const auto& account_record = item.second;
-           if( account_record.is_delegate() && !account_record.is_retracted() )
-               record.slate.insert( account_record.id );
+           record.slate.insert( approved_delegate_id );
        }
        return record;
    }
