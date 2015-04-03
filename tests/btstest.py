@@ -748,6 +748,8 @@ class Test(object):
     |[$][{](?:.|\n)*?[}][$]
     # with optional result
      (?:[~][{](?:.|\n)*?[}][~])?
+    # Variable substitution
+    |[$][a-zA-Z_][a-zA-Z0-9_]*
     # Command or metacommand invocation
     |[>]{3}
     # Comment
@@ -819,6 +821,18 @@ class Test(object):
                     expr = mo.group(1)
                 self.interpret_expr(expr)
                 self.print_output("${"+expr+"}$")
+                self.dump_matchbuf(self.context["showmatch_enabled"])
+            elif len(t) >= 2 and t[0] == "$" and t[1] in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_":
+                # variable substitution
+                name = t[1:]
+                value = self.context[name]
+                s_value = str(value)
+                self.context["matchbuf"].append(s_value)
+                if in_command:
+                    cmd_text.append(s_value)
+                else:
+                    self.expect_str(s_value)
+                self.print_output(t)
                 self.dump_matchbuf(self.context["showmatch_enabled"])
             elif len(t) >= 4 and t[0:2] == "#{" and t[-2:] == "}#":
                 # comment
