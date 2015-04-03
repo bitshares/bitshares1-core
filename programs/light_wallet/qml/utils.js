@@ -11,3 +11,12 @@ function connectOnce(event, slot, predicate) {
    }
    event.connect(task)
 }
+
+function copyTextToClipboard(text) {
+   //Hack to get clipboard access in QML
+   var input = Qt.createQmlObject("import QtQuick 2.2; TextInput{visible: false}", window)
+   input.text = text
+   input.selectAll()
+   input.copy()
+   input.destroy()
+}
