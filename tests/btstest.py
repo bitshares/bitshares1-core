@@ -609,7 +609,7 @@ class Test(object):
 
     def interpret_expr(self, expr, filename=""):
         expr = expr.strip()
-        compiled_expr = compile(expr, filename, "eval")
+        compiled_expr = compile(expr, filename, "exec")
         result = exec(compiled_expr, self.context)
         if isinstance(result, str):
             self.expect_str(result, match_callback=self.on_match)
