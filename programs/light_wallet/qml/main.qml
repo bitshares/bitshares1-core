@@ -33,6 +33,9 @@ ApplicationWindow {
    property alias payAction: __payAction
 
    Component.onCompleted: {
+      onboardLoader.parent = Extras.Utils.findRootChild(onboardLoader, "dialogOverlayLayer")
+      lockScreen.parent = Extras.Utils.findRootChild(lockScreen, "dialogOverlayLayer")
+
       if( wallet.walletExists )
          wallet.openWallet()
       if( !( wallet.accountNames.length && wallet.accounts[wallet.accountNames[0]].isRegistered ) )

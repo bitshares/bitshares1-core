@@ -224,16 +224,22 @@ MainView {
          helperText: qsTr("This is the password you were asked to write down when you backed up your account.")
          floatingLabel: true
          onEditingFinished: importNameField.findRecoverableAccounts(text)
+         onTextChanged: nameSearchTimer.restart()
          transform: ShakeAnimation { id: brainKeyShaker }
+
+         Timer {
+            id: nameSearchTimer
+            interval: 500
+            onTriggered: importNameField.findRecoverableAccounts(importBrainKeyField.text)
+            repeat: false
+         }
       }
       MenuField {
          id: importNameField
          anchors.horizontalCenter: parent.horizontalCenter
          width: parent.width - visuals.margins*2
-         placeholderText: qsTr("Account Name")
          helperText: (model && model.length === 0)? qsTr("Enter your recovery password above, then select an account to recover here.")
                                                   : qsTr("Select the account to recover.")
-         floatingLabel: true
          transform: ShakeAnimation { id: importNameShaker }
 
          function findRecoverableAccounts(key) {
