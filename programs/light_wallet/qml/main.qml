@@ -28,7 +28,6 @@ ApplicationWindow {
       property string guid: Extras.Utils.generateID()
    }
 
-//   property alias pageStack: __pageStack
    property alias lockAction: __lockAction
    property alias payAction: __payAction
 
@@ -95,14 +94,14 @@ ApplicationWindow {
          window.pageStack.push({item: transferUi, properties: args})
       else
          showMessage(qsTr("You don't have any assets, so you cannot make a transfer."), qsTr("Refresh Balances"),
-                   wallet.syncAllBalances)
+                     wallet.syncAllBalances)
    }
    function openOrderForm(args) {
       if( wallet.accounts[args.accountName].availableAssets.length )
          window.pageStack.push({item: orderUi, properties: args})
       else
          showMessage(qsTr("You don't have any assets, so you cannot place a market order."), qsTr("Refresh Balances"),
-                   wallet.syncAllBalances)
+                     wallet.syncAllBalances)
    }
 
    AppTheme {
@@ -166,22 +165,6 @@ ApplicationWindow {
       onNotification: showMessage(message)
    }
 
-//   Item {
-//      id: overlayLayer
-//      objectName: "overlayLayer"
-
-//      anchors.fill: parent
-//      z: 100
-
-//      property Item currentOverlay
-
-//      MouseArea {
-//         anchors.fill: parent
-//         enabled: overlayLayer.currentOverlay != null
-//         hoverEnabled: enabled
-//         onClicked: overlayLayer.currentOverlay.close()
-//      }
-//   }
    LockScreen {
       id: lockScreen
       width: window.width
@@ -243,127 +226,93 @@ ApplicationWindow {
       ]
    }
 
-//   Item {
-//      id: applicationArea
-//      anchors.fill: parent
-//      enabled: wallet.unlocked
-//      Toolbar {
-//         id: toolbar
-//         width: parent.width
-//         backgroundColor: Theme.primaryColor
-//         page: pageStack.currentItem
+   View {
+      id: criticalNotificationArea
+      y: toolbar.height
+      backgroundColor: "#F44336"
+      height: units.dp(100)
+      width: parent.width
+      enabled: false
+      z: -5
 
-//         Ink {
-//            anchors.fill: parent
-//            z: -1
-//            // @disable-check M126 -- I actually do want type coercion on this comparison
-//            enabled: pageStack.currentItem && pageStack.currentItem.accountName != ""
-//            onClicked: {
-//               Utils.copyTextToClipboard(pageStack.currentItem.accountName)
-//               showMessage("Copied <i>" + pageStack.currentItem.accountName + "</i> to clipboard")
-//            }
-//         }
-//      }
-      View {
-         id: criticalNotificationArea
-         y: toolbar.height
-         backgroundColor: "#F44336"
-         height: units.dp(100)
-         width: parent.width
-         enabled: false
-         z: -5
+      //Show iff brain key is set, the main page is not active or transitioning out, and we're not already in an onboarding UI
+      property bool active: wallet.brainKey.length > 0
 
-         //Show iff brain key is set, the main page is not active or transitioning out, and we're not already in an onboarding UI
-         property bool active: wallet.brainKey.length > 0
-
-         Label {
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.left:  parent.left
-            anchors.right: criticalNotificationButton.left
-            anchors.margins: visuals.margins
-            text: qsTr("Your wallet has not been backed up. You should back it up as soon as possible.")
-            color: "white"
-            style: "subheading"
-            wrapMode: Text.WrapAtWordBoundaryOrAnywhere
-         }
-         Button {
-            id: criticalNotificationButton
-            anchors.right: parent.right
-            anchors.rightMargin: visuals.margins
-            anchors.verticalCenter: parent.verticalCenter
-            text: qsTr("Back Up Wallet")
-            textColor: "white"
-
-            onClicked: backupUi.show()
-         }
-
-         states: [
-            State {
-               name: "active"
-               when: criticalNotificationArea.active
-               PropertyChanges {
-                  target: criticalNotificationArea
-                  enabled: true
-               }
-               PropertyChanges {
-                  target: pageStack
-                  anchors.topMargin: criticalNotificationArea.height
-               }
-            }
-         ]
-         transitions: [
-            Transition {
-               from: ""
-               to: "active"
-               reversible: true
-               PropertyAnimation { target: pageStack; property: "anchors.topMargin"; easing.type: Easing.InOutQuad }
-            }
-         ]
+      Label {
+         anchors.verticalCenter: parent.verticalCenter
+         anchors.left:  parent.left
+         anchors.right: criticalNotificationButton.left
+         anchors.margins: visuals.margins
+         text: qsTr("Your wallet has not been backed up. You should back it up as soon as possible.")
+         color: "white"
+         style: "subheading"
+         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
       }
-//      PageStack {
-//         id: __pageStack
-//         anchors {
-//            left: parent.left
-//            right: parent.right
-//            top: toolbar.bottom
-//            bottom: parent.bottom
-//         }
+      Button {
+         id: criticalNotificationButton
+         anchors.right: parent.right
+         anchors.rightMargin: visuals.margins
+         anchors.verticalCenter: parent.verticalCenter
+         text: qsTr("Back Up Wallet")
+         textColor: "white"
 
-//         onPushed: toolbar.push(page)
-//         onPopped: toolbar.pop()
+         onClicked: backupUi.show()
+      }
 
-         Component {
-            id: assetsUi
-
-            AssetsLayout {
-               onLockRequested: {
-                  wallet.lockWallet()
-                  uiStack.pop()
-               }
-               onOpenHistory: window.pageStack.push(historyUi, {"accountName": account, "assetSymbol": symbol})
+      states: [
+         State {
+            name: "active"
+            when: criticalNotificationArea.active
+            PropertyChanges {
+               target: criticalNotificationArea
+               enabled: true
+            }
+            PropertyChanges {
+               target: pageStack
+               anchors.topMargin: criticalNotificationArea.height
             }
          }
-         Component {
-            id: historyUi
-
-            HistoryLayout {
-            }
+      ]
+      transitions: [
+         Transition {
+            from: ""
+            to: "active"
+            reversible: true
+            PropertyAnimation { target: pageStack; property: "anchors.topMargin"; easing.type: Easing.InOutQuad }
          }
-         Component {
-            id: transferUi
+      ]
+   }
 
-            TransferLayout {
-               accountName: wallet.accountNames[0]
-               onTransferComplete: window.pageStack.pop()
-            }
+   Component {
+      id: assetsUi
+
+      AssetsLayout {
+         onLockRequested: {
+            wallet.lockWallet()
+            uiStack.pop()
          }
-         Component {
-            id: orderUi
+         onOpenHistory: window.pageStack.push(historyUi, {"accountName": account, "assetSymbol": symbol})
+      }
+   }
+   Component {
+      id: historyUi
 
-            OrderForm {
-            }
-//         }
-//      }
+      HistoryLayout {
+      }
+   }
+   Component {
+      id: transferUi
+
+      TransferLayout {
+         accountName: wallet.accountNames[0]
+         onTransferComplete: window.pageStack.pop()
+      }
+   }
+   Component {
+      id: orderUi
+
+      OrderForm {
+      }
    }
    Component {
       id: onboardingUi
