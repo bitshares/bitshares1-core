@@ -70,6 +70,10 @@ public:
       return m_brainKey;
    }
 
+   Q_INVOKABLE static QString sha256(QString text) {
+      return convert(fc::sha256::hash(convert(text)).str());
+   }
+
    Q_INVOKABLE Balance* getFee(QString assetSymbol);
    Q_INVOKABLE int getDigitsOfPrecision(QString assetSymbol);
    Q_INVOKABLE bool accountExists(QString name);
