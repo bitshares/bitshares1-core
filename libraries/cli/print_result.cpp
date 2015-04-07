@@ -1010,20 +1010,20 @@ namespace bts { namespace cli {
     for(order_history_record order : orders)
     {
       out << std::setw(7) << "Buy  "
-        << std::setw(30) << client->get_chain()->to_pretty_price(order.bid_price)
+        << std::setw(30) << client->get_chain()->to_pretty_price(order.bid_index.order_price)
         << std::setw(25) << client->get_chain()->to_pretty_asset(order.bid_paid)
         << std::setw(25) << client->get_chain()->to_pretty_asset(order.bid_received)
         << std::setw(20) << client->get_chain()->to_pretty_asset(order.bid_paid - order.ask_received)
         << std::setw(23) << pretty_timestamp(order.timestamp)
-        << std::setw(37) << string(order.bid_owner)
+        << std::setw(37) << string(order.bid_index.owner)
         << "\n"
         << std::setw(7) << "Sell  "
-        << std::setw(30) << client->get_chain()->to_pretty_price(order.ask_price)
+        << std::setw(30) << client->get_chain()->to_pretty_price(order.ask_index.order_price)
         << std::setw(25) << client->get_chain()->to_pretty_asset(order.ask_paid)
         << std::setw(25) << client->get_chain()->to_pretty_asset(order.ask_received)
         << std::setw(20) << client->get_chain()->to_pretty_asset(order.ask_paid - order.bid_received)
         << std::setw(30) << pretty_timestamp(order.timestamp)
-        << "   " << string(order.ask_owner)
+        << "   " << string(order.ask_index.owner)
         << "\n";
     }
   }

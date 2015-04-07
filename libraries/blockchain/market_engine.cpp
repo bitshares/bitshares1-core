@@ -147,17 +147,17 @@ bool market_engine::execute( const asset_id_type quote_id, const asset_id_type b
 
                 // Initialize the market transaction
                 market_transaction mtrx;
-                mtrx.bid_owner = _current_bid->get_owner();
-                mtrx.ask_owner = _current_ask->get_owner();
+                mtrx.bid_index.owner = _current_bid->get_owner();
+                mtrx.ask_index.owner = _current_ask->get_owner();
                 if( _feed_price )
                 {
-                   mtrx.bid_price = _current_bid->get_price( *_feed_price );
-                   mtrx.ask_price = _current_ask->get_price( *_feed_price );
+                   mtrx.bid_index.order_price = _current_bid->get_price( *_feed_price );
+                   mtrx.ask_index.order_price = _current_ask->get_price( *_feed_price );
                 }
                 else
                 {
-                   mtrx.bid_price = _current_bid->get_price();
-                   mtrx.ask_price = _current_ask->get_price();
+                   mtrx.bid_index.order_price = _current_bid->get_price();
+                   mtrx.ask_index.order_price = _current_ask->get_price();
                 }
                 mtrx.bid_type  = _current_bid->type;
                 mtrx.ask_type  = _current_ask->type;
@@ -171,11 +171,11 @@ bool market_engine::execute( const asset_id_type quote_id, const asset_id_type b
                     // Skip shorts that are over the price limit
                     if( _current_bid->state.limit_price.valid() )
                     {
-                      mtrx.bid_price = std::min( *_current_bid->state.limit_price, *_feed_price );
+                      mtrx.bid_index.order_price = std::min( *_current_bid->state.limit_price, *_feed_price );
                     }
                     else
                     {
-                      mtrx.bid_price = *_feed_price;
+                      mtrx.bid_index.order_price = *_feed_price;
                     }
                 }
 
@@ -190,23 +190,23 @@ bool market_engine::execute( const asset_id_type quote_id, const asset_id_type b
                     *  the minimum ask, this could lead to an attack where someone
                     *  walks the whole book to steal the collateral.
                     */
-                    if( mtrx.bid_price < minimum_cover_ask_price() )
+                    if( mtrx.bid_index.order_price < minimum_cover_ask_price() )
                     {
                         ilog("terminating cover match iteration because bid doesn't meet minimum_cover_ask_price()");
                         break;
                     }
 
-                    if( mtrx.ask_price > *_feed_price )
+                    if( mtrx.ask_index.order_price > *_feed_price )
                     {
                         // margin called cover
-                        mtrx.ask_price = mtrx.bid_price;
-                        ilog("cover is margin call executing at price ${p}", ("p",mtrx.ask_price));
+                        mtrx.ask_index.order_price = mtrx.bid_index.order_price;
+                        ilog("cover is margin call executing at price ${p}", ("p",mtrx.ask_index.order_price));
                     }
                     else if( (*_current_ask->expiration) <= _pending_state->now() )
                     {
                         // expired cover which has not been margin called
-                        mtrx.ask_price = *_feed_price;
-                        ilog("cover is executing at feed price ${p}", ("p",mtrx.ask_price));
+                        mtrx.ask_index.order_price = *_feed_price;
+                        ilog("cover is executing at feed price ${p}", ("p",mtrx.ask_index.order_price));
                     }
                     else
                     {
@@ -222,18 +222,18 @@ bool market_engine::execute( const asset_id_type quote_id, const asset_id_type b
                 // by "best" I mean that no other order can match (in the current pass) if the best order does not match
                 // so we can terminate the current pass as soon as the best orders don't match each other
                 //
-                if( mtrx.bid_price < mtrx.ask_price )
+                if( mtrx.bid_index.order_price < mtrx.ask_index.order_price )
                 {
-                   wlog( "bid_price ${b} < ask_price ${a}; exit market loop", ("b",mtrx.bid_price)("a",mtrx.ask_price) );
+                   wlog( "bid_price ${b} < ask_price ${a}; exit market loop", ("b",mtrx.bid_index.order_price)("a",mtrx.ask_index.order_price) );
                    break;
                 }
 
                 if( _current_ask->type == cover_order && _current_bid->type == short_order )
                 {
-                    price collateral_rate                = mtrx.bid_price;
+                    price collateral_rate                = mtrx.bid_index.order_price;
                     collateral_rate.ratio                /= 2; // 2x from short, 1 x from long == 3x default collateral
                     const asset cover_collateral         = asset( *_current_ask->collateral, _base_id );
-                    const asset max_usd_cover_can_afford = cover_collateral * mtrx.bid_price;
+                    const asset max_usd_cover_can_afford = cover_collateral * mtrx.bid_index.order_price;
                     const asset cover_debt               = get_current_cover_debt();
                     const asset usd_for_short_sale       = _current_bid->get_balance() * collateral_rate;
 
@@ -255,7 +255,7 @@ bool market_engine::execute( const asset_id_type quote_id, const asset_id_type b
                     if( usd_exchanged == max_usd_cover_can_afford )
                        mtrx.ask_paid = cover_collateral;
                     else  // the short was completely consumed
-                       mtrx.ask_paid = mtrx.ask_received * mtrx.ask_price;
+                       mtrx.ask_paid = mtrx.ask_received * mtrx.ask_index.order_price;
 
                     mtrx.bid_received = mtrx.ask_paid;
                     mtrx.bid_paid = mtrx.ask_received;
@@ -272,7 +272,7 @@ bool market_engine::execute( const asset_id_type quote_id, const asset_id_type b
                 else if( _current_bid->type == bid_order && _current_ask->type == cover_order )
                 {
                     const asset cover_collateral          = asset( *_current_ask->collateral, _base_id );
-                    const asset max_usd_cover_can_afford  = cover_collateral * mtrx.bid_price;
+                    const asset max_usd_cover_can_afford  = cover_collateral * mtrx.bid_index.order_price;
                     const asset cover_debt                = get_current_cover_debt();
                     const asset usd_for_sale              = _current_bid->get_balance();
 
@@ -293,7 +293,7 @@ bool market_engine::execute( const asset_id_type quote_id, const asset_id_type b
                     if( mtrx.ask_received == max_usd_cover_can_afford )
                        mtrx.ask_paid = cover_collateral;
                     else // the bid was completely consumed
-                       mtrx.ask_paid = mtrx.ask_received * mtrx.ask_price;
+                       mtrx.ask_paid = mtrx.ask_received * mtrx.ask_index.order_price;
 
                     mtrx.bid_received = mtrx.ask_paid;
                     mtrx.bid_paid = mtrx.ask_received;
@@ -306,7 +306,7 @@ bool market_engine::execute( const asset_id_type quote_id, const asset_id_type b
                     FC_ASSERT( _feed_price.valid() );
 
                     // Bound collateral ratio (maximizes collateral of new margin position)
-                    price collateral_rate          = mtrx.bid_price;
+                    price collateral_rate          = mtrx.bid_index.order_price;
                     collateral_rate.ratio          /= 2; // 2x from short, 1 x from long == 3x default collateral
                     const asset ask_quantity_usd   = _current_ask->get_quote_quantity(*_feed_price);
                     const asset short_quantity_usd = _current_bid->get_balance() * collateral_rate;
@@ -318,7 +318,7 @@ bool market_engine::execute( const asset_id_type quote_id, const asset_id_type b
                     if( usd_exchanged == ask_quantity_usd )
                         mtrx.ask_paid = _current_ask->get_balance();
                     else
-                        mtrx.ask_paid = mtrx.ask_received * mtrx.ask_price;
+                        mtrx.ask_paid = mtrx.ask_received * mtrx.ask_index.order_price;
 
                     if( usd_exchanged == short_quantity_usd )
                         mtrx.short_collateral = _current_bid->get_balance();
@@ -341,8 +341,8 @@ bool market_engine::execute( const asset_id_type quote_id, const asset_id_type b
                     const asset quantity_xts = std::min( bid_quantity_xts, ask_quantity_xts );
 
                     // Everyone gets the price they asked for
-                    mtrx.ask_received   = quantity_xts * mtrx.ask_price;
-                    mtrx.bid_paid       = quantity_xts * mtrx.bid_price;
+                    mtrx.ask_received   = quantity_xts * mtrx.ask_index.order_price;
+                    mtrx.bid_paid       = quantity_xts * mtrx.bid_index.order_price;
 
                     mtrx.ask_paid       = quantity_xts;
                     mtrx.bid_received   = quantity_xts;
@@ -371,8 +371,8 @@ bool market_engine::execute( const asset_id_type quote_id, const asset_id_type b
                 base_volume += mtrx.bid_received;
                 quote_volume += mtrx.ask_received;
                 if( opening_price == price() )
-                  opening_price = mtrx.bid_price;
-                closing_price = mtrx.bid_price;
+                  opening_price = mtrx.bid_index.order_price;
+                closing_price = mtrx.bid_index.order_price;
                 //
                 // Remark: only prices of matched orders are used to update market history
                 //
@@ -380,11 +380,11 @@ bool market_engine::execute( const asset_id_type quote_id, const asset_id_type b
                 // in the following if statements.  Ask-side orders are
                 // only sorted by price within a single pass.
                 //
-                if( highest_price == price() || highest_price < mtrx.bid_price)
-                  highest_price = mtrx.bid_price;
+                if( highest_price == price() || highest_price < mtrx.bid_index.order_price)
+                  highest_price = mtrx.bid_index.order_price;
                 // TODO check here: store lowest ask price or lowest bid price?
-                if( lowest_price == price() || lowest_price > mtrx.ask_price)
-                  lowest_price = mtrx.ask_price;
+                if( lowest_price == price() || lowest_price > mtrx.ask_index.order_price)
+                  lowest_price = mtrx.ask_index.order_price;
             }
         }
 
@@ -501,12 +501,12 @@ void market_engine::pay_current_bid( market_transaction& mtrx, asset_record& quo
     _current_bid->state.balance -= mtrx.bid_paid.amount;
     FC_ASSERT( _current_bid->state.balance >= 0 );
 
-    FC_ASSERT( base_asset.address_is_approved( *_pending_state, mtrx.bid_owner ) );
+    FC_ASSERT( base_asset.address_is_approved( *_pending_state, mtrx.bid_index.owner ) );
 
     auto bid_payout = _pending_state->get_balance_record(
-                              withdraw_condition( withdraw_with_signature(mtrx.bid_owner), _base_id ).get_address() );
+                              withdraw_condition( withdraw_with_signature(mtrx.bid_index.owner), _base_id ).get_address() );
     if( !bid_payout )
-        bid_payout = balance_record( mtrx.bid_owner, asset(0,_base_id), 0 );
+        bid_payout = balance_record( mtrx.bid_index.owner, asset(0,_base_id), 0 );
 
     share_type issuer_fee = 0;
     if( base_asset.market_fee_rate > 0 )
@@ -525,7 +525,7 @@ void market_engine::pay_current_bid( market_transaction& mtrx, asset_record& quo
     _pending_state->store_balance_record( *bid_payout );
 
     // if the balance is less than 1 XTS then it gets collected as fees.
-    if( (_current_bid->get_quote_quantity() * mtrx.bid_price).amount == 0 )
+    if( (_current_bid->get_quote_quantity() * mtrx.bid_index.order_price).amount == 0 )
     {
         mtrx.quote_fees.amount += _current_bid->state.balance;
         _current_bid->state.balance = 0;
@@ -615,12 +615,12 @@ void market_engine::pay_current_ask( market_transaction& mtrx, asset_record& quo
     _current_ask->state.balance -= mtrx.ask_paid.amount;
     FC_ASSERT( _current_ask->state.balance >= 0, "balance: ${b}", ("b",_current_ask->state.balance) );
 
-    FC_ASSERT( quote_asset.address_is_approved( *_pending_state, mtrx.ask_owner ) );
+    FC_ASSERT( quote_asset.address_is_approved( *_pending_state, mtrx.ask_index.owner ) );
 
-    auto ask_balance_address = withdraw_condition( withdraw_with_signature(mtrx.ask_owner), _quote_id ).get_address();
+    auto ask_balance_address = withdraw_condition( withdraw_with_signature(mtrx.ask_index.owner), _quote_id ).get_address();
     auto ask_payout = _pending_state->get_balance_record( ask_balance_address );
     if( !ask_payout )
-        ask_payout = balance_record( mtrx.ask_owner, asset(0,_quote_id), 0 );
+        ask_payout = balance_record( mtrx.ask_index.owner, asset(0,_quote_id), 0 );
 
     share_type issuer_fee = 0;
     if( quote_asset.market_fee_rate > 0 )
@@ -640,7 +640,7 @@ void market_engine::pay_current_ask( market_transaction& mtrx, asset_record& quo
     _pending_state->store_balance_record( *ask_payout );
 
     // if the balance is less than 1 XTS * PRICE < .001 USD XTS goes to fees
-    if( (_current_ask->get_quantity() * mtrx.ask_price).amount == 0 )
+    if( (_current_ask->get_quantity() * mtrx.ask_index.order_price).amount == 0 )
     {
         mtrx.base_fees.amount += _current_ask->state.balance;
         _current_ask->state.balance = 0;

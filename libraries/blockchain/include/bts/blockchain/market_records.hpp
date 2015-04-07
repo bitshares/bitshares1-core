@@ -35,29 +35,6 @@ namespace bts { namespace blockchain {
       }
    };
 
-   struct market_index_key_ext : public market_index_key
-   {
-      market_index_key_ext( const market_index_key b = market_index_key(),
-                            optional<price> limit = optional<price>() )
-      :market_index_key(b),limit_price(limit){}
-
-      optional<price> limit_price;
-
-      friend bool operator == ( const market_index_key_ext& a, const market_index_key_ext& b )
-      {
-          if( a.limit_price.valid() != b.limit_price.valid() ) return false;
-          if( !a.limit_price.valid() ) return market_index_key( a ) == market_index_key( b );
-          return std::tie( a.order_price, a.owner, *a.limit_price ) == std::tie( b.order_price, b.owner, *b.limit_price );
-      }
-
-      friend bool operator < ( const market_index_key_ext& a, const market_index_key_ext& b )
-      {
-          FC_ASSERT( a.limit_price.valid() == b.limit_price.valid() );
-          if( !a.limit_price.valid() ) return market_index_key( a ) < market_index_key( b );
-          return std::tie( a.order_price, a.owner, *a.limit_price ) < std::tie( b.order_price, b.owner, *b.limit_price );
-      }
-   };
-
    struct expiration_index
    {
       asset_id_type      quote_id;
@@ -216,20 +193,24 @@ namespace bts { namespace blockchain {
 
    struct market_transaction
    {
-      address                                   bid_owner;
-      address                                   ask_owner;
-      price                                     bid_price;
-      price                                     ask_price;
-      asset                                     bid_paid;
-      asset                                     bid_received;
-      /** if bid_type == short, then collateral will be paid from short to cover positon */
-      optional<asset>                           short_collateral;
-      asset                                     ask_paid;
-      asset                                     ask_received;
-      /** any leftover collateral returned to owner after a cover */
-      optional<asset>                           returned_collateral;
       fc::enum_type<uint8_t, order_type_enum>   bid_type = null_order;
       fc::enum_type<uint8_t, order_type_enum>   ask_type = null_order;
+
+      market_index_key                          bid_index;
+      market_index_key                          ask_index;
+
+      asset                                     bid_paid;
+      asset                                     ask_paid;
+
+      asset                                     bid_received;
+      asset                                     ask_received;
+
+      /** if bid_type == short, then collateral will be paid from short to cover positon */
+      optional<asset>                           short_collateral;
+
+      /** any leftover collateral returned to owner after a cover */
+      optional<asset>                           returned_collateral;
+
       asset                                     quote_fees;
       asset                                     base_fees;
    };
@@ -309,7 +290,6 @@ FC_REFLECT_ENUM( bts::blockchain::market_history_key::time_granularity_enum, (ea
 FC_REFLECT( bts::blockchain::market_status, (quote_id)(base_id)(current_feed_price)(last_valid_feed_price)(last_error) )
 FC_REFLECT_DERIVED( bts::blockchain::api_market_status, (bts::blockchain::market_status), (current_feed_price)(last_valid_feed_price) )
 FC_REFLECT( bts::blockchain::market_index_key, (order_price)(owner) )
-FC_REFLECT_DERIVED( bts::blockchain::market_index_key_ext, (bts::blockchain::market_index_key), (limit_price) )
 FC_REFLECT( bts::blockchain::market_history_record, (highest_bid)(lowest_ask)(opening_price)(closing_price)(base_volume)(quote_volume) )
 FC_REFLECT( bts::blockchain::market_history_key, (quote_id)(base_id)(granularity)(timestamp) )
 FC_REFLECT( bts::blockchain::market_history_point, (timestamp)(highest_bid)(lowest_ask)(opening_price)(closing_price)(base_volume)(quote_volume) )
@@ -319,18 +299,16 @@ FC_REFLECT( bts::blockchain::market_order, (type)(market_index)(state)(collatera
 FC_REFLECT_TYPENAME( std::vector<bts::blockchain::market_transaction> )
 FC_REFLECT_TYPENAME( bts::blockchain::market_history_key::time_granularity_enum ) // http://en.wikipedia.org/wiki/Voodoo_programminqg
 FC_REFLECT( bts::blockchain::market_transaction,
-            (bid_owner)
-            (ask_owner)
-            (bid_price)
-            (ask_price)
-            (bid_paid)
-            (bid_received)
-            (short_collateral)
-            (ask_paid)
-            (ask_received)
-            (returned_collateral)
             (bid_type)
             (ask_type)
+            (bid_index)
+            (ask_index)
+            (bid_paid)
+            (ask_paid)
+            (bid_received)
+            (ask_received)
+            (short_collateral)
+            (returned_collateral)
             (quote_fees)
             (base_fees)
           )
