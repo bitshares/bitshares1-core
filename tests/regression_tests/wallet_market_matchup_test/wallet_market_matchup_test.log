@@ -189,14 +189,14 @@ default (unlocked) >>> history
  <d-ign>2014-06-20T14:40:30</d-ign>2         delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         <d-ign> 337cbecf</d-ign>
  <d-ign>2014-06-20T14:40:50</d-ign>3         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         <d-ign> 8fedee4b</d-ign>
  <d-ign>2014-06-20T14:40:50</d-ign>4         delegate0           testaccount1        10,000.00 XMO           Sending some assets                         0.50000 XTS         <d-ign> de746aeb</d-ign>
- <d-ign>2014-06-20T14:41:10</d-ign>6         testaccount1        BID-ee62e3ce        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         <d-ign> e62c3620</d-ign>
- <d-ign>2014-06-20T14:41:30</d-ign>8         testaccount2        ASK-c2c88fbf        100.00000 XTS           sell XTS @ 2.9 XMO / XTS                    0.50000 XTS         <d-ign> 45513f2f</d-ign>
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|<d-ign>2014-06-20T14:41:50</d-ign>9         BID-ee62e3ce        MARKET              300.00 XMO              pay bid @ 3. XMO / XTS                      0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
-|                              BID-ee62e3ce        testaccount1        100.00000 XTS           bid proceeds @ 3. XMO / XTS                                             |
+ <d-ign>2014-06-20T14:41:10</d-ign>6         testaccount1        BID-ee62e3ce        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         <d-ign> ab0f8a18</d-ign>
+ <d-ign>2014-06-20T14:41:30</d-ign>8         testaccount2        ASK-c2c88fbf        100.00000 XTS           sell XTS @ 2.9 XMO / XTS                    0.50000 XTS         <d-ign> 61dcee39</d-ign>
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 |<d-ign>2014-06-20T14:41:50</d-ign>9         ASK-c2c88fbf        MARKET              100.00000 XTS           fill ask @ 2.9 XMO / XTS                    0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
 |                              ASK-c2c88fbf        testaccount2        290.00 XMO              ask proceeds @ 2.9 XMO / XTS                                            |
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|<d-ign>2014-06-20T14:41:50</d-ign>9         BID-ee62e3ce        MARKET              300.00 XMO              pay bid @ 3. XMO / XTS                      0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
+|                              BID-ee62e3ce        testaccount1        100.00000 XTS           bid proceeds @ 3. XMO / XTS                                             |
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 default (unlocked) >>> blockchain_market_list_bids XMO XTS
 TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               
@@ -290,16 +290,16 @@ default (unlocked) >>> history
  <d-ign>2014-06-20T14:40:30</d-ign>2         delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         <d-ign> 337cbecf</d-ign>
  <d-ign>2014-06-20T14:40:50</d-ign>3         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         <d-ign> 8fedee4b</d-ign>
  <d-ign>2014-06-20T14:40:50</d-ign>4         delegate0           testaccount1        10,000.00 XMO           Sending some assets                         0.50000 XTS         <d-ign> de746aeb</d-ign>
- <d-ign>2014-06-20T14:41:10</d-ign>6         testaccount1        BID-ee62e3ce        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         <d-ign> e62c3620</d-ign>
- <d-ign>2014-06-20T14:41:30</d-ign>8         testaccount2        ASK-c2c88fbf        100.00000 XTS           sell XTS @ 2.9 XMO / XTS                    0.50000 XTS         <d-ign> 45513f2f</d-ign>
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|<d-ign>2014-06-20T14:41:50</d-ign>9         BID-ee62e3ce        MARKET              300.00 XMO              pay bid @ 3. XMO / XTS                      0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
-|                              BID-ee62e3ce        testaccount1        100.00000 XTS           bid proceeds @ 3. XMO / XTS                                             |
+ <d-ign>2014-06-20T14:41:10</d-ign>6         testaccount1        BID-ee62e3ce        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         <d-ign> ab0f8a18</d-ign>
+ <d-ign>2014-06-20T14:41:30</d-ign>8         testaccount2        ASK-c2c88fbf        100.00000 XTS           sell XTS @ 2.9 XMO / XTS                    0.50000 XTS         <d-ign> 61dcee39</d-ign>
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 |<d-ign>2014-06-20T14:41:50</d-ign>9         ASK-c2c88fbf        MARKET              100.00000 XTS           fill ask @ 2.9 XMO / XTS                    0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
 |                              ASK-c2c88fbf        testaccount2        290.00 XMO              ask proceeds @ 2.9 XMO / XTS                                            |
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- <d-ign>2014-06-20T14:42:00</d-ign>10        testaccount2        ASK-49e68e53        100.00000 XTS           sell XTS @ 3.1 XMO / XTS                    0.50000 XTS         <d-ign> f250454d</d-ign>
+|<d-ign>2014-06-20T14:41:50</d-ign>9         BID-ee62e3ce        MARKET              300.00 XMO              pay bid @ 3. XMO / XTS                      0.00000 XTS         <d-ign> VIRTUAL</d-ign>|
+|                              BID-ee62e3ce        testaccount1        100.00000 XTS           bid proceeds @ 3. XMO / XTS                                             |
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ <d-ign>2014-06-20T14:42:00</d-ign>10        testaccount2        ASK-49e68e53        100.00000 XTS           sell XTS @ 3.1 XMO / XTS                    0.50000 XTS         <d-ign> 11a4c3ee</d-ign>
 default (unlocked) >>> wallet_account_order_list
 [[
     "49e68e53713a4e1d331bd1f610244495c469a2e6",{
