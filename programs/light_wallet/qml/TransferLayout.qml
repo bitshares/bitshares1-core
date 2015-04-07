@@ -21,12 +21,12 @@ Page {
       anchors.margins: visuals.margins
       width: Math.min(parent.width - visuals.margins*2, units.dp(600))
 
-      RoboHash {
+      Identicon {
          name: wallet.accounts[accountName].name
          x: visuals.margins
          Layout.fillWidth: true
       }
-      RoboHash {
+      Identicon {
          id: recipientHash
          name: toNameField.text ? toNameField.text.indexOf(wallet.keyPrefix) === 0 ? "Unregistered Account"
                                                                                    : toNameField.text

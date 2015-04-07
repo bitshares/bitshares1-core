@@ -28,7 +28,7 @@ Rectangle {
             property string name: incoming? sender : receiver
 
             Item { Layout.preferredWidth: visuals.margins }
-            RoboHash {
+            Identicon {
                name: parent.name
                elideMode: Text.ElideNone
                Layout.preferredWidth: units.dp(100)
