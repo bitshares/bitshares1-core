@@ -8,6 +8,20 @@ Dialog {
    positiveButtonText: qsTr("Next")
 
    onShowingChanged: if( showing ) backupLayout.state = ""
+   onRejected: close()
+   onAccepted: {
+      if( backupLayout.state === "verifying" ) {
+         if( !wallet.verifyBrainKey(brainKeyField.text) ) {
+            brainShaker.shake()
+         } else {
+            wallet.clearBrainKey()
+            backupLayout.state = "open"
+            close()
+         }
+      } else {
+         backupLayout.state = "verifying"
+      }
+   }
 
    Column {
       id: backupLayout
@@ -94,20 +108,5 @@ Dialog {
             }
          }
       ]
-   }
-
-   onRejected: close()
-   onAccepted: {
-      if( backupLayout.state === "verifying" ) {
-         if( !wallet.verifyBrainKey(brainKeyField.text) ) {
-            brainShaker.shake()
-         } else {
-            wallet.clearBrainKey()
-            backupLayout.state = "open"
-            close()
-         }
-      } else {
-         backupLayout.state = "verifying"
-      }
    }
 }
