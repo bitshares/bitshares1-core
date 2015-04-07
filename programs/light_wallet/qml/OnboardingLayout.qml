@@ -53,6 +53,13 @@ MainView {
       passwordField.password = ""
    }
 
+   Timer {
+      interval: 1
+      running: true
+      onTriggered: nameField.forceActiveFocus()
+      repeat: false
+   }
+
    Rectangle {
       anchors.fill: parent
       color: Theme.backgroundColor
@@ -365,7 +372,7 @@ MainView {
             from: 1; to: 0
          }
          ScriptAction {
-            script: importNameField.forceActiveFocus()
+            script: importBrainKeyField.forceActiveFocus()
          }
       },
       Transition {
