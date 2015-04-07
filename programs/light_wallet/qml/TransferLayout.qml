@@ -13,7 +13,7 @@ Page {
    property string assetSymbol: wallet.accounts[accountName].availableAssets[0]
 
    signal transferComplete(string assetSymbol)
-   
+
    RowLayout {
       id: hashBar
       anchors.top: parent.top
@@ -22,9 +22,11 @@ Page {
       width: Math.min(parent.width - visuals.margins*2, units.dp(600))
 
       Identicon {
+         id: senderHash
          name: wallet.accounts[accountName].name
          x: visuals.margins
          Layout.fillWidth: true
+         Layout.preferredWidth: hashBar.width / 2.5
       }
       Identicon {
          id: recipientHash
@@ -32,6 +34,7 @@ Page {
                                                                                    : toNameField.text
                                 : "Unknown"
          Layout.fillWidth: true
+         Layout.preferredWidth: hashBar.width / 2.5
       }
    }
    Label {
