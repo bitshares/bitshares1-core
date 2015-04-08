@@ -44,7 +44,7 @@ bid_qty_scale = decimal.Decimal(1)
 
 min_feed_price =  90
 max_feed_price = 250
-feed_price_scale = decimal.Decimal(1)
+feed_price_scale = 1 / decimal.Decimal(10000)
 
 def short_account_generator():
     for i in range(101):
