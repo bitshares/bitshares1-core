@@ -105,7 +105,7 @@ MainView {
          NumberAnimation {
             id: registrationProgressAnimation
             target: registrationProgress
-            property: "progress"
+            property: "value"
             from: 0; to: 1
             duration: 15000
             easing.type: Easing.OutQuart
