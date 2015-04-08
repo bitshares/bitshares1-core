@@ -36,13 +36,6 @@ Page {
          flickableItem.interactive: true
 
          ListView {
-            onDragEnded: {
-               if( contentY < units.dp(-100) )
-               {
-                  showMessage(qsTr("Refreshing balances"))
-                  wallet.syncAllBalances()
-               }
-            }
             model: wallet.accounts[accountName].balances
             delegate: Rectangle {
                width: parent.width
@@ -81,11 +74,19 @@ Page {
                   }
                }
             }
-            Label {
-               y: units.dp(-100) - height - parent.contentY
+
+            PullToRefresh {
+               view: parent
                text: qsTr("Release to refresh balances")
-               anchors.horizontalCenter: parent.horizontalCenter
-               style: "headline"
+
+               onTriggered: {
+                  if( !wallet.connected ) {
+                     showMessage(qsTr("Cannot refresh balances: not connected to server."))
+                     return
+                  }
+                  showMessage(qsTr("Refreshing balances"))
+                  wallet.syncAllBalances()
+               }
             }
          }
       }
