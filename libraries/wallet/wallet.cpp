@@ -1167,6 +1167,10 @@ namespace detail {
           if( timeout_seconds < 1 )
               FC_THROW_EXCEPTION( invalid_timeout, "Invalid timeout!" );
 
+          const uint32_t max_timeout_seconds = std::numeric_limits<uint32_t>::max() - bts::blockchain::now().sec_since_epoch();
+          if( timeout_seconds > max_timeout_seconds )
+              FC_THROW_EXCEPTION( invalid_timeout, "Timeout too large!", ("max_timeout_seconds",max_timeout_seconds) );
+
           fc::time_point now = fc::time_point::now();
           fc::time_point new_lock_time = now + fc::seconds( timeout_seconds );
           if( new_lock_time.sec_since_epoch() <= now.sec_since_epoch() )
