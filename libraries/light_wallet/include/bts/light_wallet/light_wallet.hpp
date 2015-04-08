@@ -31,7 +31,7 @@ namespace bts { namespace light_wallet {
        unordered_map<string,account_data>                accounts;
    };
 
-   class light_wallet 
+   class light_wallet
    {
       public:
          light_wallet(std::function<void(string,string)> persist_function,
@@ -63,7 +63,7 @@ namespace bts { namespace light_wallet {
          account_record& account(const string& account_name);
          account_record& fetch_account(const string& account_name);
          vector<const account_record*> account_records() const;
-         
+
          fc::variant_object prepare_transfer( const string& amount,
                                               const string& symbol,
                                               const string& from_account_name,
@@ -102,6 +102,7 @@ namespace bts { namespace light_wallet {
          std::function<string(string)>             restore;
 
          void fetch_welcome_package();
+         fc::ecc::private_key derive_private_key(const string& prefix_string, int sequence_number);
    private:
          fc::ecc::private_key create_one_time_key(const std::string& account_name, const std::string& key_id);
          asset get_network_fee( const string& symbol );

@@ -8,6 +8,20 @@ Dialog {
    positiveButtonText: qsTr("Next")
 
    onShowingChanged: if( showing ) backupLayout.state = ""
+   onRejected: close()
+   onAccepted: {
+      if( backupLayout.state === "verifying" ) {
+         if( !wallet.verifyBrainKey(brainKeyField.text) ) {
+            brainShaker.shake()
+         } else {
+            wallet.clearBrainKey()
+            backupLayout.state = "open"
+            close()
+         }
+      } else {
+         backupLayout.state = "verifying"
+      }
+   }
 
    Column {
       id: backupLayout
@@ -21,7 +35,6 @@ Dialog {
             margins: visuals.margins
          }
          style: "body2"
-         height: units.dp(200)
          text: qsTr("A password has been generated to protect your funds. This password should be written down and " +
                     "stored somewhere safe. It can be used to recover your account if you forget your " +
                     "login password or lose this %1. Anyone with this password can spend your money and use your " +
@@ -95,20 +108,5 @@ Dialog {
             }
          }
       ]
-   }
-   
-   onRejected: close()
-   onAccepted: {
-      if( backupLayout.state === "verifying" ) {
-         if( !wallet.verifyBrainKey(brainKeyField.text) ) {
-            brainShaker.shake()
-         } else {
-            wallet.clearBrainKey()
-            backupLayout.state = "open"
-            close()
-         }
-      } else {
-         backupLayout.state = "verifying"
-      }
    }
 }

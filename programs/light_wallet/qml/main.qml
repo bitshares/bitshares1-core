@@ -1,7 +1,7 @@
 import QtQuick 2.3
 import QtQuick.Window 2.2
 import QtQuick.Layouts 1.1
-import QtQuick.Controls 1.2
+import QtQuick.Controls 1.3 as Controls3
 import QtGraphicalEffects 1.0
 
 import Qt.labs.settings 1.0
@@ -13,7 +13,7 @@ import Material 0.1
 import Material.ListItems 0.1
 import Material.Extras 0.1 as Extras
 
-Window {
+ApplicationWindow {
    id: window
    visible: true
    width: units.dp(1200)
@@ -28,11 +28,13 @@ Window {
       property string guid: Extras.Utils.generateID()
    }
 
-   property alias pageStack: __pageStack
    property alias lockAction: __lockAction
    property alias payAction: __payAction
 
    Component.onCompleted: {
+      onboardLoader.parent = Extras.Utils.findRootChild(onboardLoader, "dialogOverlayLayer")
+      lockScreen.parent = Extras.Utils.findRootChild(lockScreen, "dialogOverlayLayer")
+
       if( wallet.walletExists )
          wallet.openWallet()
       if( !( wallet.accountNames.length && wallet.accounts[wallet.accountNames[0]].isRegistered ) )
@@ -46,16 +48,12 @@ Window {
    }
 
    function showMessage(error, buttonName, buttonCallback) {
-      snack.text = error
       if( buttonName && buttonCallback ) {
          snack.buttonText = buttonName
-         snack.onClick.connect(buttonCallback)
-         snack.onDissapear.connect(function() {
-            snack.onClick.disconnect(buttonCallback)
-         })
+         snack.buttonCallback = buttonCallback
       } else
          snack.buttonText = ""
-      snack.open()
+      snack.open(error)
    }
    function deviceType() {
       switch(Device.type) {
@@ -96,14 +94,14 @@ Window {
          window.pageStack.push({item: transferUi, properties: args})
       else
          showMessage(qsTr("You don't have any assets, so you cannot make a transfer."), qsTr("Refresh Balances"),
-                   wallet.syncAllBalances)
+                     wallet.syncAllBalances)
    }
    function openOrderForm(args) {
       if( wallet.accounts[args.accountName].availableAssets.length )
          window.pageStack.push({item: orderUi, properties: args})
       else
          showMessage(qsTr("You don't have any assets, so you cannot place a market order."), qsTr("Refresh Balances"),
-                   wallet.syncAllBalances)
+                     wallet.syncAllBalances)
    }
 
    AppTheme {
@@ -124,6 +122,13 @@ Window {
       iconName: "action/payment"
       onTriggered: openTransferPage({accountName: wallet.accountNames[0]})
    }
+   Controls3.Action {
+      id: __quitAction
+      text: "Quit"
+      shortcut: StandardKey.Quit
+      onTriggered: Qt.quit()
+   }
+
    QtObject {
       id: visuals
       property real margins: units.dp(16)
@@ -160,22 +165,6 @@ Window {
       onNotification: showMessage(message)
    }
 
-   Item {
-      id: overlayLayer
-      objectName: "overlayLayer"
-
-      anchors.fill: parent
-      z: 100
-
-      property Item currentOverlay
-
-      MouseArea {
-         anchors.fill: parent
-         enabled: overlayLayer.currentOverlay != null
-         hoverEnabled: enabled
-         onClicked: overlayLayer.currentOverlay.close()
-      }
-   }
    LockScreen {
       id: lockScreen
       width: window.width
@@ -237,114 +226,92 @@ Window {
       ]
    }
 
-   Item {
-      id: applicationArea
-      anchors.fill: parent
-      enabled: wallet.unlocked
-      Toolbar {
-         id: toolbar
-         width: parent.width
-         backgroundColor: Theme.primaryColor
+   View {
+      id: criticalNotificationArea
+      y: toolbar.height
+      backgroundColor: "#F44336"
+      height: units.dp(100)
+      width: parent.width
+      enabled: false
+      z: -5
+
+      //Show iff brain key is set, the main page is not active or transitioning out, and we're not already in an onboarding UI
+      property bool active: wallet.brainKey.length > 0
+
+      Label {
+         anchors.verticalCenter: parent.verticalCenter
+         anchors.left:  parent.left
+         anchors.right: criticalNotificationButton.left
+         anchors.margins: visuals.margins
+         text: qsTr("Your wallet has not been backed up. You should back it up as soon as possible.")
+         color: "white"
+         style: "subheading"
+         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
       }
-      View {
-         id: criticalNotificationArea
-         y: toolbar.height
-         backgroundColor: "#F44336"
-         height: units.dp(100)
-         width: parent.width
-         enabled: false
-         z: -1
+      Button {
+         id: criticalNotificationButton
+         anchors.right: parent.right
+         anchors.rightMargin: visuals.margins
+         anchors.verticalCenter: parent.verticalCenter
+         text: qsTr("Back Up Wallet")
+         textColor: "white"
 
-         //Show iff brain key is set, the main page is not active or transitioning out, and we're not already in an onboarding UI
-         property bool active: wallet.brainKey.length > 0
-
-         Label {
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.left:  parent.left
-            anchors.right: criticalNotificationButton.left
-            anchors.margins: visuals.margins
-            text: qsTr("Your wallet has not been backed up. You should back it up as soon as possible.")
-            color: "white"
-            style: "subheading"
-            wrapMode: Text.WrapAtWordBoundaryOrAnywhere
-         }
-         Button {
-            id: criticalNotificationButton
-            anchors.right: parent.right
-            anchors.rightMargin: visuals.margins
-            anchors.verticalCenter: parent.verticalCenter
-            text: qsTr("Back Up Wallet")
-            textColor: "white"
-
-            onClicked: backupUi.show()
-         }
-
-         states: [
-            State {
-               name: "active"
-               when: criticalNotificationArea.active
-               PropertyChanges {
-                  target: criticalNotificationArea
-                  enabled: true
-               }
-               PropertyChanges {
-                  target: pageStack
-                  anchors.topMargin: criticalNotificationArea.height
-               }
-            }
-         ]
-         transitions: [
-            Transition {
-               from: ""
-               to: "active"
-               reversible: true
-               PropertyAnimation { target: pageStack; property: "anchors.topMargin"; easing.type: Easing.InOutQuad }
-            }
-         ]
+         onClicked: backupUi.show()
       }
-      PageStack {
-         id: __pageStack
-         anchors {
-            left: parent.left
-            right: parent.right
-            top: toolbar.bottom
-            bottom: parent.bottom
-         }
 
-         onPushed: toolbar.push(page)
-         onPopped: toolbar.pop()
-
-         Component {
-            id: assetsUi
-
-            AssetsLayout {
-               onLockRequested: {
-                  wallet.lockWallet()
-                  uiStack.pop()
-               }
-               onOpenHistory: window.pageStack.push(historyUi, {"accountName": account, "assetSymbol": symbol})
+      states: [
+         State {
+            name: "active"
+            when: criticalNotificationArea.active
+            PropertyChanges {
+               target: criticalNotificationArea
+               enabled: true
+            }
+            PropertyChanges {
+               target: pageStack
+               anchors.topMargin: criticalNotificationArea.height
             }
          }
-         Component {
-            id: historyUi
-
-            HistoryLayout {
-            }
+      ]
+      transitions: [
+         Transition {
+            from: ""
+            to: "active"
+            reversible: true
+            PropertyAnimation { target: pageStack; property: "anchors.topMargin"; easing.type: Easing.InOutQuad }
          }
-         Component {
-            id: transferUi
+      ]
+   }
 
-            TransferLayout {
-               accountName: wallet.accountNames[0]
-               onTransferComplete: window.pageStack.pop()
-            }
-         }
-         Component {
-            id: orderUi
+   Component {
+      id: assetsUi
 
-            OrderForm {
-            }
+      AssetsLayout {
+         onLockRequested: {
+            wallet.lockWallet()
+            uiStack.pop()
          }
+         onOpenHistory: window.pageStack.push(historyUi, {"accountName": account, "assetSymbol": symbol})
+      }
+   }
+   Component {
+      id: historyUi
+
+      HistoryLayout {
+      }
+   }
+   Component {
+      id: transferUi
+
+      TransferLayout {
+         accountName: wallet.accountNames[0]
+         onTransferComplete: window.pageStack.pop()
+      }
+   }
+   Component {
+      id: orderUi
+
+      OrderForm {
       }
    }
    Component {
@@ -359,7 +326,7 @@ Window {
    }
    BackupLayout {
       id: backupUi
-      minimumWidth: parent.width / 2
+      minimumWidth: window.width * 2/3
    }
    Loader {
       id: onboardLoader
@@ -370,7 +337,7 @@ Window {
       id: snack
       duration: 5000
       enabled: opened
-      onClick: opened = false
+      onClicked: opened = false
       z: 21
    }
 }

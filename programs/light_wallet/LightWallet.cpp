@@ -57,7 +57,7 @@ void GuardFuture(fc::future<T> f, const char* file, const char* function, QObjec
 inline static QString normalize(QString key)
 {
    key = key.simplified();
-   return key.toUpper().remove(QRegExp("[^A-Z] "));
+   return key.toUpper();
 }
 
 LightWallet::LightWallet()
@@ -214,6 +214,25 @@ void LightWallet::createWallet(QString accountName, QString password)
    END_WAIT_THREAD
 }
 
+QStringList LightWallet::recoverableAccounts(QString brainKey)
+{
+   QStringList results;
+
+   IN_WAIT_THREAD
+   int n = 0;
+   bts::blockchain::oaccount_record account;
+   do {
+      auto key = m_wallet.derive_private_key(convert(brainKey), n++);
+      account = m_wallet.get_account_record(std::string(bts::blockchain::public_key_type(key.get_public_key())));
+      if( account )
+         results.append(convert(account->name));
+   } while(account);
+   END_WAIT_THREAD
+
+   qDebug() << "Found recoverable accounts:" << results;
+   return results;
+}
+
 bool LightWallet::recoverWallet(QString accountName, QString password, QString brainKey)
 {
    bool success = false;
@@ -237,7 +256,8 @@ bool LightWallet::recoverWallet(QString accountName, QString password, QString b
          Q_EMIT notification(tr("Couldn't recover account."));
       }
    } catch (bts::light_wallet::account_already_registered e) {
-      Q_EMIT notification(tr("Could not claim registered account %1. Is your recovery password correct?").arg(accountName));
+      Q_EMIT notification(tr("Could not claim %1. Is your recovery password correct?").arg(accountName));
+      wdump((e.to_detail_string()));
    }
 
    Q_EMIT walletExistsChanged(walletExists());
@@ -405,7 +425,7 @@ void LightWallet::syncAllTransactions()
    END_THREAD
 }
 
-void LightWallet::generateBrainKey()
+void LightWallet::generateBrainKey(uint8_t wordCount)
 {
    FC_ASSERT( &fc::thread::current() == &m_walletThread );
 
@@ -414,8 +434,19 @@ void LightWallet::generateBrainKey()
    auto secret = priv_key.get_secret();
 
    uint16_t* keys = (uint16_t*)&secret;
-   for( uint32_t i = 0; i < 9; ++i )
+   for( uint32_t i = 0; i < wordCount; ++i )
+   {
+      // The private key secret is 32 bytes, which is good for 16 words. Every 16 words, we need to get a new secret
+      // and begin iterating it again.
+      static_assert((sizeof(secret._hash)/sizeof(uint16_t)) == 16, "Unexpected size for private key");
+      if( i >= (sizeof(secret._hash)/sizeof(uint16_t)) )
+      {
+         wordCount -= i;
+         i = 0;
+         secret = fc::ecc::private_key::generate().get_secret();
+      }
       result = result + word_list[keys[i]%word_list_size] + " ";
+   }
    result.chop(1);
 
    m_brainKey = result;

@@ -46,14 +46,14 @@ RowLayout {
          running: button.pressed
 
          NumberAnimation {
-            target: passwordText
+            target: passwordText.input
             property: "cursorPosition"
             from: 0; to: passwordText.text.length
             easing.type: Easing.OutQuad
             duration: Math.max((passwordText.text.length - 30) * 200, 200)
          }
          NumberAnimation {
-            target: passwordText
+            target: passwordText.input
             property: "cursorPosition"
             to: 0; from: passwordText.text.length
             easing.type: Easing.OutQuad
