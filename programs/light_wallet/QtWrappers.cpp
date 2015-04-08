@@ -17,7 +17,6 @@ TransactionSummary::TransactionSummary(QString id, fc::time_point_sec timestamp,
       entry->setParent(this);
 
    connect(this, &TransactionSummary::updatingTimestampChanged, [this] (bool updating) {
-      qDebug() << "Changed updating timestamp flag to" << updating;
       if( updating )
          Q_EMIT timestampChanged();
    });
