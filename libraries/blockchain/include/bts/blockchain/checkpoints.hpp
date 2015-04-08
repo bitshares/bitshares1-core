@@ -3,7 +3,7 @@
 
 namespace bts { namespace blockchain {
 
-static std::unordered_map<uint32_t, bts::blockchain::block_id_type> CHECKPOINT_BLOCKS
+static std::map<uint32_t, bts::blockchain::block_id_type> CHECKPOINT_BLOCKS
 {
     {       1, bts::blockchain::block_id_type( "8abcfb93c52f999e3ef5288c4f837f4f15af5521" ) },
     {  274001, bts::blockchain::block_id_type( "f46c109cfb1bac323122ae59b08edc23328d880c" ) },
@@ -24,7 +24,8 @@ static std::unordered_map<uint32_t, bts::blockchain::block_id_type> CHECKPOINT_B
     { 1575501, bts::blockchain::block_id_type( "52c5e5764fba4c876cde8c80e598c89ee5c35d9f" ) },
     { 1772201, bts::blockchain::block_id_type( "5832516564d86e86edbbb501cabec98c77504307" ) },
     { 2071001, bts::blockchain::block_id_type( "58847f93f0d1846cb9250d7ba342bebda6e698e4" ) },
-    { 2104000, bts::blockchain::block_id_type( "147f68b04701f176cab47a512430c9a82c78e217" ) }
+    { 2113001, bts::blockchain::block_id_type( "3327c3632f71e470c6f875c7b1798abf9090535d" ) },
+    { 2232000, bts::blockchain::block_id_type( "7aef963b6e6488a6014b5659333c92574b8eee5c" ) }
 };
 
 // Initialized in load_checkpoints()
