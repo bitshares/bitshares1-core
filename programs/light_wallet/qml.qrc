@@ -8,7 +8,7 @@
     <file>qml/OnboardingLayout.qml</file>
     <file>qml/OrderForm.qml</file>
     <file>qml/PasswordField.qml</file>
-    <file>qml/RoboHash.qml</file>
+    <file>qml/Identicon.qml</file>
     <file>qml/ShakeAnimation.qml</file>
     <file>qml/Transaction.qml</file>
     <file>qml/TransferLayout.qml</file>
