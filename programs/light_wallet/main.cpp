@@ -12,6 +12,21 @@
 
 int main(int argc, char *argv[])
 {
+//#if defined(WIN32) && defined(_DEBUG) //TODO: restore this to eliminate console in windows release builds
+#if defined(WIN32)
+   AllocConsole();
+   //TODO: add an icon to distribution then enable the commented out code below
+   //QPixmap px(":/images/lightwallet.png");
+   //HICON hIcon = qt_pixmapToWinHICON(px);
+   //SetConsoleIcon(hIcon);
+   freopen("CONOUT$", "wb", stdout);
+   freopen("CONOUT$", "wb", stderr);
+   printf("testing stdout\n");
+   fprintf(stderr, "testing stderr\n");
+#endif
+
+
+
    QGuiApplication app(argc, argv);
    app.setApplicationName(QStringLiteral("BitShares %1 Light Wallet").arg(BTS_BLOCKCHAIN_SYMBOL));
    app.setOrganizationName(BTS_BLOCKCHAIN_NAME);
