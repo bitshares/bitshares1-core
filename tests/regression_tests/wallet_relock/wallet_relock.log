@@ -1,3 +1,5 @@
+default (unlocked) >>> debug_filter_output_for_tests true
+OK
 default (unlocked) >>> wallet_lock
 OK
 default (locked) >>> wallet_get_info
@@ -33,7 +35,7 @@ Returns:
 aliases: unlock, walletpassphrase
 default (locked) >>> wallet_unlock -1 123456789
 Command failed with exception: invalid timeout (20020)
-Invalid timeout!
+Timeout too large!
 
 
 
@@ -45,14 +47,9 @@ Invalid timeout!
 
 
 
-default (locked) >>> wallet_unlock 5 123456789
-Command failed with exception: invalid password (20001)
-Invalid password!
-
-
-
-
-default (locked) >>> wallet_get_info
+default (locked) >>> wallet_unlock 5 password
+OK
+default (unlocked) >>> wallet_get_info
 {
   "data_dir": "<d-ign></d-ign>",
   "num_scanning_threads": "<d-ign></d-ign>",
@@ -64,13 +61,13 @@ default (locked) >>> wallet_get_info
   "last_scanned_block_timestamp": null,
   "transaction_fee": "0.50000 XTS",
   "transaction_expiration_secs": 3600,
-  "unlocked": false,
-  "unlocked_until": null,
-  "unlocked_until_timestamp": null,
-  "scan_progress": null,
-  "version": "<d-ign></d-ign>"
+  "unlocked": true,
+  "unlocked_until": "<d-ign>5 seconds in the future</d-ign>",
+  "unlocked_until_timestamp": "<d-ign>2015-04-09T11:33:38</d-ign>",
+  "scan_progress": "100.00 %",
+  "version": "<d-ign>110</d-ign>"
 }
-default (locked) >>> debug_wait 6
+default (unlocked) >>> debug_wait 11
 OK
 default (locked) >>> wallet_get_info
 {
@@ -85,7 +82,7 @@ default (locked) >>> wallet_get_info
   "transaction_fee": "0.50000 XTS",
   "transaction_expiration_secs": 3600,
   "unlocked": false,
-  "unlocked_until": null,
+  "unlocked_until": "<d-ign></d-ign>",
   "unlocked_until_timestamp": null,
   "scan_progress": null,
   "version": "<d-ign></d-ign>"
