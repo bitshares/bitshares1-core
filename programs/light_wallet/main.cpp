@@ -9,6 +9,9 @@
 
 #include "QtWrappers.hpp"
 #include "LightWallet.hpp"
+#if defined(WIN32) //&& defined(_DEBUG)
+#include <Windows.h>
+#endif
 
 int main(int argc, char *argv[])
 {
