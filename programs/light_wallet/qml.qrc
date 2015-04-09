@@ -10,8 +10,10 @@
     <file>qml/PasswordField.qml</file>
     <file>qml/Identicon.qml</file>
     <file>qml/ShakeAnimation.qml</file>
+    <file>qml/PullToRefresh.qml</file>
     <file>qml/Transaction.qml</file>
     <file>qml/TransferLayout.qml</file>
     <file>qml/utils.js</file>
+    <file>qml/jdenticon/jdenticon-1.0.1.min.js</file>
   </qresource>
 </RCC>

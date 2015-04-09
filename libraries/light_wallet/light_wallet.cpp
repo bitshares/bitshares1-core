@@ -431,10 +431,12 @@ map<string, pair<double,double>> light_wallet::balance(const string& account_nam
       if( record && balance.second.owner() == _data->accounts.find(account_name)->second.user_account.active_key() )
       {
          balances[record->symbol].first += balance.second.balance / double(record->precision);
-         balances[record->symbol].second += balance.second.calculate_yield(blockchain::now(),
-                                                                           balance.second.balance,
-                                                                           record->collected_fees,
-                                                                           record->current_share_supply).amount / double(record->precision);
+         if( record->is_market_issued() )
+            balances[record->symbol].second += balance.second.calculate_yield(blockchain::now(),
+                                                                              balance.second.balance,
+                                                                              record->collected_fees,
+                                                                              record->current_share_supply).amount / double(record->precision);
+         else balances[record->symbol].second = 0;
       }
    }
    return balances;
