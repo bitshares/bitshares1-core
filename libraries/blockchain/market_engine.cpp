@@ -537,9 +537,10 @@ void market_engine::pay_current_cover( market_transaction& mtrx, asset_record& q
 { try {
     FC_ASSERT( _current_ask->type == cover_order );
     FC_ASSERT( mtrx.ask_type == cover_order );
-    FC_ASSERT( _current_collat_record.interest_rate.quote_asset_id > _current_collat_record.interest_rate.base_asset_id );
+    FC_ASSERT( _current_ask->interest_rate.valid() );
+    FC_ASSERT( _current_ask->interest_rate->quote_asset_id > _current_ask->interest_rate->base_asset_id );
 
-    const asset principle = asset( _current_collat_record.payoff_balance, quote_asset.id );
+    const asset principle = _current_ask->get_balance();
     const auto cover_age = get_current_cover_age();
     const asset total_debt = get_current_cover_debt();
 
@@ -555,7 +556,7 @@ void market_engine::pay_current_cover( market_transaction& mtrx, asset_record& q
     else
     {
         // Partial cover
-        interest_paid = get_interest_paid( mtrx.ask_received, _current_collat_record.interest_rate, cover_age );
+        interest_paid = get_interest_paid( mtrx.ask_received, *_current_ask->interest_rate, cover_age );
         principle_paid = mtrx.ask_received - interest_paid;
         _current_ask->state.balance -= principle_paid.amount;
     }
@@ -601,10 +602,39 @@ void market_engine::pay_current_cover( market_transaction& mtrx, asset_record& q
           _current_ask->collateral = 0;
     }
 
-    _current_collat_record.collateral_balance = *_current_ask->collateral;
-    _current_collat_record.payoff_balance = _current_ask->state.balance;
+    //
+    // we need to translate _current_ask back into a collat_record in order to store it in the database
+    //
+    // this comment shows the various constructors in order to make it easier to verify that every field is written back correctly
+    //
+    //  market_order( order_type_enum t, market_index_key k, order_record s, share_type c, price interest, time_point_sec exp )
+    //  :type(t),market_index(k),state(s),collateral(c),interest_rate(interest),expiration(exp){}
+    //
+    // market_order morder(
+    //    cover_order,                                       // morder.type
+    //    k,                                                 // morder.market_index
+    //    order_record(collat_record->payoff_balance),       // morder.state
+    //    collat_record->collateral_balance,                 // morder.collateral
+    //    collat_record->interest_rate,                      // morder.interest_rate
+    //    collat_record->expiration                          // morder.expiration
+    //    );
+    //
+    //       collateral_record(share_type c = 0,
+    //                     share_type p = 0,
+    //                     const price& apr = price(),
+    //                     time_point_sec exp = time_point_sec())
+    //   :collateral_balance(c),payoff_balance(p),interest_rate(apr),expiration(exp){}
+    //
+
+    collateral_record collat_record(
+        *_current_ask->collateral,               // originally initialized from collateral_balance
+        _current_ask->get_balance().amount,      // get_balance() returns payoff_balance
+        *_current_ask->interest_rate,
+        *_current_ask->expiration
+        );
+        
     _pending_state->store_collateral_record( _current_ask->market_index,
-                                             _current_collat_record );
+                                             collat_record );
 } FC_CAPTURE_AND_RETHROW( (mtrx)(quote_asset) ) }
 
 void market_engine::pay_current_ask( market_transaction& mtrx, asset_record& quote_asset, asset_record& base_asset )
@@ -748,6 +778,25 @@ bool market_engine::get_next_ask()
     return false;
 } FC_CAPTURE_AND_RETHROW() }
 
+market_order market_engine::build_collateral_market_order( market_index_key k ) const
+{
+    // fetch collateral data for given market_index_key from PCS
+    // and put it in a market_order
+    ocollateral_record collat_record = _pending_state->get_collateral_record( k );
+    
+    FC_ASSERT( collat_record.valid() );
+    
+    market_order morder(
+        cover_order,
+        k,
+        order_record(collat_record->payoff_balance),
+        collat_record->collateral_balance,
+        collat_record->interest_rate,
+        collat_record->expiration
+        );
+    return morder;
+}
+
 bool market_engine::get_next_ask_margin_call()
 { try {
     /**
@@ -755,17 +804,11 @@ bool market_engine::get_next_ask_margin_call()
     */
     while( _current_bid && _collateral_itr.valid() )
     {
-      const auto cover_ask = market_order( cover_order,
-                                           _collateral_itr.key(),
-                                           order_record(_collateral_itr.value().payoff_balance),
-                                           _collateral_itr.value().collateral_balance,
-                                           _collateral_itr.value().interest_rate,
-                                           _collateral_itr.value().expiration);
+      const market_order cover_ask = build_collateral_market_order( _collateral_itr.key() );
 
       if( cover_ask.get_price().quote_asset_id == _quote_id &&
           cover_ask.get_price().base_asset_id == _base_id )
       {
-          _current_collat_record = _collateral_itr.value();
           // Don't cover unless the price is below the feed price or margin position is expired
           if( (_feed_price.valid() && cover_ask.get_price() > *_feed_price) )
           {
@@ -803,13 +846,7 @@ bool market_engine::get_next_ask_expired_cover()
           continue;
        }
 
-       const auto cover_ask = market_order( cover_order,
-                                              _collateral_expiration_itr->key,
-                                              order_record(val->payoff_balance),
-                                              val->collateral_balance,
-                                              val->interest_rate,
-                                              val->expiration);
-
+       const market_order cover_ask = build_collateral_market_order( _collateral_expiration_itr->key );
        ++_collateral_expiration_itr;
 
        // if we have a feed price and margin was called above then don't process it
@@ -960,8 +997,11 @@ asset market_engine::get_interest_owed( const asset& principle, const price& apr
 
 asset market_engine::get_current_cover_debt() const
 { try {
+    FC_ASSERT( _current_ask->type == cover_order );
+    FC_ASSERT( _current_ask->interest_rate.valid() );
+    
     return get_interest_owed( _current_ask->get_balance(),
-                              _current_collat_record.interest_rate,
+                              *_current_ask->interest_rate,
                               get_current_cover_age() ) + _current_ask->get_balance();
 } FC_CAPTURE_AND_RETHROW() }
 
