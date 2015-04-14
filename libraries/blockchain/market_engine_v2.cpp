@@ -127,17 +127,17 @@ namespace bts { namespace blockchain { namespace detail {
                      if( (asset(quote_asset->collected_fees,quote_id) * _current_ask->get_price()).amount < (10000 * BTS_BLOCKCHAIN_PRECISION) )
                         break;
                      market_transaction mtrx;
-                     mtrx.bid_price = _current_ask->get_price();
-                     mtrx.ask_price = _current_ask->get_price();
-                     mtrx.bid_owner = address();
-                     mtrx.ask_owner = _current_ask->get_owner();
+                     mtrx.bid_index.order_price = _current_ask->get_price();
+                     mtrx.ask_index.order_price = _current_ask->get_price();
+                     mtrx.bid_index.owner = address();
+                     mtrx.ask_index.owner = _current_ask->get_owner();
                      mtrx.bid_type  = bid_order;
                      mtrx.ask_type  = _current_ask->type;
 
                      auto ask_quote_quantity = _current_ask->get_quote_quantity();
                      auto quote_quantity_usd = std::min( quote_asset->collected_fees, ask_quote_quantity.amount );
                      mtrx.ask_received = asset(quote_quantity_usd,quote_id);
-                     mtrx.ask_paid     = mtrx.ask_received * mtrx.ask_price;
+                     mtrx.ask_paid     = mtrx.ask_received * mtrx.ask_index.order_price;
                      mtrx.bid_paid     = mtrx.ask_received;
                      mtrx.bid_received = mtrx.ask_paid; // these get directed to accumulated fees
 
@@ -149,15 +149,15 @@ namespace bts { namespace blockchain { namespace detail {
                     base_volume += mtrx.bid_received;
                     quote_volume += mtrx.ask_received;
                     if( opening_price == price() )
-                      opening_price = mtrx.bid_price;
-                    closing_price = mtrx.bid_price;
+                      opening_price = mtrx.bid_index.order_price;
+                    closing_price = mtrx.bid_index.order_price;
                     // Remark: only prices of matched orders be updated to market history
                     // TODO check here: since the orders have been sorted, maybe don't need the 2nd comparison
-                    if( highest_price == price() || highest_price < mtrx.bid_price)
-                      highest_price = mtrx.bid_price;
+                    if( highest_price == price() || highest_price < mtrx.bid_index.order_price)
+                      highest_price = mtrx.bid_index.order_price;
                     // TODO check here: store lowest ask price or lowest bid price?
-                    if( lowest_price == price() || lowest_price > mtrx.ask_price)
-                      lowest_price = mtrx.ask_price;
+                    if( lowest_price == price() || lowest_price > mtrx.ask_index.order_price)
+                      lowest_price = mtrx.ask_index.order_price;
 
                      if( mtrx.ask_type == ask_order )
                         pay_current_ask( mtrx, *base_asset );
@@ -199,24 +199,24 @@ namespace bts { namespace blockchain { namespace detail {
 
                 /** the market transaction we are filling out */
                 market_transaction mtrx;
-                mtrx.bid_price = _current_bid->get_price();
-                mtrx.ask_price = _current_ask->get_price();
-                mtrx.bid_owner = _current_bid->get_owner();
-                mtrx.ask_owner = _current_ask->get_owner();
+                mtrx.bid_index.order_price = _current_bid->get_price();
+                mtrx.ask_index.order_price = _current_ask->get_price();
+                mtrx.bid_index.owner = _current_bid->get_owner();
+                mtrx.ask_index.owner = _current_ask->get_owner();
                 mtrx.bid_type  = _current_bid->type;
                 mtrx.ask_type  = _current_ask->type;
 
                 if( _current_ask->type == cover_order && _current_bid->type == short_order )
                 {
                    FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
-                   if( mtrx.ask_price < mtrx.bid_price ) // the call price has not been reached
+                   if( mtrx.ask_index.order_price < mtrx.bid_index.order_price ) // the call price has not been reached
                       break;
 
                    if( pending_block_num < BTS_V0_4_10_FORK_BLOCK_NUM )
                    {
                       // in the event that there is a margin call, we must accept the
                       // bid price assuming the bid price is reasonable
-                      if( mtrx.bid_price < min_cover_ask )
+                      if( mtrx.bid_index.order_price < min_cover_ask )
                       {
                          reset_current_ask();
                          continue;
@@ -229,7 +229,7 @@ namespace bts { namespace blockchain { namespace detail {
                         *  Don't allow shorts to be executed if they are too far over priced or they will be
                         *  immediately under collateralized.
                         */
-                       if( mtrx.bid_price > market_stat->maximum_bid() )
+                       if( mtrx.bid_index.order_price > market_stat->maximum_bid() )
                        {
                           _current_bid.reset();
                           continue;
@@ -238,7 +238,7 @@ namespace bts { namespace blockchain { namespace detail {
                         *  Don't allow shorts to be executed if they are too far over priced or they will be
                         *  immediately under collateralized.
                         */
-                       if( mtrx.bid_price < market_stat->minimum_ask() )
+                       if( mtrx.bid_index.order_price < market_stat->minimum_ask() )
                        {
                           reset_current_ask();
                           continue;
@@ -246,16 +246,16 @@ namespace bts { namespace blockchain { namespace detail {
                    }
                    else
                    {
-                       if( mtrx.bid_price > max_short_bid )
+                       if( mtrx.bid_index.order_price > max_short_bid )
                        {
                           _current_bid.reset();
                           continue;
                        }
                    }
-                   mtrx.ask_price = mtrx.bid_price;
+                   mtrx.ask_index.order_price = mtrx.bid_index.order_price;
 
                    // we want to sell enough XTS to cover our balance.
-                   ask_quantity_xts  = current_ask_balance * mtrx.bid_price;
+                   ask_quantity_xts  = current_ask_balance * mtrx.bid_index.order_price;
 
                    if( ask_quantity_xts.amount > *_current_ask->collateral )
                       ask_quantity_xts.amount = *_current_ask->collateral;
@@ -265,7 +265,7 @@ namespace bts { namespace blockchain { namespace detail {
                    if( quantity_xts == ask_quantity_xts )
                         mtrx.bid_paid      = current_ask_balance;
                    else
-                        mtrx.bid_paid      = quantity_xts * mtrx.bid_price;
+                        mtrx.bid_paid      = quantity_xts * mtrx.bid_index.order_price;
 
                    mtrx.ask_received  = mtrx.bid_paid;
                    xts_paid_by_short  = quantity_xts;
@@ -293,7 +293,7 @@ namespace bts { namespace blockchain { namespace detail {
                 else if( _current_ask->type == cover_order && _current_bid->type == bid_order )
                 {
                    FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
-                   if( mtrx.ask_price < mtrx.bid_price )
+                   if( mtrx.ask_index.order_price < mtrx.bid_index.order_price )
                       break; // the call price has not been reached
 
                    if( pending_block_num >= BTS_V0_4_12_FORK_BLOCK_NUM )
@@ -303,27 +303,27 @@ namespace bts { namespace blockchain { namespace detail {
                         *  the minimum ask, this could lead to an attack where someone
                         *  walks the whole book to steal the collateral.
                         */
-                       if( mtrx.bid_price < market_stat->minimum_ask() )
+                       if( mtrx.bid_index.order_price < market_stat->minimum_ask() )
                        {
                           reset_current_ask();
                           continue;
                        }
                    }
 
-                   mtrx.ask_price = mtrx.bid_price;
+                   mtrx.ask_index.order_price = mtrx.bid_index.order_price;
 
                    if( pending_block_num < BTS_V0_4_10_FORK_BLOCK_NUM )
                    {
                       // in the event that there is a margin call, we must accept the
                       // bid price assuming the bid price is reasonable
-                      if( mtrx.bid_price < min_cover_ask )
+                      if( mtrx.bid_index.order_price < min_cover_ask )
                       {
                          reset_current_ask();
                          continue;
                       }
                    }
 
-                   auto max_usd_purchase = asset(*_current_ask->collateral,0) * mtrx.bid_price;
+                   auto max_usd_purchase = asset(*_current_ask->collateral,0) * mtrx.bid_index.order_price;
                    auto usd_exchanged = std::min( current_bid_balance, max_usd_purchase );
 
                    if( pending_block_num >= BTS_V0_4_9_FORK_2_BLOCK_NUM )
@@ -340,7 +340,7 @@ namespace bts { namespace blockchain { namespace detail {
                    if( usd_exchanged == max_usd_purchase )
                       mtrx.ask_paid     = asset(*_current_ask->collateral,0);
                    else
-                      mtrx.ask_paid = usd_exchanged * mtrx.bid_price;
+                      mtrx.ask_paid = usd_exchanged * mtrx.bid_index.order_price;
 
                    mtrx.bid_received = mtrx.ask_paid;
 
@@ -352,7 +352,7 @@ namespace bts { namespace blockchain { namespace detail {
                 }
                 else if( _current_ask->type == ask_order && _current_bid->type == short_order )
                 {
-                   if( mtrx.bid_price < mtrx.ask_price ) break;
+                   if( mtrx.bid_index.order_price < mtrx.ask_index.order_price ) break;
                    FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
 
                    if( pending_block_num >= BTS_V0_4_12_FORK_BLOCK_NUM )
@@ -364,7 +364,7 @@ namespace bts { namespace blockchain { namespace detail {
                         *  everyone else with USD looking to sell below parity has been
                         *  bought out and the buyers of USD are willing to pay above parity.
                         */
-                       if( mtrx.ask_price <= max_short_bid )
+                       if( mtrx.ask_index.order_price <= max_short_bid )
                        {
                           _current_bid.reset();
                           continue;
@@ -374,7 +374,7 @@ namespace bts { namespace blockchain { namespace detail {
                         *  Don't allow shorts to be executed if they are too far over priced or they will be
                         *  immediately under collateralized.
                         */
-                       if( mtrx.bid_price > market_stat->maximum_bid() )
+                       if( mtrx.bid_index.order_price > market_stat->maximum_bid() )
                        {
                           _current_bid.reset();
                           continue;
@@ -382,7 +382,7 @@ namespace bts { namespace blockchain { namespace detail {
                    }
                    else
                    {
-                       if( mtrx.bid_price > max_short_bid )
+                       if( mtrx.bid_index.order_price > max_short_bid )
                        {
                           _current_bid.reset();
                           continue;
@@ -391,10 +391,10 @@ namespace bts { namespace blockchain { namespace detail {
 
                    auto quantity_xts   = std::min( bid_quantity_xts, ask_quantity_xts );
 
-                   mtrx.bid_paid       = quantity_xts * mtrx.bid_price;
+                   mtrx.bid_paid       = quantity_xts * mtrx.bid_index.order_price;
                    mtrx.ask_paid       = quantity_xts;
                    mtrx.bid_received   = mtrx.ask_paid;
-                   mtrx.ask_received   = mtrx.ask_paid * mtrx.ask_price;
+                   mtrx.ask_received   = mtrx.ask_paid * mtrx.ask_index.order_price;
 
                    xts_paid_by_short   = quantity_xts; //bid_quantity_xts;
 
@@ -415,12 +415,12 @@ namespace bts { namespace blockchain { namespace detail {
                 }
                 else if( _current_ask->type == ask_order && _current_bid->type == bid_order )
                 {
-                   if( mtrx.bid_price < mtrx.ask_price ) break;
+                   if( mtrx.bid_index.order_price < mtrx.ask_index.order_price ) break;
                    auto quantity_xts = std::min( bid_quantity_xts, ask_quantity_xts );
 
-                   mtrx.bid_paid       = quantity_xts * mtrx.bid_price;
+                   mtrx.bid_paid       = quantity_xts * mtrx.bid_index.order_price;
                    // ask gets exactly what they asked for
-                   mtrx.ask_received   = quantity_xts * mtrx.ask_price;
+                   mtrx.ask_received   = quantity_xts * mtrx.ask_index.order_price;
                    mtrx.ask_paid       = quantity_xts;
                    mtrx.bid_received   = quantity_xts;
 
@@ -444,8 +444,8 @@ namespace bts { namespace blockchain { namespace detail {
                 base_volume += mtrx.bid_received;
                 quote_volume += mtrx.ask_received;
                 if( opening_price == price() )
-                  opening_price = mtrx.bid_price;
-                closing_price = mtrx.bid_price;
+                  opening_price = mtrx.bid_index.order_price;
+                closing_price = mtrx.bid_index.order_price;
 
                 quote_asset->collected_fees += mtrx.quote_fees.amount;
                 base_asset->collected_fees += mtrx.base_fees.amount;
@@ -606,7 +606,7 @@ namespace bts { namespace blockchain { namespace detail {
              return;
           }
 
-          auto cover_price = mtrx.bid_price;
+          auto cover_price = mtrx.bid_index.order_price;
           cover_price.ratio *= 3;
           cover_price.ratio /= 4;
          // auto cover_price = mtrx.bid_paid / asset( (3*collateral.amount)/4, _base_id );
@@ -640,9 +640,9 @@ namespace bts { namespace blockchain { namespace detail {
           FC_ASSERT( _current_bid->state.balance >= 0 );
 
           auto bid_payout = _pending_state->get_balance_record(
-                                    withdraw_condition( withdraw_with_signature(mtrx.bid_owner), _base_id ).get_address() );
+                                    withdraw_condition( withdraw_with_signature(mtrx.bid_index.owner), _base_id ).get_address() );
           if( !bid_payout )
-             bid_payout = balance_record( mtrx.bid_owner, asset(0,_base_id), 0 );
+             bid_payout = balance_record( mtrx.bid_index.owner, asset(0,_base_id), 0 );
 
           bid_payout->balance += mtrx.bid_received.amount;
           bid_payout->last_update = _pending_state->now();
@@ -730,10 +730,10 @@ namespace bts { namespace blockchain { namespace detail {
           _current_ask->state.balance -= mtrx.ask_paid.amount;
           FC_ASSERT( _current_ask->state.balance >= 0 );
 
-          auto ask_balance_address = withdraw_condition( withdraw_with_signature(mtrx.ask_owner), _quote_id ).get_address();
+          auto ask_balance_address = withdraw_condition( withdraw_with_signature(mtrx.ask_index.owner), _quote_id ).get_address();
           auto ask_payout = _pending_state->get_balance_record( ask_balance_address );
           if( !ask_payout )
-             ask_payout = balance_record( mtrx.ask_owner, asset(0,_quote_id), 0 );
+             ask_payout = balance_record( mtrx.ask_index.owner, asset(0,_quote_id), 0 );
           ask_payout->balance += mtrx.ask_received.amount;
           ask_payout->last_update = _pending_state->now();
           ask_payout->deposit_date = _pending_state->now();

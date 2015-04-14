@@ -24,8 +24,6 @@ default (unlocked) >>> wallet_get_account testaccount
   ],
   "registration_date": "1970-01-01T00:00:00",
   "last_update": "2014-06-20T14:40:30",
-  "delegate_info": null,
-  "meta_data": null,
   "last_child_key_index": 0,
   "block_production_enabled": false,
   "custom_data": {}

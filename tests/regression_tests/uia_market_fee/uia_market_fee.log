@@ -210,10 +210,7 @@ TOTAL                     QUANTITY                                     PRICE | P
 default (unlocked) >>> blockchain_market_status XMO XTS
 {
   "quote_id": 1,
-  "base_id": 0,
-  "current_feed_price": null,
-  "last_valid_feed_price": null,
-  "last_error": null
+  "base_id": 0
 }
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
@@ -245,11 +242,11 @@ default (unlocked) >>> history
  <d-ign></d-ign>7         testaccount1        BID-ee62e3ce        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         <d-ign></d-ign>
  <d-ign></d-ign>9         testaccount2        ASK-c2c88fbf        100.00000 XTS           sell XTS @ 2.9 XMO / XTS                    0.50000 XTS         <d-ign></d-ign>
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|<d-ign></d-ign>10        ASK-c2c88fbf        MARKET              100.00000 XTS           fill ask @ 2.9 XMO / XTS                    0.00000 XTS         <d-ign></d-ign>|
-|                              ASK-c2c88fbf        testaccount2        223.30 XMO              ask proceeds @ 2.9 XMO / XTS                                            |
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 |<d-ign></d-ign>10        BID-ee62e3ce        MARKET              300.00 XMO              pay bid @ 3. XMO / XTS                      0.00000 XTS         <d-ign></d-ign>|
 |                              BID-ee62e3ce        testaccount1        100.00000 XTS           bid proceeds @ 3. XMO / XTS                                             |
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|<d-ign></d-ign>10        ASK-c2c88fbf        MARKET              100.00000 XTS           fill ask @ 2.9 XMO / XTS                    0.00000 XTS         <d-ign></d-ign>|
+|                              ASK-c2c88fbf        testaccount2        223.30 XMO              ask proceeds @ 2.9 XMO / XTS                                            |
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 default (unlocked) >>> blockchain_market_list_bids XMO XTS
 TYPE                QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          LIMIT               ID                                         OWNER               

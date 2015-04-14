@@ -57,6 +57,7 @@
 
 #include <algorithm>
 #include <iomanip>
+#include <random>
 #include <set>
 
 #ifndef WIN32
@@ -317,15 +318,6 @@ fc::logging_config create_default_logging_config( const fc::path& data_dir, bool
    dlc_rpc.name = "rpc";
    dlc_rpc.appenders.push_back("rpc");
 
-   fc::logger_config dlc_blockchain;
-#ifdef BTS_TEST_NETWORK
-   dlc_blockchain.level = fc::log_level::debug;
-#else
-   dlc_blockchain.level = fc::log_level::warn;
-#endif
-   dlc_blockchain.name = "blockchain";
-   dlc_blockchain.appenders.push_back("blockchain");
-
    fc::logger_config dlc_p2p;
 #ifdef BTS_TEST_NETWORK
    dlc_p2p.level = fc::log_level::debug;
@@ -346,7 +338,6 @@ fc::logging_config create_default_logging_config( const fc::path& data_dir, bool
    cfg.loggers.push_back(dlc_rpc);
    cfg.loggers.push_back(dlc_p2p);
    cfg.loggers.push_back(dlc_user);
-   cfg.loggers.push_back(dlc_blockchain);
 
    return cfg;
 }
@@ -477,8 +468,8 @@ config load_config( const fc::path& datadir, const bool enable_ulog, const fc::o
          }
       }
 
-      std::srand( std::time( 0 ) );
-      std::random_shuffle( cfg.default_peers.begin(), cfg.default_peers.end() );
+      std::shuffle( cfg.default_peers.begin(), cfg.default_peers.end(), std::default_random_engine() );
+
       return cfg;
 } FC_RETHROW_EXCEPTIONS( warn, "unable to load config file ${cfg}", ("cfg",datadir/"config.json")) }
 

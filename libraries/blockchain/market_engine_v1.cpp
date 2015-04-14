@@ -112,10 +112,10 @@ namespace bts { namespace blockchain { namespace detail {
                 usd_fees_collected += usd_paid_by_bid - usd_received_by_ask;
 
                 market_transaction mtrx;
-                mtrx.bid_owner       = _current_bid->get_owner();
-                mtrx.ask_owner       = _current_ask->get_owner();
-                mtrx.bid_price       = _current_bid->get_price();
-                mtrx.ask_price       = ask_price;
+                mtrx.bid_index.owner       = _current_bid->get_owner();
+                mtrx.ask_index.owner       = _current_ask->get_owner();
+                mtrx.bid_index.order_price       = _current_bid->get_price();
+                mtrx.ask_index.order_price       = ask_price;
                 mtrx.bid_paid        = usd_paid_by_bid;
                 mtrx.bid_received    = xts_received_by_bid;
                 mtrx.ask_paid        = xts_paid_by_ask;

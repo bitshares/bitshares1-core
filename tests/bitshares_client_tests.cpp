@@ -367,10 +367,10 @@ void bts_client_launcher_fixture::create_unsynchronized_wallets()
   bts::blockchain::start_simulated_time(genesis_block_time);
 
   // create a master blockchain
-  // we can only have a few wallet/chain databases open at a time because of the large number of 
+  // we can only have a few wallet/chain databases open at a time because of the large number of
   // files handles each leveldb eats up.  So if we're trying to generate a staggered blockchain
   // for 50 clients, we can't do them all at once.  Instead, we create a single blockchain first,
-  // then initialize clients' blockchains one-at-a-time from the master. 
+  // then initialize clients' blockchains one-at-a-time from the master.
   genesis_block.timestamp = genesis_block_time;
   fc::path genesis_json = bts_xt_client_test_config::config_directory / "genesis.json";
   fc::json::save_to_file(genesis_block, genesis_json, true);
@@ -739,7 +739,7 @@ void bts_client_launcher_fixture::create_propagation_graph(const std::vector<bts
       _initial_node(initial_node),
       _max_duration(max_duration)
     {}
-      
+
     void operator()(std::ostream& out, int v) const {
       fc::microseconds this_duration = _propagation_data[v].received_time - _propagation_data[_initial_node].received_time;
       int color = (int)((7 * this_duration.count()) / _max_duration.count()) + 1; // map to colors 1 - 8 out of 9, 9 is too dark
@@ -756,8 +756,8 @@ void bts_client_launcher_fixture::create_propagation_graph(const std::vector<bts
 
   class edge_label_writer {
   public:
-    edge_label_writer(const std::vector<bts::net::message_propagation_data>& propagation_data, 
-                      int initial_node, 
+    edge_label_writer(const std::vector<bts::net::message_propagation_data>& propagation_data,
+                      int initial_node,
                       fc::microseconds max_duration,
                       DirectedGraph& directed_graph,
                       std::map<bts::net::node_id_t, int> node_id_to_node_map) :
@@ -767,14 +767,14 @@ void bts_client_launcher_fixture::create_propagation_graph(const std::vector<bts
       _directed_graph(directed_graph),
       _node_id_to_node_map(node_id_to_node_map)
     {}
-      
+
     void operator()(std::ostream& out, const boost::graph_traits<DirectedGraph>::edge_descriptor& e) const {
       int target = boost::target(e, _directed_graph);
       int source = boost::source(e, _directed_graph);
       bool swapped = false;
 
       auto iter = _node_id_to_node_map.find(_propagation_data[source].originating_peer);
-      if (iter != _node_id_to_node_map.end() && 
+      if (iter != _node_id_to_node_map.end() &&
           iter->second == target)
       {
         std::swap(target, source);
@@ -782,7 +782,7 @@ void bts_client_launcher_fixture::create_propagation_graph(const std::vector<bts
       }
 
       iter = _node_id_to_node_map.find(_propagation_data[target].originating_peer);
-      if (iter != _node_id_to_node_map.end() && 
+      if (iter != _node_id_to_node_map.end() &&
           iter->second == source)
       {
         fc::microseconds path_delay = _propagation_data[target].received_time - _propagation_data[source].received_time;
@@ -794,7 +794,7 @@ void bts_client_launcher_fixture::create_propagation_graph(const std::vector<bts
       else
       {
         out << "[style=dotted arrowhead=none]";
-      } 
+      }
       //fc::microseconds this_duration = _propagation_data[v].received_time - _propagation_data[_initial_node].received_time;
       //int color = ((7 * this_duration.count()) / _max_duration.count()) + 1; // map to colors 1 - 8 out of 9, 9 is too dark
       //out << "[label=<" << v << "<br/>" << this_duration.count() << "us>, fillcolor=" << color;
@@ -812,9 +812,9 @@ void bts_client_launcher_fixture::create_propagation_graph(const std::vector<bts
 
   fc::create_directories(output_file.parent_path());
   std::ofstream dot_file(output_file.string());
-  boost::write_graphviz(dot_file, _directed_graph, 
+  boost::write_graphviz(dot_file, _directed_graph,
                         vertex_label_writer(propagation_data, initial_node, max_duration),
-                        edge_label_writer(propagation_data, initial_node, max_duration, _directed_graph, node_id_to_node_map), 
+                        edge_label_writer(propagation_data, initial_node, max_duration, _directed_graph, node_id_to_node_map),
                         graph_property_writer());
 }
 
@@ -1254,7 +1254,7 @@ BOOST_AUTO_TEST_CASE(simple_sync_test)
   int number_of_partitions = verify_network_connectivity(bts_xt_client_test_config::config_directory / "simple_sync_test" / "network_map.dot");
   BOOST_REQUIRE_EQUAL(number_of_partitions, 1);
 
-  // when checking that the clients are in sync, check a few times.  We might 
+  // when checking that the clients are in sync, check a few times.  We might
   // be checking while a 30-second block comes in and end up with two different
   // block counts, even if everything is otherwise in sync.
   bool clients_in_sync = false;
@@ -1409,7 +1409,7 @@ BOOST_AUTO_TEST_CASE(simple_fork_resolution_test)
   {
     std::vector<uint32_t> block_counts_after_fork;
     std::vector<bts::blockchain::block_id_type> block_hashes_after_fork;
-    
+
     for (unsigned i = 0; i < client_processes.size(); ++i)
     {
       uint32_t head_block_number = client_processes[i].rpc_client->blockchain_get_block_count();
@@ -1422,11 +1422,11 @@ BOOST_AUTO_TEST_CASE(simple_fork_resolution_test)
     for (unsigned i = 0; i < client_processes.size(); ++i)
     {
       if (i % 2)
-        odd_are_same = odd_are_same && 
+        odd_are_same = odd_are_same &&
                        block_counts_after_fork[i] == block_counts_after_fork[1] &&
                        block_hashes_after_fork[i] == block_hashes_after_fork[1];
       else
-        even_are_same = even_are_same && 
+        even_are_same = even_are_same &&
                         block_counts_after_fork[i] == block_counts_after_fork[0] &&
                         block_hashes_after_fork[i] == block_hashes_after_fork[0];
     }
@@ -1722,7 +1722,7 @@ BOOST_AUTO_TEST_CASE( oversize_message_test )
 
     fc::ip::endpoint endpoint(fc::ip::address("127.0.0.1"), client_processes[0].rpc_port);
     auto socket = std::make_shared<fc::tcp_socket>();
-    try 
+    try
     {
         socket->connect_to(endpoint);
     }

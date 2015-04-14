@@ -17,7 +17,7 @@ Parameters:
   from_account_name (sending_account_name, required): the source account to draw the shares from
   recipient (string, required): the account name, public key, address, btc address, or contact label (prefixed by "label:") which will receive the funds
   memo_message (string, optional, defaults to ""): a memo to send if the recipient is an account
-  strategy (vote_strategy, optional, defaults to "vote_recommended"): enumeration [vote_none | vote_all | vote_random | vote_recommended] 
+  strategy (vote_strategy, optional, defaults to "vote_recommended"): enumeration [vote_recommended | vote_all | vote_none]
 
 Returns:
   transaction_record
@@ -94,7 +94,6 @@ default (unlocked) >>> wallet_get_account test
   ],
   "registration_date": "2014-06-20T14:40:50",
   "last_update": "2014-06-20T14:40:50",
-  "delegate_info": null,
   "meta_data": {
     "type": "titan_account",
     "data": ""

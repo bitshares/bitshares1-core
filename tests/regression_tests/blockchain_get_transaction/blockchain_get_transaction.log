@@ -24,7 +24,6 @@ default (unlocked) >>> blockchain_get_transaction 3a384e9d58953f4a6323b8ef14e825
   "3a384e9d58953f4a6323b8ef14e825daa394bdc2",{
     "trx": {
       "expiration": "2014-06-20T15:40:30",
-      "reserved": null,
       "operations": [{
           "type": "withdraw_op_type",
           "data": {
@@ -86,7 +85,6 @@ default (unlocked) >>> blockchain_get_transaction 3a384e9d58953f4a6323b8ef14e825
         ]
       ]
     ],
-    "validation_error": null,
     "chain_location": {
       "block_num": 2,
       "trx_num": 0

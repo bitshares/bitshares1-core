@@ -34,13 +34,6 @@ Page {
          id: historyList
          model: wallet.accounts[accountName].transactionHistory(assetSymbol)
          spacing: visuals.margins / 2
-         onDragEnded: {
-            if( contentY < units.dp(-100) )
-            {
-               showMessage(qsTr("Refreshing transactions"))
-               wallet.syncAllTransactions()
-            }
-         }
 
          Connections {
             target: wallet
@@ -57,11 +50,17 @@ Page {
             Component.onDestruction: model.modelData.updatingTimestamp = false
          }
 
-         Label {
-            y: units.dp(-100) - height - parent.contentY
+         PullToRefresh {
+            view: parent
             text: qsTr("Release to refresh transactions")
-            anchors.horizontalCenter: parent.horizontalCenter
-            style: "headline"
+            onTriggered: {
+               if( !wallet.connected ) {
+                  showMessage(qsTr("Cannot refresh transactions: not connected to server."))
+                  return
+               }
+               showMessage(qsTr("Refreshing transactions"))
+               wallet.syncAllTransactions()
+            }
          }
       }
    }

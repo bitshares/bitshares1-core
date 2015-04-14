@@ -4,19 +4,21 @@ import QtQuick.Layouts 1.1
 
 import Material 0.1
 
+import "utils.js" as Utils
+
 Rectangle {
    height: transactionSummary.height
    radius: units.dp(5)
 
    property var trx: {"timestamp": "Invalid", "ledger": [], "feeAmount": 0}
    property string accountName
-   
+
    ColumnLayout {
       id: transactionSummary
       width: parent.width
-      
+
       property string timestamp: trx.timestamp
-      
+
       Item { Layout.preferredHeight: visuals.margins }
       Repeater {
          id: ledgerRepeater
@@ -26,7 +28,7 @@ Rectangle {
             property string name: incoming? sender : receiver
 
             Item { Layout.preferredWidth: visuals.margins }
-            RoboHash {
+            Identicon {
                name: parent.name
                elideMode: Text.ElideNone
                Layout.preferredWidth: units.dp(100)
@@ -116,13 +118,8 @@ Rectangle {
 
             //If this entry contains the mouse, or there's only one entry, copy the name
             if( entry.contains(Qt.point(position.x, position.y)) || ledgerRepeater.count === 1 ) {
-               //Hack to get clipboard access in QML
-               var input = Qt.createQmlObject("import QtQuick 2.2; TextInput{visible: false}", this)
-               input.text = entry.name
-               input.selectAll()
-               input.copy()
-               showMessage("Copied <i>" + input.text + "</i> to clipboard")
-               input.destroy()
+               Utils.copyTextToClipboard(entry.name)
+               showMessage("Copied <i>" + entry.name + "</i> to clipboard")
                return
             }
          }

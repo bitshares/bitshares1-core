@@ -49,67 +49,9 @@ No balances found.
 default (unlocked) >>> balance receiver
 No balances found.
 default (unlocked) >>> wallet_transfer_from_with_escrow  1000 XTS sender sender receiver agent "5100000000000000000000000000000000000000000000000000000000000005" "my memo"
-{
-  "index": 0,
-  "record_id": "1f7cb0f11975a5f1b57adc621b68ad0bf8820d4b",
-  "block_num": 0,
-  "is_virtual": false,
-  "is_confirmed": false,
-  "is_market": false,
-  "trx": {
-    "expiration": "2014-06-20T15:41:00",
-    "reserved": null,
-    "operations": [{
-        "type": "deposit_op_type",
-        "data": {
-          "amount": 100000000,
-          "condition": {
-            "asset_id": 0,
-            "slate_id": 0,
-            "type": "withdraw_escrow_type",
-            "data": {
-              "sender": "XTS2HLJKuZVHs9FqGR5TEREnBcJ8bnfMAHAD",
-              "receiver": "XTSAyGmuUgpqABEL2fq3vfWzMAwxoz914FQc",
-              "escrow": "XTSJDKfxJqG4A4RGNfgkrg9o89ZJsSpx6j15",
-              "agreement_digest": "5100000000000000000000000000000000000000000000000000000000000005",
-              "memo": {
-                "one_time_key": "XTS6Qi2AF9yduV3yFMhGo5dZHP8sq3xMoTLmpYKSmQ7H9qtCq9gNW",
-                "encrypted_memo_data": "0fea8de3b55074bc9302ba67eb1fde9d124dc8145f8f05984f16bcf5e26d7af7d37c3aef8cead1932e2c55e66805f6b24d327f331720141fed0966edd7c54ac6"
-              }
-            }
-          }
-        }
-      },{
-        "type": "withdraw_op_type",
-        "data": {
-          "balance_id": "XTSQ64zpSJuFzNuDMp1ThGz9tgudPYUYwtsH",
-          "amount": 100050000,
-          "claim_input_data": ""
-        }
-      }
-    ],
-    "signatures": [
-      "2000ec56bb10e68d90c6a5ada1082e094d6fb91d6c4bb9e9ad02a107bcdc369cf03a7e41d0f19bebd6c89e5d6aa0765ce7431767bd37702ec1dc8ad83df45224d8"
-    ]
-  },
-  "ledger_entries": [{
-      "from_account": "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra",
-      "to_account": "XTS5DBeMtFiZaive82nTRuZjBbfZMVFZbudCs86bDfh3XwkKSdUqw",
-      "amount": {
-        "amount": 100000000,
-        "asset_id": 0
-      },
-      "memo": "my memo",
-      "memo_from_account": "XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
-    }
-  ],
-  "fee": {
-    "amount": 50000,
-    "asset_id": 0
-  },
-  "created_time": "2014-06-20T14:41:00",
-  "received_time": "2014-06-20T14:41:00"
-}
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign>2014-06-20T14:41:00</d-ign>PENDING   sender as sender    receiver            1,000.00000 XTS         my memo                                     0.50000 XTS         <d-ign> 1f7cb0f1</d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4
@@ -147,46 +89,8 @@ default (unlocked) >>> wallet_escrow_summary agent
 default (unlocked) >>> wallet_escrow_summary delegate0
 []
 default (unlocked) >>> wallet_release_escrow sender XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3 sender 0 200 
-{
-  "index": 0,
-  "record_id": "5d0c5c2205dd9a46d45f65ce8b27b4b2f0973f38",
-  "block_num": 0,
-  "is_virtual": false,
-  "is_confirmed": false,
-  "is_market": false,
-  "trx": {
-    "expiration": "2014-06-20T15:41:10",
-    "reserved": null,
-    "operations": [{
-        "type": "withdraw_op_type",
-        "data": {
-          "balance_id": "XTSQ64zpSJuFzNuDMp1ThGz9tgudPYUYwtsH",
-          "amount": 50000,
-          "claim_input_data": ""
-        }
-      },{
-        "type": "release_escrow_op_type",
-        "data": {
-          "escrow_id": "XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3",
-          "released_by": "XTS2HLJKuZVHs9FqGR5TEREnBcJ8bnfMAHAD",
-          "amount_to_receiver": 20000000,
-          "amount_to_sender": 0
-        }
-      }
-    ],
-    "signatures": [
-      "201bc771fb5c8bbc077ced1b02d15ba2bd21abe9596071d5f6a545d35cedf0417c05c1f3e29aad193eaebe7850b92b19fbd88ef20294763dccb9d647e91a885cc3",
-      "201de456661873e5055c3c8feed0bc68fae05791dc5066d120fac7dafacb4c790141d86b2b2e29135c2a3c13ec8da83370ef4614ae0bffca182000756e03b6fc70"
-    ]
-  },
-  "ledger_entries": [],
-  "fee": {
-    "amount": 0,
-    "asset_id": 0
-  },
-  "created_time": "2014-06-20T14:41:10",
-  "received_time": "2014-06-20T14:41:10"
-}
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4
@@ -228,45 +132,8 @@ ACCOUNT                         BALANCE
 ============================================================
 sender                          8,999.00000 XTS             
 default (unlocked) >>> wallet_release_escrow receiver XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3 receiver 100 0 
-{
-  "index": 0,
-  "record_id": "bdf67db389a790a016bdd3853bc224b8388ecd08",
-  "block_num": 0,
-  "is_virtual": false,
-  "is_confirmed": false,
-  "is_market": false,
-  "trx": {
-    "expiration": "2014-06-20T15:41:20",
-    "reserved": null,
-    "operations": [{
-        "type": "withdraw_op_type",
-        "data": {
-          "balance_id": "XTSMbST3ZCtLe81sowU8DQsD4T4mTNvS641X",
-          "amount": 50000,
-          "claim_input_data": ""
-        }
-      },{
-        "type": "release_escrow_op_type",
-        "data": {
-          "escrow_id": "XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3",
-          "released_by": "XTSAyGmuUgpqABEL2fq3vfWzMAwxoz914FQc",
-          "amount_to_receiver": 0,
-          "amount_to_sender": 10000000
-        }
-      }
-    ],
-    "signatures": [
-      "1f02b022ee892b6897c45d97a369a359de6503d3afc0841fba2c2a11713201cd0777730d5dd65dac585ce570f5ec9e1e1727e9c339fed17071cf542ade5f2f4a6f"
-    ]
-  },
-  "ledger_entries": [],
-  "fee": {
-    "amount": 0,
-    "asset_id": 0
-  },
-  "created_time": "2014-06-20T14:41:20",
-  "received_time": "2014-06-20T14:41:20"
-}
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4
@@ -308,46 +175,8 @@ ACCOUNT                         BALANCE
 ============================================================
 sender                          9,099.00000 XTS             
 default (unlocked) >>> wallet_release_escrow delegate0 XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3 agent 222 111 
-{
-  "index": 0,
-  "record_id": "546c31572dd36b4e303661f57730f904acc4398c",
-  "block_num": 0,
-  "is_virtual": false,
-  "is_confirmed": false,
-  "is_market": false,
-  "trx": {
-    "expiration": "2014-06-20T15:41:30",
-    "reserved": null,
-    "operations": [{
-        "type": "withdraw_op_type",
-        "data": {
-          "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
-          "amount": 50000,
-          "claim_input_data": ""
-        }
-      },{
-        "type": "release_escrow_op_type",
-        "data": {
-          "escrow_id": "XTSKrhkPnQToEZfF4JXDztmKbFURpvwxVdA3",
-          "released_by": "XTSJDKfxJqG4A4RGNfgkrg9o89ZJsSpx6j15",
-          "amount_to_receiver": 11100000,
-          "amount_to_sender": 22200000
-        }
-      }
-    ],
-    "signatures": [
-      "206b7f76e1ae178407c32f71852eed1b74e73217d95a6e6f45f9d875114b1a87101e4a10b371a408ac9e24a8113c3dacc46e931be317a2d51ec63293514a4e5313",
-      "2024281e72f4578f5056d5f244ed72d0d55aa533399fc76066da7f265feed792380fd7d75f49bc71ae4f41c4a1c01359e248c9ad08a1114739dcf47e727ac8f054"
-    ]
-  },
-  "ledger_entries": [],
-  "fee": {
-    "amount": 0,
-    "asset_id": 0
-  },
-  "created_time": "2014-06-20T14:41:30",
-  "received_time": "2014-06-20T14:41:30"
-}
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4

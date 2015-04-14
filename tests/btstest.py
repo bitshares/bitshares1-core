@@ -199,6 +199,7 @@ class ClientProcess(object):
         testdir=None,
         rpc_client=None,
         debug_stop=False,
+        xts="XTS",
         ):
         self.name = name
 
@@ -247,6 +248,8 @@ class ClientProcess(object):
 
         self.debug_stop = debug_stop
 
+        self.xts = xts
+
         return
 
     def __enter__(self):
@@ -287,7 +290,34 @@ class ClientProcess(object):
         if callable(self.http_port):
             self.http_port = self.http_port()
 
-        genesis_config = os.path.abspath(self.genesis_config)
+        genesis_file = os.path.join(data_dir, "genesis.json")
+        genesis_config = self.genesis_config
+
+        if not isinstance(genesis_config, dict):
+            with open(self.genesis_config, "r") as f:
+                genesis_config = json.load(f)
+
+        # write genesis to output file after trimming keys
+        for delegate in genesis_config["delegates"]:
+            if (
+                delegate["owner"].startswith("XTS") or
+                delegate["owner"].startswith("DVS") or
+                delegate["owner"].startswith("BTS")
+               ):
+                delegate["owner"] = self.xts+delegate["owner"][3:]
+
+        # copy genesis config to file
+        with open(genesis_file, "w") as f:
+            json.dump(genesis_config, f, indent=4, sort_keys=True)
+
+        with open(os.path.join(data_dir, "checkpoints.json"), "w") as f:
+            #
+            # Since the client uses builtin checkpoints beyond the
+            # last checkpoint in the file, an empty checkpoint file
+            # won't work.  Use a hack to workaround this:  Set a
+            # bogus checkpoint very far in the future.
+            #
+            f.write("[[999999999, \"9999999999999999999999999999999999999999\"]]\n")
 
         args = [
             "--p2p-port", str(self.p2p_port),
@@ -299,7 +329,7 @@ class ClientProcess(object):
             "--disable-peer-advertising",
             "--min-delegate-connection-count", "0",
             "--upnp", "0",
-            "--genesis-config", genesis_config,
+            "--genesis-config", genesis_file,
             "--data-dir", data_dir,
             "--server",
             #"--log-commands", os.path.join(data_dir, "console.log"),
@@ -545,6 +575,7 @@ class Test(object):
         self.context = {}
         self.name2client = {}
         self.context["active_client"] = ""
+        self.context["arg"] = self.append_arg
         self.context["expect_str"] = self.expect_str
         self.context["expect_regex"] = self.expect_regex
         self.context["expect_json"] = self.expect_json
@@ -578,7 +609,7 @@ class Test(object):
 
     def interpret_expr(self, expr, filename=""):
         expr = expr.strip()
-        compiled_expr = compile(expr, filename, "eval")
+        compiled_expr = compile(expr, filename, "exec")
         result = exec(compiled_expr, self.context)
         if isinstance(result, str):
             self.expect_str(result, match_callback=self.on_match)
@@ -594,6 +625,12 @@ class Test(object):
 
     def on_pass_literal_str(self, s):
         self.print_output(s)
+        return
+
+    def append_arg(self, arg):
+        s_arg = str(arg)
+        cmd_text.append(s_arg)
+        self.matchbuf.append(s_arg)
         return
 
     def expect_literal_str(self, data):
@@ -711,6 +748,8 @@ class Test(object):
     |[$][{](?:.|\n)*?[}][$]
     # with optional result
      (?:[~][{](?:.|\n)*?[}][~])?
+    # Variable substitution
+    |[$][a-zA-Z_][a-zA-Z0-9_]*
     # Command or metacommand invocation
     |[>]{3}
     # Comment
@@ -781,8 +820,19 @@ class Test(object):
                         raise RuntimeError("mismatched ${")
                     expr = mo.group(1)
                 self.interpret_expr(expr)
-                # TODO: cmd_text.append() function
                 self.print_output("${"+expr+"}$")
+                self.dump_matchbuf(self.context["showmatch_enabled"])
+            elif len(t) >= 2 and t[0] == "$" and t[1] in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_":
+                # variable substitution
+                name = t[1:]
+                value = self.context[name]
+                s_value = str(value)
+                self.context["matchbuf"].append(s_value)
+                if in_command:
+                    cmd_text.append(s_value)
+                else:
+                    self.expect_str(s_value)
+                self.print_output(t)
                 self.dump_matchbuf(self.context["showmatch_enabled"])
             elif len(t) >= 4 and t[0:2] == "#{" and t[-2:] == "}#":
                 # comment

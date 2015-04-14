@@ -43,6 +43,9 @@ private:
         min_ask.ratio /= 10;
         return min_ask;
     }
+    
+    market_order build_collateral_market_order( market_index_key k ) const;
+    
     void handle_liquidation( const price& liqudation_price );
 
     /**
@@ -63,7 +66,6 @@ private:
 
     optional<market_order>      _current_bid;
     optional<market_order>      _current_ask;
-    collateral_record           _current_collat_record;
 
     asset_id_type               _quote_id;
     asset_id_type               _base_id;
