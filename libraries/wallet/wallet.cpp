@@ -282,13 +282,8 @@ namespace detail {
        }
        else
        {
-         if (!_relocker_done.canceled())
-         {
            ilog( "Scheduling wallet relocker task for time: ${t}", ("t", *_scheduled_lock_time) );
-           _relocker_done = fc::schedule( [this](){ relocker(); },
-                                          *_scheduled_lock_time,
-                                          "wallet_relocker" );
-         }
+           _relocker_done = fc::schedule( [this](){ relocker(); }, *_scheduled_lock_time, "wallet_relocker" );
        }
    }
 
@@ -1211,15 +1206,32 @@ namespace detail {
 
       try
       {
-        my->_login_map_cleaner_done.cancel_and_wait("wallet::lock()");
+          ilog( "Canceling wallet login_map_cleaner..." );
+          my->_login_map_cleaner_done.cancel_and_wait( "wallet::lock()" );
+          ilog( "Wallet login_map_cleaner canceled..." );
       }
       catch( const fc::exception& e )
       {
-        wlog("Unexpected exception from wallet's login_map_cleaner() : ${e}", ("e", e));
+          wlog( "Unexpected exception from wallet's login_map_cleaner: ${e}", ("e",e.to_detail_string()) );
       }
       catch( ... )
       {
-        wlog("Unexpected exception from wallet's login_map_cleaner()");
+          wlog( "Unexpected exception from wallet's login_map_cleaner" );
+      }
+
+      try
+      {
+          ilog( "Canceling wallet relocker task..." );
+          my->_relocker_done.cancel_and_wait( "wallet::lock()" );
+          ilog( "Wallet relocker task canceled..." );
+      }
+      catch( const fc::exception& e )
+      {
+          wlog( "Unexpected exception from wallet's relocker task: ${e}", ("e",e.to_detail_string()) );
+      }
+      catch( ... )
+      {
+          wlog( "Unexpected exception from wallet's relocker task" );
       }
 
       my->_stealth_private_keys.clear();
