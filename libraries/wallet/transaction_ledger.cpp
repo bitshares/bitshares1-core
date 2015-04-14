@@ -29,10 +29,6 @@ void wallet_impl::scan_market_transaction(
         bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.bid_index.owner),
                                                                       mtrx.bid_index.order_price.quote_asset_id ).get_address() );
 
-#ifndef WIN32
-#warning [DVS/BTS] Reindex market transaction ledger entries on upgrade
-#endif
-
         /* Construct a unique record id */
         transaction_id_type record_id;
         {
