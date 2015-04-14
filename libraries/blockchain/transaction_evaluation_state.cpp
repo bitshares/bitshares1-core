@@ -324,12 +324,14 @@ namespace bts { namespace blockchain {
                    addrs.insert( op.as<ask_operation>().ask_index.owner );
                    break;
                }
-#ifndef WIN32
-#warning [DVS/BTS] Add short_v2 here
-#endif
-               case short_op_type:
+               case short_op_v2_type:
                {
                    addrs.insert( op.as<short_operation>().short_index.owner );
+                   break;
+               }
+               case short_op_type:
+               {
+                   addrs.insert( op.as<short_operation_v1>().short_index.owner );
                    break;
                }
                case cover_op_type:

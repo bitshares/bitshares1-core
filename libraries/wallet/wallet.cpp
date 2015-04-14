@@ -421,37 +421,6 @@ namespace detail {
                }
            }
 
-           if( current_version < 101 )
-           {
-               /* Check for old index format market order virtual transactions */
-               auto present = false;
-               const auto items = _wallet_db.get_transactions();
-               for( const auto& item : items )
-               {
-                   const auto id = item.first;
-                   const auto trx_rec = item.second;
-                   if( trx_rec.is_virtual && trx_rec.is_market )
-                   {
-                       present = true;
-                       _wallet_db.remove_transaction( id );
-                   }
-               }
-               if( present )
-               {
-                   const auto start = 1;
-                   const auto end = _blockchain->get_head_block_num();
-
-                   /* Upgrade market order virtual transaction indexes */
-                   for( auto block_num = start; block_num <= end; block_num++ )
-                   {
-                       const auto block_timestamp = _blockchain->get_block_header( block_num ).timestamp;
-                       const auto market_trxs = _blockchain->get_market_transactions( block_num );
-                       for( const auto& market_trx : market_trxs )
-                           scan_market_transaction( market_trx, block_num, block_timestamp );
-                   }
-               }
-           }
-
            if( current_version < 102 )
            {
                self->set_transaction_fee( asset( BTS_WALLET_DEFAULT_TRANSACTION_FEE ) );
@@ -523,6 +492,37 @@ namespace detail {
                    }
                };
                _unlocked_upgrade_tasks.push_back( split_accounts );
+           }
+
+           if( current_version < 111 )
+           {
+               /* Check for old index format market order virtual transactions */
+               bool present = false;
+               const unordered_map<transaction_id_type, wallet_transaction_record> items = _wallet_db.get_transactions();
+               for( const auto& item : items )
+               {
+                   const auto id = item.first;
+                   const auto trx_rec = item.second;
+                   if( trx_rec.is_virtual && trx_rec.is_market )
+                   {
+                       present = true;
+                       _wallet_db.remove_transaction( id );
+                   }
+               }
+               if( present )
+               {
+                   const auto start = 1;
+                   const auto end = _blockchain->get_head_block_num();
+
+                   /* Upgrade market order virtual transaction indexes */
+                   for( auto block_num = start; block_num <= end; block_num++ )
+                   {
+                       const auto block_timestamp = _blockchain->get_block_header( block_num ).timestamp;
+                       const auto& market_trxs = _blockchain->get_market_transactions( block_num );
+                       for( const auto& market_trx : market_trxs )
+                           scan_market_transaction( market_trx, block_num, block_timestamp );
+                   }
+               }
            }
 
            if( _unlocked_upgrade_tasks.empty() )
