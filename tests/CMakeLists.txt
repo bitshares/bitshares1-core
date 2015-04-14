@@ -4,6 +4,14 @@ endif()
 
 add_definitions( -DBTS_GLOBAL_API_LOG=1 )
 
+IF(NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY MATCHES "\\.a$")
+IF(WIN32)
+add_definitions(/DBOOST_TEST_DYN_LINK)
+ELSE(WIN32)
+add_definitions(-DBOOST_TEST_DYN_LINK)
+ENDIF(WIN32)
+ENDIF()
+
 file(GLOB regression_tests_common_logs_files "${CMAKE_CURRENT_SOURCE_DIR}/regression_tests/_common_logs/*.log")
 source_group("Regression Tests\\Common Logs" FILES ${regression_tests_common_logs_files})
 
@@ -74,7 +82,6 @@ if( WIN32 )
     set(BOOST_ROOT $ENV{BOOST_ROOT})
     set(Boost_USE_DEBUG_PYTHON OFF)
     set(Boost_USE_MULTITHREADED ON)
-    set(Boost_USE_STATIC_LIBS OFF)
     set(BOOST_ALL_DYN_LINK ON) # force dynamic linking for all libraries
     find_package( Boost 1.54 REQUIRED COMPONENTS
                   thread
