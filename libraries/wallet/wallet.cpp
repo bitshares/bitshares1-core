@@ -3213,7 +3213,7 @@ namespace detail {
       else
           memo += " active flags";
 
-      memo += "for " + asset_record->symbol;
+      memo += " for " + asset_record->symbol;
 
       auto entry = ledger_entry();
       entry.from_account = payer_account->owner_key;
