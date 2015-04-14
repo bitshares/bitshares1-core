@@ -3177,13 +3177,13 @@ namespace bts { namespace blockchain {
           [&quote,&base,&owner,this](const market_transaction& order) -> bool
       {
           //If it's in the market pair we're interested in, it might be interesting or uninteresting
-          if( order.ask_price.base_asset_id == base
-              && order.ask_price.quote_asset_id == quote ) {
+          if( order.ask_index.order_price.base_asset_id == base
+              && order.ask_index.order_price.quote_asset_id == quote ) {
             //If we're not filtering for a specific owner, it's interesting (not uninteresting)
             if (owner == address())
               return false;
             //If neither the bidder nor the asker is the owner I'm looking for, it's uninteresting
-            return owner != order.bid_owner && owner != order.ask_owner;
+            return owner != order.bid_index.owner && owner != order.ask_index.owner;
           }
           //If it's not the market pair we're interested in, it's definitely uninteresting
           return true;

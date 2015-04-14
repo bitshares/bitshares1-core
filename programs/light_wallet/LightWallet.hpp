@@ -70,6 +70,10 @@ public:
       return m_brainKey;
    }
 
+   Q_INVOKABLE static QString sha256(QString text) {
+      return convert(fc::sha256::hash(convert(text)).str());
+   }
+
    Q_INVOKABLE Balance* getFee(QString assetSymbol);
    Q_INVOKABLE int getDigitsOfPrecision(QString assetSymbol);
    Q_INVOKABLE bool accountExists(QString name);
@@ -127,6 +131,7 @@ public Q_SLOTS:
    void disconnectFromServer();
 
    void createWallet(QString accountName, QString password);
+   QStringList recoverableAccounts(QString brainKey);
    bool recoverWallet(QString accountName, QString password, QString brainKey);
    void openWallet();
    void closeWallet();
@@ -174,6 +179,6 @@ private:
 
    mutable QMap<QString,int> m_digitsOfPrecisionCache;
 
-   void generateBrainKey();
+   void generateBrainKey(uint8_t wordCount = 16);
    void updateAccount(const bts::light_wallet::account_record& account);
 };

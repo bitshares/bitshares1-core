@@ -15,8 +15,7 @@ namespace bts { namespace wallet {
    {
       vote_none         = 0,
       vote_all          = 1,
-      vote_random       = 2,
-      vote_recommended  = 3
+      vote_recommended  = 2
    };
 
    /**
@@ -325,7 +324,6 @@ namespace bts { namespace wallet {
 FC_REFLECT_ENUM( bts::wallet::vote_strategy,
         (vote_none)
         (vote_all)
-        (vote_random)
         (vote_recommended)
         )
 FC_REFLECT( bts::wallet::transaction_builder, (transaction_record)(required_signatures)(outstanding_balances)(notices) )

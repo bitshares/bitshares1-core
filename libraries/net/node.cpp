@@ -2112,13 +2112,16 @@ namespace bts { namespace net { namespace detail {
         originating_peer->peer_needs_sync_items_from_us = false; /* I have no items in my blockchain */
       else if( !fetch_blockchain_item_ids_message_received.blockchain_synopsis.empty() &&
                reply_message.item_hashes_available.size() == 1 &&
-               reply_message.item_hashes_available.back() == fetch_blockchain_item_ids_message_received.blockchain_synopsis.back() )
-        {
+               std::find(fetch_blockchain_item_ids_message_received.blockchain_synopsis.begin(),
+                         fetch_blockchain_item_ids_message_received.blockchain_synopsis.end(), 
+                         reply_message.item_hashes_available.back()                             ) != fetch_blockchain_item_ids_message_received.blockchain_synopsis.end()
+               )
+      {
         /* the last item in the peer's list matches the last item in our list */
         originating_peer->peer_needs_sync_items_from_us = false;
         if (originating_peer->inhibit_fetching_sync_blocks)
           disconnect_from_inhibited_peer = true; // delay disconnecting until after we send our reply to this fetch_blockchain_item_ids_message
-        }
+      }
       else
         originating_peer->peer_needs_sync_items_from_us = true;
 

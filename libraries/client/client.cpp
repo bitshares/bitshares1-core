@@ -57,6 +57,7 @@
 
 #include <algorithm>
 #include <iomanip>
+#include <random>
 #include <set>
 
 #ifndef WIN32
@@ -467,8 +468,8 @@ config load_config( const fc::path& datadir, const bool enable_ulog, const fc::o
          }
       }
 
-      std::srand( std::time( 0 ) );
-      std::random_shuffle( cfg.default_peers.begin(), cfg.default_peers.end() );
+      std::shuffle( cfg.default_peers.begin(), cfg.default_peers.end(), std::default_random_engine() );
+
       return cfg;
 } FC_RETHROW_EXCEPTIONS( warn, "unable to load config file ${cfg}", ("cfg",datadir/"config.json")) }
 

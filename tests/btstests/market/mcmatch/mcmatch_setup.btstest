@@ -35,24 +35,24 @@ OK
 }#
 
 >>> debug_verify_market_matching true
->>> blockchain_market_order_book USD XTS
+>>> blockchain_market_order_book USD $xts
 >>> balance angel
 >>> balance alice
 ACCOUNT                         BALANCE
 ============================================================
-alice                           300,000.00000 XTS
+alice                           300,000.00000 $xts
 >>> balance bob
 ACCOUNT                         BALANCE
 ============================================================
-bob                             300,000.00000 XTS
+bob                             300,000.00000 $xts
 ${ issue_expired_covers() }$
->>> blockchain_market_order_book USD XTS
+>>> blockchain_market_order_book USD $xts
 >>> balance angel
 >>> balance alice
 >>> balance bob
 >>> debug_advance_time 1 block
 >>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
+>>> blockchain_market_order_book USD $xts
 >>> balance angel
 >>> balance alice
 >>> balance bob
@@ -63,45 +63,46 @@ ${ expect_json() }$
 >>> !expect disable
 >>> debug_advance_time 1 block
 >>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
+>>> blockchain_market_order_book USD $xts
 >>> balance angel
 >>> balance alice
 >>> balance bob
 >>> debug_advance_time 1 block
 >>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
+>>> blockchain_market_order_book USD $xts
 >>> balance angel
 >>> balance alice
 >>> balance bob
->>> wallet_market_submit_short angel 200000.0 XTS 0 USD 0.02
->>> wallet_market_submit_ask alice 50000 XTS 0.02 USD
->>> wallet_market_submit_ask bob 50000 XTS 0.02 USD
->>> blockchain_market_order_book USD XTS
->>> balance angel
->>> balance alice
->>> balance bob
->>> debug_advance_time 1 block
->>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
+>>> wallet_market_submit_short angel 200000.0 $xts 0 USD 0.02
+>>> wallet_market_submit_ask alice 50000 $xts 0.02 USD
+>>> wallet_market_submit_ask bob 50000 $xts 0.02 USD
+>>> blockchain_market_order_book USD $xts
 >>> balance angel
 >>> balance alice
 >>> balance bob
 >>> debug_advance_time 1 block
 >>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
+>>> blockchain_market_order_book USD $xts
 >>> balance angel
 >>> balance alice
 >>> balance bob
 >>> debug_advance_time 1 block
 >>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
+>>> blockchain_market_order_book USD $xts
 >>> balance angel
 >>> balance alice
 >>> balance bob
->>> wallet_market_order_list USD XTS -1 angel
+>>> debug_advance_time 1 block
+>>> debug_wait_for_block_by_number 1 rlast
+>>> blockchain_market_order_book USD $xts
+>>> balance angel
+>>> balance alice
+>>> balance bob
+>>> wallet_market_order_list USD $xts -1 angel
 #{ 1468800 seconds mainnet : 17 days (30 days to expiration) }#
 #{    4200 seconds testnet : 70 minutes (2 hours to expiration) }#
->>> debug_advance_time 4200 seconds
+${ expiration_half_wait_time = short_expiration_time * 60 // 100 }$
+>>> debug_advance_time $expiration_half_wait_time seconds
 >>> debug_wait_for_block_by_number 1 rlast
 >>> !expect enable
 >>> !showmatch disable
@@ -109,25 +110,25 @@ ${ expect_json() }$
 ${ expect_json() }$
 >>> !expect disable
 #{ this must occur at min_short_price, otherwise we might get this one called when we test margin calls }#
->>> wallet_market_submit_short angel2 20000000.0 XTS 0 USD 0.0135
->>> wallet_market_submit_ask   angel2 10000000.0 XTS 0.0135 USD
+>>> wallet_market_submit_short angel2 20000000.0 $xts 0 USD 0.0135
+>>> wallet_market_submit_ask   angel2 10000000.0 $xts 0.0135 USD
 >>> debug_advance_time 1 block
 >>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
+>>> blockchain_market_order_book USD $xts
 >>> balance angel
 >>> balance angel2
 >>> balance alice
 >>> balance bob
 >>> debug_advance_time 1 block
 >>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
+>>> blockchain_market_order_book USD $xts
 >>> balance angel
 >>> balance angel2
 >>> balance alice
 >>> balance bob
 >>> debug_advance_time 1 block
 >>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
+>>> blockchain_market_order_book USD $xts
 >>> balance angel
 >>> balance angel2
 >>> balance alice
@@ -137,12 +138,12 @@ ${ expect_json() }$
 >>> debug_wait_for_block_by_number 1 rlast
 >>> balance angel
 >>> balance angel2
->>> wallet_market_order_list USD XTS -1 angel
->>> wallet_market_order_list USD XTS -1 angel2
+>>> wallet_market_order_list USD $xts -1 angel
+>>> wallet_market_order_list USD $xts -1 angel2
 #{ 1296000 seconds mainnet : 15 days (30 days to expiration) }#
 #{    3600 seconds testnet : 60 minutes (2 hours to expiration) }#
 ${ cover_angel_order() }$
->>> debug_advance_time 3600 seconds
+>>> debug_advance_time $expiration_half_wait_time seconds
 >>> debug_wait_for_block_by_number 1 rlast
 >>> !expect enable
 >>> !showmatch disable
@@ -150,16 +151,16 @@ ${ cover_angel_order() }$
 ${ expect_json() }$
 >>> !expect disable
 ${ issue_the_orders() }$
->>> blockchain_market_order_book USD XTS
+>>> blockchain_market_order_book USD $xts
 >>> debug_advance_time 1 block
 >>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
+>>> blockchain_market_order_book USD $xts
 >>> debug_advance_time 1 block
 >>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
+>>> blockchain_market_order_book USD $xts
 >>> debug_advance_time 1 block
 >>> debug_wait_for_block_by_number 1 rlast
->>> blockchain_market_order_book USD XTS
+>>> blockchain_market_order_book USD $xts
 ${ check_for_matching_errors() }$
 >>> quit
 

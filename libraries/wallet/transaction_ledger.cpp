@@ -18,24 +18,36 @@ void wallet_impl::scan_market_transaction(
         const time_point_sec block_time
         )
 { try {
-    auto okey_bid = _wallet_db.lookup_key( mtrx.bid_owner );
+    auto okey_bid = _wallet_db.lookup_key( mtrx.bid_index.owner );
     if( okey_bid && okey_bid->has_private_key() )
     {
         const auto bid_account_key = _wallet_db.lookup_key( okey_bid->account_address );
 
-        auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.bid_owner),
-                                                                            mtrx.bid_price.base_asset_id ).get_address() );
+        auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.bid_index.owner),
+                                                                            mtrx.bid_index.order_price.base_asset_id ).get_address() );
 
-        bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.bid_owner),
-                                                                      mtrx.bid_price.quote_asset_id ).get_address() );
+        bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.bid_index.owner),
+                                                                      mtrx.bid_index.order_price.quote_asset_id ).get_address() );
+
+#ifndef WIN32
+#warning [DVS/BTS] Reindex market transaction ledger entries on upgrade
+#endif
 
         /* Construct a unique record id */
-        std::stringstream id_ss;
-        id_ss << block_num << string( mtrx.bid_owner ) << string( mtrx.ask_owner );
+        transaction_id_type record_id;
+        {
+            fc::ripemd160::encoder enc;
+            fc::raw::pack( enc, block_num );
+            fc::raw::pack( enc, mtrx.bid_type );
+            fc::raw::pack( enc, mtrx.bid_index );
+            fc::raw::pack( enc, mtrx.ask_type );
+            fc::raw::pack( enc, mtrx.ask_index );
+            record_id = enc.result();
+        }
 
         // TODO: Don't blow away memo, etc.
         auto record = wallet_transaction_record();
-        record.record_id = fc::ripemd160::hash( id_ss.str() );
+        record.record_id = record_id;
         record.block_num = block_num;
         record.is_virtual = true;
         record.is_confirmed = true;
@@ -50,7 +62,7 @@ void wallet_impl::scan_market_transaction(
                 entry.from_account = okey_bid->public_key;
                 //entry.to_account = "MARKET";
                 entry.amount = mtrx.bid_paid;
-                entry.memo = "pay bid @ " + _blockchain->to_pretty_price( mtrx.bid_price );
+                entry.memo = "pay bid @ " + _blockchain->to_pretty_price( mtrx.bid_index.order_price );
                 record.ledger_entries.push_back( entry );
             }
             {
@@ -58,7 +70,7 @@ void wallet_impl::scan_market_transaction(
                 entry.from_account = okey_bid->public_key;
                 entry.to_account = bid_account_key->public_key;
                 entry.amount = mtrx.bid_received;
-                entry.memo = "bid proceeds @ " + _blockchain->to_pretty_price( mtrx.bid_price );
+                entry.memo = "bid proceeds @ " + _blockchain->to_pretty_price( mtrx.bid_index.order_price );
                 record.ledger_entries.push_back( entry );
                 self->wallet_claimed_transaction( entry );
             }
@@ -95,7 +107,7 @@ void wallet_impl::scan_market_transaction(
                     entry.from_account = okey_bid->public_key;
                     //entry.to_account = "MARKET";
                     entry.amount = mtrx.bid_paid;
-                    entry.memo = "short proceeds @ " + _blockchain->to_pretty_price( mtrx.bid_price );
+                    entry.memo = "short proceeds @ " + _blockchain->to_pretty_price( mtrx.bid_index.order_price );
                     record.ledger_entries.push_back( entry );
                     self->update_margin_position( entry );
                 }
@@ -117,24 +129,32 @@ void wallet_impl::scan_market_transaction(
         _dirty_balances = true;
     }
 
-    auto okey_ask = _wallet_db.lookup_key( mtrx.ask_owner );
+    auto okey_ask = _wallet_db.lookup_key( mtrx.ask_index.owner );
     if( okey_ask && okey_ask->has_private_key() )
     {
         const auto ask_account_key = _wallet_db.lookup_key( okey_ask->account_address );
 
-        auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.ask_owner),
-                                                                            mtrx.ask_price.base_asset_id ).get_address() );
+        auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.ask_index.owner),
+                                                                            mtrx.ask_index.order_price.base_asset_id ).get_address() );
 
-        bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.ask_owner),
-                                                                      mtrx.ask_price.quote_asset_id ).get_address() );
+        bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.ask_index.owner),
+                                                                      mtrx.ask_index.order_price.quote_asset_id ).get_address() );
 
         /* Construct a unique record id */
-        std::stringstream id_ss;
-        id_ss << block_num << string( mtrx.ask_owner ) << string( mtrx.bid_owner );
+        transaction_id_type record_id;
+        {
+            fc::ripemd160::encoder enc;
+            fc::raw::pack( enc, block_num );
+            fc::raw::pack( enc, mtrx.ask_type );
+            fc::raw::pack( enc, mtrx.ask_index );
+            fc::raw::pack( enc, mtrx.bid_type );
+            fc::raw::pack( enc, mtrx.bid_index );
+            record_id = enc.result();
+        }
 
         // TODO: Don't blow away memo, etc.
         auto record = wallet_transaction_record();
-        record.record_id = fc::ripemd160::hash( id_ss.str() );
+        record.record_id = record_id;
         record.block_num = block_num;
         record.is_virtual = true;
         record.is_confirmed = true;
@@ -149,7 +169,7 @@ void wallet_impl::scan_market_transaction(
                 entry.from_account = okey_ask->public_key;
                 //entry.to_account = "MARKET";
                 entry.amount = mtrx.ask_paid;
-                entry.memo = "fill ask @ " + _blockchain->to_pretty_price( mtrx.ask_price );
+                entry.memo = "fill ask @ " + _blockchain->to_pretty_price( mtrx.ask_index.order_price );
                 record.ledger_entries.push_back( entry );
             }
             {
@@ -157,7 +177,7 @@ void wallet_impl::scan_market_transaction(
                 entry.from_account = okey_ask->public_key;
                 entry.to_account = ask_account_key->public_key;
                 entry.amount = mtrx.ask_received;
-                entry.memo = "ask proceeds @ " + _blockchain->to_pretty_price( mtrx.ask_price );
+                entry.memo = "ask proceeds @ " + _blockchain->to_pretty_price( mtrx.ask_index.order_price );
                 record.ledger_entries.push_back( entry );
                 self->wallet_claimed_transaction( entry );
             }
@@ -169,7 +189,7 @@ void wallet_impl::scan_market_transaction(
                 entry.from_account = okey_ask->public_key;
                 //entry.to_account = "MARKET";
                 entry.amount = mtrx.ask_paid;
-                entry.memo = "sell collateral @ " + _blockchain->to_pretty_price( mtrx.ask_price );
+                entry.memo = "sell collateral @ " + _blockchain->to_pretty_price( mtrx.ask_index.order_price );
                 record.ledger_entries.push_back( entry );
             }
             {
@@ -177,7 +197,7 @@ void wallet_impl::scan_market_transaction(
                 //entry.from_account = "MARKET";
                 entry.to_account = okey_ask->public_key;
                 entry.amount = mtrx.ask_received;
-                entry.memo = "payoff debt @ " + _blockchain->to_pretty_price( mtrx.ask_price );
+                entry.memo = "payoff debt @ " + _blockchain->to_pretty_price( mtrx.ask_index.order_price );
                 record.ledger_entries.push_back( entry );
             }
             if( mtrx.returned_collateral.valid() )

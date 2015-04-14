@@ -54,7 +54,6 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
         ]
       ],
       "last_block_num_produced": 0,
-      "next_secret_hash": null,
       "pay_balance": 0,
       "total_paid": 0,
       "total_burned": 0,
@@ -97,7 +96,6 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
         ]
       ],
       "last_block_num_produced": 0,
-      "next_secret_hash": null,
       "pay_balance": 0,
       "total_paid": 0,
       "total_burned": 0,
@@ -129,7 +127,6 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
         ]
       ],
       "last_block_num_produced": 0,
-      "next_secret_hash": null,
       "pay_balance": 0,
       "total_paid": 0,
       "total_burned": 0,
@@ -172,7 +169,6 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
         ]
       ],
       "last_block_num_produced": 0,
-      "next_secret_hash": null,
       "pay_balance": 0,
       "total_paid": 0,
       "total_burned": 0,
@@ -204,7 +200,6 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
         ]
       ],
       "last_block_num_produced": 0,
-      "next_secret_hash": null,
       "pay_balance": 0,
       "total_paid": 0,
       "total_burned": 0,
@@ -236,7 +231,6 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
         ]
       ],
       "last_block_num_produced": 0,
-      "next_secret_hash": null,
       "pay_balance": 0,
       "total_paid": 0,
       "total_burned": 0,
@@ -335,7 +329,6 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
         ]
       ],
       "last_block_num_produced": 0,
-      "next_secret_hash": null,
       "pay_balance": 0,
       "total_paid": 0,
       "total_burned": 0,
@@ -367,7 +360,6 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
         ]
       ],
       "last_block_num_produced": 0,
-      "next_secret_hash": null,
       "pay_balance": 0,
       "total_paid": 0,
       "total_burned": 0,
@@ -399,7 +391,6 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
         ]
       ],
       "last_block_num_produced": 0,
-      "next_secret_hash": null,
       "pay_balance": 0,
       "total_paid": 0,
       "total_burned": 0,
@@ -431,7 +422,6 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
         ]
       ],
       "last_block_num_produced": 0,
-      "next_secret_hash": null,
       "pay_balance": 0,
       "total_paid": 0,
       "total_burned": 0,

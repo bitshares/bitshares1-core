@@ -13,7 +13,7 @@ Page {
    property string assetSymbol: wallet.accounts[accountName].availableAssets[0]
 
    signal transferComplete(string assetSymbol)
-   
+
    RowLayout {
       id: hashBar
       anchors.top: parent.top
@@ -21,17 +21,20 @@ Page {
       anchors.margins: visuals.margins
       width: Math.min(parent.width - visuals.margins*2, units.dp(600))
 
-      RoboHash {
+      Identicon {
+         id: senderHash
          name: wallet.accounts[accountName].name
          x: visuals.margins
          Layout.fillWidth: true
+         Layout.preferredWidth: hashBar.width / 2.5
       }
-      RoboHash {
+      Identicon {
          id: recipientHash
          name: toNameField.text ? toNameField.text.indexOf(wallet.keyPrefix) === 0 ? "Unregistered Account"
                                                                                    : toNameField.text
                                 : "Unknown"
          Layout.fillWidth: true
+         Layout.preferredWidth: hashBar.width / 2.5
       }
    }
    Label {

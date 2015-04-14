@@ -133,6 +133,8 @@ namespace bts { namespace blockchain {
       digit = *c - '0';
       while (digit >= 0 && digit <= 9)
       {
+        //if number is greater max supported value
+        FC_ASSERT(int_part <= (UINT64_MAX - digit) / 10, "Number too big to store as price.");
         int_part = int_part * 10 + digit;
         ++c;
         digit = *c - '0';
@@ -160,16 +162,28 @@ namespace bts { namespace blockchain {
         digit = *c - '0';
         while (digit >= 0 && digit <= 9)
         {
-          frac_part = frac_part * 10 + digit;
+          //if we've reached the limits of precision, ignore remaining digits
+          if (frac_magnitude > FC_REAL128_PRECISION / 10)
+          {
+            do 
+            {
+              ++c;
+              digit = *c - '0';
+            }
+            while (digit >= 0 && digit <= 9);
+            break;
+          }
           frac_magnitude *= 10;
+          frac_part = frac_part * 10 + digit;
           ++c;
           digit = *c - '0';
         }
         ratio += fc::uint128(frac_part) * (FC_REAL128_PRECISION / frac_magnitude);
+        //skip over remaining digits since they are too precise
       }
     }
 
-    return c - ratio_str.c_str();
+    return int(c - ratio_str.c_str()); //return end point of digits
   }
 
   std::string price::ratio_string()const
