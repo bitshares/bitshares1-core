@@ -47,6 +47,8 @@ void bid_operation::evaluate( transaction_evaluation_state& eval_state )const
             FC_CAPTURE_AND_THROW( market_halted );
         }
 
+        FC_ASSERT( base_asset_record->address_is_approved( *eval_state.pending_state(), owner ) );
+
         if( !current_order.valid() )
             current_order = order_record();
 
@@ -111,6 +113,8 @@ void ask_operation::evaluate( transaction_evaluation_state& eval_state )const
         {
             FC_CAPTURE_AND_THROW( market_halted );
         }
+
+        FC_ASSERT( quote_asset_record->address_is_approved( *eval_state.pending_state(), owner ) );
 
         if( !current_order.valid() )
             current_order = order_record();

@@ -3220,7 +3220,7 @@ namespace detail {
       else
           memo = "remove " + variant( flag ).as_string() + " from";
 
-      if( add_instead_of_remove )
+      if( update_authority_permission )
           memo += " authority perms";
       else
           memo += " active flags";
@@ -3288,7 +3288,7 @@ namespace detail {
       else
           memo = "remove " + account_record->name + " from";
 
-      memo += "whitelist for " + asset_record->symbol;
+      memo += " whitelist for " + asset_record->symbol;
 
       auto entry = ledger_entry();
       entry.from_account = payer_account->owner_key;
