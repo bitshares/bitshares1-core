@@ -13,7 +13,7 @@
 using namespace bts::wallet;
 using namespace bts::wallet::detail;
 
-void  transaction_builder::set_wallet_implementation(std::unique_ptr<bts::wallet::detail::wallet_impl>& wimpl)
+void transaction_builder::set_wallet_implementation(std::unique_ptr<bts::wallet::detail::wallet_impl>& wimpl)
 {
     _wimpl = wimpl.get();
 }
@@ -325,7 +325,14 @@ transaction_builder& transaction_builder::cancel_market_order( const order_id_ty
    credit_balance(account_record->owner_address(), balance);
    //Set order key for this account if not already set
    if( order_keys.find(account_record->owner_address()) == order_keys.end() )
-      order_keys[account_record->owner_address()] = owner_key_record->public_key;
+   {
+       const oasset_record asset_record = _wimpl->_blockchain->get_asset_record( balance.asset_id );
+       FC_ASSERT( asset_record.valid() );
+       if( asset_record->flag_is_active( asset_record::restricted_accounts ) )
+           order_keys[ account_record->owner_address() ] = account_record->active_key();
+       else
+           order_keys[ account_record->owner_address() ] = owner_key_record->public_key;
+   }
 
    auto entry = ledger_entry();
    entry.from_account = owner_key_record->public_key;
@@ -354,7 +361,16 @@ transaction_builder& transaction_builder::submit_bid(const wallet_account_record
        FC_ASSERT(cost.asset_id == quote_price.quote_asset_id);
    }
 
-   auto order_key = order_key_for_account(from_account.owner_address(), from_account.name);
+   const oasset_record base_asset_record = _wimpl->_blockchain->get_asset_record( quote_price.base_asset_id );
+   FC_ASSERT( base_asset_record.valid() );
+
+   public_key_type order_key;
+   if( base_asset_record->flag_is_active( asset_record::restricted_accounts ) )
+       order_key = from_account.active_key();
+   else
+       order_key = order_key_for_account( from_account.owner_address(), from_account.name );
+
+   order_keys[ from_account.owner_address() ] = order_key;
 
    //Charge this account for the bid
    deduct_balance(from_account.owner_address(), cost);
@@ -384,9 +400,16 @@ transaction_builder& transaction_builder::submit_ask(const wallet_account_record
    validate_market(quote_price.quote_asset_id, quote_price.base_asset_id);
    FC_ASSERT(cost.asset_id == quote_price.base_asset_id);
 
-   wdump((cost));
+   const oasset_record quote_asset_record = _wimpl->_blockchain->get_asset_record( quote_price.quote_asset_id );
+   FC_ASSERT( quote_asset_record.valid() );
 
-   auto order_key = order_key_for_account(from_account.owner_address(), from_account.name);
+   public_key_type order_key;
+   if( quote_asset_record->flag_is_active( asset_record::restricted_accounts ) )
+       order_key = from_account.active_key();
+   else
+       order_key = order_key_for_account( from_account.owner_address(), from_account.name );
+
+   order_keys[ from_account.owner_address() ] = order_key;
 
    //Charge this account for the ask
    deduct_balance(from_account.owner_address(), cost);
