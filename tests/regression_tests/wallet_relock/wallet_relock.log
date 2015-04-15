@@ -63,11 +63,11 @@ default (unlocked) >>> wallet_get_info
   "transaction_expiration_secs": 3600,
   "unlocked": true,
   "unlocked_until": "<d-ign>5 seconds in the future</d-ign>",
-  "unlocked_until_timestamp": "<d-ign>2015-04-09T11:33:38</d-ign>",
+  "unlocked_until_timestamp": "<d-ign></d-ign>",
   "scan_progress": "100.00 %",
   "version": "<d-ign>110</d-ign>"
 }
-default (unlocked) >>> debug_wait 11
+default (unlocked) >>> debug_wait 6
 OK
 default (locked) >>> wallet_get_info
 {
@@ -82,7 +82,7 @@ default (locked) >>> wallet_get_info
   "transaction_fee": "0.50000 XTS",
   "transaction_expiration_secs": 3600,
   "unlocked": false,
-  "unlocked_until": "<d-ign></d-ign>",
+  "unlocked_until": null,
   "unlocked_until_timestamp": null,
   "scan_progress": null,
   "version": "<d-ign></d-ign>"
