@@ -377,6 +377,16 @@ namespace bts { namespace blockchain {
        store( record.index, record );
    } FC_CAPTURE_AND_RETHROW( (record) ) }
 
+   ostatus_record chain_interface::get_status_record( const status_index index )const
+   { try {
+       return lookup<status_record>( index );
+   } FC_CAPTURE_AND_RETHROW( (index) ) }
+
+   void chain_interface::store_status_record( const status_record& record )
+   { try {
+       store( record.index, record );
+   } FC_CAPTURE_AND_RETHROW( (record) ) }
+
    ofeed_record chain_interface::get_feed_record( const feed_index index )const
    { try {
        return lookup<feed_record>( index );

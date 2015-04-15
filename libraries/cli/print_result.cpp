@@ -359,7 +359,7 @@ namespace bts { namespace cli {
     FC_ASSERT( quote_asset_record.valid() );
     const asset_id_type quote_id = quote_asset_record->id;
 
-    const omarket_status status = client->get_chain()->get_market_status( quote_id, asset_id_type( 0 ) );
+    const ostatus_record status = client->get_chain()->get_status_record( status_index{ quote_id, asset_id_type( 0 ) } );
 
     out << std::left;
     out << std::setw( 30 ) << "AMOUNT";
@@ -713,7 +713,7 @@ namespace bts { namespace cli {
 
     price feed_price;
     {
-        const omarket_status status = client->get_chain()->get_market_status( quote_id, base_id );
+        const ostatus_record status = client->get_chain()->get_status_record( status_index{ quote_id, base_id } );
         if( status.valid() && status->last_valid_feed_price.valid() )
             feed_price = *status->last_valid_feed_price;
     }
@@ -727,7 +727,7 @@ namespace bts { namespace cli {
            shorts = client->blockchain_market_list_shorts(arguments[0].as_string(), arguments[2].as_int64());
     }
 
-    auto status = client->get_chain()->get_market_status(quote_id, base_id);
+    auto status = client->get_chain()->get_status_record( status_index{ quote_id, base_id } );
     price short_execution_price( 0, quote_id, base_id );
     bool short_execution_price_valid = (status.valid() && status->current_feed_price.valid());
     // we don't declare short_execution_price as oprice here
@@ -874,7 +874,7 @@ namespace bts { namespace cli {
         << std::string(175, '-') << "\n";
 
       {
-        const omarket_status status = client->get_chain()->get_market_status( quote_asset_record->id, asset_id_type( 0 ) );
+        const ostatus_record status = client->get_chain()->get_status_record( status_index{ quote_asset_record->id, asset_id_type( 0 ) } );
 
         auto ask_itr = bids_asks.second.rbegin();
         auto bid_itr = shorts.begin();
@@ -933,7 +933,7 @@ namespace bts { namespace cli {
         }
       }
 
-      auto status = client->get_chain()->get_market_status(quote_id, base_id);
+      auto status = client->get_chain()->get_status_record( status_index{ quote_id, base_id } );
       if(status)
       {
         if( ! short_execution_price_valid )
@@ -975,7 +975,7 @@ namespace bts { namespace cli {
     } // end call section that only applies to market issued assets vs XTS
     else
     {
-      auto status = client->get_chain()->get_market_status(quote_id, base_id);
+      auto status = client->get_chain()->get_status_record( status_index{ quote_id, base_id } );
       if(status->last_error)
       {
         out << "Last Error:  ";

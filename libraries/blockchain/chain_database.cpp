@@ -176,6 +176,8 @@ namespace bts { namespace blockchain {
 
           _burn_index_to_record.open( data_dir / "index/burn_index_to_record" );
 
+          _status_index_to_record.open( data_dir / "index/status_index_to_record" );
+
           _feed_index_to_record.open( data_dir / "index/feed_index_to_record" );
 
           _market_transactions_db.open( data_dir / "index/market_transactions_db" );
@@ -187,7 +189,6 @@ namespace bts { namespace blockchain {
           _short_db.open( data_dir / "index/short_db" );
           _collateral_db.open( data_dir / "index/collateral_db" );
 
-          _market_status_db.open( data_dir / "index/market_status_db" );
           _market_history_db.open( data_dir / "index/market_history_db" );
 
           _slot_index_to_record.open( data_dir / "index/slot_index_to_record" );
@@ -1453,6 +1454,8 @@ namespace bts { namespace blockchain {
               {
                   my->_burn_index_to_record.set_write_through( write_through );
 
+                  my->_status_index_to_record.set_write_through( write_through );
+
                   my->_feed_index_to_record.set_write_through( write_through );
 
                   my->_ask_db.set_write_through( write_through );
@@ -1461,7 +1464,6 @@ namespace bts { namespace blockchain {
                   my->_collateral_db.set_write_through( write_through );
 
                   my->_market_transactions_db.set_write_through( write_through );
-                  my->_market_status_db.set_write_through( write_through );
                   my->_market_history_db.set_write_through( write_through );
               };
 
@@ -1635,6 +1637,8 @@ namespace bts { namespace blockchain {
 
       my->_burn_index_to_record.close();
 
+      my->_status_index_to_record.close();
+
       my->_feed_index_to_record.close();
 
       my->_ask_db.close();
@@ -1643,7 +1647,6 @@ namespace bts { namespace blockchain {
       my->_collateral_db.close();
 
       my->_market_history_db.close();
-      my->_market_status_db.close();
       my->_market_transactions_db.close();
 
       my->_slot_index_to_record.close();
@@ -2937,26 +2940,12 @@ namespace bts { namespace blockchain {
    vector<pair<asset_id_type, asset_id_type>> chain_database::get_market_pairs()const
    {
        vector<pair<asset_id_type, asset_id_type>> pairs;
-       for( auto iter = my->_market_status_db.begin(); iter.valid(); ++iter )
-           pairs.push_back( iter.key() );
+       for( auto iter = my->_status_index_to_record.begin(); iter.valid(); ++iter )
+       {
+           const status_index& index = iter.key();
+           pairs.push_back( std::make_pair( index.quote_id, index.base_id ) );
+       }
        return pairs;
-   }
-
-   omarket_status chain_database::get_market_status( const asset_id_type quote_id, const asset_id_type base_id )const
-   {
-      return my->_market_status_db.fetch_optional( std::make_pair(quote_id,base_id) );
-   }
-
-   void chain_database::store_market_status( const market_status& s )
-   {
-      if( s.is_null() )
-      {
-         my->_market_status_db.remove( std::make_pair( s.quote_id, s.base_id ) );
-      }
-      else
-      {
-         my->_market_status_db.store( std::make_pair( s.quote_id, s.base_id ), s );
-      }
    }
 
    market_history_points chain_database::get_market_price_history( const asset_id_type quote_id,
@@ -3675,6 +3664,21 @@ namespace bts { namespace blockchain {
    void chain_database::burn_erase_from_index_map( const burn_index& index )
    {
        my->_burn_index_to_record.remove( index );
+   }
+
+   ostatus_record chain_database::status_lookup_by_index( const status_index index )const
+   {
+       return my->_status_index_to_record.fetch_optional( index );
+   }
+
+   void chain_database::status_insert_into_index_map( const status_index index, const status_record& record )
+   {
+       my->_status_index_to_record.store( index, record );
+   }
+
+   void chain_database::status_erase_from_index_map( const status_index index )
+   {
+       my->_status_index_to_record.remove( index );
    }
 
    ofeed_record chain_database::feed_lookup_by_index( const feed_index index )const
