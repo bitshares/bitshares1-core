@@ -30,8 +30,6 @@ namespace bts { namespace client {
 
     using namespace bts::blockchain;
     using namespace bts::wallet;
-    using bts::mail::mail_client_ptr;
-    using bts::mail::mail_server_ptr;
 
     boost::program_options::variables_map parse_option_variables(int argc, char** argv);
     fc::path get_data_dir(const boost::program_options::variables_map& option_variables);
@@ -115,9 +113,6 @@ namespace bts { namespace client {
         optional<string>    growl_notify_endpoint;
         optional<string>    growl_password;
         optional<string>    growl_bitshares_client_identifier;
-
-        bool                mail_client_enabled = false;
-        bool                mail_server_enabled = false;
     };
 
     /**
@@ -151,8 +146,6 @@ namespace bts { namespace client {
 
          chain_database_ptr         get_chain()const;
          wallet_ptr                 get_wallet()const;
-         mail_client_ptr            get_mail_client()const;
-         mail_server_ptr            get_mail_server()const;
          bts::rpc::rpc_server_ptr   get_rpc_server()const;
          bts::net::node_ptr         get_node()const;
          fc::path                   get_data_dir()const;
@@ -232,8 +225,6 @@ FC_REFLECT( bts::client::config,
         (growl_notify_endpoint)
         (growl_password)
         (growl_bitshares_client_identifier)
-        (mail_client_enabled)
-        (mail_server_enabled)
         (rpc)
     )
 
