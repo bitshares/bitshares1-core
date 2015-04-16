@@ -243,60 +243,6 @@ namespace bts { namespace blockchain {
    };
    typedef optional<collateral_record> ocollateral_record;
 
-   struct market_status
-   {
-       market_status(){} // Null case
-       market_status( asset_id_type quote, asset_id_type base )
-       :quote_id(quote),base_id(base)
-       {
-           FC_ASSERT( quote > base );
-       }
-
-       bool is_null()const { return quote_id == base_id; }
-       void update_feed_price( const optional<price>& feed )
-       {
-           current_feed_price = feed;
-           if( current_feed_price.valid() )
-               last_valid_feed_price = current_feed_price;
-       }
-
-       asset_id_type            quote_id;
-       asset_id_type            base_id;
-       optional<price>          current_feed_price;
-       optional<price>          last_valid_feed_price;
-       optional<fc::exception>  last_error;
-
-       /**************************************************************************************/
-       /* All of these are no longer used but need to be kept around for applying old blocks */
-       share_type               ask_depth = 0;
-       share_type               bid_depth = 0;
-       price                    center_price;
-       price minimum_ask()const
-       {
-           auto avg = center_price;
-           avg.ratio *= 9;
-           avg.ratio /= 10;
-           return avg;
-       }
-       price maximum_bid()const
-       {
-           auto avg = center_price;
-           avg.ratio *= 10;
-           avg.ratio /= 9;
-           return avg;
-       }
-       /**************************************************************************************/
-   };
-   typedef optional<market_status> omarket_status;
-
-   struct api_market_status : public market_status {
-       api_market_status(const market_status& market_stat = market_status())
-         : market_status(market_stat)
-       {}
-       optional<string>         current_feed_price;
-       optional<string>         last_valid_feed_price;
-   };
-
 } } // bts::blockchain
 
 FC_REFLECT_ENUM( bts::blockchain::order_type_enum,
@@ -308,8 +254,6 @@ FC_REFLECT_ENUM( bts::blockchain::order_type_enum,
                )
 
 FC_REFLECT_ENUM( bts::blockchain::market_history_key::time_granularity_enum, (each_block)(each_hour)(each_day) )
-FC_REFLECT( bts::blockchain::market_status, (quote_id)(base_id)(current_feed_price)(last_valid_feed_price)(last_error)(ask_depth)(bid_depth)(center_price) )
-FC_REFLECT_DERIVED( bts::blockchain::api_market_status, (bts::blockchain::market_status), (current_feed_price)(last_valid_feed_price) )
 FC_REFLECT( bts::blockchain::market_index_key, (order_price)(owner) )
 FC_REFLECT( bts::blockchain::market_history_record, (highest_bid)(lowest_ask)(opening_price)(closing_price)(base_volume)(quote_volume) )
 FC_REFLECT( bts::blockchain::market_history_key, (quote_id)(base_id)(granularity)(timestamp) )

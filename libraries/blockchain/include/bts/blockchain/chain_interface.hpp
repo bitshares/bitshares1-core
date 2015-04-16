@@ -11,6 +11,7 @@
 #include <bts/blockchain/property_record.hpp>
 #include <bts/blockchain/slate_record.hpp>
 #include <bts/blockchain/slot_record.hpp>
+#include <bts/blockchain/status_record.hpp>
 #include <bts/blockchain/transaction_record.hpp>
 #include <bts/blockchain/types.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
@@ -25,6 +26,7 @@ namespace bts { namespace blockchain {
      public balance_db_interface,
      public transaction_db_interface,
      public burn_db_interface,
+     public status_db_interface,
      public feed_db_interface,
      public slot_db_interface
    {
@@ -78,10 +80,6 @@ namespace bts { namespace blockchain {
                                                               const asset_id_type base_id )                = 0;
 
          fc::ripemd160                      get_current_random_seed()const;
-
-         virtual omarket_status             get_market_status( const asset_id_type quote_id,
-                                                               const asset_id_type base_id )const          = 0;
-         virtual void                       store_market_status( const market_status& s )                   = 0;
 
          virtual omarket_order              get_lowest_ask_record( const asset_id_type quote_id,
                                                                    const asset_id_type base_id )           = 0;
@@ -148,6 +146,9 @@ namespace bts { namespace blockchain {
 
          oburn_record                       get_burn_record( const burn_index& index )const;
          void                               store_burn_record( const burn_record& record );
+
+         ostatus_record                     get_status_record( const status_index index )const;
+         void                               store_status_record( const status_record& record );
 
          ofeed_record                       get_feed_record( const feed_index index )const;
          void                               store_feed_record( const feed_record& record );

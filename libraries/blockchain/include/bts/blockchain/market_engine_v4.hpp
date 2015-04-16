@@ -44,7 +44,7 @@ namespace bts { namespace blockchain { namespace detail {
     share_type                    _current_payoff_balance = 0;
     asset_id_type                 _quote_id;
     asset_id_type                 _base_id;
-    market_status                 _market_stat;
+    status_record                 _market_stat;
 
     int                           _orders_filled = 0;
 

@@ -21,9 +21,6 @@ namespace bts { namespace blockchain {
 
          virtual void                   set_market_dirty( const asset_id_type quote_id, const asset_id_type base_id )override;
 
-         virtual omarket_status         get_market_status( const asset_id_type quote_id, const asset_id_type base_id )const override;
-         virtual void                   store_market_status( const market_status& s ) override;
-
          virtual oprice                 get_active_feed_price( const asset_id_type quote_id )const override;
 
          virtual omarket_order          get_lowest_ask_record( const asset_id_type quote_id,
@@ -106,6 +103,9 @@ namespace bts { namespace blockchain {
          map<burn_index, burn_record>                                       _burn_index_to_record;
          set<burn_index>                                                    _burn_index_remove;
 
+         map<status_index, status_record>                                   _status_index_to_record;
+         set<status_index>                                                  _status_index_remove;
+
          map<feed_index, feed_record>                                       _feed_index_to_record;
          set<feed_index>                                                    _feed_index_remove;
 
@@ -121,7 +121,6 @@ namespace bts { namespace blockchain {
          std::set<std::pair<asset_id_type, asset_id_type>>                  _dirty_markets;
 
          vector<market_transaction>                                         market_transactions;
-         map< std::pair<asset_id_type,asset_id_type>, market_status>        market_statuses;
          map<market_history_key, market_history_record>                     market_history;
 
       private:
@@ -175,6 +174,10 @@ namespace bts { namespace blockchain {
          virtual void burn_insert_into_index_map( const burn_index&, const burn_record& )override;
          virtual void burn_erase_from_index_map( const burn_index& )override;
 
+         virtual ostatus_record status_lookup_by_index( const status_index )const override;
+         virtual void status_insert_into_index_map( const status_index, const status_record& )override;
+         virtual void status_erase_from_index_map( const status_index )override;
+
          virtual ofeed_record feed_lookup_by_index( const feed_index )const override;
          virtual void feed_insert_into_index_map( const feed_index, const feed_record& )override;
          virtual void feed_erase_from_index_map( const feed_index )override;
@@ -211,6 +214,8 @@ FC_REFLECT( bts::blockchain::pending_chain_state,
             (_transaction_digests)
             (_burn_index_to_record)
             (_burn_index_remove)
+            (_status_index_to_record)
+            (_status_index_remove)
             (_feed_index_to_record)
             (_feed_index_remove)
             (_slot_index_to_record)
@@ -222,6 +227,5 @@ FC_REFLECT( bts::blockchain::pending_chain_state,
             (collateral)
             (_dirty_markets)
             (market_transactions)
-            (market_statuses)
             (market_history)
             )

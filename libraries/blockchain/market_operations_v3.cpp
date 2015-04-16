@@ -115,11 +115,11 @@ void cover_operation::evaluate_v3( transaction_evaluation_state& eval_state )con
    {
       eval_state.add_balance( asset( current_cover->collateral_balance, cover_index.order_price.base_asset_id ) );
 
-      auto market_stat = eval_state.pending_state()->get_market_status( cover_index.order_price.quote_asset_id, cover_index.order_price.base_asset_id );
+      auto market_stat = eval_state.pending_state()->get_status_record( status_index{ cover_index.order_price.quote_asset_id, cover_index.order_price.base_asset_id } );
       FC_ASSERT( market_stat, "this should be valid for there to even be a position to cover" );
       market_stat->ask_depth -= current_cover->collateral_balance;
 
-      eval_state.pending_state()->store_market_status( *market_stat );
+      eval_state.pending_state()->store_status_record( *market_stat );
    }
 }
 

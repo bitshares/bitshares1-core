@@ -662,7 +662,7 @@
       },
       {
         "type_name" : "market_status",
-        "cpp_return_type" : "bts::blockchain::api_market_status"
+        "cpp_return_type" : "bts::blockchain::string_status_record"
       },
       {
         "type_name" : "market_status_array",

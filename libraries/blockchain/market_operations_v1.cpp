@@ -93,13 +93,13 @@ void ask_operation::evaluate_v1( transaction_evaluation_state& eval_state )const
    current_ask->balance     += this->amount;
    FC_ASSERT( current_ask->balance >= 0, "", ("current_ask",current_ask)  );
 
-   auto market_stat = eval_state.pending_state()->get_market_status( ask_index.order_price.quote_asset_id, ask_index.order_price.base_asset_id );
+   auto market_stat = eval_state.pending_state()->get_status_record( status_index{ ask_index.order_price.quote_asset_id, ask_index.order_price.base_asset_id } );
 
    if( !market_stat )
-      market_stat = market_status( ask_index.order_price.quote_asset_id, ask_index.order_price.base_asset_id );
+      market_stat = status_record( ask_index.order_price.quote_asset_id, ask_index.order_price.base_asset_id );
    market_stat->ask_depth += delta_amount.amount;
 
-   eval_state.pending_state()->store_market_status( *market_stat );
+   eval_state.pending_state()->store_status_record( *market_stat );
 
    eval_state.pending_state()->store_ask_record( this->ask_index, *current_ask );
 
@@ -161,13 +161,13 @@ void short_operation::evaluate_v1( transaction_evaluation_state& eval_state )con
    current_short->balance     += this->amount;
    FC_ASSERT( current_short->balance >= 0 );
 
-   auto market_stat = eval_state.pending_state()->get_market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
+   auto market_stat = eval_state.pending_state()->get_status_record( status_index{ short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id } );
    if( !market_stat )
-      market_stat = market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
+      market_stat = status_record( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
 
    market_stat->bid_depth += delta_amount.amount;
 
-   eval_state.pending_state()->store_market_status( *market_stat );
+   eval_state.pending_state()->store_status_record( *market_stat );
 
    eval_state.pending_state()->store_short_record( this->short_index, *current_short );
 }
@@ -203,11 +203,11 @@ void add_collateral_operation::evaluate_v1( transaction_evaluation_state& eval_s
    eval_state.pending_state()->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
                                                        *current_cover );
 
-   auto market_stat = eval_state.pending_state()->get_market_status( cover_index.order_price.quote_asset_id, cover_index.order_price.base_asset_id );
+   auto market_stat = eval_state.pending_state()->get_status_record( status_index{ cover_index.order_price.quote_asset_id, cover_index.order_price.base_asset_id } );
    FC_ASSERT( market_stat, "this should be valid for there to even be a position to cover" );
    market_stat->ask_depth += delta_amount.amount;
 
-   eval_state.pending_state()->store_market_status( *market_stat );
+   eval_state.pending_state()->store_status_record( *market_stat );
 }
 
 void short_operation_v1::evaluate( transaction_evaluation_state& eval_state )const
@@ -264,9 +264,9 @@ void short_operation_v1::evaluate( transaction_evaluation_state& eval_state )con
    current_short->balance     += this->amount;
    FC_ASSERT( current_short->balance >= 0 );
 
-   auto market_stat = eval_state.pending_state()->get_market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
+   auto market_stat = eval_state.pending_state()->get_status_record( status_index{ short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id } );
    if( !market_stat )
-      market_stat = market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
+      market_stat = status_record( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
 
    if( amount > 0 )
    {
@@ -290,7 +290,7 @@ void short_operation_v1::evaluate( transaction_evaluation_state& eval_state )con
 
    market_stat->bid_depth += delta_amount.amount;
 
-   eval_state.pending_state()->store_market_status( *market_stat );
+   eval_state.pending_state()->store_status_record( *market_stat );
 
    eval_state.pending_state()->store_short_record( this->short_index, *current_short );
 }
@@ -314,9 +314,9 @@ void short_operation_v1::evaluate_v1( transaction_evaluation_state& eval_state )
    FC_ASSERT( asset_to_short.valid() );
    FC_ASSERT( asset_to_short->is_market_issued(), "${symbol} is not a market issued asset", ("symbol",asset_to_short->symbol) );
 
-   auto market_stat = eval_state.pending_state()->get_market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
+   auto market_stat = eval_state.pending_state()->get_status_record( status_index{ short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id } );
    if( !market_stat )
-      market_stat = market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
+      market_stat = status_record( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
 
    if( market_stat->center_price.quote_asset_id != 0 )
    {
@@ -366,7 +366,7 @@ void short_operation_v1::evaluate_v1( transaction_evaluation_state& eval_state )
 
    market_stat->bid_depth += delta_amount.amount;
 
-   eval_state.pending_state()->store_market_status( *market_stat );
+   eval_state.pending_state()->store_status_record( *market_stat );
 
    eval_state.pending_state()->store_short_record( this->short_index, *current_short );
 
@@ -413,11 +413,11 @@ void cover_operation::evaluate_v1( transaction_evaluation_state& eval_state )con
    {
       eval_state.add_balance( asset( current_cover->collateral_balance, 0 ) );
 
-      auto market_stat = eval_state.pending_state()->get_market_status( cover_index.order_price.quote_asset_id, cover_index.order_price.base_asset_id );
+      auto market_stat = eval_state.pending_state()->get_status_record( status_index{ cover_index.order_price.quote_asset_id, cover_index.order_price.base_asset_id } );
       FC_ASSERT( market_stat, "this should be valid for there to even be a position to cover" );
       market_stat->ask_depth -= current_cover->collateral_balance;
 
-      eval_state.pending_state()->store_market_status( *market_stat );
+      eval_state.pending_state()->store_status_record( *market_stat );
    }
 }
 

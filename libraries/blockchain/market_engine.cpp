@@ -77,7 +77,7 @@ bool market_engine::execute( const asset_id_type quote_id, const asset_id_type b
         if( quote_asset->is_market_issued() && base_asset->id == 0 )
         {
             _feed_price = _db_impl.self->get_active_feed_price( _quote_id );
-            const omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
+            const ostatus_record market_stat = _pending_state->get_status_record( status_index{ _quote_id, _base_id } );
             if( (!market_stat.valid() || !market_stat->last_valid_feed_price.valid()) && !_feed_price.valid() )
                 FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id)(base_id) );
 
@@ -397,11 +397,11 @@ bool market_engine::execute( const asset_id_type quote_id, const asset_id_type b
 
         // Update market status and market history
         {
-            omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
-            if( !market_stat.valid() ) market_stat = market_status( _quote_id, _base_id );
+            ostatus_record market_stat = _pending_state->get_status_record( status_index{ _quote_id, _base_id } );
+            if( !market_stat.valid() ) market_stat = status_record( _quote_id, _base_id );
             market_stat->update_feed_price( _feed_price );
             market_stat->last_error.reset();
-            _pending_state->store_market_status( *market_stat );
+            _pending_state->store_status_record( *market_stat );
 
             // Remark: only prices of matched orders be updated to market history
             update_market_history( base_volume, quote_volume, highest_price, lowest_price,
@@ -414,11 +414,11 @@ bool market_engine::execute( const asset_id_type quote_id, const asset_id_type b
   catch( const fc::exception& e )
   {
       wlog( "error executing market ${quote} / ${base}\n ${e}", ("quote",quote_id)("base",base_id)("e",e.to_detail_string()) );
-      omarket_status market_stat = _prior_state->get_market_status( _quote_id, _base_id );
-      if( !market_stat.valid() ) market_stat = market_status( _quote_id, _base_id );
+      ostatus_record market_stat = _pending_state->get_status_record( status_index{ _quote_id, _base_id } );
+      if( !market_stat.valid() ) market_stat = status_record( _quote_id, _base_id );
       market_stat->update_feed_price( _feed_price );
       market_stat->last_error = e;
-      _prior_state->store_market_status( *market_stat );
+      _prior_state->store_status_record( *market_stat );
   }
   return false;
 } FC_CAPTURE_AND_RETHROW( (quote_id)(base_id)(timestamp) ) } // execute(...)
@@ -635,7 +635,7 @@ void market_engine::pay_current_cover( market_transaction& mtrx, asset_record& q
         *_current_ask->interest_rate,
         *_current_ask->expiration
         );
-        
+
     _pending_state->store_collateral_record( _current_ask->market_index,
                                              collat_record );
 } FC_CAPTURE_AND_RETHROW( (mtrx)(quote_asset) ) }
@@ -786,9 +786,9 @@ market_order market_engine::build_collateral_market_order( market_index_key k ) 
     // fetch collateral data for given market_index_key from PCS
     // and put it in a market_order
     ocollateral_record collat_record = _pending_state->get_collateral_record( k );
-    
+
     FC_ASSERT( collat_record.valid() );
-    
+
     market_order morder(
         cover_order,
         k,
@@ -1002,7 +1002,7 @@ asset market_engine::get_current_cover_debt() const
 { try {
     FC_ASSERT( _current_ask->type == cover_order );
     FC_ASSERT( _current_ask->interest_rate.valid() );
-    
+
     return get_interest_owed( _current_ask->get_balance(),
                               *_current_ask->interest_rate,
                               get_current_cover_age() ) + _current_ask->get_balance();
