@@ -3,7 +3,6 @@
 #include <bts/blockchain/transaction.hpp>
 #include <bts/blockchain/exceptions.hpp>
 #include <bts/wallet/wallet_records.hpp>
-#include <bts/mail/message.hpp>
 
 #include <vector>
 #include <map>
@@ -63,7 +62,6 @@ namespace bts { namespace wallet {
       ///Map of account address to key owning that account's market transactions
       std::map<blockchain::address, public_key_type>                               order_keys;
       ///List of partially-completed transaction notifications; these will be completed when sign() is called
-      std::vector<std::pair<mail::transaction_notice_message, public_key_type>>    notices;
 
 
       void  set_wallet_implementation( std::unique_ptr<detail::wallet_impl>& wimpl );
@@ -164,7 +162,6 @@ namespace bts { namespace wallet {
        * @param memo A memo for your records
        *
        * This method will create a transaction notice message, which will be completed after sign() is called.
-       * TODO can we send notices to raw addresses yet?
        */
       transaction_builder& deposit_asset_to_address(const wallet_account_record& payer,
                                                     const address& to_addr,
@@ -286,11 +283,6 @@ namespace bts { namespace wallet {
          return required_signatures.size() == trx.signatures.size();
       }
 
-      /**
-       * @brief Encrypts and returns the transaction notifications for all deposits in this transaction
-       */
-      std::vector<mail::message> encrypted_notifications();
-
    private:
       detail::wallet_impl* _wimpl;
       //Shorthand name for the signed_transaction
@@ -326,4 +318,4 @@ FC_REFLECT_ENUM( bts::wallet::vote_strategy,
         (vote_all)
         (vote_recommended)
         )
-FC_REFLECT( bts::wallet::transaction_builder, (transaction_record)(required_signatures)(outstanding_balances)(notices) )
+FC_REFLECT( bts::wallet::transaction_builder, (transaction_record)(required_signatures)(outstanding_balances) )

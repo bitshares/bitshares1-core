@@ -7,13 +7,12 @@ add_library( bts_wallet
              transaction_builder.cpp
              transaction_ledger.cpp
              transaction_ledger_experimental.cpp
-             mail.cpp
              login.cpp
              wallet.cpp
              ${HEADERS}
            )
 
-target_link_libraries( bts_wallet fc bts_db bts_utilities bts_blockchain leveldb bitcoin bts_keyhotee bts_mail bts_cli )
+target_link_libraries( bts_wallet fc bts_db bts_utilities bts_blockchain leveldb bitcoin bts_keyhotee bts_cli )
 target_include_directories( bts_wallet
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_BINARY_DIR}/include" )
 
