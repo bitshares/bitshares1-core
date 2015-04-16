@@ -1075,7 +1075,7 @@ namespace bts { namespace blockchain {
                   // to force a match, but we'll ignore that subtlety
                   // here...
                   process_ask( (*feed), morder );
-              else if( orec->expiration <= now() )
+              else if( orec->expiration <= self->now() )
                   // expired
                   process_ask( (*feed), morder );
           }
