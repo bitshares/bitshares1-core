@@ -713,11 +713,11 @@ bool client_impl::blockchain_verify_signature(const string& signer, const fc::sh
     }
 }
 
-vector<bts::blockchain::api_market_status> client_impl::blockchain_list_markets()const
+vector<bts::blockchain::string_status_record> client_impl::blockchain_list_markets()const
 {
    const vector<pair<asset_id_type, asset_id_type>> pairs = _chain_db->get_market_pairs();
 
-   vector<bts::blockchain::api_market_status> statuses;
+   vector<bts::blockchain::string_status_record> statuses;
    statuses.reserve( pairs.size() );
 
    for( const auto pair : pairs )
@@ -725,10 +725,11 @@ vector<bts::blockchain::api_market_status> client_impl::blockchain_list_markets(
       const auto quote_record = _chain_db->get_asset_record( pair.first );
       const auto base_record = _chain_db->get_asset_record( pair.second );
       FC_ASSERT( quote_record.valid() && base_record.valid() );
-      const auto status = _chain_db->get_market_status( quote_record->id, base_record->id );
+      const auto status = _chain_db->get_status_record( status_index{ quote_record->id, base_record->id } );
       FC_ASSERT( status.valid() );
 
-      api_market_status api_status( *status );
+      string_status_record api_status;
+      ( status_record& )api_status = *status;
 
       if( status->current_feed_price.valid() )
           api_status.current_feed_price = _chain_db->to_pretty_price( *status->current_feed_price, false );
@@ -747,16 +748,17 @@ vector<bts::blockchain::market_transaction> client_impl::blockchain_list_market_
    return _chain_db->get_market_transactions( block_num );
 }
 
-bts::blockchain::api_market_status client_impl::blockchain_market_status( const std::string& quote,
+bts::blockchain::string_status_record client_impl::blockchain_market_status( const std::string& quote,
                                                                           const std::string& base )const
 {
    auto qrec = _chain_db->get_asset_record(quote);
    auto brec = _chain_db->get_asset_record(base);
    FC_ASSERT( qrec && brec );
-   auto status = _chain_db->get_market_status( qrec->id, brec->id );
+   auto status = _chain_db->get_status_record( status_index{ qrec->id, brec->id } );
    FC_ASSERT( status, "The ${q}/${b} market has not yet been initialized.", ("q", quote)("b", base));
 
-   api_market_status result( *status );
+   string_status_record result;
+   ( status_record& )result = *status;
 
    if( status->current_feed_price.valid() )
        result.current_feed_price = _chain_db->to_pretty_price( *status->current_feed_price, false );

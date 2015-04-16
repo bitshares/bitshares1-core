@@ -560,15 +560,6 @@ wallet_transaction_record detail::client_impl::wallet_transfer_from_with_escrow(
     _wallet->cache_transaction( record );
     network_broadcast_transaction( record.trx );
 
-    if( _mail_client )
-    {
-        for( auto&& notice : builder->encrypted_notifications() )
-            _mail_client->send_encrypted_message(std::move(notice),
-                                                 from_account_name,
-                                                 to_account_name,
-                                                 recipient.owner_key);
-    }
-
     return record;
 }
 
@@ -961,79 +952,6 @@ optional<string> detail::client_impl::wallet_dump_account_private_key( const str
             return optional<string>();
     }
 } FC_CAPTURE_AND_RETHROW( (account_name)(key_type) ) }
-
-bts::mail::message detail::client_impl::wallet_mail_create(const std::string& sender,
-                                                           const std::string& subject,
-                                                           const std::string& body,
-                                                           const bts::mail::message_id_type& reply_to)
-{
-    return _wallet->mail_create(sender, subject, body, reply_to);
-}
-
-bts::mail::message detail::client_impl::wallet_mail_encrypt(const std::string &recipient, const bts::mail::message &plaintext)
-{
-    auto recipient_account = _chain_db->get_account_record(recipient);
-    FC_ASSERT(recipient_account, "Unknown recipient name.");
-
-    return _wallet->mail_encrypt(recipient_account->active_key(), plaintext);
-}
-
-bts::mail::message detail::client_impl::wallet_mail_open(const address& recipient, const bts::mail::message& ciphertext)
-{
-    return _wallet->mail_open(recipient, ciphertext);
-}
-
-void detail::client_impl::wallet_set_preferred_mail_servers(const string& account_name,
-                                                            const std::vector<string>& server_list,
-                                                            const string& paying_account)
-{
-    /*
-     * Brief overview of what's going on here... the user specifies a list of blockchain accounts which host mail
-     * servers. These are the mail servers the user's client will check for new mail. This list is published as a
-     * list of strings in public_data["mail_servers"].
-     *
-     * The server accounts will publish the actual endpoints in their public data as an ip::endpoint object in
-     * public_data["mail_server_endpoint"]. This function will not let the user set his mail server list unless all
-     * of his mail servers all publish this endpoint.
-     */
-
-    if( !_wallet->is_open() )
-        FC_THROW_EXCEPTION( wallet_closed, "Wallet is not open; cannot set preferred mail servers." );
-    //Skip unlock check here; wallet_account_update_registration below will check it.
-
-    //Check that all names in server_list are valid accounts which publish mail server endpoints
-    for( const string& server_name : server_list )
-    {
-        oaccount_record server_account = _chain_db->get_account_record(server_name);
-        if( !server_account )
-            FC_THROW_EXCEPTION( unknown_account_name,
-                                "The server account ${name} from server_list is not registered on the blockchain.",
-                                ("name", server_name) );
-        try {
-            //Not actually storing the value; I don't care. I just want to make sure that both of these .as() calls
-            //work smoothly.
-            server_account->public_data.as<fc::variant_object>()["mail_server_endpoint"].as<fc::ip::endpoint>();
-        } catch (fc::exception&) {
-            FC_ASSERT( false,
-                       "The server account ${name} from server_list does not publish a valid mail server endpoint.",
-                       ("name", server_name) );
-        }
-    }
-
-    //Update the public_data
-    fc::mutable_variant_object public_data;
-    try {
-        wallet_account_record account_rec = _wallet->get_account(account_name);
-        if( !account_rec.public_data.is_null() )
-            public_data = account_rec.public_data.as<fc::mutable_variant_object>();
-    } catch (fc::exception&) {
-        FC_ASSERT( false, "Account's public data is not an object. Please unset it or make it an object." );
-    }
-    public_data["mail_servers"] = server_list;
-
-    //Commit the change
-    wallet_account_update_registration(account_name, paying_account, public_data);
-}
 
 public_key_type client_impl::wallet_account_create( const string& account_name )
 { try {

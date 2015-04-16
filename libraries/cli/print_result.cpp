@@ -284,12 +284,6 @@ namespace bts { namespace cli {
       out << client->get_chain()->to_pretty_asset( result.as<asset>() ) << "\n";
     };
 
-    _command_to_function["mail_get_message"] = &f_mail_get_message;
-    _command_to_function["mail_inbox"] = &f_mail_header_list;
-    _command_to_function["mail_get_messages_from"] = &f_mail_header_list;
-    _command_to_function["mail_get_messages_to"] = &f_mail_header_list;
-    _command_to_function["mail_get_messages_in_conversation"] = &f_mail_header_list;
-
     _command_to_function["disk_usage"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
     {
       const auto& usage = result.as<fc::mutable_variant_object>();
@@ -359,7 +353,7 @@ namespace bts { namespace cli {
     FC_ASSERT( quote_asset_record.valid() );
     const asset_id_type quote_id = quote_asset_record->id;
 
-    const omarket_status status = client->get_chain()->get_market_status( quote_id, asset_id_type( 0 ) );
+    const ostatus_record status = client->get_chain()->get_status_record( status_index{ quote_id, asset_id_type( 0 ) } );
 
     out << std::left;
     out << std::setw( 30 ) << "AMOUNT";
@@ -713,7 +707,7 @@ namespace bts { namespace cli {
 
     price feed_price;
     {
-        const omarket_status status = client->get_chain()->get_market_status( quote_id, base_id );
+        const ostatus_record status = client->get_chain()->get_status_record( status_index{ quote_id, base_id } );
         if( status.valid() && status->last_valid_feed_price.valid() )
             feed_price = *status->last_valid_feed_price;
     }
@@ -727,7 +721,7 @@ namespace bts { namespace cli {
            shorts = client->blockchain_market_list_shorts(arguments[0].as_string(), arguments[2].as_int64());
     }
 
-    auto status = client->get_chain()->get_market_status(quote_id, base_id);
+    auto status = client->get_chain()->get_status_record( status_index{ quote_id, base_id } );
     price short_execution_price( 0, quote_id, base_id );
     bool short_execution_price_valid = (status.valid() && status->current_feed_price.valid());
     // we don't declare short_execution_price as oprice here
@@ -874,7 +868,7 @@ namespace bts { namespace cli {
         << std::string(175, '-') << "\n";
 
       {
-        const omarket_status status = client->get_chain()->get_market_status( quote_asset_record->id, asset_id_type( 0 ) );
+        const ostatus_record status = client->get_chain()->get_status_record( status_index{ quote_asset_record->id, asset_id_type( 0 ) } );
 
         auto ask_itr = bids_asks.second.rbegin();
         auto bid_itr = shorts.begin();
@@ -933,7 +927,7 @@ namespace bts { namespace cli {
         }
       }
 
-      auto status = client->get_chain()->get_market_status(quote_id, base_id);
+      auto status = client->get_chain()->get_status_record( status_index{ quote_id, base_id } );
       if(status)
       {
         if( ! short_execution_price_valid )
@@ -975,7 +969,7 @@ namespace bts { namespace cli {
     } // end call section that only applies to market issued assets vs XTS
     else
     {
-      auto status = client->get_chain()->get_market_status(quote_id, base_id);
+      auto status = client->get_chain()->get_status_record( status_index{ quote_id, base_id } );
       if(status->last_error)
       {
         out << "Last Error:  ";
@@ -1082,79 +1076,6 @@ namespace bts { namespace cli {
       out << std::setw(30) << (peer.last_error ? peer.last_error->to_detail_string() : "none");
 
       out << "\n";
-    }
-  }
-
-  void print_result::f_mail_get_message( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
-  {
-    mail::email_record email = result.as<mail::email_record>();
-
-    switch (mail::message_type(email.content.type)) {
-    case mail::email:
-    {
-      auto content = email.content.as<mail::signed_email_message>();
-
-      out << "=== Email Message ==="
-             "\nFrom:         " << email.header.sender
-          << "\nTo:           " << email.header.recipient
-          << "\nDate:         " << pretty_timestamp(email.header.timestamp)
-          << "\nSubject:      " << content.subject
-          << (content.reply_to != mail::message_id_type()? "\nIn Reply To:  " + content.reply_to.str() : std::string())
-          << "\n\n"
-          << content.body << "\n\n"
-             "===  End  Message ===\n\n";
-      break;
-    }
-    case mail::transaction_notice:
-    {
-      auto content = email.content.as<mail::transaction_notice_message>();
-
-      out << "=== Transaction Message ==="
-             "\nFrom:         " << email.header.sender
-          << "\nTo:           " << email.header.recipient
-          << "\nDate:         " << pretty_timestamp(email.header.timestamp)
-          << "\nMemo:         " << content.extended_memo
-          << "\n\n"
-          << pretty_transaction_list({client->get_wallet()->to_pretty_trx(
-                                      client->get_wallet()->get_transaction(content.trx.id().str()))}, client)
-          << "\n===  End  Message ===\n\n";
-      break;
-    }
-    default:
-      out << fc::json::to_pretty_string(result);
-    }
-
-    if (email.failure_reason && !email.failure_reason->empty())
-      out << "Message Failed to Send: " << *email.failure_reason << "\n"
-             "Attempted to send to these servers:\n"
-          << fc::json::to_pretty_string(email.mail_servers) << "\n";
-  }
-
-  void print_result::f_mail_header_list(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client)
-  {
-    vector<mail::email_header> inbox = result.as<vector<mail::email_header>>();
-    if (inbox.empty())
-    {
-      out << "No new mail. Why not go check out the BitUSD markets?\n";
-      return;
-    }
-
-    out << std::left
-        << std::setw(45) << "ID"
-        << std::setw(20) << "FROM"
-        << std::setw(20) << "TO"
-        << std::setw(61) << "SUBJECT"
-        << std::setw(19) << "DATE"
-        << "\n" << string(165, '-') << "\n";
-
-    for (mail::email_header header : inbox)
-    {
-      out << std::setw(45) << header.id.str()
-          << std::setw(20) << pretty_shorten(header.sender, 19)
-          << std::setw(20) << pretty_shorten(header.recipient, 19)
-          << std::setw(61) << pretty_shorten(header.subject, 60)
-          << std::setw(19) << pretty_timestamp(header.timestamp)
-          << "\n";
     }
   }
 

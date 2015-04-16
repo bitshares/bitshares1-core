@@ -74,8 +74,8 @@ namespace bts { namespace blockchain { namespace detail {
              asset base_volume( 0, base_id );
              asset quote_volume( 0, quote_id );
 
-             omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
-             if( !market_stat ) market_stat = market_status( quote_id, base_id );
+             ostatus_record market_stat = _pending_state->get_status_record( status_index{ _quote_id, _base_id } );
+             if( !market_stat ) market_stat = status_record( quote_id, base_id );
 
              price max_short_bid;
              price min_cover_ask;
@@ -552,7 +552,7 @@ namespace bts { namespace blockchain { namespace detail {
                      }
                  }
              }
-             _pending_state->store_market_status( *market_stat );
+             _pending_state->store_status_record( *market_stat );
 
               // Remark: only prices of matched orders be updated to market history
              update_market_history( base_volume, quote_volume, highest_price, lowest_price,
@@ -563,11 +563,11 @@ namespace bts { namespace blockchain { namespace detail {
         }
         catch( const fc::exception& e )
         {
-           auto market_state = _prior_state->get_market_status( quote_id, base_id );
+           auto market_state = _prior_state->get_status_record( status_index{ quote_id, base_id } );
            if( !market_state )
-              market_state = market_status( quote_id, base_id );
+              market_state = status_record( quote_id, base_id );
            market_state->last_error = e;
-           _prior_state->store_market_status( *market_state );
+           _prior_state->store_status_record( *market_state );
         }
         return false;
       } // execute(...)

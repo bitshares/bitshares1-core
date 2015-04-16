@@ -242,8 +242,6 @@ namespace bts { namespace blockchain {
          virtual void                       store_short_record( const market_index_key& key, const order_record& ) override;
          virtual void                       store_collateral_record( const market_index_key& key, const collateral_record& ) override;
 
-         virtual omarket_status             get_market_status( const asset_id_type quote_id, const asset_id_type base_id )const override;
-         virtual void                       store_market_status( const market_status& s ) override;
          virtual void                       store_market_history_record( const market_history_key &key, const market_history_record &record ) override;
          virtual omarket_history_record     get_market_history_record( const market_history_key &key )const override;
          market_history_points              get_market_price_history( const asset_id_type quote_id,
@@ -334,6 +332,10 @@ namespace bts { namespace blockchain {
          virtual oburn_record burn_lookup_by_index( const burn_index& )const override;
          virtual void burn_insert_into_index_map( const burn_index&, const burn_record& )override;
          virtual void burn_erase_from_index_map( const burn_index& )override;
+
+         virtual ostatus_record status_lookup_by_index( const status_index )const override;
+         virtual void status_insert_into_index_map( const status_index, const status_record& )override;
+         virtual void status_erase_from_index_map( const status_index )override;
 
          virtual ofeed_record feed_lookup_by_index( const feed_index )const override;
          virtual void feed_insert_into_index_map( const feed_index, const feed_record& )override;

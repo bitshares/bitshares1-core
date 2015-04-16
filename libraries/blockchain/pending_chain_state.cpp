@@ -48,10 +48,10 @@ namespace bts { namespace blockchain {
       apply_records( prev_state, _balance_id_to_record, _balance_id_remove );
       apply_records( prev_state, _transaction_id_to_record, _transaction_id_remove );
       apply_records( prev_state, _burn_index_to_record, _burn_index_remove );
+      apply_records( prev_state, _status_index_to_record, _status_index_remove );
       apply_records( prev_state, _feed_index_to_record, _feed_index_remove );
       apply_records( prev_state, _slot_index_to_record, _slot_index_remove );
 
-      for( const auto& item : market_statuses ) prev_state->store_market_status( item.second );
       for( const auto& item : bids )            prev_state->store_bid_record( item.first, item.second );
       for( const auto& item : asks )            prev_state->store_ask_record( item.first, item.second );
       for( const auto& item : shorts )          prev_state->store_short_record( item.first, item.second );
@@ -93,6 +93,7 @@ namespace bts { namespace blockchain {
       populate_undo_state( undo_state, prev_state, _balance_id_to_record, _balance_id_remove );
       populate_undo_state( undo_state, prev_state, _transaction_id_to_record, _transaction_id_remove );
       populate_undo_state( undo_state, prev_state, _burn_index_to_record, _burn_index_remove );
+      populate_undo_state( undo_state, prev_state, _status_index_to_record, _status_index_remove );
       populate_undo_state( undo_state, prev_state, _feed_index_to_record, _feed_index_remove );
       populate_undo_state( undo_state, prev_state, _slot_index_to_record, _slot_index_remove );
 
@@ -119,15 +120,6 @@ namespace bts { namespace blockchain {
          auto prev_value = prev_state->get_collateral_record( item.first );
          if( prev_value.valid() ) undo_state->store_collateral_record( item.first, *prev_value );
          else  undo_state->store_collateral_record( item.first, collateral_record() );
-      }
-      for( const auto& item : market_statuses )
-      {
-         auto prev_value = prev_state->get_market_status( item.first.first, item.first.second );
-         if( prev_value ) undo_state->store_market_status( *prev_value );
-         else
-         {
-            undo_state->store_market_status( market_status() );
-         }
       }
 
       const auto dirty_markets = prev_state->get_dirty_markets();
@@ -242,20 +234,6 @@ namespace bts { namespace blockchain {
    void pending_chain_state::set_market_transactions( vector<market_transaction> trxs )
    {
       market_transactions = std::move(trxs);
-   }
-
-   omarket_status pending_chain_state::get_market_status( const asset_id_type quote_id, const asset_id_type base_id )const
-   {
-      auto itr = market_statuses.find( std::make_pair(quote_id,base_id) );
-      if( itr != market_statuses.end() )
-         return itr->second;
-      chain_interface_ptr prev_state = _prev_state.lock();
-      return prev_state->get_market_status(quote_id,base_id);
-   }
-
-   void pending_chain_state::store_market_status( const market_status& s )
-   {
-      market_statuses[std::make_pair(s.quote_id,s.base_id)] = s;
    }
 
    void pending_chain_state::check_supplies()const
@@ -623,6 +601,28 @@ namespace bts { namespace blockchain {
    {
        _burn_index_to_record.erase( index );
        _burn_index_remove.insert( index );
+   }
+
+   ostatus_record pending_chain_state::status_lookup_by_index( const status_index index )const
+   {
+       const auto iter = _status_index_to_record.find( index );
+       if( iter != _status_index_to_record.end() ) return iter->second;
+       if( _status_index_remove.count( index ) > 0 ) return ostatus_record();
+       const chain_interface_ptr prev_state = _prev_state.lock();
+       if( !prev_state ) return ostatus_record();
+       return prev_state->lookup<status_record>( index );
+   }
+
+   void pending_chain_state::status_insert_into_index_map( const status_index index, const status_record& record )
+   {
+       _status_index_remove.erase( index );
+       _status_index_to_record[ index ] = record;
+   }
+
+   void pending_chain_state::status_erase_from_index_map( const status_index index )
+   {
+       _status_index_to_record.erase( index );
+       _status_index_remove.insert( index );
    }
 
    ofeed_record pending_chain_state::feed_lookup_by_index( const feed_index index )const

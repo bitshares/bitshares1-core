@@ -52,7 +52,7 @@ namespace bts { namespace blockchain { namespace detail {
              asset usd_fees_collected(0,quote_id);
              asset trading_volume(0, base_id);
 
-             omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
+             ostatus_record market_stat = _pending_state->get_status_record( status_index{ _quote_id, _base_id } );
              if( !market_stat.valid() )
              {
                 if( quote_asset->is_market_issued() ) FC_CAPTURE_AND_THROW( insufficient_depth, (market_stat) );
@@ -233,24 +233,24 @@ namespace bts { namespace blockchain { namespace detail {
                   )
                   FC_CAPTURE_AND_THROW( insufficient_depth, (market_stat) );
              }
-             _pending_state->store_market_status( *market_stat );
+             _pending_state->store_status_record( *market_stat );
 
-             auto market_state = _pending_state->get_market_status( quote_id, base_id );
+             auto market_state = _pending_state->get_status_record( status_index{ quote_id, base_id } );
               if( !market_state )
-                 market_state = market_status( quote_id, base_id );
+                 market_state = status_record( quote_id, base_id );
              market_state->last_error.reset();
-             _pending_state->store_market_status( *market_state );
+             _pending_state->store_status_record( *market_state );
 
              _pending_state->apply_changes();
              return true;
         }
         catch( const fc::exception& e )
         {
-           auto market_state = _prior_state->get_market_status( quote_id, base_id );
+           auto market_state = _prior_state->get_status_record( status_index{ quote_id, base_id } );
            if( !market_state )
-              market_state = market_status( quote_id, base_id );
+              market_state = status_record( quote_id, base_id );
            market_state->last_error = e;
-           _prior_state->store_market_status( *market_state );
+           _prior_state->store_status_record( *market_state );
         }
         return false;
       } // execute(...)

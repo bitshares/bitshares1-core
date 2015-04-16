@@ -70,7 +70,7 @@ namespace bts { namespace blockchain { namespace detail {
               if( quote_asset->is_market_issued() && base_asset->id == asset_id_type( 0 ) )
               {
                   _feed_price = _db_impl.self->get_active_feed_price( _quote_id );
-                  const omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
+                  const ostatus_record market_stat = _pending_state->get_status_record( status_index{ _quote_id, _base_id } );
                   if( (!market_stat.valid() || !market_stat->last_valid_feed_price.valid()) && !_feed_price.valid() )
                       FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id)(base_id) );
               }
@@ -106,7 +106,7 @@ namespace bts { namespace blockchain { namespace detail {
                   if( _base_id == asset_id_type( 0 ) )
                       _feed_price = _db_impl.self->get_active_feed_price( _quote_id );
 
-                  const omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
+                  const ostatus_record market_stat = _pending_state->get_status_record( status_index{ _quote_id, _base_id } );
                   if( (!market_stat.valid() || !market_stat->last_valid_feed_price.valid()) && !_feed_price.valid() )
                       FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id)(base_id) );
               }
@@ -327,14 +327,14 @@ namespace bts { namespace blockchain { namespace detail {
 
           // Update market status and market history
           {
-              omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
-              if( !market_stat.valid() ) market_stat = market_status( _quote_id, _base_id );
+              ostatus_record market_stat = _pending_state->get_status_record( status_index{ _quote_id, _base_id } );
+              if( !market_stat.valid() ) market_stat = status_record( _quote_id, _base_id );
               market_stat->update_feed_price( _feed_price );
               market_stat->last_error.reset();
               market_stat->ask_depth = 0;
               market_stat->bid_depth = 0;
               market_stat->center_price = price();
-              _pending_state->store_market_status( *market_stat );
+              _pending_state->store_status_record( *market_stat );
 
               // Remark: only prices of matched orders be updated to market history
             update_market_history( base_volume, quote_volume, highest_price, lowest_price,
@@ -346,14 +346,14 @@ namespace bts { namespace blockchain { namespace detail {
     }
     catch( const fc::exception& e )
     {
-        omarket_status market_stat = _prior_state->get_market_status( _quote_id, _base_id );
-        if( !market_stat.valid() ) market_stat = market_status( _quote_id, _base_id );
+        ostatus_record market_stat = _prior_state->get_status_record( status_index{ _quote_id, _base_id } );
+        if( !market_stat.valid() ) market_stat = status_record( _quote_id, _base_id );
         market_stat->update_feed_price( _feed_price );
         market_stat->last_error = e;
         market_stat->ask_depth = 0;
         market_stat->bid_depth = 0;
         market_stat->center_price = price();
-        _prior_state->store_market_status( *market_stat );
+        _prior_state->store_status_record( *market_stat );
     }
     return false;
   } // execute(...)

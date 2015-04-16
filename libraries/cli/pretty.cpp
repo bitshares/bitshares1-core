@@ -280,8 +280,6 @@ string pretty_disk_usage( fc::mutable_variant_object usage )
     format_size( usage, "blockchain" );
     format_size( usage, "dac_state" );
     format_size( usage, "logs" );
-    format_size( usage, "mail_client" );
-    format_size( usage, "mail_server" );
     format_size( usage, "network_peers" );
 
     if( !usage[ "wallets" ].is_null() )
@@ -941,7 +939,7 @@ string pretty_order_list( const vector<std::pair<order_id_type, market_order>>& 
     {
         const asset_id_type quote_id = order_items.front().second.market_index.order_price.quote_asset_id;
         const asset_id_type base_id = order_items.front().second.market_index.order_price.base_asset_id;
-        const omarket_status status = client->get_chain()->get_market_status( quote_id, base_id );
+        const ostatus_record status = client->get_chain()->get_status_record( status_index{ quote_id, base_id } );
         if( status.valid() && status->last_valid_feed_price.valid() )
             feed_price = *status->last_valid_feed_price;
     }
