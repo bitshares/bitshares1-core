@@ -2581,6 +2581,95 @@
          "prerequisites" : ["wallet_unlocked"]
       },
       {
+         "method_name" : "wallet_mail_create",
+         "description" : "Creates a new mail message and returns the unencrypted message.",
+         "return_type" : "message",
+         "parameters"  : [
+             {
+                "name" : "sender",
+                "type" : "string",
+                "description" : "The name of the message's sender."
+             },
+             {
+                "name" : "subject",
+                "type" : "string",
+                "description" : "The subject of the message."
+             },
+             {
+                "name" : "body",
+                "type" : "string",
+                "description" : "The body of the message."
+             },
+             {
+                "name" : "reply_to",
+                "type" : "message_id",
+                "description" : "The ID of the message this is in reply to.",
+                "default_value" : "message_id_type()"
+             }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_mail_encrypt",
+         "description" : "Encrypts a mail message and returns the encrypted message.",
+         "return_type" : "message",
+         "parameters"  : [
+             {
+                "name" : "recipient",
+                "type" : "string",
+                "description" : "The name of the message's recipient."
+             },
+             {
+                "name" : "plaintext",
+                "type" : "message",
+                "description" : "The plaintext message, such as from wallet_mail_create."
+             }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_mail_open",
+         "description" : "Opens an encrypted mail message.",
+         "return_type" : "message",
+         "parameters"  : [
+             {
+                "name" : "recipient",
+                "type" : "address",
+                "description" : "The address of the message's recipient."
+             },
+             {
+                "name" : "ciphertext",
+                "type" : "message",
+                "description" : "The encrypted message."
+             }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_set_preferred_mail_servers",
+         "description" : "Sets the list of mail servers an account checks for his mail.",
+         "return_type" : "void",
+         "parameters"  : [
+             {
+                "name" : "account_name",
+                "type" : "string",
+                "description" : "The name of the account whose mail servers should be updated."
+             },
+             {
+                "name" : "server_list",
+                "type" : "string_array",
+                "description" : "A list of names of blockchain accounts who run mail servers."
+             },
+             {
+                "name" : "paying_account",
+                "type" : "string",
+                "description" : "The name of the account to pay the transaction fee, if different from account_name.",
+                "default_value" : ""
+             }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
          "method_name" : "wallet_account_retract",
          "description" : "Retract (permanently disable) the specified account in case of master key compromise.",
          "return_type" : "transaction_record",

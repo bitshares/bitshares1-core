@@ -280,6 +280,8 @@ string pretty_disk_usage( fc::mutable_variant_object usage )
     format_size( usage, "blockchain" );
     format_size( usage, "dac_state" );
     format_size( usage, "logs" );
+    format_size( usage, "mail_client" );
+    format_size( usage, "mail_server" );
     format_size( usage, "network_peers" );
 
     if( !usage[ "wallets" ].is_null() )

@@ -33,6 +33,22 @@ execute_command_line <input>
 execute_script <script> 
 fetch_welcome_package <arguments> 
 http_start_server [port] 
+mail_archive_message <message_id> 
+mail_cancel_message <message_id> 
+mail_check_new_messages [get_old_messages] 
+mail_fetch_inventory <owner> <start_time> [limit] 
+mail_fetch_message <inventory_id> 
+mail_get_archive_messages 
+mail_get_message <message_id> 
+mail_get_messages_from <sender> 
+mail_get_messages_in_conversation <account_one> <account_two> 
+mail_get_messages_to <recipient> 
+mail_get_processing_messages 
+mail_inbox 
+mail_remove_message <message_id> 
+mail_retry_send <message_id> 
+mail_send <from> <to> <subject> <body> [reply_to] 
+mail_store_message <message> 
 meta_help 
 network_add_node <node> [command] 
 network_broadcast_transaction <transaction_to_broadcast> 
@@ -71,6 +87,9 @@ wallet_import_electrum <wallet_filename> <passphrase> <account_name>
 wallet_import_keys_from_json <json_filename> <imported_wallet_passphrase> <account> 
 wallet_login_finish <server_key> <client_key> <client_signature> 
 wallet_login_start <server_account> 
+wallet_mail_create <sender> <subject> <body> [reply_to] 
+wallet_mail_encrypt <recipient> <plaintext> 
+wallet_mail_open <recipient> <ciphertext> 
 wallet_market_add_collateral <from_account_name> <cover_id> <real_quantity_collateral_to_add> 
 wallet_market_batch_update <cancel_order_ids> <new_orders> <sign> 
 wallet_market_cover <from_account_name> <quantity> <quantity_symbol> <cover_id> 
@@ -86,6 +105,7 @@ wallet_remove_transaction <transaction_id>
 wallet_repair_records [collecting_account_name] 
 wallet_scan_transaction <transaction_id> [overwrite_existing] 
 wallet_scan_transaction_experimental <transaction_id> [overwrite_existing] 
+wallet_set_preferred_mail_servers <account_name> <server_list> [paying_account] 
 wallet_set_transaction_expiration_time <seconds> 
 wallet_sign_hash <signer> <hash> 
 wallet_transaction_history_experimental [account_name] 

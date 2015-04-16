@@ -3,6 +3,7 @@
 #include <bts/blockchain/asset_operations.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/transaction_creation_state.hpp>
+#include <bts/mail/message.hpp>
 #include <bts/wallet/pretty.hpp>
 #include <bts/wallet/transaction_builder.hpp>
 
@@ -519,6 +520,14 @@ namespace bts { namespace wallet {
          fc::variant login_finish( const public_key_type& server_key,
                                    const public_key_type& client_key,
                                    const fc::ecc::compact_signature& client_signature );
+
+         mail::message mail_create( const string& sender,
+                                    const string& subject,
+                                    const string& body,
+                                    const mail::message_id_type& reply_to = mail::message_id_type());
+         mail::message mail_encrypt( const public_key_type& recipient, const mail::message& plaintext );
+         mail::message mail_open( const address& recipient, const mail::message& ciphertext );
+         mail::message mail_decrypt( const address& recipient, const mail::message& ciphertext );
 
      private:
          unique_ptr<detail::wallet_impl> my;

@@ -20,6 +20,9 @@
 #include <bts/rpc/rpc_client.hpp>
 #include <bts/rpc/rpc_server.hpp>
 
+#include <bts/mail/server.hpp>
+#include <bts/mail/client.hpp>
+
 #include <fc/log/file_appender.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/log/logger_config.hpp>
@@ -1308,6 +1311,18 @@ void client::open( const path& data_dir, const fc::optional<fc::path>& genesis_f
     my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db, my->_config.wallet_enabled );
     my->_wallet->set_data_directory( data_dir / "wallets" );
 
+    if( my->_config.mail_server_enabled )
+    {
+       my->_mail_server = std::make_shared<bts::mail::server>();
+       my->_mail_server->open( data_dir / "mail" );
+    }
+
+    if( my->_config.mail_client_enabled )
+    {
+        my->_mail_client = std::make_shared<bts::mail::client>(my->_wallet, my->_chain_db);
+        my->_mail_client->open( data_dir / "mail_client" );
+    }
+
     //if we are using a simulated network, _p2p_node will already be set by client's constructor
     if( !my->_p2p_node )
        my->_p2p_node = std::make_shared<bts::net::node>( my->_user_agent );
@@ -1331,6 +1346,8 @@ client::~client()
 }
 
 wallet_ptr client::get_wallet()const { return my->_wallet; }
+mail_client_ptr client::get_mail_client()const { return my->_mail_client; }
+mail_server_ptr client::get_mail_server()const { return my->_mail_server; }
 chain_database_ptr client::get_chain()const { return my->_chain_db; }
 bts::rpc::rpc_server_ptr client::get_rpc_server()const { return my->_rpc_server; }
 bts::net::node_ptr client::get_node()const { return my->_p2p_node; }

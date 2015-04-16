@@ -233,7 +233,7 @@ transaction_builder& transaction_builder::deposit_asset_with_escrow(const bts::w
    if( amount.amount <= 0 )
       FC_THROW_EXCEPTION( invalid_asset_amount, "Cannot deposit a negative amount!" );
 
-   // Don't automatically truncate memos
+   // Don't automatically truncate memos as long as users still depend on them via deposit ops rather than mail
    if( memo.size() > BTS_BLOCKCHAIN_MAX_MEMO_SIZE )
        FC_CAPTURE_AND_THROW( memo_too_long, (memo) );
 
@@ -275,6 +275,13 @@ transaction_builder& transaction_builder::deposit_asset_with_escrow(const bts::w
    if( *memo_sender != payer.active_key() )
       entry.memo_from_account = *memo_sender;
    transaction_record.ledger_entries.push_back(std::move(entry));
+
+   auto memo_signature = _wimpl->self->get_private_key(*memo_sender).sign_compact(fc::sha256::hash(memo.data(),
+                                                                                                   memo.size()));
+   notices.emplace_back(std::make_pair(mail::transaction_notice_message(string(memo),
+                                                                        std::move(titan_one_time_key),
+                                                                        std::move(memo_signature)),
+                                       recipient.active_key()));
 
    return *this;
 } FC_CAPTURE_AND_RETHROW( (recipient)(amount)(memo) ) }
@@ -657,9 +664,22 @@ wallet_transaction_record& transaction_builder::sign()
       }
    }
 
+   for( auto& notice : notices )
+      notice.first.trx = trx;
+
    return transaction_record;
 } FC_CAPTURE_AND_RETHROW() }
 
+std::vector<bts::mail::message> transaction_builder::encrypted_notifications()
+{
+   vector<mail::message> messages;
+   for( auto& notice : notices )
+   {
+      auto one_time_key = _wimpl->_wallet_db.generate_new_one_time_key(_wimpl->_wallet_password);
+      messages.emplace_back(mail::message(notice.first).encrypt(one_time_key, notice.second));
+   }
+   return messages;
+}
 // First handles a margin position close and the collateral is returned.  Calls withdraw_fee() to
 // to handle the more common cases.
 void transaction_builder::pay_fee()

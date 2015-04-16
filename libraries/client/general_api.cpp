@@ -269,6 +269,8 @@ variant detail::client_impl::disk_usage()const
    usage["blockchain"] = variant();
    usage["dac_state"] = variant();
    usage["logs"] = variant();
+   usage["mail_client"] = variant();
+   usage["mail_server"] = variant();
    usage["network_peers"] = variant();
    usage["wallets"] = variant();
    usage["total"] = variant();
@@ -281,6 +283,12 @@ variant detail::client_impl::disk_usage()const
 
    const fc::path logs = _data_dir / "logs";
    usage["logs"] = fc::is_directory( logs ) ? fc::directory_size( logs ) : variant();
+
+   const fc::path mail_client = _data_dir / "mail_client";
+   usage["mail_client"] = fc::is_directory( mail_client ) ? fc::directory_size( mail_client ) : variant();
+
+   const fc::path mail_server = _data_dir / "mail";
+   usage["mail_server"] = fc::is_directory( mail_server ) ? fc::directory_size( mail_server ) : variant();
 
    const fc::path network_peers = _data_dir / "peers.leveldb";
    usage["network_peers"] = fc::is_directory( network_peers ) ? fc::directory_size( network_peers ) : variant();

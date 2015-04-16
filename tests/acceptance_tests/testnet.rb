@@ -10,7 +10,7 @@ module BitShares
 
   class TestNet
 
-    attr_reader :delegate_node, :alice_node, :bob_node, :running
+    attr_reader :delegate_node, :alice_node, :bob_node, :mail_node, :running
 
     TEMPDIR = 'tmp'
 
@@ -19,6 +19,7 @@ module BitShares
       @delegate_node = nil
       @alice_node = nil
       @bob_node = nil
+      @mail_node = nil
       @p2p_port = 10000 + Random.rand(10000)
       @running = false
 
@@ -84,7 +85,7 @@ module BitShares
 
       @bob_node.exec 'wallet_import_private_key', balancekeys[3], 'angel', true, true
       @bob_node.exec 'wallet_backup_create', td('bob_wallet_backup.json')
-
+      
     end
 
     def quick_bootstrap
@@ -122,20 +123,23 @@ module BitShares
 
       @bob_node = BitSharesNode.new @client_binary, name: 'bob', data_dir: td('bob'), genesis: 'genesis.json', http_port: 5692, rpc_port: 6692, p2p_port: @p2p_port, logger: @logger
       @bob_node.start
+      
+      @mail_node = BitSharesNode.new @client_binary, name: 'mail', data_dir: td('mail'), genesis: 'genesis.json', http_port: 5693, rpc_port: 6693, p2p_port: @p2p_port, logger: @logger
+      @mail_node.start
 
-      nodes = [@delegate_node, @alice_node, @bob_node]
+      nodes = [@delegate_node, @alice_node, @bob_node, @mail_node]
       wait_nodes(nodes)
-
+      
       @delegate_node.exec 'wallet_open', 'default'
       @delegate_node.exec 'wallet_unlock', '9999999', 'password'
       @delegate_node.exec 'wallet_delegate_set_block_production', 'ALL', true
-
+      
       @alice_node.exec 'wallet_open', 'default'
       @alice_node.exec 'wallet_unlock', '9999999', 'password'
-
+      
       @bob_node.exec 'wallet_open', 'default'
       @bob_node.exec 'wallet_unlock', '9999999', 'password'
-
+      
     end
 
     def create
@@ -143,6 +147,7 @@ module BitShares
       recreate_dir td('delegate')
       recreate_dir td('alice')
       recreate_dir td('bob')
+      recreate_dir td('mail')
 
       quick = File.exist?(td('delegate_wallet_backup.json'))
 
@@ -154,6 +159,9 @@ module BitShares
 
       @bob_node = BitSharesNode.new @client_binary, name: 'bob', data_dir: td('bob'), genesis: 'genesis.json', http_port: 5692, rpc_port: 6692, p2p_port: @p2p_port, logger: @logger
       @bob_node.start
+      
+      @mail_node = BitSharesNode.new @client_binary, name: 'mail', data_dir: td('mail'), genesis: 'genesis.json', http_port: 5693, rpc_port: 6693, p2p_port: @p2p_port, logger: @logger
+      # Don't start it here, instead mail_steps.rb will start it on request
 
       wait_nodes([@delegate_node, @alice_node, @bob_node])
 
@@ -175,18 +183,20 @@ module BitShares
       @delegate_node.stop
       @alice_node.stop if @alice_node
       @bob_node.stop if @bob_node
+      @mail_node.stop if @mail_node and @mail_node.running
       @running = false
     end
 
     def pause
       @alice_node.exec 'execute_command_line', 'enable_raw'
       @bob_node.exec 'execute_command_line', 'enable_raw'
+      @mail_node.exec 'execute_command_line', 'enable_raw' if @mail_node.running
       while true
         STDOUT.puts '@pause: use the following urls to access the nodes via browser:'
         STDOUT.puts "- delegate node: #{@delegate_node.url}"
         STDOUT.puts "- alice node: #{@alice_node.url}"
         STDOUT.puts "- bob node: #{@bob_node.url}"
-        STDOUT.puts 'or press [d], [a], or [b] to have console access'
+        STDOUT.puts 'or press [d],[a], [b], or [m] to have console access'
         STDOUT.puts 'or press any other key to shutdown testnet and continue..'
         c = ''
         begin
@@ -203,6 +213,8 @@ module BitShares
           @alice_node.interactive_mode
         elsif c == 'b'
           @bob_node.interactive_mode
+        elsif c == 'm'
+          @mail_node.interactive_mode
         else
           break
         end

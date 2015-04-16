@@ -1,0 +1,18 @@
+# Warning: this is a generated file, any changes made here will be overwritten by the build process
+
+class MailAPI
+
+  constructor: (@q, @log, @rpc, @interval) ->
+    #@log.info "---- API Constructor ----"
+
+<% mail_api['methods'].each do |m| %>
+  # <%= m['description'] %>
+  # parameters: <%= js_params_doc(m, 2) %>
+  # return_type: `<%= m['return_type'] %>`
+  <%= m['method_name'].gsub('mail_', '') %>: <%= js_method_params(m) %> ->
+    @rpc.request('<%= m['method_name'] %>'<%= js_pass_params(m) %>, error_handler).then (response) ->
+      response.result
+<% end %>
+
+
+angular.module("app").service("MailAPI", ["$q", "$log", "RpcService", "$interval", MailAPI])

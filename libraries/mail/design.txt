@@ -1,0 +1,40 @@
+Every RPC server can server as a potential "mail server" to receive notifications about transactions.
+
+Every Account can publish a list of mail servers that they check for incoming messages / notifications
+
+Mail servers also automatically publish market transaction notifications for the users.
+
+A wallet will check all of their mail servers for new notifications and build up their wallet transaction history.
+
+When the wallet generates a transaction it checks the mail servers that are registered for the account and broadcasts the message to the mail servers, this requires some Proof-of-Work on behalf of the sender.  
+
+
+1) Why would I host a public mail server?
+  a) because I am a delegate and am earning money
+  b) because I am hosting a web wallet and have alternative revenue
+  c) how do I prevent the system from being used for file sharing?
+     i.   by requiring proof of work with each inventory request
+     ii.  by requiring proof of work with each message request.
+  d) because I am selling an iPhone app?
+     i. is this really public or is this authenticated to the App?
+
+2) How is users privacy compromised?
+  a) IP of sender & receiver are known to the mail server and tied to account of receiver.
+  b) Timing analysis could reveal balances of sender & receiver based upon the subset of balances
+    modified around the time of the message.
+ 
+3) How does this operate legally?
+  a) All information on the server is public and available to governments
+  b) If necessary server can log the IP of everyone who reads or writes a particular account.
+
+4) How can users increase their privacy?
+  a) Use the server from a VPN or TOR
+  b) Check accounts other than their own 
+  c) Delay the broadcast of transaction notifications by a random interval
+  e) Share an mail address.
+  
+5) Why would I host a private mail server?
+  a) So that my light-weight apps can get my messages.
+
+Abuse:  To minimize "spam" servers require all published messages to perform a proof-of-work.  
+

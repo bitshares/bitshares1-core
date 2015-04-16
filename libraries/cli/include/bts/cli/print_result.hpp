@@ -41,6 +41,8 @@ namespace bts { namespace cli {
     static void f_blockchain_market_order_history( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client );
     static void f_blockchain_market_price_history( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client );
     static void f_network_list_potential_peers( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client );
+    static void f_mail_get_message( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client );
+    static void f_mail_header_list( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client );
     static void f_blockchain_get_block( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client );
 
     static void print_network_usage_graph( std::ostream& out, const std::vector<uint32_t>& usage_data );
