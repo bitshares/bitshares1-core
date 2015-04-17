@@ -915,6 +915,10 @@ namespace bts { namespace cli {
             else
             {
                   out << std::right << std::setw(26) << bts::blockchain::get_approximate_relative_time_string( *ask_itr->expiration );
+                  //
+                  // if you want to see times as seconds since epoch (for debug purposes), comment preceding line and uncomment the following line
+                  //
+                  // out << std::right << std::setw(26) << ask_itr->expiration->sec_since_epoch();
             }
             out << "   " << client->get_chain()->to_pretty_asset(asset(*ask_itr->collateral));
             out << "\n";
