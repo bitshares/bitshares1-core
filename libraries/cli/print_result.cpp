@@ -195,7 +195,6 @@ namespace bts { namespace cli {
     _command_to_function["wallet_market_cancel_order"]              = &f_wallet_transfer;
     _command_to_function["wallet_market_cancel_orders"]             = &f_wallet_transfer;
     _command_to_function["wallet_market_cover"]                     = &f_wallet_transfer;
-    _command_to_function["wallet_market_sell"]                      = &f_wallet_transfer;
     _command_to_function["wallet_market_submit_ask"]                = &f_wallet_transfer;
     _command_to_function["wallet_market_submit_bid"]                = &f_wallet_transfer;
     _command_to_function["wallet_market_submit_short"]              = &f_wallet_transfer;

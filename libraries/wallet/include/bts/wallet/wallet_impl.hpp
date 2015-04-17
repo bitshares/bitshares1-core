@@ -170,17 +170,6 @@ class wallet_impl : public chain_observer
                                   const string& short_price_limit = string()
                                  );
 
-      void apply_sell_order_to_builder(
-                                       transaction_builder_ptr builder,
-                                       const string& from_account_name,
-                                       const string& sell_quantity,
-                                       const string& sell_quantity_symbol,
-                                       const string& price_limit,
-                                       const string& price_symbol,
-                                       const string& relative_percent,
-                                       bool allow_stupid
-                                      );
-
       // TODO:  Refactor and move somewhere else
       price str_to_relative_price( const string& str, const string& base_symbol, const string& quote_symbol );
 };
