@@ -4,7 +4,7 @@ endif()
 
 add_definitions( -DBTS_GLOBAL_API_LOG=1 )
 
-IF(NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY MATCHES "\\.a$")
+IF(NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY MATCHES "\\.(a|lib)$")
 IF(WIN32)
 add_definitions(/DBOOST_TEST_DYN_LINK)
 ELSE(WIN32)
