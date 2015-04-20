@@ -59,25 +59,25 @@ Returns:
 default (unlocked) >>> wallet_uia_update_active_flags delegate0 XMO dynamic_max_supply true
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:40:30</d-ign>PENDING   delegate0           UNKNOWN             0.00000 XTS             add dynamic_max_supply to authority perm... 0.50000 XTS         <d-ign> a2ea80db</d-ign>
+<d-ign>2014-06-20T14:40:30</d-ign>PENDING   delegate0           UNKNOWN             0.00000 XTS             add dynamic_max_supply to active flags f... 0.50000 XTS         <d-ign> fae594c7</d-ign>
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> wallet_uia_update_active_flags delegate0 XMO dynamic_fees true
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:40:50</d-ign>PENDING   delegate0           UNKNOWN             0.00000 XTS             add dynamic_fees to authority perms for XMO 0.50000 XTS         <d-ign> c5fa1f09</d-ign>
+<d-ign>2014-06-20T14:40:40</d-ign>PENDING   delegate0           UNKNOWN             0.00000 XTS             add dynamic_fees to active flags for XMO    0.50000 XTS         <d-ign> 4d0ffbc2</d-ign>
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> wallet_uia_update_active_flags delegate0 XMO halted_markets true
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:40:50</d-ign>PENDING   delegate0           UNKNOWN             0.00000 XTS             add halted_markets to authority perms fo... 0.50000 XTS         <d-ign> dae57cbc</d-ign>
+<d-ign>2014-06-20T14:40:50</d-ign>PENDING   delegate0           UNKNOWN             0.00000 XTS             add halted_markets to active flags for XMO  0.50000 XTS         <d-ign> 8d31c4ec</d-ign>
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> wallet_uia_update_active_flags delegate0 XMO restricted_accounts true
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:41:00</d-ign>PENDING   delegate0           UNKNOWN             0.00000 XTS             add restricted_accounts to authority per... 0.50000 XTS         <d-ign> 2da23410</d-ign>
+<d-ign>2014-06-20T14:41:00</d-ign>PENDING   delegate0           UNKNOWN             0.00000 XTS             add restricted_accounts to active flags ... 0.50000 XTS         <d-ign> 7f0ff70f</d-ign>
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> blockchain_get_asset XMO
@@ -154,7 +154,7 @@ Returns:
 default (unlocked) >>> wallet_uia_update_whitelist delegate0 XMO test true
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:41:20</d-ign>PENDING   delegate0           UNKNOWN             0.00000 XTS             add test towhitelist for XMO                0.50000 XTS         <d-ign> ba32e0cd</d-ign>
+<d-ign>2014-06-20T14:41:20</d-ign>PENDING   delegate0           UNKNOWN             0.00000 XTS             add test to whitelist for XMO               0.50000 XTS         <d-ign> ba32e0cd</d-ign>
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> blockchain_get_asset XMO
@@ -227,7 +227,7 @@ Returns:
 default (unlocked) >>> wallet_uia_update_authority_permissions delegate0 XMO restricted_accounts false
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign>2014-06-20T14:41:40</d-ign>PENDING   delegate0           UNKNOWN             0.00000 XTS             remove restricted_accounts from active f... 0.50000 XTS         <d-ign> a680b5f6</d-ign>
+<d-ign>2014-06-20T14:41:30</d-ign>PENDING   delegate0           UNKNOWN             0.00000 XTS             remove restricted_accounts from authorit... 0.50000 XTS         <d-ign> 11ac04ca</d-ign>
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> blockchain_get_asset XMO

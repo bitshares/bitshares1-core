@@ -160,8 +160,10 @@ TOTAL                     QUANTITY                                     PRICE | P
 1,500.00 XMO              500.00000 XTS                               3. XMO | 2.9 XMO                                 100.00000 XTS                290.00 XMO
 default (unlocked) >>> blockchain_market_status XMO XTS
 {
-  "quote_id": 1,
-  "base_id": 0
+  "index": {
+    "quote_id": 1,
+    "base_id": 0
+  }
 }
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
@@ -215,8 +217,10 @@ TOTAL                     QUANTITY                                     PRICE | P
 1,200.00 XMO              400.00000 XTS                               3. XMO |
 default (unlocked) >>> blockchain_market_status XMO XTS
 {
-  "quote_id": 1,
-  "base_id": 0
+  "index": {
+    "quote_id": 1,
+    "base_id": 0
+  }
 }
 default (unlocked) >>> wallet_account_order_list
 [[
@@ -263,8 +267,10 @@ TOTAL                     QUANTITY                                     PRICE | P
 1,200.00 XMO              400.00000 XTS                               3. XMO | 3.1 XMO                                 100.00000 XTS                310.00 XMO
 default (unlocked) >>> blockchain_market_status XMO XTS
 {
-  "quote_id": 1,
-  "base_id": 0
+  "index": {
+    "quote_id": 1,
+    "base_id": 0
+  }
 }
 default (unlocked) >>> balance
 ACCOUNT                         BALANCE                     
