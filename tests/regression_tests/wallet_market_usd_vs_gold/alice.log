@@ -10980,8 +10980,10 @@ TOTAL                     QUANTITY                       INTEREST RATE (APR) | C
 Maximum Short Price: 0.02 USD / XTS     
 default (unlocked) >>> blockchain_market_status USD XTS
 {
-  "quote_id": 1,
-  "base_id": 0,
+  "index": {
+    "quote_id": 1,
+    "base_id": 0
+  },
   "current_feed_price": "0.02",
   "last_valid_feed_price": "0.02"
 }

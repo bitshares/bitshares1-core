@@ -397,21 +397,6 @@ namespace bts { namespace wallet {
                  const string& quote_symbol,
                  bool sign
                  );
-         /**
-          *  ie: submit_bid( 10 BTC at 600.34 USD per BTC )
-          *
-          *  Requires the user have 6003.4 USD
-          */
-         wallet_transaction_record sell(
-                 const string& from_account,
-                 const string& sell_quantity,
-                 const string& sell_quantity_symbol,
-                 const string& price_limit,
-                 const string& price_symbol,
-                 const string& relative_percent,
-                 bool allow_stupid,
-                 bool sign
-                 );
 
          /**
           *  ie: submit_ask( 10 BTC at 600.34 USD per BTC )

@@ -198,7 +198,6 @@ wallet_lock
 wallet_market_cancel_order <order_id> 
 wallet_market_cancel_orders <order_ids> 
 wallet_market_order_list <base_symbol> <quote_symbol> [limit] [account_name] 
-wallet_market_sell <from_account_name> <sell_quantity> <sell_quantity_symbol> [price_limit] [price_symbol] [relative_price] [allow_stupid] 
 wallet_market_submit_ask <from_account_name> <sell_quantity> <sell_quantity_symbol> <ask_price> <ask_price_symbol> [allow_stupid_ask] 
 wallet_market_submit_bid <from_account_name> <quantity> <quantity_symbol> <base_price> <base_symbol> [allow_stupid_bid] 
 wallet_market_submit_short <from_account_name> <short_collateral> <collateral_symbol> <interest_rate> <quote_symbol> [short_price_limit] 
