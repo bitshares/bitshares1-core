@@ -182,8 +182,10 @@ Returns:
   market_status
 default (unlocked) >>> blockchain_market_status XMO XTS
 {
-  "quote_id": 1,
-  "base_id": 0
+  "index": {
+    "quote_id": 1,
+    "base_id": 0
+  }
 }
 default (unlocked) >>> blockchain_unclaimed_genesis
 1,980,198,019.80100 XTS
