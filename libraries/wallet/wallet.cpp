@@ -1184,7 +1184,6 @@ namespace detail {
           my->_scheduled_lock_time = new_lock_time;
           ilog( "Wallet unlocked at time: ${t}", ("t", fc::time_point_sec(now)) );
           my->reschedule_relocker();
-          wallet_lock_state_changed( false );
           ilog( "Wallet unlocked until time: ${t}", ("t", fc::time_point_sec(*my->_scheduled_lock_time)) );
 
           my->scan_accounts();
@@ -1240,7 +1239,6 @@ namespace detail {
       my->_wallet_password = fc::sha512();
       my->_scheduled_lock_time = fc::optional<fc::time_point>();
 
-      wallet_lock_state_changed( true );
       ilog( "Wallet locked at time: ${t}", ("t",blockchain::now()) );
    }
 
