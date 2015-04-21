@@ -105,7 +105,6 @@ void wallet_impl::scan_market_transaction(
                     entry.amount = mtrx.bid_paid;
                     entry.memo = "short proceeds @ " + _blockchain->to_pretty_price( mtrx.bid_index.order_price );
                     record.ledger_entries.push_back( entry );
-                    self->update_margin_position( entry );
                 }
             }
             else /* Automatic market cancel */
