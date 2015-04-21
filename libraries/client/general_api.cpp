@@ -198,7 +198,13 @@ fc::variants client_impl::batch_authenticated( const std::string& method_name,
    fc::variants result;
    for ( auto parameters : parameters_list )
    {
-      result.push_back( _self->get_rpc_server()->direct_invoke_method( method_name, parameters) );
+      try {
+          result.push_back( _self->get_rpc_server()->direct_invoke_method( method_name, parameters) );
+      } catch (const fc::exception& e) {
+          fc::mutable_variant_object resp;
+          resp["error"] = e;
+          result.push_back( resp );
+      }
    }
    return result;
 }

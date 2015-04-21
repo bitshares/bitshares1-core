@@ -43,7 +43,7 @@ public:
       virtual void log( const fc::log_message& m ) override
       {
          if (!_thread->is_current())
-            return _thread->async([&](){ log(m); }, "user_appender::log").wait();
+            return _thread->async([=](){ log(m); }, "user_appender::log").wait();
 
          string format = m.get_format();
          // lookup translation on format here
@@ -67,14 +67,14 @@ public:
       vector<string> get_history()const
       {
          if (!_thread->is_current())
-            return _thread->async([&](){ return get_history(); }, "user_appender::get_history").wait();
+            return _thread->async([=](){ return get_history(); }, "user_appender::get_history").wait();
          return _history;
       }
 
       void clear_history()
       {
          if (!_thread->is_current())
-            return _thread->async([&](){ return clear_history(); }, "user_appender::clear_history").wait();
+            return _thread->async([=](){ return clear_history(); }, "user_appender::clear_history").wait();
          _history.clear();
       }
 

@@ -43,12 +43,8 @@ namespace bts { namespace wallet {
          void initialize_transaction_creator( transaction_creation_state& c, const string& account_name );
          void sign_transaction_creator( transaction_creation_state& c );
 
-         //Emitted when wallet is locked or unlocked. Argument is true if wallet is now locked; false otherwise.
-         fc::signal<void( bool )>  wallet_lock_state_changed;
          //Emitted when wallet claims a new transaction. Argument is new ledger entry.
          fc::signal<void( ledger_entry )> wallet_claimed_transaction;
-         //Emitted when someone (partially or fully) fills your short, thereby giving you a margin position
-         fc::signal<void( ledger_entry )> update_margin_position;
 
          /**
           *  Wallet File Management

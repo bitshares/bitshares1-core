@@ -527,6 +527,35 @@ namespace detail {
                }
            }
 
+           if( current_version < 112 )
+           {
+               // Needs to go after 110 which required unlocking
+               const function<void( void )> clean_accounts = [ & ]()
+               {
+                   vector<wallet_account_record> accounts_to_delete;
+
+                   const auto& accounts = _wallet_db.get_accounts();
+                   for( const auto& item : accounts )
+                   {
+                       const wallet_account_record& account = item.second;
+                       bool is_my_account = false;
+
+                       const auto check_key = [ & ]( const public_key_type& key )
+                       {
+                           is_my_account |= _wallet_db.has_private_key( address( key ) );
+                       };
+                       account.scan_public_keys( check_key );
+
+                       if( !is_my_account )
+                           accounts_to_delete.push_back( account );
+                   }
+
+                   for( const wallet_account_record& account : accounts_to_delete )
+                       _wallet_db.remove_account( account.owner_address() );
+               };
+               _unlocked_upgrade_tasks.push_back( clean_accounts );
+           }
+
            if( _unlocked_upgrade_tasks.empty() )
            {
                self->set_version( BTS_WALLET_VERSION );
@@ -1184,7 +1213,6 @@ namespace detail {
           my->_scheduled_lock_time = new_lock_time;
           ilog( "Wallet unlocked at time: ${t}", ("t", fc::time_point_sec(now)) );
           my->reschedule_relocker();
-          wallet_lock_state_changed( false );
           ilog( "Wallet unlocked until time: ${t}", ("t", fc::time_point_sec(*my->_scheduled_lock_time)) );
 
           my->scan_accounts();
@@ -1240,7 +1268,6 @@ namespace detail {
       my->_wallet_password = fc::sha512();
       my->_scheduled_lock_time = fc::optional<fc::time_point>();
 
-      wallet_lock_state_changed( true );
       ilog( "Wallet locked at time: ${t}", ("t",blockchain::now()) );
    }
 
