@@ -520,25 +520,7 @@ namespace bts { namespace wallet {
 
        store_and_reload_record( *account_record );
 
-       set<public_key_type> account_public_keys;
-       account_public_keys.insert( account_record->owner_key );
-       for( const auto& active_key_item : account_record->active_key_history )
-       {
-           const public_key_type& active_key = active_key_item.second;
-           if( active_key == public_key_type() ) continue;
-           account_public_keys.insert( active_key );
-       }
-       if( account.is_delegate() )
-       {
-           for( const auto& item : account.delegate_info->signing_key_history )
-           {
-               const public_key_type& signing_key = item.second;
-               if( signing_key == public_key_type() ) continue;
-               account_public_keys.insert( signing_key );
-           }
-       }
-
-       for( const public_key_type& account_public_key : account_public_keys )
+       const auto index_key = [ & ]( const public_key_type& account_public_key )
        {
            const address account_address = address( account_public_key );
            owallet_key_record key_record = lookup_key( account_address );
@@ -557,7 +539,8 @@ namespace bts { namespace wallet {
                    store_key( *key_record );
                }
            }
-       }
+       };
+       account_record->scan_public_keys( index_key );
 
        return *account_record;
    } FC_CAPTURE_AND_RETHROW( (account) ) }
@@ -577,26 +560,20 @@ namespace bts { namespace wallet {
        return *account_record;
    } FC_CAPTURE_AND_RETHROW( (blockchain_account_record) ) }
 
-   owallet_account_record wallet_db::remove_account( const address& account_address )
+   void wallet_db::remove_account( const wallet_account_record& record )
    { try {
        FC_ASSERT( is_open() );
 
-       owallet_account_record record = lookup_account( account_address );
-       if( record.valid() )
+       account_id_to_wallet_record_index.erase( record.id );
+       name_to_account_wallet_record_index.erase( record.name );
+       const auto unindex_key = [ & ]( const public_key_type& key )
        {
-           account_id_to_wallet_record_index.erase( record->id );
-           name_to_account_wallet_record_index.erase( record->name );
-           const auto unindex_key = [ & ]( const public_key_type& key )
-           {
-               address_to_account_wallet_record_index.erase( address( key ) );
-           };
-           record->scan_public_keys( unindex_key );
-           accounts.erase( record->wallet_record_index );
-           remove_item( record->wallet_record_index );
-       }
-
-       return record;
-   } FC_CAPTURE_AND_RETHROW( (account_address) ) }
+           address_to_account_wallet_record_index.erase( address( key ) );
+       };
+       record.scan_public_keys( unindex_key );
+       accounts.erase( record.wallet_record_index );
+       remove_item( record.wallet_record_index );
+   } FC_CAPTURE_AND_RETHROW( (record) ) }
 
    owallet_key_record wallet_db::lookup_key( const address& derived_address )const
    { try {

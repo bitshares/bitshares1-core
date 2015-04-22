@@ -431,69 +431,6 @@ namespace detail {
                self->set_transaction_expiration( BTS_WALLET_DEFAULT_TRANSACTION_EXPIRATION_SEC );
            }
 
-           if( current_version < 107 )
-           {
-               const auto items = _wallet_db.get_transactions();
-               for( const auto& item : items )
-               {
-                   const auto id = item.first;
-                   const auto trx_rec = item.second;
-                   if( trx_rec.is_virtual && trx_rec.is_market && trx_rec.block_num == 554801 )
-                       _wallet_db.remove_transaction( id );
-               }
-           }
-
-           if( current_version < 110 )
-           {
-               const function<void( void )> repair = [ & ]()
-               {
-                   _wallet_db.repair_records( _wallet_password );
-               };
-               _unlocked_upgrade_tasks.push_back( repair );
-
-               const function<void( void )> split_accounts = [ & ]()
-               {
-                   unordered_map<address, wallet_account_record> contacts;
-
-                   const auto& accounts = _wallet_db.get_accounts();
-                   for( const auto& item : accounts )
-                   {
-                       const wallet_account_record& account = item.second;
-
-                       if( account.approved != 0 )
-                       {
-                           approval_data approval;
-                           approval.name = account.name;
-                           approval.approval = account.approved;
-                           _wallet_db.store_approval( approval );
-                       }
-
-                       contacts[ account.owner_address() ] = account;
-                   }
-
-                   const auto& keys = _wallet_db.get_keys();
-                   for( const auto& item : keys )
-                   {
-                       const wallet_key_record& key = item.second;
-                       contacts.erase( key.account_address );
-                   }
-
-                   for( const auto& item : contacts )
-                   {
-                       const address& account_address = item.first;
-                       const wallet_account_record& account = item.second;
-
-                       if( _blockchain->get_account_record( account.name ).valid() )
-                           _wallet_db.store_contact( contact_data( account.name ) );
-                       else if( !account.is_retracted() )
-                           _wallet_db.store_contact( contact_data( account.active_key() ) );
-
-                       _wallet_db.remove_account( account_address );
-                   }
-               };
-               _unlocked_upgrade_tasks.push_back( split_accounts );
-           }
-
            if( current_version < 111 )
            {
                /* Check for old index format market order virtual transactions */
@@ -527,31 +464,65 @@ namespace detail {
                }
            }
 
-           if( current_version < 112 )
+           if( current_version < 113 )
            {
-               // Needs to go after 110 which required unlocking
                const function<void( void )> clean_accounts = [ & ]()
                {
-                   vector<wallet_account_record> accounts_to_delete;
+                   _wallet_db.repair_records( _wallet_password );
+
+                   unordered_map<address, wallet_account_record> contacts;
 
                    const auto& accounts = _wallet_db.get_accounts();
                    for( const auto& item : accounts )
                    {
-                       const wallet_account_record& account = item.second;
-                       bool is_my_account = false;
-
-                       const auto check_key = [ & ]( const public_key_type& key )
+                       try
                        {
-                           is_my_account |= _wallet_db.has_private_key( address( key ) );
-                       };
-                       account.scan_public_keys( check_key );
+                           const wallet_account_record& account = item.second;
 
-                       if( !is_my_account )
-                           accounts_to_delete.push_back( account );
+                           if( account.approved != 0 )
+                           {
+                               approval_data approval;
+                               approval.name = account.name;
+                               approval.approval = account.approved;
+                               _wallet_db.store_approval( approval );
+                           }
+
+                           const auto check_key = [ & ]( const public_key_type& key )
+                           {
+                               try
+                               {
+                                   if( self->get_private_key( address( key ) ) != private_key_type() )
+                                       return;
+                               }
+                               catch( ... )
+                               {
+                               }
+                               contacts[ account.owner_address() ] = account;
+                           };
+                           account.scan_public_keys( check_key );
+                       }
+                       catch( ... )
+                       {
+                       }
                    }
 
-                   for( const wallet_account_record& account : accounts_to_delete )
-                       _wallet_db.remove_account( account.owner_address() );
+                   for( const auto& item : contacts )
+                   {
+                       try
+                       {
+                           const wallet_account_record& account = item.second;
+
+                           if( _blockchain->get_account_record( account.name ).valid() )
+                               _wallet_db.store_contact( contact_data( account.name ) );
+                           else if( !account.is_retracted() )
+                               _wallet_db.store_contact( contact_data( account.active_key() ) );
+
+                           _wallet_db.remove_account( account );
+                       }
+                       catch( ... )
+                       {
+                       }
+                   }
                };
                _unlocked_upgrade_tasks.push_back( clean_accounts );
            }
