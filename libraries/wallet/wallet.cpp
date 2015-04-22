@@ -3204,7 +3204,7 @@ namespace detail {
 
       trx.withdraw( balance_id, balance.amount );
 
-      const string memo = "retract balance " + string( balance_id );
+      const string memo = "retract balance";
 
       const public_key_type recipient_key = my->deposit_from_transaction( trx,
                                                                           balance,
