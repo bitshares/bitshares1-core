@@ -65,7 +65,8 @@ namespace detail {
 
       const account_balance_record_summary_type balance_records = self->get_spendable_account_balance_records( from_account_name );
       if( balance_records.find( from_account_name ) == balance_records.end() )
-         FC_CAPTURE_AND_THROW( insufficient_funds, (from_account_name)(amount_to_withdraw)(balance_records) );
+          FC_CAPTURE_AND_THROW( insufficient_funds, (from_account_name)(amount_to_withdraw)(balance_records) );
+
       for( const auto& record : balance_records.at( from_account_name ) )
       {
           const asset balance = record.get_spendable_balance( _blockchain->get_pending_state()->now() );
@@ -2782,18 +2783,28 @@ namespace detail {
       const oasset_record asset_record = my->_blockchain->get_asset_record( amount.asset_id );
       FC_ASSERT( asset_record.valid() );
 
-      const asset required_fees = asset_record->is_user_issued() ? get_transaction_fee() : get_transaction_fee( amount.asset_id );
+      asset required_fees = asset_record->is_user_issued() ? get_transaction_fee() : get_transaction_fee( amount.asset_id );
 
       const asset withdrawal_fee = asset( asset_record->withdrawal_fee, amount.asset_id );
 
       if( required_fees.asset_id == amount.asset_id )
       {
-          my->withdraw_to_transaction( amount + withdrawal_fee + required_fees,
-                                       sender_account->name,
-                                       trx,
-                                       required_signatures );
+          try
+          {
+              my->withdraw_to_transaction( amount + withdrawal_fee + required_fees,
+                                           sender_account->name,
+                                           trx,
+                                           required_signatures );
+          }
+          catch( const bts::wallet::insufficient_funds& )
+          {
+              if( !asset_record->is_market_issued() ) throw;
+              trx.operations.clear();
+              required_fees = get_transaction_fee();
+          }
       }
-      else
+
+      if( required_fees.asset_id != amount.asset_id )
       {
           my->withdraw_to_transaction( amount + withdrawal_fee,
                                        sender_account->name,
@@ -3336,7 +3347,7 @@ namespace detail {
 
       trx.withdraw( balance_id, balance.amount );
 
-      const string memo = "retract balance " + string( balance_id );
+      const string memo = "retract balance";
 
       const public_key_type recipient_key = my->deposit_from_transaction( trx,
                                                                           balance,
@@ -3725,6 +3736,7 @@ namespace detail {
           {
               fee += fee + fee;
               fee = fee * *feed_price;
+              fee.amount = std::max( share_type( 1 ), fee.amount );
           }
       }
 
