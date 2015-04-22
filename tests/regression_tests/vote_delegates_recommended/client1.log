@@ -23,13 +23,7 @@ default (unlocked) >>> wallet_approve mydelegate 1
 default (unlocked) >>> wallet_list_accounts
 NAME (* delegate)                  KEY                                                             REGISTERED            BLOCK PRODUCTION ENABLED 
 account1                           XTS6HYcXm4FzwXbSx9vPVugZ6dQM7a4Adcam5JM3RgrRiZuduMHim           NO                    N/A                      
-default (unlocked) >>> debug_advance_time 1 blocks
-OK
-default (unlocked) >>> debug_wait 2
-OK
-default (unlocked) >>> debug_advance_time 1 blocks
-OK
-default (unlocked) >>> debug_wait 2
+default (unlocked) >>> debug_wait_for_block_by_number 8
 OK
 default (unlocked) >>> help blockchain_get_slate
 Usage:
@@ -71,28 +65,20 @@ default (unlocked) >>> wallet_transfer 100 XTS account1 account0 "vote all" "vot
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 <d-ign></d-ign>PENDING   account1            account0            100.00000 XTS           vote all                                    0.50000 XTS         <d-ign></d-ign>
-default (unlocked) >>> debug_advance_time 1 blocks
-OK
-default (unlocked) >>> debug_wait 2
-OK
-default (unlocked) >>> debug_advance_time 1 blocks
-OK
-default (unlocked) >>> debug_wait 2
+default (unlocked) >>> debug_wait_for_block_by_number 10
 OK
 default (unlocked) >>> wallet_transfer 100 XTS account1 account0 "vote recommended" "vote_recommended"
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 <d-ign></d-ign>PENDING   account1            account0            100.00000 XTS           vote recommended                            0.50000 XTS         <d-ign></d-ign>
-default (unlocked) >>> debug_advance_time 1 blocks
-OK
-default (unlocked) >>> debug_wait 2
-OK
-default (unlocked) >>> debug_advance_time 1 blocks
+default (unlocked) >>> debug_wait_for_block_by_number 12
 OK
 default (unlocked) >>> wallet_account_balance account1
 ACCOUNT                         BALANCE                     
 ============================================================
 account1                        1,798.50000 XTS             
+default (unlocked) >>> blockchain_get_block_count
+13
 default (unlocked) >>> debug_wait_for_block_by_number 15
 OK
 default (unlocked) >>> blockchain_get_slate mydelegate
@@ -117,13 +103,7 @@ default (unlocked) >>> wallet_transfer 100 XTS account1 account0 "vote recommend
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 <d-ign></d-ign>PENDING   account1            account0            100.00000 XTS           vote recommended #2                         0.50000 XTS         <d-ign></d-ign>
-default (unlocked) >>> debug_advance_time 1 blocks
-OK
-default (unlocked) >>> debug_wait 2
-OK
-default (unlocked) >>> debug_advance_time 1 blocks
-OK
-default (unlocked) >>> debug_wait 2
+default (unlocked) >>> debug_wait_for_block_by_number 18
 OK
 default (unlocked) >>> wallet_account_balance account1
 ACCOUNT                         BALANCE                     
