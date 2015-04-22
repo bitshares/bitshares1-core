@@ -3593,6 +3593,7 @@ namespace detail {
           {
               fee += fee + fee;
               fee = fee * *feed_price;
+              fee.amount = std::max( share_type( 1 ), fee.amount );
           }
       }
 
