@@ -96,8 +96,7 @@ public:
       _connection_count_notification_interval(fc::minutes(5)),
       _connection_count_always_notify_threshold(5),
       _connection_count_last_value_displayed(0),
-      _blockchain_synopsis_size_limit((unsigned)(log2(BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * 20))),
-      _debug_last_wait_block(0)
+      _blockchain_synopsis_size_limit((unsigned)(log2(BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * 20)))
    {
       try
       {
@@ -265,8 +264,8 @@ public:
 
    fc::future<void>                                        _client_done;
 
-   uint32_t                                                _debug_last_wait_block;
-   uint32_t                                                _debug_stop_before_block_num;
+   uint32_t                                                _debug_last_wait_block = 0;
+   uint32_t                                                _debug_stop_before_block_num = 0;
 
    void wallet_http_callback( const string& url, const ledger_entry& e );
    boost::signals2::scoped_connection   _http_callback_signal_connection;
