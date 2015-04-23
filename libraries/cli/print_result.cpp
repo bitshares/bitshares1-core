@@ -1034,14 +1034,24 @@ namespace bts { namespace cli {
       return;
     }
 
+    const string& quote_symbol = arguments[ 0 ].as_string();
+    const oasset_record quote_asset_record = client->get_chain()->get_asset_record( quote_symbol );
+    FC_ASSERT( quote_asset_record.valid() );
+    const asset_id_type quote_id = quote_asset_record->id;
+
+    const string& base_symbol = arguments[ 1 ].as_string();
+    const oasset_record base_asset_record = client->get_chain()->get_asset_record( base_symbol );
+    FC_ASSERT( base_asset_record.valid() );
+    const asset_id_type base_id = base_asset_record->id;
+
     out << std::setw(20) << "TIME"
       << std::setw(20) << "HIGHEST BID"
       << std::setw(20) << "LOWEST ASK"
       << std::setw(20) << "OPENING PRICE"
       << std::setw(20) << "CLOSING PRICE"
-      << std::setw(20) << "BASE VOLUME"
-      << std::setw(20) << "QUOTE VOLUME"
-      << "\n" << std::string(140, '-') << "\n";
+      << std::setw(30) << "BASE VOLUME"
+      << std::setw(30) << "QUOTE VOLUME"
+      << "\n" << std::string(160, '-') << "\n";
 
     for(const auto& point : points)
     {
@@ -1050,8 +1060,8 @@ namespace bts { namespace cli {
         << std::setw(20) << point.lowest_ask
         << std::setw(20) << point.opening_price
         << std::setw(20) << point.closing_price
-        << std::setw(20) << client->get_chain()->to_pretty_asset(asset(point.base_volume))
-        << std::setw(20) << client->get_chain()->to_pretty_asset(asset(point.quote_volume));
+        << std::setw(30) << client->get_chain()->to_pretty_asset(asset(point.base_volume, base_id))
+        << std::setw(30) << client->get_chain()->to_pretty_asset(asset(point.quote_volume, quote_id));
       out << "\n";
     }
   }

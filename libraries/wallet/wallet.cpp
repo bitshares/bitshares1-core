@@ -2689,74 +2689,6 @@ namespace detail {
        return my->get_new_public_key( account_name );
    }
 
-   address wallet::create_new_address( const string& account_name, const string& label )
-   {
-       FC_ASSERT( is_open() );
-       FC_ASSERT( is_unlocked() );
-       auto addr = my->get_new_address( account_name, label );
-       return addr;
-   }
-
-   void wallet::set_address_label( const address& addr, const string& label )
-   {
-       FC_ASSERT(false, "This doesn't do anything right now.");
-       FC_ASSERT( is_open() );
-       FC_ASSERT( is_unlocked() );
-       auto okey = my->_wallet_db.lookup_key( addr );
-       FC_ASSERT( okey.valid(), "No such address." );
-       //FC_ASSERT( okey->btc_data.valid(), "Trying to set a label for a TITAN address." );
-       //okey->btc_data->label = label;
-       my->_wallet_db.store_key( *okey );
-   }
-
-   string wallet::get_address_label( const address& addr )
-   {
-       FC_ASSERT(false, "This doesn't do anything right now.");
-       FC_ASSERT( is_open() );
-       FC_ASSERT( is_unlocked() );
-       auto okey = my->_wallet_db.lookup_key( addr );
-       //FC_ASSERT( okey.valid(), "No such address." );
-       //FC_ASSERT( okey->btc_data.valid(), "This address has no label (it is a TITAN address)!" );
-       //return okey->btc_data->label;
-       return "";
-   }
-
-   void wallet::set_address_group_label( const address& addr, const string& group_label )
-   {
-       FC_ASSERT(false, "This doesn't do anything right now.");
-       FC_ASSERT( is_open() );
-       FC_ASSERT( is_unlocked() );
-       auto okey = my->_wallet_db.lookup_key( addr );
-       FC_ASSERT( okey.valid(), "No such address." );
-       //FC_ASSERT( okey->btc_data.valid(), "Trying to set a group label for a TITAN address" );
-       //okey->btc_data->group_label = group_label;
-       my->_wallet_db.store_key( *okey );
-   }
-
-   string wallet::get_address_group_label( const address& addr )
-   {
-       FC_ASSERT(false, "This doesn't do anything right now.");
-       FC_ASSERT( is_open() );
-       FC_ASSERT( is_unlocked() );
-       auto okey = my->_wallet_db.lookup_key( addr );
-       FC_ASSERT( okey.valid(), "No such address." );
-       //FC_ASSERT( okey->btc_data.valid(), "This address has no group label (it is a TITAN address)!" );
-       return ""; //return okey->btc_data->group_label;
-   }
-
-   vector<address> wallet::get_addresses_for_group_label( const string& group_label )
-   {
-       FC_ASSERT(false, "This doesn't do anything right now.");
-       vector<address> addrs;
-       for( auto item : my->_wallet_db.get_keys() )
-       {
-           auto key = item.second;
-           //if( key.btc_data.valid() && key.btc_data->group_label == group_label )
-               addrs.push_back( item.first );
-       }
-       return addrs;
-   }
-
    wallet_transaction_record wallet::transfer(
            const asset& amount,
            const string& sender_account_name,
@@ -2783,35 +2715,40 @@ namespace detail {
       const oasset_record asset_record = my->_blockchain->get_asset_record( amount.asset_id );
       FC_ASSERT( asset_record.valid() );
 
-      asset required_fees = asset_record->is_user_issued() ? get_transaction_fee() : get_transaction_fee( amount.asset_id );
-
+      asset required_fees;
       const asset withdrawal_fee = asset( asset_record->withdrawal_fee, amount.asset_id );
 
-      if( required_fees.asset_id == amount.asset_id )
+      if( amount.asset_id != asset_id_type( 0 ) )
       {
           try
           {
-              my->withdraw_to_transaction( amount + withdrawal_fee + required_fees,
+              my->withdraw_to_transaction( amount + withdrawal_fee,
+                                           sender_account->name,
+                                           trx,
+                                           required_signatures );
+
+              // Always default to paying fee in core asset
+              required_fees = get_transaction_fee( 0 );
+
+              my->withdraw_to_transaction( required_fees,
                                            sender_account->name,
                                            trx,
                                            required_signatures );
           }
           catch( const bts::wallet::insufficient_funds& )
           {
+              // Can only escape if fee is insufficient and can be paid via MIA
               if( !asset_record->is_market_issued() ) throw;
               trx.operations.clear();
-              required_fees = get_transaction_fee();
           }
       }
 
-      if( required_fees.asset_id != amount.asset_id )
+      if( trx.operations.empty() )
       {
-          my->withdraw_to_transaction( amount + withdrawal_fee,
-                                       sender_account->name,
-                                       trx,
-                                       required_signatures );
+          required_fees = get_transaction_fee( amount.asset_id );
+          FC_ASSERT( required_fees.asset_id == amount.asset_id );
 
-          my->withdraw_to_transaction( required_fees,
+          my->withdraw_to_transaction( amount + withdrawal_fee + required_fees,
                                        sender_account->name,
                                        trx,
                                        required_signatures );
