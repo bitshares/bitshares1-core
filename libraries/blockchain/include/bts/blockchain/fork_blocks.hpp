@@ -52,7 +52,7 @@
                                     ((BTS_V0_5_0_FORK_BLOCK_NUM,   "0.5.0",     1421277141)) \
                                     ((BTS_V0_6_0_FORK_BLOCK_NUM,   "0.6.0",     1423270749)) \
                                     ((BTS_V0_7_0_FORK_BLOCK_NUM,   "0.7.0",     1426625439)) \
-                                    ((BTS_V0_9_0_FORK_BLOCK_NUM,   "0.9.0",     1429558848))
+                                    ((BTS_V0_9_0_FORK_BLOCK_NUM,   "0.9.0",     1429817484))
                                     //((BTS_V0_8_0_FORK_BLOCK_NUM,   "0.8.0",     1427147320))
 
 namespace bts { namespace blockchain {
