@@ -1046,9 +1046,9 @@ namespace bts { namespace cli {
       << std::setw(20) << "LOWEST ASK"
       << std::setw(20) << "OPENING PRICE"
       << std::setw(20) << "CLOSING PRICE"
-      << std::setw(20) << "BASE VOLUME"
-      << std::setw(20) << "QUOTE VOLUME"
-      << "\n" << std::string(140, '-') << "\n";
+      << std::setw(30) << "BASE VOLUME"
+      << std::setw(30) << "QUOTE VOLUME"
+      << "\n" << std::string(160, '-') << "\n";
 
     for(const auto& point : points)
     {
@@ -1057,8 +1057,8 @@ namespace bts { namespace cli {
         << std::setw(20) << point.lowest_ask
         << std::setw(20) << point.opening_price
         << std::setw(20) << point.closing_price
-        << std::setw(20) << client->get_chain()->to_pretty_asset(asset(point.base_volume, base_id))
-        << std::setw(20) << client->get_chain()->to_pretty_asset(asset(point.quote_volume, quote_id));
+        << std::setw(30) << client->get_chain()->to_pretty_asset(asset(point.base_volume, base_id))
+        << std::setw(30) << client->get_chain()->to_pretty_asset(asset(point.quote_volume, quote_id));
       out << "\n";
     }
   }
