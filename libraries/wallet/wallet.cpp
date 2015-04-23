@@ -2583,35 +2583,40 @@ namespace detail {
       const oasset_record asset_record = my->_blockchain->get_asset_record( amount.asset_id );
       FC_ASSERT( asset_record.valid() );
 
-      asset required_fees = asset_record->is_user_issued() ? get_transaction_fee() : get_transaction_fee( amount.asset_id );
-
+      asset required_fees;
       const asset withdrawal_fee = asset( asset_record->withdrawal_fee, amount.asset_id );
 
-      if( required_fees.asset_id == amount.asset_id )
+      if( amount.asset_id != asset_id_type( 0 ) )
       {
           try
           {
-              my->withdraw_to_transaction( amount + withdrawal_fee + required_fees,
+              my->withdraw_to_transaction( amount + withdrawal_fee,
+                                           sender_account->name,
+                                           trx,
+                                           required_signatures );
+
+              // Always default to paying fee in core asset
+              required_fees = get_transaction_fee( 0 );
+
+              my->withdraw_to_transaction( required_fees,
                                            sender_account->name,
                                            trx,
                                            required_signatures );
           }
           catch( const bts::wallet::insufficient_funds& )
           {
+              // Can only escape if fee is insufficient and can be paid via MIA
               if( !asset_record->is_market_issued() ) throw;
               trx.operations.clear();
-              required_fees = get_transaction_fee();
           }
       }
 
-      if( required_fees.asset_id != amount.asset_id )
+      if( trx.operations.empty() )
       {
-          my->withdraw_to_transaction( amount + withdrawal_fee,
-                                       sender_account->name,
-                                       trx,
-                                       required_signatures );
+          required_fees = get_transaction_fee( amount.asset_id );
+          FC_ASSERT( required_fees.asset_id == amount.asset_id );
 
-          my->withdraw_to_transaction( required_fees,
+          my->withdraw_to_transaction( amount + withdrawal_fee + required_fees,
                                        sender_account->name,
                                        trx,
                                        required_signatures );
