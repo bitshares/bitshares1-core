@@ -217,13 +217,6 @@ namespace bts { namespace wallet {
                                                     bool create_account = false );
 
          public_key_type    get_new_public_key( const string& account_name );
-         address            create_new_address( const string& account_name, const string& label = "");
-
-         void               set_address_label( const address& addr, const string& label );
-         string             get_address_label( const address& addr );
-         void               set_address_group_label( const address& addr, const string& group_label );
-         string             get_address_group_label( const address& addr );
-         vector<address>    get_addresses_for_group_label( const string& group_label );
 
          ///@}
 
