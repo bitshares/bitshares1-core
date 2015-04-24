@@ -18,6 +18,12 @@ string pretty_line( int size, char c )
 
 string pretty_shorten( const string& str, size_t max_size )
 {
+    if( FILTER_OUTPUT_FOR_TESTS && str.find( "publish version" ) != string::npos )
+    {
+        std::size_t start = str.find( "dryrun" );
+        if( start != string::npos )
+            return str.substr( 0, start ) + "<d-ign>" + str.substr( start ) + "</d-ign>";
+    }
     if( str.size() > max_size )
         return str.substr( 0, max_size - 3 ) + "...";
     return str;
