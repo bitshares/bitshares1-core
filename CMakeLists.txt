@@ -66,6 +66,7 @@ LIST(APPEND BOOST_COMPONENTS thread
                              unit_test_framework
                              context
                              locale)
+SET( Boost_USE_STATIC_LIBS ON CACHE STRING "ON or OFF" )
 
 IF( WIN32 )
   SET(BOOST_ROOT $ENV{BOOST_ROOT})
