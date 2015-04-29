@@ -1,5 +1,5 @@
 #include <bts/blockchain/time.hpp>
-#include <bts/db/level_map.hpp>
+#include <bts/db/cached_level_map.hpp>
 #include <bts/wallet/exceptions.hpp>
 #include <bts/wallet/wallet_db.hpp>
 
@@ -16,7 +16,7 @@ namespace bts { namespace wallet {
      {
         public:
            wallet_db*                                        self = nullptr;
-           bts::db::level_map<int32_t,generic_wallet_record> _records;
+           bts::db::cached_level_map<int32_t,generic_wallet_record> _records;
 
            void store_and_reload_generic_record( const generic_wallet_record& record, const bool sync )
            { try {
@@ -858,6 +858,9 @@ namespace bts { namespace wallet {
        for( auto iter = my->_records.begin(); iter.valid(); ++iter )
            records.push_back( iter.value() );
 
+       // disable write_through
+       my->_records.set_write_through( false );
+
        // Repair key_data.account_address when possible
        uint32_t count = 0;
        for( generic_wallet_record& record : records )
@@ -869,12 +872,23 @@ namespace bts { namespace wallet {
                    std::cout << "\rRepairing account record " << std::to_string( ++count ) << std::flush;
                    wallet_account_record account_record = record.as<wallet_account_record>();
                    store_account( account_record );
+                   if( count % 200 == 0 )
+                   {
+                       my->_records.set_write_through( true );
+                       my->_records.set_write_through( false );
+                   }
                }
            }
            catch( const fc::exception& )
            {
            }
        }
+
+       my->_records.set_write_through( true );
+       my->_records.set_write_through( false );
+
+       // set _sync_on_write to true for key records
+       my->_records.set_sync_on_write( true );
 
        // Repair key_data.public_key when I have the private key and remove if I don't have the private key
        count = 0;
@@ -916,12 +930,23 @@ namespace bts { namespace wallet {
                        continue;
                    }
                    store_key( key_record );
+                   if( count % 200 == 0 )
+                   {
+                       my->_records.set_write_through( true );
+                       my->_records.set_write_through( false );
+                   }
                }
            }
            catch( const fc::exception& )
            {
            }
        }
+
+       my->_records.set_write_through( true );
+       my->_records.set_write_through( false );
+
+       // set _sync_on_write to false for other records
+       my->_records.set_sync_on_write( false );
 
        // Repair transaction_data.record_id
        count = 0;
@@ -946,12 +971,21 @@ namespace bts { namespace wallet {
                        }
                    }
                    store_transaction( transaction_record );
+                   if( count % 200 == 0 )
+                   {
+                       my->_records.set_write_through( true );
+                       my->_records.set_write_through( false );
+                   }
                }
            }
            catch( const fc::exception& )
            {
            }
        }
+
+       // enable write_through
+       my->_records.set_write_through( true );
+
        std::cout << "\rWallet records repaired.                                  " << std::flush << "\n";
    } FC_CAPTURE_AND_RETHROW() }
 
