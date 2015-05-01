@@ -67,6 +67,7 @@ namespace bts { namespace rpc {
          bool                                              _cache_enabled = true;
          fc::time_point                                    _last_cache_clear_time;
          std::unordered_map<string,string>                 _call_cache;
+         std::set<string>                                  _whitelist;
 
          typedef std::map<std::string, bts::api::method_data> method_map_type;
          method_map_type _method_map;
@@ -308,6 +309,11 @@ namespace bts { namespace rpc {
              fc_ilog( fc::logger::get("rpc"), "Completed ${path} ${status} in ${ms}ms", ("path",r.path)("status",(int)status)("ms",(end_time - begin_time).count()/1000));
          }
 
+         void check_whitelist( const std::string& method ) {
+             if ( _whitelist.empty() ) { return; }
+             FC_ASSERT( _whitelist.find( method ) != _whitelist.end() );
+         }
+
          /** Assures that if the request path is either /req or
           *  /safebot/whatever, or of the form /req/something where
           *  something == method.
@@ -358,6 +364,7 @@ namespace bts { namespace rpc {
                 try {
                    auto rpc_call = fc::json::from_string( str ).get_object();
                    method_name = rpc_call["method"].as_string();
+                   check_whitelist( method_name );
                    auto params = rpc_call["params"].get_array();
                    validate_request_path( r.path, method_name, params );
 
@@ -549,7 +556,12 @@ namespace bts { namespace rpc {
 
             // the login method is a special case that is only used for raw json connections
             // (not for the CLI or HTTP(s) json rpc)
-            con->add_method("login", boost::bind(&rpc_server_impl::login, this, capture_con, _1));
+            try
+            {
+              check_whitelist( "login" );
+              con->add_method("login", boost::bind(&rpc_server_impl::login, this, capture_con, _1));
+            }
+            catch ( fc::assert_exception skip ) {}
             for (const method_map_type::value_type& method : _method_map)
             {
               if (method.second.method)
@@ -557,13 +569,35 @@ namespace bts { namespace rpc {
                 // old method using old registration system
                 auto bind_method = boost::bind(&rpc_server_impl::dispatch_method_from_json_connection,
                                                           this, capture_con, method.second, _1);
-                con->add_method(method.first, bind_method);
-                for ( auto alias : method.second.aliases )
+                try
+                {
+                  check_whitelist( method.first );
+                  con->add_method(method.first, bind_method);
+                  for ( const auto& alias : method.second.aliases )
                     con->add_method(alias, bind_method);
+                }
+                catch ( fc::assert_exception skip ) {}
               }
             }
 
             register_common_api_methods(con);
+            // FIXME: this assumes that reg_com_api_met only registers methods
+            // that are also in _method_map. That sucks.
+            for (const method_map_type::value_type& method : _method_map)
+            {
+              try
+              {
+                check_whitelist( method.first );
+              }
+              catch ( fc::assert_exception remove )
+              {
+                con->remove_method( method.first );
+                for ( const auto& alias : method.second.aliases )
+                {
+                  con->remove_method( alias );
+                }
+              }
+            }
          } // register methods
 
         fc::variant dispatch_method_from_json_connection(fc::rpc::json_connection* con,
@@ -661,6 +695,38 @@ namespace bts { namespace rpc {
         }
 
         fc::variant login( fc::rpc::json_connection* json_connection, const fc::variants& params );
+
+        void add_whitelist_entry( const std::string& entry ) {
+          if ( entry == "login" )
+          {
+            _whitelist.insert( entry );
+            return;
+          }
+          auto method = _method_map.find( entry );
+          if ( method == _method_map.end() )
+          {
+            const auto& alias = _alias_map.find( entry );
+            if ( alias == _alias_map.end() )
+            {
+              wlog("Whitelist contains unknown method ${method}", ("method", entry));
+              return;
+            }
+            add_whitelist_entry( alias->second );
+            return;
+          }
+          _whitelist.insert( entry );
+          for ( const auto& alias : method->second.aliases )
+          {
+            _whitelist.insert( alias );
+          }
+        }
+
+        void add_whitelist(const std::set<std::string>& new_entries) {
+          for (const auto& entry : new_entries)
+          {
+            add_whitelist_entry( entry );
+          }
+        }
     };
 
     bts::api::common_api* rpc_server_impl::get_client() const
@@ -822,6 +888,8 @@ namespace bts { namespace rpc {
 
       ilog( "listening for json rpc connections on port ${port}", ("port",my->_tcp_serv->get_port()) );
 
+      my->add_whitelist( cfg.whitelist );
+
       my->_accept_loop_complete = fc::async( [=]{ my->accept_loop(); }, "rpc_server accept_loop" );
 
       return true;
@@ -885,6 +953,8 @@ namespace bts { namespace rpc {
           fc::usleep(fc::seconds(10));
       }
 
+      my->add_whitelist( cfg.whitelist );
+
       my->_httpd->on_request([m](const fc::http::request& r, const fc::http::server::response& s){ m->handle_request(r, s); });
       return true;
     } FC_RETHROW_EXCEPTIONS(warn, "attempting to configure rpc server ${port}", ("port", cfg.rpc_endpoint)("config", cfg));
@@ -932,6 +1002,8 @@ namespace bts { namespace rpc {
        }
 
        ilog( "listening for encrypted json rpc connections on port ${port}", ("port",my->_stcp_serv->get_port()) );
+
+       my->add_whitelist( cfg.whitelist );
 
        my->_encrypted_accept_loop_complete = fc::async( [=]{ my->encrypted_accept_loop(*server_key); }, "rpc_server accept_loop" );
 

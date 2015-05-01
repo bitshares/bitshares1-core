@@ -1031,7 +1031,7 @@ namespace bts { namespace blockchain {
               oorder_record orec = pending_state->get_bid_record( bid_itr.key() );
               if( (!orec.valid()) || (orec->balance <= 0) )
                   continue;
-              
+
               market_order morder = market_order( bid_order, bid_itr.key(), *orec );
               process_bid( morder.get_price(), morder );
           }
@@ -1155,7 +1155,7 @@ namespace bts { namespace blockchain {
                    ("bid_type", get_order_type( bid_order ))
                    ("ask_type", get_order_type( ask_order ))
                   );
-              
+
               FC_ASSERT( quote_asset.valid() );
               FC_ASSERT( base_asset.valid() );
 
@@ -2437,12 +2437,16 @@ namespace bts { namespace blockchain {
         };
         const auto scan_balance = [ &addrs, &records ]( const balance_record& record )
         {
+            const auto& owner = record.condition.owner();
+            if( !owner.valid() )
+                return;
+
             for( const address& addr : addrs )
             {
-                if( record.is_owner( addr ) )
+                if( addr == *owner )
                 {
                     records[ record.id() ] = record;
-                    break;
+                    return;
                 }
             }
         };

@@ -77,7 +77,6 @@ wallet_market_cover <from_account_name> <quantity> <quantity_symbol> <cover_id>
 wallet_multisig_deposit <amount> <symbol> <from_name> <m> <addresses> [strategy] 
 wallet_multisig_get_balance_id <symbol> <m> <addresses> 
 wallet_multisig_withdraw_start <amount> <symbol> <from> <to_address> [strategy] [builder_path] 
-wallet_publish_version <publishing_account_name> [paying_account_name] 
 wallet_rebroadcast_transaction <transaction_id> 
 wallet_recover_accounts <accounts_to_recover> [maximum_number_of_attempts] 
 wallet_recover_titan_deposit_info <transaction_id_prefix> [recipient_account] 
@@ -207,6 +206,7 @@ wallet_publish_feeds <delegate_account> <symbol_to_price_map>
 wallet_publish_feeds_multi_experimental <symbol_to_price_map> 
 wallet_publish_price_feed <delegate_account> <price> <asset_symbol> 
 wallet_publish_slate <publishing_account_name> [paying_account_name] 
+wallet_publish_version <publishing_account_name> [paying_account_name] 
 wallet_release_escrow <pay_fee_with_account_name> <escrow_balance_id> <released_by_account> [amount_to_sender] [amount_to_receiver] 
 wallet_remove_contact <contact> 
 wallet_rescan_blockchain [start_block_num] [limit] [scan_in_background]

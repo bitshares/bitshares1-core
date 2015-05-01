@@ -26,7 +26,7 @@ Returns:
 default (unlocked) >>> wallet_publish_version account delegate0
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate0           delegate0           0.00000 XTS             publish version dryrun-18-2388-g25f0615-... 0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>PENDING   delegate0           delegate0           0.00000 XTS             publish version <d-ign></d-ign>0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
@@ -36,5 +36,35 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 ==============================================================================================================================================================================================
 <d-ign></d-ign>0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    19,801,980.19801 XTS    0.00000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>2         delegate0           account             0.00000 XTS             register account                            19,801,979.69801 XTS    0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>4         delegate0           delegate0           0.00000 XTS             publish version dryrun-18-2388-g25f0615-... 19,801,979.19801 XTS    0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>4         delegate0           delegate0           0.00000 XTS             publish version <d-ign></d-ign>19,801,979.19801 XTS    0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> get_info
+{
+  "blockchain_head_block_num": 4,
+  "blockchain_head_block_age": "<d-ign></d-ign>",
+  "blockchain_head_block_timestamp": "<d-ign></d-ign>",
+  "blockchain_head_block_id": "87a9e7ddb06f4ef92a7053306fad6d34e8cbf6cf",
+  "blockchain_average_delegate_participation": null,
+  "blockchain_share_supply": "2,000,000,199.99901 XTS",
+  "blockchain_blocks_left_in_round": 97,
+  "blockchain_next_round_time": "at least <d-ign></d-ign>",
+  "blockchain_next_round_timestamp": "<d-ign></d-ign>",
+  "blockchain_random_seed": "5145bd6009c78fff2fc46ffced4c5aeeb5e6286c",
+  "client_data_dir": "<d-ign></d-ign>",
+  "client_version": "<d-ign></d-ign>",
+  "network_num_connections": 8,
+  "network_num_connections_max": 200,
+  "network_chain_downloader_running": false,
+  "network_chain_downloader_blocks_remaining": null,
+  "ntp_time": "<d-ign></d-ign>",
+  "ntp_time_error": "<d-ign></d-ign>",
+  "wallet_open": true,
+  "wallet_unlocked": true,
+  "wallet_unlocked_until": "<d-ign></d-ign>",
+  "wallet_unlocked_until_timestamp": "<d-ign></d-ign>",
+  "wallet_last_scanned_block_timestamp": "<d-ign></d-ign>",
+  "wallet_scan_progress": "100.00 %",
+  "wallet_block_production_enabled": true,
+  "wallet_next_block_production_time": "<d-ign></d-ign>",
+  "wallet_next_block_production_timestamp": "<d-ign></d-ign>"
+}
 default (unlocked) >>> quit
