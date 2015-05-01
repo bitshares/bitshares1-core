@@ -1,0 +1,441 @@
+default (unlocked) >>> wallet_account_create mydelegate
+"XTS6cVReASHH3E4bqzjaubRaVXJYUXegRFzxmFvsD8AwCPf1dkhra"
+default (unlocked) >>> wallet_account_create account0
+"XTS5DBeMtFiZaive82nTRuZjBbfZMVFZbudCs86bDfh3XwkKSdUqw"
+default (unlocked) >>> wallet_transfer 1000000 XTS delegate0 mydelegate
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate0           mydelegate          1,000,000.00000 XTS                                                 0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_account_register mydelegate delegate0 "my delegate" 100
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate0           mydelegate          0.00000 XTS             register mydelegate as a delegate           59,881.68811 XTS    <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_account_register account0 delegate0
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate0           account0            0.00000 XTS             register account0                           0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_transfer 2000 XTS delegate0 XTS5qLJBGDBFX7BpBgs17tynUfvDpQGiMJGoXafF3Ro5JjvdR1n1j
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   delegate0           ANONYMOUS           2,000.00000 XTS                                                     0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_account_balance mydelegate
+ACCOUNT                         BALANCE                     
+============================================================
+mydelegate                      1,000,000.00000 XTS         
+default (unlocked) >>> wallet_account_vote_summary
+No votes found.
+default (unlocked) >>> wallet_approve delegate1 1
+{
+  "index": 324,
+  "name": "delegate1",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate2 1
+{
+  "index": 325,
+  "name": "delegate2",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate3 1
+{
+  "index": 326,
+  "name": "delegate3",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate5 1
+{
+  "index": 327,
+  "name": "delegate5",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate10 1
+{
+  "index": 328,
+  "name": "delegate10",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate20 1
+{
+  "index": 329,
+  "name": "delegate20",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate40 1
+{
+  "index": 330,
+  "name": "delegate40",
+  "approval": 1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_publish_slate mydelegate
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   mydelegate          mydelegate          0.00000 XTS             publish slate 386653298819755463            0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_close
+OK
+(wallet closed) >>> wallet_create wallet2 "password"
+OK
+wallet2 (unlocked) >>> wallet_set_automatic_backups false
+false
+wallet2 (unlocked) >>> help wallet_rescan_blockchain
+Usage:
+wallet_rescan_blockchain [start_block_num] [limit] [scan_in_background]                               Scans the blockchain history for operations relevant to this wallet.
+Scans the blockchain history for operations relevant to this wallet.
+
+Parameters:
+  start_block_num (uint32_t, optional, defaults to 0): the first block to scan
+  limit (uint32_t, optional, defaults to -1): the maximum number of blocks to scan
+  scan_in_background (bool, optional, defaults to true): if true then scan asynchronously in the background, otherwise block until scan is done
+
+Returns:
+  void
+
+aliases: scan, rescan
+wallet2 (unlocked) >>> wallet_rescan_blockchain 0 -1 false
+OK
+wallet2 (unlocked) >>> wallet_import_private_key "5JMnSU8bfBcu67oA9KemNm5jbs9RTp2eBHqxoR53WWyB4CH2QJF" account1 true false
+"account1"
+wallet2 (unlocked) >>> wallet_account_balance account1
+ACCOUNT                         BALANCE                     
+============================================================
+account1                        2,000.00000 XTS             
+wallet2 (unlocked) >>> wallet_account_register account1 account1
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   account1            account1            0.00000 XTS             register account1                           0.50000 XTS         <d-ign></d-ign>
+wallet2 (unlocked) >>> wallet_list_accounts
+NAME (* delegate)                  KEY                                                             REGISTERED            BLOCK PRODUCTION ENABLED 
+account1                           XTS6HYcXm4FzwXbSx9vPVugZ6dQM7a4Adcam5JM3RgrRiZuduMHim           NO                    N/A                      
+wallet2 (unlocked) >>> wallet_approve mydelegate 1
+{
+  "index": 12,
+  "name": "mydelegate",
+  "approval": 1,
+  "custom_data": {}
+}
+wallet2 (unlocked) >>> wallet_list_accounts
+NAME (* delegate)                  KEY                                                             REGISTERED            BLOCK PRODUCTION ENABLED 
+account1                           XTS6HYcXm4FzwXbSx9vPVugZ6dQM7a4Adcam5JM3RgrRiZuduMHim           NO                    N/A                      
+wallet2 (unlocked) >>> wallet_close
+OK
+(wallet closed) >>> wallet_open default
+OK
+default (locked) >>> wallet_unlock 99 "password"
+OK
+default (unlocked) >>> wallet_rescan_blockchain 0 -1 false
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_close
+OK
+(wallet closed) >>> wallet_open wallet2
+OK
+wallet2 (locked) >>> wallet_unlock 99 "password"
+OK
+wallet2 (unlocked) >>> wallet_rescan_blockchain 0 -1 false
+OK
+wallet2 (unlocked) >>> help blockchain_get_slate
+Usage:
+blockchain_get_slate <slate>                                                                          Retrieves a map of delegate IDs and names defined by the given slate ID or recommending account
+Retrieves a map of delegate IDs and names defined by the given slate ID or recommending account
+
+Parameters:
+  slate (string, required): slate ID or recommending account name for which to retrieve the slate of delegates
+
+Returns:
+  map<account_id_type, string>
+
+aliases: get_slate
+wallet2 (unlocked) >>> blockchain_get_slate mydelegate
+[[
+    2,
+    "delegate1"
+  ],[
+    3,
+    "delegate2"
+  ],[
+    4,
+    "delegate3"
+  ],[
+    6,
+    "delegate5"
+  ],[
+    11,
+    "delegate10"
+  ],[
+    21,
+    "delegate20"
+  ],[
+    41,
+    "delegate40"
+  ]
+]
+wallet2 (unlocked) >>> wallet_transfer 100 XTS account1 account0 "vote all" "vote_all"
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   account1            account0            100.00000 XTS           vote all                                    0.50000 XTS         <d-ign></d-ign>
+wallet2 (unlocked) >>> wallet_close
+OK
+(wallet closed) >>> wallet_open default
+OK
+default (locked) >>> wallet_unlock 99 "password"
+OK
+default (unlocked) >>> wallet_rescan_blockchain 0 -1 false
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_account_balance mydelegate
+ACCOUNT                         BALANCE                     
+============================================================
+mydelegate                      999,999.50000 XTS           
+default (unlocked) >>> wallet_account_balance account0
+ACCOUNT                         BALANCE                     
+============================================================
+account0                        100.00000 XTS               
+default (unlocked) >>> wallet_account_vote_summary
+DELEGATE                        VOTES                   APPROVAL
+================================================================
+delegate1                       100.00000 XTS           
+delegate10                      100.00000 XTS           
+delegate2                       100.00000 XTS           
+delegate20                      100.00000 XTS           
+delegate3                       100.00000 XTS           
+delegate40                      100.00000 XTS           
+delegate5                       100.00000 XTS           
+mydelegate                      100.00000 XTS           
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_close
+OK
+(wallet closed) >>> wallet_open wallet2
+OK
+wallet2 (locked) >>> wallet_unlock 99 "password"
+OK
+wallet2 (unlocked) >>> wallet_rescan_blockchain 0 -1 false
+OK
+wallet2 (unlocked) >>> wallet_transfer 100 XTS account1 account0 "vote recommended" "vote_recommended"
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   account1            account0            100.00000 XTS           vote recommended                            0.50000 XTS         <d-ign></d-ign>
+wallet2 (unlocked) >>> wallet_close
+OK
+(wallet closed) >>> wallet_open default
+OK
+default (locked) >>> wallet_unlock 99 "password"
+OK
+default (unlocked) >>> wallet_rescan_blockchain 0 -1 false
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_close
+OK
+(wallet closed) >>> wallet_open wallet2
+OK
+wallet2 (locked) >>> wallet_unlock 99 "password"
+OK
+wallet2 (unlocked) >>> wallet_rescan_blockchain 0 -1 false
+OK
+wallet2 (unlocked) >>> wallet_account_balance account1
+ACCOUNT                         BALANCE                     
+============================================================
+account1                        1,798.50000 XTS             
+wallet2 (unlocked) >>> wallet_close
+OK
+(wallet closed) >>> wallet_open default
+OK
+default (locked) >>> wallet_unlock 99 "password"
+OK
+default (unlocked) >>> wallet_rescan_blockchain 0 -1 false
+OK
+default (unlocked) >>> wallet_account_balance account0
+ACCOUNT                         BALANCE                     
+============================================================
+account0                        200.00000 XTS               
+default (unlocked) >>> wallet_account_vote_summary
+DELEGATE                        VOTES                   APPROVAL
+================================================================
+delegate1                       200.00000 XTS           
+delegate10                      200.00000 XTS           
+delegate2                       200.00000 XTS           
+delegate20                      200.00000 XTS           
+delegate3                       200.00000 XTS           
+delegate40                      200.00000 XTS           
+delegate5                       200.00000 XTS           
+mydelegate                      200.00000 XTS           
+default (unlocked) >>> wallet_approve delegate2 -1
+{
+  "index": 325,
+  "name": "delegate2",
+  "approval": -1,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_approve delegate3 0
+{
+  "index": 326,
+  "name": "delegate3",
+  "approval": 0,
+  "custom_data": {}
+}
+default (unlocked) >>> wallet_publish_slate mydelegate
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   mydelegate          mydelegate          0.00000 XTS             publish slate 13167304502616932632          0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_close
+OK
+(wallet closed) >>> wallet_open wallet2
+OK
+wallet2 (locked) >>> wallet_unlock 99 "password"
+OK
+wallet2 (unlocked) >>> wallet_rescan_blockchain 0 -1 false
+OK
+wallet2 (unlocked) >>> blockchain_get_slate mydelegate
+[[
+    2,
+    "delegate1"
+  ],[
+    6,
+    "delegate5"
+  ],[
+    11,
+    "delegate10"
+  ],[
+    21,
+    "delegate20"
+  ],[
+    41,
+    "delegate40"
+  ],[
+    102,
+    "mydelegate"
+  ]
+]
+wallet2 (unlocked) >>> wallet_transfer 100 XTS account1 account0 "vote recommended #2" "vote_recommended"
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>PENDING   account1            account0            100.00000 XTS           vote recommended #2                         0.50000 XTS         <d-ign></d-ign>
+wallet2 (unlocked) >>> wallet_close
+OK
+(wallet closed) >>> wallet_open default
+OK
+default (locked) >>> wallet_unlock 99 "password"
+OK
+default (unlocked) >>> wallet_rescan_blockchain 0 -1 false
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_close
+OK
+(wallet closed) >>> wallet_open wallet2
+OK
+wallet2 (locked) >>> wallet_unlock 99 "password"
+OK
+wallet2 (unlocked) >>> wallet_rescan_blockchain 0 -1 false
+OK
+wallet2 (unlocked) >>> wallet_account_balance account1
+ACCOUNT                         BALANCE                     
+============================================================
+account1                        1,698.00000 XTS             
+wallet2 (unlocked) >>> history
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+<d-ign></d-ign>5         UNKNOWN             account1            2,000.00000 XTS                                                     2,000.00000 XTS         0.50000 XTS         <d-ign> 297d12b6</d-ign>
+<d-ign></d-ign>7         account1            account1            0.00000 XTS             register account1                           1,999.50000 XTS         0.50000 XTS         <d-ign> f4e92672</d-ign>
+<d-ign></d-ign>10        account1            account0            100.00000 XTS           vote all                                    1,899.00000 XTS         0.50000 XTS         <d-ign> aef0dff5</d-ign>
+<d-ign></d-ign>12        account1            account0            100.00000 XTS           vote recommended                            1,798.50000 XTS         0.50000 XTS         <d-ign> 939df584</d-ign>
+<d-ign></d-ign>16        account1            account0            100.00000 XTS           vote recommended #2                         1,698.00000 XTS         0.50000 XTS         <d-ign> 5af11d5f</d-ign>
+wallet2 (unlocked) >>> wallet_close
+OK
+(wallet closed) >>> wallet_open default
+OK
+default (locked) >>> wallet_unlock 99 "password"
+OK
+default (unlocked) >>> wallet_rescan_blockchain 0 -1 false
+OK
+default (unlocked) >>> wallet_account_balance account0
+ACCOUNT                         BALANCE                     
+============================================================
+account0                        300.00000 XTS               
+default (unlocked) >>> wallet_account_vote_summary
+DELEGATE                        VOTES                   APPROVAL
+================================================================
+delegate1                       300.00000 XTS           
+delegate10                      300.00000 XTS           
+delegate2                       200.00000 XTS           
+delegate20                      300.00000 XTS           
+delegate3                       200.00000 XTS           
+delegate40                      300.00000 XTS           
+delegate5                       300.00000 XTS           
+mydelegate                      300.00000 XTS           
+default (unlocked) >>> history "" "" 0 1
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+<d-ign></d-ign>2         delegate0           mydelegate          1,000,000.00000 XTS                                                 0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>3         delegate0           mydelegate          0.00000 XTS             register mydelegate as a delegate           59,881.68811 XTS    <d-ign></d-ign>
+<d-ign></d-ign>4         delegate0           account0            0.00000 XTS             register account0                           0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>5         delegate0           ANONYMOUS           2,000.00000 XTS                                                     0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>6         mydelegate          mydelegate          0.00000 XTS             publish slate 386653298819755463            0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>10        account1            account0            100.00000 XTS           vote all                                    0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>12        account1            account0            100.00000 XTS           vote recommended                            0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>14        mydelegate          mydelegate          0.00000 XTS             publish slate 13167304502616932632          0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>16        account1            account0            100.00000 XTS           vote recommended #2                         0.50000 XTS         <d-ign></d-ign>
+default (unlocked) >>> quit

@@ -18,6 +18,8 @@ namespace bts { namespace db {
             _sync_on_write = sync_on_write;
         } FC_CAPTURE_AND_RETHROW( (dir)(create)(leveldb_cache_size)(write_through)(sync_on_write) ) }
 
+        bool is_open() { return _db.is_open(); }
+
         void close()
         { try {
             if( _db.is_open() ) flush();
@@ -37,6 +39,8 @@ namespace bts { namespace db {
 
             _write_through = write_through;
         } FC_CAPTURE_AND_RETHROW( (write_through) ) }
+
+        void set_sync_on_write( bool sync_on_write ) { _sync_on_write = sync_on_write; } 
 
         void flush()
         { try {
@@ -80,6 +84,21 @@ namespace bts { namespace db {
                 _dirty_remove.erase( key );
             }
         } FC_CAPTURE_AND_RETHROW( (key)(value) ) }
+
+        // parameter `sync_on_write` takes effect only when `_write_through == true`
+        void store( const Key& key, const Value& value, bool sync_on_write )
+        { try {
+            _cache[ key ] = value;
+            if( _write_through )
+            {
+                _db.store( key, value, sync_on_write );
+            }
+            else
+            {
+                _dirty_store.insert( key );
+                _dirty_remove.erase( key );
+            }
+        } FC_CAPTURE_AND_RETHROW( (key)(value)(sync_on_write) ) }
 
         void remove( const Key& key )
         { try {

@@ -66,8 +66,8 @@ LIST(APPEND BOOST_COMPONENTS thread
                              unit_test_framework
                              context
                              locale)
+SET( Boost_USE_STATIC_LIBS ON CACHE STRING "ON or OFF" )
 
-set(Boost_USE_STATIC_LIBS ON)
 IF( WIN32 )
   SET(BOOST_ROOT $ENV{BOOST_ROOT})
   set(Boost_USE_MULTITHREADED ON)
@@ -181,7 +181,6 @@ else( WIN32 ) # Apple AND Linux
         endif()
     endif()
 
-    set(Boost_USE_STATIC_LIBS ON)
 endif( WIN32 )
 
 list(APPEND LEVEL_DB_SOURCES "${LEVELDB_PORT_FILE}")
