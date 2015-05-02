@@ -1,18 +1,28 @@
 language: cpp
 
+branches:
+  only:
+    - develop
+
 compiler:
   - clang
 
 before_install:
+  - git submodule update --init --recursive
   - sudo add-apt-repository -y ppa:andykimpe/cmake
   - sudo add-apt-repository -y ppa:boost-latest/ppa
   - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+  - sudo add-apt-repository -y ppa:louisinternet/openssl
+  - wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key|sudo apt-key add -
+  - sudo add-apt-repository -y "deb http://llvm.org/apt/precise/ llvm-toolchain-precise-3.6 main"
   - sudo apt-get update -qq
 
 install:
-  - sudo apt-get install -qq g++-4.8
-  - sudo apt-get install -qq cmake libreadline-dev uuid-dev libdb++-dev libdb-dev zip libssl-dev openssl build-essential python-dev autotools-dev libicu-dev libbz2-dev boost1.55
+  - sudo apt-get install -qq clang-3.6 clang++-3.6
+  - sudo apt-get install -qq cmake libreadline-dev uuid-dev libdb++-dev libdb-dev libssl-dev libicu-dev libbz2-dev libboost1.55-dev libboost1.55-all-dev
+
+before_script:
+  - scan-build-3.6 --use-cc clang-3.6 --use-c++ clang++-3.6 cmake .
 
 script:
-  - cmake .
-  - make bitshares_client
+  - scan-build-3.6 --use-cc clang-3.6 --use-c++ clang++-3.6 make bitsharestestnet_client
