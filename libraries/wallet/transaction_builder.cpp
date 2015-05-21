@@ -561,11 +561,7 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
    deduct_balance(from_account.owner_address(), cover_amount);
    trx.cover(cover_amount, order->market_index);
 
-#ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_9_0_FORK_BLOCK_NUM has passed
-#endif
-   if( _wimpl->_blockchain->get_head_block_num() >= BTS_V0_9_0_FORK_BLOCK_NUM )
-       trx.limit_fee( _wimpl->self->get_transaction_fee() );
+   trx.limit_fee( _wimpl->self->get_transaction_fee() );
 
    if( trx.expiration == time_point_sec() )
        trx.expiration = blockchain::now() + WALLET_DEFAULT_MARKET_TRANSACTION_EXPIRATION_SEC;

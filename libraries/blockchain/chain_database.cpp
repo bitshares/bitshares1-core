@@ -2360,12 +2360,6 @@ namespace bts { namespace blockchain {
       new_block.timestamp           = block_timestamp;
       new_block.transaction_digest  = digest_block( new_block ).calculate_transaction_digest();
 
-#ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_9_0_FORK_BLOCK_NUM has passed
-#endif
-      if( new_block.block_num < BTS_V0_9_0_FORK_BLOCK_NUM )
-          new_block.transaction_digest = digest_type( "c8cf12fe3180ed901a58a0697a522f1217de72d04529bd255627a4ad6164f0f0" );
-
       return new_block;
    } FC_CAPTURE_AND_RETHROW( (block_timestamp)(config) ) }
 

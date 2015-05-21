@@ -554,11 +554,6 @@ namespace bts { namespace blockchain {
 
    void limit_fee_operation::evaluate( transaction_evaluation_state& eval_state )const
    { try {
-#ifndef WIN32
-#warning [SOFTFORK] Remove this check after BTS_V0_9_0_FORK_BLOCK_NUM has passed
-#endif
-       FC_ASSERT( eval_state.pending_state()->get_head_block_num() >= BTS_V0_9_0_FORK_BLOCK_NUM );
-
        FC_ASSERT( eval_state.max_fees.count( this->max_fee.asset_id ) == 0 );
        eval_state.max_fees[ this->max_fee.asset_id ] = this->max_fee.amount;
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
