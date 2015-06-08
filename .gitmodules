@@ -4,7 +4,7 @@
     ignore = dirty
 [submodule "libraries/fc"]
 	path = libraries/fc
-	url = https://github.com/BitShares/fc.git
+	url = https://github.com/cryptonomex/fc.git
     ignore = dirty
 [submodule "programs/web_wallet"]
 	path = programs/web_wallet
