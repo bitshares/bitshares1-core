@@ -1,6 +1,9 @@
+[submodule "docs"]
+	path = docs
+	url = https://github.com/bitshares/bitshares.wiki.git
 [submodule "vendor"]
 	path = vendor
-	url = https://github.com/BitShares/vendor.git
+	url = https://github.com/bitshares/vendor.git
     ignore = dirty
 [submodule "libraries/fc"]
 	path = libraries/fc
@@ -8,11 +11,11 @@
     ignore = dirty
 [submodule "programs/web_wallet"]
 	path = programs/web_wallet
-	url = https://github.com/BitShares/web_wallet.git
+	url = https://github.com/bitshares/web_wallet.git
     ignore = dirty
 [submodule "programs/qt_wallet"]
 	path = programs/qt_wallet
-	url = https://github.com/BitShares/qt_wallet.git
+	url = https://github.com/bitshares/qt_wallet.git
     ignore = dirty
 [submodule "libraries/leveldb"]
 	path = libraries/leveldb
