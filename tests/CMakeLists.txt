@@ -100,8 +100,8 @@ if( WIN32 )
    # message(STATUS "boost libraries ${Boost_LIBRARIES}")
 endif (WIN32)
 
-add_executable( deterministic_signature_test deterministic_signature_test.cpp)
-target_link_libraries( deterministic_signature_test bts_utilities deterministic_openssl_rand fc )
+#add_executable( deterministic_signature_test deterministic_signature_test.cpp)
+#target_link_libraries( deterministic_signature_test bts_utilities deterministic_openssl_rand fc )
 
 
 #if( false )
