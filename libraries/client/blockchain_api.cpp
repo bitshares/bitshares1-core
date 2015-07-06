@@ -536,6 +536,14 @@ asset client_impl::blockchain_calculate_debt( const string& which_asset, bool in
    return asset( _chain_db->calculate_debts( include_interest ).at( asset_id ), asset_id );
 } FC_CAPTURE_AND_RETHROW( (which_asset)(include_interest) ) }
 
+asset client_impl::blockchain_calculate_max_supply( uint8_t average_delegate_pay_rate )const
+{ try {
+   FC_ASSERT( average_delegate_pay_rate >= 0 );
+   FC_ASSERT( average_delegate_pay_rate <= 100 );
+   const share_type pay_per_block = BTS_MAX_DELEGATE_PAY_PER_BLOCK * average_delegate_pay_rate / 100;
+   return asset( _chain_db->calculate_max_core_supply( pay_per_block ) );
+} FC_CAPTURE_AND_RETHROW( (average_delegate_pay_rate) ) }
+
 vector<market_order> client_impl::blockchain_market_list_bids( const string& quote_symbol, const string& base_symbol,
                                                                uint32_t limit )const
 {
@@ -597,9 +605,9 @@ map<order_id_type, market_order> client_impl::blockchain_list_address_orders(
   const oasset_record base_record = _chain_db->get_asset_record( base_symbol );
   FC_ASSERT( quote_symbol.empty() || quote_record.valid() );
   FC_ASSERT( base_symbol.empty() || base_record.valid() );
-      
+
   address account_address = address(account_address_str);
-  
+
   const auto filter = [&]( const market_order& order ) -> bool
   {
       if( quote_record.valid() && order.market_index.order_price.quote_asset_id != quote_record->id )

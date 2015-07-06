@@ -266,6 +266,7 @@ namespace bts { namespace blockchain {
 
          unordered_map<asset_id_type, share_type> calculate_supplies()const;
          unordered_map<asset_id_type, share_type> calculate_debts( bool include_interest )const;
+         share_type calculate_max_core_supply( share_type pay_per_block )const;
 
          asset                              unclaimed_genesis();
 
