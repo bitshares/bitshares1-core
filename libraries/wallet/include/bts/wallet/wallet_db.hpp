@@ -6,6 +6,18 @@ namespace bts { namespace wallet {
 
    namespace detail { class wallet_db_impl; }
 
+   struct exported_account_keys
+   {
+       string account_name;
+       vector<vector<char>> encrypted_private_keys;
+   };
+
+   struct exported_keys
+   {
+       fc::sha512 password_checksum;
+       vector<exported_account_keys> account_keys;
+   };
+
    class wallet_db
    {
       public:
@@ -99,6 +111,8 @@ namespace bts { namespace wallet {
          void export_to_json( const path& filename )const;
          void import_from_json( const path& filename );
 
+         void export_keys( const path& filename )const;
+
          bool validate_password( const fc::sha512& password )const;
 
          void set_master_key( const extended_private_key& key,
@@ -156,3 +170,13 @@ namespace bts { namespace wallet {
    };
 
 } } // bts::wallet
+
+FC_REFLECT( bts::wallet::exported_account_keys,
+        (account_name)
+        (encrypted_private_keys)
+        )
+
+FC_REFLECT( bts::wallet::exported_keys,
+        (password_checksum)
+        (account_keys)
+        )

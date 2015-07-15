@@ -66,6 +66,8 @@ namespace bts { namespace wallet {
          void    export_to_json( const path& filename )const;
          void    create_from_json( const path& filename, const string& wallet_name, const string& passphrase );
 
+         void    export_keys( const path& filename )const;
+
          void    auto_backup( const string& reason )const;
 
          void    write_latest_builder( const transaction_builder& builder,

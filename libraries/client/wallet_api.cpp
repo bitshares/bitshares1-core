@@ -72,6 +72,11 @@ void detail::client_impl::wallet_backup_restore( const fc::path& json_filename,
     reschedule_delegate_loop();
 }
 
+void detail::client_impl::wallet_export_keys( const fc::path& json_filename )const
+{
+    _wallet->export_keys( json_filename );
+}
+
 // This should be able to get an encrypted private key or WIF key out of any reasonable JSON object
 void read_keys( const fc::variant& vo, vector<private_key_type>& keys, const string& password )
 {
