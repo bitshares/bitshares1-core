@@ -28,6 +28,21 @@
         "aliases" : []
       },
       {
+        "method_name": "blockchain_generate_full_snapshot",
+        "description": "Save snapshot of current state to specified file",
+        "return_type": "void",
+        "parameters" : [
+            {
+              "name" : "filename",
+              "type" : "string",
+              "description" : "filename to save snapshot to"
+            }
+        ],
+        "is_const"   : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
+      },
+      {
         "method_name": "blockchain_generate_issuance_map",
         "description": "A utility to help verify UIA distribution. Returns a snapshot map of all issuances for a particular UIA.",
         "return_type": "void",
