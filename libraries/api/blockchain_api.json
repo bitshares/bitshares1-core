@@ -86,6 +86,23 @@
         "aliases" : ["debt", "calculate_debt"]
       },
       {
+        "method_name": "blockchain_calculate_max_supply",
+        "description": "Calculate the maximum possible supply of the core asset from the current time assuming a maximum dilution schedule",
+        "cached"      : true,
+        "return_type": "asset",
+        "parameters" : [
+            {
+              "name" : "average_delegate_pay_rate",
+              "type" : "uint8_t",
+              "description" : "average delegate pay rate percentage",
+              "default_value" : 100
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["max_supply", "calculate_max_supply"]
+      },
+      {
         "method_name": "blockchain_get_block_count",
         "description": "Returns the current head block number",
         "return_type": "uint32_t",

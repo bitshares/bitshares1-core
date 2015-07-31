@@ -3441,6 +3441,29 @@ namespace bts { namespace blockchain {
        return totals;
    } FC_CAPTURE_AND_RETHROW( (include_interest) ) }
 
+   share_type chain_database::calculate_max_core_supply( share_type pay_per_block )const
+   { try {
+       share_type max_supply = calculate_supplies().at( 0 );
+
+       static const time_point_sec start_timestamp = get_genesis_timestamp();
+       static const uint32_t seconds_per_period = fc::days( 4 * 365 ).to_seconds(); // Ignore leap years, leap seconds, etc.
+
+       time_point_sec interval_start = this->now();
+       time_point_sec interval_end = start_timestamp + seconds_per_period;
+
+       for( ; pay_per_block > 0; pay_per_block /= 2 )
+       {
+           const uint32_t interval_duration = (interval_end - interval_start).to_seconds();
+
+           max_supply += interval_duration * pay_per_block / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+
+           interval_start = interval_end;
+           interval_end += seconds_per_period;
+       }
+
+       return max_supply;
+   } FC_CAPTURE_AND_RETHROW( (pay_per_block) ) }
+
    asset chain_database::unclaimed_genesis()
    { try {
         asset unclaimed_total;

@@ -1071,6 +1071,15 @@ namespace detail {
       }
    } FC_CAPTURE_AND_RETHROW( (filename)(wallet_name) ) }
 
+   void wallet::export_keys( const path& filename )const
+   { try {
+      if( fc::exists( filename ) )
+          FC_THROW_EXCEPTION( file_already_exists, "Filename to export to already exists!", ("filename",filename) );
+
+      FC_ASSERT( is_open() );
+      my->_wallet_db.export_keys( filename );
+   } FC_CAPTURE_AND_RETHROW( (filename) ) }
+
    void wallet::auto_backup( const string& reason )const
    { try {
       if( !get_automatic_backups() ) return;

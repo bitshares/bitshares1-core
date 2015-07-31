@@ -1109,6 +1109,43 @@ namespace bts { namespace wallet {
       }
    } FC_CAPTURE_AND_RETHROW( (filename) ) }
 
+   void wallet_db::export_keys( const path& filename )const
+   { try {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( !fc::exists( filename ) );
+
+      const auto dir = fc::absolute( filename ).parent_path();
+      if( !fc::exists( dir ) )
+          fc::create_directories( dir );
+
+      map<string, vector<vector<char>>> account_keys;
+
+      for( auto itr = my->_records.begin(); itr.valid(); ++itr )
+      {
+          const auto& record = itr.value();
+          if( wallet_record_type_enum( record.type ) == key_record_type )
+          {
+              const auto& key_record = record.as<wallet_key_record>();
+              const auto& account_record = lookup_account( key_record.account_address );
+
+              string account_name;
+              if( account_record.valid() )
+                  account_name = account_record->name;
+
+              account_keys[ account_name ].push_back( key_record.encrypted_private_key );
+          }
+      }
+
+      exported_keys keys;
+      FC_ASSERT( wallet_master_key.valid() );
+      keys.password_checksum = wallet_master_key->checksum;
+
+      for( const auto& item : account_keys )
+          keys.account_keys.push_back( exported_account_keys{ item.first, item.second } );
+
+      fc::json::save_to_file( keys, filename );
+   } FC_CAPTURE_AND_RETHROW( (filename) ) }
+
    bool wallet_db::has_private_key( const address& addr )const
    { try {
       auto itr = keys.find( addr );
