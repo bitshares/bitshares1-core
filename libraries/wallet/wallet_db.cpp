@@ -1118,7 +1118,7 @@ namespace bts { namespace wallet {
       if( !fc::exists( dir ) )
           fc::create_directories( dir );
 
-      map<string, vector<vector<char>>> account_keys;
+      map<string, exported_account_keys> account_keys;
 
       for( auto itr = my->_records.begin(); itr.valid(); ++itr )
       {
@@ -1132,7 +1132,10 @@ namespace bts { namespace wallet {
               if( account_record.valid() )
                   account_name = account_record->name;
 
-              account_keys[ account_name ].push_back( key_record.encrypted_private_key );
+              auto& keys = account_keys[ account_name ];
+              keys.account_name = account_name;
+              keys.encrypted_private_keys.push_back( key_record.encrypted_private_key );
+              keys.public_keys.push_back( key_record.public_key );
           }
       }
 
@@ -1141,7 +1144,7 @@ namespace bts { namespace wallet {
       keys.password_checksum = wallet_master_key->checksum;
 
       for( const auto& item : account_keys )
-          keys.account_keys.push_back( exported_account_keys{ item.first, item.second } );
+          keys.account_keys.push_back( item.second );
 
       fc::json::save_to_file( keys, filename );
    } FC_CAPTURE_AND_RETHROW( (filename) ) }
