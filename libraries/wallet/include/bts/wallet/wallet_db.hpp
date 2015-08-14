@@ -10,6 +10,7 @@ namespace bts { namespace wallet {
    {
        string account_name;
        vector<vector<char>> encrypted_private_keys;
+       vector<public_key_type> public_keys;
    };
 
    struct exported_keys
@@ -174,6 +175,7 @@ namespace bts { namespace wallet {
 FC_REFLECT( bts::wallet::exported_account_keys,
         (account_name)
         (encrypted_private_keys)
+        (public_keys)
         )
 
 FC_REFLECT( bts::wallet::exported_keys,
