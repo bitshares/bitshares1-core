@@ -509,6 +509,11 @@ void client_impl::blockchain_generate_snapshot( const string& filename )const
     _chain_db->generate_snapshot( fc::path( filename ) );
 } FC_CAPTURE_AND_RETHROW( (filename) ) }
 
+void client_impl::blockchain_generate_full_snapshot( const string& filename )const
+{ try {
+    _chain_db->generate_full_snapshot( filename );
+} FC_CAPTURE_AND_RETHROW( (filename) ) }
+
 void client_impl::blockchain_generate_issuance_map( const string& symbol, const string& filename )const
 { try {
     _chain_db->generate_issuance_map( symbol, fc::path( filename ) );
