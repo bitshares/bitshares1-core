@@ -509,9 +509,13 @@ void client_impl::blockchain_generate_snapshot( const string& filename )const
     _chain_db->generate_snapshot( fc::path( filename ) );
 } FC_CAPTURE_AND_RETHROW( (filename) ) }
 
-void client_impl::blockchain_generate_full_snapshot( const string& filename )const
+void client_impl::blockchain_graphene_snapshot( const string& filename, const string& whitelist_filename )const
 { try {
-    _chain_db->generate_full_snapshot( filename );
+    set<string> whitelist;
+    if( !whitelist_filename.empty() )
+        whitelist = fc::json::from_file<std::set<string>>( whitelist_filename );
+
+    _chain_db->graphene_snapshot( filename, whitelist );
 } FC_CAPTURE_AND_RETHROW( (filename) ) }
 
 void client_impl::blockchain_generate_issuance_map( const string& symbol, const string& filename )const

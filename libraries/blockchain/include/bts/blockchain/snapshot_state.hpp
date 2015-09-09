@@ -41,6 +41,7 @@ struct snapshot_balance
 
 struct snapshot_account
 {
+    time_point_sec timestamp;
     public_key_type owner_key;
     public_key_type active_key;
     optional<public_key_type> signing_key;
@@ -84,7 +85,7 @@ FC_REFLECT( bts::blockchain::snapshot_summary, (num_balance_owners)(num_asset_ba
                                                (num_mias)(num_collateral_positions)(num_uias))
 FC_REFLECT( bts::blockchain::snapshot_vesting_balance, (start_time)(duration_seconds)(original_balance)(current_balance) )
 FC_REFLECT( bts::blockchain::snapshot_balance, (assets)(vesting) )
-FC_REFLECT( bts::blockchain::snapshot_account, (owner_key)(active_key)(signing_key)(daily_pay) )
+FC_REFLECT( bts::blockchain::snapshot_account, (timestamp)(owner_key)(active_key)(signing_key)(daily_pay) )
 FC_REFLECT( bts::blockchain::snapshot_debt, (collateral)(debt) )
 FC_REFLECT( bts::blockchain::snapshot_asset, (owner)(description)(precision)(max_supply)(collected_fees)(debts) )
 FC_REFLECT( bts::blockchain::snapshot_state, (head_block)(max_core_supply)(summary)(balances)(accounts)(assets) )

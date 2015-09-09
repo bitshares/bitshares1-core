@@ -28,14 +28,20 @@
         "aliases" : []
       },
       {
-        "method_name": "blockchain_generate_full_snapshot",
-        "description": "Save snapshot of current state to specified file",
+        "method_name": "blockchain_graphene_snapshot",
+        "description": "Save snapshot of current state to specified file in Graphene genesis format",
         "return_type": "void",
         "parameters" : [
             {
               "name" : "filename",
               "type" : "string",
               "description" : "filename to save snapshot to"
+            },
+            {
+              "name" : "whitelist_filename",
+              "type" : "string",
+              "description" : "filename containing set of account names to whitelist from name-prefixing",
+              "default_value" : ""
             }
         ],
         "is_const"   : true,

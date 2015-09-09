@@ -3365,7 +3365,7 @@ namespace bts { namespace blockchain {
        fc::json::save_to_file( snapshot, filename );
    } FC_CAPTURE_AND_RETHROW( (filename) ) }
 
-   void chain_database::generate_full_snapshot( const string& filename )const
+   void chain_database::graphene_snapshot( const string& filename, const set<string>& whitelist )const
    { try {
        snapshot_state snapshot;
        snapshot.head_block = get_head_block();
@@ -3451,6 +3451,7 @@ namespace bts { namespace blockchain {
                return;
 
            auto& snapshot_account = snapshot.accounts[ record.name ];
+           snapshot_account.timestamp = record.registration_date;
            snapshot_account.owner_key = record.owner_key;
            snapshot_account.active_key = record.active_key();
 
@@ -3537,7 +3538,7 @@ namespace bts { namespace blockchain {
            snapshot_asset.debts[ index.owner ].debt += collateral.payoff_balance;
        }
 
-       // Rectify supply/debt differences
+       // Hack to rectify supply/debt differences for GOLD
        for( auto& item : snapshot.assets )
        {
            const auto& symbol = item.first;
@@ -3668,12 +3669,64 @@ namespace bts { namespace blockchain {
        genesis.initial_timestamp = snapshot.head_block.timestamp;
        genesis.max_core_supply = snapshot.max_core_supply;
 
+       const auto is_cheap_name = []( const string& n ) -> bool
+       {
+           bool v = false;
+           for( auto c : n )
+           {
+              if( c >= '0' && c <= '9' ) return true;
+              if( c == '.' || c == '-' || c == '/' ) return true;
+              switch( c )
+              {
+                 case 'a':
+                 case 'e':
+                 case 'i':
+                 case 'o':
+                 case 'u':
+                 case 'y':
+                    v = true;
+              }
+           }
+           if( !v )
+              return true;
+           return false;
+       };
+
+       static const auto june8 = time_point_sec( 1433736000 );
+       static const auto june18 = time_point_sec( 1434600000 );
+
        // Accounts, witnesses, and workers
        // TODO: Don't forget name modifications and blacklists
        for( const auto& item : snapshot.accounts )
        {
-           const string& name = item.first;
+           const string& original_name = item.first;
            const snapshot_account& keys = item.second;
+
+           const auto prefix_name = [ & ]( const string& name ) -> string
+           {
+               string prefixed_name = "bts-" + name;
+               int count = 0;
+               while( snapshot.accounts.count( prefixed_name ) > 0 )
+               {
+                   prefixed_name = "bts" + std::to_string( count ) + "-" + name;
+                   ++count;
+               }
+               return prefixed_name;
+           };
+
+           string name = original_name;
+           if( keys.timestamp >= june8 )
+           {
+               if( keys.timestamp >= june18 )
+               {
+                   if( whitelist.count( name ) == 0 )
+                       name = prefix_name( name );
+               }
+               else if( !is_cheap_name( name ) )
+               {
+                   name = prefix_name( name );
+               }
+           }
 
            genesis_state_type::initial_account_type account;
            account.name = name;
