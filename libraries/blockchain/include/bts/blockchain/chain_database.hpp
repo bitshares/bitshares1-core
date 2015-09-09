@@ -262,7 +262,7 @@ namespace bts { namespace blockchain {
                                                                   const address& owner );
 
          void                               generate_snapshot( const fc::path& filename )const;
-         void                               generate_full_snapshot( const string& filename )const;
+         void                               graphene_snapshot( const string& filename, const set<string>& whitelist )const;
          void                               generate_issuance_map( const string& symbol, const fc::path& filename )const;
 
          unordered_map<asset_id_type, share_type> calculate_supplies()const;
