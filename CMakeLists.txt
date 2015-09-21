@@ -201,8 +201,8 @@ add_subdirectory( tests )
 if (ENABLE_INSTALLER)
 
 set(VERSION_MAJOR 0)
-set(VERSION_MINOR 1)
-set(VERSION_PATCH 0)
+set(VERSION_MINOR 9)
+set(VERSION_PATCH 3)
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/web_wallet")
   MESSAGE(STATUS "Found web wallet source code, attempting to bundle it in the installer")
