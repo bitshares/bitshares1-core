@@ -3452,6 +3452,7 @@ namespace bts { namespace blockchain {
                return;
 
            auto& snapshot_account = snapshot.accounts[ record.name ];
+           snapshot_account.id = uint32_t( record.id );
            snapshot_account.timestamp = record.registration_date;
            snapshot_account.owner_key = record.owner_key;
            snapshot_account.active_key = record.active_key();
@@ -3506,6 +3507,8 @@ namespace bts { namespace blockchain {
                return;
 
            auto& snapshot_asset = snapshot.assets[ record.symbol ];
+
+           snapshot_asset.id = uint32_t( record.id );
 
            if( record.is_market_issued() )
            {
@@ -3723,6 +3726,7 @@ namespace bts { namespace blockchain {
            account.active_key = keys.active_key;
            account.is_lifetime_member = keys.signing_key.valid() || keys.daily_pay.valid();
            account.is_prefixed = is_prefixed;
+           account.id = keys.id;
 
            genesis.initial_accounts.push_back( std::move( account ) );
 
@@ -3802,6 +3806,7 @@ namespace bts { namespace blockchain {
            asset.accumulated_fees = snapshot_asset.collected_fees;
 
            asset.is_bitasset = snapshot_asset.owner == string( "witness-account" );
+           asset.id = snapshot_asset.id;
 
            for( const auto& debt_item : snapshot_asset.debts )
            {
