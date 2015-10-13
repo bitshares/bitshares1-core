@@ -26,6 +26,7 @@ struct genesis_state_type {
       public_key_type owner_key;
       public_key_type active_key;
       bool is_lifetime_member;
+      bool is_prefixed;
    };
    struct initial_asset_type {
       struct initial_collateral_position {
@@ -94,7 +95,7 @@ FC_REFLECT( bts::blockchain::immutable_chain_parameters,
    (min_witness_count)
 )
 
-FC_REFLECT(bts::blockchain::genesis_state_type::initial_account_type, (name)(owner_key)(active_key)(is_lifetime_member))
+FC_REFLECT(bts::blockchain::genesis_state_type::initial_account_type, (name)(owner_key)(active_key)(is_lifetime_member)(is_prefixed))
 
 FC_REFLECT(bts::blockchain::genesis_state_type::initial_asset_type,
            (symbol)(issuer_name)(description)(precision)(max_supply)(accumulated_fees)(is_bitasset)(collateral_records))

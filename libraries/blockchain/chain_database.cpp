@@ -3700,32 +3700,20 @@ namespace bts { namespace blockchain {
        // TODO: Don't forget name modifications and blacklists
        for( const auto& item : snapshot.accounts )
        {
-           const string& original_name = item.first;
+           const string& name = item.first;
            const snapshot_account& keys = item.second;
 
-           const auto prefix_name = [ & ]( const string& name ) -> string
-           {
-               string prefixed_name = "bts-" + name;
-               int count = 0;
-               while( snapshot.accounts.count( prefixed_name ) > 0 )
-               {
-                   prefixed_name = "bts" + std::to_string( count ) + "-" + name;
-                   ++count;
-               }
-               return prefixed_name;
-           };
-
-           string name = original_name;
+           bool is_prefixed = false;
            if( keys.timestamp >= june8 )
            {
                if( keys.timestamp >= june18 )
                {
                    if( whitelist.count( name ) == 0 )
-                       name = prefix_name( name );
+                       is_prefixed = true;
                }
                else if( !is_cheap_name( name ) )
                {
-                   name = prefix_name( name );
+                   is_prefixed = true;
                }
            }
 
@@ -3734,6 +3722,7 @@ namespace bts { namespace blockchain {
            account.owner_key = keys.owner_key;
            account.active_key = keys.active_key;
            account.is_lifetime_member = keys.signing_key.valid() || keys.daily_pay.valid();
+           account.is_prefixed = is_prefixed;
 
            genesis.initial_accounts.push_back( std::move( account ) );
 
