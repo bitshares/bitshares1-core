@@ -38,8 +38,8 @@ git submodule update --init --recursive
    by using currently used compiler. Download the appropriate package from one of the links below
    (or both if you plan to build 32bit and 64bit versions).
 
-   32bit version:    http://get.syncad.com/invictus/Bitshare_toolkit_prebuilt_libs-vs2013.7z
-   64bit version:    http://get.syncad.com/invictus/Bitshare_toolkit_prebuilt_libs-vs2013-x64.7z
+   32bit version:    https://drive.google.com/open?id=1GyIkKZuIavFUithXnD5SW3q8choL6gka
+   64bit version:    https://drive.google.com/open?id=1bFdKuVPmgfHycHSKUQ_R9jC0bo5Bk1tI
 
    and should be unpacked into Bitshare-root directory (ie: D:\Bitshares).
    Now the package contains: BerkeleyDB, boost 1.55, OpenSSL 1.0.1g.
